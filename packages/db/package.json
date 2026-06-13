@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "shared mongoose database models",
-  "main": "index.js",
+  "description": "Shared Mongoose models and connection utilities for Socialista",
   "files": [
     "dist"
   ],
@@ -13,19 +12,22 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc -p tsconfig.check.json"
   },
-  "keywords": [],
-  "author": "",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
   "license": "ISC",
   "devDependencies": {
     "@socialista/eslint-config": "workspace:^",
     "@socialista/typescript-config": "workspace:^",
-    "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.9.3",
     "eslint": "^9.39.1",
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "dotenv": "^17.4.2",
     "mongoose": "^9.7.0"
   }
 }

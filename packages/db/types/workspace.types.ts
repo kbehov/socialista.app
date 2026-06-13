@@ -1,5 +1,5 @@
 import type { HydratedDocument, Types } from 'mongoose'
-// Enum for workspace
+
 export enum WorkspaceStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
@@ -10,11 +10,13 @@ export enum WorkspaceMemberRole {
   ADMIN = 'admin',
   MEMBER = 'member',
 }
+
 export enum Plan {
   FREE = 'free',
   PRO = 'pro',
   ENTERPRISE = 'enterprise',
 }
+
 export enum BillingStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
@@ -22,7 +24,8 @@ export enum BillingStatus {
   CANCELLED = 'cancelled',
   EXPIRED = 'expired',
 }
-export type WorkspaceMembers = {
+
+export type WorkspaceMember = {
   userId: Types.ObjectId
   role: WorkspaceMemberRole
 }
@@ -60,7 +63,7 @@ export interface IWorkspace {
   settings: WorkspaceSettings
   avatar?: string
   status: WorkspaceStatus
-  members: WorkspaceMembers[]
+  members: WorkspaceMember[]
   limits: WorkspaceLimits
   usage: WorkspaceUsage
   billing: WorkspaceBilling
