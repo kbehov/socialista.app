@@ -47,7 +47,7 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
     }),
   )
 }
-const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query', 'read'])
+const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query'])
 export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
   const normalized = normalizeQuery(query as FilterQuery)
   const { page, limit, sort, query: textSearch, ...rest } = normalized
@@ -55,9 +55,7 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
   const match: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(rest)) {
     if (RESERVED_KEYS.has(key) || value === '') continue
-    if (key === 'topic') {
-      match['topics'] = { $in: [toObjectId(value)] }
-    } else if (key === 'id') {
+    if (key === 'id') {
       try {
         match['_id'] = toObjectId(value)
       } catch {

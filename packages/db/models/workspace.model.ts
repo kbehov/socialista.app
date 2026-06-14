@@ -1,12 +1,7 @@
 import { model, Schema } from 'mongoose'
 import { enumValues } from '../lib/schema.js'
 import type { IWorkspace } from '../types/workspace.types.js'
-import {
-  BillingStatus,
-  Plan,
-  WorkspaceMemberRole,
-  WorkspaceStatus,
-} from '../types/workspace.types.js'
+import { BillingStatus, Plan, WorkspaceMemberRole, WorkspaceStatus } from '../types/workspace.types.js'
 
 const workspaceMemberSchema = new Schema(
   {
@@ -30,10 +25,10 @@ const workspaceSettingsSchema = new Schema(
 
 const workspaceLimitsSchema = new Schema(
   {
-    members: { type: Number, required: true, min: 0 },
-    storage: { type: Number, required: true, min: 0 },
-    accounts: { type: Number, required: true, min: 0 },
-    posts: { type: Number, required: true, min: 0 },
+    members: { type: Number, required: true, min: 0, default: 1 },
+    storage: { type: Number, required: true, min: 0, default: 1000 },
+    accounts: { type: Number, required: true, min: 0, default: 3 },
+    posts: { type: Number, required: true, min: 0, default: 30 },
   },
   { _id: false },
 )
