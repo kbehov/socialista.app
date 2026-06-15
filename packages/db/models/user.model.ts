@@ -1,8 +1,8 @@
+import { hash } from 'bcrypt'
 import { model, Schema } from 'mongoose'
 import { enumValues } from '../lib/schema.js'
-import type { IUser } from '../types/user.types.js'
+import type { IUser, UserDocument } from '../types/user.types.js'
 import { UserRole, UserStatus } from '../types/user.types.js'
-
 const oauthAccountSchema = new Schema(
   {
     provider: { type: String, required: true },
@@ -38,6 +38,11 @@ const userSchema = new Schema<IUser>(
   },
   { timestamps: true },
 )
+
+userSchema.pre('save', async function (this: UserDocument) {
+  if (!this.isModified('password')) return
+  this.password = await hash(this.password!, 10)
+})
 
 userSchema.index({ status: 1 })
 

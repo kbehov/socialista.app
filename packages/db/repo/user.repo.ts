@@ -12,7 +12,7 @@ export const getUserById = async (id: string) => {
 }
 
 // Create user
-export const createUser = async (user: IUser) => {
+export const createUser = async (user: Partial<IUser>) => {
   return await UserModel.create(user)
 }
 

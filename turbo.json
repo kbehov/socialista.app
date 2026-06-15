@@ -1,7 +1,15 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["MONGODB_URI", "DATABASE_URL"],
+  "globalEnv": [
+    "MONGODB_URI",
+    "DATABASE_URL",
+    "PORT",
+    "JWT_ACCESS_SECRET",
+    "JWT_REFRESH_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

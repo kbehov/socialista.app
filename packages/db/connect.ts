@@ -44,6 +44,7 @@ export async function connectDb(uri?: string): Promise<typeof mongoose> {
   }
 
   cache.conn = await cache.promise
+  console.log('Connected to MongoDB:', cache.conn.connection.host)
   return cache.conn
 }
 

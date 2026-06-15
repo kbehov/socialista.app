@@ -53,6 +53,7 @@ export type WorkspaceBilling = {
   status: BillingStatus
   nextBillingDate: Date
   nextBillingAmount: number
+  stripeCustomerId?: string
 }
 
 export interface IWorkspace {

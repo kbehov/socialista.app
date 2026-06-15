@@ -10,6 +10,11 @@
     "build:db": "turbo run build --filter=@socialista/db",
     "lint:db": "turbo run lint --filter=@socialista/db",
     "check-types:db": "turbo run check-types --filter=@socialista/db",
+    "start:api": "turbo run start --filter=@socialista/api",
+    "dev:api": "turbo run dev --filter=@socialista/api",
+    "lint:api": "turbo run lint --filter=@socialista/api",
+    "build:api": "turbo run build --filter=@socialista/api",
+    "check-types:api": "turbo run check-types --filter=@socialista/api",
     "clean": "pnpm exec turbo run clean 2>/dev/null || true && rm -rf node_modules .pnpm-store .turbo",
     "clean:all": "rm -rf node_modules apps/*/node_modules packages/*/node_modules .pnpm-store .turbo",
     "clean:lock": "rm -rf pnpm-lock.yaml"

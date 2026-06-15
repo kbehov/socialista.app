@@ -54,6 +54,7 @@ const workspaceBillingSchema = new Schema(
       enum: enumValues(BillingStatus),
       default: BillingStatus.ACTIVE,
     },
+    stripeCustomerId: { type: String },
     nextBillingDate: { type: Date, required: true },
     nextBillingAmount: { type: Number, required: true, min: 0 },
   },
