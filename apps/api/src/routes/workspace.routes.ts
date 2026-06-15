@@ -1,0 +1,29 @@
+import {
+  addWorkspaceMember,
+  createWorkspace,
+  deleteWorkspace,
+  getUserWorkspaces,
+  getWorkspace,
+  getWorkspaceMembers,
+  removeWorkspaceMember,
+  updateWorkspace,
+  updateWorkspaceMember,
+} from '@/controllers/workspace.controller.js'
+import { authMiddleware, type AppContext } from '@/middlewares/auth.middleware.js'
+import { Hono } from 'hono'
+
+const workspaceRoutes = new Hono<AppContext>()
+
+workspaceRoutes.use('/*', authMiddleware)
+
+workspaceRoutes.get('/', getUserWorkspaces)
+workspaceRoutes.post('/', createWorkspace)
+workspaceRoutes.get('/:id/members', getWorkspaceMembers)
+workspaceRoutes.post('/:id/members', addWorkspaceMember)
+workspaceRoutes.patch('/:id/members/:userId', updateWorkspaceMember)
+workspaceRoutes.delete('/:id/members/:userId', removeWorkspaceMember)
+workspaceRoutes.get('/:id', getWorkspace)
+workspaceRoutes.patch('/:id', updateWorkspace)
+workspaceRoutes.delete('/:id', deleteWorkspace)
+
+export default workspaceRoutes

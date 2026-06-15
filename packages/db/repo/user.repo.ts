@@ -1,9 +1,18 @@
+import { compare } from 'bcrypt'
 import { UserModel } from '../models/user.model.js'
 import { IUser } from '../types/user.types.js'
 import { buildFilters } from '../utils/build-filters.js'
-// Get user by email
+
 export const getUserByEmail = async (email: string) => {
   return await UserModel.findOne({ email })
+}
+
+export const authenticateUser = async (email: string, password: string) => {
+  const user = await UserModel.findOne({ email }).select('+password')
+  if (!user?.password) return null
+  const valid = await compare(password, user.password)
+  if (!valid) return null
+  return await UserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }, { new: true })
 }
 
 // Get user by id
@@ -16,9 +25,18 @@ export const createUser = async (user: Partial<IUser>) => {
   return await UserModel.create(user)
 }
 
-// Update user
-export const updateUser = async (id: string, user: IUser) => {
-  return await UserModel.findByIdAndUpdate(id, user, { new: true })
+// Update user (runs validators; password changes go through save hook for hashing)
+export const updateUser = async (id: string, updates: Partial<IUser>) => {
+  const user = await UserModel.findById(id)
+  if (!user) return null
+
+  const { password, ...rest } = updates
+  Object.assign(user, rest)
+  if (password) {
+    user.password = password
+  }
+  await user.save()
+  return user
 }
 
 // Delete user

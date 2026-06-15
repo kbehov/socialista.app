@@ -1,13 +1,16 @@
 import { Types } from 'mongoose'
 import { WorkspaceModel } from '../models/workspace.model.js'
 import { IWorkspace, WorkspaceMemberRole } from '../types/workspace.types.js'
-// Get workspace by id
+
 export const getWorkspaceById = async (id: string) => {
   return await WorkspaceModel.findById(id).lean()
 }
 
-// Create workspace
-export const createWorkspace = async (workspace: IWorkspace, userId: string) => {
+export const getUserWorkspaces = async (userId: string) => {
+  return await WorkspaceModel.find({ 'members.userId': new Types.ObjectId(userId) }).lean()
+}
+
+export const createWorkspace = async (workspace: Partial<IWorkspace>, userId: string) => {
   if (!userId) {
     throw new Error('User ID is required')
   }
@@ -95,4 +98,12 @@ export const updateWorkspace = async (workspaceId: string, workspace: Partial<IW
     throw new Error('Workspace not found')
   }
   return await WorkspaceModel.findByIdAndUpdate(workspaceId, { $set: { ...workspace } }, { new: true })
+}
+
+export const deleteWorkspace = async (workspaceId: string) => {
+  const workspace = await getWorkspaceById(workspaceId)
+  if (!workspace) {
+    throw new Error('Workspace not found')
+  }
+  return await WorkspaceModel.findByIdAndDelete(workspaceId).lean()
 }

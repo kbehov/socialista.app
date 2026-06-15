@@ -16,10 +16,3 @@ export const errorResponse = (c: Context, status: ContentfulStatusCode, message:
 export const successResponse = <T>(c: Context, status: ContentfulStatusCode, data: T) => {
   return c.json({ success: true, data }, status)
 }
-
-export const handleControllerError = (c: Context, error: Error) => {
-  console.error(`Error: ${error.message} : ${c.req.url}`)
-  const status = error instanceof HttpError ? error.status : 500
-  const message = error instanceof Error ? error.message : 'Internal server error'
-  return errorResponse(c, status, message)
-}
