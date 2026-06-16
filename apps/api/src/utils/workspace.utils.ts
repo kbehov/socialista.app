@@ -1,6 +1,7 @@
 import { parseParamId } from '@/utils/common.utils.js'
 import { HttpError } from '@/utils/http-response.js'
 import { serializeUser } from '@/utils/user.utils.js'
+
 import {
   BillingStatus,
   getUserById,
@@ -21,7 +22,18 @@ export const defaultWorkspaceBilling = () => ({
 })
 
 export const defaultWorkspaceSettings = () => ({
-  timezone: 'UTC',
+  settings: { timezone: 'Europe/Sofia', language: 'en' },
+  limits: {
+    members: 1,
+    storage: 1000,
+    accounts: 3,
+    posts: 30,
+  },
+  usage: {
+    storage: 0,
+    accounts: 0,
+    posts: 0,
+  },
 })
 
 export const serializeWorkspace = (workspace: IWorkspace) => ({

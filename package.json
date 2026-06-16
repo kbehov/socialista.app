@@ -14,6 +14,7 @@
     "dev:api": "turbo run dev --filter=@socialista/api",
     "lint:api": "turbo run lint --filter=@socialista/api",
     "build:api": "turbo run build --filter=@socialista/api",
+    "dev:web": "turbo run dev --filter=@socialista/web",
     "check-types:api": "turbo run check-types --filter=@socialista/api",
     "clean": "pnpm exec turbo run clean 2>/dev/null || true && rm -rf node_modules .pnpm-store .turbo",
     "clean:all": "rm -rf node_modules apps/*/node_modules packages/*/node_modules .pnpm-store .turbo",

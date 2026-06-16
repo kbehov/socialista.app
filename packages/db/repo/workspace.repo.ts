@@ -89,15 +89,15 @@ export const updateWorkspaceMemberRole = async (workspaceId: string, userId: str
 }
 
 // Update workspace
-export const updateWorkspace = async (workspaceId: string, workspace: Partial<IWorkspace>) => {
-  if (!workspaceId || !workspace) {
+export const updateWorkspace = async (workspaceId: string, data: Partial<IWorkspace>) => {
+  if (!workspaceId || !data) {
     throw new Error('Workspace ID is required')
   }
   const wp = await getWorkspaceById(workspaceId)
   if (!wp) {
     throw new Error('Workspace not found')
   }
-  return await WorkspaceModel.findByIdAndUpdate(workspaceId, { $set: { ...workspace } }, { new: true })
+  return await WorkspaceModel.findByIdAndUpdate(wp._id, { $set: { ...data } }, { new: true })
 }
 
 export const deleteWorkspace = async (workspaceId: string) => {

@@ -1,0 +1,23 @@
+{
+  "name": "@socialista/types",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "license": "ISC",
+  "devDependencies": {
+    "@socialista/typescript-config": "workspace:^",
+    "typescript": "5.9.2"
+  }
+}

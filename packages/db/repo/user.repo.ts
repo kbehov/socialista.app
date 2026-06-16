@@ -7,6 +7,12 @@ export const getUserByEmail = async (email: string) => {
   return await UserModel.findOne({ email })
 }
 
+export const getUserByOAuthAccount = async (provider: string, providerAccountId: string) => {
+  return await UserModel.findOne({
+    oauthAccounts: { $elemMatch: { provider, providerAccountId } },
+  })
+}
+
 export const authenticateUser = async (email: string, password: string) => {
   const user = await UserModel.findOne({ email }).select('+password')
   if (!user?.password) return null
