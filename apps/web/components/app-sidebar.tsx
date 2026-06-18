@@ -5,7 +5,7 @@ import * as React from 'react'
 import { NavMain } from '@/components/nav-main'
 import { NavProjects } from '@/components/nav-projects'
 import { NavUser } from '@/components/nav-user'
-import { TeamSwitcher } from '@/components/team-switcher'
+import { TeamSwitcher } from '@/components/workspace-switcher'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import { WorkspaceResponse } from '@socialista/types'
 import {
@@ -158,7 +158,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher workspaces={workspaces || []} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

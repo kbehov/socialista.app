@@ -14,6 +14,8 @@ export interface IAccount {
   createdBy: Types.ObjectId
   timezone: string
   connectionStatus: ConnectionStatus
+  accountName: string
+  accountAvatar?: string
   provider: string
   providerAccountId: string
   refreshToken?: string

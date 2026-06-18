@@ -71,6 +71,7 @@ const workspaceSchema = new Schema<IWorkspace>(
       index: true,
     },
     description: { type: String, trim: true },
+    logo: { type: String },
     settings: { type: workspaceSettingsSchema, required: true },
     avatar: { type: String },
     status: {

@@ -20,32 +20,24 @@ import {
   deleteWorkspace as deleteWorkspaceRecord,
   getUserWorkspaces as getUserWorkspacesFromDb,
   removeWorkspaceMember as removeWorkspaceMemberRecord,
-  updateWorkspace as updateWorkspaceRecord,
   updateWorkspaceMemberRole,
+  updateWorkspace as updateWorkspaceRecord,
 } from '@socialista/db'
 
 export const getUserWorkspaces = async (c: AuthContext) => {
   const workspaces = await getUserWorkspacesFromDb(c.get('userId'))
-  return successResponse(c, 200, {
-    workspaces: workspaces.map(workspace => serializeWorkspace(workspace)),
-  })
+  return successResponse(c, 200, workspaces)
 }
 
 export const createWorkspace = async (c: AuthContext) => {
   const input = parseCreateWorkspaceInput(await c.req.json())
-  const workspace = await createWorkspaceRecord(
-    { ...input, billing: defaultWorkspaceBilling() },
-    c.get('userId'),
-  )
+  const workspace = await createWorkspaceRecord({ ...input, billing: defaultWorkspaceBilling() }, c.get('userId'))
 
   return successResponse(c, 201, { workspace: serializeWorkspace(workspace) })
 }
 
 export const getWorkspace = async (c: AuthContext) => {
-  const workspace = await getWorkspaceAsMember(
-    parseParamId(c.req.param('id'), 'workspace ID'),
-    c.get('userId'),
-  )
+  const workspace = await getWorkspaceAsMember(parseParamId(c.req.param('id'), 'workspace ID'), c.get('userId'))
   return successResponse(c, 200, { workspace: serializeWorkspace(workspace) })
 }
 
@@ -73,10 +65,7 @@ export const deleteWorkspace = async (c: AuthContext) => {
 }
 
 export const getWorkspaceMembers = async (c: AuthContext) => {
-  const workspace = await getWorkspaceAsMember(
-    parseParamId(c.req.param('id'), 'workspace ID'),
-    c.get('userId'),
-  )
+  const workspace = await getWorkspaceAsMember(parseParamId(c.req.param('id'), 'workspace ID'), c.get('userId'))
 
   const members = await loadWorkspaceMembers(workspace)
   return successResponse(c, 200, { members })

@@ -1,5 +1,6 @@
 import '@/env.js'
 import authRoutes from '@/routes/auth.routes.js'
+import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
 import userRoutes from '@/routes/user.routes.js'
 import workspaceRoutes from '@/routes/workspace.routes.js'
@@ -24,13 +25,13 @@ app.onError((error, c) => {
 
 await connectDb()
 
-app.get('/', c => c.text('Hello Hono!'))
+// app.get('/', c => c.text('Hello Socialista!'))
 
 app.route('/auth', authRoutes)
 app.route('/users', userRoutes)
 app.route('/workspaces', workspaceRoutes)
 app.route('/invitations', invitationRoutes)
-
+app.route('/inspirations', inspirationRoutes)
 serve(
   {
     fetch: app.fetch,

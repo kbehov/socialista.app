@@ -21,12 +21,15 @@ export const WorkspaceProvider = ({
 }) => {
   const { isLoading, currentWorkspace } = useWorkspaceStore()
   const { setWorkspaces, setIsLoading, setCurrentWorkspace } = useWorkspaceStoreActions()
+
   useEffect(() => {
     try {
+      console.log('workspaces.length', workspaces.length)
       if (!workspaces.length) return
       setWorkspaces(workspaces || [])
       if (!currentWorkspace) {
         setCurrentWorkspace(workspaces[0] || null)
+        console.log('currentWorkspace', currentWorkspace)
       }
     } catch (error) {
       console.error(error)
@@ -34,5 +37,8 @@ export const WorkspaceProvider = ({
       setIsLoading(false)
     }
   }, [workspaces, currentWorkspace, setWorkspaces, setIsLoading, setCurrentWorkspace, workspaces.length])
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
   return <WorkspaceContext.Provider value={{ isLoading, workspaces }}>{children}</WorkspaceContext.Provider>
 }

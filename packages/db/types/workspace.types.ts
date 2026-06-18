@@ -61,6 +61,7 @@ export interface IWorkspace {
   name: string
   ownerId: Types.ObjectId
   description?: string
+  logo?: string
   settings: WorkspaceSettings
   avatar?: string
   status: WorkspaceStatus

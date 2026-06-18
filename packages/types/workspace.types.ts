@@ -1,5 +1,7 @@
 export type WorkspaceResponse = {
   id: string
+  _id: string
+  logo?: string
   name: string
   ownerId: string
   settings: {

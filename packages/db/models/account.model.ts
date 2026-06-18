@@ -23,6 +23,8 @@ const accountSchema = new Schema<IAccount>(
       enum: enumValues(ConnectionStatus),
       default: ConnectionStatus.PENDING,
     },
+    accountName: { type: String, required: true },
+    accountAvatar: { type: String },
     provider: { type: String, required: true },
     providerAccountId: { type: String, required: true },
     refreshToken: { type: String, select: false },
@@ -33,9 +35,6 @@ const accountSchema = new Schema<IAccount>(
   { timestamps: true },
 )
 
-accountSchema.index(
-  { workspace: 1, provider: 1, providerAccountId: 1 },
-  { unique: true },
-)
+accountSchema.index({ workspace: 1, provider: 1, providerAccountId: 1 }, { unique: true })
 
 export const AccountModel = model<IAccount>('Account', accountSchema)
