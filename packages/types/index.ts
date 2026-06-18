@@ -1,2 +1,3 @@
 export * from './common.types.js'
 export * from './user.types.js'
+export * from './workspace.types.js'

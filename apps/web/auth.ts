@@ -1,18 +1,25 @@
-import NextAuth, { CredentialsSignin } from 'next-auth'
-import type { Account, Profile, User as NextAuthUser } from 'next-auth'
-import type { JWT } from 'next-auth/jwt'
-import Credentials from 'next-auth/providers/credentials'
-import GitHub from 'next-auth/providers/github'
-import Google from 'next-auth/providers/google'
-import { signInSchema } from './lib/zod/auth.schema.js'
-import { refreshTokens as refreshTokensService, signIn as signInService, socialLogin as socialLoginService } from './services/auth.service.js'
+import { signInSchema } from '@/lib/zod/auth.schema'
+import {
+  refreshTokens as refreshTokensService,
+  signIn as signInService,
+  socialLogin as socialLoginService,
+} from '@/services/auth.service'
 import {
   applyAuthToToken,
   getSocialProfile,
   mapApiUserToSessionUser,
   shouldRefreshAccessToken,
   toIsoString,
-} from './utils/auth.utils.js'
+} from '@/utils/auth.utils'
+import type { Account, User as NextAuthUser, Profile } from 'next-auth'
+import NextAuth, { CredentialsSignin } from 'next-auth'
+import type { JWT } from 'next-auth/jwt'
+import Credentials from 'next-auth/providers/credentials'
+import GitHub from 'next-auth/providers/github'
+import Google from 'next-auth/providers/google'
+
+const googleClientId = process.env.GOOGLE_CLIENT_ID ?? process.env.AUTH_GOOGLE_ID
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? process.env.AUTH_GOOGLE_SECRET
 
 class InvalidCredentialsError extends CredentialsSignin {
   code = 'invalid_credentials'
@@ -22,13 +29,7 @@ class SocialLoginError extends CredentialsSignin {
   code = 'social_login_failed'
 }
 
-const socialProviders = [
-  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-    ? Google({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    : null,
+const optionalSocialProviders = [
   process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
     ? GitHub({
         clientId: process.env.GITHUB_CLIENT_ID,
@@ -131,7 +132,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       },
     }),
-    ...socialProviders,
+    ...(googleClientId && googleClientSecret
+      ? [
+          Google({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          }),
+        ]
+      : []),
+    ...optionalSocialProviders,
   ],
   callbacks: {
     async jwt({ token, user, account, profile, trigger, session }) {
