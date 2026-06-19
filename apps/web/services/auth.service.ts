@@ -1,5 +1,5 @@
 import { AUTH_ROUTES } from '@/constants/routes'
-import { publicApi } from '@/lib/api'
+import { publicApi } from '@/lib/api-public'
 import type { ApiResponse, AuthResponse, RefreshTokenResponse, SocialLoginInput } from '@socialista/types'
 
 export const signIn = async (email: string, password: string): Promise<ApiResponse<AuthResponse>> => {

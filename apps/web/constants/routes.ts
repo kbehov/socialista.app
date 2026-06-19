@@ -25,3 +25,23 @@ export const WORKSPACE_ROUTES = {
   REMOVE_MEMBER: `/workspace/:id/member/:memberId`,
   UPDATE_MEMBER: `/workspace/:id/member/:memberId`,
 }
+
+export const INSPIRATION_ROUTES = {
+  GET_INSPIRATIONS: `/inspirations`,
+  CREATE_INSPIRATION: `/inspirations`,
+  UPDATE_INSPIRATION: `/inspirations/:id`,
+  DELETE_INSPIRATION: `/inspirations/:id`,
+  VIEW_INSPIRATION: `/inspirations/:id/view`,
+  GET_CATEGORIES: `/inspirations/categories`,
+  CREATE_CATEGORY: `/inspirations/categories`,
+  UPDATE_CATEGORY: `/inspirations/categories/:id`,
+  DELETE_CATEGORY: `/inspirations/categories/:id`,
+  GET_NICHES: `/inspirations/niches`,
+  CREATE_NICHE: `/inspirations/niches`,
+  UPDATE_NICHE: `/inspirations/niches/:id`,
+  DELETE_NICHE: `/inspirations/niches/:id`,
+} as const
+
+export function inspirationRoute(template: string, id: string): string {
+  return template.replace(':id', id)
+}

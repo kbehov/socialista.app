@@ -1,12 +1,41 @@
+import type { Types } from 'mongoose'
 import { InspirationCategoryModel, InspirationModel, InspirationNicheModel } from '../models/inspiration.model.js'
 import type { IInspirationCategory, IInspirationNiche, IIspiration } from '../types/inspiration.types.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, toObjectId } from '../utils/build-filters.js'
+
+function applyArrayIdFilter(match: Record<string, unknown>, field: 'categories' | 'niches') {
+  const value = match[field]
+  if (typeof value !== 'string' || !value) return
+
+  const ids = value
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean)
+    .map(id => {
+      try {
+        return toObjectId(id)
+      } catch {
+        return null
+      }
+    })
+    .filter((id): id is Types.ObjectId => id !== null)
+
+  if (ids.length === 0) {
+    delete match[field]
+    return
+  }
+
+  match[field] = ids.length === 1 ? ids[0] : { $in: ids }
+}
+
 export const getInspirationById = async (id: string) => {
   return await InspirationModel.findById(id).lean()
 }
 
 export const getInspiration = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
+  applyArrayIdFilter(match, 'categories')
+  applyArrayIdFilter(match, 'niches')
   const inspirations = await InspirationModel.find(match)
     .skip(pagination.skip)
     .limit(pagination.limit)
@@ -21,6 +50,9 @@ export const getInspiration = async (query: string) => {
       total,
       page: pagination.page,
       limit: pagination.limit,
+      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
+      hasPreviousPage: pagination.page > 1,
+      sort,
     },
   }
 }

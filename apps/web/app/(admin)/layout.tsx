@@ -1,25 +1,33 @@
 import { auth } from '@/auth'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { AdminSidebar } from '@/components/admin-sidebar'
+import { Separator } from '@/components/ui/separator'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { redirect } from 'next/navigation'
-import { Suspense } from 'react'
-const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) {
     redirect('/auth/signin')
   }
-  const isAdmin = session.user?.role === 'admin'
-  // check if the user is admin
-  if (!isAdmin) {
+
+  if (session.user?.role !== 'admin') {
     redirect('/dashboard')
   }
 
   return (
-    <Suspense fallback={<div>suspended...</div>}>
-      <SidebarProvider>
-        <SidebarInset>{children}</SidebarInset>
-      </SidebarProvider>
-    </Suspense>
+    <SidebarProvider>
+      <AdminSidebar />
+      <SidebarInset className="flex min-h-svh flex-col bg-background">
+        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <span className="text-xs text-muted-foreground">Admin</span>
+        </header>
+
+        <main className="flex flex-1 flex-col overflow-auto">
+          <div className="mx-auto flex w-full container flex-1 flex-col gap-10 px-6 py-8 md:px-8">{children}</div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
-
-export default DashboardLayout

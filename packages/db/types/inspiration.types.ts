@@ -20,8 +20,8 @@ export type Stats = {
 }
 export type Image = {
   url: string
-  width: number
-  height: number
+  width?: number
+  height?: number
 }
 export enum InspirationContentType {
   SLIDESHOW = 'slideshow',

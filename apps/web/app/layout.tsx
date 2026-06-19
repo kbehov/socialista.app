@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
+
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 const geistSans = Geist({
@@ -29,13 +30,14 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const session = await auth()
+
   return (
     <html
       lang="en"
       suppressHydrationWarning
       className={cn('h-full', 'antialiased', geistSans.variable, geistMono.variable, 'font-sans', inter.variable)}
     >
-      <body className="min-h-full flex flex-col">
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AuthProvider session={session}>
           <TooltipProvider>{children}</TooltipProvider>
         </AuthProvider>

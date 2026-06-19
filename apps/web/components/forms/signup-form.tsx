@@ -10,7 +10,7 @@ import {
 } from '@/components/forms/auth-form-shared'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ApiError } from '@/lib/api'
+import { ApiError } from '@/lib/api-public'
 import { signUpSchema, type SignUpSchemaType } from '@/lib/zod/auth.schema'
 import { cn } from '@/lib/utils'
 import { signUp as signUpService } from '@/services/auth.service'

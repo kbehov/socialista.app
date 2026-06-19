@@ -14,7 +14,13 @@
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
     "AUTH_GOOGLE_ID",
-    "AUTH_GOOGLE_SECRET"
+    "AUTH_GOOGLE_SECRET",
+    "R2_ACCOUNT_ID",
+    "R2_BUCKET_NAME",
+    "R2_PUBLIC_BASE_URL",
+    "R2_CDN_BASE_URL",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY"
   ],
   "tasks": {
     "build": {
