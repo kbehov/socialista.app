@@ -19,6 +19,7 @@ app.use(compress())
 
 app.onError((error, c) => {
   const mapped = toHttpError(error)
+  console.log(error)
   console.error(`Error: ${mapped.message} : ${c.req.url}`)
   return errorResponse(c, mapped.status, mapped.message)
 })

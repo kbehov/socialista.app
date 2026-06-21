@@ -1,17 +1,22 @@
 import { PageHeader } from '@/components/common/page-header'
 import { InspirationActions } from '@/components/inspirations/inspiration-actions'
 import { parseFiltersFromSearchParams, toSearchParamsRecord } from '@/lib/inspiration-filters'
-import {
-  getInspirationCategories,
-  getInspirationNiches,
-  getInspirations,
-} from '@/services/inspiration.service'
+import { getInspirationCategories, getInspirationNiches, getInspirations } from '@/services/inspiration.service'
 import type { MetaResponse } from '@socialista/types'
-
-import { InspirationsPageContent } from './_components/inspirations-page-content'
+import { InspirationsList } from './_components/inspirations-list'
+import { InspirationsPagination } from './_components/inspirations-pagination'
+import { InspirationsToolbar } from './_components/inspirations-toolbar'
 
 type InspirationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+const defaultMeta: MetaResponse = {
+  total: 0,
+  page: 1,
+  limit: 12,
+  hasNextPage: false,
+  hasPreviousPage: false,
 }
 
 function getInspirationListQuery(searchParams: Record<string, string | string[] | undefined>): string {
@@ -26,14 +31,6 @@ function getInspirationListQuery(searchParams: Record<string, string | string[] 
   }
 
   return params.toString()
-}
-
-const defaultMeta: MetaResponse = {
-  total: 0,
-  page: 1,
-  limit: 12,
-  hasNextPage: false,
-  hasPreviousPage: false,
 }
 
 export default async function InspirationsPage({ searchParams }: InspirationsPageProps) {
@@ -53,21 +50,18 @@ export default async function InspirationsPage({ searchParams }: InspirationsPag
   const meta = inspirationsResult.data?.meta ?? defaultMeta
 
   return (
-    <>
+    <div className="flex flex-col gap-8">
       <PageHeader
         title="Inspirations"
-        description="Browse and organize TikTok content."
         breadcrumbs={[{ label: 'Manager', href: '/manager' }, { label: 'Inspirations' }]}
         actions={<InspirationActions />}
       />
 
-      <InspirationsPageContent
-        inspirations={inspirations}
-        meta={meta}
-        categories={categories}
-        niches={niches}
-        filters={filters}
-      />
-    </>
+      <section className="flex flex-col gap-6">
+        <InspirationsToolbar categories={categories} niches={niches} filters={filters} total={meta.total} />
+        <InspirationsList inspirations={inspirations} filters={filters} />
+        <InspirationsPagination meta={meta} />
+      </section>
+    </div>
   )
 }

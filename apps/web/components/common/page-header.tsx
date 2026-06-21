@@ -11,6 +11,7 @@ import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Fragment } from 'react'
+import { Separator } from '../ui/separator'
 
 export type PageHeaderBreadcrumb = {
   label: string
@@ -26,16 +27,9 @@ type PageHeaderProps = {
   className?: string
 }
 
-export function PageHeader({
-  title,
-  description,
-  breadcrumbs,
-  backHref,
-  actions,
-  className,
-}: PageHeaderProps) {
+export function PageHeader({ title, description, breadcrumbs, backHref, actions, className }: PageHeaderProps) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-4', className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumb>
           <BreadcrumbList className="text-xs text-muted-foreground">
@@ -73,12 +67,13 @@ export function PageHeader({
             </Link>
           )}
 
-          <h1 className="text-xl font-medium tracking-tight text-foreground">{title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
           {description && <p className="max-w-lg text-sm text-muted-foreground">{description}</p>}
         </div>
 
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
+      <Separator className="my-4" />
     </div>
   )
 }

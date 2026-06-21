@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -15,8 +11,10 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 import { ChevronRightIcon } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 type NavMainItem = {
   title: string
@@ -30,23 +28,28 @@ type NavMainItem = {
 }
 
 export function NavMain({ items }: { items: NavMainItem[] }) {
+  const pathname = usePathname()
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item =>
           item.items?.length ? (
-            <Collapsible
-              key={item.title}
-              asChild
-              defaultOpen={item.isActive}
-              className="group/collapsible"
-            >
+            <Collapsible key={item.title} asChild defaultOpen={pathname === item.url} className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.title}>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    className={cn(
+                      'font-medium',
+                      pathname === item.url
+                        ? 'bg-sidebar-accent rounded-md text-foreground font-medium'
+                        : 'text-muted-foreground font-normal',
+                    )}
+                  >
                     {item.icon}
-                    <span>{item.title}</span>
+                    <span className="text-sm">{item.title}</span>
                     <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -54,7 +57,10 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
                   <SidebarMenuSub>
                     {item.items.map(subItem => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild>
+                        <SidebarMenuSubButton
+                          asChild
+                          className={cn(pathname === subItem.url ? 'text-foreground' : 'text-muted-foreground')}
+                        >
                           <Link href={subItem.url}>
                             <span>{subItem.title}</span>
                           </Link>
@@ -66,9 +72,14 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
               </SidebarMenuItem>
             </Collapsible>
           ) : (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem
+              key={item.title}
+              className={
+                pathname === item.url ? 'bg-sidebar-accent rounded-md text-foreground' : 'text-muted-foreground'
+              }
+            >
               <SidebarMenuButton asChild tooltip={item.title}>
-                <Link href={item.url}>
+                <Link href={item.url} className="text-sm">
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>

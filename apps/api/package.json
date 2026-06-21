@@ -11,6 +11,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1072.0",
     "@hono/node-server": "^1.19.14",
     "@socialista/db": "workspace:^",
+    "axios": "^1.18.0",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.4.2",

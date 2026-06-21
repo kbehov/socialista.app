@@ -1,7 +1,11 @@
 import { PageHeader } from '@/components/common/page-header'
+import { getInspirationCategories, getInspirationNiches } from '@/services/inspiration.service'
 import { InspirationCreateWrapper } from '../_components/inspiration-create'
-
-export default function CreateInspirationPage() {
+export default async function CreateInspirationPage() {
+  const [categories, niches] = await Promise.all([
+    getInspirationCategories('limit=100&sort=name'),
+    getInspirationNiches('limit=100&sort=name'),
+  ])
   return (
     <>
       <PageHeader
@@ -15,7 +19,7 @@ export default function CreateInspirationPage() {
         backHref="/manager/inspirations"
       />
 
-      <InspirationCreateWrapper />
+      <InspirationCreateWrapper categories={categories.data?.categories ?? []} niches={niches.data?.niches ?? []} />
     </>
   )
 }

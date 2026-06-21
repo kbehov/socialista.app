@@ -1,4 +1,4 @@
-import { LayoutDashboardIcon, PictureInPictureIcon } from 'lucide-react'
+import { FolderArchive, LayoutDashboardIcon, LightbulbIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { NavMain } from './nav-main'
@@ -21,7 +21,7 @@ const items = [
   {
     title: 'Inspirations',
     url: '/manager/inspirations',
-    icon: <PictureInPictureIcon />,
+    icon: <LightbulbIcon />,
     isActive: true,
     items: [
       {
@@ -29,27 +29,35 @@ const items = [
         url: '/manager/inspirations',
       },
       {
-        title: 'Create',
-        url: '/manager/inspirations/create',
+        title: 'Categories',
+        url: '/manager/inspirations/categories',
+      },
+      {
+        title: 'Niches',
+        url: '/manager/inspirations/niches',
       },
     ],
+  },
+  {
+    title: 'Collections',
+    url: '/manager/collections',
+    icon: <FolderArchive />,
   },
 ]
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="border-b border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="default" asChild>
               <Link href="/manager">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <LayoutDashboardIcon className="size-4" />
+                <div className="flex aspect-square size-6 sm:size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <span className="text-md lg:text-2xl">✺</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Socialista</span>
-                  <span className="truncate text-xs text-muted-foreground">Admin</span>
+                  <span className="truncate font-semibold text-md ">Socialista.app</span>
                 </div>
               </Link>
             </SidebarMenuButton>

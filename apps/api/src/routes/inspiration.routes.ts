@@ -11,6 +11,7 @@ import {
   updateInspiration,
   updateInspirationCategory,
   updateInspirationNiche,
+  uploadInspirationVideo,
   viewInspiration,
 } from '@/controllers/inspirations.controller.js'
 import { adminMiddleware } from '@/middlewares/admin.middleware.js'
@@ -20,6 +21,7 @@ import { Hono } from 'hono'
 const inspirationRoutes = new Hono()
 
 inspirationRoutes.get('/', getInspirations)
+inspirationRoutes.post('/upload-video', authMiddleware, adminMiddleware, uploadInspirationVideo)
 inspirationRoutes.post('/', authMiddleware, adminMiddleware, createInspiration)
 inspirationRoutes.put('/:id', authMiddleware, adminMiddleware, updateInspiration)
 inspirationRoutes.delete('/:id', authMiddleware, adminMiddleware, deleteInspiration)

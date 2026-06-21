@@ -62,9 +62,9 @@ export function InspirationsPagination({ meta }: InspirationsPaginationProps) {
   const params = new URLSearchParams(searchParams.toString())
 
   return (
-    <div className="flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-xs tabular-nums text-muted-foreground">
-        {start}–{end} of {meta.total}
+        Showing {start}–{end} of {meta.total}
       </p>
 
       {totalPages > 1 && (

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -26,9 +26,10 @@ export function InspirationActions({ align = 'end' }: InspirationActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 rounded-lg bg-background">
+          <Button size="sm" className="h-8 gap-1.5 rounded-lg">
+            <PlusIcon className="size-3.5" />
             New
-            <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+            <ChevronDownIcon className="size-3.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
 

@@ -77,6 +77,28 @@ export type InspirationNichesListResponse = {
 /** @deprecated Use InspirationsListResponse */
 export type InspirationsReponse = InspirationsListResponse
 
+export type CreateInspirationInput = {
+  contentType: 'slideshow' | 'video'
+  images: string[]
+  /** Pre-uploaded video URL (e.g. after client-side TikTok download). */
+  videoUrl?: string
+  /** Remote video URLs for server-side download (non-TikTok sources). */
+  videoUrls?: string[]
+  author: {
+    username: string
+    nickName: string
+    avatarUrl?: string
+  }
+  stats: {
+    likes: number
+    comments: number
+    shares: number
+    plays: number
+  }
+  categories: string[]
+  niches: string[]
+}
+
 export type CreateInspirationCategoryInput = {
   name: string
   icon?: string

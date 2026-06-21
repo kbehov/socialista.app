@@ -64,6 +64,11 @@ interface TikTokVideo {
   cover?: string
   originCover?: string
   dynamicCover?: string
+  bitrateInfo?: Array<{
+    PlayAddr?: {
+      UrlList?: string[]
+    }
+  }>
 }
 
 interface TikTokItemStruct {
@@ -122,7 +127,8 @@ function extractImageUrls(imagePost: TikTokImagePost): string[] {
 }
 
 function extractVideoUrls(video: TikTokVideo): string[] {
-  return uniqueUrls([video.playAddr, video.downloadAddr])
+  const bitrateUrls = (video.bitrateInfo ?? []).flatMap(info => info.PlayAddr?.UrlList ?? [])
+  return uniqueUrls([video.downloadAddr, ...bitrateUrls, video.playAddr])
 }
 
 function extractCoverUrls(video: TikTokVideo | undefined): string[] {

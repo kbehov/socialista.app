@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import type {
   ApiResponse,
   CreateInspirationCategoryInput,
+  CreateInspirationInput,
   CreateInspirationNicheInput,
   InspirationCategoriesListResponse,
   InspirationCategoryResponse,
@@ -28,7 +29,7 @@ export const getInspirations = async (query?: string): Promise<ApiResponse<Inspi
 }
 
 export const createInspiration = async (
-  body: Record<string, unknown>,
+  body: CreateInspirationInput,
 ): Promise<ApiResponse<{ inspiration: InspirationResponse }>> => {
   const response = await api.post<{ inspiration: InspirationResponse }>(INSPIRATION_ROUTES.CREATE_INSPIRATION, body)
   revalidatePath(INSPIRATIONS_PATH)

@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/context/auth-provider'
+import { ThemeProvider } from '@/context/theme-provider'
 import { cn } from '@/lib/utils'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
@@ -39,7 +40,9 @@ export default async function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AuthProvider session={session}>
-          <TooltipProvider>{children}</TooltipProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ThemeProvider>
         </AuthProvider>
         <Toaster />
       </body>
