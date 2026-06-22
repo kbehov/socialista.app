@@ -69,6 +69,15 @@ export const assertWorkspaceMember = (workspace: IWorkspace, userId: string): vo
   }
 }
 
+const STORAGE_LIMIT_MB_TO_BYTES = 1024 * 1024
+
+export const assertWorkspaceStorageAvailable = (workspace: IWorkspace, fileSizeBytes: number): void => {
+  const limitBytes = workspace.limits.storage * STORAGE_LIMIT_MB_TO_BYTES
+  if (workspace.usage.storage + fileSizeBytes > limitBytes) {
+    throw new HttpError(403, 'Workspace storage is full')
+  }
+}
+
 export const assertWorkspaceAdmin = (workspace: IWorkspace, userId: string): void => {
   const role = getMemberRole(workspace, userId)
   if (role !== WorkspaceMemberRole.OWNER && role !== WorkspaceMemberRole.ADMIN) {

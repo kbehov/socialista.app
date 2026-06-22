@@ -19,7 +19,7 @@ export {
 } from './types/image.types.js'
 export * from './types/inspiration.types.js'
 export { buildFilters, type FilterQuery, type ParsedFilters } from './utils/build-filters.js'
-export { isValidEmail, isValidId, isValidPassword } from './utils/isValid.js'
+export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 
 export { ConnectionStatus, type AccountDocument, type IAccount } from './types/account.types.js'
 

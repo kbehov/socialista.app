@@ -1,172 +1,57 @@
 'use client'
 
-import * as React from 'react'
-
 import { NavMain } from '@/components/nav-main'
-import { NavProjects } from '@/components/nav-projects'
 import { NavUser } from '@/components/nav-user'
+import { SidebarStorageFooter } from '@/components/sidebar-storage-footer'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { WorkspaceResponse } from '@socialista/types'
-import {
-  AudioLinesIcon,
-  BookOpenIcon,
-  BotIcon,
-  FrameIcon,
-  GalleryVerticalEndIcon,
-  MapIcon,
-  PieChartIcon,
-  Settings2Icon,
-  TerminalIcon,
-  TerminalSquareIcon,
-} from 'lucide-react'
+import { FolderArchiveIcon } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
-// This is sample data.
-const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: <GalleryVerticalEndIcon />,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: <AudioLinesIcon />,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: <TerminalIcon />,
-      plan: 'Free',
-    },
-  ],
-  navMain: [
-    {
-      title: 'Playground',
-      url: '#',
-      icon: <TerminalSquareIcon />,
-      isActive: true,
-      items: [
-        {
-          title: 'History',
-          url: '#',
-        },
-        {
-          title: 'Starred',
-          url: '#',
-        },
-        {
-          title: 'Settings',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Models',
-      url: '#',
-      icon: <BotIcon />,
-      items: [
-        {
-          title: 'Genesis',
-          url: '#',
-        },
-        {
-          title: 'Explorer',
-          url: '#',
-        },
-        {
-          title: 'Quantum',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Documentation',
-      url: '#',
-      icon: <BookOpenIcon />,
-      items: [
-        {
-          title: 'Introduction',
-          url: '#',
-        },
-        {
-          title: 'Get Started',
-          url: '#',
-        },
-        {
-          title: 'Tutorials',
-          url: '#',
-        },
-        {
-          title: 'Changelog',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Settings',
-      url: '#',
-      icon: <Settings2Icon />,
-      items: [
-        {
-          title: 'General',
-          url: '#',
-        },
-        {
-          title: 'Team',
-          url: '#',
-        },
-        {
-          title: 'Billing',
-          url: '#',
-        },
-        {
-          title: 'Limits',
-          url: '#',
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: 'Design Engineering',
-      url: '#',
-      icon: <FrameIcon />,
-    },
-    {
-      name: 'Sales & Marketing',
-      url: '#',
-      icon: <PieChartIcon />,
-    },
-    {
-      name: 'Travel',
-      url: '#',
-      icon: <MapIcon />,
-    },
-  ],
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  workspaces: WorkspaceResponse[]
+  user?: {
+    name: string
+    email: string
+    avatar: string
+  }
 }
 
-export function AppSidebar({
-  workspaces,
-  ...props
-}: React.ComponentProps<typeof Sidebar> & { workspaces: WorkspaceResponse[] }) {
+const defaultUser = {
+  name: 'User',
+  email: '',
+  avatar: '',
+}
+
+export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSidebarProps) {
+  const pathname = usePathname()
+
+  const navItems = [
+    {
+      title: 'Files',
+      url: DASHBOARD_ROUTES.HOME,
+      icon: <FolderArchiveIcon />,
+      isActive: pathname === DASHBOARD_ROUTES.HOME || pathname.startsWith('/dashboard/folders'),
+    },
+  ]
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher workspaces={workspaces || []} />
+        <TeamSwitcher workspaces={workspaces} />
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navItems} />
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <SidebarStorageFooter />
+        <NavUser user={user} />
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )

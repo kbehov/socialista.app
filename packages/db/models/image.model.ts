@@ -7,6 +7,7 @@ const imageSchema = new Schema<IImage>(
     width: { type: Number, required: true },
     height: { type: Number, required: true },
     key: { type: String, required: true },
+    size: { type: Number, default: 0, min: 0 },
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace' },
     collection: { type: Schema.Types.ObjectId, ref: 'ImageCollection' },
     uploadedBy: { type: Schema.Types.ObjectId, ref: 'User' },

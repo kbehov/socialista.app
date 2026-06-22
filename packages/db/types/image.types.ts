@@ -6,6 +6,7 @@ export interface IImage {
   width: number
   height: number
   key: string
+  size?: number
   workspace?: Types.ObjectId
   collection?: Types.ObjectId
   uploadedBy?: Types.ObjectId

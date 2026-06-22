@@ -107,3 +107,30 @@ export const deleteWorkspace = async (workspaceId: string) => {
   }
   return await WorkspaceModel.findByIdAndDelete(workspaceId).lean()
 }
+
+export const incrementWorkspaceStorageUsage = async (workspaceId: string, bytes: number) => {
+  return await WorkspaceModel.findByIdAndUpdate(
+    workspaceId,
+    { $inc: { 'usage.storage': bytes } },
+    { new: true },
+  ).lean()
+}
+
+export const decrementWorkspaceStorageUsage = async (workspaceId: string, bytes: number) => {
+  if (bytes <= 0) {
+    return await getWorkspaceById(workspaceId)
+  }
+
+  const workspace = await getWorkspaceById(workspaceId)
+  if (!workspace) {
+    throw new Error('Workspace not found')
+  }
+
+  const nextStorage = Math.max(0, workspace.usage.storage - bytes)
+
+  return await WorkspaceModel.findByIdAndUpdate(
+    workspaceId,
+    { $set: { 'usage.storage': nextStorage } },
+    { new: true },
+  ).lean()
+}

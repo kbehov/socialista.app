@@ -41,7 +41,18 @@ export const INSPIRATION_ROUTES = {
   UPDATE_NICHE: `/inspirations/niches/:id`,
   DELETE_NICHE: `/inspirations/niches/:id`,
 } as const
-
+export const COLLECTION_ROUTES = {
+  CREATE_COLLECTION: `/collections`,
+  GET_COLLECTIONS: `/collections`,
+  GET_WORKSPACE_IMAGES: (workspaceId: string) => `/collections/workspace/${workspaceId}/images`,
+  UPLOAD_TO_WORKSPACE: (workspaceId: string) => `/collections/workspace/${workspaceId}/files`,
+  UPLOAD_TO_COLLECTION: (workspaceId: string, collectionId: string) =>
+    `/collections/workspace/${workspaceId}/collection/${collectionId}/files`,
+  DELETE_FILE: (workspaceId: string, fileId: string) =>
+    `/collections/workspace/${workspaceId}/files/${fileId}`,
+  DELETE_FOLDER: (workspaceId: string, folderId: string) =>
+    `/collections/workspace/${workspaceId}/folder/${folderId}`,
+} as const
 export function inspirationRoute(template: string, id: string): string {
   return template.replace(':id', id)
 }

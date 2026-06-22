@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import dotenv from 'dotenv'
 import 'dotenv/config'
 import { Buffer } from 'node:buffer'
@@ -33,6 +33,34 @@ export async function uploadBufferToR2(key: string, body: Buffer, contentType: s
     }),
   )
   return `${base}/${key}`
+}
+
+export async function getObjectSizeFromR2(key: string): Promise<number> {
+  if (!R2_BUCKET) {
+    throw new Error('R2_BUCKET_NAME is not set')
+  }
+
+  const response = await s3.send(
+    new HeadObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: key,
+    }),
+  )
+
+  return response.ContentLength ?? 0
+}
+
+export async function deleteObjectFromR2(key: string): Promise<void> {
+  if (!R2_BUCKET) {
+    throw new Error('R2_BUCKET_NAME is not set')
+  }
+
+  await s3.send(
+    new DeleteObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: key,
+    }),
+  )
 }
 
 export { R2_BUCKET, R2_CDN_BASE_URL, R2_PUBLIC_BASE_URL, s3 }

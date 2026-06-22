@@ -1,5 +1,6 @@
 import '@/env.js'
 import authRoutes from '@/routes/auth.routes.js'
+import { collectionRoutes } from '@/routes/collection.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
 import userRoutes from '@/routes/user.routes.js'
@@ -33,6 +34,7 @@ app.route('/users', userRoutes)
 app.route('/workspaces', workspaceRoutes)
 app.route('/invitations', invitationRoutes)
 app.route('/inspirations', inspirationRoutes)
+app.route('/collections', collectionRoutes)
 serve(
   {
     fetch: app.fetch,

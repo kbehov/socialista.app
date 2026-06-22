@@ -32,7 +32,10 @@ async function request<T>(
   const resolvedHeaders = new Headers(headers)
   resolvedHeaders.set('x-user-id', userId)
   resolvedHeaders.set('Authorization', `Bearer ${accessToken}`)
-  if (body !== undefined && !resolvedHeaders.has('Content-Type')) {
+
+  // FormData sets its own Content-Type (with boundary) — don't override it
+  const isFormData = body instanceof FormData
+  if (body !== undefined && !isFormData && !resolvedHeaders.has('Content-Type')) {
     resolvedHeaders.set('Content-Type', 'application/json')
   }
 
@@ -40,7 +43,7 @@ async function request<T>(
     ...rest,
     method,
     headers: resolvedHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
   })
 
   return parseJson<T>(response)

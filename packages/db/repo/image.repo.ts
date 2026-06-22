@@ -2,7 +2,7 @@ import { ImageCollectionModel, ImageModel } from '../models/image.model.js'
 import type { IImage, IImageCollection } from '../types/image.types.js'
 import { buildFilters } from '../utils/build-filters.js'
 
-export const createImage = async (image: IImage) => {
+export const createImage = async (image: Partial<IImage>) => {
   return await ImageModel.create(image)
 }
 
@@ -15,7 +15,11 @@ export const updateImage = async (id: string, image: IImage) => {
 }
 
 export const deleteImage = async (id: string) => {
-  return await ImageModel.findByIdAndDelete(id)
+  return await ImageModel.findByIdAndDelete(id).lean()
+}
+
+export const getImagesByCollection = async (collectionId: string) => {
+  return await ImageModel.find({ collection: collectionId }).lean()
 }
 
 export const getImages = async (query: string) => {
@@ -28,7 +32,7 @@ export const getImages = async (query: string) => {
   }
 }
 
-export const createImageCollection = async (collection: IImageCollection) => {
+export const createImageCollection = async (collection: Partial<IImageCollection>) => {
   return await ImageCollectionModel.create(collection)
 }
 
@@ -44,6 +48,14 @@ export const deleteImageCollection = async (id: string) => {
   return await ImageCollectionModel.findByIdAndDelete(id)
 }
 
+export const incrementCollectionImagesCount = async (collectionId: string, count = 1) => {
+  return await ImageCollectionModel.findByIdAndUpdate(
+    collectionId,
+    { $inc: { imagesCount: count } },
+    { new: true },
+  ).lean()
+}
+
 export const getImageCollections = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const collections = await ImageCollectionModel.find(match)
@@ -54,6 +66,13 @@ export const getImageCollections = async (query: string) => {
   const total = await ImageCollectionModel.countDocuments(match)
   return {
     collections,
-    meta: { total, page: pagination.page, limit: pagination.limit },
+    meta: {
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+      sort,
+      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
+      hasPreviousPage: pagination.page > 1,
+    },
   }
 }

@@ -1,3 +1,4 @@
+export * from './collection.types.js'
 export * from './common.types.js'
 export * from './inspiration.types.js'
 export * from './user.types.js'

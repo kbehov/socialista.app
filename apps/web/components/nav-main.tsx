@@ -27,23 +27,28 @@ type NavMainItem = {
   }[]
 }
 
+function isItemActive(pathname: string, item: NavMainItem) {
+  if (item.isActive !== undefined) return item.isActive
+  return pathname === item.url
+}
+
 export function NavMain({ items }: { items: NavMainItem[] }) {
   const pathname = usePathname()
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Workspace</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item =>
           item.items?.length ? (
-            <Collapsible key={item.title} asChild defaultOpen={pathname === item.url} className="group/collapsible">
+            <Collapsible key={item.title} asChild defaultOpen={isItemActive(pathname, item)} className="group/collapsible">
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     tooltip={item.title}
                     className={cn(
                       'font-medium',
-                      pathname === item.url
+                      isItemActive(pathname, item)
                         ? 'bg-sidebar-accent rounded-md text-foreground font-medium'
                         : 'text-muted-foreground font-normal',
                     )}
@@ -75,7 +80,7 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
             <SidebarMenuItem
               key={item.title}
               className={
-                pathname === item.url ? 'bg-sidebar-accent rounded-md text-foreground' : 'text-muted-foreground'
+                isItemActive(pathname, item) ? 'bg-sidebar-accent rounded-md text-foreground' : 'text-muted-foreground'
               }
             >
               <SidebarMenuButton asChild tooltip={item.title}>

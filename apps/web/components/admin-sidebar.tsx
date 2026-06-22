@@ -39,7 +39,7 @@ const items = [
     ],
   },
   {
-    title: 'Collections',
+    title: 'Files',
     url: '/manager/collections',
     icon: <FolderArchive />,
   },
