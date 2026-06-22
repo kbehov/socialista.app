@@ -48,11 +48,16 @@ export const COLLECTION_ROUTES = {
   UPLOAD_TO_WORKSPACE: (workspaceId: string) => `/collections/workspace/${workspaceId}/files`,
   UPLOAD_TO_COLLECTION: (workspaceId: string, collectionId: string) =>
     `/collections/workspace/${workspaceId}/collection/${collectionId}/files`,
-  DELETE_FILE: (workspaceId: string, fileId: string) =>
-    `/collections/workspace/${workspaceId}/files/${fileId}`,
-  DELETE_FOLDER: (workspaceId: string, folderId: string) =>
-    `/collections/workspace/${workspaceId}/folder/${folderId}`,
+  DELETE_FILE: (workspaceId: string, fileId: string) => `/collections/workspace/${workspaceId}/files/${fileId}`,
+  DELETE_FOLDER: (workspaceId: string, folderId: string) => `/collections/workspace/${workspaceId}/folder/${folderId}`,
 } as const
 export function inspirationRoute(template: string, id: string): string {
   return template.replace(':id', id)
 }
+export const MODEL_ROUTES = {
+  GET_MODELS: `/models`,
+  GET_MODEL: (id: string) => `/models/${id}`,
+  CREATE_MODEL: `/models`,
+  UPDATE_MODEL: (id: string) => `/models/${id}`,
+  DELETE_MODEL: (id: string) => `/models/${id}`,
+} as const

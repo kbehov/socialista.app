@@ -3,6 +3,7 @@ import authRoutes from '@/routes/auth.routes.js'
 import { collectionRoutes } from '@/routes/collection.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
+import modelRoutes from '@/routes/model.routes.js'
 import userRoutes from '@/routes/user.routes.js'
 import workspaceRoutes from '@/routes/workspace.routes.js'
 import { toHttpError } from '@/utils/common.utils.js'
@@ -35,6 +36,7 @@ app.route('/workspaces', workspaceRoutes)
 app.route('/invitations', invitationRoutes)
 app.route('/inspirations', inspirationRoutes)
 app.route('/collections', collectionRoutes)
+app.route('/models', modelRoutes)
 serve(
   {
     fetch: app.fetch,
