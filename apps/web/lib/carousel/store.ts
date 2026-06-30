@@ -8,12 +8,15 @@ import {
   DEFAULT_CANVAS,
   DEFAULT_LAYER_STYLE,
 } from './defaults'
+import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
+import { proxiedImageUrl } from './image-url'
 import { getTextPreset, mergeTextPreset } from './text-presets'
 
 const HISTORY_LIMIT = 50
 
 interface EditorState {
   canvas: CanvasDimensions
+  aspectRatioId: string
   slides: Slide[]
   activeSlideId: SlideId | null
   activeLayerId: LayerId | null
@@ -24,6 +27,7 @@ interface EditorState {
   removeSlide: (slideId: SlideId) => void
   duplicateSlide: (slideId: SlideId) => void
   reorderSlides: (sourceId: SlideId, targetId: SlideId) => void
+  setSlideOrder: (orderedIds: SlideId[]) => void
   setActiveSlide: (slideId: SlideId | null) => void
   setSlideBackground: (slideId: SlideId, imageUrl: string) => void
   setSlideBackgroundColor: (slideId: SlideId, color: string) => void
@@ -37,12 +41,15 @@ interface EditorState {
   setActiveLayer: (slideId: SlideId | null, layerId: LayerId | null) => void
   bringForward: (slideId: SlideId, layerId: LayerId) => void
   sendBackward: (slideId: SlideId, layerId: LayerId) => void
+  setLayerOrder: (slideId: SlideId, orderedIds: LayerId[]) => void
 
   undo: () => void
   redo: () => void
   reset: (slides?: Slide[]) => void
   setCanvas: (dimensions: CanvasDimensions) => void
+  setAspectRatio: (id: string) => void
   applyGeneratedContent: (texts: string[]) => void
+  applyTikTokImport: (imageUrls: string[]) => void
 }
 
 type Snapshot = Pick<EditorState, 'slides' | 'activeSlideId' | 'activeLayerId'>
@@ -79,6 +86,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
   const initialSlide = createSlide(0)
   return {
     canvas: DEFAULT_CANVAS,
+    aspectRatioId: DEFAULT_ASPECT_RATIO_ID,
     slides: [initialSlide],
     activeSlideId: initialSlide.id,
     activeLayerId: null,
@@ -139,6 +147,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
         reordered.splice(state.slides.indexOf(source), 1)
         reordered.splice(state.slides.indexOf(target), 0, source)
         return { slides: reordered.map((s, i) => ({ ...s, order: i })) }
+      })
+    },
+
+    setSlideOrder: orderedIds => {
+      record(state => {
+        const byId = new Map(state.slides.map(slide => [slide.id, slide]))
+        const slides = orderedIds
+          .map(id => byId.get(id))
+          .filter((slide): slide is Slide => slide != null)
+        if (slides.length !== state.slides.length) return {}
+        return { slides: slides.map((slide, index) => ({ ...slide, order: index })) }
       })
     },
 
@@ -258,6 +277,21 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
+    setLayerOrder: (slideId, orderedIds) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const byId = new Map(slide.layers.map(layer => [layer.id, layer]))
+          const layers = orderedIds
+            .slice()
+            .reverse()
+            .map(id => byId.get(id))
+            .filter((layer): layer is TextLayer => layer != null)
+          if (layers.length !== slide.layers.length) return slide
+          return { ...slide, layers: reindexLayers(layers) }
+        }),
+      }))
+    },
+
     undo: () => {
       set(state => {
         if (state.past.length === 0) return {}
@@ -295,7 +329,16 @@ export const useEditorStore = create<EditorState>((set, get) => {
       })
     },
 
-    setCanvas: dimensions => set({ canvas: dimensions }),
+    setCanvas: dimensions =>
+      set({
+        canvas: dimensions,
+        aspectRatioId: findAspectRatioId(dimensions),
+      }),
+
+    setAspectRatio: id => {
+      const preset = getAspectRatioPreset(id)
+      set({ aspectRatioId: id, canvas: preset.dimensions })
+    },
 
     applyGeneratedContent: texts => {
       if (texts.length === 0) return
@@ -319,6 +362,21 @@ export const useEditorStore = create<EditorState>((set, get) => {
         slides,
         activeSlideId: slides[0].id,
         activeLayerId: slides[0].layers[0]?.id ?? null,
+        past: [],
+        future: [],
+      })
+    },
+
+    applyTikTokImport: imageUrls => {
+      if (imageUrls.length === 0) return
+      const tiktokCanvas = getAspectRatioPreset('tiktok').dimensions
+      const slides = imageUrls.map((imageUrl, order) => createSlide(order, proxiedImageUrl(imageUrl)))
+      set({
+        aspectRatioId: 'tiktok',
+        canvas: tiktokCanvas,
+        slides,
+        activeSlideId: slides[0].id,
+        activeLayerId: null,
         past: [],
         future: [],
       })

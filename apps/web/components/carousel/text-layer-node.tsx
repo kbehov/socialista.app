@@ -46,15 +46,19 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
   const textCss = useMemo(() => buildTextLayerCss(effective.style, scale), [effective.style, scale])
 
   useEffect(() => {
-    if (isEditing && editRef.current) {
-      editRef.current.focus()
-      const range = document.createRange()
-      range.selectNodeContents(editRef.current)
-      const selection = window.getSelection()
-      selection?.removeAllRanges()
-      selection?.addRange(range)
-    }
-  }, [isEditing])
+    if (!isEditing || !editRef.current) return
+
+    editRef.current.textContent = layer.content || ''
+    editRef.current.focus()
+
+    const range = document.createRange()
+    range.selectNodeContents(editRef.current)
+    range.collapse(false)
+
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+  }, [isEditing, layer.id])
 
   const commitEdit = () => {
     if (!editRef.current) return
@@ -109,7 +113,8 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
             : undefined
         }
         className={cn(
-          'flex h-full w-full items-center overflow-hidden whitespace-pre-wrap break-words',
+          'flex h-full w-full overflow-hidden whitespace-pre-wrap break-words',
+          isEditing ? 'items-start justify-start' : 'items-center',
           isEditing && 'outline-none ring-2 ring-primary/60',
         )}
         style={{
@@ -123,7 +128,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
           wordBreak: 'break-word',
         }}
       >
-        {layer.content || ' '}
+        {isEditing ? null : layer.content || ' '}
       </div>
 
       {selected && interactive && !isEditing ? (

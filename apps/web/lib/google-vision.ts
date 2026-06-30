@@ -63,3 +63,17 @@ export async function extractHookSlideText(imageUrl: string): Promise<SlideTextR
     text: extractSlideshowOverlayText(result),
   }
 }
+
+export async function extractAllSlideTexts(imageUrls: string[]): Promise<SlideTextResult[]> {
+  return Promise.all(
+    imageUrls.map(async (imageUrl, index) => {
+      const content = await fetchImageContent(imageUrl)
+      const [result] = await getVisionClient().textDetection({ image: { content } })
+      return {
+        slide: index + 1,
+        path: imageUrl,
+        text: extractSlideshowOverlayText(result),
+      }
+    }),
+  )
+}

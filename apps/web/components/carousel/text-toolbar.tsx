@@ -24,18 +24,21 @@ export function TextToolbar() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed p-3 text-center text-[11px] text-muted-foreground">
-        No slide selected.
+      <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center text-xs text-muted-foreground">
+        Select a slide in the filmstrip to edit its background.
       </div>
     )
   }
 
   if (!layer) {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed p-3 text-center text-[11px] text-muted-foreground">
-        <span>Select a text layer or add one from the canvas.</span>
-        <Button size="xs" variant="outline" onClick={() => addTextLayer(slide.id)}>
-          <PlusIcon className="size-3" /> Add text
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          Click a text box on the canvas, or add one below.
+        </p>
+        <Button size="sm" variant="outline" onClick={() => addTextLayer(slide.id)}>
+          <PlusIcon />
+          Add text box
         </Button>
       </div>
     )
@@ -44,7 +47,7 @@ export function TextToolbar() {
   const style = layer.style
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-card p-2.5 shadow-xs">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium text-muted-foreground">Text</span>
         <div className="flex gap-1">

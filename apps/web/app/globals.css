@@ -257,61 +257,6 @@ body::before {
 }
 
 @layer utilities {
-  .guest-feed-scroll {
-    animation: guest-feed-scroll 4s ease-in-out infinite;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .guest-feed-scroll {
-      animation: none;
-    }
-  }
-
-  .marquee-track {
-    animation: marquee 32s linear infinite;
-  }
-
-  .marquee-track-reverse {
-    animation: marquee 38s linear infinite reverse;
-  }
-
-  .marquee-group:hover .marquee-track,
-  .marquee-group:hover .marquee-track-reverse {
-    animation-play-state: paused;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .marquee-track,
-    .marquee-track-reverse {
-      animation: none;
-    }
-  }
-
-  .guest-snap-x {
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .guest-snap-item {
-    scroll-snap-align: start;
-  }
-
-  .guest-landing {
-    --guest-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  }
-
-  .guest-cinematic {
-    box-shadow:
-      0 0 0 1px color-mix(in oklch, var(--foreground) 6%, transparent),
-      0 24px 48px -12px color-mix(in oklch, var(--foreground) 12%, transparent);
-  }
-
-  .dark .guest-cinematic {
-    box-shadow:
-      0 0 0 1px color-mix(in oklch, white 8%, transparent),
-      0 32px 64px -16px rgba(0, 0, 0, 0.55);
-  }
-
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -319,6 +264,17 @@ body::before {
 
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  .studio-canvas-workspace {
+    background-color: color-mix(in oklch, var(--muted) 70%, transparent);
+    background-image: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--foreground) 7%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 14px 14px;
+    background-position: center center;
   }
 
   .sidebar-scrollbar {

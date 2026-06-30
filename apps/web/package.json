@@ -11,6 +11,10 @@
   "dependencies": {
     "@ai-sdk/react": "^3.0.210",
     "@base-ui/react": "^1.6.0",
+    "@dnd-kit/dom": "^0.5.0",
+    "@dnd-kit/helpers": "^0.5.0",
+    "@dnd-kit/react": "^0.5.0",
+    "@fal-ai/client": "^1.10.1",
     "@google-cloud/vision": "^5.3.7",
     "@hookform/resolvers": "^5.4.0",
     "ai": "^6.0.208",

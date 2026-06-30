@@ -31,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <UserDropdown />
           </header>
 
-          <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 overflow-auto px-4 py-6 lg:px-6">
+          <main className="mx-auto flex w-full max-w-7xl min-h-0 flex-1 flex-col gap-6 overflow-auto px-4 py-6 lg:px-6">
             {children}
           </main>
         </SidebarInset>

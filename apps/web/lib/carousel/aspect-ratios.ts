@@ -58,6 +58,14 @@ export function getAspectRatioPreset(id: string): AspectRatioPreset {
   return ASPECT_RATIO_PRESETS.find(p => p.id === id) ?? ASPECT_RATIO_PRESETS[0]
 }
 
+export function findAspectRatioId(dimensions: CanvasDimensions): string {
+  const match = ASPECT_RATIO_PRESETS.find(
+    preset =>
+      preset.dimensions.width === dimensions.width && preset.dimensions.height === dimensions.height,
+  )
+  return match?.id ?? DEFAULT_ASPECT_RATIO_ID
+}
+
 export function formatAspectRatio(dimensions: CanvasDimensions): string {
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
   const divisor = gcd(dimensions.width, dimensions.height)

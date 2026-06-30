@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CheckIcon, ImageIcon, LinkIcon, Trash2Icon, UploadIcon, XIcon } from 'lucide-react'
+import { CheckIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon, UploadIcon, XIcon } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { ColorPicker } from './primitives/color-picker'
 
 export function SlideBackgroundPanel() {
@@ -12,6 +13,7 @@ export function SlideBackgroundPanel() {
   const setSlideBackground = useEditorStore(s => s.setSlideBackground)
   const setSlideBackgroundColor = useEditorStore(s => s.setSlideBackgroundColor)
   const clearSlideBackgroundImage = useEditorStore(s => s.clearSlideBackgroundImage)
+  const { openEditDialog, replaceSlideImage, isEditingSlide } = useSlideImageEdit()
 
   const [urlVisible, setUrlVisible] = useState(false)
   const [urlValue, setUrlValue] = useState('')
@@ -30,7 +32,7 @@ export function SlideBackgroundPanel() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed p-3 text-center text-[11px] text-muted-foreground">
+      <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center text-xs text-muted-foreground">
         Select a slide to edit its background.
       </div>
     )
@@ -58,8 +60,10 @@ export function SlideBackgroundPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-card p-2.5 shadow-xs">
-      <span className="text-[11px] font-medium text-muted-foreground">Background</span>
+    <div className="flex flex-col gap-3">
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        Set a fill color or upload a photo. Images cover the full slide.
+      </p>
 
       <div className="space-y-1.5">
         <Label className="text-[11px] font-medium text-muted-foreground">Color</Label>
@@ -94,29 +98,47 @@ export function SlideBackgroundPanel() {
                 onCancel={cancelUrl}
               />
             ) : (
-              <div className="flex gap-1.5">
-                <label className="flex h-7 flex-1 cursor-pointer items-center justify-center gap-1 rounded-md border border-input bg-transparent px-2 text-xs shadow-xs transition hover:bg-muted">
-                  <ImageIcon className="size-3" />
-                  Replace
-                  <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-                </label>
+              <div className="flex flex-col gap-1.5">
                 <Button
-                  size="xs"
-                  variant="outline"
-                  onClick={() => setUrlVisible(true)}
-                  aria-label="Replace with URL"
+                  size="sm"
+                  className="w-full"
+                  disabled={isEditingSlide(slide.id)}
+                  onClick={() => openEditDialog(slide.id, slide.backgroundImageUrl)}
                 >
-                  <LinkIcon className="size-3" />
+                  <SparklesIcon className="size-3.5" />
+                  Edit with AI
                 </Button>
-                <Button
-                  size="xs"
-                  variant="outline"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => clearSlideBackgroundImage(slide.id)}
-                  aria-label="Remove image"
-                >
-                  <Trash2Icon className="size-3" />
-                </Button>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isEditingSlide(slide.id)}
+                    onClick={() => replaceSlideImage(slide.id)}
+                  >
+                    <ImageIcon className="size-3" />
+                    Replace
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={() => setUrlVisible(true)}
+                    disabled={isEditingSlide(slide.id)}
+                    aria-label="Replace with URL"
+                  >
+                    <LinkIcon className="size-3" />
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => clearSlideBackgroundImage(slide.id)}
+                    disabled={isEditingSlide(slide.id)}
+                    aria-label="Remove image"
+                  >
+                    <Trash2Icon className="size-3" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -132,16 +154,16 @@ export function SlideBackgroundPanel() {
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <label className="flex h-7 w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-input bg-transparent px-2 text-xs shadow-xs transition hover:bg-muted">
-              <UploadIcon className="size-3" />
+            <label className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-input bg-muted/30 px-2 text-xs font-medium transition hover:border-primary/40 hover:bg-muted/50">
+              <UploadIcon className="size-3.5" />
               Upload image
               <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </label>
-            <Button size="xs" variant="outline" className="w-full" onClick={() => setUrlVisible(true)}>
-              <LinkIcon className="size-3" /> Paste URL
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setUrlVisible(true)}>
+              <LinkIcon className="size-3.5" /> Paste image URL
             </Button>
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              Optional — color shows through when no image is set.
+              Solid color shows when no image is set.
             </p>
           </div>
         )}

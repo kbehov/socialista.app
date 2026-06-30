@@ -1,25 +1,33 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { DownloadIcon, Loader2Icon, Redo2Icon, Undo2Icon, PlusIcon } from 'lucide-react'
-import { useEditorStore } from '@/lib/carousel/store'
-import { useEditorShortcuts } from '@/hooks/carousel/use-editor-shortcuts'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Kbd } from '@/components/ui/kbd'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useEditorShortcuts } from '@/hooks/carousel/use-editor-shortcuts'
 import { exportSlidesAsZip } from '@/lib/carousel/export'
+import { useEditorStore } from '@/lib/carousel/store'
+import {
+  DownloadIcon,
+  Loader2Icon,
+  MousePointer2Icon,
+  Redo2Icon,
+  TypeIcon,
+  Undo2Icon,
+} from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { AspectRatioBadge } from './slideshow-generator-panel'
+import { EditorInspector } from './editor-inspector'
+import { SlidePreviewCarousel } from './slide-preview-carousel'
 import { SlideNavigator } from './slide-navigator'
-import { SlideCanvas } from './slide-canvas'
-import { SlideBackgroundPanel } from './slide-background-panel'
-import { TextToolbar } from './text-toolbar'
-import { LayerList } from './layer-list'
+import { AspectRatioBadge } from './format-selector'
+import { SlideImageEditProvider } from './slide-image-edit-provider'
 
 export function CarouselEditor() {
   useEditorShortcuts()
 
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
+  const activeLayerId = useEditorStore(s => s.activeLayerId)
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
   const addTextLayer = useEditorStore(s => s.addTextLayer)
@@ -31,6 +39,7 @@ export function CarouselEditor() {
 
   const activeSlide = slides.find(s => s.id === activeSlideId) ?? slides[0]
   const activeIndex = activeSlide ? slides.findIndex(s => s.id === activeSlide.id) + 1 : 1
+  const hasLayers = (activeSlide?.layers.length ?? 0) > 0
 
   const canUndo = past.length > 0
   const canRedo = future.length > 0
@@ -53,68 +62,101 @@ export function CarouselEditor() {
   }, [exporting, slides])
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
-      {/* Top toolbar */}
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2">
+    <SlideImageEditProvider>
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+      {/* Toolbar */}
+      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
         <div className="flex items-center gap-0.5">
-          <Button size="icon-sm" variant="ghost" onClick={undo} disabled={!canUndo} aria-label="Undo">
-            <Undo2Icon />
-          </Button>
-          <Button size="icon-sm" variant="ghost" onClick={redo} disabled={!canRedo} aria-label="Redo">
-            <Redo2Icon />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="icon-sm" variant="ghost" onClick={undo} disabled={!canUndo} aria-label="Undo">
+                <Undo2Icon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Undo <Kbd className="ml-1">⌘Z</Kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="icon-sm" variant="ghost" onClick={redo} disabled={!canRedo} aria-label="Redo">
+                <Redo2Icon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="hidden h-5 w-px bg-border sm:block" />
+
+        {activeSlide ? (
+          <Button size="sm" variant="outline" onClick={() => addTextLayer(activeSlide.id)}>
+            <TypeIcon />
+            Add text
+          </Button>
+        ) : null}
+
+        <div className="flex-1" />
+
+        <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
           <span>
             Slide {activeIndex} of {slides.length}
           </span>
-          <span className="hidden sm:inline">·</span>
-          <AspectRatioBadge className="hidden sm:inline" />
+          <span>·</span>
+          <AspectRatioBadge />
         </div>
 
         <Button size="sm" onClick={handleExport} disabled={exporting}>
           {exporting ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
-          {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
+          {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export ZIP'}
         </Button>
       </div>
 
-      {/* Canvas + properties */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1fr_240px]">
-        <div className="relative flex min-h-0 flex-col bg-muted/50">
-          <div className="flex items-center justify-between border-b bg-background/80 px-3 py-1.5 backdrop-blur-sm">
-            <span className="text-[11px] font-medium text-muted-foreground">Canvas</span>
+      {/* Canvas + inspector */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,min(320px,42vh))] overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px] lg:grid-rows-1">
+        <div className="relative flex min-h-0 flex-col overflow-hidden">
+          <div className="studio-canvas-workspace relative flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-6">
             {activeSlide ? (
-              <Button size="xs" variant="ghost" onClick={() => addTextLayer(activeSlide.id)}>
-                <PlusIcon /> Text
-              </Button>
-            ) : null}
-          </div>
-
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
-            {activeSlide ? (
-              <SlideCanvas slide={activeSlide} interactive maxWidth={480} />
+              <div className="flex min-h-0 flex-1 items-center justify-center">
+                <div className="h-full w-full max-w-[560px]">
+                  <SlidePreviewCarousel maxWidth={560} className="h-full" />
+                </div>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">No slide selected</p>
             )}
+
+            {activeSlide && !activeLayerId && hasLayers ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center px-4 lg:bottom-4">
+                <div className="flex items-center gap-2 rounded-full border bg-background/95 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-sm">
+                  <MousePointer2Icon className="size-3.5 shrink-0" />
+                  <span>Click background to edit · Click text to select · Drag to move</span>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
-        <div className="min-h-0 overflow-hidden border-t lg:border-t-0 lg:border-l">
-          <ScrollArea className="h-full min-h-0 **:data-[slot=scroll-area-viewport]:h-full **:data-[slot=scroll-area-viewport]:overscroll-contain">
-            <div className="flex flex-col gap-2 p-2">
-              <SlideBackgroundPanel />
-              <TextToolbar />
-              <LayerList />
-            </div>
-          </ScrollArea>
+        <div className="flex h-full min-h-0 max-h-[min(320px,42vh)] flex-col overflow-hidden border-t bg-card lg:max-h-none lg:border-t-0 lg:border-l">
+          <EditorInspector />
         </div>
       </div>
 
-      {/* Bottom filmstrip */}
-      <div className="shrink-0 border-t bg-muted/30 px-3 py-2">
+      {/* Filmstrip */}
+      <div className="shrink-0 border-t bg-muted/20 px-3 py-2.5">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Slides
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            Swipe preview · Drag to reorder · Right-click for duplicate &amp; delete
+          </span>
+        </div>
         <SlideNavigator variant="filmstrip" />
       </div>
     </div>
+    </SlideImageEditProvider>
   )
 }
