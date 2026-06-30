@@ -4,9 +4,10 @@ import { FieldError, FieldLabel } from '@/components/forms/auth-form-shared'
 import { TikTokPostCard } from '@/components/tiktok/tiktok-post-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { generateSlideshowPrompt } from '@/lib/ai'
+import { downloadTikTokVideo } from '@/lib/tiktok/download-video'
 import type { TikTokExtractResult } from '@/lib/tiktok/extract'
 import { cn } from '@/lib/utils'
-import { downloadTikTokVideo } from '@/lib/tiktok/download-video'
 import { createInspiration } from '@/services/inspiration.service'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { InspirationCategoryResponse, InspirationNicheResponse } from '@socialista/types'
@@ -16,7 +17,6 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-
 const extractFormSchema = z.object({
   url: z.string().trim().min(1, 'URL is required').url('Enter a valid URL'),
 })
@@ -24,7 +24,11 @@ const extractFormSchema = z.object({
 type ExtractFormValues = z.infer<typeof extractFormSchema>
 
 function toggleItem<T extends { _id: string }>(item: T, selected: T[], onChange: (next: T[]) => void) {
-  onChange(selected.some(entry => entry._id === item._id) ? selected.filter(entry => entry._id !== item._id) : [...selected, item])
+  onChange(
+    selected.some(entry => entry._id === item._id)
+      ? selected.filter(entry => entry._id !== item._id)
+      : [...selected, item],
+  )
 }
 
 function SelectionGroup<T extends { _id: string; name: string; icon?: string }>({
@@ -44,7 +48,9 @@ function SelectionGroup<T extends { _id: string; name: string; icon?: string }>(
     return (
       <div className="space-y-1">
         <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">No {label.toLowerCase()} yet. Create one from the inspirations page.</p>
+        <p className="text-xs text-muted-foreground">
+          No {label.toLowerCase()} yet. Create one from the inspirations page.
+        </p>
       </div>
     )
   }
@@ -90,6 +96,9 @@ export function InspirationCreateWrapper({
   const [selectedNiches, setSelectedNiches] = useState<InspirationNicheResponse[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [hookText, setHookText] = useState<string | null>(null)
+  const [isExtractingOcr, setIsExtractingOcr] = useState(false)
+  const [prompt, setPrompt] = useState<string | null>(null)
 
   const {
     register,
@@ -104,6 +113,7 @@ export function InspirationCreateWrapper({
 
   const onSubmit = handleSubmit(async ({ url }) => {
     setPreview(null)
+    setHookText(null)
     setSaveError(null)
     setSelectedCategories([])
     setSelectedNiches([])
@@ -123,6 +133,34 @@ export function InspirationCreateWrapper({
       }
 
       setPreview(data)
+
+      if (data.type === 'slideshow' && data.imageUrls[0]) {
+        setIsExtractingOcr(true)
+        try {
+          const ocrResponse = await fetch('/api/ocr/slides', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrls: [data.imageUrls[0]] }),
+          })
+          const ocrData = (await ocrResponse.json()) as {
+            hook?: { text: string }
+            error?: string
+          }
+
+          if (!ocrResponse.ok) {
+            toast.error(ocrData.error ?? 'Failed to extract hook slide text')
+          } else {
+            setHookText(ocrData.hook?.text ?? '')
+          }
+          const aiprompt = await generateSlideshowPrompt(ocrData.hook?.text ?? '', data?.imageUrls.length ?? 3)
+          console.log(prompt)
+          setPrompt(aiprompt)
+        } catch {
+          toast.error('Failed to extract hook slide text')
+        } finally {
+          setIsExtractingOcr(false)
+        }
+      }
     } catch {
       setError('root', { message: 'Something went wrong. Please try again.' })
     }
@@ -282,10 +320,34 @@ export function InspirationCreateWrapper({
         )}
       </section>
 
-      <section>
+      <section className="space-y-4">
         <div className="flex min-h-[480px] items-center justify-center rounded-lg border border-border p-4">
           {preview ? <TikTokPostCard post={preview} /> : <p className="text-xs text-muted-foreground">No preview</p>}
         </div>
+
+        {preview?.type === 'slideshow' && (
+          <div className="rounded-lg border p-6">
+            <div>
+              <h2 className="text-sm font-medium">Hook text</h2>
+              <p className="text-xs text-muted-foreground">OCR text extracted from the first slideshow image.</p>
+            </div>
+
+            {isExtractingOcr ? (
+              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Extracting hook text…
+              </div>
+            ) : hookText !== null ? (
+              <p className="mt-4 rounded-md bg-muted/50 p-3 text-sm whitespace-pre-wrap">
+                {hookText || <span className="text-muted-foreground italic">No text detected</span>}
+              </p>
+            ) : (
+              <p className="mt-4 text-xs text-muted-foreground">No hook text extracted yet.</p>
+            )}
+
+            {prompt && <div className="mt-4 rounded-md bg-muted/50 p-3 text-sm whitespace-pre-wrap">{prompt}</div>}
+          </div>
+        )}
       </section>
     </div>
   )

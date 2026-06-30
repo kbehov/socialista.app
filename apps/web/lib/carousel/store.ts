@@ -1,0 +1,327 @@
+import { create } from 'zustand'
+import type { Slide, SlideId, TextLayer, LayerId, CanvasDimensions } from '@socialista/types'
+import {
+  createSlide,
+  createTextLayer,
+  reindexLayers,
+  sortLayers,
+  DEFAULT_CANVAS,
+  DEFAULT_LAYER_STYLE,
+} from './defaults'
+import { getTextPreset, mergeTextPreset } from './text-presets'
+
+const HISTORY_LIMIT = 50
+
+interface EditorState {
+  canvas: CanvasDimensions
+  slides: Slide[]
+  activeSlideId: SlideId | null
+  activeLayerId: LayerId | null
+  past: { slides: Slide[]; activeSlideId: SlideId | null; activeLayerId: LayerId | null }[]
+  future: { slides: Slide[]; activeSlideId: SlideId | null; activeLayerId: LayerId | null }[]
+
+  addSlide: (backgroundImageUrl?: string) => void
+  removeSlide: (slideId: SlideId) => void
+  duplicateSlide: (slideId: SlideId) => void
+  reorderSlides: (sourceId: SlideId, targetId: SlideId) => void
+  setActiveSlide: (slideId: SlideId | null) => void
+  setSlideBackground: (slideId: SlideId, imageUrl: string) => void
+  setSlideBackgroundColor: (slideId: SlideId, color: string) => void
+  clearSlideBackgroundImage: (slideId: SlideId) => void
+
+  addTextLayer: (slideId: SlideId) => void
+  updateLayer: (slideId: SlideId, layerId: LayerId, partial: Partial<TextLayer>) => void
+  updateLayerStyle: (slideId: SlideId, layerId: LayerId, style: Partial<TextLayer['style']>) => void
+  removeLayer: (slideId: SlideId, layerId: LayerId) => void
+  duplicateLayer: (slideId: SlideId, layerId: LayerId) => void
+  setActiveLayer: (slideId: SlideId | null, layerId: LayerId | null) => void
+  bringForward: (slideId: SlideId, layerId: LayerId) => void
+  sendBackward: (slideId: SlideId, layerId: LayerId) => void
+
+  undo: () => void
+  redo: () => void
+  reset: (slides?: Slide[]) => void
+  setCanvas: (dimensions: CanvasDimensions) => void
+  applyGeneratedContent: (texts: string[]) => void
+}
+
+type Snapshot = Pick<EditorState, 'slides' | 'activeSlideId' | 'activeLayerId'>
+
+function takeSnapshot(state: EditorState): Snapshot {
+  return {
+    slides: state.slides.map(slide => ({ ...slide, layers: slide.layers.map(l => ({ ...l, style: { ...l.style } })) })),
+    activeSlideId: state.activeSlideId,
+    activeLayerId: state.activeLayerId,
+  }
+}
+
+function withHistory<T extends EditorState>(set: (partial: Partial<T> | ((state: T) => Partial<T>)) => void) {
+  return (updater: (state: T) => Partial<T>) =>
+    set((state: T) => {
+      const snapshot = takeSnapshot(state as unknown as EditorState)
+      const past = [...(state as unknown as EditorState).past, snapshot].slice(-HISTORY_LIMIT)
+      const next = updater(state)
+      return { ...next, past, future: [] } as Partial<T>
+    })
+}
+
+function mutateSlide(slides: Slide[], slideId: SlideId, mutator: (slide: Slide) => Slide): Slide[] {
+  return slides.map(slide => (slide.id === slideId ? mutator(slide) : slide))
+}
+
+function mutateLayer(slide: Slide, layerId: LayerId, mutator: (layer: TextLayer) => TextLayer): Slide {
+  return { ...slide, layers: reindexLayers(slide.layers.map(l => (l.id === layerId ? mutator(l) : l))) }
+}
+
+export const useEditorStore = create<EditorState>((set, get) => {
+  const record = withHistory(set as never)
+
+  const initialSlide = createSlide(0)
+  return {
+    canvas: DEFAULT_CANVAS,
+    slides: [initialSlide],
+    activeSlideId: initialSlide.id,
+    activeLayerId: null,
+    past: [],
+    future: [],
+
+    addSlide: backgroundImageUrl => {
+      record(state => {
+        const order = state.slides.length
+        const slide = createSlide(order, backgroundImageUrl)
+        return {
+          slides: [...state.slides, slide],
+          activeSlideId: slide.id,
+          activeLayerId: null,
+        }
+      })
+    },
+
+    removeSlide: slideId => {
+      record(state => {
+        if (state.slides.length <= 1) return {}
+        const remaining = state.slides
+          .filter(s => s.id !== slideId)
+          .map((s, i) => ({ ...s, order: i }))
+        const activeSlideId =
+          state.activeSlideId === slideId ? remaining[0]?.id ?? null : state.activeSlideId
+        return { slides: remaining, activeSlideId, activeLayerId: null }
+      })
+    },
+
+    duplicateSlide: slideId => {
+      record(state => {
+        const original = state.slides.find(s => s.id === slideId)
+        if (!original) return {}
+        const copy: Slide = {
+          ...original,
+          id: `slide_${Math.random().toString(36).slice(2, 10)}`,
+          layers: original.layers.map(l => ({ ...l, style: { ...l.style } })),
+        }
+        const insertAt = state.slides.indexOf(original) + 1
+        const slides = [...state.slides]
+        slides.splice(insertAt, 0, copy)
+        return {
+          slides: slides.map((s, i) => ({ ...s, order: i })),
+          activeSlideId: copy.id,
+          activeLayerId: null,
+        }
+      })
+    },
+
+    reorderSlides: (sourceId, targetId) => {
+      if (sourceId === targetId) return
+      record(state => {
+        const source = state.slides.find(s => s.id === sourceId)
+        const target = state.slides.find(s => s.id === targetId)
+        if (!source || !target) return {}
+        const reordered = [...state.slides]
+        reordered.splice(state.slides.indexOf(source), 1)
+        reordered.splice(state.slides.indexOf(target), 0, source)
+        return { slides: reordered.map((s, i) => ({ ...s, order: i })) }
+      })
+    },
+
+    setActiveSlide: slideId => set({ activeSlideId: slideId, activeLayerId: null }),
+
+    setSlideBackground: (slideId, imageUrl) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({ ...slide, backgroundImageUrl: imageUrl })),
+      }))
+    },
+
+    setSlideBackgroundColor: (slideId, color) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({ ...slide, backgroundColor: color })),
+      }))
+    },
+
+    clearSlideBackgroundImage: slideId => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({ ...slide, backgroundImageUrl: '' })),
+      }))
+    },
+
+    addTextLayer: slideId => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const zIndex = slide.layers.length
+          const layer = createTextLayer({ zIndex })
+          return { ...slide, layers: [...slide.layers, layer] }
+        }),
+      }))
+      const slide = get().slides.find(s => s.id === slideId)
+      const top = slide ? sortLayers(slide.layers).at(-1) : undefined
+      if (top) set({ activeLayerId: top.id })
+    },
+
+    updateLayer: (slideId, layerId, partial) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => ({ ...layer, ...partial })),
+        ),
+      }))
+    },
+
+    updateLayerStyle: (slideId, layerId, style) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => ({ ...layer, style: { ...layer.style, ...style } })),
+        ),
+      }))
+    },
+
+    removeLayer: (slideId, layerId) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          layers: reindexLayers(slide.layers.filter(l => l.id !== layerId)),
+        })),
+        activeLayerId: state.activeLayerId === layerId ? null : state.activeLayerId,
+      }))
+    },
+
+    duplicateLayer: (slideId, layerId) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const original = slide.layers.find(l => l.id === layerId)
+          if (!original) return slide
+          const copy: TextLayer = {
+            ...original,
+            style: { ...original.style },
+            id: `layer_${Math.random().toString(36).slice(2, 10)}`,
+            x: Math.min(original.x + 4, 90),
+            y: Math.min(original.y + 4, 88),
+          }
+          return { ...slide, layers: reindexLayers([...slide.layers, copy]) }
+        }),
+      }))
+      const state = get()
+      const slide = state.slides.find(s => s.id === slideId)
+      if (slide) {
+        const top = sortLayers(slide.layers).at(-1)
+        if (top) set({ activeLayerId: top.id })
+      }
+    },
+
+    setActiveLayer: (slideId, layerId) => set({ activeSlideId: slideId, activeLayerId: layerId }),
+
+    bringForward: (slideId, layerId) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const sorted = sortLayers(slide.layers)
+          const idx = sorted.findIndex(l => l.id === layerId)
+          if (idx < 0 || idx >= sorted.length - 1) return slide
+          const a = sorted[idx]
+          const b = sorted[idx + 1]
+          const reordered = sorted.map((l, i) =>
+            i === idx ? { ...l, zIndex: b.zIndex } : i === idx + 1 ? { ...l, zIndex: a.zIndex } : l,
+          )
+          return { ...slide, layers: reindexLayers(reordered) }
+        }),
+      }))
+    },
+
+    sendBackward: (slideId, layerId) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const sorted = sortLayers(slide.layers)
+          const idx = sorted.findIndex(l => l.id === layerId)
+          if (idx <= 0) return slide
+          const a = sorted[idx]
+          const b = sorted[idx - 1]
+          const reordered = sorted.map((l, i) =>
+            i === idx ? { ...l, zIndex: b.zIndex } : i === idx - 1 ? { ...l, zIndex: a.zIndex } : l,
+          )
+          return { ...slide, layers: reindexLayers(reordered) }
+        }),
+      }))
+    },
+
+    undo: () => {
+      set(state => {
+        if (state.past.length === 0) return {}
+        const previous = state.past[state.past.length - 1]
+        const current = takeSnapshot(state)
+        return {
+          ...previous,
+          past: state.past.slice(0, -1),
+          future: [current, ...state.future].slice(0, HISTORY_LIMIT),
+        }
+      })
+    },
+
+    redo: () => {
+      set(state => {
+        if (state.future.length === 0) return {}
+        const next = state.future[0]
+        const current = takeSnapshot(state)
+        return {
+          ...next,
+          past: [...state.past, current].slice(-HISTORY_LIMIT),
+          future: state.future.slice(1),
+        }
+      })
+    },
+
+    reset: slides => {
+      const initial = slides && slides.length > 0 ? slides : [createSlide(0)]
+      set({
+        slides: initial.map((s, i) => ({ ...s, order: i })),
+        activeSlideId: initial[0].id,
+        activeLayerId: null,
+        past: [],
+        future: [],
+      })
+    },
+
+    setCanvas: dimensions => set({ canvas: dimensions }),
+
+    applyGeneratedContent: texts => {
+      if (texts.length === 0) return
+      const outlinePreset = getTextPreset('outline')?.style ?? {}
+      const slides = texts.map((text, order) => {
+        const slide = createSlide(order)
+        slide.layers = [
+          createTextLayer({
+            zIndex: 0,
+            content: text,
+            x: 8,
+            y: 38,
+            width: 84,
+            height: 18,
+            style: mergeTextPreset(DEFAULT_LAYER_STYLE, outlinePreset),
+          }),
+        ]
+        return slide
+      })
+      set({
+        slides,
+        activeSlideId: slides[0].id,
+        activeLayerId: slides[0].layers[0]?.id ?? null,
+        past: [],
+        future: [],
+      })
+    },
+  }
+})

@@ -3,11 +3,10 @@
 import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
 import { SidebarStorageFooter } from '@/components/sidebar-storage-footer'
-import { TeamSwitcher } from '@/components/workspace-switcher'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
-import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { TeamSwitcher } from '@/components/workspace-switcher'
 import { WorkspaceResponse } from '@socialista/types'
-import { FolderArchiveIcon } from 'lucide-react'
+import { FileTextIcon, FolderArchiveIcon, ImagesIcon, LayoutDashboardIcon, LightbulbIcon, UserIcon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
@@ -30,10 +29,61 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
 
   const navItems = [
     {
+      title: 'Dashboard',
+      url: '/dashboard',
+      icon: <LayoutDashboardIcon />,
+      isActive: pathname === '/dashboard',
+    },
+    {
+      title: 'Accounts',
+      url: '/dashboard/accounts',
+      icon: <UserIcon />,
+      isActive: pathname === '/dashboard/accounts',
+    },
+    {
+      title: 'Posts',
+      url: '/dashboard/posts',
+      icon: <FileTextIcon />,
+      items: [
+        {
+          title: 'Create post',
+          url: '/dashboard/posts',
+        },
+        {
+          title: 'All posts',
+          url: '/dashboard/posts/all',
+        },
+        {
+          title: 'Scheduled posts',
+          url: '/dashboard/posts/scheduled',
+        },
+        {
+          title: 'Drafts',
+          url: '/dashboard/posts/categories',
+        },
+      ],
+
+      isActive: pathname === '/dashboard/posts',
+    },
+  ]
+  const studioItems = [
+    {
+      title: 'Slideshow Generator',
+      url: '/dashboard/studio/slideshows',
+      icon: <ImagesIcon />,
+    },
+  ]
+  const databaseItems = [
+    {
+      title: 'Inspirations',
+      url: '/dashboard/inspirations',
+      icon: <LightbulbIcon />,
+    },
+    {
       title: 'Files',
-      url: DASHBOARD_ROUTES.HOME,
+      url: '/dashboard/files',
       icon: <FolderArchiveIcon />,
-      isActive: pathname === DASHBOARD_ROUTES.HOME || pathname.startsWith('/dashboard/folders'),
+      isActive: pathname === '/dashboard/files' || pathname.startsWith('/dashboard/folders'),
     },
   ]
 
@@ -44,7 +94,9 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain items={navItems} sectionTitle="Platform" />
+        <NavMain items={studioItems} sectionTitle="Studio" />
+        <NavMain items={databaseItems} sectionTitle="Database" />
       </SidebarContent>
 
       <SidebarFooter>

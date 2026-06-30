@@ -27,11 +27,16 @@ export enum InspirationContentType {
   SLIDESHOW = 'slideshow',
   VIDEO = 'video',
 }
+export type Slide = {
+  content: string
+}
 export interface IIspiration {
   _id: Types.ObjectId
   images: Image[]
   author: Author
   contentType?: InspirationContentType
+  description?: string
+  slides: Slide[]
   stats: Stats
   video: Video
   categories: Types.ObjectId[]

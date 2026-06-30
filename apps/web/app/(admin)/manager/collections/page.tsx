@@ -1,6 +1,5 @@
 import { FilesBrowser } from '@/components/collections/files-browser'
 import { PageHeader } from '@/components/common/page-header'
-import { managerFilesPaths } from '@/constants/app-routes'
 import { getCollections } from '@/services/collection.service'
 
 export default async function CollectionsPage() {
@@ -15,7 +14,7 @@ export default async function CollectionsPage() {
         breadcrumbs={[{ label: 'Manager', href: '/manager' }, { label: 'Files' }]}
       />
 
-      <FilesBrowser folders={folders} paths={managerFilesPaths} />
+      <FilesBrowser folders={folders} pathsVariant="manager" />
     </div>
   )
 }

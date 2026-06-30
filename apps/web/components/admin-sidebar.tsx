@@ -1,4 +1,4 @@
-import { FolderArchive, LayoutDashboardIcon, LightbulbIcon } from 'lucide-react'
+import { BoxIcon, FolderArchive, LayoutDashboardIcon, LightbulbIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { NavMain } from './nav-main'
@@ -42,6 +42,11 @@ const items = [
     title: 'Files',
     url: '/manager/collections',
     icon: <FolderArchive />,
+  },
+  {
+    title: 'Models',
+    url: '/manager/models',
+    icon: <BoxIcon />,
   },
 ]
 

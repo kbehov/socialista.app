@@ -1,4 +1,5 @@
 export * from './collection.types.js'
+export * from './carousel.types.js'
 export * from './common.types.js'
 export * from './inspiration.types.js'
 export * from './model.types.js'

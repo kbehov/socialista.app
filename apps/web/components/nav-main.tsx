@@ -32,16 +32,21 @@ function isItemActive(pathname: string, item: NavMainItem) {
   return pathname === item.url
 }
 
-export function NavMain({ items }: { items: NavMainItem[] }) {
+export function NavMain({ items, sectionTitle }: { items: NavMainItem[]; sectionTitle: string }) {
   const pathname = usePathname()
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+      <SidebarGroupLabel>{sectionTitle}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map(item =>
           item.items?.length ? (
-            <Collapsible key={item.title} asChild defaultOpen={isItemActive(pathname, item)} className="group/collapsible">
+            <Collapsible
+              key={item.title}
+              asChild
+              defaultOpen={isItemActive(pathname, item)}
+              className="group/collapsible"
+            >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton

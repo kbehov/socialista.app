@@ -22,3 +22,14 @@ export const managerFilesPaths: FilesRoutePaths = {
   root: MANAGER_FILES_ROUTES.HOME,
   folder: MANAGER_FILES_ROUTES.folder,
 }
+
+export type FilesPathsVariant = 'dashboard' | 'manager'
+
+const filesPathsByVariant: Record<FilesPathsVariant, FilesRoutePaths> = {
+  dashboard: dashboardFilesPaths,
+  manager: managerFilesPaths,
+}
+
+export function getFilesPaths(variant: FilesPathsVariant): FilesRoutePaths {
+  return filesPathsByVariant[variant]
+}

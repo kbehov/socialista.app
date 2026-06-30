@@ -1,6 +1,6 @@
 import { FilesBrowser } from '@/components/collections/files-browser'
 import { PageHeader } from '@/components/common/page-header'
-import { MANAGER_FILES_ROUTES, managerFilesPaths } from '@/constants/app-routes'
+import { MANAGER_FILES_ROUTES } from '@/constants/app-routes'
 import { formatFileCount } from '@/lib/format'
 import { getCollectionById } from '@/services/collection.service'
 import { notFound } from 'next/navigation'
@@ -32,7 +32,7 @@ const FolderPage = async ({ params }: { params: Promise<{ id: string }> }) => {
         folderId={id}
         folderName={folder.name}
         folderFileCount={folder.imagesCount}
-        paths={managerFilesPaths}
+        pathsVariant="manager"
       />
     </div>
   )

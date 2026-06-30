@@ -7,6 +7,7 @@ const monorepoRoot = path.join(dirname, '..', '..')
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
+  serverExternalPackages: ['@google-cloud/vision'],
   transpilePackages: ['@socialista/types'],
   turbopack: {
     root: monorepoRoot,

@@ -12,7 +12,7 @@ import { FolderGrid } from '@/components/media/folder-grid'
 import type { MediaGridItem } from '@/components/media/media-grid'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
 import { formatFileCount } from '@/lib/format'
-import { dashboardFilesPaths, type FilesRoutePaths } from '@/constants/app-routes'
+import { getFilesPaths, type FilesPathsVariant, type FilesRoutePaths } from '@/constants/app-routes'
 import { useCollectionImages } from '@/hooks/use-collection-images'
 import { deleteWorkspaceFile, deleteWorkspaceFolder } from '@/services/collection.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
@@ -26,7 +26,7 @@ type FilesBrowserProps = {
   folderId?: string
   folderName?: string
   folderFileCount?: number
-  paths?: FilesRoutePaths
+  pathsVariant?: FilesPathsVariant
 }
 
 type DeleteTarget =
@@ -103,8 +103,9 @@ export function FilesBrowser({
   folderId,
   folderName,
   folderFileCount = 0,
-  paths = dashboardFilesPaths,
+  pathsVariant = 'dashboard',
 }: FilesBrowserProps) {
+  const paths = getFilesPaths(pathsVariant)
   const router = useRouter()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const { updateWorkspace } = useWorkspaceStoreActions()

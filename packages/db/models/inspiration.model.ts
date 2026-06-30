@@ -6,6 +6,7 @@ import type {
   IInspirationNiche,
   IIspiration,
   Image,
+  Slide,
   Stats,
   Video,
 } from '../types/inspiration.types.js'
@@ -68,11 +69,20 @@ const nicheSchema = new Schema<IInspirationNiche>(
   },
   { timestamps: true },
 )
+
+const slideSchema = new Schema<Slide>(
+  {
+    content: { type: String, required: true },
+  },
+  { _id: false },
+)
 const inspirationSchema = new Schema<IIspiration>(
   {
     contentType: { type: String, enum: enumValues(InspirationContentType), required: true },
     images: { type: [imageSchema], required: true },
     author: { type: authorSchema, required: true },
+    description: { type: String },
+    slides: { type: [slideSchema], required: true },
     stats: { type: statsSchema, required: true },
     video: { type: videoSchema, required: true },
     categories: { type: [Schema.Types.ObjectId], ref: 'InspirationCategory', required: true },
