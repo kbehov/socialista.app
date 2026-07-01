@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/carousel'
 import { cn } from '@/lib/utils'
 import { SlideCanvasShell } from './slide-canvas-shell'
+import { useSlideImageEdit } from './slide-image-edit-provider'
 
 type SlidePreviewCarouselProps = {
   maxWidth?: number
@@ -22,6 +23,7 @@ export function SlidePreviewCarousel({ maxWidth = 560, className }: SlidePreview
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
+  const { adjustTarget } = useSlideImageEdit()
 
   const [api, setApi] = useState<CarouselApi>()
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -70,9 +72,9 @@ export function SlidePreviewCarousel({ maxWidth = 560, className }: SlidePreview
   return (
     <Carousel
       setApi={setApi}
-      draggable
+      draggable={!adjustTarget}
       opts={{ align: 'center', containScroll: 'trimSnaps' }}
-      className={cn('relative h-full w-full cursor-grab active:cursor-grabbing', className)}
+      className={cn('relative h-full min-h-0 max-h-full w-full cursor-grab active:cursor-grabbing', className)}
     >
       {slides.length > 1 && (
         <div className="pointer-events-none absolute inset-x-3 top-2 z-20 flex gap-0.5 sm:inset-x-4">
@@ -88,16 +90,16 @@ export function SlidePreviewCarousel({ maxWidth = 560, className }: SlidePreview
         </div>
       )}
 
-      <CarouselContent className="ml-0 h-full">
+      <CarouselContent className="ml-0 h-full min-h-0">
         {slides.map(slide => (
-          <CarouselItem key={slide.id} className="h-full pl-0">
-            <div className="flex h-full items-center justify-center">
-              <div className="h-full w-full" style={{ maxWidth }}>
+          <CarouselItem key={slide.id} className="h-full min-h-0 pl-0">
+            <div className="flex h-full min-h-0 max-h-full items-center justify-center">
+              <div className="h-full min-h-0 max-h-full w-full" style={{ maxWidth }}>
                 <SlideCanvasShell
                   slide={slide}
                   interactive={slide.id === activeSlideId}
                   maxWidth={maxWidth}
-                  className="h-full"
+                  className="h-full min-h-0 max-h-full"
                 />
               </div>
             </div>

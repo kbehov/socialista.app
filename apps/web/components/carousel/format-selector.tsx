@@ -1,20 +1,12 @@
 'use client'
 
-import type { ComponentType } from 'react'
 import { FacebookIcon } from '@/components/icons/facebook-icon'
 import { InstagramIcon } from '@/components/icons/instagram-icon'
 import { LinkedInIcon } from '@/components/icons/linkedin-icon'
-import type { SocialIconProps } from '@/components/icons/types'
 import { TikTokIcon } from '@/components/icons/tiktok-icon'
+import type { SocialIconProps } from '@/components/icons/types'
 import { XIcon } from '@/components/icons/x-icon'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/components/ui/select'
 import {
   ASPECT_RATIO_PRESETS,
   formatAspectRatio,
@@ -23,6 +15,7 @@ import {
 } from '@/lib/carousel/aspect-ratios'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import type { ComponentType } from 'react'
 
 const PLATFORM_ICONS: Record<string, ComponentType<SocialIconProps>> = {
   Instagram: InstagramIcon,
@@ -40,20 +33,15 @@ const PLATFORM_ACCENTS: Record<string, string> = {
   Facebook: 'bg-[#1877f2]/10 text-[#1877f2]',
 }
 
-function PlatformIcon({
-  platform,
-  className,
-  size = 16,
-}: {
-  platform: string
-  className?: string
-  size?: number
-}) {
+function PlatformIcon({ platform, className, size = 16 }: { platform: string; className?: string; size?: number }) {
   const Icon = PLATFORM_ICONS[platform]
   if (!Icon) {
     return (
       <span
-        className={cn('flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-bold', className)}
+        className={cn(
+          'flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-bold',
+          className,
+        )}
       >
         {platform.charAt(0)}
       </span>
@@ -83,7 +71,7 @@ function FormatOption({
   className?: string
 }) {
   return (
-    <div className={cn('flex min-w-0 items-center gap-2.5', className)}>
+    <div className={cn('flex min-w-0 items-center gap-1 py-2', className)}>
       <PlatformIcon platform={preset.platform} />
       <div className="min-w-0 text-left">
         <p className="truncate text-sm font-medium leading-none">
@@ -108,24 +96,16 @@ export function FormatSelector({ className }: { className?: string }) {
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Format
-      </span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Format</span>
       <Select value={aspectRatioId} onValueChange={setAspectRatio}>
         <SelectTrigger
           size="sm"
           aria-label={`Format: ${activePreset.platform} ${activePreset.label}, ${activePreset.dimensions.width} by ${activePreset.dimensions.height}`}
-          className="h-auto w-full min-w-[220px] gap-2 px-3 py-2.5 sm:min-w-[240px]"
+          className="h-auto w-full min-w-[220px] gap-1 px-4 sm:min-w-[240px]"
         >
-          <FormatOption preset={activePreset} compact className="min-w-0 flex-1 px-1 py-0.5" />
+          <FormatOption preset={activePreset} compact className="min-w-0 flex-1 px-1 py-2" />
         </SelectTrigger>
-        <SelectContent
-          position="popper"
-          side="bottom"
-          align="end"
-          sideOffset={6}
-          className="min-w-[280px]"
-        >
+        <SelectContent position="popper" side="bottom" align="end" sideOffset={6} className="min-w-[280px]">
           {platforms.map(platform => (
             <SelectGroup key={platform}>
               <SelectLabel className="flex items-center gap-2 px-2 py-1.5">

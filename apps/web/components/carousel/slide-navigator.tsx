@@ -108,7 +108,9 @@ function SortableSlideThumb({
   const reorderSlides = useEditorStore(s => s.reorderSlides)
 
   const isFilmstrip = variant === 'filmstrip'
+  const canvas = useEditorStore(s => s.canvas)
   const thumbWidth = isFilmstrip ? 80 : 128
+  const thumbHeight = thumbWidth * (canvas.height / canvas.width)
   const active = slide.id === activeSlideId
 
   const { ref, isDragging, isDropTarget } = useSortable({
@@ -130,19 +132,17 @@ function SortableSlideThumb({
               setActiveSlide(slide.id)
             }
           }}
-          style={{ width: thumbWidth }}
+          style={{ width: thumbWidth, height: thumbHeight }}
           className={cn(
-            'group relative shrink-0 cursor-grab overflow-hidden rounded-md border-2 outline-none transition-[opacity,box-shadow,border-color] active:cursor-grabbing',
-            active
-              ? 'border-primary shadow-sm ring-2 ring-primary/20'
-              : 'border-border/80 hover:border-muted-foreground/50',
+            'group relative shrink-0 cursor-grab overflow-hidden rounded-md outline-none transition-[opacity,box-shadow,transform] active:cursor-grabbing',
+            active ? 'opacity-100 shadow-md' : 'opacity-75 hover:opacity-100',
             isDragging && 'z-20 scale-[1.02] opacity-70 shadow-lg',
-            isDropTarget && !isDragging && 'border-primary/50 ring-2 ring-primary/25',
+            isDropTarget && !isDragging && 'opacity-100 shadow-lg',
           )}
           aria-label={`Slide ${index + 1}`}
           aria-current={active ? 'true' : undefined}
         >
-          <SlideCanvas slide={slide} interactive={false} forceWidth={thumbWidth} />
+          <SlideCanvas slide={slide} interactive={false} forceWidth={thumbWidth} className="size-full" />
           <div className="pointer-events-none absolute left-1 top-1 flex size-4 items-center justify-center rounded bg-background/95 text-[10px] font-semibold tabular-nums text-foreground shadow-sm">
             {index + 1}
           </div>

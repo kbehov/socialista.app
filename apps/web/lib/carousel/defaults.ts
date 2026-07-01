@@ -1,4 +1,6 @@
-import type { Slide, TextLayer } from '@socialista/types'
+import type { BackgroundImageAdjustment, Slide, TextLayer } from '@socialista/types'
+
+export const DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT: BackgroundImageAdjustment = { type: 'cover' }
 
 export const DEFAULT_CANVAS = { width: 1080, height: 1350 } as const
 
@@ -50,6 +52,7 @@ export function createSlide(order: number, backgroundImageUrl = '', backgroundCo
     id: `slide_${Math.random().toString(36).slice(2, 10)}`,
     backgroundColor,
     backgroundImageUrl,
+    backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
     layers: [],
     order,
   }

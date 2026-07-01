@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Slide, SlideId, TextLayer, LayerId, CanvasDimensions } from '@socialista/types'
+import type { BackgroundImageAdjustment, Slide, SlideId, TextLayer, LayerId, CanvasDimensions } from '@socialista/types'
 import {
   createSlide,
   createTextLayer,
@@ -7,6 +7,7 @@ import {
   sortLayers,
   DEFAULT_CANVAS,
   DEFAULT_LAYER_STYLE,
+  DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
 } from './defaults'
 import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
 import { proxiedImageUrl } from './image-url'
@@ -31,6 +32,7 @@ interface EditorState {
   setActiveSlide: (slideId: SlideId | null) => void
   setSlideBackground: (slideId: SlideId, imageUrl: string) => void
   setSlideBackgroundColor: (slideId: SlideId, color: string) => void
+  setSlideBackgroundImageAdjustment: (slideId: SlideId, adjustment: BackgroundImageAdjustment) => void
   clearSlideBackgroundImage: (slideId: SlideId) => void
 
   addTextLayer: (slideId: SlideId) => void
@@ -125,6 +127,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
           ...original,
           id: `slide_${Math.random().toString(36).slice(2, 10)}`,
           layers: original.layers.map(l => ({ ...l, style: { ...l.style } })),
+          backgroundImageAdjustment: structuredClone(original.backgroundImageAdjustment),
         }
         const insertAt = state.slides.indexOf(original) + 1
         const slides = [...state.slides]
@@ -165,7 +168,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     setSlideBackground: (slideId, imageUrl) => {
       record(state => ({
-        slides: mutateSlide(state.slides, slideId, slide => ({ ...slide, backgroundImageUrl: imageUrl })),
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageUrl: imageUrl,
+          backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+        })),
       }))
     },
 
@@ -175,9 +182,22 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
+    setSlideBackgroundImageAdjustment: (slideId, adjustment) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageAdjustment: adjustment,
+        })),
+      }))
+    },
+
     clearSlideBackgroundImage: slideId => {
       record(state => ({
-        slides: mutateSlide(state.slides, slideId, slide => ({ ...slide, backgroundImageUrl: '' })),
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageUrl: '',
+          backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+        })),
       }))
     },
 

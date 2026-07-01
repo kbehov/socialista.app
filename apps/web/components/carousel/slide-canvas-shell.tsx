@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Slide } from '@socialista/types'
 import {
+  CropIcon,
   ImageIcon,
   Loader2Icon,
   SparklesIcon,
   Trash2Icon,
   UploadIcon,
+  ZoomInIcon,
 } from 'lucide-react'
 import {
   ContextMenu,
@@ -21,6 +23,7 @@ import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { useSlideImageEdit } from './slide-image-edit-provider'
 import { SlideCanvas } from './slide-canvas'
+import { SlideImageAdjustOverlay } from './slide-image-adjust-overlay'
 
 type SlideCanvasShellProps = {
   slide: Slide
@@ -38,19 +41,31 @@ export function SlideCanvasShell({
   forceWidth,
 }: SlideCanvasShellProps) {
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
-  const { isEditingSlide, openEditDialog, replaceSlideImage, removeSlideImage } = useSlideImageEdit()
+  const {
+    isEditingSlide,
+    adjustTarget,
+    isAdjustingSlide,
+    openEditDialog,
+    openAdjustMode,
+    closeAdjustMode,
+    replaceSlideImage,
+    removeSlideImage,
+  } = useSlideImageEdit()
 
   const [bgActionsVisible, setBgActionsVisible] = useState(false)
   const shellRef = useRef<HTMLDivElement>(null)
   const isEditing = isEditingSlide(slide.id)
+  const isAdjusting = isAdjustingSlide(slide.id)
+  const activeAdjust =
+    interactive &&
+    adjustTarget?.slideId === slide.id &&
+    adjustTarget.imageUrl === slide.backgroundImageUrl
+      ? adjustTarget
+      : null
   const hasBackground = Boolean(slide.backgroundImageUrl)
 
   useEffect(() => {
-    if (!interactive) setBgActionsVisible(false)
-  }, [interactive, slide.id])
-
-  useEffect(() => {
-    if (!bgActionsVisible) return
+    if (!bgActionsVisible || isAdjusting || !interactive) return
 
     const dismiss = (event: PointerEvent) => {
       if (shellRef.current?.contains(event.target as Node)) return
@@ -59,19 +74,31 @@ export function SlideCanvasShell({
 
     window.addEventListener('pointerdown', dismiss)
     return () => window.removeEventListener('pointerdown', dismiss)
-  }, [bgActionsVisible])
+  }, [bgActionsVisible, interactive, isAdjusting])
 
   const handleBackgroundSelect = useCallback(() => {
-    if (!interactive || !hasBackground || isEditing) return
+    if (!interactive || !hasBackground || isEditing || isAdjusting) return
     setActiveLayer(slide.id, null)
     setBgActionsVisible(true)
-  }, [interactive, hasBackground, isEditing, setActiveLayer, slide.id])
+  }, [interactive, hasBackground, isEditing, isAdjusting, setActiveLayer, slide.id])
 
   const handleEditImage = useCallback(() => {
     if (!slide.backgroundImageUrl) return
     setBgActionsVisible(false)
     openEditDialog(slide.id, slide.backgroundImageUrl)
   }, [openEditDialog, slide.backgroundImageUrl, slide.id])
+
+  const handleZoomAdjust = useCallback(() => {
+    if (!slide.backgroundImageUrl) return
+    setBgActionsVisible(false)
+    openAdjustMode(slide.id, slide.backgroundImageUrl, 'zoom')
+  }, [openAdjustMode, slide.backgroundImageUrl, slide.id])
+
+  const handleCropAdjust = useCallback(() => {
+    if (!slide.backgroundImageUrl) return
+    setBgActionsVisible(false)
+    openAdjustMode(slide.id, slide.backgroundImageUrl, 'crop')
+  }, [openAdjustMode, slide.backgroundImageUrl, slide.id])
 
   const handleReplace = useCallback(() => {
     setBgActionsVisible(false)
@@ -84,23 +111,42 @@ export function SlideCanvasShell({
   }, [removeSlideImage, slide.id])
 
   const canvas = (
-    <div ref={shellRef} className={cn('relative h-full w-full', className)}>
+    <div ref={shellRef} className={cn('relative h-full min-h-0 max-h-full w-full', className)}>
       <SlideCanvas
         slide={slide}
         interactive={interactive}
         maxWidth={maxWidth}
         forceWidth={forceWidth}
         isBackgroundEditing={isEditing}
+        hideBackgroundImage={Boolean(activeAdjust)}
         onBackgroundSelect={interactive && hasBackground ? handleBackgroundSelect : undefined}
-        className={cn('h-full', bgActionsVisible && 'ring-2 ring-primary/60 ring-offset-2 ring-offset-background')}
+        className="h-full"
       />
 
-      {bgActionsVisible && hasBackground && interactive && !isEditing ? (
+      {activeAdjust ? (
+        <SlideImageAdjustOverlay
+          slideId={slide.id}
+          imageUrl={activeAdjust.imageUrl}
+          mode={activeAdjust.mode}
+          onDone={closeAdjustMode}
+          onCancel={closeAdjustMode}
+        />
+      ) : null}
+
+      {bgActionsVisible && hasBackground && interactive && !isEditing && !isAdjusting ? (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-center p-4">
-          <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur-sm">
+          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur-sm">
             <Button size="sm" className="h-8 rounded-full px-3.5" onClick={handleEditImage}>
               <SparklesIcon className="size-3.5" />
               Edit image
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleZoomAdjust}>
+              <ZoomInIcon className="size-3.5" />
+              Zoom
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleCropAdjust}>
+              <CropIcon className="size-3.5" />
+              Crop
             </Button>
             <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleReplace}>
               <UploadIcon className="size-3.5" />
@@ -120,7 +166,7 @@ export function SlideCanvasShell({
       ) : null}
 
       {isEditing ? (
-        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 rounded-sm bg-background/35 backdrop-blur-[2px]">
+        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 bg-background/35 backdrop-blur-[2px]">
           <Loader2Icon className="size-8 animate-spin text-primary" />
           <p className="rounded-full bg-background/90 px-3 py-1 text-xs font-medium text-foreground shadow-sm">
             Editing image…
@@ -136,18 +182,26 @@ export function SlideCanvasShell({
     <ContextMenu>
       <ContextMenuTrigger asChild>{canvas}</ContextMenuTrigger>
       <ContextMenuContent className="w-48">
-        <ContextMenuItem disabled={!hasBackground || isEditing} onSelect={handleEditImage}>
+        <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleEditImage}>
           <SparklesIcon />
           Edit with AI
         </ContextMenuItem>
-        <ContextMenuItem disabled={isEditing} onSelect={handleReplace}>
+        <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleZoomAdjust}>
+          <ZoomInIcon />
+          Zoom &amp; pan
+        </ContextMenuItem>
+        <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleCropAdjust}>
+          <CropIcon />
+          Crop image
+        </ContextMenuItem>
+        <ContextMenuItem disabled={isEditing || isAdjusting} onSelect={handleReplace}>
           <UploadIcon />
           {hasBackground ? 'Replace image' : 'Upload image'}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
           variant="destructive"
-          disabled={!hasBackground || isEditing}
+          disabled={!hasBackground || isEditing || isAdjusting}
           onSelect={handleRemove}
         >
           <Trash2Icon />

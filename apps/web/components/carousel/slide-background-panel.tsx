@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CheckIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon, UploadIcon, XIcon } from 'lucide-react'
+import { CheckIcon, CropIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon, UploadIcon, XIcon, ZoomInIcon } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -13,7 +13,7 @@ export function SlideBackgroundPanel() {
   const setSlideBackground = useEditorStore(s => s.setSlideBackground)
   const setSlideBackgroundColor = useEditorStore(s => s.setSlideBackgroundColor)
   const clearSlideBackgroundImage = useEditorStore(s => s.clearSlideBackgroundImage)
-  const { openEditDialog, replaceSlideImage, isEditingSlide } = useSlideImageEdit()
+  const { openEditDialog, openAdjustMode, replaceSlideImage, isEditingSlide } = useSlideImageEdit()
 
   const [urlVisible, setUrlVisible] = useState(false)
   const [urlValue, setUrlValue] = useState('')
@@ -108,6 +108,28 @@ export function SlideBackgroundPanel() {
                   <SparklesIcon className="size-3.5" />
                   Edit with AI
                 </Button>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isEditingSlide(slide.id)}
+                    onClick={() => openAdjustMode(slide.id, slide.backgroundImageUrl, 'zoom')}
+                  >
+                    <ZoomInIcon className="size-3" />
+                    Zoom
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isEditingSlide(slide.id)}
+                    onClick={() => openAdjustMode(slide.id, slide.backgroundImageUrl, 'crop')}
+                  >
+                    <CropIcon className="size-3" />
+                    Crop
+                  </Button>
+                </div>
                 <div className="flex gap-1.5">
                   <Button
                     size="xs"

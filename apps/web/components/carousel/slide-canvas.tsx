@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Slide } from '@socialista/types'
 import { useEditorStore } from '@/lib/carousel/store'
-import { DEFAULT_SLIDE_BACKGROUND, sortLayers } from '@/lib/carousel/defaults'
+import { DEFAULT_SLIDE_BACKGROUND, sortLayers, DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT } from '@/lib/carousel/defaults'
+import { fitSlideDisplaySize } from '@/lib/carousel/fit-slide-display'
 import { TextLayerNode } from './text-layer-node'
+import { SlideBackgroundImage } from './slide-background-image'
 import { cn } from '@/lib/utils'
 
 type SlideCanvasProps = {
@@ -16,23 +18,7 @@ type SlideCanvasProps = {
   forceWidth?: number
   isBackgroundEditing?: boolean
   onBackgroundSelect?: () => void
-}
-
-function fitDisplayWidth(
-  containerWidth: number,
-  containerHeight: number,
-  canvasWidth: number,
-  canvasHeight: number,
-  maxWidth?: number,
-): number {
-  if (containerWidth <= 0 || containerHeight <= 0) return 0
-
-  const cappedWidth = maxWidth ? Math.min(containerWidth, maxWidth) : containerWidth
-  const heightAtCappedWidth = cappedWidth * (canvasHeight / canvasWidth)
-
-  if (heightAtCappedWidth <= containerHeight) return cappedWidth
-
-  return containerHeight * (canvasWidth / canvasHeight)
+  hideBackgroundImage?: boolean
 }
 
 export function SlideCanvas({
@@ -43,6 +29,7 @@ export function SlideCanvas({
   forceWidth,
   isBackgroundEditing = false,
   onBackgroundSelect,
+  hideBackgroundImage = false,
 }: SlideCanvasProps) {
   const canvas = useEditorStore(s => s.canvas)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
@@ -66,9 +53,12 @@ export function SlideCanvas({
     return () => observer.disconnect()
   }, [])
 
-  const displayWidth = useMemo(() => {
-    if (forceWidth != null) return forceWidth
-    return fitDisplayWidth(
+  const displaySize = useMemo(() => {
+    if (forceWidth != null) {
+      const height = forceWidth * (canvas.height / canvas.width)
+      return { width: forceWidth, height }
+    }
+    return fitSlideDisplaySize(
       containerSize.width,
       containerSize.height,
       canvas.width,
@@ -77,8 +67,13 @@ export function SlideCanvas({
     )
   }, [forceWidth, containerSize, canvas.width, canvas.height, maxWidth])
 
+  const displayWidth = displaySize.width
+  const displayHeight = displaySize.height
+  const isMeasured = displayWidth > 0 && displayHeight > 0
+
   const scale = displayWidth > 0 ? displayWidth / canvas.width : 0
   const backgroundColor = slide.backgroundColor || DEFAULT_SLIDE_BACKGROUND
+  const backgroundImageAdjustment = slide.backgroundImageAdjustment ?? DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT
 
   const isActiveSlide = activeSlideId === slide.id
   const onCanvasPointerDown = (e: React.PointerEvent) => {
@@ -95,32 +90,34 @@ export function SlideCanvas({
   }
 
   return (
-    <div ref={outerRef} className={cn('flex h-full w-full items-center justify-center', className)}>
+    <div
+      ref={outerRef}
+      className={cn('flex h-full max-h-full min-h-0 w-full max-w-full items-center justify-center', className)}
+    >
       <div
         ref={innerRef}
         data-slide-canvas={slide.id}
         onPointerDown={onCanvasPointerDown}
-        className="relative overflow-hidden rounded-sm border border-border/80 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.25)] ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+        className={cn('relative shrink-0 overflow-hidden', !isMeasured && 'invisible')}
         style={{
-          width: displayWidth > 0 ? `${displayWidth}px` : '100%',
-          aspectRatio: `${canvas.width} / ${canvas.height}`,
+          width: isMeasured ? `${displayWidth}px` : undefined,
+          height: isMeasured ? `${displayHeight}px` : undefined,
+          maxWidth: '100%',
+          maxHeight: '100%',
           backgroundColor,
         }}
       >
         <div data-slot="canvas-bg" className="absolute inset-0" style={{ backgroundColor }} />
 
-        {slide.backgroundImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            data-slot="canvas-bg-image"
-            src={slide.backgroundImageUrl}
-            alt=""
-            className={cn(
-              'absolute inset-0 size-full object-cover transition-[filter,opacity] duration-500',
-              interactive && onBackgroundSelect && 'cursor-pointer',
-              isBackgroundEditing && 'animate-pulse opacity-80 brightness-90',
-            )}
-            draggable={false}
+        {slide.backgroundImageUrl && !hideBackgroundImage ? (
+          <SlideBackgroundImage
+            imageUrl={slide.backgroundImageUrl}
+            adjustment={backgroundImageAdjustment}
+            interactive={interactive}
+            isBackgroundEditing={isBackgroundEditing}
+            onSelect={interactive && onBackgroundSelect ? onBackgroundSelect : undefined}
+            layoutWidth={isMeasured ? displayWidth : undefined}
+            layoutHeight={isMeasured ? displayHeight : undefined}
           />
         ) : null}
 

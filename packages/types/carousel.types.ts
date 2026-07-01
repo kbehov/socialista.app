@@ -53,11 +53,38 @@ export interface TextLayer {
   style: TextLayerStyle
 }
 
+/** Percentage rectangle of the source image (react-easy-crop). */
+export interface CropAreaPercentages {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export type BackgroundImageAdjustment =
+  | { type: 'cover' }
+  | {
+      type: 'zoom'
+      scale: number
+      /** Pan offset as a fraction of viewport width when saved. */
+      positionX: number
+      /** Pan offset as a fraction of viewport height when saved. */
+      positionY: number
+    }
+  | {
+      type: 'crop'
+      crop: { x: number; y: number }
+      zoom: number
+      area: CropAreaPercentages
+    }
+
 export interface Slide {
   id: SlideId
   /** Solid fill behind optional background image. */
   backgroundColor: string
   backgroundImageUrl: string
+  /** How the background image is framed inside the slide. */
+  backgroundImageAdjustment: BackgroundImageAdjustment
   layers: TextLayer[]
   order: number
 }
