@@ -7,12 +7,14 @@ export { InvitationModel } from './models/invitation.model.js'
 export { ModelModel } from './models/model.js'
 export { UserModel } from './models/user.model.js'
 export { WorkspaceModel } from './models/workspace.model.js'
+export { SlideshowModel } from './models/slideshow.model.js'
 export * from './repo/image.repo.js'
 export * from './repo/inpsiration.repo.js'
 export * from './repo/invitation.repo.js'
 export * from './repo/model.repo.js'
 export * from './repo/user.repo.js'
 export * from './repo/workspace.repo.js'
+export * from './repo/slideshow.repo.js'
 export {
   type IImage,
   type IImageCollection,
@@ -29,6 +31,16 @@ export { ConnectionStatus, type AccountDocument, type IAccount } from './types/a
 export { InvitationStatus, type Invitation, type InvitationDocument } from './types/invitation.types.js'
 
 export { UserRole, UserStatus, type IUser, type OAuthAccount, type UserDocument } from './types/user.types.js'
+
+export {
+  SlideshowStatus,
+  type ISlideshow,
+  type SlideshowBackgroundImageAdjustment,
+  type SlideshowCanvas,
+  type SlideshowDocument,
+  type SlideshowSlide,
+  type SlideshowTextLayer,
+} from './types/slideshow.types.js'
 
 export {
   BillingStatus,

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Slide } from '@socialista/types'
 import {
   CropIcon,
-  ImageIcon,
   Loader2Icon,
   SparklesIcon,
   Trash2Icon,
@@ -111,7 +110,7 @@ export function SlideCanvasShell({
   }, [removeSlideImage, slide.id])
 
   const canvas = (
-    <div ref={shellRef} className={cn('relative h-full min-h-0 max-h-full w-full', className)}>
+    <div ref={shellRef} className={cn('relative w-full', className)}>
       <SlideCanvas
         slide={slide}
         interactive={interactive}
@@ -134,11 +133,11 @@ export function SlideCanvasShell({
       ) : null}
 
       {bgActionsVisible && hasBackground && interactive && !isEditing && !isAdjusting ? (
-        <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-center p-4">
-          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-center p-3 sm:p-4">
+          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur-sm">
             <Button size="sm" className="h-8 rounded-full px-3.5" onClick={handleEditImage}>
               <SparklesIcon className="size-3.5" />
-              Edit image
+              AI edit
             </Button>
             <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleZoomAdjust}>
               <ZoomInIcon className="size-3.5" />
@@ -198,21 +197,16 @@ export function SlideCanvasShell({
           <UploadIcon />
           {hasBackground ? 'Replace image' : 'Upload image'}
         </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          variant="destructive"
-          disabled={!hasBackground || isEditing || isAdjusting}
-          onSelect={handleRemove}
-        >
-          <Trash2Icon />
-          Remove image
-        </ContextMenuItem>
-        {!hasBackground ? (
+        {hasBackground ? (
           <>
             <ContextMenuSeparator />
-            <ContextMenuItem disabled className="text-muted-foreground">
-              <ImageIcon />
-              No background image
+            <ContextMenuItem
+              variant="destructive"
+              disabled={isEditing || isAdjusting}
+              onSelect={handleRemove}
+            >
+              <Trash2Icon />
+              Remove image
             </ContextMenuItem>
           </>
         ) : null}

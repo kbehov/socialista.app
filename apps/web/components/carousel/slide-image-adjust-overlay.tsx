@@ -129,7 +129,7 @@ function ZoomAdjustOverlay({ imageUrl, initial, onApply, onCancel }: ZoomAdjustO
           positionY={initialTransform.positionY}
           onTransform={setTransform}
         >
-          {({ zoomIn, zoomOut, resetTransform }) => (
+          {({ zoomIn, zoomOut, centerView }) => (
             <>
               <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-background/90 to-transparent px-3 pb-6 pt-3">
                 <p className="text-center text-xs font-medium text-foreground">
@@ -161,7 +161,7 @@ function ZoomAdjustOverlay({ imageUrl, initial, onApply, onCancel }: ZoomAdjustO
                     size="icon-sm"
                     variant="ghost"
                     className="size-8 rounded-full"
-                    onClick={() => resetTransform()}
+                    onClick={() => centerView(1)}
                     aria-label="Reset zoom"
                   >
                     <RotateCcwIcon className="size-3.5" />

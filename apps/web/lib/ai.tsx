@@ -1,45 +1,12 @@
 'use server'
-import { generateObject, generateText } from 'ai'
-import { z } from 'zod'
+import { generateText } from 'ai'
 
-const slideshowSlidesSchema = z.object({
-  slides: z
-    .array(
-      z.object({
-        text: z.string().describe('Slide text, 8-12 words, lowercase, no emojis or hashtags'),
-      }),
-    )
-    .describe('One entry per slide, in order'),
-})
+import { generateSlideshow } from '@/agents/slideshow-generator'
 
-const slideshowContentSystem = `
-You write viral TikTok/Instagram carousel slide text.
-
-Rules:
-- slide 1 is always the hook — make it stop the scroll
-- 8–12 words per slide
-- lowercase only
-- no emojis, no hashtags
-- no corporate language
-- every slide must stand alone and create swipe tension
-- match the exact slide count requested
-
-Return structured JSON only.
-`.trim()
-
+/** @deprecated Use generateSlideshowSlides from @/actions/slideshow.actions */
 export const generateSlideshowContent = async (hook: string, slideCount: number) => {
-  const result = await generateObject({
-    model: 'anthropic/claude-sonnet-4.6',
-    schema: slideshowSlidesSchema,
-    system: slideshowContentSystem,
-    temperature: 0.85,
-    prompt: `Hook: "${hook}"
-Slide count: ${slideCount}
-
-Write exactly ${slideCount} carousel slides. Slide 1 must be the hook.`,
-  })
-
-  return result.object.slides.map(s => s.text)
+  const result = await generateSlideshow({ hook, slideCount })
+  return result.texts
 }
 
 const slideshowSystem = `

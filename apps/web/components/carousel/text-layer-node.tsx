@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, AlignVerticalJustifyCenterIcon, AlignVerticalJustifyEndIcon, AlignVerticalJustifyStartIcon, CopyIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import type { SlideId, TextLayer } from '@socialista/types'
 import { useEditorStore } from '@/lib/carousel/store'
 import { useDragResize, type Corner } from '@/hooks/carousel/use-drag-resize'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
+import { clamp } from '@/lib/carousel/defaults'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -14,7 +15,24 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+
+const CANVAS_EDGE_MARGIN = 8
+
+type VerticalAlign = 'top' | 'center' | 'bottom'
+
+function getAlignedPosition(layer: Pick<TextLayer, 'width' | 'height'>, alignment: VerticalAlign) {
+  const x = clamp((100 - layer.width) / 2, -10, 100 - layer.width)
+  const y =
+    alignment === 'top'
+      ? clamp(CANVAS_EDGE_MARGIN, -10, 100 - layer.height)
+      : alignment === 'center'
+        ? clamp((100 - layer.height) / 2, -10, 100 - layer.height)
+        : clamp(100 - layer.height - CANVAS_EDGE_MARGIN, -10, 100 - layer.height)
+
+  return { x, y }
+}
 
 type TextLayerNodeProps = {
   layer: TextLayer
@@ -48,7 +66,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
   useEffect(() => {
     if (!isEditing || !editRef.current) return
 
-    editRef.current.textContent = layer.content || ''
+    editRef.current.innerText = layer.content || ''
     editRef.current.focus()
 
     const range = document.createRange()
@@ -62,11 +80,47 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
 
   const commitEdit = () => {
     if (!editRef.current) return
-    const next = editRef.current.innerText.trim()
-    if (next !== layer.content) {
-      updateLayer(slideId, layer.id, { content: next || ' ' })
+    const next = editRef.current.innerText.replace(/\r\n/g, '\n').trim()
+    const canvasEl = canvasRef.current
+    const partial: Partial<TextLayer> = {}
+
+    if (next !== layer.content.trim()) {
+      partial.content = next || ' '
     }
+
+    if (canvasEl && editRef.current.scrollHeight > 0) {
+      const canvasHeight = canvasEl.clientHeight
+      if (canvasHeight > 0) {
+        const neededPct = (editRef.current.scrollHeight / canvasHeight) * 100
+        const minHeight = Math.max(layer.height, neededPct)
+        if (minHeight > layer.height + 0.5) {
+          partial.height = Math.min(minHeight, 100)
+        }
+      }
+    }
+
+    if (Object.keys(partial).length > 0) {
+      updateLayer(slideId, layer.id, partial)
+    }
+
     setIsEditing(false)
+  }
+
+  const growToFitContent = () => {
+    if (!isEditing || !editRef.current || !canvasRef.current) return
+    const canvasHeight = canvasRef.current.clientHeight
+    if (canvasHeight <= 0) return
+
+    const neededPct = (editRef.current.scrollHeight / canvasHeight) * 100
+    const currentHeight = draft?.height ?? layer.height
+    if (neededPct > currentHeight + 0.5) {
+      updateLayer(slideId, layer.id, { height: Math.min(neededPct, 100) })
+    }
+  }
+
+  const alignLayer = (alignment: VerticalAlign) => {
+    const { width, height } = effective
+    updateLayer(slideId, layer.id, getAlignedPosition({ width, height }, alignment))
   }
 
   const layerEl = (
@@ -97,6 +151,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
         contentEditable={isEditing}
         suppressContentEditableWarning
         onBlur={commitEdit}
+        onInput={isEditing ? growToFitContent : undefined}
         onKeyDown={
           isEditing
             ? e => {
@@ -105,7 +160,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
                   e.preventDefault()
                   commitEdit()
                 }
-                if (e.key === 'Enter' && e.metaKey) {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault()
                   commitEdit()
                 }
@@ -113,20 +168,12 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
             : undefined
         }
         className={cn(
-          'flex h-full w-full overflow-hidden whitespace-pre-wrap break-words',
-          isEditing ? 'items-start justify-start' : 'items-center',
-          isEditing && 'outline-none ring-2 ring-primary/60',
+          'block h-full w-full break-words whitespace-pre-wrap',
+          isEditing
+            ? 'cursor-text overflow-y-auto outline-none ring-2 ring-primary/60'
+            : 'overflow-hidden',
         )}
-        style={{
-          ...textCss,
-          justifyContent:
-            effective.style.textAlign === 'center'
-              ? 'center'
-              : effective.style.textAlign === 'right'
-                ? 'flex-end'
-                : 'flex-start',
-          wordBreak: 'break-word',
-        }}
+        style={textCss}
       >
         {isEditing ? null : layer.content || ' '}
       </div>
@@ -138,6 +185,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
             <Handle key={corner} corner={corner} onPointerDown={beginResize(corner)} />
           ))}
           <RotateHandle onPointerDown={beginRotate} />
+          <TextLayerAlignToolbar onAlign={alignLayer} />
         </>
       ) : null}
     </div>
@@ -204,5 +252,47 @@ function RotateHandle({ onPointerDown }: { onPointerDown: (e: React.PointerEvent
         className="absolute -top-8 left-1/2 size-3.5 -translate-x-1/2 cursor-grab rounded-full border border-dashed border-muted-foreground bg-background shadow-sm"
       />
     </>
+  )
+}
+
+function TextLayerAlignToolbar({ onAlign }: { onAlign: (alignment: VerticalAlign) => void }) {
+  return (
+    <div
+      className="pointer-events-none absolute top-[calc(100%+10px)] left-1/2 z-50 -translate-x-1/2"
+      onPointerDown={event => event.stopPropagation()}
+    >
+      <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border bg-background/95 p-0.5 shadow-lg backdrop-blur-sm">
+        <Button
+          type="button"
+          size="icon-xs"
+          variant="ghost"
+          className="rounded-full"
+          aria-label="Align top center"
+          onClick={() => onAlign('top')}
+        >
+          <AlignVerticalJustifyStartIcon />
+        </Button>
+        <Button
+          type="button"
+          size="icon-xs"
+          variant="ghost"
+          className="rounded-full"
+          aria-label="Align center"
+          onClick={() => onAlign('center')}
+        >
+          <AlignVerticalJustifyCenterIcon />
+        </Button>
+        <Button
+          type="button"
+          size="icon-xs"
+          variant="ghost"
+          className="rounded-full"
+          aria-label="Align bottom center"
+          onClick={() => onAlign('bottom')}
+        >
+          <AlignVerticalJustifyEndIcon />
+        </Button>
+      </div>
+    </div>
   )
 }

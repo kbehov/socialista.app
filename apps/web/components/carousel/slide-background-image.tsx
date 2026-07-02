@@ -46,7 +46,7 @@ export function SlideBackgroundImage({
     zoomPan && isMeasured ? resolveZoomPanPosition(adjustment, width, height) : null
 
   const imageClassName = cn(
-    interactive && onSelect && 'cursor-pointer',
+    interactive && onSelect && 'cursor-pointer transition-[filter,opacity] hover:brightness-[0.97]',
     isBackgroundEditing && 'animate-pulse opacity-80 brightness-90',
     className,
   )

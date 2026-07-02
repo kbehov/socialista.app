@@ -19,6 +19,16 @@ function isNormalizedPanOffset(value: number): boolean {
   return Math.abs(value) <= 2
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+/**
+ * Resolve a saved zoom adjustment into a pixel-space transform that always
+ * keeps the image covering the canvas. Scale is floored at 1 (cover-fit) and
+ * pan offsets are clamped to the range that keeps the scaled image edge at or
+ * beyond the wrapper edge, so no empty space can ever appear.
+ */
 export function resolveZoomPanPosition(
   adjustment: Extract<BackgroundImageAdjustment, { type: 'zoom' }>,
   containerWidth: number,
@@ -26,19 +36,23 @@ export function resolveZoomPanPosition(
 ): { scale: number; positionX: number; positionY: number } {
   const { scale, positionX, positionY } = adjustment
 
+  const safeScale = Math.max(1, scale)
+  const maxOffsetX = ((safeScale - 1) * containerWidth) / 2
+  const maxOffsetY = ((safeScale - 1) * containerHeight) / 2
+
   if (isNormalizedPanOffset(positionX) && isNormalizedPanOffset(positionY)) {
     return {
-      scale,
-      positionX: positionX * containerWidth,
-      positionY: positionY * containerHeight,
+      scale: safeScale,
+      positionX: clamp(positionX * containerWidth, -maxOffsetX, maxOffsetX),
+      positionY: clamp(positionY * containerHeight, -maxOffsetY, maxOffsetY),
     }
   }
 
   const legacyScale = containerWidth / LEGACY_ZOOM_REFERENCE_WIDTH
   return {
-    scale,
-    positionX: positionX * legacyScale,
-    positionY: positionY * legacyScale,
+    scale: safeScale,
+    positionX: clamp(positionX * legacyScale, -maxOffsetX, maxOffsetX),
+    positionY: clamp(positionY * legacyScale, -maxOffsetY, maxOffsetY),
   }
 }
 

@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Slide } from '@socialista/types'
+import type { CanvasDimensions, Slide } from '@socialista/types'
 import { useEditorStore } from '@/lib/carousel/store'
 import { DEFAULT_SLIDE_BACKGROUND, sortLayers, DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT } from '@/lib/carousel/defaults'
-import { fitSlideDisplaySize } from '@/lib/carousel/fit-slide-display'
 import { TextLayerNode } from './text-layer-node'
 import { SlideBackgroundImage } from './slide-background-image'
 import { cn } from '@/lib/utils'
@@ -16,6 +15,8 @@ type SlideCanvasProps = {
   maxWidth?: number
   /** Force a specific display width in px. Used for export at full resolution. */
   forceWidth?: number
+  /** Override editor canvas dimensions (e.g. list previews). */
+  canvasDimensions?: CanvasDimensions
   isBackgroundEditing?: boolean
   onBackgroundSelect?: () => void
   hideBackgroundImage?: boolean
@@ -27,11 +28,13 @@ export function SlideCanvas({
   className,
   maxWidth,
   forceWidth,
+  canvasDimensions,
   isBackgroundEditing = false,
   onBackgroundSelect,
   hideBackgroundImage = false,
 }: SlideCanvasProps) {
-  const canvas = useEditorStore(s => s.canvas)
+  const storeCanvas = useEditorStore(s => s.canvas)
+  const canvas = canvasDimensions ?? storeCanvas
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const activeLayerId = useEditorStore(s => s.activeLayerId)
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
@@ -43,6 +46,14 @@ export function SlideCanvas({
   useEffect(() => {
     const el = outerRef.current
     if (!el) return
+
+    const updateSize = () => {
+      const { width, height } = el.getBoundingClientRect()
+      setContainerSize({ width, height })
+    }
+
+    updateSize()
+
     const observer = new ResizeObserver(entries => {
       const entry = entries[0]
       if (!entry) return
@@ -51,25 +62,34 @@ export function SlideCanvas({
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [canvas.width, canvas.height])
 
   const displaySize = useMemo(() => {
     if (forceWidth != null) {
       const height = forceWidth * (canvas.height / canvas.width)
       return { width: forceWidth, height }
     }
-    return fitSlideDisplaySize(
-      containerSize.width,
-      containerSize.height,
-      canvas.width,
-      canvas.height,
-      maxWidth,
-    )
+
+    if (containerSize.width <= 0 || canvas.width <= 0 || canvas.height <= 0) {
+      return { width: 0, height: 0 }
+    }
+
+    const aspect = canvas.width / canvas.height
+    let width = maxWidth ? Math.min(containerSize.width, maxWidth) : containerSize.width
+    let height = width / aspect
+
+    if (containerSize.height > 0 && height > containerSize.height) {
+      height = containerSize.height
+      width = height * aspect
+    }
+
+    return { width, height }
   }, [forceWidth, containerSize, canvas.width, canvas.height, maxWidth])
 
   const displayWidth = displaySize.width
   const displayHeight = displaySize.height
   const isMeasured = displayWidth > 0 && displayHeight > 0
+  const isPortrait = canvas.height > canvas.width
 
   const scale = displayWidth > 0 ? displayWidth / canvas.width : 0
   const backgroundColor = slide.backgroundColor || DEFAULT_SLIDE_BACKGROUND
@@ -92,18 +112,26 @@ export function SlideCanvas({
   return (
     <div
       ref={outerRef}
-      className={cn('flex h-full max-h-full min-h-0 w-full max-w-full items-center justify-center', className)}
+      className={cn(
+        'flex w-full max-w-full',
+        isPortrait ? 'items-start justify-center' : 'min-h-full items-center justify-center',
+        className,
+      )}
     >
       <div
         ref={innerRef}
         data-slide-canvas={slide.id}
         onPointerDown={onCanvasPointerDown}
-        className={cn('relative shrink-0 overflow-hidden', !isMeasured && 'invisible')}
+        className={cn(
+          'relative shrink-0',
+          interactive ? 'overflow-visible' : 'overflow-hidden',
+          !isMeasured && 'invisible',
+        )}
         style={{
           width: isMeasured ? `${displayWidth}px` : undefined,
           height: isMeasured ? `${displayHeight}px` : undefined,
           maxWidth: '100%',
-          maxHeight: '100%',
+          maxHeight: isPortrait ? undefined : '100%',
           backgroundColor,
         }}
       >

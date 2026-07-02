@@ -1,7 +1,5 @@
-import { SlideshowStudio } from '@/components/carousel/slideshow-studio'
+import { SlideshowList } from '@/components/carousel/slideshow-list'
 
-const SlideshowsPage = () => {
-  return <SlideshowStudio />
+export default function SlideshowsPage() {
+  return <SlideshowList />
 }
-
-export default SlideshowsPage

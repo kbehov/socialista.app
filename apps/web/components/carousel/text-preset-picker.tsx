@@ -25,7 +25,7 @@ export function TextPresetPicker({ currentStyle, onApply }: TextPresetPickerProp
           Presets
         </AccordionTrigger>
         <AccordionContent className="pb-1 pt-0">
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid max-h-56 grid-cols-3 gap-1.5 overflow-y-auto pr-0.5">
             {TEXT_PRESETS.map(preset => (
               <PresetButton
                 key={preset.id}
@@ -96,6 +96,7 @@ function stylesMatch(a: TextLayerStyle, b: TextLayerStyle): boolean {
     (a.textStrokeWidth ?? 0) === (b.textStrokeWidth ?? 0) &&
     (a.padding ?? 0) === (b.padding ?? 0) &&
     (a.borderRadius ?? 0) === (b.borderRadius ?? 0) &&
+    (a.letterSpacing ?? 0) === (b.letterSpacing ?? 0) &&
     shadowsEqual(a.textShadow, b.textShadow)
   )
 }

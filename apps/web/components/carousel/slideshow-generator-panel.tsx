@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Loader2Icon, SparklesIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { generateSlideshowContent } from '@/lib/ai'
+import { generateSlideshowSlides } from '@/actions/slideshow.actions'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -18,7 +18,7 @@ import {
 
 const SLIDE_COUNT_OPTIONS = [3, 4, 5, 6, 7, 8, 10] as const
 
-export function SlideshowGeneratorPanel() {
+export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boolean }) {
   const applyGeneratedContent = useEditorStore(s => s.applyGeneratedContent)
 
   const [hook, setHook] = useState('')
@@ -33,35 +33,39 @@ export function SlideshowGeneratorPanel() {
     }
 
     startTransition(async () => {
-      try {
-        const texts = await generateSlideshowContent(trimmed, slideCount)
-        if (texts.length === 0) {
-          toast.error('No slides were generated. Try again.')
-          return
-        }
-        applyGeneratedContent(texts)
-        toast.success(`Generated ${texts.length} slides`)
-      } catch {
-        toast.error('Failed to generate slides. Please try again.')
+      const result = await generateSlideshowSlides(trimmed, slideCount)
+      if (!result.success) {
+        toast.error(result.error)
+        return
       }
+      applyGeneratedContent(result.texts)
+      toast.success(`Generated ${result.texts.length} slides · ${result.contentType}`)
     })
   }
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
-      <div className="border-b bg-muted/20 px-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
-            1
-          </span>
-          <div>
-            <h2 className="text-sm font-semibold leading-none">AI generator</h2>
-            <p className="mt-1 text-[11px] text-muted-foreground">Optional — skip to design manually</p>
+    <aside
+      className={
+        embedded
+          ? 'flex h-full min-h-0 flex-col overflow-hidden'
+          : 'flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm'
+      }
+    >
+      {!embedded ? (
+        <div className="border-b bg-muted/20 px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+              1
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold leading-none">AI generator</h2>
+              <p className="mt-1 text-[11px] text-muted-foreground">Optional — skip to design manually</p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+      <div data-studio-scroll="source" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
         <div className="space-y-1.5">
           <Label htmlFor="slideshow-hook" className="text-xs font-medium">
             Hook or topic
@@ -109,8 +113,8 @@ export function SlideshowGeneratorPanel() {
           <p className="text-[11px] font-medium">After generating</p>
           <ul className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
             <li>· Pick a slide in the filmstrip below</li>
-            <li>· Upload a background in the Slide tab</li>
-            <li>· Style text in the Text tab, then Export ZIP</li>
+            <li>· Style text in the Text tab — backgrounds are optional</li>
+            <li>· Add a photo in the Slide tab if you want one</li>
           </ul>
         </div>
       </div>

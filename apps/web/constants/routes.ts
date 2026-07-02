@@ -51,6 +51,14 @@ export const COLLECTION_ROUTES = {
   DELETE_FILE: (workspaceId: string, fileId: string) => `/collections/workspace/${workspaceId}/files/${fileId}`,
   DELETE_FOLDER: (workspaceId: string, folderId: string) => `/collections/workspace/${workspaceId}/folder/${folderId}`,
 } as const
+
+export const SLIDESHOW_ROUTES = {
+  CREATE: '/slideshows',
+  GET_BY_ID: (id: string) => `/slideshows/${id}`,
+  UPDATE: (id: string) => `/slideshows/${id}`,
+  DELETE: (id: string) => `/slideshows/${id}`,
+  GET_WORKSPACE_SLIDESHOWS: (workspaceId: string) => `/slideshows/workspace/${workspaceId}`,
+} as const
 export function inspirationRoute(template: string, id: string): string {
   return template.replace(':id', id)
 }

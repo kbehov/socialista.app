@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { ImageIcon, LayersIcon, TypeIcon } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { LayerList } from './layer-list'
 import { SlideBackgroundPanel } from './slide-background-panel'
@@ -55,14 +54,12 @@ export function EditorInspector() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <ScrollArea className="h-full w-full **:data-[slot=scroll-area-viewport]:size-full">
-          <div className="flex flex-col gap-3 p-3">
-            {tab === 'slide' ? <SlideBackgroundPanel /> : null}
-            {tab === 'text' ? <TextToolbar /> : null}
-            {tab === 'layers' ? <LayerList forceVisible /> : null}
-          </div>
-        </ScrollArea>
+      <div className="min-h-0 flex-1 overflow-y-auto sidebar-scrollbar">
+        <div className="flex flex-col gap-3 p-3">
+          {tab === 'slide' ? <SlideBackgroundPanel /> : null}
+          {tab === 'text' ? <TextToolbar /> : null}
+          {tab === 'layers' ? <LayerList forceVisible /> : null}
+        </div>
       </div>
     </div>
   )

@@ -139,7 +139,7 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
   const { carouselRef, orientation } = useCarousel()
 
   return (
-    <div ref={carouselRef} className="h-full min-h-0 overflow-hidden" data-slot="carousel-content">
+    <div ref={carouselRef} className="min-h-0 overflow-hidden" data-slot="carousel-content">
       <div
         className={cn(
           'flex h-full min-h-0',

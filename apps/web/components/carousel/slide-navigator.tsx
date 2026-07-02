@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
 import { move } from '@dnd-kit/helpers'
@@ -24,10 +24,22 @@ type SlideNavigatorProps = {
 
 export function SlideNavigator({ variant = 'default' }: SlideNavigatorProps) {
   const slides = useEditorStore(s => s.slides)
+  const activeSlideId = useEditorStore(s => s.activeSlideId)
   const addSlide = useEditorStore(s => s.addSlide)
   const setSlideOrder = useEditorStore(s => s.setSlideOrder)
+  const stripRef = useRef<HTMLDivElement>(null)
 
   const isFilmstrip = variant === 'filmstrip'
+
+  useEffect(() => {
+    if (!isFilmstrip || !stripRef.current) return
+    const scroller = stripRef.current
+    const activeThumb = scroller.querySelector<HTMLElement>('[data-active-slide="true"]')
+    if (!activeThumb) return
+
+    const targetScroll = activeThumb.offsetLeft - (scroller.clientWidth - activeThumb.offsetWidth) / 2
+    scroller.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' })
+  }, [activeSlideId, isFilmstrip, slides.length])
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -56,8 +68,9 @@ export function SlideNavigator({ variant = 'default' }: SlideNavigatorProps) {
       <DragDropProvider onDragEnd={handleDragEnd}>
         <div className="flex items-center gap-2">
           <div
+            ref={stripRef}
             className={cn(
-              'flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5',
+              'flex min-w-0 flex-1 gap-3 overflow-x-auto py-0.5',
               isFilmstrip && 'no-scrollbar',
             )}
           >
@@ -109,7 +122,7 @@ function SortableSlideThumb({
 
   const isFilmstrip = variant === 'filmstrip'
   const canvas = useEditorStore(s => s.canvas)
-  const thumbWidth = isFilmstrip ? 80 : 128
+  const thumbWidth = isFilmstrip ? 88 : 128
   const thumbHeight = thumbWidth * (canvas.height / canvas.width)
   const active = slide.id === activeSlideId
 
@@ -123,6 +136,7 @@ function SortableSlideThumb({
       <ContextMenuTrigger asChild>
         <div
           ref={ref}
+          data-active-slide={active ? 'true' : undefined}
           role="button"
           tabIndex={0}
           onClick={() => setActiveSlide(slide.id)}
@@ -134,10 +148,12 @@ function SortableSlideThumb({
           }}
           style={{ width: thumbWidth, height: thumbHeight }}
           className={cn(
-            'group relative shrink-0 cursor-grab overflow-hidden rounded-md outline-none transition-[opacity,box-shadow,transform] active:cursor-grabbing',
-            active ? 'opacity-100 shadow-md' : 'opacity-75 hover:opacity-100',
-            isDragging && 'z-20 scale-[1.02] opacity-70 shadow-lg',
-            isDropTarget && !isDragging && 'opacity-100 shadow-lg',
+            'group relative shrink-0 cursor-grab overflow-hidden rounded-md border-2 outline-none transition-[opacity,box-shadow,transform,border-color] active:cursor-grabbing',
+            active
+              ? 'border-primary opacity-100 shadow-md'
+              : 'border-transparent opacity-70 hover:border-muted-foreground/20 hover:opacity-100',
+            isDragging && 'z-20 scale-[1.03] border-primary/50 opacity-80 shadow-lg',
+            isDropTarget && !isDragging && 'border-primary/40 opacity-100 shadow-lg',
           )}
           aria-label={`Slide ${index + 1}`}
           aria-current={active ? 'true' : undefined}

@@ -4,29 +4,55 @@ export const DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT: BackgroundImageAdjustment = { 
 
 export const DEFAULT_CANVAS = { width: 1080, height: 1350 } as const
 
-export const DEFAULT_SLIDE_BACKGROUND = '#1a1a2e'
+export const DEFAULT_SLIDE_BACKGROUND = '#22c55e'
 
 export const FONT_FAMILIES = [
+  'Arial, Helvetica, sans-serif',
+  'Impact, Haettenschweiler, sans-serif',
   'Inter, system-ui, sans-serif',
+  'Helvetica, Arial, sans-serif',
+  'Verdana, Geneva, sans-serif',
+  '"Trebuchet MS", Helvetica, sans-serif',
+  '"Arial Black", Gadget, sans-serif',
   'Georgia, serif',
-  '"Times New Roman", serif',
-  'Arial, sans-serif',
-  '"Courier New", monospace',
-  'Impact, sans-serif',
+  '"Times New Roman", Times, serif',
+  '"Courier New", Courier, monospace',
   '"Comic Sans MS", cursive',
+  '"Segoe UI", Tahoma, sans-serif',
+  'system-ui, sans-serif',
 ] as const
 
+export type FontFamily = (typeof FONT_FAMILIES)[number]
+
+export const FONT_LABELS: Record<FontFamily, string> = {
+  'Arial, Helvetica, sans-serif': 'Arial',
+  'Impact, Haettenschweiler, sans-serif': 'Impact',
+  'Inter, system-ui, sans-serif': 'Inter',
+  'Helvetica, Arial, sans-serif': 'Helvetica',
+  'Verdana, Geneva, sans-serif': 'Verdana',
+  '"Trebuchet MS", Helvetica, sans-serif': 'Trebuchet MS',
+  '"Arial Black", Gadget, sans-serif': 'Arial Black',
+  'Georgia, serif': 'Georgia',
+  '"Times New Roman", Times, serif': 'Times New Roman',
+  '"Courier New", Courier, monospace': 'Courier New',
+  '"Comic Sans MS", cursive': 'Comic Sans',
+  '"Segoe UI", Tahoma, sans-serif': 'Segoe UI',
+  'system-ui, sans-serif': 'System UI',
+}
+
+export const DEFAULT_FONT = FONT_FAMILIES[0]
+
 export const DEFAULT_LAYER_STYLE: TextLayer['style'] = {
-  fontFamily: FONT_FAMILIES[0],
-  fontSize: 64,
+  fontFamily: DEFAULT_FONT,
+  fontSize: 48,
   fontWeight: 'bold',
   color: '#ffffff',
   backgroundColor: null,
   textAlign: 'center',
   letterSpacing: 0,
   lineHeight: 1.2,
-  padding: 12,
-  borderRadius: 8,
+  padding: 0,
+  borderRadius: 0,
   textStrokeColor: null,
   textStrokeWidth: 0,
   textShadow: null,

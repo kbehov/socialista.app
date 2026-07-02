@@ -11,7 +11,6 @@ import {
 } from './defaults'
 import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
 import { proxiedImageUrl } from './image-url'
-import { getTextPreset, mergeTextPreset } from './text-presets'
 
 const HISTORY_LIMIT = 50
 
@@ -23,6 +22,9 @@ interface EditorState {
   activeLayerId: LayerId | null
   past: { slides: Slide[]; activeSlideId: SlideId | null; activeLayerId: LayerId | null }[]
   future: { slides: Slide[]; activeSlideId: SlideId | null; activeLayerId: LayerId | null }[]
+
+  slideshowId: string | null
+  slideshowName: string
 
   addSlide: (backgroundImageUrl?: string) => void
   removeSlide: (slideId: SlideId) => void
@@ -48,6 +50,21 @@ interface EditorState {
   undo: () => void
   redo: () => void
   reset: (slides?: Slide[]) => void
+  loadProject: (project: {
+    id: string
+    name: string
+    canvas: CanvasDimensions
+    aspectRatioId: string
+    slides: Slide[]
+  }) => void
+  setSlideshowName: (name: string) => void
+  getProjectPayload: () => {
+    name: string
+    canvas: CanvasDimensions
+    aspectRatioId: string
+    slides: Slide[]
+  }
+  clearProject: () => void
   setCanvas: (dimensions: CanvasDimensions) => void
   setAspectRatio: (id: string) => void
   applyGeneratedContent: (texts: string[]) => void
@@ -94,6 +111,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
     activeLayerId: null,
     past: [],
     future: [],
+    slideshowId: null,
+    slideshowName: 'Untitled slideshow',
 
     addSlide: backgroundImageUrl => {
       record(state => {
@@ -349,6 +368,48 @@ export const useEditorStore = create<EditorState>((set, get) => {
       })
     },
 
+    loadProject: project => {
+      const slides = project.slides.length > 0 ? project.slides : [createSlide(0)]
+      set({
+        slideshowId: project.id,
+        slideshowName: project.name,
+        canvas: project.canvas,
+        aspectRatioId: project.aspectRatioId,
+        slides: slides.map((slide, index) => ({ ...slide, order: index })),
+        activeSlideId: slides[0]?.id ?? null,
+        activeLayerId: null,
+        past: [],
+        future: [],
+      })
+    },
+
+    setSlideshowName: name => set({ slideshowName: name }),
+
+    getProjectPayload: () => {
+      const state = get()
+      return {
+        name: state.slideshowName,
+        canvas: state.canvas,
+        aspectRatioId: state.aspectRatioId,
+        slides: state.slides,
+      }
+    },
+
+    clearProject: () => {
+      const initialSlide = createSlide(0)
+      set({
+        slideshowId: null,
+        slideshowName: 'Untitled slideshow',
+        canvas: DEFAULT_CANVAS,
+        aspectRatioId: DEFAULT_ASPECT_RATIO_ID,
+        slides: [initialSlide],
+        activeSlideId: initialSlide.id,
+        activeLayerId: null,
+        past: [],
+        future: [],
+      })
+    },
+
     setCanvas: dimensions =>
       set({
         canvas: dimensions,
@@ -362,7 +423,6 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     applyGeneratedContent: texts => {
       if (texts.length === 0) return
-      const outlinePreset = getTextPreset('outline')?.style ?? {}
       const slides = texts.map((text, order) => {
         const slide = createSlide(order)
         slide.layers = [
@@ -373,7 +433,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
             y: 38,
             width: 84,
             height: 18,
-            style: mergeTextPreset(DEFAULT_LAYER_STYLE, outlinePreset),
+            style: { ...DEFAULT_LAYER_STYLE },
           }),
         ]
         return slide

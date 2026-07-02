@@ -11,7 +11,7 @@ import { useEditorStore } from '@/lib/carousel/store'
 import type { TikTokExtractResult } from '@/lib/tiktok/extract'
 import { isTikTokUrl } from '@/lib/tiktok/extract'
 
-export function SlideshowTikTokImportPanel() {
+export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: boolean }) {
   const applyTikTokImport = useEditorStore(s => s.applyTikTokImport)
 
   const [url, setUrl] = useState('')
@@ -70,20 +70,28 @@ export function SlideshowTikTokImportPanel() {
   const canImport = preview && preview.imageUrls.length > 0 && !isPending
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
-      <div className="border-b bg-muted/20 px-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
-            TT
-          </span>
-          <div>
-            <h2 className="text-sm font-semibold leading-none">TikTok import</h2>
-            <p className="mt-1 text-[11px] text-muted-foreground">Pull slides from an existing post</p>
+    <aside
+      className={
+        embedded
+          ? 'flex h-full min-h-0 flex-col overflow-hidden'
+          : 'flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm'
+      }
+    >
+      {!embedded ? (
+        <div className="border-b bg-muted/20 px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+              TT
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold leading-none">TikTok import</h2>
+              <p className="mt-1 text-[11px] text-muted-foreground">Pull slides from an existing post</p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+      <div data-studio-scroll="source" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
         <div className="space-y-1.5">
           <Label htmlFor="tiktok-url" className="text-xs font-medium">
             TikTok slideshow URL

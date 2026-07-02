@@ -1,11 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CheckIcon, CropIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon, UploadIcon, XIcon, ZoomInIcon } from 'lucide-react'
+import {
+  CheckIcon,
+  CropIcon,
+  FolderOpenIcon,
+  ImageIcon,
+  LinkIcon,
+  SparklesIcon,
+  Trash2Icon,
+  UploadIcon,
+  XIcon,
+  ZoomInIcon,
+} from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
+import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
 import { ColorPicker } from './primitives/color-picker'
 
 export function SlideBackgroundPanel() {
@@ -17,7 +29,24 @@ export function SlideBackgroundPanel() {
 
   const [urlVisible, setUrlVisible] = useState(false)
   const [urlValue, setUrlValue] = useState('')
+  const [filesDialogOpen, setFilesDialogOpen] = useState(false)
+  const [filesDialogSlideId, setFilesDialogSlideId] = useState<string | null>(null)
   const urlInputRef = useRef<HTMLInputElement>(null)
+
+  const isFilesDialogOpen = filesDialogOpen && filesDialogSlideId === slide?.id
+
+  const openFilesDialog = () => {
+    if (!slide) return
+    setFilesDialogSlideId(slide.id)
+    setFilesDialogOpen(true)
+  }
+
+  const handleFilesDialogOpenChange = (open: boolean) => {
+    setFilesDialogOpen(open)
+    if (!open) {
+      setFilesDialogSlideId(null)
+    }
+  }
 
   // Reset the URL input whenever the active slide changes.
   useEffect(() => {
@@ -57,6 +86,11 @@ export function SlideBackgroundPanel() {
   const cancelUrl = () => {
     setUrlVisible(false)
     setUrlValue('')
+  }
+
+  const handleSelectFromFiles = (imageUrl: string) => {
+    setSlideBackground(slide.id, imageUrl)
+    setUrlVisible(false)
   }
 
   return (
@@ -144,6 +178,15 @@ export function SlideBackgroundPanel() {
                   <Button
                     size="xs"
                     variant="outline"
+                    disabled={isEditingSlide(slide.id)}
+                    onClick={openFilesDialog}
+                    aria-label="Select from files"
+                  >
+                    <FolderOpenIcon className="size-3" />
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
                     onClick={() => setUrlVisible(true)}
                     disabled={isEditingSlide(slide.id)}
                     aria-label="Replace with URL"
@@ -181,6 +224,10 @@ export function SlideBackgroundPanel() {
               Upload image
               <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </label>
+            <Button size="sm" variant="outline" className="w-full" onClick={openFilesDialog}>
+              <FolderOpenIcon className="size-3.5" />
+              Select from files
+            </Button>
             <Button size="sm" variant="outline" className="w-full" onClick={() => setUrlVisible(true)}>
               <LinkIcon className="size-3.5" /> Paste image URL
             </Button>
@@ -190,6 +237,12 @@ export function SlideBackgroundPanel() {
           </div>
         )}
       </div>
+
+      <WorkspaceImagePickerDialog
+        open={isFilesDialogOpen}
+        onOpenChange={handleFilesDialogOpenChange}
+        onSelect={handleSelectFromFiles}
+      />
     </div>
   )
 }

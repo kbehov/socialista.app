@@ -6,9 +6,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEditorShortcuts } from '@/hooks/carousel/use-editor-shortcuts'
 import { exportSlidesAsZip } from '@/lib/carousel/export'
 import { useEditorStore } from '@/lib/carousel/store'
-import { DownloadIcon, Loader2Icon, MousePointer2Icon, Redo2Icon, TypeIcon, Undo2Icon } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { DownloadIcon, ImageIcon, Loader2Icon, MousePointer2Icon, Redo2Icon, TypeIcon, Undo2Icon } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { useForwardWheelScroll } from '@/hooks/carousel/use-forward-wheel-scroll'
 import { EditorInspector } from './editor-inspector'
 import { AspectRatioBadge } from './format-selector'
 import { SlideImageEditProvider } from './slide-image-edit-provider'
@@ -30,9 +31,13 @@ export function CarouselEditor() {
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
 
+  const canvasWorkspaceRef = useRef<HTMLDivElement>(null)
+  useForwardWheelScroll(canvasWorkspaceRef)
+
   const activeSlide = slides.find(s => s.id === activeSlideId) ?? slides[0]
   const activeIndex = activeSlide ? slides.findIndex(s => s.id === activeSlide.id) + 1 : 1
   const hasLayers = (activeSlide?.layers.length ?? 0) > 0
+  const hasBackground = Boolean(activeSlide?.backgroundImageUrl)
 
   const canUndo = past.length > 0
   const canRedo = future.length > 0
@@ -54,9 +59,15 @@ export function CarouselEditor() {
     }
   }, [exporting, slides])
 
+  const showCanvasHint = activeSlide && !activeLayerId && !exporting && hasLayers
+
+  const hintMessage = hasBackground
+    ? 'Click the image for crop & zoom · Click text to edit'
+    : 'Click text to edit · Style in the Text tab'
+
   return (
     <SlideImageEditProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         {/* Toolbar */}
         <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
           <div className="flex items-center gap-0.5">
@@ -87,62 +98,66 @@ export function CarouselEditor() {
           {activeSlide ? (
             <Button size="sm" variant="outline" onClick={() => addTextLayer(activeSlide.id)}>
               <TypeIcon />
-              Add text
+              <span className="hidden sm:inline">Add text</span>
             </Button>
           ) : null}
 
           <div className="flex-1" />
 
-          <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
-            <span>
-              Slide {activeIndex} of {slides.length}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="tabular-nums">
+              {activeIndex}/{slides.length}
             </span>
-            <span>·</span>
-            <AspectRatioBadge />
+            <span className="hidden text-border sm:inline">·</span>
+            <AspectRatioBadge className="hidden sm:inline-flex" />
           </div>
 
-          <Button size="sm" onClick={handleExport} disabled={exporting}>
+          <Button size="sm" onClick={handleExport} disabled={exporting || slides.length === 0}>
             {exporting ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
-            {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export ZIP'}
+            {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
           </Button>
         </div>
 
         {/* Canvas + inspector */}
-        <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,min(280px,36vh))] overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px] lg:grid-rows-1">
+        <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,min(200px,24vh))] overflow-hidden xl:grid-cols-[minmax(0,1fr)_272px] xl:grid-rows-1">
           <div className="relative flex min-h-0 flex-col overflow-hidden">
-            <div className="studio-canvas-workspace relative flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-4">
+            <div ref={canvasWorkspaceRef} className="studio-canvas-workspace sidebar-scrollbar relative min-h-0 flex-1 overflow-y-auto p-1 sm:p-2">
               {activeSlide ? (
-                <div className="flex h-full min-h-0 max-h-full flex-1 items-center justify-center">
-                  <div className="h-full min-h-0 max-h-full w-full max-w-[600px]">
-                    <SlidePreviewCarousel maxWidth={600} className="h-full min-h-0 max-h-full" />
-                  </div>
+                <div className="flex min-h-full w-full justify-center py-1 sm:py-2">
+                  <SlidePreviewCarousel className="w-full" />
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No slide selected</p>
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+                  <ImageIcon className="size-8 text-muted-foreground/50" />
+                  <p className="text-sm font-medium text-muted-foreground">No slide selected</p>
+                  <p className="max-w-xs text-xs text-muted-foreground/80">
+                    Generate or import slides from the panel on the left.
+                  </p>
+                </div>
               )}
 
-              {activeSlide && !activeLayerId && hasLayers ? (
-                <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center px-4 lg:bottom-4">
-                  <div className="flex items-center gap-2 rounded-full border bg-background/95 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-sm">
-                    <MousePointer2Icon className="size-3.5 shrink-0" />
-                    <span>Click background to edit · Zoom or crop image · Click text to select</span>
+              {showCanvasHint ? (
+                <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-4 sm:top-4">
+                  <div className="flex max-w-md items-center gap-2 rounded-full border bg-background/95 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-sm">
+                    <MousePointer2Icon className="size-3.5 shrink-0 text-primary/70" />
+                    <span>{hintMessage}</span>
                   </div>
                 </div>
               ) : null}
             </div>
           </div>
 
-          <div className="flex h-full min-h-0 max-h-[min(380px,40vh)] flex-col overflow-hidden border-t bg-card lg:max-h-none lg:border-t-0 lg:border-l">
+          <div className="flex h-full min-h-0 max-h-[min(280px,28vh)] flex-col overflow-hidden border-t bg-card xl:max-h-none xl:border-t-0 xl:border-l">
             <EditorInspector />
           </div>
         </div>
 
         {/* Filmstrip */}
-        <div className="shrink-0 border-t bg-muted/20 px-3 py-2">
+        <div className="shrink-0 border-t bg-muted/25 px-3 py-2">
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Slides</span>
-            <span className="text-[11px] text-muted-foreground">
-              Swipe preview · Drag to reorder · Right-click for duplicate &amp; delete
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">
+              Drag to reorder · Right-click for options
             </span>
           </div>
           <SlideNavigator variant="filmstrip" />

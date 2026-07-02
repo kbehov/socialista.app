@@ -71,6 +71,7 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
       title: 'Slideshow Generator',
       url: '/dashboard/studio/slideshows',
       icon: <ImagesIcon />,
+      isActive: pathname === '/dashboard/studio/slideshows' || pathname.startsWith('/dashboard/studio/slideshows/'),
     },
   ]
   const databaseItems = [

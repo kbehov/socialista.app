@@ -63,22 +63,39 @@ function PlatformIcon({ platform, className, size = 16 }: { platform: string; cl
 
 function FormatOption({
   preset,
-  compact = false,
   className,
 }: {
   preset: AspectRatioPreset
-  compact?: boolean
   className?: string
 }) {
   return (
-    <div className={cn('flex min-w-0 items-center gap-1 py-2', className)}>
+    <div className={cn('flex min-w-0 items-center gap-2', className)}>
       <PlatformIcon platform={preset.platform} />
-      <div className="min-w-0 text-left">
+      <div className="min-w-0 flex-1 overflow-hidden text-left">
         <p className="truncate text-sm font-medium leading-none">
           {preset.platform}
-          {!compact ? <span className="font-normal text-muted-foreground"> · {preset.label}</span> : null}
+          <span className="font-normal text-muted-foreground"> · {preset.label}</span>
         </p>
         <p className="mt-1 truncate text-[11px] tabular-nums text-muted-foreground">
+          {preset.dimensions.width}×{preset.dimensions.height}
+          <span className="mx-1">·</span>
+          {formatAspectRatio(preset.dimensions)}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function FormatTriggerLabel({ preset }: { preset: AspectRatioPreset }) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden py-0.5">
+      <PlatformIcon platform={preset.platform} />
+      <div className="min-w-0 flex-1 overflow-hidden text-left">
+        <p className="truncate text-sm font-medium leading-tight">
+          {preset.platform}
+          <span className="font-normal text-muted-foreground"> · {preset.label}</span>
+        </p>
+        <p className="truncate text-[11px] leading-tight tabular-nums text-muted-foreground">
           {preset.dimensions.width}×{preset.dimensions.height}
           <span className="mx-1">·</span>
           {formatAspectRatio(preset.dimensions)}
@@ -95,15 +112,15 @@ export function FormatSelector({ className }: { className?: string }) {
   const platforms = [...new Set(ASPECT_RATIO_PRESETS.map(preset => preset.platform))]
 
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    <div className={cn('flex min-w-0 flex-col gap-1', className)}>
       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Format</span>
       <Select value={aspectRatioId} onValueChange={setAspectRatio}>
         <SelectTrigger
           size="sm"
           aria-label={`Format: ${activePreset.platform} ${activePreset.label}, ${activePreset.dimensions.width} by ${activePreset.dimensions.height}`}
-          className="h-auto w-full min-w-[220px] gap-1 px-4 sm:min-w-[240px]"
+          className="h-auto min-h-8 w-full min-w-0 max-w-full gap-2 overflow-hidden whitespace-normal py-1.5 pl-2.5 pr-2 data-[size=sm]:h-auto"
         >
-          <FormatOption preset={activePreset} compact className="min-w-0 flex-1 px-1 py-2" />
+          <FormatTriggerLabel preset={activePreset} />
         </SelectTrigger>
         <SelectContent position="popper" side="bottom" align="end" sideOffset={6} className="min-w-[280px]">
           {platforms.map(platform => (
@@ -113,8 +130,8 @@ export function FormatSelector({ className }: { className?: string }) {
                 {platform}
               </SelectLabel>
               {ASPECT_RATIO_PRESETS.filter(preset => preset.platform === platform).map(preset => (
-                <SelectItem key={preset.id} value={preset.id} className="py-2.5 pl-3">
-                  <FormatOption preset={preset} />
+                <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
+                  <FormatOption preset={preset} className="py-1" />
                 </SelectItem>
               ))}
             </SelectGroup>
