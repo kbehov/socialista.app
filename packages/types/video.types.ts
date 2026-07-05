@@ -28,6 +28,10 @@ export interface SerializedMediaAsset {
   duration: number
   width?: number
   height?: number
+  /** CDN URL after upload to workspace files. */
+  url?: string
+  /** Workspace file id (`Image` model). */
+  fileId?: string
 }
 
 export interface Transition {
@@ -170,6 +174,9 @@ export type VideoSummaryResponse = Pick<
 > & {
   trackCount: number
   clipCount: number
+  /** First video/image asset URL for list preview. */
+  previewUrl?: string
+  previewType?: 'video' | 'image'
 }
 
 export type CreateVideoPayload = {

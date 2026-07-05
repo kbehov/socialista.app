@@ -195,6 +195,7 @@ export function SlideCanvas({
                 imageUrl={slide.backgroundImageUrl}
                 slideId={slide.id}
                 adjustment={backgroundImageAdjustment}
+                filters={slide.backgroundImageFilters}
                 interactive={interactive}
                 isBackgroundEditing={isBackgroundEditing}
                 isBackgroundSelected={isBackgroundSelected && usesFrame(backgroundImageAdjustment)}

@@ -68,11 +68,23 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   const activeVisualKey = useVideoEditorStore(s =>
     getActiveClipVisualKey(s.project.tracks, s.project.clips, s.assets, s.playhead),
   )
+  const resolution = useVideoEditorStore(s => s.project.resolution)
   const play = useVideoEditorStore(s => s.play)
   const pause = useVideoEditorStore(s => s.pause)
   const seek = useVideoEditorStore(s => s.seek)
 
   const getAsset = (clip: Clip) => assets[clip.assetId]
+
+  const syncCanvasSize = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return false
+    const { width, height } = useVideoEditorStore.getState().project.resolution
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    }
+    return true
+  }
 
   /** Acquire or reuse a visual element for a clip. */
   const getVideoSlot = (clip: Clip): VideoSlot | null => {
@@ -181,6 +193,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   }
 
   const drawFrame = (clip: Clip) => {
+    if (!syncCanvasSize()) return
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -278,12 +291,14 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       }
     } else {
       // Clear canvas
-      const canvas = canvasRef.current
-      if (canvas) {
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.fillStyle = '#000'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
+      if (syncCanvasSize()) {
+        const canvas = canvasRef.current
+        if (canvas) {
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.fillStyle = '#000'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
         }
       }
     }
@@ -402,12 +417,14 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
         }
       }
     } else {
-      const canvas = canvasRef.current
-      if (canvas) {
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.fillStyle = '#000'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
+      if (syncCanvasSize()) {
+        const canvas = canvasRef.current
+        if (canvas) {
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.fillStyle = '#000'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
         }
       }
     }
@@ -464,17 +481,19 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
         }
       }
     } else {
-      const canvas = canvasRef.current
-      if (canvas) {
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.fillStyle = '#000'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
+      if (syncCanvasSize()) {
+        const canvas = canvasRef.current
+        if (canvas) {
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.fillStyle = '#000'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
         }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playhead, activeVisualKey, isPlaying])
+  }, [playhead, activeVisualKey, isPlaying, resolution.width, resolution.height])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -524,27 +543,4 @@ function getActiveClipVisualKey(
   return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${JSON.stringify(clip.filters)}`
 }
 
-function filtersToCss(filters: VideoClip['filters'] | undefined): string {
-  if (!filters || !filters.length) return ''
-  const parts: string[] = []
-  for (const f of filters) {
-    switch (f.type) {
-      case 'brightness':
-        parts.push(`brightness(${1 + f.value})`)
-        break
-      case 'contrast':
-        parts.push(`contrast(${1 + f.value})`)
-        break
-      case 'saturation':
-        parts.push(`saturate(${1 + f.value})`)
-        break
-      case 'blur':
-        parts.push(`blur(${f.value}px)`)
-        break
-      case 'grayscale':
-        parts.push(`grayscale(${f.value})`)
-        break
-    }
-  }
-  return parts.join(' ')
-}
+import { filtersToCss } from '@/lib/media-filters'

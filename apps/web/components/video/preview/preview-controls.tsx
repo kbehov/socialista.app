@@ -17,19 +17,19 @@ export function PreviewControls({ playback }: { playback: Playback }) {
   const seek = useVideoEditorStore(s => s.seek)
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full items-center gap-3">
       <button
         type="button"
         onClick={playback.toggle}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-900 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground text-background hover:opacity-90"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
-        {isPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+        {isPlaying ? <PauseIcon className="size-3.5" /> : <PlayIcon className="size-3.5" />}
       </button>
-      <div className="font-mono text-sm tabular-nums text-neutral-700 dark:text-neutral-300">
-        <span>{formatTimecode(playhead, fps)}</span>
-        <span className="mx-2 text-neutral-400">/</span>
-        <span className="text-neutral-500">{formatTimecode(duration, fps)}</span>
+      <div className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+        <span className="text-foreground">{formatTimecode(playhead, fps)}</span>
+        <span className="mx-1.5 text-border">/</span>
+        <span>{formatTimecode(duration, fps)}</span>
       </div>
       <input
         type="range"
@@ -42,7 +42,7 @@ export function PreviewControls({ playback }: { playback: Playback }) {
           seek(t)
           playback.seekTo(t)
         }}
-        className="hidden flex-1 md:block"
+        className="min-w-0 flex-1 accent-primary"
       />
     </div>
   )

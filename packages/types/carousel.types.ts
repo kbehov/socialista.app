@@ -71,6 +71,13 @@ export interface BackgroundImageTransform {
   offsetY: number
 }
 
+export type BackgroundImageFilterType = 'brightness' | 'contrast' | 'saturation' | 'blur' | 'grayscale'
+
+export interface BackgroundImageFilter {
+  type: BackgroundImageFilterType
+  value: number
+}
+
 export type BackgroundImageAdjustment =
   | { type: 'cover' }
   | {
@@ -101,6 +108,8 @@ export interface Slide {
   backgroundImageUrl: string
   /** How the background image is framed inside the slide. */
   backgroundImageAdjustment: BackgroundImageAdjustment
+  /** CSS-style image filters applied to the background photo. */
+  backgroundImageFilters: BackgroundImageFilter[]
   layers: TextLayer[]
   order: number
 }

@@ -18,6 +18,8 @@ import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
+import { FilterControls } from '@/components/media/filter-controls'
+import { filtersToCss } from '@/lib/media-filters'
 import { ColorPicker } from './primitives/color-picker'
 
 export function SlideBackgroundPanel() {
@@ -26,6 +28,10 @@ export function SlideBackgroundPanel() {
   const setSlideBackground = useEditorStore(s => s.setSlideBackground)
   const setSlideBackgroundColor = useEditorStore(s => s.setSlideBackgroundColor)
   const clearSlideBackgroundImage = useEditorStore(s => s.clearSlideBackgroundImage)
+  const setSlideBackgroundFilter = useEditorStore(s => s.setSlideBackgroundFilter)
+  const removeSlideBackgroundFilter = useEditorStore(s => s.removeSlideBackgroundFilter)
+  const setSlideBackgroundFilterLive = useEditorStore(s => s.setSlideBackgroundFilterLive)
+  const removeSlideBackgroundFilterLive = useEditorStore(s => s.removeSlideBackgroundFilterLive)
   const { openEditDialog, openAdjustMode, replaceSlideImage, isEditingSlide } = useSlideImageEdit()
 
   const [urlVisible, setUrlVisible] = useState(false)
@@ -94,6 +100,8 @@ export function SlideBackgroundPanel() {
     setUrlVisible(false)
   }
 
+  const previewFilter = filtersToCss(slide.backgroundImageFilters)
+
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -124,8 +132,17 @@ export function SlideBackgroundPanel() {
                 src={slide.backgroundImageUrl}
                 alt="Slide background"
                 className="size-full object-cover"
+                style={previewFilter ? { filter: previewFilter } : undefined}
               />
             </div>
+
+            <FilterControls
+              filters={slide.backgroundImageFilters}
+              onChange={filter => setSlideBackgroundFilterLive(slide.id, filter)}
+              onCommit={filter => setSlideBackgroundFilter(slide.id, filter)}
+              onRemove={type => removeSlideBackgroundFilterLive(slide.id, type)}
+              onRemoveCommit={type => removeSlideBackgroundFilter(slide.id, type)}
+            />
 
             {urlVisible ? (
               <UrlInputForm

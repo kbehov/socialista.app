@@ -4,6 +4,7 @@ import {
   SlideshowStatus,
   type ISlideshow,
   type SlideshowBackgroundImageAdjustment,
+  type SlideshowBackgroundImageFilter,
   type SlideshowSlide,
   type SlideshowTextLayer,
   type SlideshowTextLayerStyle,
@@ -78,12 +79,25 @@ const backgroundImageAdjustmentSchema = new Schema<SlideshowBackgroundImageAdjus
   { _id: false },
 )
 
+const backgroundImageFilterSchema = new Schema<SlideshowBackgroundImageFilter>(
+  {
+    type: {
+      type: String,
+      enum: ['brightness', 'contrast', 'saturation', 'blur', 'grayscale'],
+      required: true,
+    },
+    value: { type: Number, required: true },
+  },
+  { _id: false },
+)
+
 const slideSchema = new Schema<SlideshowSlide>(
   {
     id: { type: String, required: true },
     backgroundColor: { type: String, required: true },
     backgroundImageUrl: { type: String, default: '' },
     backgroundImageAdjustment: { type: backgroundImageAdjustmentSchema, required: true },
+    backgroundImageFilters: { type: [backgroundImageFilterSchema], default: [] },
     layers: { type: [textLayerSchema], default: [] },
     order: { type: Number, required: true },
   },

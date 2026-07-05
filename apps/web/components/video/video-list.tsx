@@ -1,112 +1,20 @@
 'use client'
 
+import { VideoCard } from '@/components/cards/video-card'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatRelativeTime } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import { deleteVideo, duplicateVideo, getWorkspaceVideos } from '@/services/video.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import type { VideoSummaryResponse } from '@socialista/types'
-import { CopyIcon, Loader2Icon, PlusIcon, Trash2Icon, VideoIcon } from 'lucide-react'
+import { PlusIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 function getWorkspaceId(workspace: { id?: string; _id?: string } | null | undefined): string | undefined {
   return workspace?.id ?? workspace?._id
-}
-
-function VideoCard({
-  video,
-  onDelete,
-  onDuplicate,
-  isDuplicating,
-}: {
-  video: VideoSummaryResponse
-  onDelete: (video: VideoSummaryResponse) => void
-  onDuplicate: (video: VideoSummaryResponse) => void
-  isDuplicating: boolean
-}) {
-  const href = `/dashboard/studio/videos/${video.id}`
-  const aspectRatio = video.resolution.width / video.resolution.height
-  return (
-    <article className="group/card relative">
-      <Link href={href} className="block focus-visible:outline-none">
-        <div
-          className={cn(
-            'relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-black ring-1 ring-border/60 transition-[box-shadow,ring-color] duration-200',
-            'group-hover/card:ring-border group-hover/card:shadow-md',
-            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-          )}
-          style={{ aspectRatio }}
-        >
-          <VideoIcon className="size-10 text-white/40" strokeWidth={1.25} />
-          <span className="absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-            {video.duration > 0 ? `${video.duration.toFixed(1)}s` : 'Empty'}
-          </span>
-          <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-            {video.resolution.width}×{video.resolution.height}
-          </span>
-        </div>
-      </Link>
-
-      <div className="mt-2.5 space-y-1.5 px-0.5">
-        <Link href={href} className="block min-w-0 focus-visible:underline focus-visible:outline-none">
-          <h2 className="truncate text-sm font-medium leading-snug tracking-tight">{video.name}</h2>
-        </Link>
-        <div className="flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
-          <span className="shrink-0">{formatRelativeTime(video.updatedAt)}</span>
-          <span className="text-border">·</span>
-          <span className="truncate">{video.clipCount} clips</span>
-        </div>
-      </div>
-
-      <div className="absolute top-2 right-2 z-30 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="size-8 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/55 hover:text-white"
-              aria-label={`Duplicate ${video.name}`}
-              disabled={isDuplicating}
-              onClick={event => {
-                event.preventDefault()
-                event.stopPropagation()
-                onDuplicate(video)
-              }}
-            >
-              {isDuplicating ? <Loader2Icon className="size-3.5 animate-spin" /> : <CopyIcon className="size-3.5" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Duplicate</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="size-8 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/55 hover:text-white"
-              aria-label={`Delete ${video.name}`}
-              onClick={event => {
-                event.preventDefault()
-                event.stopPropagation()
-                onDelete(video)
-              }}
-            >
-              <Trash2Icon className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Delete</TooltipContent>
-        </Tooltip>
-      </div>
-    </article>
-  )
 }
 
 export function VideoList() {

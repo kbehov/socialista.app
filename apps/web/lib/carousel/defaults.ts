@@ -1,4 +1,4 @@
-import type { BackgroundImageAdjustment, BackgroundImageTransform, Slide, TextLayer } from '@socialista/types'
+import type { BackgroundImageAdjustment, BackgroundImageFilter, BackgroundImageTransform, Slide, TextLayer } from '@socialista/types'
 
 export const DEFAULT_BACKGROUND_TRANSFORM: BackgroundImageTransform = {
   scale: 1,
@@ -96,6 +96,7 @@ export function createSlide(order: number, backgroundImageUrl = '', backgroundCo
     backgroundColor,
     backgroundImageUrl,
     backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+    backgroundImageFilters: [],
     layers: [],
     order,
   }
@@ -225,9 +226,20 @@ export function normalizeSlideBackgroundAdjustment(
   return adjustment
 }
 
+export function normalizeSlideBackgroundFilters(
+  filters: BackgroundImageFilter[] | undefined | null,
+): BackgroundImageFilter[] {
+  if (!filters?.length) return []
+  return filters.filter(
+    (filter): filter is BackgroundImageFilter =>
+      typeof filter?.type === 'string' && typeof filter?.value === 'number',
+  )
+}
+
 export function normalizeSlide(slide: Slide): Slide {
   return {
     ...slide,
     backgroundImageAdjustment: normalizeSlideBackgroundAdjustment(slide.backgroundImageAdjustment),
+    backgroundImageFilters: normalizeSlideBackgroundFilters(slide.backgroundImageFilters),
   }
 }

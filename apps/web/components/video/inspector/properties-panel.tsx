@@ -21,16 +21,25 @@ function EmptyTabState({
   icon: Icon,
   title,
   description,
+  action,
 }: {
   icon: typeof TypeIcon
   title: string
   description: string
+  action?: { label: string; onClick: () => void; icon?: typeof TypeIcon }
 }) {
+  const ActionIcon = action?.icon
   return (
     <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-8 text-center">
       <Icon className="mx-auto size-6 text-muted-foreground" />
       <p className="mt-2 text-sm font-medium">{title}</p>
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+      {action ? (
+        <Button type="button" size="sm" className="mt-4 h-8 gap-1.5" onClick={action.onClick}>
+          {ActionIcon ? <ActionIcon className="size-3.5" /> : null}
+          {action.label}
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -38,6 +47,9 @@ function EmptyTabState({
 export function PropertiesPanel() {
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
+  const playhead = useVideoEditorStore(s => s.playhead)
+  const duration = useVideoEditorStore(s => s.project.duration)
+  const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
   const [tab, setTab] = useState<InspectorTab>('project')
 
   useEffect(() => {
@@ -45,10 +57,11 @@ export function PropertiesPanel() {
     else if (selectedOverlayId) setTab('overlay')
   }, [selectedClipId, selectedOverlayId])
 
-  useEffect(() => {
-    if (!selectedClipId && tab === 'clip') setTab('project')
-    if (!selectedOverlayId && tab === 'overlay') setTab('project')
-  }, [selectedClipId, selectedOverlayId, tab])
+  const handleAddText = () => {
+    const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
+    addTextOverlay(playhead, Math.max(playhead + 0.5, end))
+    setTab('overlay')
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -93,7 +106,8 @@ export function PropertiesPanel() {
             <EmptyTabState
               icon={TypeIcon}
               title="No text overlay selected"
-              description="Click Add text in the toolbar, or select an overlay on the timeline or preview."
+              description="Add a text layer at the playhead, or select one on the timeline or preview."
+              action={{ label: 'Add text', onClick: handleAddText, icon: TypeIcon }}
             />
           ) : null}
 

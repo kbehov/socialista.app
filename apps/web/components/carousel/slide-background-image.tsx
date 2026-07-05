@@ -1,12 +1,13 @@
 'use client'
 
-import type { BackgroundImageAdjustment, BackgroundImageTransform } from '@socialista/types'
+import type { BackgroundImageAdjustment, BackgroundImageFilter, BackgroundImageTransform } from '@socialista/types'
 import {
   backgroundImageStyle,
   backgroundImageTransformStyle,
   resolveBackgroundTransform,
   usesFrame,
 } from '@/lib/carousel/background-image-style'
+import { filtersToCss } from '@/lib/media-filters'
 import {
   useBackgroundImageTransform,
   type TransformCorner,
@@ -23,6 +24,7 @@ import {
 type SlideBackgroundImageProps = {
   imageUrl: string
   adjustment: BackgroundImageAdjustment
+  filters?: BackgroundImageFilter[]
   slideId?: SlideId
   className?: string
   interactive?: boolean
@@ -66,6 +68,7 @@ function TransformHandle({
 export function SlideBackgroundImage({
   imageUrl,
   adjustment,
+  filters = [],
   slideId,
   className,
   interactive,
@@ -81,6 +84,8 @@ export function SlideBackgroundImage({
   const transform = resolveBackgroundTransform(adjustment)
   const isFrame = usesFrame(adjustment)
   const imageStyle = backgroundImageStyle(adjustment)
+  const filterStyle = filtersToCss(filters)
+  const renderedImageStyle = filterStyle ? { filter: filterStyle } : undefined
 
   const width = layoutWidth ?? 0
   const height = layoutHeight ?? 0
@@ -151,6 +156,7 @@ export function SlideBackgroundImage({
               src={imageUrl}
               alt=""
               className={imageClassName}
+              style={renderedImageStyle}
               draggable={false}
               decoding="async"
               onLoad={() => setImageLoaded(true)}
@@ -184,7 +190,7 @@ export function SlideBackgroundImage({
           src={imageUrl}
           alt=""
           className={cn('absolute inset-0 size-full object-cover select-none', imageClassName)}
-          style={imageStyle}
+          style={{ ...imageStyle, ...renderedImageStyle }}
           draggable={false}
           decoding="async"
           onLoad={() => setImageLoaded(true)}

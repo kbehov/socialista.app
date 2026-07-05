@@ -38,6 +38,7 @@ export {
   SlideshowStatus,
   type ISlideshow,
   type SlideshowBackgroundImageAdjustment,
+  type SlideshowBackgroundImageFilter,
   type SlideshowCanvas,
   type SlideshowDocument,
   type SlideshowSlide,

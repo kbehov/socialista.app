@@ -53,6 +53,18 @@ export type SlideshowCropArea = {
   height: number
 }
 
+export type SlideshowBackgroundImageFilterType =
+  | 'brightness'
+  | 'contrast'
+  | 'saturation'
+  | 'blur'
+  | 'grayscale'
+
+export type SlideshowBackgroundImageFilter = {
+  type: SlideshowBackgroundImageFilterType
+  value: number
+}
+
 export type SlideshowBackgroundImageAdjustment =
   | { type: 'cover' }
   | {
@@ -79,6 +91,7 @@ export type SlideshowSlide = {
   backgroundColor: string
   backgroundImageUrl: string
   backgroundImageAdjustment: SlideshowBackgroundImageAdjustment
+  backgroundImageFilters: SlideshowBackgroundImageFilter[]
   layers: SlideshowTextLayer[]
   order: number
 }

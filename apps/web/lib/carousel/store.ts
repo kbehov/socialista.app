@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BackgroundImageAdjustment, Slide, SlideId, TextLayer, LayerId, CanvasDimensions } from '@socialista/types'
+import type { BackgroundImageAdjustment, BackgroundImageFilter, Slide, SlideId, TextLayer, LayerId, CanvasDimensions } from '@socialista/types'
 import {
   createSlide,
   createTextLayer,
@@ -42,6 +42,10 @@ interface EditorState {
   setSlideBackground: (slideId: SlideId, imageUrl: string) => void
   setSlideBackgroundColor: (slideId: SlideId, color: string) => void
   setSlideBackgroundImageAdjustment: (slideId: SlideId, adjustment: BackgroundImageAdjustment) => void
+  setSlideBackgroundFilter: (slideId: SlideId, filter: BackgroundImageFilter) => void
+  removeSlideBackgroundFilter: (slideId: SlideId, filterType: BackgroundImageFilter['type']) => void
+  setSlideBackgroundFilterLive: (slideId: SlideId, filter: BackgroundImageFilter) => void
+  removeSlideBackgroundFilterLive: (slideId: SlideId, filterType: BackgroundImageFilter['type']) => void
   clearSlideBackgroundImage: (slideId: SlideId) => void
 
   addTextLayer: (slideId: SlideId) => void
@@ -160,6 +164,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
           id: `slide_${Math.random().toString(36).slice(2, 10)}`,
           layers: original.layers.map(l => ({ ...l, style: { ...l.style } })),
           backgroundImageAdjustment: structuredClone(original.backgroundImageAdjustment),
+          backgroundImageFilters: [...original.backgroundImageFilters],
         }
         const insertAt = state.slides.indexOf(original) + 1
         const slides = [...state.slides]
@@ -204,6 +209,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
           ...slide,
           backgroundImageUrl: imageUrl,
           backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+          backgroundImageFilters: [],
         })),
       }))
     },
@@ -223,12 +229,53 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
+    setSlideBackgroundFilter: (slideId, filter) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageFilters: [
+            ...slide.backgroundImageFilters.filter(item => item.type !== filter.type),
+            filter,
+          ],
+        })),
+      }))
+    },
+
+    removeSlideBackgroundFilter: (slideId, filterType) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageFilters: slide.backgroundImageFilters.filter(item => item.type !== filterType),
+        })),
+      }))
+    },
+
+    setSlideBackgroundFilterLive: (slideId, filter) =>
+      set(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageFilters: [
+            ...slide.backgroundImageFilters.filter(item => item.type !== filter.type),
+            filter,
+          ],
+        })),
+      })),
+
+    removeSlideBackgroundFilterLive: (slideId, filterType) =>
+      set(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageFilters: slide.backgroundImageFilters.filter(item => item.type !== filterType),
+        })),
+      })),
+
     clearSlideBackgroundImage: slideId => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide => ({
           ...slide,
           backgroundImageUrl: '',
           backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+          backgroundImageFilters: [],
         })),
       }))
     },
@@ -375,7 +422,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     reset: slides => {
       const initial = slides && slides.length > 0 ? slides : [createSlide(0)]
       set({
-        slides: initial.map((s, i) => ({ ...s, order: i })),
+        slides: initial.map((s, i) => normalizeSlide({ ...s, order: i })),
         activeSlideId: initial[0].id,
         activeLayerId: null,
         past: [],

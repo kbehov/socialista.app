@@ -98,6 +98,7 @@ function serializeVideo(video: VideoResponseInput): VideoResponse {
 }
 
 function serializeVideoSummary(video: IVideo): VideoSummaryResponse {
+  const preview = getVideoPreview(video)
   return {
     id: video._id.toString(),
     name: video.name,
@@ -110,7 +111,29 @@ function serializeVideoSummary(video: IVideo): VideoSummaryResponse {
     clipCount: video.clips.length,
     createdAt: video.createdAt,
     updatedAt: video.updatedAt,
+    previewUrl: preview.previewUrl,
+    previewType: preview.previewType,
   }
+}
+
+function getVideoPreview(video: IVideo): Pick<VideoSummaryResponse, 'previewUrl' | 'previewType'> {
+  const assetsById = new Map(video.assets.map(asset => [asset.id, asset]))
+  const visualClips = video.clips
+    .filter(clip => clip.type === 'video' || clip.type === 'image')
+    .toSorted((a, b) => a.startTime - b.startTime)
+
+  for (const clip of visualClips) {
+    const asset = assetsById.get(clip.assetId)
+    if (!asset?.url) continue
+    if (asset.type === 'video' || asset.type === 'image') {
+      return {
+        previewUrl: asset.url,
+        previewType: asset.type,
+      }
+    }
+  }
+
+  return {}
 }
 
 async function getVideoForMember(id: string, userId: string) {

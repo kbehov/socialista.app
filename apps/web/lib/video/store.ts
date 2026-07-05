@@ -78,6 +78,10 @@ interface EditorState {
   registerAsset: (asset: MediaAsset) => void
   relinkAsset: (assetId: string, file: File, hash: string) => void
   removeAsset: (assetId: string) => void
+  /** Attach runtime media loaded from persisted URLs without duplicating project.assets. */
+  hydrateRuntimeAssets: (assets: MediaAsset[]) => void
+  /** Sync persisted asset metadata after upload on save. */
+  applyPersistedAssets: (assets: SerializedMediaAsset[]) => void
 
   // Clips
   addClip: (assetId: string, trackId: TrackId, startTime: number) => ClipId | null
@@ -379,6 +383,39 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
             clips: remainingClips,
             tracks,
           },
+        }
+      })
+    },
+
+    hydrateRuntimeAssets: assetsToHydrate => {
+      if (assetsToHydrate.length === 0) return
+      set(state => {
+        const nextAssets = { ...state.assets }
+        for (const asset of assetsToHydrate) {
+          nextAssets[asset.id] = asset
+        }
+        return { assets: nextAssets }
+      })
+    },
+
+    applyPersistedAssets: persistedAssets => {
+      set(state => {
+        const persistedById = new Map(persistedAssets.map(asset => [asset.id, asset]))
+        const nextRuntimeAssets = { ...state.assets }
+
+        for (const [id, asset] of Object.entries(nextRuntimeAssets)) {
+          const persisted = persistedById.get(id)
+          if (!persisted || !isMediaAssetAvailable(asset)) continue
+          nextRuntimeAssets[id] = {
+            ...asset,
+            url: persisted.url,
+            fileId: persisted.fileId,
+          }
+        }
+
+        return {
+          assets: nextRuntimeAssets,
+          project: { ...state.project, assets: persistedAssets },
         }
       })
     },

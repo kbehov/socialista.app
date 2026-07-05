@@ -113,6 +113,8 @@ const assetSchema = new Schema<DbSerializedMediaAsset>(
     duration: { type: Number, required: true },
     width: { type: Number },
     height: { type: Number },
+    url: { type: String },
+    fileId: { type: String },
   },
   { _id: false },
 )

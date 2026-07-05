@@ -145,6 +145,8 @@ export function toSerializedAsset(asset: MediaAsset): SerializedMediaAsset {
     duration: asset.duration,
     width: asset.width,
     height: asset.height,
+    url: asset.url,
+    fileId: asset.fileId,
   }
 }
 

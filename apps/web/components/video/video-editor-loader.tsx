@@ -3,6 +3,7 @@
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
 import { VideoStudio } from '@/components/video/video-studio'
+import { hydrateVideoAssets } from '@/lib/video/hydrate-video-assets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { getVideo } from '@/services/video.service'
 import { useEffect, useState } from 'react'
@@ -13,6 +14,7 @@ type VideoEditorLoaderProps = {
 
 export function VideoEditorLoader({ videoId }: VideoEditorLoaderProps) {
   const loadProject = useVideoEditorStore(s => s.loadProject)
+  const hydrateRuntimeAssets = useVideoEditorStore(s => s.hydrateRuntimeAssets)
   const clearProject = useVideoEditorStore(s => s.clearProject)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,6 +51,11 @@ export function VideoEditorLoader({ videoId }: VideoEditorLoaderProps) {
           assets: video.assets,
         },
       })
+
+      const hydrated = await hydrateVideoAssets(video.assets)
+      if (cancelled) return
+      hydrateRuntimeAssets(hydrated)
+
       setIsLoading(false)
     }
 
@@ -58,7 +65,7 @@ export function VideoEditorLoader({ videoId }: VideoEditorLoaderProps) {
       cancelled = true
       clearProject()
     }
-  }, [clearProject, loadProject, videoId])
+  }, [clearProject, hydrateRuntimeAssets, loadProject, videoId])
 
   if (isLoading) {
     return <LoadingState message="Loading video…" className="flex-1" />

@@ -101,6 +101,8 @@ export interface DbSerializedMediaAsset {
   duration: number
   width?: number
   height?: number
+  url?: string
+  fileId?: string
 }
 
 export interface IVideo {

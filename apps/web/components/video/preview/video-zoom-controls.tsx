@@ -5,10 +5,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { RotateCcwIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const MIN_ZOOM = 0.25
-const MAX_ZOOM = 3
-const DEFAULT_ZOOM = 1
-const ZOOM_STEP = 0.25
+import {
+  DEFAULT_VIEWPORT_ZOOM,
+  MAX_VIEWPORT_ZOOM,
+  MIN_VIEWPORT_ZOOM,
+  VIEWPORT_ZOOM_STEP,
+} from '@/lib/carousel/defaults'
 
 type VideoZoomControlsProps = {
   zoom: number
@@ -19,9 +21,9 @@ type VideoZoomControlsProps = {
 export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomControlsProps) {
   const percent = Math.round(zoom * 100)
 
-  const zoomOut = () => onZoomChange(Math.max(MIN_ZOOM, zoom - ZOOM_STEP))
-  const zoomIn = () => onZoomChange(Math.min(MAX_ZOOM, zoom + ZOOM_STEP))
-  const resetZoom = () => onZoomChange(DEFAULT_ZOOM)
+  const zoomOut = () => onZoomChange(Math.max(MIN_VIEWPORT_ZOOM, zoom - VIEWPORT_ZOOM_STEP))
+  const zoomIn = () => onZoomChange(Math.min(MAX_VIEWPORT_ZOOM, zoom + VIEWPORT_ZOOM_STEP))
+  const resetZoom = () => onZoomChange(DEFAULT_VIEWPORT_ZOOM)
 
   return (
     <div
@@ -38,7 +40,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
             variant="ghost"
             className="size-7 rounded-full"
             onClick={zoomOut}
-            disabled={zoom <= MIN_ZOOM}
+            disabled={zoom <= MIN_VIEWPORT_ZOOM}
             aria-label="Zoom preview out"
           >
             <ZoomOutIcon className="size-3.5" />
@@ -63,7 +65,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
             variant="ghost"
             className="size-7 rounded-full"
             onClick={zoomIn}
-            disabled={zoom >= MAX_ZOOM}
+            disabled={zoom >= MAX_VIEWPORT_ZOOM}
             aria-label="Zoom preview in"
           >
             <ZoomInIcon className="size-3.5" />
@@ -72,7 +74,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
         <TooltipContent>Zoom in</TooltipContent>
       </Tooltip>
 
-      {zoom !== DEFAULT_ZOOM ? (
+      {zoom !== DEFAULT_VIEWPORT_ZOOM ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -85,7 +87,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
               <RotateCcwIcon className="size-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Reset to 100%</TooltipContent>
+          <TooltipContent>Reset to {Math.round(DEFAULT_VIEWPORT_ZOOM * 100)}%</TooltipContent>
         </Tooltip>
       ) : null}
     </div>

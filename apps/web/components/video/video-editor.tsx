@@ -1,15 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
+import { DEFAULT_VIEWPORT_ZOOM } from '@/lib/carousel/defaults'
+import { usePlayback } from '@/hooks/video/use-playback'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
 import { formatTimecode } from '@/lib/video/timecode'
 import { DownloadIcon, Loader2Icon, Redo2Icon, ScissorsIcon, SparklesIcon, TypeIcon, Undo2Icon } from 'lucide-react'
 import { ClipAiProvider, useClipAi } from '@/components/video/ai/clip-ai-provider'
 import { PreviewCanvas } from './preview/preview-canvas'
+import { PreviewControls } from './preview/preview-controls'
+import { VideoZoomControls } from './preview/video-zoom-controls'
 import { Timeline } from './timeline/timeline'
 import { PropertiesPanel } from './inspector/properties-panel'
 import { ExportModal } from './export/export-modal'
@@ -25,6 +30,11 @@ export function VideoEditor() {
 
 function VideoEditorContent() {
   useVideoShortcuts()
+  const workspaceRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const playback = usePlayback(canvasRef)
+  const [previewZoom, setPreviewZoom] = useState(DEFAULT_VIEWPORT_ZOOM)
+  const [showSafeZone, setShowSafeZone] = useState(true)
   const undo = useVideoEditorStore(s => s.undo)
   const redo = useVideoEditorStore(s => s.redo)
   const past = useVideoEditorStore(s => s.past)
@@ -32,8 +42,10 @@ function VideoEditorContent() {
   const playhead = useVideoEditorStore(s => s.playhead)
   const duration = useVideoEditorStore(s => s.project.duration)
   const fps = useVideoEditorStore(s => s.project.fps)
+  const isPlaying = useVideoEditorStore(s => s.isPlaying)
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
+  const selectClip = useVideoEditorStore(s => s.selectClip)
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
@@ -55,6 +67,15 @@ function VideoEditorContent() {
     } else if (selectedOverlayId) {
       splitOverlay(selectedOverlayId, playhead)
     }
+  }
+
+  const handleWorkspacePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement
+    if (target.closest('[data-video-canvas]')) return
+    if (target.closest('[data-canvas-controls]')) return
+    if (target.closest('[data-preview-playback]')) return
+    if (isPlaying) return
+    selectClip(null)
   }
 
   return (
@@ -140,6 +161,12 @@ function VideoEditorContent() {
           </TooltipContent>
         </Tooltip>
 
+        <VideoZoomControls
+          className="hidden md:flex"
+          zoom={previewZoom}
+          onZoomChange={setPreviewZoom}
+        />
+
         <div className="hidden flex-1 md:block" />
 
         <p className="hidden min-w-0 flex-1 truncate text-[11px] text-muted-foreground lg:block">
@@ -169,9 +196,36 @@ function VideoEditorContent() {
         </Tooltip>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,260px)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_280px] lg:grid-rows-1">
-        <div className="min-h-0 min-w-0 overflow-hidden">
-          <PreviewCanvas />
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,260px)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px] lg:grid-rows-1">
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+          <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
+            <div
+              ref={workspaceRef}
+              className={cn(
+                'studio-canvas-workspace relative min-h-0 flex-1',
+                previewZoom > 1 ? 'overflow-auto' : 'overflow-hidden',
+              )}
+              onPointerDown={handleWorkspacePointerDown}
+            >
+              <PreviewCanvas
+                canvasRef={canvasRef}
+                previewZoom={previewZoom}
+                showSafeZone={showSafeZone}
+                onToggleSafeZone={() => setShowSafeZone(value => !value)}
+              />
+
+              <div className="pointer-events-none absolute bottom-3 left-3 z-10 md:hidden">
+                <VideoZoomControls zoom={previewZoom} onZoomChange={setPreviewZoom} />
+              </div>
+            </div>
+          </CanvasWorkspaceProvider>
+
+          <div
+            data-preview-playback
+            className="shrink-0 border-t bg-muted/15 px-3 py-2"
+          >
+            <PreviewControls playback={playback} />
+          </div>
         </div>
         <div className="flex h-full min-h-0 flex-col overflow-hidden border-t bg-card lg:border-t-0 lg:border-l">
           <PropertiesPanel />
