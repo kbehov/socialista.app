@@ -8,6 +8,7 @@ export { ModelModel } from './models/model.js'
 export { UserModel } from './models/user.model.js'
 export { WorkspaceModel } from './models/workspace.model.js'
 export { SlideshowModel } from './models/slideshow.model.js'
+export { VideoModel } from './models/video.model.js'
 export * from './repo/image.repo.js'
 export * from './repo/inpsiration.repo.js'
 export * from './repo/invitation.repo.js'
@@ -15,6 +16,7 @@ export * from './repo/model.repo.js'
 export * from './repo/user.repo.js'
 export * from './repo/workspace.repo.js'
 export * from './repo/slideshow.repo.js'
+export * from './repo/video.repo.js'
 export {
   type IImage,
   type IImageCollection,
@@ -41,6 +43,22 @@ export {
   type SlideshowSlide,
   type SlideshowTextLayer,
 } from './types/slideshow.types.js'
+
+export {
+  VideoStatus,
+  type DbAudioClip,
+  type DbClip,
+  type DbMediaType,
+  type DbSerializedMediaAsset,
+  type DbTextOverlay,
+  type DbTextOverlayStyle,
+  type DbTrack,
+  type DbTransition,
+  type DbVideoClip,
+  type DbVideoFilter,
+  type IVideo,
+  type VideoDocument,
+} from './types/video.types.js'
 
 export {
   BillingStatus,

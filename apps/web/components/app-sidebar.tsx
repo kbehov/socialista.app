@@ -6,7 +6,7 @@ import { SidebarStorageFooter } from '@/components/sidebar-storage-footer'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import { WorkspaceResponse } from '@socialista/types'
-import { FileTextIcon, FolderArchiveIcon, ImagesIcon, LayoutDashboardIcon, LightbulbIcon, UserIcon } from 'lucide-react'
+import { FileTextIcon, FolderArchiveIcon, ImagesIcon, LayoutDashboardIcon, LightbulbIcon, UserIcon, VideoIcon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
@@ -72,6 +72,12 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
       url: '/dashboard/studio/slideshows',
       icon: <ImagesIcon />,
       isActive: pathname === '/dashboard/studio/slideshows' || pathname.startsWith('/dashboard/studio/slideshows/'),
+    },
+    {
+      title: 'Video Editor',
+      url: '/dashboard/studio/videos',
+      icon: <VideoIcon />,
+      isActive: pathname === '/dashboard/studio/videos' || pathname.startsWith('/dashboard/studio/videos/'),
     },
   ]
   const databaseItems = [

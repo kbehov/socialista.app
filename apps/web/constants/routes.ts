@@ -60,6 +60,15 @@ export const SLIDESHOW_ROUTES = {
   DUPLICATE: (id: string) => `/slideshows/${id}/duplicate`,
   GET_WORKSPACE_SLIDESHOWS: (workspaceId: string) => `/slideshows/workspace/${workspaceId}`,
 } as const
+
+export const VIDEO_ROUTES = {
+  CREATE: '/videos',
+  GET_BY_ID: (id: string) => `/videos/${id}`,
+  UPDATE: (id: string) => `/videos/${id}`,
+  DELETE: (id: string) => `/videos/${id}`,
+  DUPLICATE: (id: string) => `/videos/${id}/duplicate`,
+  GET_WORKSPACE_VIDEOS: (workspaceId: string) => `/videos/workspace/${workspaceId}`,
+} as const
 export function inspirationRoute(template: string, id: string): string {
   return template.replace(':id', id)
 }
