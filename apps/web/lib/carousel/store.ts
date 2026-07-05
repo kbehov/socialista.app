@@ -8,6 +8,12 @@ import {
   DEFAULT_CANVAS,
   DEFAULT_LAYER_STYLE,
   DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+  DEFAULT_VIEWPORT_ZOOM,
+  MIN_VIEWPORT_ZOOM,
+  MAX_VIEWPORT_ZOOM,
+  VIEWPORT_ZOOM_STEP,
+  mergeGeneratedTextsIntoSlides,
+  normalizeSlide,
 } from './defaults'
 import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
 import { proxiedImageUrl } from './image-url'
@@ -17,6 +23,7 @@ const HISTORY_LIMIT = 50
 interface EditorState {
   canvas: CanvasDimensions
   aspectRatioId: string
+  viewportZoom: number
   slides: Slide[]
   activeSlideId: SlideId | null
   activeLayerId: LayerId | null
@@ -43,6 +50,7 @@ interface EditorState {
   removeLayer: (slideId: SlideId, layerId: LayerId) => void
   duplicateLayer: (slideId: SlideId, layerId: LayerId) => void
   setActiveLayer: (slideId: SlideId | null, layerId: LayerId | null) => void
+  clearLayerSelection: () => void
   bringForward: (slideId: SlideId, layerId: LayerId) => void
   sendBackward: (slideId: SlideId, layerId: LayerId) => void
   setLayerOrder: (slideId: SlideId, orderedIds: LayerId[]) => void
@@ -67,6 +75,10 @@ interface EditorState {
   clearProject: () => void
   setCanvas: (dimensions: CanvasDimensions) => void
   setAspectRatio: (id: string) => void
+  setViewportZoom: (zoom: number) => void
+  zoomViewportIn: () => void
+  zoomViewportOut: () => void
+  resetViewportZoom: () => void
   applyGeneratedContent: (texts: string[]) => void
   applyTikTokImport: (imageUrls: string[]) => void
 }
@@ -106,6 +118,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
   return {
     canvas: DEFAULT_CANVAS,
     aspectRatioId: DEFAULT_ASPECT_RATIO_ID,
+    viewportZoom: DEFAULT_VIEWPORT_ZOOM,
     slides: [initialSlide],
     activeSlideId: initialSlide.id,
     activeLayerId: null,
@@ -230,7 +243,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }))
       const slide = get().slides.find(s => s.id === slideId)
       const top = slide ? sortLayers(slide.layers).at(-1) : undefined
-      if (top) set({ activeLayerId: top.id })
+      if (top) set({ activeSlideId: slideId, activeLayerId: top.id })
     },
 
     updateLayer: (slideId, layerId, partial) => {
@@ -283,6 +296,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     setActiveLayer: (slideId, layerId) => set({ activeSlideId: slideId, activeLayerId: layerId }),
+
+    clearLayerSelection: () => set({ activeLayerId: null }),
 
     bringForward: (slideId, layerId) => {
       record(state => ({
@@ -375,7 +390,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         slideshowName: project.name,
         canvas: project.canvas,
         aspectRatioId: project.aspectRatioId,
-        slides: slides.map((slide, index) => ({ ...slide, order: index })),
+        slides: slides.map((slide, index) => normalizeSlide({ ...slide, order: index })),
         activeSlideId: slides[0]?.id ?? null,
         activeLayerId: null,
         past: [],
@@ -391,7 +406,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         name: state.slideshowName,
         canvas: state.canvas,
         aspectRatioId: state.aspectRatioId,
-        slides: state.slides,
+        slides: state.slides.map(normalizeSlide),
       }
     },
 
@@ -402,6 +417,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         slideshowName: 'Untitled slideshow',
         canvas: DEFAULT_CANVAS,
         aspectRatioId: DEFAULT_ASPECT_RATIO_ID,
+        viewportZoom: DEFAULT_VIEWPORT_ZOOM,
         slides: [initialSlide],
         activeSlideId: initialSlide.id,
         activeLayerId: null,
@@ -418,32 +434,41 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     setAspectRatio: id => {
       const preset = getAspectRatioPreset(id)
-      set({ aspectRatioId: id, canvas: preset.dimensions })
+      set({ aspectRatioId: id, canvas: preset.dimensions, viewportZoom: DEFAULT_VIEWPORT_ZOOM })
     },
+
+    setViewportZoom: zoom =>
+      set({ viewportZoom: Math.min(MAX_VIEWPORT_ZOOM, Math.max(MIN_VIEWPORT_ZOOM, zoom)) }),
+
+    zoomViewportIn: () =>
+      set(state => ({
+        viewportZoom: Math.min(
+          MAX_VIEWPORT_ZOOM,
+          Math.round((state.viewportZoom + VIEWPORT_ZOOM_STEP) * 100) / 100,
+        ),
+      })),
+
+    zoomViewportOut: () =>
+      set(state => ({
+        viewportZoom: Math.max(
+          MIN_VIEWPORT_ZOOM,
+          Math.round((state.viewportZoom - VIEWPORT_ZOOM_STEP) * 100) / 100,
+        ),
+      })),
+
+    resetViewportZoom: () => set({ viewportZoom: DEFAULT_VIEWPORT_ZOOM }),
 
     applyGeneratedContent: texts => {
       if (texts.length === 0) return
-      const slides = texts.map((text, order) => {
-        const slide = createSlide(order)
-        slide.layers = [
-          createTextLayer({
-            zIndex: 0,
-            content: text,
-            x: 8,
-            y: 38,
-            width: 84,
-            height: 18,
-            style: { ...DEFAULT_LAYER_STYLE },
-          }),
-        ]
-        return slide
-      })
-      set({
-        slides,
-        activeSlideId: slides[0].id,
-        activeLayerId: slides[0].layers[0]?.id ?? null,
-        past: [],
-        future: [],
+      record(state => {
+        const slides = mergeGeneratedTextsIntoSlides(state.slides, texts)
+        const activeSlide = slides[0]
+        const activeLayer = activeSlide ? sortLayers(activeSlide.layers)[0] : undefined
+        return {
+          slides,
+          activeSlideId: activeSlide?.id ?? null,
+          activeLayerId: activeLayer?.id ?? null,
+        }
       })
     },
 
@@ -454,6 +479,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set({
         aspectRatioId: 'tiktok',
         canvas: tiktokCanvas,
+        viewportZoom: DEFAULT_VIEWPORT_ZOOM,
         slides,
         activeSlideId: slides[0].id,
         activeLayerId: null,

@@ -61,8 +61,24 @@ export interface CropAreaPercentages {
   height: number
 }
 
+/** Zoom/pan transform for a full-bleed background image on the slide canvas. */
+export interface BackgroundImageTransform {
+  /** 1 = cover-fit; values above 1 zoom into the image. */
+  scale: number
+  /** Pan offset as a fraction of canvas width. */
+  offsetX: number
+  /** Pan offset as a fraction of canvas height. */
+  offsetY: number
+}
+
 export type BackgroundImageAdjustment =
   | { type: 'cover' }
+  | {
+      type: 'frame'
+      scale: number
+      offsetX: number
+      offsetY: number
+    }
   | {
       type: 'zoom'
       scale: number

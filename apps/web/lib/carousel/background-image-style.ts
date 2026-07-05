@@ -1,5 +1,122 @@
-import type { BackgroundImageAdjustment, CropAreaPercentages } from '@socialista/types'
+import type { BackgroundImageAdjustment, BackgroundImageTransform, CropAreaPercentages } from '@socialista/types'
 import type { CSSProperties } from 'react'
+import { DEFAULT_BACKGROUND_TRANSFORM, MIN_BACKGROUND_SCALE } from './defaults'
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+/** Legacy frame shape saved before scale/offset model. */
+type LegacyFrame = {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+}
+
+function migrateLegacyFrame(raw: LegacyFrame): BackgroundImageTransform {
+  const x = raw.x ?? 0
+  const y = raw.y ?? 0
+  const width = raw.width ?? 100
+  const height = raw.height ?? 100
+
+  if (x === 0 && y === 0 && width === 100 && height === 100) {
+    return DEFAULT_BACKGROUND_TRANSFORM
+  }
+
+  const scale = Math.max(width / 100, height / 100, MIN_BACKGROUND_SCALE)
+  return {
+    scale,
+    offsetX: (x + width / 2 - 50) / 50,
+    offsetY: (y + height / 2 - 50) / 50,
+  }
+}
+
+export function resolveBackgroundTransform(adjustment: BackgroundImageAdjustment): BackgroundImageTransform {
+  if (adjustment.type === 'frame') {
+    if ('offsetX' in adjustment && typeof adjustment.offsetX === 'number') {
+      return {
+        scale: Math.max(MIN_BACKGROUND_SCALE, adjustment.scale),
+        offsetX: adjustment.offsetX,
+        offsetY: adjustment.offsetY,
+      }
+    }
+    return migrateLegacyFrame(adjustment as LegacyFrame & { scale?: number })
+  }
+
+  if (adjustment.type === 'zoom') {
+    return {
+      scale: Math.max(MIN_BACKGROUND_SCALE, adjustment.scale),
+      offsetX: adjustment.positionX,
+      offsetY: adjustment.positionY,
+    }
+  }
+
+  if (adjustment.type === 'cover') {
+    return DEFAULT_BACKGROUND_TRANSFORM
+  }
+
+  return DEFAULT_BACKGROUND_TRANSFORM
+}
+
+export function transformToAdjustment(
+  transform: BackgroundImageTransform,
+): Extract<BackgroundImageAdjustment, { type: 'frame' }> {
+  return { type: 'frame', ...transform }
+}
+
+export function resolveTransformPixels(
+  transform: BackgroundImageTransform,
+  containerWidth: number,
+  containerHeight: number,
+): { scale: number; translateX: number; translateY: number } {
+  const scale = Math.max(MIN_BACKGROUND_SCALE, transform.scale)
+  const maxOffsetX = ((scale - 1) * containerWidth) / 2
+  const maxOffsetY = ((scale - 1) * containerHeight) / 2
+
+  return {
+    scale,
+    translateX: clamp(transform.offsetX * containerWidth, -maxOffsetX, maxOffsetX),
+    translateY: clamp(transform.offsetY * containerHeight, -maxOffsetY, maxOffsetY),
+  }
+}
+
+export function normalizeTransform(
+  scale: number,
+  translateX: number,
+  translateY: number,
+  containerWidth: number,
+  containerHeight: number,
+): BackgroundImageTransform {
+  return {
+    scale: Math.max(MIN_BACKGROUND_SCALE, scale),
+    offsetX: containerWidth > 0 ? translateX / containerWidth : 0,
+    offsetY: containerHeight > 0 ? translateY / containerHeight : 0,
+  }
+}
+
+export function backgroundImageTransformStyle(
+  transform: BackgroundImageTransform,
+  containerWidth: number,
+  containerHeight: number,
+): CSSProperties {
+  const { scale, translateX, translateY } = resolveTransformPixels(
+    transform,
+    containerWidth,
+    containerHeight,
+  )
+
+  return {
+    width: '100%',
+    height: '100%',
+    transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
+    transformOrigin: 'center center',
+  }
+}
+
+export function usesFrame(adjustment: BackgroundImageAdjustment): boolean {
+  return adjustment.type === 'frame' || adjustment.type === 'cover' || adjustment.type === 'zoom'
+}
 
 export function croppedAreaStyle(area: CropAreaPercentages): CSSProperties {
   return {
@@ -10,78 +127,6 @@ export function croppedAreaStyle(area: CropAreaPercentages): CSSProperties {
     transform: `translate(${( -area.x / area.width) * 100}%, ${( -area.y / area.height) * 100}%)`,
     transformOrigin: 'top left',
   }
-}
-
-/** Preview width used before pan offsets were stored as viewport fractions. */
-const LEGACY_ZOOM_REFERENCE_WIDTH = 560
-
-function isNormalizedPanOffset(value: number): boolean {
-  return Math.abs(value) <= 2
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
-}
-
-/**
- * Resolve a saved zoom adjustment into a pixel-space transform that always
- * keeps the image covering the canvas. Scale is floored at 1 (cover-fit) and
- * pan offsets are clamped to the range that keeps the scaled image edge at or
- * beyond the wrapper edge, so no empty space can ever appear.
- */
-export function resolveZoomPanPosition(
-  adjustment: Extract<BackgroundImageAdjustment, { type: 'zoom' }>,
-  containerWidth: number,
-  containerHeight: number,
-): { scale: number; positionX: number; positionY: number } {
-  const { scale, positionX, positionY } = adjustment
-
-  const safeScale = Math.max(1, scale)
-  const maxOffsetX = ((safeScale - 1) * containerWidth) / 2
-  const maxOffsetY = ((safeScale - 1) * containerHeight) / 2
-
-  if (isNormalizedPanOffset(positionX) && isNormalizedPanOffset(positionY)) {
-    return {
-      scale: safeScale,
-      positionX: clamp(positionX * containerWidth, -maxOffsetX, maxOffsetX),
-      positionY: clamp(positionY * containerHeight, -maxOffsetY, maxOffsetY),
-    }
-  }
-
-  const legacyScale = containerWidth / LEGACY_ZOOM_REFERENCE_WIDTH
-  return {
-    scale: safeScale,
-    positionX: clamp(positionX * legacyScale, -maxOffsetX, maxOffsetX),
-    positionY: clamp(positionY * legacyScale, -maxOffsetY, maxOffsetY),
-  }
-}
-
-export function normalizeZoomPanPosition(
-  scale: number,
-  positionX: number,
-  positionY: number,
-  containerWidth: number,
-  containerHeight: number,
-): Extract<BackgroundImageAdjustment, { type: 'zoom' }> {
-  return {
-    type: 'zoom',
-    scale,
-    positionX: containerWidth > 0 ? positionX / containerWidth : 0,
-    positionY: containerHeight > 0 ? positionY / containerHeight : 0,
-  }
-}
-
-export function backgroundImageContainerStyle(
-  adjustment: BackgroundImageAdjustment,
-): CSSProperties | undefined {
-  if (adjustment.type === 'zoom' || adjustment.type === 'crop') {
-    return { overflow: 'hidden' }
-  }
-  return undefined
-}
-
-export function usesObjectCover(adjustment: BackgroundImageAdjustment): boolean {
-  return adjustment.type === 'cover'
 }
 
 export function usesZoomPan(adjustment: BackgroundImageAdjustment): adjustment is Extract<

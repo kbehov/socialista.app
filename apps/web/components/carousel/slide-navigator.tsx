@@ -38,7 +38,7 @@ export function SlideNavigator({ variant = 'default' }: SlideNavigatorProps) {
     if (!activeThumb) return
 
     const targetScroll = activeThumb.offsetLeft - (scroller.clientWidth - activeThumb.offsetWidth) / 2
-    scroller.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' })
+    scroller.scrollTo({ left: Math.max(0, targetScroll), behavior: 'auto' })
   }, [activeSlideId, isFilmstrip, slides.length])
 
   const handleDragEnd = useCallback(
@@ -53,7 +53,7 @@ export function SlideNavigator({ variant = 'default' }: SlideNavigatorProps) {
   )
 
   return (
-    <div className={cn('flex flex-col gap-2', isFilmstrip && 'gap-1.5')}>
+    <div className={cn('flex flex-col gap-2', isFilmstrip && 'gap-1')}>
       {!isFilmstrip ? (
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">
@@ -122,7 +122,7 @@ function SortableSlideThumb({
 
   const isFilmstrip = variant === 'filmstrip'
   const canvas = useEditorStore(s => s.canvas)
-  const thumbWidth = isFilmstrip ? 88 : 128
+  const thumbWidth = isFilmstrip ? 56 : 128
   const thumbHeight = thumbWidth * (canvas.height / canvas.width)
   const active = slide.id === activeSlideId
 
@@ -136,6 +136,7 @@ function SortableSlideThumb({
       <ContextMenuTrigger asChild>
         <div
           ref={ref}
+          data-slide-thumb
           data-active-slide={active ? 'true' : undefined}
           role="button"
           tabIndex={0}
@@ -150,8 +151,8 @@ function SortableSlideThumb({
           className={cn(
             'group relative shrink-0 cursor-grab overflow-hidden rounded-md border-2 outline-none transition-[opacity,box-shadow,transform,border-color] active:cursor-grabbing',
             active
-              ? 'border-primary opacity-100 shadow-md'
-              : 'border-transparent opacity-70 hover:border-muted-foreground/20 hover:opacity-100',
+              ? 'border-primary opacity-100 shadow-md ring-2 ring-primary/20'
+              : 'border-transparent opacity-75 hover:border-muted-foreground/25 hover:opacity-100',
             isDragging && 'z-20 scale-[1.03] border-primary/50 opacity-80 shadow-lg',
             isDropTarget && !isDragging && 'border-primary/40 opacity-100 shadow-lg',
           )}

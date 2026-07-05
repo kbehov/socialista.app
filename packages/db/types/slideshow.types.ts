@@ -56,6 +56,12 @@ export type SlideshowCropArea = {
 export type SlideshowBackgroundImageAdjustment =
   | { type: 'cover' }
   | {
+      type: 'frame'
+      scale: number
+      offsetX: number
+      offsetY: number
+    }
+  | {
       type: 'zoom'
       scale: number
       positionX: number

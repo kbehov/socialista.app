@@ -54,6 +54,34 @@ type UpdateSlideshowPayload = {
   slides?: ISlideshow['slides']
 }
 
+type DuplicateSlideshowPayload = {
+  name?: string
+}
+
+function createEntityId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`
+}
+
+function cloneSlides(slides: ISlideshow['slides']): ISlideshow['slides'] {
+  return slides.map((slide, index) => {
+    const copy = structuredClone(slide)
+    copy.id = createEntityId('slide')
+    copy.order = index
+    copy.layers = copy.layers.map(layer => ({
+      ...layer,
+      id: createEntityId('layer'),
+    }))
+    return copy
+  })
+}
+
+function duplicateSlideshowName(sourceName: string, requestedName?: string): string {
+  if (typeof requestedName === 'string' && requestedName.trim()) {
+    return requestedName.trim()
+  }
+  return `${sourceName} (copy)`
+}
+
 function serializeSlideshow(slideshow: ISlideshow): SlideshowResponse {
   return {
     id: slideshow._id.toString(),
@@ -187,4 +215,29 @@ export const deleteSlideshow = async (c: Context<AppContext>) => {
   }
 
   return successResponse(c, 200, { id })
+}
+
+export const duplicateSlideshow = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'slideshow ID')
+  const source = await getSlideshowForMember(id, userId)
+
+  let input: DuplicateSlideshowPayload = {}
+  try {
+    input = (await c.req.json()) as DuplicateSlideshowPayload
+  } catch {
+    input = {}
+  }
+
+  const slideshow = await createSlideshowInDb({
+    name: duplicateSlideshowName(source.name, input.name),
+    status: SlideshowStatus.DRAFT,
+    workspace: source.workspace,
+    createdBy: toObjectId(userId),
+    canvas: source.canvas,
+    aspectRatioId: source.aspectRatioId,
+    slides: cloneSlides(source.slides),
+  })
+
+  return successResponse(c, 201, { slideshow: serializeSlideshow(slideshow.toObject()) })
 }

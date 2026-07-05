@@ -57,8 +57,10 @@ const textLayerSchema = new Schema<SlideshowTextLayer>(
 
 const backgroundImageAdjustmentSchema = new Schema<SlideshowBackgroundImageAdjustment>(
   {
-    type: { type: String, enum: ['cover', 'zoom', 'crop'], required: true },
-    scale: { type: Number },
+    type: { type: String, enum: ['cover', 'frame', 'zoom', 'crop'], required: true },
+    scale: { type: Number, default: 1 },
+    offsetX: { type: Number, default: 0 },
+    offsetY: { type: Number, default: 0 },
     positionX: { type: Number },
     positionY: { type: Number },
     crop: {

@@ -1,6 +1,7 @@
 import {
   createSlideshow,
   deleteSlideshow,
+  duplicateSlideshow,
   getSlideshow,
   getWorkspaceSlideshows,
   updateSlideshow,
@@ -15,6 +16,7 @@ slideshowRoutes.use('/*', authMiddleware)
 
 slideshowRoutes.post('/', createSlideshow)
 slideshowRoutes.get('/workspace/:workspaceId', getWorkspaceSlideshows)
+slideshowRoutes.post('/:id/duplicate', duplicateSlideshow)
 slideshowRoutes.get('/:id', getSlideshow)
 slideshowRoutes.patch('/:id', updateSlideshow)
 slideshowRoutes.delete('/:id', deleteSlideshow)

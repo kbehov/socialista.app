@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, type ReactNode } from 'react'
 import type { Slide } from '@socialista/types'
 import {
   CropIcon,
@@ -8,7 +8,6 @@ import {
   SparklesIcon,
   Trash2Icon,
   UploadIcon,
-  ZoomInIcon,
 } from 'lucide-react'
 import {
   ContextMenu,
@@ -18,6 +17,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { useSlideImageEdit } from './slide-image-edit-provider'
@@ -30,6 +30,7 @@ type SlideCanvasShellProps = {
   className?: string
   maxWidth?: number
   forceWidth?: number
+  canvasHint?: string | null
 }
 
 export function SlideCanvasShell({
@@ -38,12 +39,16 @@ export function SlideCanvasShell({
   className,
   maxWidth,
   forceWidth,
+  canvasHint,
 }: SlideCanvasShellProps) {
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
   const {
     isEditingSlide,
     adjustTarget,
     isAdjustingSlide,
+    isBackgroundEditSelected,
+    selectBackgroundEdit,
+    deselectBackgroundEdit,
     openEditDialog,
     openAdjustMode,
     closeAdjustMode,
@@ -51,8 +56,6 @@ export function SlideCanvasShell({
     removeSlideImage,
   } = useSlideImageEdit()
 
-  const [bgActionsVisible, setBgActionsVisible] = useState(false)
-  const shellRef = useRef<HTMLDivElement>(null)
   const isEditing = isEditingSlide(slide.id)
   const isAdjusting = isAdjustingSlide(slide.id)
   const activeAdjust =
@@ -62,106 +65,79 @@ export function SlideCanvasShell({
       ? adjustTarget
       : null
   const hasBackground = Boolean(slide.backgroundImageUrl)
+  const isBackgroundSelected =
+    interactive && isBackgroundEditSelected(slide.id) && hasBackground && !isEditing && !isAdjusting
 
-  useEffect(() => {
-    if (!bgActionsVisible || isAdjusting || !interactive) return
-
-    const dismiss = (event: PointerEvent) => {
-      if (shellRef.current?.contains(event.target as Node)) return
-      setBgActionsVisible(false)
-    }
-
-    window.addEventListener('pointerdown', dismiss)
-    return () => window.removeEventListener('pointerdown', dismiss)
-  }, [bgActionsVisible, interactive, isAdjusting])
+  const clearSelection = useCallback(() => {
+    deselectBackgroundEdit()
+    setActiveLayer(slide.id, null)
+  }, [deselectBackgroundEdit, setActiveLayer, slide.id])
 
   const handleBackgroundSelect = useCallback(() => {
     if (!interactive || !hasBackground || isEditing || isAdjusting) return
     setActiveLayer(slide.id, null)
-    setBgActionsVisible(true)
-  }, [interactive, hasBackground, isEditing, isAdjusting, setActiveLayer, slide.id])
+    selectBackgroundEdit(slide.id)
+  }, [interactive, hasBackground, isEditing, isAdjusting, setActiveLayer, selectBackgroundEdit, slide.id])
 
   const handleEditImage = useCallback(() => {
     if (!slide.backgroundImageUrl) return
-    setBgActionsVisible(false)
+    deselectBackgroundEdit()
     openEditDialog(slide.id, slide.backgroundImageUrl)
-  }, [openEditDialog, slide.backgroundImageUrl, slide.id])
-
-  const handleZoomAdjust = useCallback(() => {
-    if (!slide.backgroundImageUrl) return
-    setBgActionsVisible(false)
-    openAdjustMode(slide.id, slide.backgroundImageUrl, 'zoom')
-  }, [openAdjustMode, slide.backgroundImageUrl, slide.id])
+  }, [deselectBackgroundEdit, openEditDialog, slide.backgroundImageUrl, slide.id])
 
   const handleCropAdjust = useCallback(() => {
     if (!slide.backgroundImageUrl) return
-    setBgActionsVisible(false)
-    openAdjustMode(slide.id, slide.backgroundImageUrl, 'crop')
-  }, [openAdjustMode, slide.backgroundImageUrl, slide.id])
+    deselectBackgroundEdit()
+    openAdjustMode(slide.id, slide.backgroundImageUrl)
+  }, [deselectBackgroundEdit, openAdjustMode, slide.backgroundImageUrl, slide.id])
 
   const handleReplace = useCallback(() => {
-    setBgActionsVisible(false)
+    deselectBackgroundEdit()
     replaceSlideImage(slide.id)
-  }, [replaceSlideImage, slide.id])
+  }, [deselectBackgroundEdit, replaceSlideImage, slide.id])
 
   const handleRemove = useCallback(() => {
-    setBgActionsVisible(false)
+    deselectBackgroundEdit()
     removeSlideImage(slide.id)
-  }, [removeSlideImage, slide.id])
+  }, [deselectBackgroundEdit, removeSlideImage, slide.id])
+
+  useEffect(() => {
+    deselectBackgroundEdit()
+  }, [slide.backgroundImageUrl, deselectBackgroundEdit])
 
   const canvas = (
-    <div ref={shellRef} className={cn('relative w-full', className)}>
+    <div className={cn('relative h-full w-full', className)}>
       <SlideCanvas
         slide={slide}
         interactive={interactive}
         maxWidth={maxWidth}
         forceWidth={forceWidth}
         isBackgroundEditing={isEditing}
+        isBackgroundSelected={isBackgroundSelected}
         hideBackgroundImage={Boolean(activeAdjust)}
         onBackgroundSelect={interactive && hasBackground ? handleBackgroundSelect : undefined}
+        onClearSelection={interactive ? clearSelection : undefined}
+        canvasHint={canvasHint}
         className="h-full"
+        backgroundToolbar={
+          isBackgroundSelected ? (
+            <BackgroundEditToolbar
+              onEditImage={handleEditImage}
+              onCropAdjust={handleCropAdjust}
+              onReplace={handleReplace}
+              onRemove={handleRemove}
+            />
+          ) : null
+        }
       />
 
       {activeAdjust ? (
         <SlideImageAdjustOverlay
           slideId={slide.id}
           imageUrl={activeAdjust.imageUrl}
-          mode={activeAdjust.mode}
           onDone={closeAdjustMode}
           onCancel={closeAdjustMode}
         />
-      ) : null}
-
-      {bgActionsVisible && hasBackground && interactive && !isEditing && !isAdjusting ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-center p-3 sm:p-4">
-          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur-sm">
-            <Button size="sm" className="h-8 rounded-full px-3.5" onClick={handleEditImage}>
-              <SparklesIcon className="size-3.5" />
-              AI edit
-            </Button>
-            <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleZoomAdjust}>
-              <ZoomInIcon className="size-3.5" />
-              Zoom
-            </Button>
-            <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleCropAdjust}>
-              <CropIcon className="size-3.5" />
-              Crop
-            </Button>
-            <Button size="sm" variant="outline" className="h-8 rounded-full px-3" onClick={handleReplace}>
-              <UploadIcon className="size-3.5" />
-              Replace
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              className="size-8 rounded-full text-destructive hover:text-destructive"
-              onClick={handleRemove}
-              aria-label="Remove background"
-            >
-              <Trash2Icon className="size-3.5" />
-            </Button>
-          </div>
-        </div>
       ) : null}
 
       {isEditing ? (
@@ -184,10 +160,6 @@ export function SlideCanvasShell({
         <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleEditImage}>
           <SparklesIcon />
           Edit with AI
-        </ContextMenuItem>
-        <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleZoomAdjust}>
-          <ZoomInIcon />
-          Zoom &amp; pan
         </ContextMenuItem>
         <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleCropAdjust}>
           <CropIcon />
@@ -212,5 +184,65 @@ export function SlideCanvasShell({
         ) : null}
       </ContextMenuContent>
     </ContextMenu>
+  )
+}
+
+function BackgroundEditToolbar({
+  onEditImage,
+  onCropAdjust,
+  onReplace,
+  onRemove,
+}: {
+  onEditImage: () => void
+  onCropAdjust: () => void
+  onReplace: () => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="pointer-events-auto flex flex-col gap-0.5 rounded-xl border bg-background/95 p-0.5 shadow-md backdrop-blur-sm">
+      <ToolbarIconButton label="AI edit" onClick={onEditImage}>
+        <SparklesIcon className="size-3" />
+      </ToolbarIconButton>
+      <ToolbarIconButton label="Crop" variant="outline" onClick={onCropAdjust}>
+        <CropIcon className="size-3" />
+      </ToolbarIconButton>
+      <ToolbarIconButton label="Replace" variant="outline" onClick={onReplace}>
+        <UploadIcon className="size-3" />
+      </ToolbarIconButton>
+      <ToolbarIconButton label="Remove" variant="ghost" destructive onClick={onRemove}>
+        <Trash2Icon className="size-3" />
+      </ToolbarIconButton>
+    </div>
+  )
+}
+
+function ToolbarIconButton({
+  children,
+  label,
+  onClick,
+  variant = 'default',
+  destructive = false,
+}: {
+  children: ReactNode
+  label: string
+  onClick: () => void
+  variant?: 'default' | 'outline' | 'ghost'
+  destructive?: boolean
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="icon-xs"
+          variant={variant}
+          className={cn('size-7 rounded-md', destructive && 'text-destructive hover:text-destructive')}
+          onClick={onClick}
+          aria-label={label}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="left">{label}</TooltipContent>
+    </Tooltip>
   )
 }

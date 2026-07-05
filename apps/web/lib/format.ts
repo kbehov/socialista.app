@@ -55,7 +55,7 @@ export function formatRelativeTime(date: Date | string | number): string {
   let duration = diffSeconds
   for (const { amount, unit } of RELATIVE_TIME_DIVISIONS) {
     if (Math.abs(duration) < amount) {
-      return formatter.format(duration, unit)
+      return formatter.format(Math.round(duration), unit)
     }
     duration /= amount
   }

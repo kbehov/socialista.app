@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import type {
   ApiResponse,
   CreateSlideshowPayload,
+  DuplicateSlideshowPayload,
   GetSlideshowsResponse,
   SlideshowResponse,
   UpdateSlideshowPayload,
@@ -55,5 +56,17 @@ export const updateSlideshow = async (
 export const deleteSlideshow = async (id: string): Promise<ApiResponse<{ id: string }>> => {
   const response = await api.delete<{ id: string }>(SLIDESHOW_ROUTES.DELETE(id))
   revalidateSlideshowPaths(id)
+  return response
+}
+
+export const duplicateSlideshow = async (
+  id: string,
+  payload?: DuplicateSlideshowPayload,
+): Promise<ApiResponse<{ slideshow: SlideshowResponse }>> => {
+  const response = await api.post<{ slideshow: SlideshowResponse }>(
+    SLIDESHOW_ROUTES.DUPLICATE(id),
+    payload ?? {},
+  )
+  revalidateSlideshowPaths(response.data?.slideshow.id)
   return response
 }

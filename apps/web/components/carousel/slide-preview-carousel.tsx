@@ -16,9 +16,10 @@ import { useSlideImageEdit } from './slide-image-edit-provider'
 
 type SlidePreviewCarouselProps = {
   className?: string
+  canvasHint?: string | null
 }
 
-export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
+export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCarouselProps) {
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const canvas = useEditorStore(s => s.canvas)
@@ -29,6 +30,7 @@ export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const activeIndex = slides.findIndex(slide => slide.id === activeSlideId)
+  const canvasKey = `${canvas.width}x${canvas.height}`
 
   useEffect(() => {
     if (!api) return
@@ -55,15 +57,15 @@ export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
   useEffect(() => {
     if (!api || activeIndex < 0) return
     if (api.selectedScrollSnap() !== activeIndex) {
-      api.scrollTo(activeIndex)
+      api.scrollTo(activeIndex, true)
     }
     setCurrentIndex(activeIndex)
-  }, [api, activeIndex, activeSlideId])
+  }, [api, activeIndex])
 
   useEffect(() => {
     if (!api) return
     api.reInit()
-  }, [api, slides.map(slide => slide.id).join(','), canvas.width, canvas.height])
+  }, [api, slides.map(slide => slide.id).join(','), canvasKey])
 
   if (slides.length === 0) {
     return (
@@ -77,16 +79,15 @@ export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
   }
 
   return (
-    <div className="w-full">
-      <Carousel
-        setApi={setApi}
-        draggable={!adjustTarget}
-        opts={{ align: 'center', containScroll: 'trimSnaps', dragFree: false }}
-        className={cn('relative w-full cursor-grab active:cursor-grabbing', className)}
-      >
+    <Carousel
+      setApi={setApi}
+      draggable={!adjustTarget}
+      opts={{ align: 'center', containScroll: 'trimSnaps', dragFree: false }}
+      className={cn('relative h-full w-full cursor-grab active:cursor-grabbing', className)}
+    >
       {slides.length > 1 ? (
         <>
-          <div className="pointer-events-none absolute inset-x-4 top-3 z-20 flex gap-1 sm:inset-x-5">
+          <div className="pointer-events-none absolute inset-x-4 top-3 z-20 flex gap-1">
             {slides.map((slide, index) => (
               <div
                 key={slide.id}
@@ -98,7 +99,7 @@ export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
             ))}
           </div>
 
-          <div className="pointer-events-none absolute top-3 right-3 z-20 sm:top-4 sm:right-4">
+          <div className="pointer-events-none absolute top-3 right-3 z-20">
             <span className="rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground shadow-sm backdrop-blur-sm">
               {currentIndex + 1} / {slides.length}
             </span>
@@ -106,16 +107,15 @@ export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
         </>
       ) : null}
 
-      <CarouselContent className="ml-0">
+      <CarouselContent className="ml-0 h-full">
         {slides.map(slide => (
-          <CarouselItem key={slide.id} className="pl-0">
-            <div className="flex w-full justify-center px-1 py-1">
-              <SlideCanvasShell
-                slide={slide}
-                interactive={slide.id === activeSlideId}
-                className="w-full max-w-full"
-              />
-            </div>
+          <CarouselItem key={slide.id} className="h-full pl-0">
+            <SlideCanvasShell
+              slide={slide}
+              interactive={slide.id === activeSlideId}
+              className="h-full w-full"
+              canvasHint={slide.id === activeSlideId ? canvasHint : undefined}
+            />
           </CarouselItem>
         ))}
       </CarouselContent>
@@ -123,16 +123,17 @@ export function SlidePreviewCarousel({ className }: SlidePreviewCarouselProps) {
       {slides.length > 1 ? (
         <>
           <CarouselPrevious
+            data-carousel-nav
             variant="ghost"
             className="top-1/2 left-2 z-20 size-9 -translate-y-1/2 rounded-full border-0 bg-background/85 shadow-md backdrop-blur-sm hover:bg-background disabled:opacity-30"
           />
           <CarouselNext
+            data-carousel-nav
             variant="ghost"
             className="top-1/2 right-2 left-auto z-20 size-9 -translate-y-1/2 rounded-full border-0 bg-background/85 shadow-md backdrop-blur-sm hover:bg-background disabled:opacity-30"
           />
         </>
       ) : null}
-      </Carousel>
-    </div>
+    </Carousel>
   )
 }

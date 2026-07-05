@@ -57,6 +57,7 @@ export const SLIDESHOW_ROUTES = {
   GET_BY_ID: (id: string) => `/slideshows/${id}`,
   UPDATE: (id: string) => `/slideshows/${id}`,
   DELETE: (id: string) => `/slideshows/${id}`,
+  DUPLICATE: (id: string) => `/slideshows/${id}/duplicate`,
   GET_WORKSPACE_SLIDESHOWS: (workspaceId: string) => `/slideshows/workspace/${workspaceId}`,
 } as const
 export function inspirationRoute(template: string, id: string): string {

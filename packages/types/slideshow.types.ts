@@ -40,6 +40,10 @@ export type UpdateSlideshowPayload = {
   slides?: Slide[]
 }
 
+export type DuplicateSlideshowPayload = {
+  name?: string
+}
+
 export type GetSlideshowsResponse = {
   slideshows: SlideshowSummaryResponse[]
   meta: MetaResponse

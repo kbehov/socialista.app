@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { useEditorStore } from '@/lib/carousel/store'
 
 export function useEditorShortcuts(): void {
   const removeLayer = useEditorStore(s => s.removeLayer)
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
-  const setActiveLayer = useEditorStore(s => s.setActiveLayer)
+  const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
+  const { deselectBackgroundEdit } = useSlideImageEdit()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -19,7 +21,8 @@ export function useEditorShortcuts(): void {
         target?.tagName === 'SELECT'
 
       if (e.key === 'Escape') {
-        setActiveLayer(null, null)
+        deselectBackgroundEdit()
+        clearLayerSelection()
         target?.blur?.()
         return
       }
@@ -50,5 +53,5 @@ export function useEditorShortcuts(): void {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [removeLayer, undo, redo, setActiveLayer])
+  }, [deselectBackgroundEdit, removeLayer, undo, redo, clearLayerSelection])
 }

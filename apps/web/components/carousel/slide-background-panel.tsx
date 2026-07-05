@@ -11,17 +11,18 @@ import {
   Trash2Icon,
   UploadIcon,
   XIcon,
-  ZoomInIcon,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
 import { ColorPicker } from './primitives/color-picker'
 
 export function SlideBackgroundPanel() {
   const slide = useEditorStore(s => s.slides.find(sl => sl.id === s.activeSlideId) ?? null)
+  const canvas = useEditorStore(s => s.canvas)
   const setSlideBackground = useEditorStore(s => s.setSlideBackground)
   const setSlideBackgroundColor = useEditorStore(s => s.setSlideBackgroundColor)
   const clearSlideBackgroundImage = useEditorStore(s => s.clearSlideBackgroundImage)
@@ -94,13 +95,13 @@ export function SlideBackgroundPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2.5">
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Set a fill color or upload a photo. Images cover the full slide.
+        Background color or photo. Click the image on canvas to pan and zoom.
       </p>
 
       <div className="space-y-1.5">
-        <Label className="text-[11px] font-medium text-muted-foreground">Color</Label>
+        <Label className="text-[11px] font-medium text-muted-foreground">Fill color</Label>
         <ColorPicker
           value={slide.backgroundColor}
           onChange={color => color && setSlideBackgroundColor(slide.id, color)}
@@ -114,7 +115,10 @@ export function SlideBackgroundPanel() {
 
         {slide.backgroundImageUrl ? (
           <div className="space-y-2">
-            <div className="relative aspect-video overflow-hidden rounded-md border bg-muted">
+            <div
+              className="relative mx-auto w-full max-w-[200px] overflow-hidden rounded-md border bg-muted shadow-xs"
+              style={{ aspectRatio: `${canvas.width} / ${canvas.height}` }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={slide.backgroundImageUrl}
@@ -142,67 +146,43 @@ export function SlideBackgroundPanel() {
                   <SparklesIcon className="size-3.5" />
                   Edit with AI
                 </Button>
-                <div className="flex gap-1.5">
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="flex-1"
+                <div className="grid grid-cols-5 gap-1">
+                  <ImageActionButton
+                    label="Crop & position"
                     disabled={isEditingSlide(slide.id)}
-                    onClick={() => openAdjustMode(slide.id, slide.backgroundImageUrl, 'zoom')}
-                  >
-                    <ZoomInIcon className="size-3" />
-                    Zoom
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="flex-1"
-                    disabled={isEditingSlide(slide.id)}
-                    onClick={() => openAdjustMode(slide.id, slide.backgroundImageUrl, 'crop')}
+                    onClick={() => openAdjustMode(slide.id, slide.backgroundImageUrl)}
                   >
                     <CropIcon className="size-3" />
-                    Crop
-                  </Button>
-                </div>
-                <div className="flex gap-1.5">
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="flex-1"
+                  </ImageActionButton>
+                  <ImageActionButton
+                    label="Replace image"
                     disabled={isEditingSlide(slide.id)}
                     onClick={() => replaceSlideImage(slide.id)}
                   >
                     <ImageIcon className="size-3" />
-                    Replace
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
+                  </ImageActionButton>
+                  <ImageActionButton
+                    label="Select from files"
                     disabled={isEditingSlide(slide.id)}
                     onClick={openFilesDialog}
-                    aria-label="Select from files"
                   >
                     <FolderOpenIcon className="size-3" />
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    onClick={() => setUrlVisible(true)}
+                  </ImageActionButton>
+                  <ImageActionButton
+                    label="Paste image URL"
                     disabled={isEditingSlide(slide.id)}
-                    aria-label="Replace with URL"
+                    onClick={() => setUrlVisible(true)}
                   >
                     <LinkIcon className="size-3" />
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => clearSlideBackgroundImage(slide.id)}
+                  </ImageActionButton>
+                  <ImageActionButton
+                    label="Remove image"
                     disabled={isEditingSlide(slide.id)}
-                    aria-label="Remove image"
+                    destructive
+                    onClick={() => clearSlideBackgroundImage(slide.id)}
                   >
                     <Trash2Icon className="size-3" />
-                  </Button>
+                  </ImageActionButton>
                 </div>
               </div>
             )}
@@ -264,7 +244,7 @@ function UrlInputForm({ inputRef, value, onChange, onSubmit, onCancel }: UrlInpu
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder="https://…"
-        className="min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+        className="min-w-0 flex-1 rounded-md border border-input bg-background/60 px-2 py-1 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
       />
       <Button size="icon-xs" type="submit" disabled={!value.trim()} aria-label="Apply URL">
         <CheckIcon />
@@ -273,5 +253,33 @@ function UrlInputForm({ inputRef, value, onChange, onSubmit, onCancel }: UrlInpu
         <XIcon />
       </Button>
     </form>
+  )
+}
+
+type ImageActionButtonProps = {
+  children: React.ReactNode
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  destructive?: boolean
+}
+
+function ImageActionButton({ children, label, onClick, disabled, destructive }: ImageActionButtonProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="icon-xs"
+          variant="outline"
+          className={destructive ? 'text-destructive hover:bg-destructive/10 hover:text-destructive' : undefined}
+          onClick={onClick}
+          disabled={disabled}
+          aria-label={label}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   )
 }

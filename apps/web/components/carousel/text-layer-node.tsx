@@ -5,6 +5,7 @@ import type { RefObject } from 'react'
 import { ArrowDownIcon, ArrowUpIcon, AlignVerticalJustifyCenterIcon, AlignVerticalJustifyEndIcon, AlignVerticalJustifyStartIcon, CopyIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import type { SlideId, TextLayer } from '@socialista/types'
 import { useEditorStore } from '@/lib/carousel/store'
+import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
 import { useDragResize, type Corner } from '@/hooks/carousel/use-drag-resize'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { clamp } from '@/lib/carousel/defaults'
@@ -41,11 +42,21 @@ type TextLayerNodeProps = {
   selected: boolean
   canvasRef: RefObject<HTMLDivElement | null>
   interactive: boolean
+  selectable?: boolean
 }
 
-export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, interactive }: TextLayerNodeProps) {
+export function TextLayerNode({
+  layer,
+  slideId,
+  scale,
+  selected,
+  canvasRef,
+  interactive,
+  selectable = interactive,
+}: TextLayerNodeProps) {
   const updateLayer = useEditorStore(s => s.updateLayer)
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
+  const deselectBackgroundEdit = useSlideImageEditOptional()?.deselectBackgroundEdit
   const duplicateLayer = useEditorStore(s => s.duplicateLayer)
   const removeLayer = useEditorStore(s => s.removeLayer)
   const bringForward = useEditorStore(s => s.bringForward)
@@ -67,7 +78,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
     if (!isEditing || !editRef.current) return
 
     editRef.current.innerText = layer.content || ''
-    editRef.current.focus()
+    editRef.current.focus({ preventScroll: true })
 
     const range = document.createRange()
     range.selectNodeContents(editRef.current)
@@ -123,9 +134,30 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
     updateLayer(slideId, layer.id, getAlignedPosition({ width, height }, alignment))
   }
 
+  const canDrag = interactive && !isEditing
+  const canSelect = selectable && !isEditing
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!canSelect && !canDrag) return
+    if (canSelect) {
+      e.stopPropagation()
+      deselectBackgroundEdit?.()
+      setActiveLayer(slideId, layer.id)
+    }
+    if (canDrag) {
+      beginDrag(e)
+    }
+  }
+
   const layerEl = (
     <div
-      className={cn('absolute select-none', interactive && 'cursor-move', isEditing && 'cursor-text')}
+      className={cn(
+        'absolute select-none',
+        !selectable && !interactive && 'pointer-events-none',
+        canDrag && 'cursor-move',
+        canSelect && !canDrag && 'cursor-pointer',
+        isEditing && 'cursor-text',
+      )}
       style={{
         left: `${effective.x}%`,
         top: `${effective.y}%`,
@@ -135,16 +167,8 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
         transformOrigin: 'center center',
         zIndex: effective.zIndex,
       }}
-      onPointerDown={interactive && !isEditing ? beginDrag : undefined}
-      onClick={
-        interactive && !isEditing
-          ? e => {
-              e.stopPropagation()
-              setActiveLayer(slideId, layer.id)
-            }
-          : undefined
-      }
-      onDoubleClick={interactive ? () => setIsEditing(true) : undefined}
+      onPointerDown={canSelect || canDrag ? handlePointerDown : undefined}
+      onDoubleClick={interactive && canSelect ? () => setIsEditing(true) : undefined}
     >
       <div
         ref={editRef}
@@ -191,7 +215,7 @@ export function TextLayerNode({ layer, slideId, scale, selected, canvasRef, inte
     </div>
   )
 
-  if (!interactive || isEditing) return layerEl
+  if ((!selectable && !interactive) || isEditing) return layerEl
 
   return (
     <ContextMenu>

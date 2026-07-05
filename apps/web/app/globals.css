@@ -332,6 +332,49 @@ body::before {
     background-position: center center;
   }
 
+  /* Studio workspace — unified editor surface */
+  .studio-workspace {
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid color-mix(in oklch, var(--foreground) 8%, transparent);
+    background-color: color-mix(in oklch, var(--muted) 25%, transparent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .studio-source-panel {
+    background-color: color-mix(in oklch, var(--card) 80%, var(--muted));
+  }
+
+  /* Filmstrip horizontal fade — hints scrollability */
+  .studio-filmstrip-mask {
+    position: relative;
+  }
+
+  .studio-filmstrip-mask::before,
+  .studio-filmstrip-mask::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.5rem;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .studio-filmstrip-mask::before {
+    left: 0;
+    background: linear-gradient(to right, color-mix(in oklch, var(--muted) 80%, var(--card)), transparent);
+  }
+
+  .studio-filmstrip-mask::after {
+    right: 2.75rem;
+    background: linear-gradient(to left, color-mix(in oklch, var(--muted) 80%, var(--card)), transparent);
+  }
+
+  .studio-canvas-workspace [data-slot='carousel'],
+  .studio-canvas-workspace [data-slot='carousel-content'] {
+    height: 100%;
+  }
+
   /* Refined thin scrollbar — Linear-style, hairline */
   .sidebar-scrollbar {
     scrollbar-gutter: stable;

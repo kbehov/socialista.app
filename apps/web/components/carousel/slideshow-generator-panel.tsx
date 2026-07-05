@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Loader2Icon, SparklesIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { generateSlideshowSlides } from '@/actions/slideshow.actions'
+import { isBlankSlide } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -38,8 +39,23 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         toast.error(result.error)
         return
       }
+      const slidesBefore = useEditorStore.getState().slides
+      const existingCount =
+        slidesBefore.length === 1 && slidesBefore[0] && isBlankSlide(slidesBefore[0])
+          ? 0
+          : slidesBefore.length
+
       applyGeneratedContent(result.texts)
-      toast.success(`Generated ${result.texts.length} slides · ${result.contentType}`)
+
+      const updated = Math.min(existingCount, result.texts.length)
+      const created = Math.max(0, result.texts.length - existingCount)
+      const detail =
+        created > 0 && updated > 0
+          ? `Updated ${updated} slide${updated === 1 ? '' : 's'}, added ${created} new`
+          : created > 0
+            ? `Added ${created} slide${created === 1 ? '' : 's'}`
+            : `Updated ${updated} slide${updated === 1 ? '' : 's'}`
+      toast.success(`${detail} · ${result.contentType}`)
     })
   }
 
@@ -65,7 +81,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         </div>
       ) : null}
 
-      <div data-studio-scroll="source" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+      <div data-studio-scroll="source" className="sidebar-scrollbar flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto p-3.5">
         <div className="space-y-1.5">
           <Label htmlFor="slideshow-hook" className="text-xs font-medium">
             Hook or topic
@@ -76,16 +92,16 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
             value={hook}
             onChange={e => setHook(e.target.value)}
             rows={4}
-            className="min-h-24 resize-none text-sm"
+            className="min-h-[5.5rem] resize-none bg-background/60 text-sm"
             disabled={isPending}
           />
-          <p className="text-[11px] text-muted-foreground">
-            One sentence is enough — AI writes slide-by-slide copy you can edit on the canvas.
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            One sentence is enough — AI adds copy without replacing your images.
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium">Slides</Label>
+          <Label className="text-xs font-medium">Slide count</Label>
           <Select
             value={String(slideCount)}
             onValueChange={v => setSlideCount(Number(v))}
@@ -104,18 +120,18 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           </Select>
         </div>
 
-        <Button className="w-full" onClick={handleGenerate} disabled={isPending || !hook.trim()}>
+        <Button className="w-full" size="default" onClick={handleGenerate} disabled={isPending || !hook.trim()}>
           {isPending ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}
           {isPending ? 'Generating…' : 'Generate slides'}
         </Button>
 
-        <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-2.5">
-          <p className="text-[11px] font-medium">After generating</p>
-          <ul className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
-            <li>· Pick a slide in the filmstrip below</li>
-            <li>· Style text in the Text tab — backgrounds are optional</li>
-            <li>· Add a photo in the Slide tab if you want one</li>
-          </ul>
+        <div className="rounded-lg border border-dashed border-border/70 bg-muted/15 px-3 py-2.5">
+          <p className="text-[11px] font-medium text-foreground/80">Next steps</p>
+          <ol className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
+            <li>1. Pick a slide in the filmstrip</li>
+            <li>2. Style text in the Text tab</li>
+            <li>3. Add a background in the Slide tab</li>
+          </ol>
         </div>
       </div>
     </aside>

@@ -1,6 +1,23 @@
-import type { BackgroundImageAdjustment, Slide, TextLayer } from '@socialista/types'
+import type { BackgroundImageAdjustment, BackgroundImageTransform, Slide, TextLayer } from '@socialista/types'
 
-export const DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT: BackgroundImageAdjustment = { type: 'cover' }
+export const DEFAULT_BACKGROUND_TRANSFORM: BackgroundImageTransform = {
+  scale: 1,
+  offsetX: 0,
+  offsetY: 0,
+}
+
+export const DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT: BackgroundImageAdjustment = {
+  type: 'frame',
+  ...DEFAULT_BACKGROUND_TRANSFORM,
+}
+
+export const MIN_BACKGROUND_SCALE = 1
+export const MAX_BACKGROUND_SCALE = 4
+
+export const DEFAULT_VIEWPORT_ZOOM = 1
+export const MIN_VIEWPORT_ZOOM = 0.25
+export const MAX_VIEWPORT_ZOOM = 2
+export const VIEWPORT_ZOOM_STEP = 0.1
 
 export const DEFAULT_CANVAS = { width: 1080, height: 1350 } as const
 
@@ -84,21 +101,80 @@ export function createSlide(order: number, backgroundImageUrl = '', backgroundCo
   }
 }
 
-export function createSlidesFromContent(texts: string[]): Slide[] {
-  return texts.map((text, order) => {
-    const slide = createSlide(order)
-    slide.layers = [
-      createTextLayer({
-        zIndex: 0,
-        content: text,
-        x: 8,
-        y: 38,
-        width: 84,
-        height: 18,
-      }),
-    ]
-    return slide
+export function isBlankSlide(slide: Slide): boolean {
+  return !slide.backgroundImageUrl && slide.layers.length === 0
+}
+
+export function createGeneratedTextLayer(text: string, zIndex: number): TextLayer {
+  return createTextLayer({
+    zIndex,
+    content: text,
+    x: 8,
+    y: 38,
+    width: 84,
+    height: 18,
   })
+}
+
+/** Apply AI-generated copy to a slide without changing its background or id. */
+export function applyGeneratedTextToSlide(slide: Slide, text: string): Slide {
+  const primaryTextLayer = sortLayers(slide.layers).find(layer => layer.type === 'text')
+  if (primaryTextLayer) {
+    return {
+      ...slide,
+      layers: slide.layers.map(layer =>
+        layer.id === primaryTextLayer.id ? { ...layer, content: text } : layer,
+      ),
+    }
+  }
+
+  return {
+    ...slide,
+    layers: reindexLayers([
+      ...slide.layers,
+      createGeneratedTextLayer(text, slide.layers.length),
+    ]),
+  }
+}
+
+export function createSlideWithGeneratedText(text: string, order: number): Slide {
+  const slide = createSlide(order)
+  slide.layers = [createGeneratedTextLayer(text, 0)]
+  return slide
+}
+
+export function createSlidesFromContent(texts: string[]): Slide[] {
+  return texts.map((text, order) => createSlideWithGeneratedText(text, order))
+}
+
+/** Merge AI texts into existing slides; create only the slides that are missing. */
+export function mergeGeneratedTextsIntoSlides(existingSlides: Slide[], texts: string[]): Slide[] {
+  const workingSlides =
+    existingSlides.length === 1 && existingSlides[0] && isBlankSlide(existingSlides[0])
+      ? []
+      : existingSlides
+
+  const merged: Slide[] = []
+
+  for (let i = 0; i < texts.length; i++) {
+    const text = texts[i]!
+    if (i < workingSlides.length) {
+      merged.push(applyGeneratedTextToSlide(workingSlides[i]!, text))
+    } else {
+      merged.push(createSlideWithGeneratedText(text, i))
+    }
+  }
+
+  if (workingSlides.length > texts.length) {
+    merged.push(
+      ...workingSlides.slice(texts.length).map((slide, index) => ({
+        ...slide,
+        order: texts.length + index,
+      })),
+    )
+  }
+
+  return merged.map((slide, order) => ({ ...slide, order }))
 }
 
 export function sortLayers(layers: TextLayer[]): TextLayer[] {
@@ -112,4 +188,46 @@ export function reindexLayers(layers: TextLayer[]): TextLayer[] {
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
+}
+
+export function normalizeSlideBackgroundAdjustment(
+  adjustment: BackgroundImageAdjustment | undefined | null,
+): BackgroundImageAdjustment {
+  if (!adjustment) return DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT
+
+  if (adjustment.type === 'frame') {
+    return {
+      type: 'frame',
+      scale:
+        typeof adjustment.scale === 'number'
+          ? adjustment.scale
+          : DEFAULT_BACKGROUND_TRANSFORM.scale,
+      offsetX:
+        typeof adjustment.offsetX === 'number'
+          ? adjustment.offsetX
+          : DEFAULT_BACKGROUND_TRANSFORM.offsetX,
+      offsetY:
+        typeof adjustment.offsetY === 'number'
+          ? adjustment.offsetY
+          : DEFAULT_BACKGROUND_TRANSFORM.offsetY,
+    }
+  }
+
+  if (adjustment.type === 'zoom') {
+    return {
+      type: 'zoom',
+      scale: typeof adjustment.scale === 'number' ? adjustment.scale : 1,
+      positionX: typeof adjustment.positionX === 'number' ? adjustment.positionX : 0,
+      positionY: typeof adjustment.positionY === 'number' ? adjustment.positionY : 0,
+    }
+  }
+
+  return adjustment
+}
+
+export function normalizeSlide(slide: Slide): Slide {
+  return {
+    ...slide,
+    backgroundImageAdjustment: normalizeSlideBackgroundAdjustment(slide.backgroundImageAdjustment),
+  }
 }
