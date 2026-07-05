@@ -97,6 +97,9 @@ interface EditorState {
   removeClipFilterLive: (clipId: ClipId, filterType: VideoFilter['type']) => void
   trimClipLive: (clipId: ClipId, trimIn: number, trimOut: number) => void
   duplicateClip: (clipId: ClipId) => void
+  replaceClipAsset: (clipId: ClipId, newAssetId: string) => void
+  /** Register a generated asset and swap it onto an existing clip in one undo step. */
+  applyClipAiResult: (clipId: ClipId, asset: MediaAsset) => void
   selectClip: (clipId: ClipId | null) => void
 
   // Text overlays
@@ -556,6 +559,82 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         return {
           project: recomputeDuration(withClipOnTrack(state.project, copy, track.id)),
           selectedClipId: copy.id,
+        }
+      })
+    },
+
+    replaceClipAsset: (clipId, newAssetId) => {
+      record(state => {
+        const clip = state.project.clips[clipId]
+        const asset = state.assets[newAssetId]
+        if (!clip || clip.type === 'audio' || !asset || !isMediaAssetAvailable(asset) || asset.type === 'audio') {
+          return {}
+        }
+
+        const clipType = asset.type === 'image' ? 'image' : 'video'
+        const duration =
+          asset.type === 'image'
+            ? clip.type === 'image'
+              ? clip.duration
+              : 5
+            : asset.duration > 0
+              ? asset.duration
+              : clip.duration
+
+        const updated: Clip = {
+          ...clip,
+          type: clipType,
+          assetId: newAssetId,
+          trimIn: 0,
+          trimOut: 0,
+          duration,
+        }
+
+        return {
+          project: recomputeDuration({
+            ...state.project,
+            clips: { ...state.project.clips, [clipId]: updated },
+          }),
+        }
+      })
+    },
+
+    applyClipAiResult: (clipId, asset) => {
+      record(state => {
+        const clip = state.project.clips[clipId]
+        if (!clip || clip.type === 'audio' || asset.type === 'audio' || !isMediaAssetAvailable(asset)) {
+          return {}
+        }
+
+        const clipType = asset.type === 'image' ? 'image' : 'video'
+        const duration =
+          asset.type === 'image'
+            ? clip.type === 'image'
+              ? clip.duration
+              : 5
+            : asset.duration > 0
+              ? asset.duration
+              : clip.duration
+
+        const updated: Clip = {
+          ...clip,
+          type: clipType,
+          assetId: asset.id,
+          trimIn: 0,
+          trimOut: 0,
+          duration,
+        }
+
+        const serialized = toSerializedAsset(asset)
+        const hasAsset = state.project.assets.some(a => a.id === asset.id)
+
+        return {
+          assets: { ...state.assets, [asset.id]: asset },
+          project: recomputeDuration({
+            ...state.project,
+            assets: hasAsset ? state.project.assets : [...state.project.assets, serialized],
+            clips: { ...state.project.clips, [clipId]: updated },
+          }),
         }
       })
     },

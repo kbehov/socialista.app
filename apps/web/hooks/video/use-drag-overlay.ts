@@ -15,6 +15,7 @@ type DragState = {
 }
 
 const MIN_DURATION = 0.2
+const TAP_THRESHOLD_PX = 5
 
 export type OverlayTimingDraft = {
   overlayId: string
@@ -28,6 +29,7 @@ export function useDragOverlay(pxPerSec: number) {
   const [isDragging, setIsDragging] = useState(false)
   const stateRef = useRef<DragState | null>(null)
   const draftRef = useRef<OverlayTimingDraft | null>(null)
+  const onTapRef = useRef<(() => void) | null>(null)
   const setOverlayTiming = useVideoEditorStore(s => s.setOverlayTiming)
 
   const applyDraft = useCallback((next: OverlayTimingDraft) => {
@@ -76,11 +78,24 @@ export function useDragOverlay(pxPerSec: number) {
   const stop = useCallback(() => {
     const it = stateRef.current
     const finalDraft = draftRef.current
+    const onTap = onTapRef.current
     if (it && finalDraft) {
-      setOverlayTiming(finalDraft.overlayId, finalDraft.startTime, finalDraft.endTime)
+      const moved =
+        it.mode === 'move'
+          ? Math.abs(finalDraft.startTime - it.startStartTime) * it.pxPerSec > TAP_THRESHOLD_PX
+          : it.mode === 'trim-start'
+            ? Math.abs(finalDraft.startTime - it.startStartTime) * it.pxPerSec > TAP_THRESHOLD_PX
+            : Math.abs(finalDraft.endTime - it.startEndTime) * it.pxPerSec > TAP_THRESHOLD_PX
+
+      if (!moved && it.mode === 'move' && onTap) {
+        onTap()
+      } else if (moved) {
+        setOverlayTiming(finalDraft.overlayId, finalDraft.startTime, finalDraft.endTime)
+      }
     }
     stateRef.current = null
     draftRef.current = null
+    onTapRef.current = null
     setDraft(null)
     setIsDragging(false)
   }, [setOverlayTiming])
@@ -120,7 +135,14 @@ export function useDragOverlay(pxPerSec: number) {
     setIsDragging(true)
   }
 
-  const beginMove = (overlayId: string, startTime: number, endTime: number, e: React.PointerEvent) => {
+  const beginMove = (
+    overlayId: string,
+    startTime: number,
+    endTime: number,
+    e: React.PointerEvent,
+    onTap?: () => void,
+  ) => {
+    onTapRef.current = onTap ?? null
     beginInteraction(overlayId, 'move', startTime, endTime, e)
   }
 
@@ -131,6 +153,7 @@ export function useDragOverlay(pxPerSec: number) {
     endTime: number,
     e: React.PointerEvent,
   ) => {
+    onTapRef.current = null
     beginInteraction(overlayId, edge === 'start' ? 'trim-start' : 'trim-end', startTime, endTime, e)
   }
 

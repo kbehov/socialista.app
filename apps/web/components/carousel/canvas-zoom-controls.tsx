@@ -49,7 +49,7 @@ export function CanvasZoomControls({ className }: CanvasZoomControlsProps) {
 
       <button
         type="button"
-        className="min-w-[3rem] px-1 text-center text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
+        className="min-w-12 px-1 text-center text-[11px] font-medium tabular-nums text-muted-foreground hover:text-foreground"
         onClick={resetZoom}
         aria-label={`Canvas zoom ${percent}%, click to reset`}
       >

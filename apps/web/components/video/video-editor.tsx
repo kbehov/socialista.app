@@ -7,7 +7,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
 import { formatTimecode } from '@/lib/video/timecode'
-import { DownloadIcon, Redo2Icon, ScissorsIcon, TypeIcon, Undo2Icon } from 'lucide-react'
+import { DownloadIcon, Loader2Icon, Redo2Icon, ScissorsIcon, SparklesIcon, TypeIcon, Undo2Icon } from 'lucide-react'
+import { ClipAiProvider, useClipAi } from '@/components/video/ai/clip-ai-provider'
 import { PreviewCanvas } from './preview/preview-canvas'
 import { Timeline } from './timeline/timeline'
 import { PropertiesPanel } from './inspector/properties-panel'
@@ -15,6 +16,14 @@ import { ExportModal } from './export/export-modal'
 import { cn } from '@/lib/utils'
 
 export function VideoEditor() {
+  return (
+    <ClipAiProvider>
+      <VideoEditorContent />
+    </ClipAiProvider>
+  )
+}
+
+function VideoEditorContent() {
   useVideoShortcuts()
   const undo = useVideoEditorStore(s => s.undo)
   const redo = useVideoEditorStore(s => s.redo)
@@ -28,12 +37,17 @@ export function VideoEditor() {
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
+  const { openClipAi, canUseClipAi, getClipAiMode, isProcessingClip } = useClipAi()
   const [exportOpen, setExportOpen] = useState(false)
 
   const canUndo = past.length > 0
   const canRedo = future.length > 0
   const canSplit = Boolean(selectedClipId || selectedOverlayId)
   const canExport = duration > 0
+  const clipAiMode = selectedClipId ? getClipAiMode(selectedClipId) : null
+  const canUseAi = selectedClipId ? canUseClipAi(selectedClipId) : false
+  const isAiProcessing = selectedClipId ? isProcessingClip(selectedClipId) : false
+  const aiLabel = clipAiMode === 'animate-image' ? 'Animate with AI' : 'Edit with AI'
 
   const handleSplit = () => {
     if (selectedClipId) {
@@ -98,6 +112,31 @@ export function VideoEditor() {
           </TooltipTrigger>
           <TooltipContent>
             Split at playhead <Kbd className="ml-1">S</Kbd>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 bg-background/60"
+              onClick={() => selectedClipId && openClipAi(selectedClipId)}
+              disabled={!canUseAi || isAiProcessing}
+              aria-label={aiLabel}
+            >
+              {isAiProcessing ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}
+              <span className="hidden sm:inline">{isAiProcessing ? 'Generating…' : aiLabel}</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {!selectedClipId
+              ? 'Select a video or image clip on the timeline'
+              : !canUseAi
+                ? 'Re-link clip media to use AI'
+                : clipAiMode === 'animate-image'
+                  ? 'Generate a short video from the selected image'
+                  : 'Edit the selected video clip with a text prompt'}
           </TooltipContent>
         </Tooltip>
 

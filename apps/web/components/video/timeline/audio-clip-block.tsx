@@ -3,6 +3,7 @@
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useDragClip } from '@/hooks/video/use-drag-clip'
 import { useTrimHandles } from '@/hooks/video/use-trim-handles'
+import { useTimelineFocus } from '@/components/video/timeline/timeline-focus-context'
 import type { AudioClip, Track } from '@socialista/types'
 
 type Props = {
@@ -20,6 +21,7 @@ export function AudioClipBlock({ clip, left, width, height, pxPerSec, track }: P
   const assets = useVideoEditorStore(s => s.assets)
   const { beginDrag } = useDragClip(pxPerSec)
   const { beginTrim } = useTrimHandles(pxPerSec)
+  const focusAtTime = useTimelineFocus()
 
   const asset = assets[clip.assetId]
   const waveform = asset && 'waveform' in asset ? asset.waveform : undefined
@@ -28,10 +30,11 @@ export function AudioClipBlock({ clip, left, width, height, pxPerSec, track }: P
   return (
     <div
       data-clip-block
+      data-clip-id={clip.id}
       onPointerDown={e => {
         if (track.locked) return
         selectClip(clip.id)
-        beginDrag(clip.id, clip.startTime, clip.trackId, e)
+        beginDrag(clip.id, clip.startTime, clip.trackId, e, () => focusAtTime?.(clip.startTime))
       }}
       className={`absolute top-1 flex items-center overflow-hidden rounded border ${selected ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-emerald-600'} bg-emerald-500/20`}
       style={{ left, width, height: height - 8 }}

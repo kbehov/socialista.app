@@ -4,15 +4,18 @@ import { useEffect, useRef } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import type { Clip, ClipId, Project, VideoClip } from '@socialista/types'
+import { pickActiveVideoClip } from '@/lib/video/active-clip'
 
 type VideoSlot = {
   video: HTMLVideoElement
   clipId: ClipId
+  assetId: string
 }
 
 type ImageSlot = {
   image: HTMLImageElement
   clipId: ClipId
+  assetId: string
 }
 
 type AudioSlot = {
@@ -73,32 +76,54 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
   /** Acquire or reuse a visual element for a clip. */
   const getVideoSlot = (clip: Clip): VideoSlot | null => {
-    if (clip.type === 'audio') return null
+    if (clip.type === 'audio' || clip.type === 'image') return null
     const asset = getAsset(clip)
     if (!asset || !isMediaAssetAvailable(asset)) return null
-    if (clip.type === 'image') return null
+
+    imageSlotsRef.current.delete(clip.id)
+
     const existing = videoSlotsRef.current.get(clip.id)
-    if (existing) return existing
+    if (existing && existing.assetId === clip.assetId) return existing
+    if (existing) {
+      existing.video.removeAttribute('src')
+      existing.video.load()
+      videoSlotsRef.current.delete(clip.id)
+    }
+
     const video = document.createElement('video')
     video.src = asset.objectUrl
     video.muted = true // Audio handled via Web Audio for sync
     video.playsInline = true
     video.preload = 'auto'
     video.crossOrigin = 'anonymous'
-    videoSlotsRef.current.set(clip.id, { video, clipId: clip.id })
-    return { video, clipId: clip.id }
+    const slot = { video, clipId: clip.id, assetId: clip.assetId }
+    videoSlotsRef.current.set(clip.id, slot)
+    return slot
   }
 
   const getImageSlot = (clip: Clip): ImageSlot | null => {
     if (clip.type !== 'image') return null
     const asset = getAsset(clip)
     if (!asset || !isMediaAssetAvailable(asset)) return null
+
+    const existingVideo = videoSlotsRef.current.get(clip.id)
+    if (existingVideo) {
+      existingVideo.video.removeAttribute('src')
+      existingVideo.video.load()
+      videoSlotsRef.current.delete(clip.id)
+    }
+
     const existing = imageSlotsRef.current.get(clip.id)
-    if (existing) return existing
+    if (existing && existing.assetId === clip.assetId) return existing
+    if (existing) {
+      existing.image.removeAttribute('src')
+      imageSlotsRef.current.delete(clip.id)
+    }
+
     const image = new Image()
     image.crossOrigin = 'anonymous'
     image.src = asset.objectUrl
-    const slot = { image, clipId: clip.id }
+    const slot = { image, clipId: clip.id, assetId: clip.assetId }
     imageSlotsRef.current.set(clip.id, slot)
     return slot
   }
@@ -488,29 +513,6 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   }
 }
 
-function pickActiveVideoClip(
-  tracks: Project['tracks'],
-  clips: Project['clips'],
-  assets: Record<string, unknown>,
-  time: number,
-): VideoClip | null {
-  for (let i = tracks.length - 1; i >= 0; i--) {
-    const track = tracks[i]
-    if (!track || track.type !== 'video' || track.muted) continue
-    for (const clipId of track.clips) {
-      const clip = clips[clipId]
-      if (!clip) continue
-      if (clip.type === 'audio') continue
-      if (time >= clip.startTime && time < clip.startTime + clip.duration) {
-        const asset = assets[clip.assetId]
-        if (!asset) continue
-        return clip
-      }
-    }
-  }
-  return null
-}
-
 function getActiveClipVisualKey(
   tracks: Project['tracks'],
   clips: Project['clips'],
@@ -519,7 +521,7 @@ function getActiveClipVisualKey(
 ): string | null {
   const clip = pickActiveVideoClip(tracks, clips, assets, time)
   if (!clip) return null
-  return `${clip.id}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${JSON.stringify(clip.filters)}`
+  return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${JSON.stringify(clip.filters)}`
 }
 
 function filtersToCss(filters: VideoClip['filters'] | undefined): string {

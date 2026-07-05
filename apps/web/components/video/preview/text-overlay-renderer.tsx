@@ -11,12 +11,14 @@ import { cn } from '@/lib/utils'
 type TextOverlayRendererProps = {
   artboardRef: RefObject<HTMLDivElement | null>
   scale: number
+  canSelectClip?: boolean
   onBackgroundPointerDown?: () => void
 }
 
 export function TextOverlayRenderer({
   artboardRef,
   scale,
+  canSelectClip = false,
   onBackgroundPointerDown,
 }: TextOverlayRendererProps) {
   const overlays = useVideoEditorStore(s => s.project.textOverlays)
@@ -32,7 +34,11 @@ export function TextOverlayRenderer({
 
   return (
     <div
-      className={cn('absolute inset-0 z-20', interactive ? 'pointer-events-auto' : 'pointer-events-none')}
+      className={cn(
+        'absolute inset-0 z-20',
+        interactive ? 'pointer-events-auto' : 'pointer-events-none',
+        interactive && canSelectClip && 'cursor-pointer',
+      )}
       onPointerDown={e => {
         if (e.target === e.currentTarget) {
           onBackgroundPointerDown?.()

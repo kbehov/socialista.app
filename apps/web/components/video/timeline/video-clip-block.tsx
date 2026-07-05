@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useDragClip } from '@/hooks/video/use-drag-clip'
 import { useTrimHandles } from '@/hooks/video/use-trim-handles'
+import { useTimelineFocus } from '@/components/video/timeline/timeline-focus-context'
 import type { Track, VideoClip } from '@socialista/types'
 
 type Props = {
@@ -20,6 +22,7 @@ export function VideoClipBlock({ clip, left, width, height, pxPerSec, track }: P
   const assets = useVideoEditorStore(s => s.assets)
   const { beginDrag, drag } = useDragClip(pxPerSec)
   const { beginTrim, draft } = useTrimHandles(pxPerSec)
+  const focusAtTime = useTimelineFocus()
 
   const asset = assets[clip.assetId]
   const thumbnails = asset && 'thumbnails' in asset ? asset.thumbnails : undefined
@@ -32,14 +35,22 @@ export function VideoClipBlock({ clip, left, width, height, pxPerSec, track }: P
   const trimDraft = draft && draft.clipId === clip.id ? draft : null
   const effectiveTrimIn = trimDraft ? trimDraft.trimIn : clip.trimIn
   const effectiveTrimOut = trimDraft ? trimDraft.trimOut : clip.trimOut
+  const blockRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!selected || !blockRef.current) return
+    blockRef.current.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [selected])
 
   return (
     <div
+      ref={blockRef}
       data-clip-block
+      data-clip-id={clip.id}
       onPointerDown={e => {
         if (track.locked) return
         selectClip(clip.id)
-        beginDrag(clip.id, clip.startTime, clip.trackId, e)
+        beginDrag(clip.id, clip.startTime, clip.trackId, e, () => focusAtTime?.(clip.startTime))
       }}
       className={`absolute top-1 cursor-grab overflow-hidden rounded border ${selected ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-neutral-400'} bg-neutral-800`}
       style={{ left: draftLeft, width: draftWidth, height: height - 8 }}

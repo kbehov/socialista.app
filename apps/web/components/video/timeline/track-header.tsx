@@ -17,6 +17,7 @@ export function TrackHeader({ track, width, height }: TrackHeaderProps) {
 
   return (
     <div
+      data-track-header
       className="shrink-0 border-r bg-muted/30 px-2 py-1"
       style={{ width, height }}
     >

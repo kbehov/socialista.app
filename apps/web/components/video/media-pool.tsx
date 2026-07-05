@@ -89,7 +89,7 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
       onDragLeave={() => setIsDragOver(false)}
       onDrop={onDropFiles}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-semibold">Media</h2>
         <Button
           type="button"
@@ -105,17 +105,27 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
 
       <div
         className={cn(
-          'rounded-lg border border-dashed px-3 py-4 text-center transition-colors',
+          'shrink-0 rounded-lg border border-dashed text-center transition-colors',
+          project.assets.length > 0 ? 'px-2 py-2' : 'px-3 py-4',
           isDragOver ? 'border-primary bg-primary/5' : 'border-border/60 bg-muted/20',
         )}
       >
-        <UploadIcon className="mx-auto size-5 text-muted-foreground" />
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          Drop files here or click Import
+        <UploadIcon
+          className={cn('mx-auto text-muted-foreground', project.assets.length > 0 ? 'size-4' : 'size-5')}
+        />
+        <p
+          className={cn(
+            'text-muted-foreground',
+            project.assets.length > 0 ? 'mt-1 text-[10px]' : 'mt-1.5 text-[11px]',
+          )}
+        >
+          {project.assets.length > 0 ? 'Drop more files' : 'Drop files here or click Import'}
         </p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground/80">
-          Added at playhead · double-click to re-add
-        </p>
+        {project.assets.length === 0 ? (
+          <p className="mt-0.5 text-[10px] text-muted-foreground/80">
+            Added at playhead · double-click to re-add
+          </p>
+        ) : null}
       </div>
 
       <input
@@ -132,7 +142,7 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
         className="hidden"
       />
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-y-auto sidebar-scrollbar">
+      <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 content-start gap-2 overflow-y-auto sidebar-scrollbar">
         {isImporting && project.assets.length === 0 ? (
           <div className="col-span-2 flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
             <Loader2Icon className="size-4 animate-spin" />
@@ -144,6 +154,12 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
           const asset = assets[serialized.id]
           const available = asset ? isMediaAssetAvailable(asset) : false
           const isDragging = draggingAssetId === serialized.id
+          const durationLabel =
+            serialized.duration > 0
+              ? `${serialized.duration.toFixed(1)}s`
+              : serialized.type === 'image'
+                ? '5.0s'
+                : null
           return (
             <div
               key={serialized.id}
@@ -160,80 +176,86 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
                 handleAddAtPlayhead(serialized.id, serialized.name)
               }}
               className={cn(
-                'group relative flex cursor-grab flex-col gap-1 rounded-md border bg-muted/30 p-1.5 transition-opacity active:cursor-grabbing',
+                'group relative w-full cursor-grab self-start overflow-hidden rounded-md border bg-muted/30 transition-opacity active:cursor-grabbing',
                 isDragging && 'opacity-50',
                 available && 'hover:border-primary/40 hover:bg-muted/50',
               )}
               title={available ? 'Double-click to add at playhead · drag onto timeline' : 'Re-link file to use on timeline'}
             >
-              <div className="aspect-video w-full overflow-hidden rounded bg-black">
+              <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
                 {available && asset && 'thumbnails' in asset && asset.thumbnails && asset.thumbnails.length > 0 ? (
                   <img
                     src={asset.thumbnails[0]}
-                    alt={serialized.name}
-                    className="h-full w-full object-cover"
+                    alt=""
+                    className="absolute inset-0 size-full object-cover"
                     draggable={false}
                   />
                 ) : available && asset && asset.type === 'audio' ? (
-                  <div className="flex h-full w-full items-center justify-center text-emerald-400">
-                    <MusicIcon className="h-6 w-6" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-emerald-950/40 text-emerald-400">
+                    <MusicIcon className="size-5" />
                   </div>
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-yellow-400">
+                  <div className="absolute inset-0 flex items-center justify-center bg-yellow-950/20 text-yellow-500">
                     {serialized.type === 'audio' ? (
-                      <MusicIcon className="h-6 w-6" />
+                      <MusicIcon className="size-5" />
                     ) : serialized.type === 'image' ? (
-                      <ImageIcon className="h-6 w-6" />
+                      <ImageIcon className="size-5" />
                     ) : (
-                      <FilmIcon className="h-6 w-6" />
+                      <FilmIcon className="size-5" />
                     )}
                   </div>
                 )}
-              </div>
-              <div className="truncate text-[10px]" title={serialized.name}>
-                {serialized.name}
-              </div>
-              <div className="text-[9px] text-muted-foreground">
-                {serialized.duration > 0 ? `${serialized.duration.toFixed(1)}s` : serialized.type === 'image' ? '5.0s' : '—'} ·{' '}
-                {serialized.type}
-              </div>
-              {!available && (
+                {durationLabel ? (
+                  <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1 py-px text-[9px] font-medium tabular-nums leading-none text-white">
+                    {durationLabel}
+                  </span>
+                ) : null}
+                <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1 py-px text-[8px] font-medium uppercase leading-none tracking-wide text-white/90">
+                  {serialized.type}
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    const input = document.createElement('input')
-                    input.type = 'file'
-                    input.accept = ACCEPT
-                    input.onchange = async () => {
-                      const file = input.files?.[0]
-                      if (!file) return
-                      try {
-                        const hash = await sha1File(file)
-                        if (hash !== serialized.hash) {
-                          toast.error('File hash does not match the original. Re-import the same file.')
-                          return
-                        }
-                        relinkAsset(serialized.id, file, hash)
-                        toast.success(`Re-linked ${serialized.name}`)
-                      } catch {
-                        toast.error('Failed to re-link file')
-                      }
-                    }
-                    input.click()
-                  }}
-                  className="rounded bg-yellow-500/20 px-1 py-0.5 text-[9px] text-yellow-700 dark:text-yellow-300"
+                  onClick={() => removeAsset(serialized.id)}
+                  className="absolute right-1 top-1 hidden rounded bg-black/70 p-1 text-white hover:bg-red-500 group-hover:block"
+                  aria-label="Remove asset"
                 >
-                  Re-link
+                  <Trash2Icon className="size-3" />
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => removeAsset(serialized.id)}
-                className="absolute right-1 top-1 hidden rounded bg-black/60 p-1 text-white hover:bg-red-500 group-hover:block"
-                aria-label="Remove asset"
-              >
-                <Trash2Icon className="h-3 w-3" />
-              </button>
+              </div>
+              <div className="space-y-1 px-1.5 py-1.5">
+                <p className="truncate text-[10px] leading-tight font-medium" title={serialized.name}>
+                  {serialized.name}
+                </p>
+                {!available ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = ACCEPT
+                      input.onchange = async () => {
+                        const file = input.files?.[0]
+                        if (!file) return
+                        try {
+                          const hash = await sha1File(file)
+                          if (hash !== serialized.hash) {
+                            toast.error('File hash does not match the original. Re-import the same file.')
+                            return
+                          }
+                          relinkAsset(serialized.id, file, hash)
+                          toast.success(`Re-linked ${serialized.name}`)
+                        } catch {
+                          toast.error('Failed to re-link file')
+                        }
+                      }
+                      input.click()
+                    }}
+                    className="w-full rounded bg-yellow-500/15 px-1 py-0.5 text-[9px] font-medium text-yellow-700 dark:text-yellow-300"
+                  >
+                    Re-link file
+                  </button>
+                ) : null}
+              </div>
             </div>
           )
         })}

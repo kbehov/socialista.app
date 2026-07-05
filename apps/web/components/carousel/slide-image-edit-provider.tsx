@@ -1,21 +1,12 @@
 'use client'
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import type { SlideId } from '@socialista/types'
-import { toast } from 'sonner'
 import { editImage } from '@/actions/fal.actions'
 import { proxiedImageUrl } from '@/lib/carousel/image-url'
 import { resolveFalImageUrl } from '@/lib/carousel/resolve-fal-image-url'
 import { useEditorStore } from '@/lib/carousel/store'
+import type { SlideId } from '@socialista/types'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { SlideImageEditDialog } from './slide-image-edit-dialog'
 
 type EditTarget = {
@@ -89,7 +80,9 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (activeLayerId) {
-      setBackgroundEditSlideId(null)
+      setTimeout(() => {
+        setBackgroundEditSlideId(null)
+      }, 0)
     }
   }, [activeLayerId])
 
@@ -117,8 +110,7 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
     setAdjustTarget(null)
   }, [])
 
-  const activeAdjustTarget =
-    adjustTarget && adjustTarget.slideId === activeSlideId ? adjustTarget : null
+  const activeAdjustTarget = adjustTarget && adjustTarget.slideId === activeSlideId ? adjustTarget : null
 
   const activeBackgroundEditSlideId =
     backgroundEditSlideId && backgroundEditSlideId === activeSlideId ? backgroundEditSlideId : null

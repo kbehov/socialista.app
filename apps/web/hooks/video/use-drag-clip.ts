@@ -12,12 +12,15 @@ type DragState = {
   pxPerSec: number
 }
 
+const TAP_THRESHOLD_PX = 5
+
 /** Hook for moving a clip on the timeline (drag body). Returns handlers + current draft delta. */
 export function useDragClip(pxPerSec: number) {
   const [drag, setDrag] = useState<{ clipId: ClipId; deltaSec: number; trackId: TrackId } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const stateRef = useRef<DragState | null>(null)
   const dragRef = useRef<{ clipId: ClipId; deltaSec: number; trackId: TrackId } | null>(null)
+  const onTapRef = useRef<((clipId: ClipId) => void) | null>(null)
   const moveClip = useVideoEditorStore(s => s.moveClip)
   const tracks = useVideoEditorStore(s => s.project.tracks)
 
@@ -37,12 +40,19 @@ export function useDragClip(pxPerSec: number) {
   const stop = useCallback(() => {
     const it = stateRef.current
     const finalDrag = dragRef.current
+    const onTap = onTapRef.current
     if (it && finalDrag) {
-      const newStart = Math.max(0, it.startStartTime + finalDrag.deltaSec)
-      moveClip(it.clipId, newStart, it.startTrackId)
+      const pixelDelta = Math.abs(finalDrag.deltaSec * it.pxPerSec)
+      if (pixelDelta > TAP_THRESHOLD_PX) {
+        const newStart = Math.max(0, it.startStartTime + finalDrag.deltaSec)
+        moveClip(it.clipId, newStart, it.startTrackId)
+      } else {
+        onTap?.(it.clipId)
+      }
     }
     stateRef.current = null
     dragRef.current = null
+    onTapRef.current = null
     setDrag(null)
     setIsDragging(false)
   }, [moveClip])
@@ -59,13 +69,20 @@ export function useDragClip(pxPerSec: number) {
     }
   }, [isDragging, onMove, stop])
 
-  const beginDrag = (clipId: ClipId, startTime: number, trackId: TrackId, e: React.PointerEvent) => {
+  const beginDrag = (
+    clipId: ClipId,
+    startTime: number,
+    trackId: TrackId,
+    e: React.PointerEvent,
+    onTap?: (clipId: ClipId) => void,
+  ) => {
     if (e.button !== 0) return
     const track = tracks.find(t => t.id === trackId)
     if (!track || track.locked) return
     e.preventDefault()
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
+    onTapRef.current = onTap ?? null
     stateRef.current = {
       clipId,
       startPointerX: e.clientX,

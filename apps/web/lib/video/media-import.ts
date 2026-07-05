@@ -92,18 +92,31 @@ function captureFrameToDataUrl(video: HTMLVideoElement, width: number, height: n
   return canvas.toDataURL('image/jpeg', 0.6)
 }
 
-async function captureImageThumbnail(src: string): Promise<string> {
-  const img = await loadImageElement(src)
-  const targetWidth = 240
-  const scale = targetWidth / img.naturalWidth
-  const targetHeight = Math.round(img.naturalHeight * scale)
+const POOL_THUMB_WIDTH = 160
+const POOL_THUMB_HEIGHT = 90
+
+function captureImageToDataUrl(img: HTMLImageElement, width: number, height: number): string {
   const canvas = document.createElement('canvas')
-  canvas.width = targetWidth
-  canvas.height = targetHeight
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) return ''
-  ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+  const iw = img.naturalWidth
+  const ih = img.naturalHeight
+  const scale = Math.max(width / iw, height / ih)
+  const drawW = iw * scale
+  const drawH = ih * scale
+  const dx = (width - drawW) / 2
+  const dy = (height - drawH) / 2
+  ctx.fillStyle = '#000'
+  ctx.fillRect(0, 0, width, height)
+  ctx.drawImage(img, dx, dy, drawW, drawH)
   return canvas.toDataURL('image/jpeg', 0.6)
+}
+
+async function captureImageThumbnail(src: string): Promise<string> {
+  const img = await loadImageElement(src)
+  return captureImageToDataUrl(img, POOL_THUMB_WIDTH, POOL_THUMB_HEIGHT)
 }
 
 async function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
@@ -127,9 +140,6 @@ async function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
 async function captureVideoThumbnails(file: File, src: string, duration: number): Promise<string[]> {
   const video = await loadVideoElement(src)
   const thumbs: string[] = []
-  const thumbWidth = 160
-  const ratio = video.videoWidth && video.videoHeight ? video.videoHeight / video.videoWidth : 9 / 16
-  const thumbHeight = Math.round(thumbWidth * ratio)
   try {
     const segment = duration / (THUMBNAIL_COUNT + 1)
     for (let i = 1; i <= THUMBNAIL_COUNT; i++) {
@@ -137,7 +147,7 @@ async function captureVideoThumbnails(file: File, src: string, duration: number)
       // Skip near-end seeks that may stall.
       if (t >= duration - 0.05) continue
       await seekVideo(video, t)
-      const data = captureFrameToDataUrl(video, thumbWidth, thumbHeight)
+      const data = captureFrameToDataUrl(video, POOL_THUMB_WIDTH, POOL_THUMB_HEIGHT)
       if (data) thumbs.push(data)
     }
   } finally {

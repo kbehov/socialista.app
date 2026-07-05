@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
 import type { ClipId } from '@socialista/types'
+import { Loader2Icon, SparklesIcon } from 'lucide-react'
+import { useClipAiOptional } from '@/components/video/ai/clip-ai-provider'
+import { Button } from '@/components/ui/button'
 import { FilterControls } from './filter-controls'
 import { Slider } from './slider'
 import { TransitionPicker } from './transition-picker'
@@ -22,6 +25,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const removeClipFilterLive = useVideoEditorStore(s => s.removeClipFilterLive)
   const setClipTransition = useVideoEditorStore(s => s.setClipTransition)
   const trimClip = useVideoEditorStore(s => s.trimClip)
+  const clipAi = useClipAiOptional()
 
   const [trimInDraft, setTrimInDraft] = useState(() => clip?.trimIn.toFixed(2) ?? '0')
   const [trimOutDraft, setTrimOutDraft] = useState(() => clip?.trimOut.toFixed(2) ?? '0')
@@ -32,6 +36,14 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
 
   const asset = assets[clip.assetId]
   const assetDuration = asset?.duration ?? clip.duration
+  const aiMode = clipAi?.getClipAiMode(clipId) ?? null
+  const canUseAi = clipAi?.canUseClipAi(clipId) ?? false
+  const isAiProcessing = clipAi?.isProcessingClip(clipId) ?? false
+  const aiLabel = aiMode === 'animate-image' ? 'Animate with AI' : 'Edit with AI'
+  const aiDescription =
+    aiMode === 'animate-image'
+      ? 'Turn this still image into a short animated video clip.'
+      : 'Apply AI edits to this video while keeping the same clip on the timeline.'
 
   return (
     <div className="flex flex-col gap-4">
@@ -39,6 +51,30 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
         <div className="text-xs font-semibold uppercase text-muted-foreground">Clip</div>
         <div className="mt-1 truncate text-sm">{asset ? asset.name : 'Missing media'}</div>
       </div>
+
+      {clip.type !== 'audio' && clipAi ? (
+        <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-start gap-2">
+            <SparklesIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <p className="text-xs font-medium">{aiLabel}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{aiDescription}</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 w-full"
+                onClick={() => clipAi.openClipAi(clipId)}
+                disabled={!canUseAi || isAiProcessing}
+              >
+                {isAiProcessing ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}
+                {isAiProcessing ? 'Generating…' : aiLabel}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <div className="text-xs font-medium text-muted-foreground">Timing</div>

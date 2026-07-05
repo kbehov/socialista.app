@@ -2,6 +2,7 @@
 
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useDragOverlay } from '@/hooks/video/use-drag-overlay'
+import { useTimelineFocus } from '@/components/video/timeline/timeline-focus-context'
 import type { TextOverlay } from '@socialista/types'
 import { TypeIcon } from 'lucide-react'
 
@@ -11,6 +12,7 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const { beginMove, beginTrim, draft } = useDragOverlay(pxPerSec)
+  const focusAtTime = useTimelineFocus()
 
   return (
     <div className="absolute inset-0 z-[1] touch-none">
@@ -33,7 +35,11 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
               selectClip(null)
               selectOverlay(overlay.id)
             }}
-            onMove={e => beginMove(overlay.id, startTime, endTime, e)}
+            onMove={e => {
+              selectClip(null)
+              selectOverlay(overlay.id)
+              beginMove(overlay.id, startTime, endTime, e, () => focusAtTime?.(overlay.startTime))
+            }}
             onTrimStart={e => {
               selectClip(null)
               selectOverlay(overlay.id)
@@ -73,6 +79,7 @@ function TextOverlayBlock({
   return (
     <div
       data-overlay-bar
+      data-overlay-id={overlay.id}
       className={`absolute top-0.5 flex h-[26px] touch-none select-none items-center overflow-hidden rounded border ${
         selected
           ? 'z-10 border-blue-500 bg-blue-500 ring-2 ring-blue-500/40'
