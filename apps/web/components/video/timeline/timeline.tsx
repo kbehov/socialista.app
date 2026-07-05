@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
+import { seekPreview } from '@/hooks/video/use-playback'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatRulerTick } from '@/lib/video/timecode'
-import { timeFromTimelinePointer } from '@/lib/video/timeline-seek'
+import { timeFromTimelineClientX } from '@/lib/video/timeline-seek'
 import { Playhead } from './playhead'
 import { TrackList } from './track-list'
 import { TextOverlayBar } from './text-overlay-bar'
@@ -26,18 +27,32 @@ export function Timeline() {
   const timelineWidth = Math.max(MIN_TIMELINE_WIDTH, Math.ceil(duration * zoom) + 80)
 
   const seekAtClientX = useCallback(
-    (clientX: number, targetRect: DOMRect) => {
-      const scrollLeft = scrollRef.current?.scrollLeft ?? 0
-      const time = timeFromTimelinePointer(clientX, targetRect, scrollLeft, zoom, fps, duration)
+    (clientX: number) => {
+      const el = scrollRef.current
+      if (!el) return
+      const time = timeFromTimelineClientX(clientX, el, TRACK_HEADER_WIDTH, zoom, fps, duration)
       pause()
       seek(time)
+      seekPreview(time)
     },
     [duration, fps, pause, seek, zoom],
   )
 
-  const handleRulerClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      seekAtClientX(e.clientX, e.currentTarget.getBoundingClientRect())
+  const handleScrubPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return
+      if ((e.target as HTMLElement).closest('[data-clip-block], [data-overlay-bar]')) return
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      seekAtClientX(e.clientX)
+    },
+    [seekAtClientX],
+  )
+
+  const handleScrubPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+      seekAtClientX(e.clientX)
     },
     [seekAtClientX],
   )
@@ -56,7 +71,11 @@ export function Timeline() {
       </div>
       <div ref={scrollRef} className="relative flex-1 overflow-auto">
         <div className="relative" style={{ width: TRACK_HEADER_WIDTH + timelineWidth }}>
-          <Playhead pxPerSec={zoom} headerWidth={TRACK_HEADER_WIDTH} />
+          <Playhead
+            pxPerSec={zoom}
+            headerWidth={TRACK_HEADER_WIDTH}
+            onSeekAtClientX={seekAtClientX}
+          />
 
           {/* Ruler row */}
           <div className="sticky top-0 z-10 flex bg-background">
@@ -66,9 +85,10 @@ export function Timeline() {
             />
             <div
               data-timeline-ruler
-              className="relative cursor-crosshair border-b"
+              className="relative cursor-crosshair touch-none border-b"
               style={{ width: timelineWidth, height: RULER_HEIGHT }}
-              onClick={handleRulerClick}
+              onPointerDown={handleScrubPointerDown}
+              onPointerMove={handleScrubPointerMove}
             >
               <TimelineRuler duration={duration} pxPerSec={zoom} fps={fps} durationGuide={durationGuide} />
             </div>
@@ -85,10 +105,8 @@ export function Timeline() {
             <div
               className="relative cursor-crosshair touch-none"
               style={{ width: timelineWidth, height: 36 }}
-              onPointerDown={e => {
-                if ((e.target as HTMLElement).closest('[data-overlay-bar]')) return
-                seekAtClientX(e.clientX, e.currentTarget.getBoundingClientRect())
-              }}
+              onPointerDown={handleScrubPointerDown}
+              onPointerMove={handleScrubPointerMove}
             >
               <TextOverlayBar pxPerSec={zoom} />
             </div>
@@ -101,7 +119,8 @@ export function Timeline() {
             headerWidth={TRACK_HEADER_WIDTH}
             rowHeight={TRACK_ROW_HEIGHT}
             scrollRef={scrollRef}
-            onSeekAtClientX={seekAtClientX}
+            onScrubPointerDown={handleScrubPointerDown}
+            onScrubPointerMove={handleScrubPointerMove}
           />
         </div>
       </div>

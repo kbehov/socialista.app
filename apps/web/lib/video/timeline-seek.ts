@@ -1,14 +1,16 @@
 import { frameAtTime, timeAtFrame } from '@/lib/video/timecode'
 
-export function timeFromTimelinePointer(
+/** Map a screen X coordinate to timeline time using the scroll container. */
+export function timeFromTimelineClientX(
   clientX: number,
-  targetRect: DOMRect,
-  scrollLeft: number,
+  scrollContainer: HTMLElement,
+  headerWidth: number,
   pxPerSec: number,
   fps: number,
   maxDuration: number,
 ): number {
-  const x = clientX - targetRect.left + scrollLeft
+  const rect = scrollContainer.getBoundingClientRect()
+  const x = scrollContainer.scrollLeft + (clientX - rect.left) - headerWidth
   const raw = Math.max(0, x / pxPerSec)
   const snapped = timeAtFrame(frameAtTime(raw, fps), fps)
   return Math.min(snapped, maxDuration)

@@ -21,6 +21,24 @@ type AudioSlot = {
   clipId: ClipId
 }
 
+const previewSeekRef: { current: ((time: number) => void) | null } = { current: null }
+
+/** Seek preview canvas immediately (used by timeline scrubbing). */
+export function seekPreview(time: number) {
+  previewSeekRef.current?.(time)
+}
+
+function usePreviewSeekRegistration(seekTo: (time: number) => void) {
+  useEffect(() => {
+    previewSeekRef.current = seekTo
+    return () => {
+      if (previewSeekRef.current === seekTo) {
+        previewSeekRef.current = null
+      }
+    }
+  }, [seekTo])
+}
+
 /**
  * Real-time preview playback engine.
  *
@@ -194,7 +212,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     const newTime = startPlayheadRef.current + elapsed
     if (newTime >= state.project.duration) {
       pause()
-      seek(state.project.duration)
+      seek(0)
       rafRef.current = null
       return
     }
@@ -451,6 +469,8 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       }
     }
   }, [])
+
+  usePreviewSeekRegistration(seekTo)
 
   return {
     play: () => {

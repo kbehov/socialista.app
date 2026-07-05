@@ -1,201 +1,146 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
+import { buildTextLayerCss } from '@/lib/carousel/text-style'
+import { useOverlayInteraction } from '@/hooks/video/use-overlay-interaction'
 import { useVideoEditorStore } from '@/lib/video/store'
 import type { TextOverlay } from '@socialista/types'
+import { cn } from '@/lib/utils'
 
-type Interaction =
-  | { kind: 'drag'; startPointerX: number; startPointerY: number; startX: number; startY: number; rectW: number; rectH: number }
-  | { kind: 'resize'; startPointerX: number; startPointerY: number; startX: number; startY: number; startWidth: number; rectW: number; rectH: number }
-  | { kind: 'rotate'; centerX: number; centerY: number; startPointerX: number; startPointerY: number; startRotation: number }
+type TextOverlayRendererProps = {
+  artboardRef: RefObject<HTMLDivElement | null>
+  scale: number
+  onBackgroundPointerDown?: () => void
+}
 
-const X_MIN = -10
-const Y_MIN = -10
-const X_MAX = 100
-const Y_MAX = 100
-const W_MIN = 5
-
-export function TextOverlayRenderer({ canvasRef }: { canvasRef: RefObject<HTMLCanvasElement | null> }) {
+export function TextOverlayRenderer({
+  artboardRef,
+  scale,
+  onBackgroundPointerDown,
+}: TextOverlayRendererProps) {
   const overlays = useVideoEditorStore(s => s.project.textOverlays)
   const playhead = useVideoEditorStore(s => s.playhead)
   const isPlaying = useVideoEditorStore(s => s.isPlaying)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const updateOverlay = useVideoEditorStore(s => s.updateOverlay)
-  const canvasElement = canvasRef.current
-  void canvasElement
 
+  const interactive = !isPlaying
   const visible = overlays.filter(o => playhead >= o.startTime && playhead < o.endTime)
   const sorted = [...visible].sort((a, b) => a.zIndex - b.zIndex)
 
   return (
-    <>
+    <div
+      className={cn('absolute inset-0 z-20', interactive ? 'pointer-events-auto' : 'pointer-events-none')}
+      onPointerDown={e => {
+        if (e.target === e.currentTarget) {
+          onBackgroundPointerDown?.()
+        }
+      }}
+    >
       {sorted.map(overlay => (
         <OverlayNode
           key={overlay.id}
           overlay={overlay}
-          canvasRef={canvasRef}
+          canvasRef={artboardRef}
+          scale={scale}
           selected={overlay.id === selectedOverlayId}
-          isEditing={!isPlaying}
+          interactive={interactive}
           onSelect={() => selectOverlay(overlay.id)}
           onCommit={partial => updateOverlay(overlay.id, partial)}
         />
       ))}
-    </>
+    </div>
   )
 }
 
 function OverlayNode({
   overlay,
   canvasRef,
+  scale,
   selected,
-  isEditing,
+  interactive,
   onSelect,
   onCommit,
 }: {
   overlay: TextOverlay
-  canvasRef: RefObject<HTMLCanvasElement | null>
+  canvasRef: RefObject<HTMLElement | null>
+  scale: number
   selected: boolean
-  isEditing: boolean
+  interactive: boolean
   onSelect: () => void
   onCommit: (partial: Partial<TextOverlay>) => void
 }) {
-  const [draft, setDraft] = useState<Partial<TextOverlay> | null>(null)
-  const interaction = useRef<Interaction | null>(null)
-  const draftRef = useRef<Partial<TextOverlay> | null>(null)
-  const onCommitRef = useRef(onCommit)
-  useEffect(() => {
-    onCommitRef.current = onCommit
-  }, [onCommit])
+  const [isEditingContent, setIsEditingContent] = useState(false)
+  const editRef = useRef<HTMLDivElement>(null)
 
-  const updateDraft = useCallback((partial: Partial<TextOverlay>) => {
-    draftRef.current = partial
-    setDraft(partial)
-  }, [])
+  const { draft, beginDrag, beginResize, beginRotate } = useOverlayInteraction({
+    overlay,
+    canvasRef,
+    onCommit,
+  })
 
-  const stop = useCallback(() => {
-    if (!interaction.current) return
-    interaction.current = null
-    const toCommit = draftRef.current
-    draftRef.current = null
-    setDraft(null)
-    if (toCommit) onCommitRef.current(toCommit)
-  }, [])
-
-  const onMove = useCallback(
-    (e: PointerEvent) => {
-      const it = interaction.current
-      if (!it) return
-      e.preventDefault()
-      if (it.kind === 'drag') {
-        const dxPct = ((e.clientX - it.startPointerX) / it.rectW) * 100
-        const dyPct = ((e.clientY - it.startPointerY) / it.rectH) * 100
-        updateDraft({
-          x: clamp(it.startX + dxPct, X_MIN, X_MAX),
-          y: clamp(it.startY + dyPct, Y_MIN, Y_MAX),
-        })
-        return
-      }
-      if (it.kind === 'resize') {
-        const dxPct = ((e.clientX - it.startPointerX) / it.rectW) * 100
-        updateDraft({ width: clamp(it.startWidth + dxPct, W_MIN, 100) })
-        return
-      }
-      if (it.kind === 'rotate') {
-        const startAngle = Math.atan2(it.startPointerY - it.centerY, it.startPointerX - it.centerX)
-        const currentAngle = Math.atan2(e.clientY - it.centerY, e.clientX - it.centerX)
-        const delta = ((currentAngle - startAngle) * 180) / Math.PI
-        updateDraft({ rotation: Math.round((it.startRotation + delta) % 360) })
-      }
-    },
-    [updateDraft],
-  )
+  const effective = useMemo(() => (draft ? { ...overlay, ...draft } : overlay), [overlay, draft])
+  const textCss = useMemo(() => buildTextLayerCss(effective.style, scale), [effective.style, scale])
 
   useEffect(() => {
-    if (!interaction.current) return
-    window.addEventListener('pointermove', onMove, { passive: false })
-    window.addEventListener('pointerup', stop)
-    window.addEventListener('pointercancel', stop)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', stop)
-      window.removeEventListener('pointercancel', stop)
-    }
-  }, [onMove, stop])
+    if (!isEditingContent || !editRef.current) return
 
-  const beginDrag = (e: React.PointerEvent) => {
-    if (!isEditing || e.button !== 0) return
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
-    e.preventDefault()
-    e.stopPropagation()
-    onSelect()
-    interaction.current = {
-      kind: 'drag',
-      startPointerX: e.clientX,
-      startPointerY: e.clientY,
-      startX: overlay.x,
-      startY: overlay.y,
-      rectW: rect.width,
-      rectH: rect.height,
+    editRef.current.innerText = overlay.content || ''
+    editRef.current.focus({ preventScroll: true })
+
+    const range = document.createRange()
+    range.selectNodeContents(editRef.current)
+    range.collapse(false)
+
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+  }, [isEditingContent, overlay.id, overlay.content])
+
+  const commitContentEdit = useCallback(() => {
+    if (!editRef.current) return
+    const next = editRef.current.innerText.replace(/\r\n/g, '\n').trim()
+    if (next !== overlay.content.trim()) {
+      onCommit({ content: next || ' ' })
     }
-    updateDraft({ x: overlay.x, y: overlay.y })
+    setIsEditingContent(false)
+  }, [onCommit, overlay.content])
+
+  const canDrag = interactive && !isEditingContent
+  const canSelect = interactive
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!canSelect && !canDrag) return
+    if (canSelect) {
+      e.stopPropagation()
+      onSelect()
+    }
+    if (canDrag) {
+      beginDrag(e)
+    }
   }
 
-  const beginResize = (e: React.PointerEvent) => {
-    if (!isEditing || e.button !== 0) return
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
-    e.preventDefault()
-    e.stopPropagation()
-    onSelect()
-    interaction.current = {
-      kind: 'resize',
-      startPointerX: e.clientX,
-      startPointerY: e.clientY,
-      startX: overlay.x,
-      startY: overlay.y,
-      startWidth: overlay.width,
-      rectW: rect.width,
-      rectH: rect.height,
-    }
-    updateDraft({ width: overlay.width })
-  }
-
-  const beginRotate = (e: React.PointerEvent) => {
-    if (!isEditing || e.button !== 0) return
-    const overlayEl = (e.currentTarget.parentElement as HTMLElement | null)?.getBoundingClientRect()
-    if (!overlayEl) return
-    e.preventDefault()
-    e.stopPropagation()
-    onSelect()
-    interaction.current = {
-      kind: 'rotate',
-      centerX: overlayEl.left + overlayEl.width / 2,
-      centerY: overlayEl.top + overlayEl.height / 2,
-      startPointerX: e.clientX,
-      startPointerY: e.clientY,
-      startRotation: overlay.rotation,
-    }
-    updateDraft({ rotation: overlay.rotation })
-  }
-
-  const effective = draft ? { ...overlay, ...draft } : overlay
   const animation = overlay.style.animation ?? 'none'
   const animationClass =
-    isEditing && animation === 'fade'
+    interactive && animation === 'fade'
       ? 'animate-in fade-in'
-      : isEditing && animation === 'slide-up'
+      : interactive && animation === 'slide-up'
         ? 'animate-in slide-in-from-bottom-2'
-        : isEditing && animation === 'slide-down'
+        : interactive && animation === 'slide-down'
           ? 'animate-in slide-in-from-top-2'
           : ''
 
   return (
     <div
-      onPointerDown={beginDrag}
-      className={`absolute select-none ${isEditing ? 'cursor-move' : 'pointer-events-none'} ${animationClass} ${isEditing && selected ? 'ring-2 ring-blue-500' : ''}`}
+      className={cn(
+        'absolute select-none',
+        canDrag && 'cursor-move',
+        canSelect && !canDrag && 'cursor-pointer',
+        isEditingContent && 'cursor-text',
+        animationClass,
+      )}
       style={{
         left: `${effective.x}%`,
         top: `${effective.y}%`,
@@ -204,33 +149,51 @@ function OverlayNode({
         transformOrigin: 'center center',
         zIndex: effective.zIndex,
       }}
+      onPointerDown={canSelect || canDrag ? handlePointerDown : undefined}
+      onDoubleClick={interactive && canSelect ? () => setIsEditingContent(true) : undefined}
     >
       <div
-        className="px-2 py-1"
-        style={{
-          fontFamily: effective.style.fontFamily,
-          fontSize: effective.style.fontSize,
-          fontWeight: effective.style.fontWeight,
-          color: effective.style.color,
-          backgroundColor: effective.style.backgroundColor ?? 'transparent',
-          textAlign: effective.style.textAlign,
-          letterSpacing: effective.style.letterSpacing,
-          lineHeight: effective.style.lineHeight,
-          padding: effective.style.padding,
-          borderRadius: effective.style.borderRadius,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
+        ref={editRef}
+        contentEditable={isEditingContent}
+        suppressContentEditableWarning
+        onBlur={commitContentEdit}
+        onKeyDown={
+          isEditingContent
+            ? e => {
+                e.stopPropagation()
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  commitContentEdit()
+                }
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  commitContentEdit()
+                }
+              }
+            : undefined
+        }
+        className={cn(
+          'block w-full break-words whitespace-pre-wrap',
+          isEditingContent
+            ? 'min-h-[1em] cursor-text outline-none ring-2 ring-primary/60'
+            : 'overflow-hidden',
+        )}
+        style={textCss}
       >
-        {effective.content || ' '}
+        {isEditingContent ? null : effective.content || ' '}
       </div>
-      {isEditing && selected && (
+
+      {selected && interactive && !isEditingContent ? (
         <>
-          <Handle className="left-0 top-1/2 -translate-y-1/2 -translate-x-1/2" onPointerDown={beginResize} />
-          <Handle className="right-0 top-1/2 -translate-y-1/2 translate-x-1/2" onPointerDown={beginResize} />
-          <Handle className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rotate-handle" onPointerDown={beginRotate} />
+          <div className="pointer-events-none absolute inset-0 rounded-sm border border-dashed border-primary/70" />
+          <Handle className="left-0 top-1/2 -translate-x-1/2 -translate-y-1/2" onPointerDown={beginResize('w')} />
+          <Handle className="right-0 top-1/2 translate-x-1/2 -translate-y-1/2" onPointerDown={beginResize('e')} />
+          <Handle
+            className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2"
+            onPointerDown={beginRotate}
+          />
         </>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -245,11 +208,10 @@ function Handle({
   return (
     <div
       onPointerDown={onPointerDown}
-      className={`absolute h-3 w-3 rounded-full border-2 border-blue-500 bg-white ${className}`}
+      className={cn(
+        'absolute z-10 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm',
+        className,
+      )}
     />
   )
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
 }

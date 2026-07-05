@@ -1,68 +1,54 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
-
-type DragState = {
-  startPointerX: number
-  startTime: number
-  pxPerSec: number
-}
 
 type PlayheadProps = {
   pxPerSec: number
   headerWidth: number
+  onSeekAtClientX: (clientX: number) => void
 }
 
-export function Playhead({ pxPerSec, headerWidth }: PlayheadProps) {
+export function Playhead({ pxPerSec, headerWidth, onSeekAtClientX }: PlayheadProps) {
   const playhead = useVideoEditorStore(s => s.playhead)
-  const seek = useVideoEditorStore(s => s.seek)
   const pause = useVideoEditorStore(s => s.pause)
-  const duration = useVideoEditorStore(s => s.project.duration)
-  const [drag, setDrag] = useState<number | null>(null)
-  const stateRef = useRef<DragState | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const onMove = useCallback(
     (e: PointerEvent) => {
-      const it = stateRef.current
-      if (!it) return
       e.preventDefault()
-      const deltaSec = (e.clientX - it.startPointerX) / it.pxPerSec
-      const next = Math.max(0, Math.min(it.startTime + deltaSec, duration))
-      setDrag(next)
-      seek(next)
+      onSeekAtClientX(e.clientX)
     },
-    [duration, seek],
+    [onSeekAtClientX],
   )
 
   const stop = useCallback(() => {
-    stateRef.current = null
-    setDrag(null)
+    setIsDragging(false)
   }, [])
 
   useEffect(() => {
-    if (!stateRef.current) return
+    if (!isDragging) return
+
     window.addEventListener('pointermove', onMove, { passive: false })
-    window.addEventListener('pointerup', stop, { once: true })
-    window.addEventListener('pointercancel', stop, { once: true })
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', stop)
       window.removeEventListener('pointercancel', stop)
     }
-  }, [onMove, stop])
+  }, [isDragging, onMove, stop])
 
   const beginDrag = (e: React.PointerEvent) => {
     if (e.button !== 0) return
     e.preventDefault()
     e.stopPropagation()
     pause()
-    stateRef.current = { startPointerX: e.clientX, startTime: playhead, pxPerSec }
-    setDrag(playhead)
+    setIsDragging(true)
+    onSeekAtClientX(e.clientX)
   }
 
-  const current = drag ?? playhead
-  const left = current * pxPerSec
+  const left = playhead * pxPerSec
 
   return (
     <div
@@ -70,12 +56,11 @@ export function Playhead({ pxPerSec, headerWidth }: PlayheadProps) {
       style={{ left: headerWidth + left, width: 0 }}
     >
       <div
-        className="pointer-events-auto absolute top-0 z-20 h-full cursor-ew-resize"
-        style={{ left: 0 }}
+        className="pointer-events-auto absolute top-0 z-20 h-full w-3 -translate-x-1/2 cursor-ew-resize"
         onPointerDown={beginDrag}
       >
-        <div className="absolute top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-red-500 shadow-sm" />
-        <div className="absolute top-0 h-full w-px -translate-x-1/2 bg-red-500" />
+        <div className="absolute top-0 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full bg-red-500 shadow-sm" />
+        <div className="absolute top-0 left-1/2 h-full w-px -translate-x-1/2 bg-red-500" />
       </div>
     </div>
   )

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { ASSET_DRAG_MIME, addAssetToTimeline } from '@/lib/video/timeline-placement'
-import { timeFromTimelinePointer } from '@/lib/video/timeline-seek'
+import { timeFromTimelineClientX } from '@/lib/video/timeline-seek'
 import type { Track } from '@socialista/types'
 import { toast } from 'sonner'
 import { VideoClipBlock } from './video-clip-block'
@@ -15,10 +15,21 @@ type TrackRowProps = {
   width: number
   height: number
   scrollRef: React.RefObject<HTMLDivElement | null>
-  onSeekAtClientX: (clientX: number, targetRect: DOMRect) => void
+  headerWidth: number
+  onScrubPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
+  onScrubPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void
 }
 
-export function TrackRow({ track, pxPerSec, width, height, scrollRef, onSeekAtClientX }: TrackRowProps) {
+export function TrackRow({
+  track,
+  pxPerSec,
+  width,
+  height,
+  scrollRef,
+  headerWidth,
+  onScrubPointerDown,
+  onScrubPointerMove,
+}: TrackRowProps) {
   const clips = useVideoEditorStore(s => s.project.clips)
   const assets = useVideoEditorStore(s => s.assets)
   const fps = useVideoEditorStore(s => s.project.fps)
@@ -45,9 +56,16 @@ export function TrackRow({ track, pxPerSec, width, height, scrollRef, onSeekAtCl
       return
     }
 
-    const scrollLeft = scrollRef.current?.scrollLeft ?? 0
-    const rect = e.currentTarget.getBoundingClientRect()
-    const startTime = timeFromTimelinePointer(e.clientX, rect, scrollLeft, pxPerSec, fps, duration)
+    const scrollEl = scrollRef.current
+    if (!scrollEl) return
+    const startTime = timeFromTimelineClientX(
+      e.clientX,
+      scrollEl,
+      headerWidth,
+      pxPerSec,
+      fps,
+      duration,
+    )
     const result = addAssetToTimeline(assetId, startTime, track.id)
     if (result !== 'ok') {
       toast.error('Could not place clip here — try another position')
@@ -56,7 +74,7 @@ export function TrackRow({ track, pxPerSec, width, height, scrollRef, onSeekAtCl
 
   const handleBackgroundPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('[data-clip-block]')) return
-    onSeekAtClientX(e.clientX, e.currentTarget.getBoundingClientRect())
+    onScrubPointerDown(e)
   }
 
   return (
@@ -64,6 +82,7 @@ export function TrackRow({ track, pxPerSec, width, height, scrollRef, onSeekAtCl
       className={`relative cursor-crosshair bg-neutral-100 dark:bg-neutral-900 ${track.locked ? 'opacity-60' : ''} ${isDropTarget ? 'ring-2 ring-inset ring-primary/50' : ''}`}
       style={{ width, height }}
       onPointerDown={handleBackgroundPointerDown}
+      onPointerMove={onScrubPointerMove}
       onDragOver={e => {
         if (track.locked) return
         if (!e.dataTransfer.types.includes(ASSET_DRAG_MIME)) return

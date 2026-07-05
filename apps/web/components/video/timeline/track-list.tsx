@@ -11,7 +11,8 @@ type TrackListProps = {
   headerWidth: number
   rowHeight: number
   scrollRef: React.RefObject<HTMLDivElement | null>
-  onSeekAtClientX: (clientX: number, targetRect: DOMRect) => void
+  onScrubPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
+  onScrubPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void
 }
 
 export function TrackList({
@@ -20,7 +21,8 @@ export function TrackList({
   headerWidth,
   rowHeight,
   scrollRef,
-  onSeekAtClientX,
+  onScrubPointerDown,
+  onScrubPointerMove,
 }: TrackListProps) {
   const tracks = useVideoEditorStore(s => s.project.tracks)
   const addTrack = useVideoEditorStore(s => s.addTrack)
@@ -36,7 +38,9 @@ export function TrackList({
             width={timelineWidth}
             height={rowHeight}
             scrollRef={scrollRef}
-            onSeekAtClientX={onSeekAtClientX}
+            headerWidth={headerWidth}
+            onScrubPointerDown={onScrubPointerDown}
+            onScrubPointerMove={onScrubPointerMove}
           />
         </div>
       ))}

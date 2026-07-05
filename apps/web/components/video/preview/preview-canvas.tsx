@@ -17,8 +17,11 @@ import { cn } from '@/lib/utils'
 export function PreviewCanvas() {
   const workspaceRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const artboardRef = useRef<HTMLDivElement>(null)
   const resolution = useVideoEditorStore(s => s.project.resolution)
   const duration = useVideoEditorStore(s => s.project.duration)
+  const selectClip = useVideoEditorStore(s => s.selectClip)
+  const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const [previewZoom, setPreviewZoom] = useState(1)
   const [showSafeZone, setShowSafeZone] = useState(true)
   const playback = usePlayback(canvasRef)
@@ -70,9 +73,25 @@ export function PreviewCanvas() {
             </div>
           ) : null}
 
-          <Artboard canvasRef={canvasRef} resolution={resolution} previewZoom={previewZoom}>
-            <SafeZoneOverlay visible={showReelsSafeZone && !isEmpty} />
-            <TextOverlayRenderer canvasRef={canvasRef} />
+          <Artboard
+            artboardRef={artboardRef}
+            canvasRef={canvasRef}
+            resolution={resolution}
+            previewZoom={previewZoom}
+          >
+            {scale => (
+              <>
+                <SafeZoneOverlay visible={showReelsSafeZone && !isEmpty} />
+                <TextOverlayRenderer
+                  artboardRef={artboardRef}
+                  scale={scale}
+                  onBackgroundPointerDown={() => {
+                    selectClip(null)
+                    selectOverlay(null)
+                  }}
+                />
+              </>
+            )}
           </Artboard>
         </div>
 
@@ -86,15 +105,17 @@ export function PreviewCanvas() {
 }
 
 function Artboard({
+  artboardRef,
   canvasRef,
   resolution,
   previewZoom,
   children,
 }: {
+  artboardRef: React.RefObject<HTMLDivElement | null>
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   resolution: { width: number; height: number }
   previewZoom: number
-  children?: React.ReactNode
+  children: (scale: number) => React.ReactNode
 }) {
   const size = useCanvasWorkspaceSize()
   const fitted = fitArtboardInWorkspace(size.width, size.height, resolution.width, resolution.height)
@@ -102,17 +123,20 @@ function Artboard({
     width: Math.round(fitted.width * previewZoom),
     height: Math.round(fitted.height * previewZoom),
   }
+  const scale = scaled.width / resolution.width
+
   return (
     <div
+      ref={artboardRef}
       className="relative bg-black shadow-xl"
       style={{ width: scaled.width, height: scaled.height }}
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 h-full w-full"
+        className="pointer-events-none absolute inset-0 h-full w-full"
         style={{ imageRendering: 'auto' }}
       />
-      {children}
+      {children(scale)}
     </div>
   )
 }
