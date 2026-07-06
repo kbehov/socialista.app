@@ -26,6 +26,7 @@ import {
   DEFAULT_RESOLUTION,
   DEFAULT_ZOOM,
   DEFAULT_IMAGE_CLIP_DURATION,
+  getClipSourceDuration,
   HISTORY_LIMIT,
   MAX_CLIP_SPEED,
   MIN_CLIP_SPEED,
@@ -33,7 +34,14 @@ import {
   toSerializedAsset,
   withClipMoved,
   withClipOnTrack,
+  withClipReordered,
 } from './defaults'
+import {
+  DEFAULT_VIDEO_FORMAT_PRESET_ID,
+  getVideoFormatPreset,
+  resolveVideoFormatPresetId,
+  type VideoFormatPresetId,
+} from './format-presets'
 import type { MediaAsset } from './types'
 import { isMediaAssetAvailable } from './types'
 import { frameAtTime, timeAtFrame } from './timecode'
@@ -62,11 +70,14 @@ interface EditorState {
   durationGuide: number | null
   past: Snapshot[]
   future: Snapshot[]
+  /** Selected export preset (e.g. tiktok vs instagram-story at the same resolution). */
+  formatPresetId: VideoFormatPresetId
 
   // Project / tracks
   loadProject: (input: { id: string; name: string; project: Project }) => void
   setProjectName: (name: string) => void
   setResolution: (resolution: CanvasDimensions) => void
+  setFormatPreset: (presetId: VideoFormatPresetId) => void
   setFps: (fps: number) => void
   setDurationGuide: (seconds: number | null) => void
   addTrack: (type: 'video' | 'audio') => void
@@ -185,6 +196,51 @@ function recomputeDuration(project: Project): Project {
   return { ...project, duration: computeProjectDuration(project) }
 }
 
+/**
+ * Ripple shift: move every clip on the track whose start is at or past
+ * `afterTime` (except the source clip) by `deltaSec`. Used after a trim to
+ * keep adjacent clips touching the trimmed clip's edge instead of leaving a
+ * gap or pushing into a neighbour.
+ */
+function shiftSubsequentClips(
+  project: Project,
+  trackId: TrackId,
+  sourceClipId: ClipId,
+  afterTime: number,
+  deltaSec: number,
+): Project {
+  if (deltaSec === 0) return project
+  const track = project.tracks.find(t => t.id === trackId)
+  if (!track) return project
+  const clips = { ...project.clips }
+  for (const id of track.clips) {
+    if (id === sourceClipId) continue
+    const c = clips[id]
+    if (!c) continue
+    if (c.startTime >= afterTime) {
+      const nextStart = Math.max(0, c.startTime + deltaSec)
+      clips[id] = { ...c, startTime: nextStart }
+    }
+  }
+  return recomputeDuration({ ...project, clips })
+}
+
+/**
+ * Clamp a clip's desired start time for a cross-track move. Same-track moves
+ * use {@link withClipReordered} instead, which can reorder past neighbours.
+ */
+function clampCrossTrackStart(
+  project: Project,
+  trackId: TrackId,
+  clipId: ClipId,
+  desiredStart: number,
+  duration: number,
+): number | null {
+  const candidate = Math.max(0, desiredStart)
+  if (wouldOverlap(project, trackId, candidate, duration, clipId)) return null
+  return candidate
+}
+
 function applyTrim(
   project: Project,
   assets: AssetMap,
@@ -195,14 +251,16 @@ function applyTrim(
   const clip = project.clips[clipId]
   if (!clip) return null
   const asset = assets[clip.assetId]
-  const assetDuration = asset?.duration ?? clip.duration
+  const sourceDuration = getClipSourceDuration(clip, asset)
   const safeTrimIn = Math.max(0, trimIn)
   const safeTrimOut = Math.max(0, trimOut)
-  const newDuration = Math.max(0.1, assetDuration - safeTrimIn - safeTrimOut)
+  const newDuration = Math.max(0.1, sourceDuration - safeTrimIn - safeTrimOut)
   const updated: Clip = { ...clip, trimIn: safeTrimIn, trimOut: safeTrimOut, duration: newDuration }
-  if (wouldOverlap(project, clip.trackId, clip.startTime, newDuration, clipId)) return null
+  const oldEnd = clip.startTime + clip.duration
+  const deltaSec = newDuration - clip.duration
   const clips = { ...project.clips, [clipId]: updated }
-  return recomputeDuration({ ...project, clips })
+  const trimmed = recomputeDuration({ ...project, clips })
+  return shiftSubsequentClips(trimmed, clip.trackId, clipId, oldEnd, deltaSec)
 }
 
 function snapSeekTime(time: number, fps: number, maxDuration: number): number {
@@ -257,6 +315,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     durationGuide: null,
     past: [],
     future: [],
+    formatPresetId: DEFAULT_VIDEO_FORMAT_PRESET_ID,
 
     loadProject: ({ id, name, project }) => {
       set({
@@ -268,12 +327,26 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         selectedOverlayId: null,
         past: [],
         future: [],
+        formatPresetId: resolveVideoFormatPresetId(project.resolution),
       })
     },
 
     setProjectName: name => set(state => ({ project: { ...state.project, name } })),
 
-    setResolution: resolution => set(state => ({ project: { ...state.project, resolution } })),
+    setResolution: resolution =>
+      set(state => ({
+        project: { ...state.project, resolution },
+        formatPresetId: resolveVideoFormatPresetId(resolution, state.formatPresetId),
+      })),
+
+    setFormatPreset: presetId => {
+      const preset = getVideoFormatPreset(presetId)
+      if (!preset) return
+      set(state => ({
+        project: { ...state.project, resolution: { ...preset.dimensions } },
+        formatPresetId: presetId,
+      }))
+    },
 
     setFps: fps => set(state => ({ project: { ...state.project, fps } })),
 
@@ -459,9 +532,20 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         const targetTrack = state.project.tracks.find(t => t.id === newTrackId)
         if (!targetTrack || targetTrack.locked) return {}
         if (targetTrack.type !== (clip.type === 'audio' ? 'audio' : 'video')) return {}
-        const start = Math.max(0, newStartTime)
-        if (wouldOverlap(state.project, newTrackId, start, clip.duration, clipId)) return {}
-        return { project: recomputeDuration(withClipMoved(state.project, clipId, start, newTrackId)) }
+        const desired = Math.max(0, newStartTime)
+        if (newTrackId === clip.trackId) {
+          if (desired === clip.startTime) return {}
+          return { project: withClipReordered(state.project, clipId, desired) }
+        }
+        const finalStart = clampCrossTrackStart(
+          state.project,
+          newTrackId,
+          clipId,
+          desired,
+          clip.duration,
+        )
+        if (finalStart === null) return {}
+        return { project: recomputeDuration(withClipMoved(state.project, clipId, finalStart, newTrackId)) }
       })
     },
 
@@ -482,18 +566,22 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         const localTime = atTime - clip.startTime
         if (localTime <= 0 || localTime >= clip.duration) return {}
         const asset = state.assets[clip.assetId]
-        const assetDuration = asset?.duration ?? clip.duration
+        const sourceDuration = getClipSourceDuration(clip, asset)
         const firstDuration = localTime
         const secondDuration = clip.duration - localTime
         const secondTrimIn = clip.trimIn + localTime
-        const first: Clip = { ...clip, duration: firstDuration }
+        const first: Clip = {
+          ...clip,
+          duration: firstDuration,
+          trimOut: Math.max(0, sourceDuration - clip.trimIn - firstDuration),
+        }
         const second: Clip = {
           ...clip,
           id: createEntityId('clip'),
           startTime: clip.startTime + firstDuration,
           duration: secondDuration,
           trimIn: secondTrimIn,
-          trimOut: Math.max(0, assetDuration - secondTrimIn - secondDuration),
+          trimOut: Math.max(0, sourceDuration - secondTrimIn - secondDuration),
         }
         const clips = { ...state.project.clips, [clip.id]: first, [second.id]: second }
         return {
@@ -862,6 +950,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         durationGuide: null,
         past: [],
         future: [],
+        formatPresetId: DEFAULT_VIDEO_FORMAT_PRESET_ID,
       })
     },
 

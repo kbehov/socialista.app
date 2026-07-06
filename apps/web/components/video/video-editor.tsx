@@ -8,11 +8,13 @@ import { ClipAiProvider, useClipAi } from '@/components/video/ai/clip-ai-provide
 import { usePlayback } from '@/hooks/video/use-playback'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
 import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/carousel/defaults'
+import { formatTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { VideoFormatSelector } from '@/components/video/video-format-selector'
+import { VideoFormatSelector, VideoResolutionBadge } from '@/components/video/video-format-selector'
 import { VideoSaveBar } from '@/components/video/video-save-bar'
-import { DownloadIcon, Redo2Icon, Undo2Icon } from 'lucide-react'
+import { isVerticalReelsFormat } from '@/components/video/preview/safe-zone-overlay'
+import { DownloadIcon, Redo2Icon, ShieldCheckIcon, Undo2Icon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { ExportModal } from './export/export-modal'
 import { PreviewCanvas } from './preview/preview-canvas'
@@ -41,6 +43,8 @@ function VideoEditorContent() {
   const future = useVideoEditorStore(s => s.future)
   const playhead = useVideoEditorStore(s => s.playhead)
   const duration = useVideoEditorStore(s => s.project.duration)
+  const fps = useVideoEditorStore(s => s.project.fps)
+  const resolution = useVideoEditorStore(s => s.project.resolution)
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectClip = useVideoEditorStore(s => s.selectClip)
@@ -58,6 +62,7 @@ function VideoEditorContent() {
   const canUseAi = selectedClipId ? canUseClipAi(selectedClipId) : false
   const isAiProcessing = selectedClipId ? isProcessingClip(selectedClipId) : false
   const aiLabel = clipAiMode === 'animate-image' ? 'Animate with AI' : 'Edit with AI'
+  const isReelsFormat = isVerticalReelsFormat(resolution.width, resolution.height)
 
   const handleSplit = () => {
     if (selectedClipId) {
@@ -83,7 +88,6 @@ function VideoEditorContent() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-      {/* Canvas top bar — CapCut-style chrome */}
       <div className="video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
         <div className="flex items-center gap-0.5">
           <Tooltip>
@@ -107,8 +111,6 @@ function VideoEditorContent() {
             </TooltipContent>
           </Tooltip>
         </div>
-
-        <VideoZoomControls className="hidden sm:flex" zoom={previewZoom} onZoomChange={setPreviewZoom} />
 
         <div className="min-w-0 flex-1" />
 
@@ -135,29 +137,61 @@ function VideoEditorContent() {
         </Tooltip>
       </div>
 
-      {/* Preview — full width, maximum height */}
-      <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
-        <div
-          ref={workspaceRef}
-          className={cn(
-            'video-editor-canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden',
-          )}
-          onPointerDown={handleWorkspacePointerDown}
-        >
-          <PreviewCanvas
-            canvasRef={canvasRef}
-            previewZoom={previewZoom}
-            showSafeZone={showSafeZone}
-            onToggleSafeZone={() => setShowSafeZone(value => !value)}
-          />
-
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10 sm:hidden">
-            <VideoZoomControls zoom={previewZoom} onZoomChange={setPreviewZoom} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
+          <div
+            ref={workspaceRef}
+            className="video-editor-canvas-area relative min-h-0 w-full flex-1 overflow-hidden"
+            onPointerDown={handleWorkspacePointerDown}
+          >
+            <PreviewCanvas
+              canvasRef={canvasRef}
+              previewZoom={previewZoom}
+              showSafeZone={showSafeZone}
+            />
           </div>
-        </div>
-      </CanvasWorkspaceProvider>
+        </CanvasWorkspaceProvider>
 
-      {/* Timeline section — transport bar + tracks */}
+        <div className="video-editor-status-bar mt-auto flex min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 py-1.5">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+              <span className="font-medium text-foreground">Time</span>
+              <span>
+                {formatTimecode(playhead, fps)} / {formatTimecode(duration, fps)}
+              </span>
+            </div>
+            <span className="hidden h-4 w-px shrink-0 bg-border sm:block" aria-hidden />
+            <VideoResolutionBadge className="hidden sm:inline-flex" />
+            {isReelsFormat ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    data-canvas-controls
+                    className={cn(
+                      'h-7 gap-1.5 px-2 text-xs text-muted-foreground',
+                      showSafeZone && 'bg-primary/10 text-primary',
+                    )}
+                    onClick={() => setShowSafeZone(value => !value)}
+                    aria-pressed={showSafeZone}
+                    aria-label={showSafeZone ? 'Hide safe area guides' : 'Show safe area guides'}
+                  >
+                    <ShieldCheckIcon className="size-3.5 shrink-0" />
+                    <span className="hidden md:inline">Safe area</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px]">
+                  {showSafeZone ? 'Hide safe area guides' : 'Show safe area for Reels & TikTok UI'}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
+          <VideoZoomControls zoom={previewZoom} onZoomChange={setPreviewZoom} />
+        </div>
+      </div>
+
       <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t">
         <TimelineTransport
           playback={playback}

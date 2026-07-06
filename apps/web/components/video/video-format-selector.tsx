@@ -9,32 +9,13 @@ import {
   SelectLabel,
   SelectTrigger,
 } from '@/components/ui/select'
+import { formatAspectRatio, type AspectRatioPreset } from '@/lib/carousel/aspect-ratios'
 import {
-  ASPECT_RATIO_PRESETS,
-  formatAspectRatio,
-  type AspectRatioPreset,
-} from '@/lib/carousel/aspect-ratios'
+  VIDEO_FORMAT_PRESETS,
+  type VideoFormatPresetId,
+} from '@/lib/video/format-presets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { cn } from '@/lib/utils'
-import type { CanvasDimensions } from '@socialista/types'
-
-const VIDEO_PRESET_IDS = new Set([
-  'instagram-story',
-  'tiktok',
-  'instagram-square',
-  'twitter',
-])
-
-const VIDEO_PRESETS = ASPECT_RATIO_PRESETS.filter(p => VIDEO_PRESET_IDS.has(p.id))
-
-function dimensionsMatch(a: CanvasDimensions, b: CanvasDimensions): boolean {
-  return a.width === b.width && a.height === b.height
-}
-
-function findPresetId(resolution: CanvasDimensions): string {
-  const match = VIDEO_PRESETS.find(p => dimensionsMatch(p.dimensions, resolution))
-  return match?.id ?? VIDEO_PRESETS[0]?.id ?? 'tiktok'
-}
 
 function FormatOption({ preset, className }: { preset: AspectRatioPreset; className?: string }) {
   return (
@@ -78,11 +59,11 @@ export function VideoFormatSelector({
   className?: string
   showLabel?: boolean
 }) {
-  const resolution = useVideoEditorStore(s => s.project.resolution)
-  const setResolution = useVideoEditorStore(s => s.setResolution)
-  const activeId = findPresetId(resolution)
-  const activePreset = VIDEO_PRESETS.find(p => p.id === activeId) ?? VIDEO_PRESETS[0]!
-  const platforms = [...new Set(VIDEO_PRESETS.map(preset => preset.platform))]
+  const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
+  const setFormatPreset = useVideoEditorStore(s => s.setFormatPreset)
+  const activePreset =
+    VIDEO_FORMAT_PRESETS.find(p => p.id === formatPresetId) ?? VIDEO_FORMAT_PRESETS[0]!
+  const platforms = [...new Set(VIDEO_FORMAT_PRESETS.map(preset => preset.platform))]
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-0.5', className)}>
@@ -92,11 +73,8 @@ export function VideoFormatSelector({
         </span>
       ) : null}
       <Select
-        value={activeId}
-        onValueChange={id => {
-          const preset = VIDEO_PRESETS.find(p => p.id === id)
-          if (preset) setResolution(preset.dimensions)
-        }}
+        value={formatPresetId}
+        onValueChange={id => setFormatPreset(id as VideoFormatPresetId)}
       >
         <SelectTrigger
           size="sm"
@@ -112,7 +90,7 @@ export function VideoFormatSelector({
                 <PlatformIcon platform={platform} size={14} />
                 {platform}
               </SelectLabel>
-              {VIDEO_PRESETS.filter(preset => preset.platform === platform).map(preset => (
+              {VIDEO_FORMAT_PRESETS.filter(preset => preset.platform === platform).map(preset => (
                 <SelectItem key={preset.id} value={preset.id} className="py-2 pl-3">
                   <FormatOption preset={preset} className="py-1" />
                 </SelectItem>
@@ -127,8 +105,9 @@ export function VideoFormatSelector({
 
 export function VideoResolutionBadge({ className }: { className?: string }) {
   const resolution = useVideoEditorStore(s => s.project.resolution)
-  const activeId = findPresetId(resolution)
-  const preset = VIDEO_PRESETS.find(p => p.id === activeId) ?? VIDEO_PRESETS[0]!
+  const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
+  const preset =
+    VIDEO_FORMAT_PRESETS.find(p => p.id === formatPresetId) ?? VIDEO_FORMAT_PRESETS[0]!
 
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs text-muted-foreground', className)}>

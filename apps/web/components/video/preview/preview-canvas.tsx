@@ -2,39 +2,30 @@
 
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { VideoResolutionBadge } from '@/components/video/video-format-selector'
 import { seekPreview } from '@/hooks/video/use-playback'
 import { fitVideoPreviewInWorkspace } from '@/lib/carousel/canvas-viewport'
 import { pickActiveVideoClip } from '@/lib/video/active-clip'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import { cn } from '@/lib/utils'
-import { FilmIcon, ShieldCheckIcon } from 'lucide-react'
+import { FilmIcon } from 'lucide-react'
 import { SafeZoneOverlay, isVerticalReelsFormat } from './safe-zone-overlay'
 import { TextOverlayRenderer } from './text-overlay-renderer'
-
-/** Horizontal + vertical padding on the preview centering container (`p-1` × 2 sides). */
-const PREVIEW_CONTAINER_INSET = 8
 
 type PreviewCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>
   previewZoom: number
   showSafeZone: boolean
-  onToggleSafeZone: () => void
 }
 
 function PreviewEmptyState() {
   return (
-    <div className="flex h-full items-center justify-center p-6">
-      <div className="max-w-xs text-center">
-        <FilmIcon className="mx-auto size-7 text-muted-foreground/60" strokeWidth={1.5} />
-        <p className="mt-3 text-sm font-medium tracking-tight">Import media to preview</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Add videos or images from the left panel. Clips appear here once placed on the timeline.
-        </p>
-      </div>
+    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+      <FilmIcon className="size-8 text-muted-foreground/50" strokeWidth={1.5} />
+      <p className="text-sm font-medium text-muted-foreground">Import media to preview</p>
+      <p className="max-w-xs text-xs text-muted-foreground/80">
+        Add videos or images from the left panel. Clips appear here once placed on the timeline.
+      </p>
     </div>
   )
 }
@@ -43,7 +34,6 @@ export function PreviewCanvas({
   canvasRef,
   previewZoom,
   showSafeZone,
-  onToggleSafeZone,
 }: PreviewCanvasProps) {
   const artboardRef = useRef<HTMLDivElement>(null)
   const resolution = useVideoEditorStore(s => s.project.resolution)
@@ -59,8 +49,10 @@ export function PreviewCanvas({
   const workspaceSize = useCanvasWorkspaceSize()
 
   const isEmpty = duration <= 0
+  const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
   const isReelsFormat = isVerticalReelsFormat(resolution.width, resolution.height)
   const showReelsSafeZone = showSafeZone && isReelsFormat
+  const zoom = Math.max(previewZoom, 0.01)
 
   const activeClip = useMemo(
     () => pickActiveVideoClip(tracks, clips, assets, playhead),
@@ -78,22 +70,20 @@ export function PreviewCanvas({
       return { width: 0, height: 0 }
     }
 
-    const zoom = Math.max(previewZoom, 0.01)
-
     return fitVideoPreviewInWorkspace(
-      Math.max(1, (workspaceSize.width - PREVIEW_CONTAINER_INSET) / zoom),
-      Math.max(1, (workspaceSize.height - PREVIEW_CONTAINER_INSET) / zoom),
+      workspaceSize.width,
+      workspaceSize.height,
       resolution.width,
       resolution.height,
     )
-  }, [workspaceSize.width, workspaceSize.height, resolution.width, resolution.height, previewZoom])
+  }, [workspaceSize.width, workspaceSize.height, resolution.width, resolution.height])
 
   const baseWidth = baseSize.width
   const baseHeight = baseSize.height
-  const visualWidth = Math.round(baseWidth * previewZoom)
-  const visualHeight = Math.round(baseHeight * previewZoom)
+  const visualWidth = Math.round(baseWidth * zoom)
+  const visualHeight = Math.round(baseHeight * zoom)
   const isMeasured = baseWidth > 0 && baseHeight > 0
-  const scale = baseWidth > 0 ? baseWidth / resolution.width : 0
+  const scale = isMeasured ? visualWidth / resolution.width : 0
 
   const handleCanvasPointerDown = useCallback(() => {
     if (isPlaying) return
@@ -118,77 +108,49 @@ export function PreviewCanvas({
   }
 
   return (
-    <div className="flex h-full w-full min-w-0 items-center justify-center overflow-hidden p-1">
-      <div
-        className={cn('relative shrink-0', !isMeasured && 'invisible')}
-        style={{
-          width: isMeasured ? visualWidth : undefined,
-          height: isMeasured ? visualHeight : undefined,
-        }}
-      >
+    <div className="video-editor-preview-scroll h-full min-h-0 w-full overflow-auto overscroll-contain">
+      <div className="flex min-h-full min-w-full items-center justify-center p-8">
         <div
-          ref={artboardRef}
-          data-video-canvas
-          className={cn(
-            'relative overflow-hidden bg-black',
-            'rounded-sm shadow-lg ring-1 ring-inset ring-foreground/10',
-            isActiveClipSelected && 'ring-2 ring-inset ring-primary/45',
-          )}
+          className={cn('relative shrink-0', !isMeasured && 'invisible')}
           style={{
-            width: isMeasured ? baseWidth : undefined,
-            height: isMeasured ? baseHeight : undefined,
-            transform: isMeasured && previewZoom !== 1 ? `scale(${previewZoom})` : undefined,
-            transformOrigin: 'top left',
+            width: isMeasured ? visualWidth : undefined,
+            height: isMeasured ? visualHeight : undefined,
           }}
         >
-          <canvas
-            ref={canvasRef}
-            className="pointer-events-none block"
-            style={isMeasured ? { width: baseWidth, height: baseHeight } : undefined}
-          />
-          <TextOverlayRenderer
-            artboardRef={artboardRef}
-            scale={scale}
-            canSelectClip={canSelectClip}
-            onBackgroundPointerDown={handleCanvasPointerDown}
-          />
-          <SafeZoneOverlay visible={showReelsSafeZone} />
-        </div>
-
-        <div
-          data-canvas-controls
-          className="pointer-events-none absolute top-2 right-2 z-40 flex items-center gap-1"
-        >
-          {isReelsFormat ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className={cn(
-                    'pointer-events-auto size-7 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground',
-                    showSafeZone && 'bg-primary/10 text-primary',
-                  )}
-                  onPointerDown={e => e.preventDefault()}
-                  onClick={e => {
-                    e.stopPropagation()
-                    onToggleSafeZone()
-                  }}
-                  aria-pressed={showSafeZone}
-                  aria-label={showSafeZone ? 'Hide safe area guides' : 'Show safe area guides'}
-                >
-                  <ShieldCheckIcon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[200px]">
-                {showSafeZone ? 'Hide safe area guides' : 'Show safe area for Reels & TikTok UI'}
-              </TooltipContent>
-            </Tooltip>
-          ) : null}
-          <span className="pointer-events-none rounded-md bg-background/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur-sm">
-            <VideoResolutionBadge />
-          </span>
+          <div
+            ref={artboardRef}
+            data-video-canvas
+            className={cn(
+              'relative overflow-hidden rounded-lg bg-black shadow-md',
+              isActiveClipSelected
+                ? 'ring-2 ring-primary/25'
+                : 'ring-1 ring-border/40',
+            )}
+            style={{
+              width: isMeasured ? baseWidth : undefined,
+              height: isMeasured ? baseHeight : undefined,
+              transform: isMeasured && zoom !== 1 ? `scale(${zoom})` : undefined,
+              transformOrigin: 'top left',
+            }}
+          >
+            <canvas
+              ref={canvasRef}
+              className="pointer-events-none block"
+              style={isMeasured ? { width: baseWidth, height: baseHeight } : undefined}
+            />
+            <TextOverlayRenderer
+              artboardRef={artboardRef}
+              scale={scale}
+              canSelectClip={canSelectClip}
+              onBackgroundPointerDown={handleCanvasPointerDown}
+            />
+            <SafeZoneOverlay
+              visible={showReelsSafeZone}
+              canvasWidth={resolution.width}
+              canvasHeight={resolution.height}
+              formatId={formatPresetId}
+            />
+          </div>
         </div>
       </div>
     </div>

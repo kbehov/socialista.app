@@ -1,13 +1,25 @@
 'use client'
 
-import { useState } from 'react'
-import { FilmIcon, FolderOpenIcon } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { FilmIcon, FolderOpenIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { PropertiesPanel } from '@/components/video/inspector/properties-panel'
 import { VideoSourcePanel } from '@/components/video/video-source-panel'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 type SidebarTab = 'media' | 'edit'
+
+const PANEL_OPEN_STORAGE_KEY = 'video-panel-open'
+
+function readPanelOpen(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    const stored = sessionStorage.getItem(PANEL_OPEN_STORAGE_KEY)
+    return stored === null ? true : stored === 'true'
+  } catch {
+    return true
+  }
+}
 
 function RailButton({
   active,
@@ -46,9 +58,22 @@ function RailButton({
 
 export function VideoStudioSidebar({ className }: { className?: string }) {
   const [tab, setTab] = useState<SidebarTab>('media')
+  const [panelOpen, setPanelOpen] = useState(() => readPanelOpen())
+
+  const togglePanel = useCallback(() => {
+    setPanelOpen(prev => {
+      const next = !prev
+      try {
+        sessionStorage.setItem(PANEL_OPEN_STORAGE_KEY, String(next))
+      } catch {
+        // ignore storage errors
+      }
+      return next
+    })
+  }, [])
 
   return (
-    <div className={cn('flex h-full min-h-0 min-w-0 shrink-0', className)}>
+    <div className={cn('relative flex h-full min-h-0 min-w-0 shrink-0', className)}>
       <nav
         aria-label="Editor panels"
         className="video-editor-rail flex w-14 shrink-0 flex-col gap-1 border-r px-1.5 py-2"
@@ -67,9 +92,53 @@ export function VideoStudioSidebar({ className }: { className?: string }) {
         />
       </nav>
 
-      <div className="video-editor-panel flex w-60 min-w-0 shrink-0 flex-col overflow-hidden border-r lg:w-64 xl:w-[280px]">
-        {tab === 'media' ? <VideoSourcePanel /> : <PropertiesPanel embedded />}
+      <div
+        className={cn(
+          'video-editor-panel relative flex min-w-0 shrink-0 flex-col overflow-hidden border-r transition-[width,opacity] duration-200 ease-out',
+          panelOpen ? 'w-60 opacity-100 lg:w-64 xl:w-[280px]' : 'w-0 border-r-0 opacity-0',
+        )}
+        aria-hidden={!panelOpen}
+      >
+        <div className={cn('flex h-full min-h-0 w-60 flex-col lg:w-64 xl:w-[280px]', !panelOpen && 'invisible')}>
+          {tab === 'media' ? <VideoSourcePanel /> : <PropertiesPanel embedded />}
+        </div>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={togglePanel}
+              aria-expanded={panelOpen}
+              aria-label={panelOpen ? 'Collapse panel' : 'Expand panel'}
+              className="video-editor-panel-toggle absolute top-1/2 -right-3 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background shadow-sm transition-colors hover:bg-muted"
+            >
+              {panelOpen ? (
+                <ChevronLeftIcon className="size-3.5 text-muted-foreground" />
+              ) : (
+                <ChevronRightIcon className="size-3.5 text-muted-foreground" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{panelOpen ? 'Collapse panel' : 'Expand panel'}</TooltipContent>
+        </Tooltip>
       </div>
+
+      {!panelOpen ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={togglePanel}
+              aria-expanded={false}
+              aria-label="Expand panel"
+              className="video-editor-panel-toggle absolute top-1/2 left-[3.25rem] z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background shadow-sm transition-colors hover:bg-muted"
+            >
+              <ChevronRightIcon className="size-3.5 text-muted-foreground" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Expand panel</TooltipContent>
+        </Tooltip>
+      ) : null}
     </div>
   )
 }

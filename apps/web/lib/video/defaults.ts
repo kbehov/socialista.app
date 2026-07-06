@@ -184,6 +184,22 @@ export function snapToZoomLevel(zoom: number, direction: 1 | -1): number {
   return ZOOM_LEVELS[next]!
 }
 
+/**
+ * Source duration of a clip's underlying media.
+ *
+ * For video/audio with a probed asset, this is `asset.duration`. For images
+ * (where `asset.duration` is `0`) and for clips whose asset is missing, fall
+ * back to the clip's trim invariant `trimIn + duration + trimOut` so trims
+ * remain reversible after reloads or asset removal.
+ */
+export function getClipSourceDuration(
+  clip: Clip,
+  asset: { duration: number } | undefined,
+): number {
+  if (asset && asset.duration > 0) return asset.duration
+  return clip.trimIn + clip.duration + clip.trimOut
+}
+
 /** Recompute the project duration as the max clip/overlay end time. */
 export function computeProjectDuration(project: Project): number {
   let max = 0
@@ -256,4 +272,69 @@ export function withClipMoved(
       track.id === newTrackId ? { ...track, clips: sortTrackClips(withTarget, newTrackId) } : track,
     ),
   }
+}
+
+/**
+ * Move a clip to a desired start time on its own track, reordering it past
+ * neighbours when the drop position crosses a neighbour's midpoint. Clips
+ * after the insertion point shift right as needed so no overlaps remain.
+ *
+ * Midpoint heuristic: dropping in the first half of a neighbour inserts
+ * before it (reorder); dropping in the second half inserts after it (reorder
+ * or clamp to the neighbour's edge). Dropping in a gap that fits the clip
+ * just moves it without disturbing anything else.
+ */
+export function withClipReordered(
+  project: Project,
+  clipId: ClipId,
+  desiredStart: number,
+): Project {
+  const clip = project.clips[clipId]
+  if (!clip) return project
+  const track = project.tracks.find(t => t.id === clip.trackId)
+  if (!track) return project
+
+  const others = track.clips
+    .filter(id => id !== clipId)
+    .map(id => project.clips[id])
+    .filter((c): c is Clip => c !== undefined)
+    .sort((a, b) => a.startTime - b.startTime)
+
+  const duration = clip.duration
+  const candidate = Math.max(0, desiredStart)
+
+  let insertIdx = others.length
+  for (let i = 0; i < others.length; i++) {
+    const other = others[i]
+    if (!other) continue
+    const midpoint = other.startTime + other.duration / 2
+    if (candidate < midpoint) {
+      insertIdx = i
+      break
+    }
+  }
+
+  const prev = insertIdx > 0 ? others[insertIdx - 1] : null
+  const lowerBound = prev ? prev.startTime + prev.duration : 0
+  const xStart = Math.max(lowerBound, candidate)
+
+  const clips = { ...project.clips, [clipId]: { ...clip, startTime: xStart } }
+  let currentEnd = xStart + duration
+  for (let i = insertIdx; i < others.length; i++) {
+    const other = others[i]
+    if (!other) continue
+    if (other.startTime < currentEnd) {
+      clips[other.id] = { ...other, startTime: currentEnd }
+      currentEnd = currentEnd + other.duration
+    } else {
+      break
+    }
+  }
+
+  const updatedProject: Project = { ...project, clips }
+  const tracks = project.tracks.map(t =>
+    t.id === track.id ? { ...t, clips: sortTrackClips(updatedProject, track.id) } : t,
+  )
+  const withTracks: Project = { ...updatedProject, tracks }
+  return { ...withTracks, duration: computeProjectDuration(withTracks) }
 }

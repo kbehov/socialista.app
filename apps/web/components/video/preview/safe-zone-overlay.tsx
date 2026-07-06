@@ -2,64 +2,110 @@
 
 import { cn } from '@/lib/utils'
 
-/** Safe zones for 9:16 reels (1080×1920 reference). */
-const TOP_SAFE_PCT = (108 / 1920) * 100
-const BOTTOM_SAFE_PCT = (320 / 1920) * 100
-const SIDE_SAFE_PCT = (48 / 1080) * 100
+/** Reference frame for vertical short-form safe zones. */
+const REF_WIDTH = 1080
+const REF_HEIGHT = 1920
+
+type SafeZoneInsets = {
+  top: number
+  bottom: number
+  left: number
+  right: number
+}
+
+/** Safe margins on a 1080×1920 canvas (px), scaled to the project resolution. */
+const SAFE_ZONE_BY_FORMAT: Record<string, SafeZoneInsets> = {
+  tiktok: { top: 150, bottom: 340, left: 48, right: 168 },
+  'instagram-story': { top: 180, bottom: 360, left: 48, right: 108 },
+}
+
+const DEFAULT_SAFE_ZONE: SafeZoneInsets = { top: 180, bottom: 360, left: 48, right: 168 }
+
+function getSafeZoneInsets(
+  width: number,
+  height: number,
+  formatId: string,
+): SafeZoneInsets | null {
+  if (!isVerticalReelsFormat(width, height)) return null
+
+  const preset = SAFE_ZONE_BY_FORMAT[formatId] ?? DEFAULT_SAFE_ZONE
+
+  const scaleX = width / REF_WIDTH
+  const scaleY = height / REF_HEIGHT
+
+  return {
+    top: Math.round(preset.top * scaleY),
+    bottom: Math.round(preset.bottom * scaleY),
+    left: Math.round(preset.left * scaleX),
+    right: Math.round(preset.right * scaleX),
+  }
+}
 
 type SafeZoneOverlayProps = {
   visible: boolean
+  canvasWidth: number
+  canvasHeight: number
+  formatId: string
   className?: string
 }
 
-export function SafeZoneOverlay({ visible, className }: SafeZoneOverlayProps) {
+export function SafeZoneOverlay({
+  visible,
+  canvasWidth,
+  canvasHeight,
+  formatId,
+  className,
+}: SafeZoneOverlayProps) {
+  const insets = getSafeZoneInsets(canvasWidth, canvasHeight, formatId)
+  if (!insets) return null
+
+  const topPct = (insets.top / canvasHeight) * 100
+  const bottomPct = (insets.bottom / canvasHeight) * 100
+  const leftPct = (insets.left / canvasWidth) * 100
+  const rightPct = (insets.right / canvasWidth) * 100
+
   return (
     <div
       className={cn(
-        'pointer-events-none absolute inset-0 z-30 transition-opacity duration-150',
+        'pointer-events-none absolute inset-0 z-30 transition-opacity duration-200',
         visible ? 'opacity-100' : 'opacity-0',
+        !visible && 'invisible',
         className,
       )}
       aria-hidden={!visible}
     >
-      {/* Top — profile / status bar area */}
       <div
-        className="absolute inset-x-0 top-0 border-b border-dashed border-amber-400/70 bg-amber-400/10"
-        style={{ height: `${TOP_SAFE_PCT}%` }}
-      >
-        <span className="absolute left-2 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-amber-100">
-          UI overlay area
-        </span>
-      </div>
-
-      {/* Bottom — captions / buttons / nav */}
-      <div
-        className="absolute inset-x-0 bottom-0 border-t border-dashed border-amber-400/70 bg-amber-400/10"
-        style={{ height: `${BOTTOM_SAFE_PCT}%` }}
-      >
-        <span className="absolute bottom-1.5 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-amber-100">
-          Captions &amp; buttons
-        </span>
-      </div>
-
-      {/* Side margins — like / share buttons */}
-      <div
-        className="absolute inset-y-0 left-0 border-r border-dashed border-amber-400/50 bg-amber-400/5"
-        style={{ width: `${SIDE_SAFE_PCT}%` }}
+        className="absolute inset-x-0 top-0 bg-black/20"
+        style={{ height: `${topPct}%` }}
       />
       <div
-        className="absolute inset-y-0 right-0 border-l border-dashed border-amber-400/50 bg-amber-400/5"
-        style={{ width: `${SIDE_SAFE_PCT}%` }}
+        className="absolute inset-x-0 bottom-0 bg-black/20"
+        style={{ height: `${bottomPct}%` }}
       />
-
-      {/* Safe content frame */}
       <div
-        className="absolute border border-dashed border-emerald-400/70"
+        className="absolute left-0 bg-black/15"
         style={{
-          top: `${TOP_SAFE_PCT}%`,
-          bottom: `${BOTTOM_SAFE_PCT}%`,
-          left: `${SIDE_SAFE_PCT}%`,
-          right: `${SIDE_SAFE_PCT}%`,
+          top: `${topPct}%`,
+          bottom: `${bottomPct}%`,
+          width: `${leftPct}%`,
+        }}
+      />
+      <div
+        className="absolute right-0 bg-black/15"
+        style={{
+          top: `${topPct}%`,
+          bottom: `${bottomPct}%`,
+          width: `${rightPct}%`,
+        }}
+      />
+
+      <div
+        className="absolute ring-1 ring-inset ring-white/45"
+        style={{
+          top: `${topPct}%`,
+          bottom: `${bottomPct}%`,
+          left: `${leftPct}%`,
+          right: `${rightPct}%`,
         }}
       />
     </div>
@@ -67,5 +113,6 @@ export function SafeZoneOverlay({ visible, className }: SafeZoneOverlayProps) {
 }
 
 export function isVerticalReelsFormat(width: number, height: number): boolean {
-  return height > width && Math.abs(width / height - 9 / 16) < 0.05
+  if (height <= width) return false
+  return Math.abs(width / height - 9 / 16) < 0.05
 }

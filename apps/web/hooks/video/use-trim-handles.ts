@@ -16,6 +16,13 @@ type TrimState = {
   pxPerSec: number
 }
 
+/** Snap trim values to this many seconds so handles move in fixed increments. */
+const TRIM_SNAP_SECONDS = 0.5
+
+function snapToStep(value: number, step: number): number {
+  return Math.round(value / step) * step
+}
+
 /** Hook for trimming a clip via the in/out edge handles. */
 export function useTrimHandles(pxPerSec: number) {
   const [draft, setDraft] = useState<{ clipId: ClipId; trimIn: number; trimOut: number } | null>(null)
@@ -28,14 +35,16 @@ export function useTrimHandles(pxPerSec: number) {
     const it = stateRef.current
     if (!it) return
     e.preventDefault()
-    const deltaSec = (e.clientX - it.startPointerX) / it.pxPerSec
+    const rawDeltaSec = (e.clientX - it.startPointerX) / it.pxPerSec
     let next: { clipId: ClipId; trimIn: number; trimOut: number }
     if (it.edge === 'in') {
-      const newTrimIn = Math.max(0, it.startTrimIn + deltaSec)
+      const snappedTrimIn = snapToStep(it.startTrimIn + rawDeltaSec, TRIM_SNAP_SECONDS)
+      const newTrimIn = Math.max(0, snappedTrimIn)
       const maxTrimIn = it.startTrimIn + it.startDuration - 0.1
       next = { clipId: it.clipId, trimIn: Math.min(newTrimIn, maxTrimIn), trimOut: it.startTrimOut }
     } else {
-      const newTrimOut = Math.max(0, it.startTrimOut - deltaSec)
+      const snappedTrimOut = snapToStep(it.startTrimOut - rawDeltaSec, TRIM_SNAP_SECONDS)
+      const newTrimOut = Math.max(0, snappedTrimOut)
       const maxTrimOut = it.startTrimOut + it.startDuration - 0.1
       next = { clipId: it.clipId, trimIn: it.startTrimIn, trimOut: Math.min(newTrimOut, maxTrimOut) }
     }

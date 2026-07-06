@@ -7,6 +7,9 @@ export const SLIDESHOW_WORKSPACE_PADDING = 4
 /** Tighter inset for video preview — maximizes readable canvas area. */
 export const VIDEO_PREVIEW_WORKSPACE_PADDING = 4
 
+/** Breathing room so the video preview fits fully in the artboard viewport. */
+export const VIDEO_PREVIEW_VIEWPORT_CHROME = 32
+
 /** Minimum share of workspace width the slideshow preview should target. */
 export const SLIDESHOW_MIN_PREVIEW_WIDTH_RATIO = 0.48
 
@@ -159,16 +162,19 @@ export function fitCarouselPreviewInWorkspace(
   )
 }
 
-/** Fit video preview within workspace bounds. */
+/** Fit video preview so the full frame is visible in the artboard at 100% zoom. */
 export function fitVideoPreviewInWorkspace(
   workspaceWidth: number,
   workspaceHeight: number,
   canvasWidth: number,
   canvasHeight: number,
 ): { width: number; height: number } {
+  const effectiveHeight = Math.max(workspaceHeight - VIDEO_PREVIEW_VIEWPORT_CHROME, 1)
+  const effectiveWidth = Math.max(workspaceWidth - 48, 1)
+
   return fitArtboardInWorkspace(
-    workspaceWidth,
-    workspaceHeight,
+    effectiveWidth,
+    effectiveHeight,
     canvasWidth,
     canvasHeight,
     VIDEO_PREVIEW_WORKSPACE_PADDING,
