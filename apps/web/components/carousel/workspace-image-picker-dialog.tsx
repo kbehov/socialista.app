@@ -17,7 +17,7 @@ import { finderGridClassName } from '@/components/media/folder-grid'
 import { formatFileCount } from '@/lib/format'
 import { getMediaKind } from '@/lib/media'
 import { proxiedImageUrl } from '@/lib/carousel/image-url'
-import { getCollections, getWorkspaceImages } from '@/services/collection.service'
+import { getFolders, getWorkspaceFiles } from '@/services/files.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { cn } from '@/lib/utils'
 
@@ -68,20 +68,20 @@ export function WorkspaceImagePickerDialog({ open, onOpenChange, onSelect }: Wor
       setError(null)
 
       try {
-        const [collectionsResult, imagesResult] = await Promise.all([
-          folderId ? Promise.resolve(null) : getCollections(),
-          getWorkspaceImages(currentWorkspace!._id, folderId),
+        const [foldersResult, filesResult] = await Promise.all([
+          folderId ? Promise.resolve(null) : getFolders(),
+          getWorkspaceFiles(currentWorkspace!._id, folderId),
         ])
 
         if (cancelled) return
 
-        if (!folderId && collectionsResult?.data) {
-          setFolders(collectionsResult.data.collections)
+        if (!folderId && foldersResult?.data) {
+          setFolders(foldersResult.data.collections)
         } else if (!folderId) {
           setFolders([])
         }
 
-        setImages(imagesResult.data?.images ?? [])
+        setImages(filesResult.data?.images ?? [])
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load files')

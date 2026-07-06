@@ -6,7 +6,7 @@ import { RotateCcwIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import {
-  DEFAULT_VIEWPORT_ZOOM,
+  DEFAULT_VIDEO_PREVIEW_ZOOM,
   MAX_VIEWPORT_ZOOM,
   MIN_VIEWPORT_ZOOM,
   VIEWPORT_ZOOM_STEP,
@@ -23,7 +23,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
 
   const zoomOut = () => onZoomChange(Math.max(MIN_VIEWPORT_ZOOM, zoom - VIEWPORT_ZOOM_STEP))
   const zoomIn = () => onZoomChange(Math.min(MAX_VIEWPORT_ZOOM, zoom + VIEWPORT_ZOOM_STEP))
-  const resetZoom = () => onZoomChange(DEFAULT_VIEWPORT_ZOOM)
+  const resetZoom = () => onZoomChange(DEFAULT_VIDEO_PREVIEW_ZOOM)
 
   return (
     <div
@@ -74,7 +74,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
         <TooltipContent>Zoom in</TooltipContent>
       </Tooltip>
 
-      {zoom !== DEFAULT_VIEWPORT_ZOOM ? (
+      {zoom !== DEFAULT_VIDEO_PREVIEW_ZOOM ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -87,7 +87,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
               <RotateCcwIcon className="size-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Reset to {Math.round(DEFAULT_VIEWPORT_ZOOM * 100)}%</TooltipContent>
+          <TooltipContent>Reset to {Math.round(DEFAULT_VIDEO_PREVIEW_ZOOM * 100)}%</TooltipContent>
         </Tooltip>
       ) : null}
     </div>

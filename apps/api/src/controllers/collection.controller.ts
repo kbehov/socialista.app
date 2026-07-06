@@ -55,7 +55,7 @@ export const getCollectionById = async (c: Context<AppContext>) => {
 }
 
 // GET /collections/workspace/:workspaceId/images
-// Optional query: ?collection=<collectionId> to filter by collection
+// Optional query: ?collectionId=<id> to filter by collection
 export const getWorkspaceImages = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
@@ -215,7 +215,7 @@ export const addFileToCollection = async (c: Context<AppContext>) => {
     width,
     height,
     size: buffer.length,
-    collection: toObjectId(collectionId),
+    collectionId: toObjectId(collectionId),
     uploadedBy: toObjectId(userId),
     workspace: toObjectId(workspaceId),
   })

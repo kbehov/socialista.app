@@ -8,7 +8,7 @@ export interface IImage {
   key: string
   size?: number
   workspace?: Types.ObjectId
-  collection?: Types.ObjectId
+  collectionId?: Types.ObjectId
   uploadedBy?: Types.ObjectId
   createdAt: Date
   updatedAt: Date

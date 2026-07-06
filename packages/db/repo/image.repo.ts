@@ -19,7 +19,7 @@ export const deleteImage = async (id: string) => {
 }
 
 export const getImagesByCollection = async (collectionId: string) => {
-  return await ImageModel.find({ collection: collectionId }).lean()
+  return await ImageModel.find({ collectionId }).lean()
 }
 
 export const getImages = async (query: string) => {

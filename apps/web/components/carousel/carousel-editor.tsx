@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
 import { CanvasZoomControls } from '@/components/carousel/canvas-zoom-controls'
-import { EditorInspector } from './editor-inspector'
+import { EditorInspector, type InspectorTab } from './editor-inspector'
 import { SlideImageEditProvider, useSlideImageEdit } from './slide-image-edit-provider'
 import { SlideNavigator } from './slide-navigator'
 import { SlidePreviewCarousel } from './slide-preview-carousel'
@@ -126,10 +126,12 @@ function CarouselEditorContent({
 }: CarouselEditorContentProps) {
   useEditorShortcuts()
   const activeLayerId = useEditorStore(s => s.activeLayerId)
-  const viewportZoom = useEditorStore(s => s.viewportZoom)
   const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
   const addSlide = useEditorStore(s => s.addSlide)
   const { deselectBackgroundEdit, isBackgroundEditSelected } = useSlideImageEdit()
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('slide')
+
+  const capPreviewHeight = inspectorTab === 'text' || Boolean(activeLayerId)
 
   const showCanvasHint = Boolean(
     activeSlide &&
@@ -221,44 +223,46 @@ function CarouselEditorContent({
 
         {/* Canvas + inspector */}
         <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,180px)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px] lg:grid-rows-1">
-          <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
-            <div
-              ref={workspaceRef}
-              className={cn(
-                'studio-canvas-workspace relative h-full min-h-0',
-                viewportZoom > 1
-                  ? 'overflow-auto'
-                  : isBackgroundToolbarOpen
+          <div className="relative h-full min-h-0">
+            <CanvasWorkspaceProvider workspaceRef={workspaceRef} capPreviewHeight={capPreviewHeight}>
+              <div
+                className={cn(
+                  'studio-canvas-workspace relative flex h-full min-h-0 flex-col box-border',
+                  capPreviewHeight && 'py-8',
+                  isBackgroundToolbarOpen
                     ? 'overflow-visible'
-                    : 'overflow-hidden',
-              )}
-              onPointerDown={handleWorkspacePointerDown}
-            >
-              {activeSlide ? (
-                <SlidePreviewCarousel className="h-full" canvasHint={showCanvasHint ? hintMessage : null} />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                  <ImageIcon className="size-8 text-muted-foreground/50" />
-                  <p className="text-sm font-medium text-muted-foreground">No slide selected</p>
-                  <p className="max-w-xs text-xs text-muted-foreground/80">
-                    Generate or import slides from the panel on the left.
-                  </p>
+                    : 'overflow-auto',
+                )}
+                onPointerDown={handleWorkspacePointerDown}
+              >
+                <div ref={workspaceRef} className="relative min-h-0 w-full flex-1">
+                  {activeSlide ? (
+                    <SlidePreviewCarousel className="h-full" canvasHint={showCanvasHint ? hintMessage : null} />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                      <ImageIcon className="size-8 text-muted-foreground/50" />
+                      <p className="text-sm font-medium text-muted-foreground">No slide selected</p>
+                      <p className="max-w-xs text-xs text-muted-foreground/80">
+                        Generate or import slides from the panel on the left.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <div className="pointer-events-none absolute bottom-3 left-3 z-10 md:hidden">
-                <CanvasZoomControls />
+                <div className="pointer-events-none absolute bottom-3 left-3 z-10 md:hidden">
+                  <CanvasZoomControls />
+                </div>
               </div>
-            </div>
-          </CanvasWorkspaceProvider>
+            </CanvasWorkspaceProvider>
+          </div>
 
           <div className="flex h-full min-h-0 flex-col overflow-hidden border-t bg-card lg:border-t-0 lg:border-l">
-            <EditorInspector />
+            <EditorInspector tab={inspectorTab} onTabChange={setInspectorTab} />
           </div>
         </div>
 
         {/* Filmstrip */}
-        <div className="shrink-0 border-t bg-muted/20 px-3 py-1.5">
+        <div className="shrink-0 border-t bg-muted/20 px-3 py-1">
           <div className="mb-1 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Slides</span>

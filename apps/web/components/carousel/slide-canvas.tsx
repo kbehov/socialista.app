@@ -5,8 +5,8 @@ import type { BackgroundImageTransform, CanvasDimensions, Slide } from '@sociali
 import { useEditorStore } from '@/lib/carousel/store'
 import { DEFAULT_SLIDE_BACKGROUND, sortLayers, DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT } from '@/lib/carousel/defaults'
 import { transformToAdjustment, usesFrame } from '@/lib/carousel/background-image-style'
-import { fitArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
-import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
+import { fitArtboardInWorkspace, fitSlideshowArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
+import { useCanvasWorkspaceSize, useCanvasWorkspaceLayout } from '@/components/carousel/canvas-workspace-context'
 import { TextLayerNode } from './text-layer-node'
 import { SlideBackgroundImage } from './slide-background-image'
 import { cn } from '@/lib/utils'
@@ -53,6 +53,7 @@ export function SlideCanvas({
   const activeLayerId = useEditorStore(s => s.activeLayerId)
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
   const workspaceSize = useCanvasWorkspaceSize()
+  const { capPreviewHeight } = useCanvasWorkspaceLayout()
 
   const fallbackRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
@@ -93,11 +94,12 @@ export function SlideCanvas({
     }
 
     if (usesWorkspace) {
-      return fitArtboardInWorkspace(
+      return fitSlideshowArtboardInWorkspace(
         measureSize.width,
         measureSize.height,
         canvas.width,
         canvas.height,
+        { capPreviewHeight },
       )
     }
 
@@ -108,7 +110,7 @@ export function SlideCanvas({
       canvas.height,
       16,
     )
-  }, [forceWidth, measureSize, canvas.width, canvas.height, usesWorkspace])
+  }, [forceWidth, measureSize, canvas.width, canvas.height, usesWorkspace, capPreviewHeight])
 
   const usesEditorViewport = forceWidth == null
   const zoom = usesEditorViewport ? viewportZoom : 1

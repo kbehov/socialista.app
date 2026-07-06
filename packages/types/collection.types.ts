@@ -29,7 +29,7 @@ export type ImageResponse = {
   key: string
   size?: number
   workspace: string
-  collection?: string
+  collectionId?: string
   uploadedBy?: string
   createdAt: Date
   updatedAt: Date

@@ -1,10 +1,10 @@
-import { FilesBrowser } from '@/components/collections/files-browser'
+import { FilesBrowser } from '@/components/files/files-browser'
 import { PageHeader } from '@/components/common/page-header'
-import { getCollections } from '@/services/collection.service'
+import { getFolders } from '@/services/files.service'
 
-export default async function CollectionsPage() {
-  const collections = await getCollections()
-  const folders = collections.data?.collections ?? []
+export default async function ManagerFilesPage() {
+  const foldersResult = await getFolders()
+  const folders = foldersResult.data?.collections ?? []
 
   return (
     <div className="flex flex-col gap-6">

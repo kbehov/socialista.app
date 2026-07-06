@@ -1,9 +1,9 @@
 'use client'
 
-import { CreateCollectionSheet } from '@/components/collections/create-collection-sheet'
-import { FilesDropzone } from '@/components/collections/files-dropzone'
-import { FilesToolbar, FolderToolbar } from '@/components/collections/files-toolbar'
-import { FilesUploadEmptyState } from '@/components/collections/files-upload-empty-state'
+import { CreateFolderSheet } from '@/components/files/create-folder-sheet'
+import { FilesDropzone } from '@/components/files/files-dropzone'
+import { FilesToolbar, FolderToolbar } from '@/components/files/files-toolbar'
+import { FilesUploadEmptyState } from '@/components/files/files-upload-empty-state'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
@@ -13,8 +13,8 @@ import type { MediaGridItem } from '@/components/media/media-grid'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
 import { formatFileCount } from '@/lib/format'
 import { getFilesPaths, type FilesPathsVariant, type FilesRoutePaths } from '@/constants/app-routes'
-import { useCollectionImages } from '@/hooks/use-collection-images'
-import { deleteWorkspaceFile, deleteWorkspaceFolder } from '@/services/collection.service'
+import { useWorkspaceFiles } from '@/hooks/use-workspace-files'
+import { deleteWorkspaceFile, deleteWorkspaceFolder } from '@/services/files.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
 import type { CollectionResponse, ImageResponse } from '@socialista/types'
 import { useRouter } from 'next/navigation'
@@ -111,15 +111,15 @@ export function FilesBrowser({
   const { updateWorkspace } = useWorkspaceStoreActions()
   const isRootView = !folderId
 
-  const { images, isLoading, isUploading, error, refetch, uploadState, uploadActions } = useCollectionImages({
-    collectionId: folderId,
+  const { files, isLoading, isUploading, error, refetch, uploadState, uploadActions } = useWorkspaceFiles({
+    folderId,
   })
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const { isDragging } = uploadState
-  const totalItems = folders.length + images.length
+  const totalItems = folders.length + files.length
   const hasItems = totalItems > 0
   const title = folderName ?? currentWorkspace?.name ?? 'Files'
 
@@ -210,12 +210,12 @@ export function FilesBrowser({
               itemCount={totalItems}
               isUploading={isUploading}
               onUpload={uploadActions.openFileDialog}
-              actions={<CreateCollectionSheet variant="toolbar" />}
+              actions={<CreateFolderSheet variant="toolbar" />}
             />
           ) : (
             <FolderToolbar
               title={title}
-              fileCount={images.length}
+              fileCount={files.length}
               isUploading={isUploading}
               onUpload={uploadActions.openFileDialog}
               onDeleteFolder={
@@ -236,17 +236,17 @@ export function FilesBrowser({
         ) : isRootView ? (
           <FinderContent
             folders={folders}
-            files={images}
+            files={files}
             paths={paths}
             isDragging={isDragging}
             onUpload={uploadActions.openFileDialog}
             onDeleteFile={handleDeleteFile}
             onDeleteFolder={handleDeleteFolder}
           />
-        ) : images.length === 0 ? (
+        ) : files.length === 0 ? (
           <FilesUploadEmptyState isDragging={isDragging} onUpload={uploadActions.openFileDialog} />
         ) : (
-          <FileMediaGrid items={toMediaGridItems(images)} onDeleteFile={handleDeleteFile} />
+          <FileMediaGrid items={toMediaGridItems(files)} onDeleteFile={handleDeleteFile} />
         )}
       </FilesDropzone>
 

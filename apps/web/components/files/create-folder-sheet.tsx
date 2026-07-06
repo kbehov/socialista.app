@@ -1,6 +1,6 @@
 'use client'
 
-import { createCollection } from '@/services/collection.service'
+import { createFolder } from '@/services/files.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FolderPlusIcon, Loader2, PlusIcon } from 'lucide-react'
@@ -14,17 +14,17 @@ import { Input } from '../ui/input'
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet'
 import { Switch } from '../ui/switch'
 
-const createCollectionSchema = z.object({
+const createFolderSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   isPublic: z.boolean(),
   workspaceId: z.string().optional(),
 })
 
-type CreateCollectionSheetProps = {
+type CreateFolderSheetProps = {
   variant?: 'default' | 'toolbar'
 }
 
-export const CreateCollectionSheet = ({ variant = 'default' }: CreateCollectionSheetProps) => {
+export const CreateFolderSheet = ({ variant = 'default' }: CreateFolderSheetProps) => {
   const router = useRouter()
   const { currentWorkspace } = useWorkspaceStore()
   const {
@@ -32,8 +32,8 @@ export const CreateCollectionSheet = ({ variant = 'default' }: CreateCollectionS
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<z.infer<typeof createCollectionSchema>>({
-    resolver: zodResolver(createCollectionSchema),
+  } = useForm<z.infer<typeof createFolderSchema>>({
+    resolver: zodResolver(createFolderSchema),
     defaultValues: {
       name: '',
       isPublic: false,
@@ -42,7 +42,7 @@ export const CreateCollectionSheet = ({ variant = 'default' }: CreateCollectionS
   })
 
   const onSubmit = handleSubmit(async data => {
-    const response = await createCollection(data)
+    const response = await createFolder(data)
     if (response.success) {
       toast.success('Folder created successfully')
       reset()

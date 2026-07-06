@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { FilmIcon, SettingsIcon, TypeIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -44,55 +44,96 @@ function EmptyTabState({
   )
 }
 
-export function PropertiesPanel() {
+export function PropertiesPanel({ embedded = false }: { embedded?: boolean }) {
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const playhead = useVideoEditorStore(s => s.playhead)
   const duration = useVideoEditorStore(s => s.project.duration)
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
-  const [tab, setTab] = useState<InspectorTab>('project')
+  const [activeTab, setActiveTab] = useState<InspectorTab>('project')
+  const prevSelectedClipId = useRef<string | null>(null)
+  const prevSelectedOverlayId = useRef<string | null>(null)
 
   useEffect(() => {
-    if (selectedClipId) setTab('clip')
-    else if (selectedOverlayId) setTab('overlay')
-  }, [selectedClipId, selectedOverlayId])
+    if (selectedClipId !== prevSelectedClipId.current) {
+      prevSelectedClipId.current = selectedClipId
+      if (selectedClipId) setActiveTab('clip')
+    }
+  }, [selectedClipId])
+
+  useEffect(() => {
+    if (selectedOverlayId !== prevSelectedOverlayId.current) {
+      prevSelectedOverlayId.current = selectedOverlayId
+      if (selectedOverlayId) setActiveTab('overlay')
+    }
+  }, [selectedOverlayId])
 
   const handleAddText = () => {
     const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
     addTextOverlay(playhead, Math.max(playhead + 0.5, end))
-    setTab('overlay')
+    setActiveTab('overlay')
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 border-b bg-muted/15 px-2.5 py-2">
-        <div className="flex gap-0.5 rounded-lg border border-border/50 bg-muted/40 p-0.5">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <Button
-              key={id}
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setTab(id)}
-              className={cn(
-                'h-7 flex-1 gap-1.5 rounded-md px-2 text-xs font-medium',
-                tab === id
-                  ? 'bg-background text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
-              )}
-              aria-pressed={tab === id}
-            >
-              <Icon className="size-3.5 shrink-0" />
-              <span className="truncate">{label}</span>
-            </Button>
-          ))}
+      {!embedded ? (
+        <div className="shrink-0 border-b bg-muted/15 px-2.5 py-2">
+          <div className="flex gap-0.5 rounded-lg border border-border/50 bg-muted/40 p-0.5">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <Button
+                key={id}
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setActiveTab(id)}
+                className={cn(
+                  'h-7 flex-1 gap-1.5 rounded-md px-2 text-xs font-medium',
+                  activeTab === id
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
+                )}
+                aria-pressed={activeTab === id}
+              >
+                <Icon className="size-3.5 shrink-0" />
+                <span className="truncate">{label}</span>
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="shrink-0 space-y-2 border-b px-3 py-2.5">
+          <div>
+            <p className="text-xs font-semibold tracking-tight">Edit</p>
+            <p className="text-[11px] text-muted-foreground">Clip, text, and project settings</p>
+          </div>
+          <div className="flex gap-0.5 rounded-md border border-border/50 bg-muted/30 p-0.5">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <Button
+                key={id}
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setActiveTab(id)}
+                className={cn(
+                  'h-7 flex-1 gap-1 rounded-sm px-1.5 text-[11px] font-medium',
+                  activeTab === id
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
+                )}
+                aria-pressed={activeTab === id}
+              >
+                <Icon className="size-3 shrink-0" />
+                <span className="truncate">{label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto sidebar-scrollbar">
         <div className="flex flex-col gap-3 p-3">
-          {tab === 'clip' && selectedClipId ? (
+          {activeTab === 'clip' && selectedClipId ? (
             <ClipProperties key={selectedClipId} clipId={selectedClipId} />
-          ) : tab === 'clip' ? (
+          ) : activeTab === 'clip' ? (
             <EmptyTabState
               icon={FilmIcon}
               title="No clip selected"
@@ -100,9 +141,9 @@ export function PropertiesPanel() {
             />
           ) : null}
 
-          {tab === 'overlay' && selectedOverlayId ? (
+          {activeTab === 'overlay' && selectedOverlayId ? (
             <OverlayProperties overlayId={selectedOverlayId} />
-          ) : tab === 'overlay' ? (
+          ) : activeTab === 'overlay' ? (
             <EmptyTabState
               icon={TypeIcon}
               title="No text overlay selected"
@@ -111,7 +152,7 @@ export function PropertiesPanel() {
             />
           ) : null}
 
-          {tab === 'project' ? <ProjectProperties /> : null}
+          {activeTab === 'project' ? <ProjectProperties /> : null}
         </div>
       </div>
     </div>

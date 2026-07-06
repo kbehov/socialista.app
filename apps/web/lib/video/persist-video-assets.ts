@@ -1,4 +1,4 @@
-import { uploadToWorkspace } from '@/services/collection.service'
+import { uploadToWorkspace } from '@/services/files.service'
 import { toSerializedAsset } from '@/lib/video/defaults'
 import type { MediaAsset } from '@/lib/video/types'
 import { isMediaAssetAvailable } from '@/lib/video/types'

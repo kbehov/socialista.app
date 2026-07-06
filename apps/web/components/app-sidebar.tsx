@@ -90,7 +90,7 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
       title: 'Files',
       url: '/dashboard/files',
       icon: <FolderArchiveIcon />,
-      isActive: pathname === '/dashboard/files' || pathname.startsWith('/dashboard/folders'),
+      isActive: pathname === '/dashboard/files' || pathname.startsWith('/dashboard/files/'),
     },
   ]
 

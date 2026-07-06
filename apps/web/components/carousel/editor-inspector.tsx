@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { ImageIcon, LayersIcon, TypeIcon } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
@@ -11,19 +11,26 @@ import { TextToolbar } from './text-toolbar'
 
 type InspectorTab = 'slide' | 'text' | 'layers'
 
+export type { InspectorTab }
+
 const TABS: { id: InspectorTab; label: string; icon: typeof TypeIcon }[] = [
   { id: 'slide', label: 'Slide', icon: ImageIcon },
   { id: 'text', label: 'Text', icon: TypeIcon },
   { id: 'layers', label: 'Layers', icon: LayersIcon },
 ]
 
-export function EditorInspector() {
+export function EditorInspector({
+  tab,
+  onTabChange,
+}: {
+  tab: InspectorTab
+  onTabChange: (tab: InspectorTab) => void
+}) {
   const activeLayerId = useEditorStore(s => s.activeLayerId)
-  const [tab, setTab] = useState<InspectorTab>('slide')
 
   useEffect(() => {
-    if (activeLayerId) setTab('text')
-  }, [activeLayerId])
+    if (activeLayerId) onTabChange('text')
+  }, [activeLayerId, onTabChange])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -35,7 +42,7 @@ export function EditorInspector() {
               type="button"
               size="sm"
               variant="ghost"
-              onClick={() => setTab(id)}
+              onClick={() => onTabChange(id)}
               className={cn(
                 'h-7 flex-1 gap-1.5 rounded-md px-2 text-xs font-medium',
                 tab === id

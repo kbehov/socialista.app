@@ -1,19 +1,19 @@
-import { FilesBrowser } from '@/components/collections/files-browser'
+import { FilesBrowser } from '@/components/files/files-browser'
 import { PageHeader } from '@/components/common/page-header'
 import { MANAGER_FILES_ROUTES } from '@/constants/app-routes'
 import { formatFileCount } from '@/lib/format'
-import { getCollectionById } from '@/services/collection.service'
+import { getFolderById } from '@/services/files.service'
 import { notFound } from 'next/navigation'
 
-const FolderPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+const ManagerFolderPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params
-  const collection = await getCollectionById(id)
+  const folderResult = await getFolderById(id)
 
-  if (!collection.data) {
+  if (!folderResult.data) {
     return notFound()
   }
 
-  const folder = collection.data
+  const folder = folderResult.data
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,4 +38,4 @@ const FolderPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   )
 }
 
-export default FolderPage
+export default ManagerFolderPage

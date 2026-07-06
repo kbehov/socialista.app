@@ -50,7 +50,6 @@ export function Timeline() {
   const zoom = useVideoEditorStore(s => s.zoom)
   const duration = useVideoEditorStore(s => s.project.duration)
   const durationGuide = useVideoEditorStore(s => s.durationGuide)
-  const tracks = useVideoEditorStore(s => s.project.tracks)
   const seek = useVideoEditorStore(s => s.seek)
   const fps = useVideoEditorStore(s => s.project.fps)
   const pause = useVideoEditorStore(s => s.pause)
@@ -156,18 +155,11 @@ export function Timeline() {
   )
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-md border bg-background">
-      <div className="flex items-center gap-2 border-b px-3 py-2 text-sm">
-        <span className="font-medium">Timeline</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{tracks.length} tracks</span>
-        <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-          <ZoomButton direction={-1}>−</ZoomButton>
-          <span className="w-12 text-center tabular-nums">{zoom}px/s</span>
-          <ZoomButton direction={1}>+</ZoomButton>
-        </div>
-      </div>
-      <div ref={scrollRef} className="relative flex-1 overflow-auto">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background">
+      <div
+        ref={scrollRef}
+        className="relative min-h-0 min-w-0 w-full max-w-full flex-1 overflow-x-auto overflow-y-auto"
+      >
         <TimelineFocusContext value={focusAtTime}>
           <ContextMenu onOpenChange={open => { if (!open) setMenuTarget(null) }}>
             <ContextMenuTrigger asChild onContextMenu={handleContextMenu}>
@@ -232,20 +224,6 @@ export function Timeline() {
         </TimelineFocusContext>
       </div>
     </div>
-  )
-}
-
-function ZoomButton({ direction, children }: { direction: 1 | -1; children: React.ReactNode }) {
-  const zoomIn = useVideoEditorStore(s => s.zoomIn)
-  const zoomOut = useVideoEditorStore(s => s.zoomOut)
-  return (
-    <button
-      type="button"
-      className="flex h-6 w-6 items-center justify-center rounded border hover:bg-muted"
-      onClick={() => (direction === 1 ? zoomIn() : zoomOut())}
-    >
-      {children}
-    </button>
   )
 }
 

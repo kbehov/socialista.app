@@ -1,24 +1,24 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
-import { DEFAULT_VIEWPORT_ZOOM } from '@/lib/carousel/defaults'
-import { usePlayback } from '@/hooks/video/use-playback'
-import { useVideoEditorStore } from '@/lib/video/store'
-import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
-import { formatTimecode } from '@/lib/video/timecode'
-import { DownloadIcon, Loader2Icon, Redo2Icon, ScissorsIcon, SparklesIcon, TypeIcon, Undo2Icon } from 'lucide-react'
 import { ClipAiProvider, useClipAi } from '@/components/video/ai/clip-ai-provider'
+import { usePlayback } from '@/hooks/video/use-playback'
+import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
+import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/carousel/defaults'
+import { cn } from '@/lib/utils'
+import { useVideoEditorStore } from '@/lib/video/store'
+import { VideoFormatSelector } from '@/components/video/video-format-selector'
+import { VideoSaveBar } from '@/components/video/video-save-bar'
+import { DownloadIcon, Redo2Icon, Undo2Icon } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ExportModal } from './export/export-modal'
 import { PreviewCanvas } from './preview/preview-canvas'
-import { PreviewControls } from './preview/preview-controls'
 import { VideoZoomControls } from './preview/video-zoom-controls'
 import { Timeline } from './timeline/timeline'
-import { PropertiesPanel } from './inspector/properties-panel'
-import { ExportModal } from './export/export-modal'
-import { cn } from '@/lib/utils'
+import { TimelineTransport } from './timeline/timeline-transport'
 
 export function VideoEditor() {
   return (
@@ -33,7 +33,7 @@ function VideoEditorContent() {
   const workspaceRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const playback = usePlayback(canvasRef)
-  const [previewZoom, setPreviewZoom] = useState(DEFAULT_VIEWPORT_ZOOM)
+  const [previewZoom, setPreviewZoom] = useState(DEFAULT_VIDEO_PREVIEW_ZOOM)
   const [showSafeZone, setShowSafeZone] = useState(true)
   const undo = useVideoEditorStore(s => s.undo)
   const redo = useVideoEditorStore(s => s.redo)
@@ -41,8 +41,6 @@ function VideoEditorContent() {
   const future = useVideoEditorStore(s => s.future)
   const playhead = useVideoEditorStore(s => s.playhead)
   const duration = useVideoEditorStore(s => s.project.duration)
-  const fps = useVideoEditorStore(s => s.project.fps)
-  const isPlaying = useVideoEditorStore(s => s.isPlaying)
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectClip = useVideoEditorStore(s => s.selectClip)
@@ -69,23 +67,29 @@ function VideoEditorContent() {
     }
   }
 
+  const handleAddText = () => {
+    const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
+    addTextOverlay(playhead, Math.max(playhead + 0.5, end))
+  }
+
   const handleWorkspacePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement
     if (target.closest('[data-video-canvas]')) return
     if (target.closest('[data-canvas-controls]')) return
     if (target.closest('[data-preview-playback]')) return
-    if (isPlaying) return
+    if (useVideoEditorStore.getState().isPlaying) return
     selectClip(null)
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center gap-1.5 border-b bg-muted/15 px-2.5 py-1.5 sm:px-3">
-        <div className="flex items-center rounded-md border border-border/50 bg-background/60 p-0.5">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+      {/* Canvas top bar — CapCut-style chrome */}
+      <div className="video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
+        <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" onClick={undo} disabled={!canUndo} aria-label="Undo">
-                <Undo2Icon />
+              <Button size="icon-sm" variant="ghost" className="size-8" onClick={undo} disabled={!canUndo}>
+                <Undo2Icon className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -94,8 +98,8 @@ function VideoEditorContent() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" onClick={redo} disabled={!canRedo} aria-label="Redo">
-                <Redo2Icon />
+              <Button size="icon-sm" variant="ghost" className="size-8" onClick={redo} disabled={!canRedo}>
+                <Redo2Icon className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -104,136 +108,70 @@ function VideoEditorContent() {
           </Tooltip>
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 bg-background/60"
-          onClick={() => {
-            const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
-            addTextOverlay(playhead, Math.max(playhead + 0.5, end))
-          }}
-        >
-          <TypeIcon />
-          <span className="hidden sm:inline">Add text</span>
-        </Button>
+        <VideoZoomControls className="hidden sm:flex" zoom={previewZoom} onZoomChange={setPreviewZoom} />
+
+        <div className="min-w-0 flex-1" />
+
+        <VideoFormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
+        <VideoSaveBar showLabel={false} className="hidden min-w-0 max-w-[160px] shrink-0 md:flex lg:max-w-[180px]" />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               size="sm"
-              variant="outline"
-              className="h-8 bg-background/60"
-              onClick={handleSplit}
-              disabled={!canSplit}
-              aria-label="Split at playhead"
+              className={cn('h-8 gap-1.5 px-3', canExport && 'bg-primary hover:bg-primary/90')}
+              onClick={() => setExportOpen(true)}
+              disabled={!canExport}
             >
-              <ScissorsIcon />
-              <span className="hidden sm:inline">Split</span>
+              <DownloadIcon className="size-3.5" />
+              <span className="hidden sm:inline">Export</span>
             </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            Split at playhead <Kbd className="ml-1">S</Kbd>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 bg-background/60"
-              onClick={() => selectedClipId && openClipAi(selectedClipId)}
-              disabled={!canUseAi || isAiProcessing}
-              aria-label={aiLabel}
-            >
-              {isAiProcessing ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}
-              <span className="hidden sm:inline">{isAiProcessing ? 'Generating…' : aiLabel}</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {!selectedClipId
-              ? 'Select a video or image clip on the timeline'
-              : !canUseAi
-                ? 'Re-link clip media to use AI'
-                : clipAiMode === 'animate-image'
-                  ? 'Generate a short video from the selected image'
-                  : 'Edit the selected video clip with a text prompt'}
-          </TooltipContent>
-        </Tooltip>
-
-        <VideoZoomControls
-          className="hidden md:flex"
-          zoom={previewZoom}
-          onZoomChange={setPreviewZoom}
-        />
-
-        <div className="hidden flex-1 md:block" />
-
-        <p className="hidden min-w-0 flex-1 truncate text-[11px] text-muted-foreground lg:block">
-          Drag clips to trim · <Kbd>S</Kbd> split · <Kbd>Space</Kbd> play
-        </p>
-
-        <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-background/60 py-0.5 pr-0.5 pl-2 text-xs text-muted-foreground">
-          <span className="font-mono tabular-nums text-foreground">{formatTimecode(playhead, fps)}</span>
-          <span className="text-border">/</span>
-          <span className="font-mono tabular-nums">{formatTimecode(duration, fps)}</span>
-        </div>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex">
-              <Button size="sm" className="h-8" onClick={() => setExportOpen(true)} disabled={!canExport}>
-                <DownloadIcon />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            </span>
           </TooltipTrigger>
           {!canExport ? (
-            <TooltipContent>Import media to the timeline before exporting</TooltipContent>
+            <TooltipContent>Add media before exporting</TooltipContent>
           ) : (
-            <TooltipContent>Export MP4</TooltipContent>
+            <TooltipContent>Download MP4</TooltipContent>
           )}
         </Tooltip>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,260px)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px] lg:grid-rows-1">
-        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
-          <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
-            <div
-              ref={workspaceRef}
-              className={cn(
-                'studio-canvas-workspace relative min-h-0 flex-1',
-                previewZoom > 1 ? 'overflow-auto' : 'overflow-hidden',
-              )}
-              onPointerDown={handleWorkspacePointerDown}
-            >
-              <PreviewCanvas
-                canvasRef={canvasRef}
-                previewZoom={previewZoom}
-                showSafeZone={showSafeZone}
-                onToggleSafeZone={() => setShowSafeZone(value => !value)}
-              />
+      {/* Preview — full width, maximum height */}
+      <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
+        <div
+          ref={workspaceRef}
+          className={cn(
+            'video-editor-canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden',
+          )}
+          onPointerDown={handleWorkspacePointerDown}
+        >
+          <PreviewCanvas
+            canvasRef={canvasRef}
+            previewZoom={previewZoom}
+            showSafeZone={showSafeZone}
+            onToggleSafeZone={() => setShowSafeZone(value => !value)}
+          />
 
-              <div className="pointer-events-none absolute bottom-3 left-3 z-10 md:hidden">
-                <VideoZoomControls zoom={previewZoom} onZoomChange={setPreviewZoom} />
-              </div>
-            </div>
-          </CanvasWorkspaceProvider>
-
-          <div
-            data-preview-playback
-            className="shrink-0 border-t bg-muted/15 px-3 py-2"
-          >
-            <PreviewControls playback={playback} />
+          <div className="pointer-events-none absolute bottom-3 left-3 z-10 sm:hidden">
+            <VideoZoomControls zoom={previewZoom} onZoomChange={setPreviewZoom} />
           </div>
         </div>
-        <div className="flex h-full min-h-0 flex-col overflow-hidden border-t bg-card lg:border-t-0 lg:border-l">
-          <PropertiesPanel />
-        </div>
-      </div>
+      </CanvasWorkspaceProvider>
 
-      <div className={cn('h-[280px] shrink-0 border-t bg-card')}>
-        <Timeline />
+      {/* Timeline section — transport bar + tracks */}
+      <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t">
+        <TimelineTransport
+          playback={playback}
+          onAddText={handleAddText}
+          onSplit={handleSplit}
+          onOpenAi={() => selectedClipId && openClipAi(selectedClipId)}
+          canSplit={canSplit}
+          canUseAi={canUseAi}
+          isAiProcessing={isAiProcessing}
+          aiLabel={aiLabel}
+        />
+        <div className="h-[min(240px,32vh)] min-h-[180px] min-w-0 overflow-hidden lg:h-[220px]">
+          <Timeline />
+        </div>
       </div>
 
       <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />

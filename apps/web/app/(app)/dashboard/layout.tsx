@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <WorkspaceProvider workspaces={workspaces.data || []}>
-      <SidebarProvider>
+      <SidebarProvider className="overflow-x-hidden">
         <AppSidebar
           workspaces={workspaces.data ?? []}
           user={{
@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             avatar: session.user?.image ?? '',
           }}
         />
-        <SidebarInset className="flex min-h-svh flex-col bg-background">
+        <SidebarInset className="flex min-h-svh min-w-0 flex-1 flex-col overflow-hidden bg-background">
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex items-center gap-1">
@@ -35,7 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
           </header>
 
-          <main className="mx-auto flex w-full max-w-7xl min-h-0 flex-1 flex-col gap-6 overflow-auto px-4 py-6 lg:px-6">
+          <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-7xl flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-4 py-6 lg:px-6 [&:has(.studio-shell,.video-studio)]:mx-0 [&:has(.studio-shell,.video-studio)]:h-[calc(100svh-3.5rem)] [&:has(.studio-shell,.video-studio)]:max-w-none [&:has(.studio-shell,.video-studio)]:gap-0 [&:has(.studio-shell,.video-studio)]:overflow-hidden [&:has(.studio-shell,.video-studio)]:p-0">
             {children}
           </main>
         </SidebarInset>

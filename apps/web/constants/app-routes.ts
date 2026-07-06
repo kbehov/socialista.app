@@ -1,11 +1,11 @@
 export const DASHBOARD_ROUTES = {
-  HOME: '/dashboard',
-  folder: (id: string) => `/dashboard/folders/${id}`,
+  HOME: '/dashboard/files',
+  folder: (id: string) => `/dashboard/files/${id}`,
 } as const
 
 export const MANAGER_FILES_ROUTES = {
-  HOME: '/manager/collections',
-  folder: (id: string) => `/manager/collections/${id}`,
+  HOME: '/manager/files',
+  folder: (id: string) => `/manager/files/${id}`,
 } as const
 
 export type FilesRoutePaths = {

@@ -41,13 +41,14 @@ export const INSPIRATION_ROUTES = {
   UPDATE_NICHE: `/inspirations/niches/:id`,
   DELETE_NICHE: `/inspirations/niches/:id`,
 } as const
-export const COLLECTION_ROUTES = {
-  CREATE_COLLECTION: `/collections`,
-  GET_COLLECTIONS: `/collections`,
-  GET_WORKSPACE_IMAGES: (workspaceId: string) => `/collections/workspace/${workspaceId}/images`,
+/** Backend file/folder API paths (served under /collections). */
+export const FILES_API_ROUTES = {
+  CREATE_FOLDER: `/collections`,
+  GET_FOLDERS: `/collections`,
+  GET_WORKSPACE_FILES: (workspaceId: string) => `/collections/workspace/${workspaceId}/images`,
   UPLOAD_TO_WORKSPACE: (workspaceId: string) => `/collections/workspace/${workspaceId}/files`,
-  UPLOAD_TO_COLLECTION: (workspaceId: string, collectionId: string) =>
-    `/collections/workspace/${workspaceId}/collection/${collectionId}/files`,
+  UPLOAD_TO_FOLDER: (workspaceId: string, folderId: string) =>
+    `/collections/workspace/${workspaceId}/collection/${folderId}/files`,
   DELETE_FILE: (workspaceId: string, fileId: string) => `/collections/workspace/${workspaceId}/files/${fileId}`,
   DELETE_FOLDER: (workspaceId: string, folderId: string) => `/collections/workspace/${workspaceId}/folder/${folderId}`,
 } as const
