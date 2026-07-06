@@ -35,7 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
           </header>
 
-          <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-7xl flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-4 py-6 lg:px-6 [&:has(.studio-shell,.video-studio)]:mx-0 [&:has(.studio-shell,.video-studio)]:h-[calc(100svh-3.5rem)] [&:has(.studio-shell,.video-studio)]:max-w-none [&:has(.studio-shell,.video-studio)]:gap-0 [&:has(.studio-shell,.video-studio)]:overflow-hidden [&:has(.studio-shell,.video-studio)]:p-0">
+          <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-7xl flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-4 py-6 lg:px-6 [&:has(.studio-shell,.video-studio,.slideshow-studio)]:mx-0 [&:has(.studio-shell,.video-studio,.slideshow-studio)]:h-[calc(100svh-3.5rem)] [&:has(.studio-shell,.video-studio,.slideshow-studio)]:max-w-none [&:has(.studio-shell,.video-studio,.slideshow-studio)]:gap-0 [&:has(.studio-shell,.video-studio,.slideshow-studio)]:overflow-hidden [&:has(.studio-shell,.video-studio,.slideshow-studio)]:p-0">
             {children}
           </main>
         </SidebarInset>

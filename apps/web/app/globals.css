@@ -371,22 +371,28 @@ body::before {
   }
 
   /* Video editor — CapCut-inspired chrome */
-  .video-studio {
+  .video-studio,
+  .slideshow-studio {
     background-color: var(--background);
     max-width: 100%;
   }
 
-  .video-editor-rail {
+  .video-editor-rail,
+  .slideshow-editor-rail {
     background-color: color-mix(in oklch, var(--muted) 55%, var(--background));
   }
 
   .video-editor-panel,
   .video-editor-transport,
-  .video-editor-canvas-bar {
+  .video-editor-canvas-bar,
+  .slideshow-editor-panel,
+  .slideshow-editor-transport,
+  .slideshow-editor-canvas-bar {
     background-color: color-mix(in oklch, var(--muted) 35%, var(--background));
   }
 
-  .video-editor-canvas-area {
+  .video-editor-canvas-area,
+  .slideshow-editor-canvas-area {
     background-color: color-mix(in oklch, var(--muted) 70%, var(--background));
     background-image: radial-gradient(
       circle,
@@ -397,11 +403,13 @@ body::before {
     background-position: center center;
   }
 
-  .video-editor-timeline-section {
+  .video-editor-timeline-section,
+  .slideshow-editor-filmstrip-section {
     background-color: color-mix(in oklch, var(--card) 90%, var(--muted));
   }
 
-  .video-editor-main {
+  .video-editor-main,
+  .slideshow-editor-main {
     background-color: var(--background);
     max-width: 100%;
   }
@@ -416,8 +424,11 @@ body::before {
   }
 
   .studio-canvas-workspace [data-slot='carousel'],
-  .studio-canvas-workspace [data-slot='carousel-content'] {
+  .studio-canvas-workspace [data-slot='carousel-content'],
+  .slideshow-editor-canvas-area [data-slot='carousel'],
+  .slideshow-editor-canvas-area [data-slot='carousel-content'] {
     height: 100%;
+    min-height: 0;
   }
 
   /* Video editor scrubber — filled progress track */

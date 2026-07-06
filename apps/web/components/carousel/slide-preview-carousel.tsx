@@ -14,6 +14,22 @@ import { cn } from '@/lib/utils'
 import { SlideCanvasShell } from './slide-canvas-shell'
 import { useSlideImageEdit } from './slide-image-edit-provider'
 
+function SlidePreviewViewport({
+  slide,
+  interactive,
+  canvasHint,
+}: {
+  slide: ReturnType<typeof useEditorStore.getState>['slides'][number]
+  interactive: boolean
+  canvasHint?: string | null
+}) {
+  return (
+    <div className="flex h-full min-h-0 w-full items-center justify-center overflow-hidden p-1">
+      <SlideCanvasShell slide={slide} interactive={interactive} canvasHint={canvasHint} />
+    </div>
+  )
+}
+
 type SlidePreviewCarouselProps = {
   className?: string
   canvasHint?: string | null
@@ -83,7 +99,10 @@ export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCaro
       setApi={setApi}
       draggable={!adjustTarget}
       opts={{ align: 'center', containScroll: 'trimSnaps', dragFree: false }}
-      className={cn('relative h-full w-full cursor-grab active:cursor-grabbing', className)}
+      className={cn(
+        'relative flex h-full min-h-0 w-full min-w-0 cursor-grab flex-col overflow-hidden active:cursor-grabbing',
+        className,
+      )}
     >
       {slides.length > 1 ? (
         <>
@@ -107,13 +126,12 @@ export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCaro
         </>
       ) : null}
 
-      <CarouselContent className="ml-0 h-full">
+      <CarouselContent className="ml-0 h-full min-h-0 flex-1">
         {slides.map(slide => (
-          <CarouselItem key={slide.id} className="h-full pl-0">
-            <SlideCanvasShell
+          <CarouselItem key={slide.id} className="h-full min-h-0 basis-full pl-0">
+            <SlidePreviewViewport
               slide={slide}
               interactive={slide.id === activeSlideId}
-              className="h-full w-full"
               canvasHint={slide.id === activeSlideId ? canvasHint : undefined}
             />
           </CarouselItem>

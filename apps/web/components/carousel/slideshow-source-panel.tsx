@@ -10,12 +10,20 @@ import { cn } from '@/lib/utils'
 
 type SourceMode = 'ai' | 'tiktok'
 
-export function SlideshowSourcePanel() {
+export function SlideshowSourcePanel({ embedded = false }: { embedded?: boolean }) {
   const [mode, setMode] = useState<SourceMode>('ai')
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 border-b bg-muted/15 px-3 py-2.5">
+      {embedded ? (
+        <div className="shrink-0 space-y-2 border-b px-3 py-2.5">
+          <div>
+            <p className="text-xs font-semibold tracking-tight">Generate</p>
+            <p className="text-[11px] text-muted-foreground">Create slides with AI or import from TikTok</p>
+          </div>
+        </div>
+      ) : null}
+      <div className={cn('shrink-0 border-b px-3 py-2.5', embedded ? 'bg-transparent' : 'bg-muted/15')}>
         <div className="flex gap-0.5 rounded-lg border border-border/50 bg-muted/40 p-0.5">
           <Button
             type="button"

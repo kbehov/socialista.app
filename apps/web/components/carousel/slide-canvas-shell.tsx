@@ -106,7 +106,7 @@ export function SlideCanvasShell({
   }, [slide.backgroundImageUrl, deselectBackgroundEdit])
 
   const canvas = (
-    <div className={cn('relative h-full w-full', className)}>
+    <div className={cn('relative', className)}>
       <SlideCanvas
         slide={slide}
         interactive={interactive}
@@ -118,7 +118,6 @@ export function SlideCanvasShell({
         onBackgroundSelect={interactive && hasBackground ? handleBackgroundSelect : undefined}
         onClearSelection={interactive ? clearSelection : undefined}
         canvasHint={canvasHint}
-        className="h-full"
         backgroundToolbar={
           isBackgroundSelected ? (
             <BackgroundEditToolbar

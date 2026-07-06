@@ -22,6 +22,12 @@ export const SLIDESHOW_WORKSPACE_VERTICAL_INSET = 120
 /** Inset reserved for carousel progress chrome when capping preview height. */
 export const SLIDESHOW_CAROUSEL_CHROME_INSET = 40
 
+/** Top chrome for slide progress dots and counter in the editor carousel. */
+export const CAROUSEL_PREVIEW_TOP_CHROME = 28
+
+/** Horizontal breathing room for prev/next slide controls. */
+export const CAROUSEL_PREVIEW_SIDE_CHROME = 40
+
 type SlideshowFitOptions = {
   capPreviewHeight?: boolean
 }
@@ -99,6 +105,22 @@ export function fitSlideshowArtboardInWorkspace(
     width: Math.round(width),
     height: Math.round(height),
   }
+}
+
+/** Fit carousel editor preview — always reserves chrome so size stays stable across selection states. */
+export function fitCarouselPreviewInWorkspace(
+  workspaceWidth: number,
+  workspaceHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
+): { width: number; height: number } {
+  return fitArtboardInWorkspace(
+    Math.max(1, workspaceWidth - CAROUSEL_PREVIEW_SIDE_CHROME),
+    Math.max(1, workspaceHeight - CAROUSEL_PREVIEW_TOP_CHROME),
+    canvasWidth,
+    canvasHeight,
+    VIDEO_PREVIEW_WORKSPACE_PADDING,
+  )
 }
 
 /** Fit video preview within workspace bounds. */

@@ -5,8 +5,9 @@ import type { BackgroundImageTransform, CanvasDimensions, Slide } from '@sociali
 import { useEditorStore } from '@/lib/carousel/store'
 import { DEFAULT_SLIDE_BACKGROUND, sortLayers, DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT } from '@/lib/carousel/defaults'
 import { transformToAdjustment, usesFrame } from '@/lib/carousel/background-image-style'
-import { fitArtboardInWorkspace, fitSlideshowArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
-import { useCanvasWorkspaceSize, useCanvasWorkspaceLayout } from '@/components/carousel/canvas-workspace-context'
+import { fitArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
+import { useCarouselPreviewLayout } from '@/components/carousel/carousel-preview-layout'
+import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
 import { TextLayerNode } from './text-layer-node'
 import { SlideBackgroundImage } from './slide-background-image'
 import { cn } from '@/lib/utils'
@@ -53,14 +54,15 @@ export function SlideCanvas({
   const activeLayerId = useEditorStore(s => s.activeLayerId)
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
   const workspaceSize = useCanvasWorkspaceSize()
-  const { capPreviewHeight } = useCanvasWorkspaceLayout()
+  const previewLayout = useCarouselPreviewLayout()
 
   const fallbackRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const [fallbackSize, setFallbackSize] = useState({ width: 0, height: 0 })
 
   const hasWorkspaceMeasure = workspaceSize.width > 0 && workspaceSize.height > 0
-  const usesWorkspace = forceWidth == null && hasWorkspaceMeasure
+  const usesPreviewLayout = forceWidth == null && previewLayout != null
+  const usesWorkspace = forceWidth == null && !usesPreviewLayout && hasWorkspaceMeasure
   const measureSize = usesWorkspace ? workspaceSize : fallbackSize
 
   useEffect(() => {
@@ -89,18 +91,15 @@ export function SlideCanvas({
       }
     }
 
-    if (measureSize.width <= 0 || measureSize.height <= 0) {
-      return { width: 0, height: 0 }
+    if (usesPreviewLayout && previewLayout) {
+      return {
+        width: previewLayout.baseWidth,
+        height: previewLayout.baseHeight,
+      }
     }
 
-    if (usesWorkspace) {
-      return fitSlideshowArtboardInWorkspace(
-        measureSize.width,
-        measureSize.height,
-        canvas.width,
-        canvas.height,
-        { capPreviewHeight },
-      )
+    if (measureSize.width <= 0 || measureSize.height <= 0) {
+      return { width: 0, height: 0 }
     }
 
     return fitArtboardInWorkspace(
@@ -110,17 +109,24 @@ export function SlideCanvas({
       canvas.height,
       16,
     )
-  }, [forceWidth, measureSize, canvas.width, canvas.height, usesWorkspace, capPreviewHeight])
+  }, [forceWidth, usesPreviewLayout, previewLayout, measureSize, canvas.width, canvas.height])
 
   const usesEditorViewport = forceWidth == null
-  const zoom = usesEditorViewport ? viewportZoom : 1
+  const zoom = usesPreviewLayout && previewLayout ? previewLayout.zoom : usesEditorViewport ? viewportZoom : 1
   const baseWidth = baseSize.width
   const baseHeight = baseSize.height
-  const visualWidth = Math.round(baseWidth * zoom)
-  const visualHeight = Math.round(baseHeight * zoom)
+  const visualWidth =
+    usesPreviewLayout && previewLayout ? previewLayout.visualWidth : Math.round(baseWidth * zoom)
+  const visualHeight =
+    usesPreviewLayout && previewLayout ? previewLayout.visualHeight : Math.round(baseHeight * zoom)
   const isMeasured = baseWidth > 0 && baseHeight > 0
 
-  const scale = baseWidth > 0 ? baseWidth / canvas.width : 0
+  const scale =
+    usesPreviewLayout && previewLayout
+      ? previewLayout.scale
+      : baseWidth > 0
+        ? baseWidth / canvas.width
+        : 0
   const backgroundColor = slide.backgroundColor || DEFAULT_SLIDE_BACKGROUND
   const backgroundImageAdjustment = slide.backgroundImageAdjustment ?? DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT
 
@@ -152,20 +158,31 @@ export function SlideCanvas({
 
   return (
     <div
-      ref={usesWorkspace ? undefined : fallbackRef}
+      ref={usesWorkspace || usesPreviewLayout ? undefined : fallbackRef}
       className={cn(
-        'flex h-full w-full items-center justify-center',
-        !usesWorkspace && 'relative min-h-0',
-        className,
+        usesPreviewLayout
+          ? 'relative shrink-0'
+          : 'flex h-full w-full min-h-0 items-center justify-center overflow-hidden',
+        !usesPreviewLayout && className,
+        !usesWorkspace && !usesPreviewLayout && 'relative',
       )}
+      style={
+        usesPreviewLayout && isMeasured
+          ? { width: visualWidth, height: visualHeight }
+          : undefined
+      }
       onPointerDown={interactive ? onCanvasPointerDown : undefined}
     >
       <div
-        className={cn('relative shrink-0', !isMeasured && 'invisible')}
-        style={{
-          width: isMeasured ? visualWidth : undefined,
-          height: isMeasured ? visualHeight : undefined,
-        }}
+        className={cn('relative', usesPreviewLayout ? 'size-full' : 'shrink-0', !isMeasured && 'invisible')}
+        style={
+          usesPreviewLayout
+            ? undefined
+            : {
+                width: isMeasured ? visualWidth : undefined,
+                height: isMeasured ? visualHeight : undefined,
+              }
+        }
       >
         <div className="relative size-full">
           <div
@@ -173,10 +190,9 @@ export function SlideCanvas({
             data-slide-canvas={slide.id}
             onPointerDown={onCanvasPointerDown}
             className={cn(
-              'absolute inset-0',
-              isAdjustingBackground ? 'overflow-visible' : 'overflow-hidden',
-              interactive && 'rounded-sm shadow-lg ring-1 ring-black/10',
-              isAdjustingBackground && 'ring-2 ring-primary/40',
+              'absolute inset-0 overflow-hidden',
+              interactive && 'rounded-sm shadow-lg ring-1 ring-inset ring-black/10',
+              isAdjustingBackground && 'ring-2 ring-inset ring-primary/40',
             )}
             style={{
               width: isMeasured ? baseWidth : undefined,
@@ -241,18 +257,18 @@ export function SlideCanvas({
         {canvasHint ? (
           <div
             data-canvas-hint
-            className="pointer-events-none absolute top-full left-1/2 z-10 mt-2.5 w-max max-w-[min(100vw,20rem)] -translate-x-1/2 px-2"
+            className="pointer-events-none absolute inset-x-2 bottom-2 z-20 flex justify-center"
           >
-            <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/90 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md">
+            <div className="flex max-w-full items-center gap-2 rounded-full border border-border/60 bg-background/90 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md">
               <MousePointer2Icon className="size-3.5 shrink-0 text-primary/80" />
-              <span className="text-center">{canvasHint}</span>
+              <span className="truncate text-center">{canvasHint}</span>
             </div>
           </div>
         ) : null}
 
         {backgroundToolbar ? (
           <div
-            className="pointer-events-none absolute top-1/2 left-full z-10 ml-3 -translate-y-1/2"
+            className="pointer-events-none absolute top-1/2 left-full z-20 ml-2 -translate-y-1/2"
             data-bg-edit-toolbar
           >
             {backgroundToolbar}

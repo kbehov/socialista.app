@@ -47,20 +47,20 @@ function TransformHandle({
 }) {
   const anchor =
     corner === 'nw'
-      ? 'left-0 top-0 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize'
+      ? 'left-1.5 top-1.5 cursor-nwse-resize'
       : corner === 'ne'
-        ? 'right-0 top-0 translate-x-1/2 -translate-y-1/2 cursor-nesw-resize'
+        ? 'right-1.5 top-1.5 cursor-nesw-resize'
         : corner === 'se'
-          ? 'right-0 bottom-0 translate-x-1/2 translate-y-1/2 cursor-nwse-resize'
-          : 'left-0 bottom-0 -translate-x-1/2 translate-y-1/2 cursor-nesw-resize'
+          ? 'right-1.5 bottom-1.5 cursor-nwse-resize'
+          : 'left-1.5 bottom-1.5 cursor-nesw-resize'
 
   return (
     <div
-      className={cn('absolute z-30 flex size-9 items-center justify-center pointer-events-auto touch-none', anchor)}
+      className={cn('absolute z-30 flex size-6 items-center justify-center pointer-events-auto touch-none', anchor)}
       onPointerDown={onPointerDown}
       aria-hidden
     >
-      <div className="size-4 rounded-sm border-2 border-primary bg-background shadow-md ring-2 ring-background/80" />
+      <div className="size-3.5 rounded-sm border-2 border-primary bg-background shadow-md ring-2 ring-background/80" />
     </div>
   )
 }
