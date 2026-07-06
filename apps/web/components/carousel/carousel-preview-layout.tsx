@@ -1,7 +1,10 @@
 'use client'
 
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
-import { fitCarouselPreviewInWorkspace } from '@/lib/carousel/canvas-viewport'
+import {
+  VERTICAL_STACK_SLIDE_GAP,
+  fitVerticalStackSlideInWorkspace,
+} from '@/lib/carousel/canvas-viewport'
 import { useEditorStore } from '@/lib/carousel/store'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
@@ -12,6 +15,7 @@ export type CarouselPreviewLayout = {
   visualHeight: number
   zoom: number
   scale: number
+  slideGap: number
 }
 
 const CarouselPreviewLayoutContext = createContext<CarouselPreviewLayout | null>(null)
@@ -26,27 +30,36 @@ export function CarouselPreviewLayoutProvider({ children }: { children: ReactNod
   const canvas = useEditorStore(s => s.canvas)
 
   const layout = useMemo<CarouselPreviewLayout | null>(() => {
-    if (workspaceSize.width <= 0 || workspaceSize.height <= 0 || canvas.width <= 0 || canvas.height <= 0) {
+    if (
+      workspaceSize.width <= 0 ||
+      workspaceSize.height <= 0 ||
+      canvas.width <= 0 ||
+      canvas.height <= 0
+    ) {
       return null
     }
 
     const zoom = Math.max(viewportZoom, 0.01)
-    const base = fitCarouselPreviewInWorkspace(
-      Math.max(1, workspaceSize.width / zoom),
-      Math.max(1, workspaceSize.height / zoom),
+    const base = fitVerticalStackSlideInWorkspace(
+      workspaceSize.width,
+      workspaceSize.height,
       canvas.width,
       canvas.height,
     )
 
     if (base.width <= 0 || base.height <= 0) return null
 
+    const visualWidth = Math.round(base.width * zoom)
+    const visualHeight = Math.round(base.height * zoom)
+
     return {
       baseWidth: base.width,
       baseHeight: base.height,
-      visualWidth: Math.round(base.width * zoom),
-      visualHeight: Math.round(base.height * zoom),
+      visualWidth,
+      visualHeight,
       zoom,
-      scale: base.width / canvas.width,
+      scale: visualWidth / canvas.width,
+      slideGap: VERTICAL_STACK_SLIDE_GAP,
     }
   }, [workspaceSize.width, workspaceSize.height, canvas.width, canvas.height, viewportZoom])
 

@@ -14,10 +14,8 @@ import { CarouselPreviewLayoutProvider } from '@/components/carousel/carousel-pr
 import { CanvasZoomControls } from '@/components/carousel/canvas-zoom-controls'
 import { FormatSelector } from '@/components/carousel/format-selector'
 import { SlideshowSaveBar } from '@/components/carousel/slideshow-save-bar'
-import { SlideFilmstripTransport } from '@/components/carousel/slide-filmstrip-transport'
 import { SlideImageEditProvider, useSlideImageEdit } from './slide-image-edit-provider'
-import { SlideNavigator } from './slide-navigator'
-import { SlidePreviewCarousel } from './slide-preview-carousel'
+import { SlidePreviewStack } from './slide-preview-stack'
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
@@ -35,10 +33,8 @@ export function CarouselEditor({ panels }: { panels?: ReactNode }) {
 function CarouselEditorMain() {
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
-  const activeLayerId = useEditorStore(s => s.activeLayerId)
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
-  const addTextLayer = useEditorStore(s => s.addTextLayer)
   const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
   const past = useEditorStore(s => s.past)
   const future = useEditorStore(s => s.future)
@@ -47,11 +43,11 @@ function CarouselEditorMain() {
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
 
   const workspaceRef = useRef<HTMLDivElement>(null)
-  const { deselectBackgroundEdit, isBackgroundEditSelected } = useSlideImageEdit()
+  const { deselectBackgroundEdit } = useSlideImageEdit()
 
   const activeSlide = slides.find(s => s.id === activeSlideId) ?? slides[0]
-  const hasLayers = (activeSlide?.layers.length ?? 0) > 0
-  const hasBackground = Boolean(activeSlide?.backgroundImageUrl)
+  const activeIndex = slides.findIndex(slide => slide.id === activeSlideId)
+  const currentPage = activeIndex >= 0 ? activeIndex + 1 : 0
   const canUndo = past.length > 0
   const canRedo = future.length > 0
 
@@ -80,93 +76,74 @@ function CarouselEditorMain() {
     }
   }, [exporting, slides])
 
-  const hintMessage = hasBackground
-    ? 'Drag image to pan · Corner handles to zoom'
-    : 'Click text to edit · Style in the Edit panel'
-
-  const showCanvasHint = Boolean(
-    activeSlide &&
-      !activeLayerId &&
-      !exporting &&
-      (hasBackground ? isBackgroundEditSelected(activeSlide.id) : hasLayers),
-  )
-
   const handleWorkspacePointerDown = useCallback(
     (e: React.PointerEvent) => {
       const target = e.target as HTMLElement
       if (target.closest('[data-slide-canvas]')) return
       if (target.closest('[data-bg-edit-toolbar]')) return
       if (target.closest('[data-canvas-controls]')) return
-      if (target.closest('[data-carousel-nav]')) return
-      if (target.closest('[data-slide-thumb]')) return
-      if (target.closest('[data-canvas-hint]')) return
+      if (target.closest('[data-slide-actions]')) return
+      if (target.closest('[data-add-page]')) return
       deselectBackgroundEdit()
       clearLayerSelection()
     },
     [clearLayerSelection, deselectBackgroundEdit],
   )
 
-  const handleAddText = useCallback(() => {
-    if (!activeSlide) return
-    addTextLayer(activeSlide.id)
-  }, [activeSlide, addTextLayer])
-
   return (
     <main className="slideshow-editor-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-        <div className="slideshow-editor-canvas-bar video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
-          <div className="flex items-center gap-0.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon-sm" variant="ghost" className="size-8" onClick={undo} disabled={!canUndo}>
-                  <Undo2Icon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Undo <Kbd className="ml-1">⌘Z</Kbd>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon-sm" variant="ghost" className="size-8" onClick={redo} disabled={!canRedo}>
-                  <Redo2Icon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          <CanvasZoomControls className="hidden sm:flex" />
-
-          <div className="min-w-0 flex-1" />
-
-          <FormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
-          <SlideshowSaveBar showLabel={false} className="hidden w-[min(100%,220px)] shrink-0 md:flex lg:w-[260px]" />
-
-          <Button
-            size="sm"
-            className={cn('h-8 gap-1.5 px-3', slides.length > 0 && 'bg-primary hover:bg-primary/90')}
-            onClick={() => void handleExport()}
-            disabled={exporting || slides.length === 0}
-          >
-            {exporting ? <Loader2Icon className="size-3.5 animate-spin" /> : <DownloadIcon className="size-3.5" />}
-            <span className="hidden sm:inline">
-              {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
-            </span>
-          </Button>
+      <div className="slideshow-editor-canvas-bar video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
+        <div className="flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="icon-sm" variant="ghost" className="size-8" onClick={undo} disabled={!canUndo}>
+                <Undo2Icon className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Undo <Kbd className="ml-1">⌘Z</Kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="icon-sm" variant="ghost" className="size-8" onClick={redo} disabled={!canRedo}>
+                <Redo2Icon className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
+        <div className="min-w-0 flex-1" />
+
+        <FormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
+        <SlideshowSaveBar showLabel={false} className="hidden w-[min(100%,220px)] shrink-0 md:flex lg:w-[260px]" />
+
+        <Button
+          size="sm"
+          className={cn('h-8 gap-1.5 px-3', slides.length > 0 && 'bg-primary hover:bg-primary/90')}
+          onClick={() => void handleExport()}
+          disabled={exporting || slides.length === 0}
+        >
+          {exporting ? <Loader2Icon className="size-3.5 animate-spin" /> : <DownloadIcon className="size-3.5" />}
+          <span className="hidden sm:inline">
+            {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
+          </span>
+        </Button>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
           <div
             ref={workspaceRef}
-            className="slideshow-editor-canvas-area video-editor-canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden"
+            className="slideshow-editor-canvas-area video-editor-canvas-area relative min-h-0 w-full flex-1 overflow-hidden"
             onPointerDown={handleWorkspacePointerDown}
           >
             <CarouselPreviewLayoutProvider>
               {activeSlide ? (
-                <SlidePreviewCarousel className="h-full" canvasHint={showCanvasHint ? hintMessage : null} />
+                <SlidePreviewStack />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
                   <ImageIcon className="size-8 text-muted-foreground/50" />
@@ -177,20 +154,17 @@ function CarouselEditorMain() {
                 </div>
               )}
             </CarouselPreviewLayoutProvider>
-
-            <div className="pointer-events-none absolute bottom-3 left-3 z-10 sm:hidden">
-              <CanvasZoomControls />
-            </div>
           </div>
         </CanvasWorkspaceProvider>
 
-        <div className="slideshow-editor-filmstrip-section video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t">
-          <SlideFilmstripTransport onAddText={handleAddText} />
-          <div className="min-h-[104px] min-w-0 overflow-hidden px-2 py-2 sm:px-3">
-            <div className="studio-filmstrip-mask">
-              <SlideNavigator variant="filmstrip" />
-            </div>
+        <div className="slideshow-editor-status-bar mt-auto flex min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 py-1.5">
+          <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+            <span className="font-medium text-foreground">Pages</span>
+            <span>
+              {currentPage} / {slides.length}
+            </span>
           </div>
+          <CanvasZoomControls />
         </div>
       </div>
     </main>

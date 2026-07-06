@@ -28,6 +28,18 @@ export const CAROUSEL_PREVIEW_TOP_CHROME = 28
 /** Horizontal breathing room for prev/next slide controls. */
 export const CAROUSEL_PREVIEW_SIDE_CHROME = 40
 
+/** Width of peek slides relative to the active slide artboard. */
+export const CAROUSEL_PEEK_WIDTH_RATIO = 0.38
+
+/** Vertical gap between stacked slides in the editor canvas. */
+export const VERTICAL_STACK_SLIDE_GAP = 32
+
+/** Top/bottom padding inside the vertical slide stack scroll area. */
+export const VERTICAL_STACK_SECTION_PADDING = 32
+
+/** Extra inset so one slide fits fully in the viewport (action bar + breathing room). */
+export const VERTICAL_STACK_VIEWPORT_CHROME = 48
+
 type SlideshowFitOptions = {
   capPreviewHeight?: boolean
 }
@@ -107,19 +119,43 @@ export function fitSlideshowArtboardInWorkspace(
   }
 }
 
-/** Fit carousel editor preview — always reserves chrome so size stays stable across selection states. */
+/** Fit one slide so its full artboard is visible in the stack viewport at 100% zoom. */
+export function fitVerticalStackSlideInWorkspace(
+  workspaceWidth: number,
+  workspaceHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
+): { width: number; height: number } {
+  if (workspaceWidth <= 0 || workspaceHeight <= 0 || canvasWidth <= 0 || canvasHeight <= 0) {
+    return { width: 0, height: 0 }
+  }
+
+  const chromeInset = VERTICAL_STACK_SECTION_PADDING * 2 + VERTICAL_STACK_VIEWPORT_CHROME
+  const effectiveHeight = Math.max(workspaceHeight - chromeInset, 1)
+  const effectiveWidth = Math.max(workspaceWidth - 48, 1)
+
+  return fitArtboardInWorkspace(
+    effectiveWidth,
+    effectiveHeight,
+    canvasWidth,
+    canvasHeight,
+    SLIDESHOW_WORKSPACE_PADDING,
+  )
+}
+
+/** Fit carousel editor preview — comfortable single-slide sizing with readability boost. */
 export function fitCarouselPreviewInWorkspace(
   workspaceWidth: number,
   workspaceHeight: number,
   canvasWidth: number,
   canvasHeight: number,
 ): { width: number; height: number } {
-  return fitArtboardInWorkspace(
+  return fitSlideshowArtboardInWorkspace(
     Math.max(1, workspaceWidth - CAROUSEL_PREVIEW_SIDE_CHROME),
     Math.max(1, workspaceHeight - CAROUSEL_PREVIEW_TOP_CHROME),
     canvasWidth,
     canvasHeight,
-    VIDEO_PREVIEW_WORKSPACE_PADDING,
+    { capPreviewHeight: true },
   )
 }
 

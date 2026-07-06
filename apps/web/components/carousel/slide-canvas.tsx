@@ -268,7 +268,7 @@ export function SlideCanvas({
 
         {backgroundToolbar ? (
           <div
-            className="pointer-events-none absolute top-1/2 left-full z-20 ml-2 -translate-y-1/2"
+            className="pointer-events-none absolute top-1/2 right-2 z-20 -translate-y-1/2"
             data-bg-edit-toolbar
           >
             {backgroundToolbar}

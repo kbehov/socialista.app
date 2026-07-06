@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCarouselPreviewLayout } from '@/components/carousel/carousel-preview-layout'
+import { CAROUSEL_PEEK_WIDTH_RATIO } from '@/lib/carousel/canvas-viewport'
 import { useEditorStore } from '@/lib/carousel/store'
 import {
   Carousel,
@@ -14,25 +16,54 @@ import { cn } from '@/lib/utils'
 import { SlideCanvasShell } from './slide-canvas-shell'
 import { useSlideImageEdit } from './slide-image-edit-provider'
 
-function SlidePreviewViewport({
-  slide,
-  interactive,
-  canvasHint,
-}: {
-  slide: ReturnType<typeof useEditorStore.getState>['slides'][number]
-  interactive: boolean
-  canvasHint?: string | null
-}) {
-  return (
-    <div className="flex h-full min-h-0 w-full items-center justify-center overflow-hidden p-1">
-      <SlideCanvasShell slide={slide} interactive={interactive} canvasHint={canvasHint} />
-    </div>
-  )
-}
-
 type SlidePreviewCarouselProps = {
   className?: string
   canvasHint?: string | null
+}
+
+function SlideCarouselItem({
+  slide,
+  index,
+  isActive,
+  canvasHint,
+  onActivate,
+}: {
+  slide: ReturnType<typeof useEditorStore.getState>['slides'][number]
+  index: number
+  isActive: boolean
+  canvasHint?: string | null
+  onActivate: () => void
+}) {
+  const layout = useCarouselPreviewLayout()
+  const peekWidth = layout ? Math.max(48, Math.round(layout.baseWidth * CAROUSEL_PEEK_WIDTH_RATIO)) : undefined
+
+  return (
+    <div
+      className={cn(
+        'flex h-full w-full items-center justify-center overflow-visible transition-[opacity,transform] duration-300 ease-out',
+        isActive ? 'scale-100 opacity-100' : 'scale-[0.9] opacity-65',
+      )}
+    >
+      <div
+        role="presentation"
+        onClick={isActive ? undefined : onActivate}
+        className={cn(
+          'overflow-visible rounded-lg transition-shadow duration-300',
+          isActive ? 'cursor-default shadow-lg ring-1 ring-border/40' : 'cursor-pointer',
+        )}
+      >
+        <SlideCanvasShell
+          slide={slide}
+          interactive={isActive}
+          forceWidth={isActive ? undefined : peekWidth}
+          canvasHint={isActive ? canvasHint : undefined}
+        />
+      </div>
+      {!isActive ? (
+        <span className="sr-only">Slide {index + 1}, click or drag to select</span>
+      ) : null}
+    </div>
+  )
 }
 
 export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCarouselProps) {
@@ -47,6 +78,28 @@ export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCaro
 
   const activeIndex = slides.findIndex(slide => slide.id === activeSlideId)
   const canvasKey = `${canvas.width}x${canvas.height}`
+  const hasMultipleSlides = slides.length > 1
+
+  const carouselOpts = useMemo(
+    () => ({
+      align: 'center' as const,
+      containScroll: 'trimSnaps' as const,
+      dragFree: false,
+      slidesToScroll: 1,
+    }),
+    [],
+  )
+
+  const itemBasisClass = hasMultipleSlides ? 'basis-[78%] sm:basis-[72%] lg:basis-[68%]' : 'basis-full'
+
+  const handleActivate = useCallback(
+    (slideId: string, index: number) => {
+      if (slideId === activeSlideId) return
+      setActiveSlide(slideId)
+      api?.scrollTo(index, true)
+    },
+    [activeSlideId, api, setActiveSlide],
+  )
 
   useEffect(() => {
     if (!api) return
@@ -81,7 +134,7 @@ export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCaro
   useEffect(() => {
     if (!api) return
     api.reInit()
-  }, [api, slides.map(slide => slide.id).join(','), canvasKey])
+  }, [api, slides.map(slide => slide.id).join(','), canvasKey, hasMultipleSlides])
 
   if (slides.length === 0) {
     return (
@@ -98,13 +151,13 @@ export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCaro
     <Carousel
       setApi={setApi}
       draggable={!adjustTarget}
-      opts={{ align: 'center', containScroll: 'trimSnaps', dragFree: false }}
+      opts={carouselOpts}
       className={cn(
         'relative flex h-full min-h-0 w-full min-w-0 cursor-grab flex-col overflow-hidden active:cursor-grabbing',
         className,
       )}
     >
-      {slides.length > 1 ? (
+      {hasMultipleSlides ? (
         <>
           <div className="pointer-events-none absolute inset-x-4 top-3 z-20 flex gap-1">
             {slides.map((slide, index) => (
@@ -126,19 +179,25 @@ export function SlidePreviewCarousel({ className, canvasHint }: SlidePreviewCaro
         </>
       ) : null}
 
-      <CarouselContent className="ml-0 h-full min-h-0 flex-1">
-        {slides.map(slide => (
-          <CarouselItem key={slide.id} className="h-full min-h-0 basis-full pl-0">
-            <SlidePreviewViewport
-              slide={slide}
-              interactive={slide.id === activeSlideId}
-              canvasHint={slide.id === activeSlideId ? canvasHint : undefined}
-            />
-          </CarouselItem>
-        ))}
+      <CarouselContent className="ml-0 h-full min-h-0 flex-1 items-center px-2">
+        {slides.map((slide, index) => {
+          const isActive = slide.id === activeSlideId
+
+          return (
+            <CarouselItem key={slide.id} className={cn('h-full min-h-0 pl-0', itemBasisClass)}>
+              <SlideCarouselItem
+                slide={slide}
+                index={index}
+                isActive={isActive}
+                canvasHint={canvasHint}
+                onActivate={() => handleActivate(slide.id, index)}
+              />
+            </CarouselItem>
+          )
+        })}
       </CarouselContent>
 
-      {slides.length > 1 ? (
+      {hasMultipleSlides ? (
         <>
           <CarouselPrevious
             data-carousel-nav
