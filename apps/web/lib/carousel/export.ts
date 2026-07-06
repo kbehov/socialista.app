@@ -45,14 +45,11 @@ type ExportProgress = {
   onProgress?: (current: number, total: number) => void
 }
 
-/** Render each slide off-screen and download as a single ZIP (avoids browser multi-download blocking). */
-export async function exportSlidesAsZip(
-  slides: Slide[],
-  canvasWidth: number,
-  { onProgress }: ExportProgress = {},
-): Promise<void> {
-  if (slides.length === 0) return
+/** Render each slide off-screen to PNG files at the project's reference canvas width. */
+export async function renderSlidesToFiles(slides: Slide[], canvasWidth: number): Promise<File[]> {
+  if (slides.length === 0) return []
 
+  const sorted = [...slides].sort((a, b) => a.order - b.order)
   const { createRoot } = await import('react-dom/client')
   const { flushSync } = await import('react-dom')
   const { createElement } = await import('react')
@@ -69,12 +66,11 @@ export async function exportSlidesAsZip(
   document.body.appendChild(container)
 
   const root = createRoot(container)
-  const zip = new JSZip()
-  let exportedCount = 0
+  const files: File[] = []
 
   try {
-    for (let i = 0; i < slides.length; i++) {
-      const slide = slides[i]
+    for (let i = 0; i < sorted.length; i++) {
+      const slide = sorted[i]!
 
       flushSync(() => {
         root.render(
@@ -94,26 +90,46 @@ export async function exportSlidesAsZip(
       }
 
       const dataUrl = await exportSlideToPng(node)
-      const base64 = dataUrl.split(',')[1]
-      if (!base64) {
-        throw new Error(`Could not encode slide ${i + 1} as PNG`)
-      }
-
-      zip.file(slideFilename(slide, i), base64, { base64: true })
-      exportedCount++
-      onProgress?.(i + 1, slides.length)
+      const blob = dataUrlToBlob(dataUrl)
+      files.push(new File([blob], slideFilename(slide, i), { type: 'image/png' }))
     }
 
-    if (exportedCount === 0) {
-      throw new Error('No slides were exported')
-    }
-
-    const blob = await zip.generateAsync({ type: 'blob' })
-    downloadBlob(blob, 'slideshow.zip')
+    return files
   } finally {
     root.unmount()
     document.body.removeChild(container)
   }
+}
+
+/** Render each slide off-screen and download as a single ZIP (avoids browser multi-download blocking). */
+export async function exportSlidesAsZip(
+  slides: Slide[],
+  canvasWidth: number,
+  { onProgress }: ExportProgress = {},
+): Promise<void> {
+  const files = await renderSlidesToFiles(slides, canvasWidth)
+  if (files.length === 0) return
+
+  const zip = new JSZip()
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]!
+    const base64 = await blobToBase64(file)
+    zip.file(file.name, base64, { base64: true })
+    onProgress?.(i + 1, files.length)
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' })
+  downloadBlob(blob, 'slideshow.zip')
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary)
 }
 
 async function prepareSlideForExport(container: HTMLElement): Promise<void> {

@@ -37,6 +37,8 @@ export const MAX_CLIP_SPEED = 4
 
 export const DEFAULT_FONT = 'Inter, system-ui, sans-serif'
 
+export const DEFAULT_IMAGE_CLIP_DURATION = 5
+
 export const DEFAULT_TEXT_OVERLAY_STYLE: TextOverlay['style'] = {
   fontFamily: DEFAULT_FONT,
   fontSize: 64,
@@ -66,15 +68,21 @@ export function createTrack(type: 'video' | 'audio', name?: string): Track {
   }
 }
 
-export function createVideoClip(asset: MediaAsset, trackId: TrackId, startTime: number): VideoClip {
-  const duration = asset.type === 'image' ? 5 : asset.duration
+export function createVideoClip(
+  asset: MediaAsset,
+  trackId: TrackId,
+  startTime: number,
+  duration?: number,
+): VideoClip {
+  const resolvedDuration =
+    duration ?? (asset.type === 'image' ? DEFAULT_IMAGE_CLIP_DURATION : asset.duration)
   return {
     id: createEntityId('clip'),
     type: asset.type === 'image' ? 'image' : 'video',
     assetId: asset.id,
     trackId,
     startTime,
-    duration,
+    duration: resolvedDuration,
     trimIn: 0,
     trimOut: 0,
     volume: 1,
@@ -99,10 +107,15 @@ export function createAudioClip(asset: MediaAsset, trackId: TrackId, startTime: 
   }
 }
 
-export function createClip(asset: MediaAsset, trackId: TrackId, startTime: number): Clip {
+export function createClip(
+  asset: MediaAsset,
+  trackId: TrackId,
+  startTime: number,
+  duration?: number,
+): Clip {
   return asset.type === 'audio'
     ? createAudioClip(asset, trackId, startTime)
-    : createVideoClip(asset, trackId, startTime)
+    : createVideoClip(asset, trackId, startTime, duration)
 }
 
 export function createTextOverlay(startTime: number, endTime: number, zIndex: number): TextOverlay {

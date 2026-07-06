@@ -20,6 +20,7 @@ export function addAssetToTimeline(
   assetId: string,
   startTime: number,
   trackId?: TrackId,
+  duration?: number,
 ): 'ok' | 'missing' | 'no-track' | 'blocked' {
   const state = useVideoEditorStore.getState()
   const asset = state.assets[assetId]
@@ -33,7 +34,7 @@ export function addAssetToTimeline(
   if (track.locked) return 'blocked'
   if (track.type !== (asset.type === 'audio' ? 'audio' : 'video')) return 'blocked'
 
-  const clipId = state.addClip(assetId, resolvedTrackId, Math.max(0, startTime))
+  const clipId = state.addClip(assetId, resolvedTrackId, Math.max(0, startTime), duration)
   if (!clipId) return 'blocked'
 
   state.selectClip(clipId)

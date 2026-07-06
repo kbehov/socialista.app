@@ -195,7 +195,7 @@ function CarouselEditorContent({
         <div className="min-w-0 flex-1" />
 
         <FormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
-        <SlideshowSaveBar showLabel={false} className="hidden min-w-0 max-w-[160px] shrink-0 md:flex lg:max-w-[200px]" />
+        <SlideshowSaveBar showLabel={false} className="hidden w-[min(100%,220px)] shrink-0 md:flex lg:w-[260px]" />
 
         <Button
           size="sm"

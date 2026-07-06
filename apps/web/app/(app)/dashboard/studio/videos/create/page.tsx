@@ -1,5 +1,10 @@
 import { VideoCreateEditor } from '@/components/video/video-create-editor'
 
-export default function CreateVideoPage() {
-  return <VideoCreateEditor />
+type CreateVideoPageProps = {
+  searchParams: Promise<{ slideshowId?: string }>
+}
+
+export default async function CreateVideoPage({ searchParams }: CreateVideoPageProps) {
+  const { slideshowId } = await searchParams
+  return <VideoCreateEditor slideshowId={slideshowId} />
 }

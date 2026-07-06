@@ -84,7 +84,7 @@ interface EditorState {
   applyPersistedAssets: (assets: SerializedMediaAsset[]) => void
 
   // Clips
-  addClip: (assetId: string, trackId: TrackId, startTime: number) => ClipId | null
+  addClip: (assetId: string, trackId: TrackId, startTime: number, duration?: number) => ClipId | null
   moveClip: (clipId: ClipId, newStartTime: number, newTrackId: TrackId) => void
   trimClip: (clipId: ClipId, trimIn: number, trimOut: number) => void
   splitClip: (clipId: ClipId, atTime: number) => void
@@ -420,13 +420,13 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       })
     },
 
-    addClip: (assetId, trackId, startTime) => {
+    addClip: (assetId, trackId, startTime, duration) => {
       const asset = get().assets[assetId]
       if (!asset || !isMediaAssetAvailable(asset)) return null
       const track = get().project.tracks.find(t => t.id === trackId)
       if (!track) return null
       if (track.type !== (asset.type === 'audio' ? 'audio' : 'video')) return null
-      const clip = createClip(asset, trackId, startTime)
+      const clip = createClip(asset, trackId, startTime, duration)
       if (wouldOverlap(get().project, trackId, clip.startTime, clip.duration, clip.id)) {
         return null
       }
