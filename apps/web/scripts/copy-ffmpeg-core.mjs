@@ -20,6 +20,14 @@ const sources = [
     from: '../node_modules/@ffmpeg/ffmpeg/dist/esm/worker.js',
     to: 'worker.js',
   },
+  {
+    from: '../node_modules/@ffmpeg/ffmpeg/dist/esm/const.js',
+    to: 'const.js',
+  },
+  {
+    from: '../node_modules/@ffmpeg/ffmpeg/dist/esm/errors.js',
+    to: 'errors.js',
+  },
 ]
 
 if (!existsSync(publicDir)) {

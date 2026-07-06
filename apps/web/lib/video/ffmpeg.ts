@@ -11,11 +11,15 @@ export async function loadFFmpeg(onLog?: (msg: string) => void): Promise<void> {
     if (onLog) {
       ffmpeg.on('log', ({ message }) => onLog(message))
     }
+    // classWorkerURL must be an absolute http(s) URL — a path like `/ffmpeg/worker.js`
+    // is resolved against import.meta.url (file:// in the bundle) and breaks Workers.
+    const classWorkerURL = new URL('/ffmpeg/worker.js', window.location.origin).href
+
     loadingPromise = ffmpeg
       .load({
         coreURL: await toBlobURL('/ffmpeg/ffmpeg-core.js', 'text/javascript'),
         wasmURL: await toBlobURL('/ffmpeg/ffmpeg-core.wasm', 'application/wasm'),
-        classWorkerURL: '/ffmpeg/worker.js',
+        classWorkerURL,
       })
       .then(() => undefined)
   }

@@ -8,14 +8,16 @@ import { pickActiveVideoClip } from '@/lib/video/active-clip'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import { cn } from '@/lib/utils'
-import { FilmIcon } from 'lucide-react'
+import { FilmIcon, Loader2Icon } from 'lucide-react'
 import { SafeZoneOverlay, isVerticalReelsFormat } from './safe-zone-overlay'
+import { SelectedClipActionBar } from '../timeline/selected-clip-action-bar'
 import { TextOverlayRenderer } from './text-overlay-renderer'
 
 type PreviewCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>
   previewZoom: number
   showSafeZone: boolean
+  isBuffering?: boolean
 }
 
 function PreviewEmptyState() {
@@ -34,6 +36,7 @@ export function PreviewCanvas({
   canvasRef,
   previewZoom,
   showSafeZone,
+  isBuffering = false,
 }: PreviewCanvasProps) {
   const artboardRef = useRef<HTMLDivElement>(null)
   const resolution = useVideoEditorStore(s => s.project.resolution)
@@ -150,6 +153,14 @@ export function PreviewCanvas({
               canvasHeight={resolution.height}
               formatId={formatPresetId}
             />
+            {isActiveClipSelected && activeClip ? (
+              <SelectedClipActionBar clipId={activeClip.id} variant="floating" />
+            ) : null}
+            {isBuffering && isPlaying ? (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                <Loader2Icon className="size-6 animate-spin text-white/70" aria-hidden />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

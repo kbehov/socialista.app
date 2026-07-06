@@ -4,7 +4,7 @@ import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ClipAiProvider, useClipAi } from '@/components/video/ai/clip-ai-provider'
+import { ClipAiProvider } from '@/components/video/ai/clip-ai-provider'
 import { usePlayback } from '@/hooks/video/use-playback'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
 import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/carousel/defaults'
@@ -15,11 +15,12 @@ import { VideoFormatSelector, VideoResolutionBadge } from '@/components/video/vi
 import { VideoSaveBar } from '@/components/video/video-save-bar'
 import { isVerticalReelsFormat } from '@/components/video/preview/safe-zone-overlay'
 import { DownloadIcon, Redo2Icon, ShieldCheckIcon, Undo2Icon } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ExportModal } from './export/export-modal'
 import { PreviewCanvas } from './preview/preview-canvas'
 import { VideoZoomControls } from './preview/video-zoom-controls'
 import { Timeline } from './timeline/timeline'
+import { SelectedClipActionBar } from './timeline/selected-clip-action-bar'
 import { TimelineTransport } from './timeline/timeline-transport'
 
 export function VideoEditor() {
@@ -27,6 +28,33 @@ export function VideoEditor() {
     <ClipAiProvider>
       <VideoEditorContent />
     </ClipAiProvider>
+  )
+}
+
+function VideoEditorTimecode({ fps, duration }: { fps: number; duration: number }) {
+  const spanRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const formatTime = (playhead: number) =>
+      `${formatTimecode(playhead, fps)} / ${formatTimecode(duration, fps)}`
+
+    if (spanRef.current) {
+      spanRef.current.textContent = formatTime(useVideoEditorStore.getState().playhead)
+    }
+
+    return useVideoEditorStore.subscribe((state, prevState) => {
+      if (state.playhead === prevState.playhead) return
+      if (spanRef.current) {
+        spanRef.current.textContent = formatTime(state.playhead)
+      }
+    })
+  }, [fps, duration])
+
+  const initialPlayhead = useVideoEditorStore.getState().playhead
+  return (
+    <span ref={spanRef}>
+      {formatTimecode(initialPlayhead, fps)} / {formatTimecode(duration, fps)}
+    </span>
   )
 }
 
@@ -41,7 +69,6 @@ function VideoEditorContent() {
   const redo = useVideoEditorStore(s => s.redo)
   const past = useVideoEditorStore(s => s.past)
   const future = useVideoEditorStore(s => s.future)
-  const playhead = useVideoEditorStore(s => s.playhead)
   const duration = useVideoEditorStore(s => s.project.duration)
   const fps = useVideoEditorStore(s => s.project.fps)
   const resolution = useVideoEditorStore(s => s.project.resolution)
@@ -51,37 +78,35 @@ function VideoEditorContent() {
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
-  const { openClipAi, canUseClipAi, getClipAiMode, isProcessingClip } = useClipAi()
   const [exportOpen, setExportOpen] = useState(false)
 
   const canUndo = past.length > 0
   const canRedo = future.length > 0
   const canSplit = Boolean(selectedClipId || selectedOverlayId)
   const canExport = duration > 0
-  const clipAiMode = selectedClipId ? getClipAiMode(selectedClipId) : null
-  const canUseAi = selectedClipId ? canUseClipAi(selectedClipId) : false
-  const isAiProcessing = selectedClipId ? isProcessingClip(selectedClipId) : false
-  const aiLabel = clipAiMode === 'animate-image' ? 'Animate with AI' : 'Edit with AI'
   const isReelsFormat = isVerticalReelsFormat(resolution.width, resolution.height)
 
-  const handleSplit = () => {
+  const handleSplit = useCallback(() => {
+    const playhead = useVideoEditorStore.getState().playhead
     if (selectedClipId) {
       splitClip(selectedClipId, playhead)
     } else if (selectedOverlayId) {
       splitOverlay(selectedOverlayId, playhead)
     }
-  }
+  }, [selectedClipId, selectedOverlayId, splitClip, splitOverlay])
 
-  const handleAddText = () => {
+  const handleAddText = useCallback(() => {
+    const playhead = useVideoEditorStore.getState().playhead
     const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
     addTextOverlay(playhead, Math.max(playhead + 0.5, end))
-  }
+  }, [addTextOverlay, duration])
 
   const handleWorkspacePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement
     if (target.closest('[data-video-canvas]')) return
     if (target.closest('[data-canvas-controls]')) return
     if (target.closest('[data-preview-playback]')) return
+    if (target.closest('[data-clip-actions]')) return
     if (useVideoEditorStore.getState().isPlaying) return
     selectClip(null)
   }
@@ -148,6 +173,7 @@ function VideoEditorContent() {
               canvasRef={canvasRef}
               previewZoom={previewZoom}
               showSafeZone={showSafeZone}
+              isBuffering={playback.isBuffering}
             />
           </div>
         </CanvasWorkspaceProvider>
@@ -156,9 +182,7 @@ function VideoEditorContent() {
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
               <span className="font-medium text-foreground">Time</span>
-              <span>
-                {formatTimecode(playhead, fps)} / {formatTimecode(duration, fps)}
-              </span>
+              <VideoEditorTimecode fps={fps} duration={duration} />
             </div>
             <span className="hidden h-4 w-px shrink-0 bg-border sm:block" aria-hidden />
             <VideoResolutionBadge className="hidden sm:inline-flex" />
@@ -197,12 +221,9 @@ function VideoEditorContent() {
           playback={playback}
           onAddText={handleAddText}
           onSplit={handleSplit}
-          onOpenAi={() => selectedClipId && openClipAi(selectedClipId)}
           canSplit={canSplit}
-          canUseAi={canUseAi}
-          isAiProcessing={isAiProcessing}
-          aiLabel={aiLabel}
         />
+        {selectedClipId ? <SelectedClipActionBar clipId={selectedClipId} /> : null}
         <div className="h-[min(240px,32vh)] min-h-[180px] min-w-0 overflow-hidden lg:h-[220px]">
           <Timeline />
         </div>

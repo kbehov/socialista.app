@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { filtersToCss } from '@/lib/media-filters'
+import { useEffect, useRef, useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
-import type { Clip, ClipId, Project, VideoClip } from '@socialista/types'
+import type { Clip, ClipId, Project, VideoClip, VideoFilter } from '@socialista/types'
 import { pickActiveVideoClip } from '@/lib/video/active-clip'
 
 type VideoSlot = {
@@ -16,6 +17,7 @@ type ImageSlot = {
   image: HTMLImageElement
   clipId: ClipId
   assetId: string
+  loadScheduled?: boolean
 }
 
 type AudioSlot = {
@@ -25,6 +27,34 @@ type AudioSlot = {
 }
 
 const previewSeekRef: { current: ((time: number) => void) | null } = { current: null }
+
+function getClipLocalTime(clip: VideoClip, timelineTime: number): number {
+  const elapsed = timelineTime - clip.startTime
+  const speed = clip.speed ?? 1
+  return clip.trimIn + elapsed * speed
+}
+
+function scheduleImageDraw(slot: ImageSlot, onLoad: () => void) {
+  if (slot.image.complete && slot.image.naturalWidth) {
+    onLoad()
+    return
+  }
+  if (slot.loadScheduled) return
+  slot.loadScheduled = true
+  slot.image.addEventListener(
+    'load',
+    () => {
+      slot.loadScheduled = false
+      onLoad()
+    },
+    { once: true },
+  )
+}
+
+function filtersVisualKey(filters: VideoFilter[]): string {
+  if (!filters.length) return ''
+  return filters.map(f => `${f.type}:${f.value}`).join('|')
+}
 
 /** Seek preview canvas immediately (used by timeline scrubbing). */
 export function seekPreview(time: number) {
@@ -59,9 +89,15 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   const startClockRef = useRef<number>(0)
   const startPlayheadRef = useRef<number>(0)
   const lastPlayheadStoreWriteRef = useRef<number>(0)
+  const isBufferingRef = useRef(false)
+  const [isBuffering, setIsBuffering] = useState(false)
 
-  const tracks = useVideoEditorStore(s => s.project.tracks)
-  const clips = useVideoEditorStore(s => s.project.clips)
+  const setBuffering = (value: boolean) => {
+    if (isBufferingRef.current === value) return
+    isBufferingRef.current = value
+    setIsBuffering(value)
+  }
+
   const assets = useVideoEditorStore(s => s.assets)
   const isPlaying = useVideoEditorStore(s => s.isPlaying)
   const playhead = useVideoEditorStore(s => s.playhead)
@@ -265,15 +301,22 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       if (activeVideoClip.type === 'image') {
         const slot = getImageSlot(activeVideoClip)
         if (slot?.image.complete) {
+          setBuffering(false)
           drawFrame(activeVideoClip)
         } else if (slot) {
-          slot.image.onload = () => drawFrame(activeVideoClip)
+          setBuffering(true)
+          scheduleImageDraw(slot, () => {
+            setBuffering(false)
+            drawFrame(activeVideoClip)
+          })
         }
       } else {
         const slot = getVideoSlot(activeVideoClip)
         if (slot) {
-          const localTime = newTime - activeVideoClip.startTime + activeVideoClip.trimIn
+          const localTime = getClipLocalTime(activeVideoClip, newTime)
           const video = slot.video
+          const buffering = video.readyState < 2
+          setBuffering(buffering)
           if (Math.abs(video.currentTime - localTime) > 0.15) {
             try {
               video.currentTime = localTime
@@ -286,10 +329,13 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
               // Autoplay blocked; pause store
             })
           }
-          drawFrame(activeVideoClip)
+          if (video.readyState >= 2) {
+            drawFrame(activeVideoClip)
+          }
         }
       }
     } else {
+      setBuffering(false)
       // Clear canvas
       if (syncCanvasSize()) {
         const canvas = canvasRef.current
@@ -384,6 +430,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     }
     stopAllVideo()
     stopAllAudio()
+    setBuffering(false)
     pause()
   }
 
@@ -400,23 +447,30 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       if (activeVideoClip.type === 'image') {
         const slot = getImageSlot(activeVideoClip)
         if (slot?.image.complete) {
+          setBuffering(false)
           drawFrame(activeVideoClip)
         } else if (slot) {
-          slot.image.onload = () => drawFrame(activeVideoClip)
+          setBuffering(true)
+          scheduleImageDraw(slot, () => {
+            setBuffering(false)
+            drawFrame(activeVideoClip)
+          })
         }
       } else {
         const slot = getVideoSlot(activeVideoClip)
         if (slot) {
-          const localTime = time - activeVideoClip.startTime + activeVideoClip.trimIn
+          const localTime = getClipLocalTime(activeVideoClip, time)
           slot.video.currentTime = localTime
           const onSeeked = () => {
             slot.video.removeEventListener('seeked', onSeeked)
+            setBuffering(false)
             drawFrame(activeVideoClip)
           }
           slot.video.addEventListener('seeked', onSeeked, { once: true })
         }
       }
     } else {
+      setBuffering(false)
       if (syncCanvasSize()) {
         const canvas = canvasRef.current
         if (canvas) {
@@ -454,33 +508,43 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       if (activeVideoClip.type === 'image') {
         const slot = getImageSlot(activeVideoClip)
         if (slot?.image.complete) {
+          setBuffering(false)
           drawFrame(activeVideoClip)
         } else if (slot) {
-          slot.image.onload = () => drawFrame(activeVideoClip)
+          setBuffering(true)
+          scheduleImageDraw(slot, () => {
+            setBuffering(false)
+            drawFrame(activeVideoClip)
+          })
         }
       } else {
         const slot = getVideoSlot(activeVideoClip)
         if (slot) {
-          const localTime = playhead - activeVideoClip.startTime + activeVideoClip.trimIn
+          const localTime = getClipLocalTime(activeVideoClip, playhead)
           if (Math.abs(slot.video.currentTime - localTime) > 0.05) {
             slot.video.currentTime = localTime
           }
           const onSeeked = () => {
             slot.video.removeEventListener('seeked', onSeeked)
+            setBuffering(false)
             drawFrame(activeVideoClip)
           }
           if (slot.video.readyState >= 2) {
             if (Math.abs(slot.video.currentTime - localTime) <= 0.05) {
+              setBuffering(false)
               drawFrame(activeVideoClip)
             } else {
+              setBuffering(true)
               slot.video.addEventListener('seeked', onSeeked, { once: true })
             }
           } else {
+            setBuffering(true)
             slot.video.addEventListener('loadeddata', onSeeked, { once: true })
           }
         }
       }
     } else {
+      setBuffering(false)
       if (syncCanvasSize()) {
         const canvas = canvasRef.current
         if (canvas) {
@@ -529,6 +593,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       }
     },
     seekTo,
+    isBuffering,
   }
 }
 
@@ -540,7 +605,6 @@ function getActiveClipVisualKey(
 ): string | null {
   const clip = pickActiveVideoClip(tracks, clips, assets, time)
   if (!clip) return null
-  return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${JSON.stringify(clip.filters)}`
+  const filtersKey = filtersVisualKey(clip.filters)
+  return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${filtersKey}`
 }
-
-import { filtersToCss } from '@/lib/media-filters'

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { PreviewControls } from '@/components/video/preview/preview-controls'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { Loader2Icon, ScissorsIcon, SparklesIcon, TypeIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react'
+import { ScissorsIcon, TypeIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react'
 
 type Playback = {
   toggle: () => void
@@ -15,11 +15,7 @@ type TimelineTransportProps = {
   playback: Playback
   onAddText: () => void
   onSplit: () => void
-  onOpenAi: () => void
   canSplit: boolean
-  canUseAi: boolean
-  isAiProcessing: boolean
-  aiLabel: string
 }
 
 function TimelineZoomButton({ direction, children }: { direction: 1 | -1; children: React.ReactNode }) {
@@ -44,11 +40,7 @@ export function TimelineTransport({
   playback,
   onAddText,
   onSplit,
-  onOpenAi,
   canSplit,
-  canUseAi,
-  isAiProcessing,
-  aiLabel,
 }: TimelineTransportProps) {
   const zoom = useVideoEditorStore(s => s.zoom)
 
@@ -83,25 +75,6 @@ export function TimelineTransport({
           <TooltipContent>{canSplit ? 'Split at playhead' : 'Select a clip to split'}</TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="size-8"
-              onClick={onOpenAi}
-              disabled={!canUseAi || isAiProcessing}
-            >
-              {isAiProcessing ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
-              ) : (
-                <SparklesIcon className="size-3.5" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{isAiProcessing ? 'Generating…' : aiLabel}</TooltipContent>
-        </Tooltip>
       </div>
 
       <div className="min-w-0 flex-1">

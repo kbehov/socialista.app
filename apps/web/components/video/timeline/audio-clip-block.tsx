@@ -5,6 +5,7 @@ import { useDragClip } from '@/hooks/video/use-drag-clip'
 import { useTrimHandles } from '@/hooks/video/use-trim-handles'
 import { useTimelineFocus } from '@/components/video/timeline/timeline-focus-context'
 import type { AudioClip, Track } from '@socialista/types'
+import { memo, useMemo } from 'react'
 
 type Props = {
   clip: AudioClip
@@ -15,7 +16,14 @@ type Props = {
   track: Track
 }
 
-export function AudioClipBlock({ clip, left, width, height, pxPerSec, track }: Props) {
+export const AudioClipBlock = memo(function AudioClipBlock({
+  clip,
+  left,
+  width,
+  height,
+  pxPerSec,
+  track,
+}: Props) {
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const assets = useVideoEditorStore(s => s.assets)
@@ -57,13 +65,9 @@ export function AudioClipBlock({ clip, left, width, height, pxPerSec, track }: P
       )}
     </div>
   )
-}
+})
 
-function WaveformSvg({ peaks, className }: { peaks?: Int8Array; className?: string }) {
-  if (!peaks || peaks.length === 0) {
-    return <div className={className} />
-  }
-  // peaks: int8 min/max pairs; render as a centered SVG path
+function buildWaveformPath(peaks: Int8Array): string {
   const pairCount = Math.floor(peaks.length / 2)
   const width = 100
   const height = 100
@@ -78,14 +82,25 @@ function WaveformSvg({ peaks, className }: { peaks?: Int8Array; className?: stri
     top += ` L ${x.toFixed(2)} ${(mid + min * mid).toFixed(2)}`
     bottom = ` L ${x.toFixed(2)} ${(mid + max * mid).toFixed(2)}` + bottom
   }
-  const d = top + ' L ' + width + ' ' + mid + bottom + ' Z'
+  return top + ' L ' + width + ' ' + mid + bottom + ' Z'
+}
+
+const WaveformSvg = memo(function WaveformSvg({
+  peaks,
+  className,
+}: {
+  peaks?: Int8Array
+  className?: string
+}) {
+  const d = useMemo(() => (peaks && peaks.length > 0 ? buildWaveformPath(peaks) : null), [peaks])
+
+  if (!d) {
+    return <div className={className} />
+  }
+
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      className={className}
-    >
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className={className}>
       <path d={d} fill="currentColor" opacity={0.6} />
     </svg>
   )
-}
+})
