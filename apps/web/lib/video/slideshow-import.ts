@@ -5,13 +5,30 @@ import type { SlideshowResponse } from '@socialista/types'
 
 export const SLIDESHOW_CLIP_DURATION_SECONDS = 3
 
-export async function importSlideshowToTimeline(slideshow: SlideshowResponse): Promise<number> {
+export type SlideshowImportPhase = 'rendering' | 'importing'
+
+export type SlideshowImportProgress = {
+  phase: SlideshowImportPhase
+  current: number
+  total: number
+}
+
+type ImportSlideshowOptions = {
+  onProgress?: (progress: SlideshowImportProgress) => void
+}
+
+export async function importSlideshowToTimeline(
+  slideshow: SlideshowResponse,
+  { onProgress }: ImportSlideshowOptions = {},
+): Promise<number> {
   const sortedSlides = [...slideshow.slides].sort((a, b) => a.order - b.order)
   if (sortedSlides.length === 0) {
     throw new Error('Slideshow has no slides')
   }
 
-  const files = await renderSlidesToFiles(sortedSlides, slideshow.canvas.width)
+  const files = await renderSlidesToFiles(sortedSlides, slideshow.canvas.width, {
+    onProgress: (current, total) => onProgress?.({ phase: 'rendering', current, total }),
+  })
   if (files.length === 0) {
     throw new Error('Failed to render slideshow slides')
   }
@@ -25,18 +42,22 @@ export async function importSlideshowToTimeline(slideshow: SlideshowResponse): P
     throw new Error('No video track available')
   }
 
+  let imported = 0
+  const assets = await Promise.all(
+    files.map(async file => {
+      const asset = await importMediaAsset(file)
+      imported += 1
+      onProgress?.({ phase: 'importing', current: imported, total: files.length })
+      return asset
+    }),
+  )
+
   let startTime = 0
   let clipCount = 0
 
-  for (const file of files) {
-    const asset = await importMediaAsset(file)
+  for (const asset of assets) {
     store.registerAsset(asset)
-    const clipId = store.addClip(
-      asset.id,
-      videoTrack.id,
-      startTime,
-      SLIDESHOW_CLIP_DURATION_SECONDS,
-    )
+    const clipId = store.addClip(asset.id, videoTrack.id, startTime, SLIDESHOW_CLIP_DURATION_SECONDS)
     if (!clipId) {
       throw new Error('Failed to add slide to timeline')
     }

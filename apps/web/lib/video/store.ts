@@ -25,6 +25,7 @@ import {
   DEFAULT_PROJECT_NAME,
   DEFAULT_RESOLUTION,
   DEFAULT_ZOOM,
+  DEFAULT_IMAGE_CLIP_DURATION,
   HISTORY_LIMIT,
   MAX_CLIP_SPEED,
   MIN_CLIP_SPEED,
@@ -222,6 +223,20 @@ function wouldOverlap(project: Project, trackId: TrackId, startTime: number, dur
     if (startTime < otherEnd && end > other.startTime) return true
   }
   return false
+}
+
+function resolveClipFromAsset(clip: Clip, asset: MediaAsset): Pick<Clip, 'type' | 'duration'> {
+  const clipType = asset.type === 'image' ? 'image' : 'video'
+  const duration =
+    asset.type === 'image'
+      ? clip.type === 'image'
+        ? clip.duration
+        : DEFAULT_IMAGE_CLIP_DURATION
+      : asset.duration > 0
+        ? asset.duration
+        : clip.duration
+
+  return { type: clipType, duration }
 }
 
 export const useVideoEditorStore = create<EditorState>((set, get) => {
@@ -608,15 +623,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
           return {}
         }
 
-        const clipType = asset.type === 'image' ? 'image' : 'video'
-        const duration =
-          asset.type === 'image'
-            ? clip.type === 'image'
-              ? clip.duration
-              : 5
-            : asset.duration > 0
-              ? asset.duration
-              : clip.duration
+        const { type: clipType, duration } = resolveClipFromAsset(clip, asset)
 
         const updated: Clip = {
           ...clip,
@@ -643,15 +650,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
           return {}
         }
 
-        const clipType = asset.type === 'image' ? 'image' : 'video'
-        const duration =
-          asset.type === 'image'
-            ? clip.type === 'image'
-              ? clip.duration
-              : 5
-            : asset.duration > 0
-              ? asset.duration
-              : clip.duration
+        const { type: clipType, duration } = resolveClipFromAsset(clip, asset)
 
         const updated: Clip = {
           ...clip,

@@ -29,8 +29,11 @@ export const createSlideshow = async (
   return response
 }
 
-export const getSlideshow = async (id: string): Promise<ApiResponse<{ slideshow: SlideshowResponse }>> => {
-  return api.get<{ slideshow: SlideshowResponse }>(SLIDESHOW_ROUTES.GET_BY_ID(id))
+export const getSlideshow = async (
+  id: string,
+  options?: { signal?: AbortSignal },
+): Promise<ApiResponse<{ slideshow: SlideshowResponse }>> => {
+  return api.get<{ slideshow: SlideshowResponse }>(SLIDESHOW_ROUTES.GET_BY_ID(id), { signal: options?.signal })
 }
 
 export const getWorkspaceSlideshows = async (

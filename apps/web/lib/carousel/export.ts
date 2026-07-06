@@ -46,7 +46,11 @@ type ExportProgress = {
 }
 
 /** Render each slide off-screen to PNG files at the project's reference canvas width. */
-export async function renderSlidesToFiles(slides: Slide[], canvasWidth: number): Promise<File[]> {
+export async function renderSlidesToFiles(
+  slides: Slide[],
+  canvasWidth: number,
+  { onProgress }: ExportProgress = {},
+): Promise<File[]> {
   if (slides.length === 0) return []
 
   const sorted = [...slides].sort((a, b) => a.order - b.order)
@@ -92,6 +96,7 @@ export async function renderSlidesToFiles(slides: Slide[], canvasWidth: number):
       const dataUrl = await exportSlideToPng(node)
       const blob = dataUrlToBlob(dataUrl)
       files.push(new File([blob], slideFilename(slide, i), { type: 'image/png' }))
+      onProgress?.(i + 1, sorted.length)
     }
 
     return files
@@ -107,7 +112,7 @@ export async function exportSlidesAsZip(
   canvasWidth: number,
   { onProgress }: ExportProgress = {},
 ): Promise<void> {
-  const files = await renderSlidesToFiles(slides, canvasWidth)
+  const files = await renderSlidesToFiles(slides, canvasWidth, { onProgress })
   if (files.length === 0) return
 
   const zip = new JSZip()
@@ -123,13 +128,12 @@ export async function exportSlidesAsZip(
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
-  const buffer = await blob.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte)
-  }
-  return btoa(binary)
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1] ?? '')
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read blob'))
+    reader.readAsDataURL(blob)
+  })
 }
 
 async function prepareSlideForExport(container: HTMLElement): Promise<void> {

@@ -1,14 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { LayersIcon, SparklesIcon } from 'lucide-react'
 import { EditorInspector } from '@/components/carousel/editor-inspector'
 import { SlideshowSourcePanel } from '@/components/carousel/slideshow-source-panel'
-import { useEditorStore } from '@/lib/carousel/store'
+import { type SidebarTab, useSidebarTab } from '@/hooks/carousel/use-sidebar-tab'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-
-type SidebarTab = 'generate' | 'edit'
+import { LayersIcon, SparklesIcon } from 'lucide-react'
 
 function RailButton({
   active,
@@ -46,16 +43,20 @@ function RailButton({
 }
 
 function StudioPanelContent({ tab }: { tab: SidebarTab }) {
-  return tab === 'generate' ? <SlideshowSourcePanel embedded /> : <EditorInspector embedded />
+  return (
+    <div className="relative h-full min-h-0">
+      <div className={cn('h-full min-h-0', tab !== 'generate' && 'hidden')} aria-hidden={tab !== 'generate'}>
+        <SlideshowSourcePanel embedded />
+      </div>
+      <div className={cn('h-full min-h-0', tab !== 'edit' && 'hidden')} aria-hidden={tab !== 'edit'}>
+        <EditorInspector embedded />
+      </div>
+    </div>
+  )
 }
 
 export function SlideshowStudioSidebar({ className }: { className?: string }) {
-  const [tab, setTab] = useState<SidebarTab>('generate')
-  const activeLayerId = useEditorStore(s => s.activeLayerId)
-
-  useEffect(() => {
-    if (activeLayerId) setTab('edit')
-  }, [activeLayerId])
+  const { tab, setTab } = useSidebarTab()
 
   return (
     <div className={cn('flex h-full min-h-0 min-w-0 shrink-0', className)}>
@@ -69,12 +70,7 @@ export function SlideshowStudioSidebar({ className }: { className?: string }) {
           icon={SparklesIcon}
           onClick={() => setTab('generate')}
         />
-        <RailButton
-          active={tab === 'edit'}
-          label="Edit"
-          icon={LayersIcon}
-          onClick={() => setTab('edit')}
-        />
+        <RailButton active={tab === 'edit'} label="Edit" icon={LayersIcon} onClick={() => setTab('edit')} />
       </nav>
 
       <div className="slideshow-editor-panel video-editor-panel flex w-60 min-w-0 shrink-0 flex-col overflow-hidden border-r lg:w-64 xl:w-[280px]">
@@ -90,12 +86,7 @@ const MOBILE_TABS: { id: SidebarTab; label: string; icon: typeof SparklesIcon }[
 ]
 
 export function SlideshowStudioMobilePanel({ className }: { className?: string }) {
-  const [tab, setTab] = useState<SidebarTab>('generate')
-  const activeLayerId = useEditorStore(s => s.activeLayerId)
-
-  useEffect(() => {
-    if (activeLayerId) setTab('edit')
-  }, [activeLayerId])
+  const { tab, setTab } = useSidebarTab()
 
   return (
     <aside

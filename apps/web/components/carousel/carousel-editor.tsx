@@ -35,9 +35,11 @@ export function CarouselEditor({ panels }: { panels?: ReactNode }) {
 function CarouselEditorMain() {
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
+  const activeLayerId = useEditorStore(s => s.activeLayerId)
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
   const addTextLayer = useEditorStore(s => s.addTextLayer)
+  const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
   const past = useEditorStore(s => s.past)
   const future = useEditorStore(s => s.future)
 
@@ -45,13 +47,15 @@ function CarouselEditorMain() {
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
 
   const workspaceRef = useRef<HTMLDivElement>(null)
+  const { deselectBackgroundEdit, isBackgroundEditSelected } = useSlideImageEdit()
 
   const activeSlide = slides.find(s => s.id === activeSlideId) ?? slides[0]
   const hasLayers = (activeSlide?.layers.length ?? 0) > 0
   const hasBackground = Boolean(activeSlide?.backgroundImageUrl)
-
   const canUndo = past.length > 0
   const canRedo = future.length > 0
+
+  useEditorShortcuts()
 
   useEffect(() => {
     if (slides.length > 0 && !activeSlideId) {
@@ -80,66 +84,6 @@ function CarouselEditorMain() {
     ? 'Drag image to pan · Corner handles to zoom'
     : 'Click text to edit · Style in the Edit panel'
 
-  return (
-    <main className="slideshow-editor-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <CarouselEditorContent
-        workspaceRef={workspaceRef}
-        activeSlide={activeSlide}
-        hintMessage={hintMessage}
-        hasBackground={hasBackground}
-        hasLayers={hasLayers}
-        exporting={exporting}
-        exportProgress={exportProgress}
-        handleExport={handleExport}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        undo={undo}
-        redo={redo}
-        addTextLayer={addTextLayer}
-        slidesLength={slides.length}
-      />
-    </main>
-  )
-}
-
-type CarouselEditorContentProps = {
-  workspaceRef: React.RefObject<HTMLDivElement | null>
-  activeSlide: ReturnType<typeof useEditorStore.getState>['slides'][number] | undefined
-  hintMessage: string
-  hasBackground: boolean
-  hasLayers: boolean
-  exporting: boolean
-  canUndo: boolean
-  canRedo: boolean
-  undo: () => void
-  redo: () => void
-  addTextLayer: (slideId: string) => void
-  slidesLength: number
-  exportProgress: { current: number; total: number }
-  handleExport: () => void
-}
-
-function CarouselEditorContent({
-  workspaceRef,
-  activeSlide,
-  hintMessage,
-  hasBackground,
-  hasLayers,
-  exporting,
-  canUndo,
-  canRedo,
-  undo,
-  redo,
-  addTextLayer,
-  slidesLength,
-  exportProgress,
-  handleExport,
-}: CarouselEditorContentProps) {
-  useEditorShortcuts()
-  const activeLayerId = useEditorStore(s => s.activeLayerId)
-  const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
-  const { deselectBackgroundEdit, isBackgroundEditSelected } = useSlideImageEdit()
-
   const showCanvasHint = Boolean(
     activeSlide &&
       !activeLayerId &&
@@ -147,103 +91,108 @@ function CarouselEditorContent({
       (hasBackground ? isBackgroundEditSelected(activeSlide.id) : hasLayers),
   )
 
-  const handleWorkspacePointerDown = (e: React.PointerEvent) => {
-    const target = e.target as HTMLElement
-    if (target.closest('[data-slide-canvas]')) return
-    if (target.closest('[data-bg-edit-toolbar]')) return
-    if (target.closest('[data-canvas-controls]')) return
-    if (target.closest('[data-carousel-nav]')) return
-    if (target.closest('[data-slide-thumb]')) return
-    if (target.closest('[data-canvas-hint]')) return
-    deselectBackgroundEdit()
-    clearLayerSelection()
-  }
+  const handleWorkspacePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      const target = e.target as HTMLElement
+      if (target.closest('[data-slide-canvas]')) return
+      if (target.closest('[data-bg-edit-toolbar]')) return
+      if (target.closest('[data-canvas-controls]')) return
+      if (target.closest('[data-carousel-nav]')) return
+      if (target.closest('[data-slide-thumb]')) return
+      if (target.closest('[data-canvas-hint]')) return
+      deselectBackgroundEdit()
+      clearLayerSelection()
+    },
+    [clearLayerSelection, deselectBackgroundEdit],
+  )
 
-  const handleAddText = () => {
+  const handleAddText = useCallback(() => {
     if (!activeSlide) return
     addTextLayer(activeSlide.id)
-  }
+  }, [activeSlide, addTextLayer])
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-      <div className="slideshow-editor-canvas-bar video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" className="size-8" onClick={undo} disabled={!canUndo}>
-                <Undo2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Undo <Kbd className="ml-1">⌘Z</Kbd>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" className="size-8" onClick={redo} disabled={!canRedo}>
-                <Redo2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
-            </TooltipContent>
-          </Tooltip>
+    <main className="slideshow-editor-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+        <div className="slideshow-editor-canvas-bar video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
+          <div className="flex items-center gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon-sm" variant="ghost" className="size-8" onClick={undo} disabled={!canUndo}>
+                  <Undo2Icon className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Undo <Kbd className="ml-1">⌘Z</Kbd>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon-sm" variant="ghost" className="size-8" onClick={redo} disabled={!canRedo}>
+                  <Redo2Icon className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          <CanvasZoomControls className="hidden sm:flex" />
+
+          <div className="min-w-0 flex-1" />
+
+          <FormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
+          <SlideshowSaveBar showLabel={false} className="hidden w-[min(100%,220px)] shrink-0 md:flex lg:w-[260px]" />
+
+          <Button
+            size="sm"
+            className={cn('h-8 gap-1.5 px-3', slides.length > 0 && 'bg-primary hover:bg-primary/90')}
+            onClick={() => void handleExport()}
+            disabled={exporting || slides.length === 0}
+          >
+            {exporting ? <Loader2Icon className="size-3.5 animate-spin" /> : <DownloadIcon className="size-3.5" />}
+            <span className="hidden sm:inline">
+              {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
+            </span>
+          </Button>
         </div>
 
-        <CanvasZoomControls className="hidden sm:flex" />
+        <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
+          <div
+            ref={workspaceRef}
+            className="slideshow-editor-canvas-area video-editor-canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden"
+            onPointerDown={handleWorkspacePointerDown}
+          >
+            <CarouselPreviewLayoutProvider>
+              {activeSlide ? (
+                <SlidePreviewCarousel className="h-full" canvasHint={showCanvasHint ? hintMessage : null} />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                  <ImageIcon className="size-8 text-muted-foreground/50" />
+                  <p className="text-sm font-medium text-muted-foreground">No slides yet</p>
+                  <p className="max-w-xs text-xs text-muted-foreground/80">
+                    Use Generate in the sidebar to create TikTok or Instagram carousels with AI, or import from TikTok.
+                  </p>
+                </div>
+              )}
+            </CarouselPreviewLayoutProvider>
 
-        <div className="min-w-0 flex-1" />
+            <div className="pointer-events-none absolute bottom-3 left-3 z-10 sm:hidden">
+              <CanvasZoomControls />
+            </div>
+          </div>
+        </CanvasWorkspaceProvider>
 
-        <FormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
-        <SlideshowSaveBar showLabel={false} className="hidden w-[min(100%,220px)] shrink-0 md:flex lg:w-[260px]" />
-
-        <Button
-          size="sm"
-          className={cn('h-8 gap-1.5 px-3', slidesLength > 0 && 'bg-primary hover:bg-primary/90')}
-          onClick={handleExport}
-          disabled={exporting || slidesLength === 0}
-        >
-          {exporting ? <Loader2Icon className="size-3.5 animate-spin" /> : <DownloadIcon className="size-3.5" />}
-          <span className="hidden sm:inline">
-            {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
-          </span>
-        </Button>
-      </div>
-
-      <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
-        <div
-          ref={workspaceRef}
-          className="slideshow-editor-canvas-area video-editor-canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden"
-          onPointerDown={handleWorkspacePointerDown}
-        >
-          <CarouselPreviewLayoutProvider>
-            {activeSlide ? (
-              <SlidePreviewCarousel className="h-full" canvasHint={showCanvasHint ? hintMessage : null} />
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-                <ImageIcon className="size-8 text-muted-foreground/50" />
-                <p className="text-sm font-medium text-muted-foreground">No slides yet</p>
-                <p className="max-w-xs text-xs text-muted-foreground/80">
-                  Use Generate in the sidebar to create TikTok or Instagram carousels with AI, or import from TikTok.
-                </p>
-              </div>
-            )}
-          </CarouselPreviewLayoutProvider>
-
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10 sm:hidden">
-            <CanvasZoomControls />
+        <div className="slideshow-editor-filmstrip-section video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t">
+          <SlideFilmstripTransport onAddText={handleAddText} />
+          <div className="min-h-[104px] min-w-0 overflow-hidden px-2 py-2 sm:px-3">
+            <div className="studio-filmstrip-mask">
+              <SlideNavigator variant="filmstrip" />
+            </div>
           </div>
         </div>
-      </CanvasWorkspaceProvider>
-
-      <div className="slideshow-editor-filmstrip-section video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t">
-        <SlideFilmstripTransport onAddText={handleAddText} />
-        <div className="min-h-[104px] min-w-0 overflow-hidden px-2 py-2 sm:px-3">
-          <div className="studio-filmstrip-mask">
-            <SlideNavigator variant="filmstrip" />
-          </div>
-        </div>
       </div>
-    </div>
+    </main>
   )
 }

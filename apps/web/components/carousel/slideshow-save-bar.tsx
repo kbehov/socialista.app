@@ -22,6 +22,8 @@ type PersistSlideshowResult = {
   isNew: boolean
 }
 
+type BusyAction = 'save' | 'create-video' | null
+
 export function SlideshowSaveBar({
   className,
   showLabel = true,
@@ -37,7 +39,8 @@ export function SlideshowSaveBar({
   const setSlideshowName = useEditorStore(s => s.setSlideshowName)
   const getProjectPayload = useEditorStore(s => s.getProjectPayload)
   const loadProject = useEditorStore(s => s.loadProject)
-  const [isBusy, setIsBusy] = useState(false)
+  const [busyAction, setBusyAction] = useState<BusyAction>(null)
+  const isBusy = busyAction !== null
 
   const persistSlideshowDraft = useCallback(async (): Promise<PersistSlideshowResult | null> => {
     if (!workspaceId) return null
@@ -95,7 +98,7 @@ export function SlideshowSaveBar({
 
   const handleSave = useCallback(async () => {
     if (!workspaceId || isBusy) return
-    setIsBusy(true)
+    setBusyAction('save')
 
     try {
       const result = await persistSlideshowDraft()
@@ -107,13 +110,13 @@ export function SlideshowSaveBar({
 
       toast.success('Draft saved')
     } finally {
-      setIsBusy(false)
+      setBusyAction(null)
     }
   }, [isBusy, persistSlideshowDraft, router, workspaceId])
 
   const handleCreateVideo = useCallback(async () => {
     if (!workspaceId || isBusy) return
-    setIsBusy(true)
+    setBusyAction('create-video')
 
     try {
       const result = await persistSlideshowDraft()
@@ -121,7 +124,7 @@ export function SlideshowSaveBar({
 
       router.push(`/dashboard/studio/videos/create?slideshowId=${result.id}`)
     } finally {
-      setIsBusy(false)
+      setBusyAction(null)
     }
   }, [isBusy, persistSlideshowDraft, router, workspaceId])
 
@@ -149,9 +152,15 @@ export function SlideshowSaveBar({
                 disabled={isBusy || !workspaceId}
                 aria-label="Create video"
               >
-                {isBusy ? <Loader2Icon className="size-3.5 animate-spin" /> : <VideoIcon className="size-3.5" />}
+                {busyAction === 'create-video' ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <VideoIcon className="size-3.5" />
+                )}
                 {showLabel ? (
-                  <span className="hidden sm:inline">{isBusy ? 'Saving…' : 'Create video'}</span>
+                  <span className="hidden sm:inline">
+                    {busyAction === 'create-video' ? 'Saving…' : 'Create video'}
+                  </span>
                 ) : null}
               </Button>
             </TooltipTrigger>
@@ -167,10 +176,14 @@ export function SlideshowSaveBar({
                 disabled={isBusy || !workspaceId}
                 aria-label={slideshowId ? 'Save' : 'Save draft'}
               >
-                {isBusy ? <Loader2Icon className="size-3.5 animate-spin" /> : <SaveIcon className="size-3.5" />}
+                {busyAction === 'save' ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <SaveIcon className="size-3.5" />
+                )}
                 {showLabel ? (
                   <span className="hidden sm:inline">
-                    {isBusy ? 'Saving…' : slideshowId ? 'Save' : 'Save draft'}
+                    {busyAction === 'save' ? 'Saving…' : slideshowId ? 'Save' : 'Save draft'}
                   </span>
                 ) : null}
               </Button>
