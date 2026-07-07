@@ -182,22 +182,25 @@ export function SlideBackgroundImage({
 
   if (adjustment.type === 'crop') {
     return (
-      <div data-slot="canvas-bg-image-wrap" className="absolute inset-0 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          ref={imageRef}
-          data-slot="canvas-bg-image"
-          src={imageUrl}
-          alt=""
-          className={cn('absolute inset-0 size-full object-cover select-none', imageClassName)}
-          style={{ ...imageStyle, ...renderedImageStyle }}
-          draggable={false}
-          decoding="async"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageLoaded(true)}
-          onPointerDown={handleImagePointerDown}
-        />
-      </div>
+      <>
+        <div data-slot="canvas-bg-image-wrap" className="absolute inset-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imageRef}
+            data-slot="canvas-bg-image"
+            src={imageUrl}
+            alt=""
+            className={cn('absolute inset-0 size-full object-cover select-none', imageClassName)}
+            style={{ ...imageStyle, ...renderedImageStyle }}
+            draggable={false}
+            decoding="async"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageLoaded(true)}
+            onPointerDown={handleImagePointerDown}
+          />
+        </div>
+        {children}
+      </>
     )
   }
 

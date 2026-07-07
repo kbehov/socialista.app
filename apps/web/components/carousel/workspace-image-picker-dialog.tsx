@@ -25,9 +25,15 @@ type WorkspaceImagePickerDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelect: (imageUrl: string) => void
+  description?: string
 }
 
-export function WorkspaceImagePickerDialog({ open, onOpenChange, onSelect }: WorkspaceImagePickerDialogProps) {
+export function WorkspaceImagePickerDialog({
+  open,
+  onOpenChange,
+  onSelect,
+  description = 'Choose an image from your workspace files and folders.',
+}: WorkspaceImagePickerDialogProps) {
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
 
   const [folderId, setFolderId] = useState<string | undefined>()
@@ -120,9 +126,7 @@ export function WorkspaceImagePickerDialog({ open, onOpenChange, onSelect }: Wor
       <DialogContent className="flex max-h-[min(85vh,720px)] flex-col gap-4 overflow-hidden sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Select from files</DialogTitle>
-          <DialogDescription>
-            Choose a background image from your workspace files and folders.
-          </DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <nav className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground" aria-label="Folder path">

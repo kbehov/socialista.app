@@ -1,12 +1,23 @@
 import { create } from 'zustand'
-import type { BackgroundImageAdjustment, BackgroundImageFilter, Slide, SlideId, TextLayer, LayerId, CanvasDimensions } from '@socialista/types'
+import type {
+  BackgroundImageAdjustment,
+  BackgroundImageFilter,
+  ImageLayer,
+  LayerId,
+  Slide,
+  SlideId,
+  SlideLayer,
+  TextLayer,
+  CanvasDimensions,
+} from '@socialista/types'
 import {
   createSlide,
   createTextLayer,
+  createImageLayer,
+  cloneLayer,
   reindexLayers,
   sortLayers,
   DEFAULT_CANVAS,
-  DEFAULT_LAYER_STYLE,
   DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
   DEFAULT_VIEWPORT_ZOOM,
   MIN_VIEWPORT_ZOOM,
@@ -15,6 +26,7 @@ import {
   mergeGeneratedTextsIntoSlides,
   normalizeSlide,
 } from './defaults'
+import { createLayerId, createSlideId } from './id'
 import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
 import { proxiedImageUrl } from './image-url'
 
@@ -49,8 +61,15 @@ interface EditorState {
   clearSlideBackgroundImage: (slideId: SlideId) => void
 
   addTextLayer: (slideId: SlideId) => void
-  updateLayer: (slideId: SlideId, layerId: LayerId, partial: Partial<TextLayer>) => void
+  addImageLayer: (slideId: SlideId, imageUrl?: string) => void
+  updateLayer: (slideId: SlideId, layerId: LayerId, partial: Partial<SlideLayer>) => void
   updateLayerStyle: (slideId: SlideId, layerId: LayerId, style: Partial<TextLayer['style']>) => void
+  setLayerImageUrl: (slideId: SlideId, layerId: LayerId, imageUrl: string) => void
+  setImageLayerFilter: (slideId: SlideId, layerId: LayerId, filter: BackgroundImageFilter) => void
+  removeImageLayerFilter: (slideId: SlideId, layerId: LayerId, filterType: BackgroundImageFilter['type']) => void
+  setImageLayerFilterLive: (slideId: SlideId, layerId: LayerId, filter: BackgroundImageFilter) => void
+  removeImageLayerFilterLive: (slideId: SlideId, layerId: LayerId, filterType: BackgroundImageFilter['type']) => void
+  promoteImageLayerToBackground: (slideId: SlideId, layerId: LayerId) => void
   removeLayer: (slideId: SlideId, layerId: LayerId) => void
   duplicateLayer: (slideId: SlideId, layerId: LayerId) => void
   setActiveLayer: (slideId: SlideId | null, layerId: LayerId | null) => void
@@ -91,7 +110,12 @@ type Snapshot = Pick<EditorState, 'slides' | 'activeSlideId' | 'activeLayerId'>
 
 function takeSnapshot(state: EditorState): Snapshot {
   return {
-    slides: state.slides.map(slide => ({ ...slide, layers: slide.layers.map(l => ({ ...l, style: { ...l.style } })) })),
+    slides: state.slides.map(slide => ({
+      ...slide,
+      backgroundImageAdjustment: structuredClone(slide.backgroundImageAdjustment),
+      backgroundImageFilters: [...slide.backgroundImageFilters],
+      layers: slide.layers.map(cloneLayer),
+    })),
     activeSlideId: state.activeSlideId,
     activeLayerId: state.activeLayerId,
   }
@@ -111,8 +135,21 @@ function mutateSlide(slides: Slide[], slideId: SlideId, mutator: (slide: Slide) 
   return slides.map(slide => (slide.id === slideId ? mutator(slide) : slide))
 }
 
-function mutateLayer(slide: Slide, layerId: LayerId, mutator: (layer: TextLayer) => TextLayer): Slide {
+function mutateLayer(slide: Slide, layerId: LayerId, mutator: (layer: SlideLayer) => SlideLayer): Slide {
   return { ...slide, layers: reindexLayers(slide.layers.map(l => (l.id === layerId ? mutator(l) : l))) }
+}
+
+function mutateImageLayer(
+  slide: Slide,
+  layerId: LayerId,
+  mutator: (layer: ImageLayer) => ImageLayer,
+): Slide {
+  return {
+    ...slide,
+    layers: reindexLayers(
+      slide.layers.map(l => (l.id === layerId && l.type === 'image' ? mutator(l) : l)),
+    ),
+  }
 }
 
 export const useEditorStore = create<EditorState>((set, get) => {
@@ -161,8 +198,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (!original) return {}
         const copy: Slide = {
           ...original,
-          id: `slide_${Math.random().toString(36).slice(2, 10)}`,
-          layers: original.layers.map(l => ({ ...l, style: { ...l.style } })),
+          id: createSlideId(),
+          layers: original.layers.map(cloneLayer),
           backgroundImageAdjustment: structuredClone(original.backgroundImageAdjustment),
           backgroundImageFilters: [...original.backgroundImageFilters],
         }
@@ -293,10 +330,23 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (top) set({ activeSlideId: slideId, activeLayerId: top.id })
     },
 
+    addImageLayer: (slideId, imageUrl = '') => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const zIndex = slide.layers.length
+          const layer = createImageLayer({ zIndex, imageUrl })
+          return { ...slide, layers: [...slide.layers, layer] }
+        }),
+      }))
+      const slide = get().slides.find(s => s.id === slideId)
+      const top = slide ? sortLayers(slide.layers).at(-1) : undefined
+      if (top) set({ activeSlideId: slideId, activeLayerId: top.id })
+    },
+
     updateLayer: (slideId, layerId, partial) => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide =>
-          mutateLayer(slide, layerId, layer => ({ ...layer, ...partial })),
+          mutateLayer(slide, layerId, layer => ({ ...layer, ...partial }) as SlideLayer),
         ),
       }))
     },
@@ -304,8 +354,82 @@ export const useEditorStore = create<EditorState>((set, get) => {
     updateLayerStyle: (slideId, layerId, style) => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide =>
-          mutateLayer(slide, layerId, layer => ({ ...layer, style: { ...layer.style, ...style } })),
+          mutateLayer(slide, layerId, layer => {
+            if (layer.type !== 'text') return layer
+            return { ...layer, style: { ...layer.style, ...style } }
+          }),
         ),
+      }))
+    },
+
+    setLayerImageUrl: (slideId, layerId, imageUrl) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => {
+            if (layer.type !== 'image') return layer
+            return { ...layer, imageUrl }
+          }),
+        ),
+      }))
+    },
+
+    setImageLayerFilter: (slideId, layerId, filter) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateImageLayer(slide, layerId, layer => ({
+            ...layer,
+            filters: [...layer.filters.filter(item => item.type !== filter.type), filter],
+          })),
+        ),
+      }))
+    },
+
+    removeImageLayerFilter: (slideId, layerId, filterType) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateImageLayer(slide, layerId, layer => ({
+            ...layer,
+            filters: layer.filters.filter(item => item.type !== filterType),
+          })),
+        ),
+      }))
+    },
+
+    setImageLayerFilterLive: (slideId, layerId, filter) =>
+      set(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateImageLayer(slide, layerId, layer => ({
+            ...layer,
+            filters: [...layer.filters.filter(item => item.type !== filter.type), filter],
+          })),
+        ),
+      })),
+
+    removeImageLayerFilterLive: (slideId, layerId, filterType) =>
+      set(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateImageLayer(slide, layerId, layer => ({
+            ...layer,
+            filters: layer.filters.filter(item => item.type !== filterType),
+          })),
+        ),
+      })),
+
+    promoteImageLayerToBackground: (slideId, layerId) => {
+      const state = get()
+      const slide = state.slides.find(s => s.id === slideId)
+      const layer = slide?.layers.find(l => l.id === layerId)
+      if (!layer || layer.type !== 'image' || !layer.imageUrl) return
+
+      record(s => ({
+        slides: mutateSlide(s.slides, slideId, current => ({
+          ...current,
+          backgroundImageUrl: layer.imageUrl,
+          backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+          backgroundImageFilters: [],
+          layers: reindexLayers(current.layers.filter(l => l.id !== layerId)),
+        })),
+        activeLayerId: s.activeLayerId === layerId ? null : s.activeLayerId,
       }))
     },
 
@@ -324,14 +448,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
         slides: mutateSlide(state.slides, slideId, slide => {
           const original = slide.layers.find(l => l.id === layerId)
           if (!original) return slide
-          const copy: TextLayer = {
-            ...original,
-            style: { ...original.style },
-            id: `layer_${Math.random().toString(36).slice(2, 10)}`,
+          const copy = cloneLayer(original)
+          const duplicated: SlideLayer = {
+            ...copy,
+            id: createLayerId(),
             x: Math.min(original.x + 4, 90),
             y: Math.min(original.y + 4, 88),
           }
-          return { ...slide, layers: reindexLayers([...slide.layers, copy]) }
+          return { ...slide, layers: reindexLayers([...slide.layers, duplicated]) }
         }),
       }))
       const state = get()
@@ -352,11 +476,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
           const sorted = sortLayers(slide.layers)
           const idx = sorted.findIndex(l => l.id === layerId)
           if (idx < 0 || idx >= sorted.length - 1) return slide
-          const a = sorted[idx]
-          const b = sorted[idx + 1]
-          const reordered = sorted.map((l, i) =>
-            i === idx ? { ...l, zIndex: b.zIndex } : i === idx + 1 ? { ...l, zIndex: a.zIndex } : l,
-          )
+          const reordered = sorted.slice()
+          ;[reordered[idx], reordered[idx + 1]] = [reordered[idx + 1]!, reordered[idx]!]
           return { ...slide, layers: reindexLayers(reordered) }
         }),
       }))
@@ -368,11 +489,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
           const sorted = sortLayers(slide.layers)
           const idx = sorted.findIndex(l => l.id === layerId)
           if (idx <= 0) return slide
-          const a = sorted[idx]
-          const b = sorted[idx - 1]
-          const reordered = sorted.map((l, i) =>
-            i === idx ? { ...l, zIndex: b.zIndex } : i === idx - 1 ? { ...l, zIndex: a.zIndex } : l,
-          )
+          const reordered = sorted.slice()
+          ;[reordered[idx - 1], reordered[idx]] = [reordered[idx]!, reordered[idx - 1]!]
           return { ...slide, layers: reindexLayers(reordered) }
         }),
       }))
@@ -386,7 +504,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
             .slice()
             .reverse()
             .map(id => byId.get(id))
-            .filter((layer): layer is TextLayer => layer != null)
+            .filter((layer): layer is SlideLayer => layer != null)
           if (layers.length !== slide.layers.length) return slide
           return { ...slide, layers: reindexLayers(layers) }
         }),

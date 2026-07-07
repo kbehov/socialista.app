@@ -4,15 +4,14 @@ import { editImage } from '@/actions/fal.actions'
 import { proxiedImageUrl } from '@/lib/carousel/image-url'
 import { resolveFalImageUrl } from '@/lib/carousel/resolve-fal-image-url'
 import { useEditorStore } from '@/lib/carousel/store'
-import type { SlideId } from '@socialista/types'
+import type { LayerId, SlideId } from '@socialista/types'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { SlideImageEditDialog } from './slide-image-edit-dialog'
 
-type EditTarget = {
-  slideId: SlideId
-  imageUrl: string
-}
+export type ImageEditTarget =
+  | { kind: 'background'; slideId: SlideId; imageUrl: string }
+  | { kind: 'layer'; slideId: SlideId; layerId: LayerId; imageUrl: string }
 
 type AdjustTarget = {
   slideId: SlideId
@@ -27,9 +26,10 @@ type SlideImageEditContextValue = {
   isBackgroundEditSelected: (slideId: SlideId) => boolean
   selectBackgroundEdit: (slideId: SlideId) => void
   deselectBackgroundEdit: () => void
-  openEditDialog: (slideId: SlideId, imageUrl: string) => void
+  openEditDialog: (target: ImageEditTarget) => void
   openAdjustMode: (slideId: SlideId, imageUrl: string) => void
   closeAdjustMode: () => void
+  replaceImage: (target: ImageEditTarget) => void
   replaceSlideImage: (slideId: SlideId) => void
   removeSlideImage: (slideId: SlideId) => void
 }
@@ -50,15 +50,16 @@ export function useSlideImageEdit(): SlideImageEditContextValue {
 
 export function SlideImageEditProvider({ children }: { children: ReactNode }) {
   const setSlideBackground = useEditorStore(s => s.setSlideBackground)
+  const setLayerImageUrl = useEditorStore(s => s.setLayerImageUrl)
   const clearSlideBackgroundImage = useEditorStore(s => s.clearSlideBackgroundImage)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const activeLayerId = useEditorStore(s => s.activeLayerId)
 
   const [editingSlideIds, setEditingSlideIds] = useState<Set<SlideId>>(() => new Set())
-  const [dialogTarget, setDialogTarget] = useState<EditTarget | null>(null)
+  const [dialogTarget, setDialogTarget] = useState<ImageEditTarget | null>(null)
   const [adjustTarget, setAdjustTarget] = useState<AdjustTarget | null>(null)
   const [backgroundEditSlideId, setBackgroundEditSlideId] = useState<SlideId | null>(null)
-  const replaceTargetRef = useRef<SlideId | null>(null)
+  const replaceTargetRef = useRef<ImageEditTarget | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const setEditing = useCallback((slideId: SlideId, editing: boolean) => {
@@ -86,14 +87,14 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
     }
   }, [activeLayerId])
 
-  const openEditDialog = useCallback((slideId: SlideId, imageUrl: string) => {
-    if (!imageUrl) {
-      toast.error('Add a background image first')
+  const openEditDialog = useCallback((target: ImageEditTarget) => {
+    if (!target.imageUrl) {
+      toast.error('Add an image first')
       return
     }
     setAdjustTarget(null)
     setBackgroundEditSlideId(null)
-    setDialogTarget({ slideId, imageUrl })
+    setDialogTarget(target)
   }, [])
 
   const openAdjustMode = useCallback((slideId: SlideId, imageUrl: string) => {
@@ -115,10 +116,18 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
   const activeBackgroundEditSlideId =
     backgroundEditSlideId && backgroundEditSlideId === activeSlideId ? backgroundEditSlideId : null
 
-  const replaceSlideImage = useCallback((slideId: SlideId) => {
-    replaceTargetRef.current = slideId
+  const replaceImage = useCallback((target: ImageEditTarget) => {
+    replaceTargetRef.current = target
     fileInputRef.current?.click()
   }, [])
+
+  const replaceSlideImage = useCallback(
+    (slideId: SlideId) => {
+      const slide = useEditorStore.getState().slides.find(s => s.id === slideId)
+      replaceImage({ kind: 'background', slideId, imageUrl: slide?.backgroundImageUrl ?? '' })
+    },
+    [replaceImage],
+  )
 
   const removeSlideImage = useCallback(
     (slideId: SlideId) => {
@@ -128,16 +137,30 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
     [clearSlideBackgroundImage],
   )
 
+  const applyEditedImage = useCallback(
+    (target: ImageEditTarget, url: string) => {
+      const proxied = proxiedImageUrl(url)
+      if (target.kind === 'background') {
+        setSlideBackground(target.slideId, proxied)
+        toast.success('Background image updated')
+        return
+      }
+      setLayerImageUrl(target.slideId, target.layerId, proxied)
+      toast.success('Image layer updated')
+    },
+    [setLayerImageUrl, setSlideBackground],
+  )
+
   const runEdit = useCallback(
     async (prompt: string) => {
       if (!dialogTarget) return
 
-      const { slideId, imageUrl } = dialogTarget
+      const target = dialogTarget
       setDialogTarget(null)
-      setEditing(slideId, true)
+      setEditing(target.slideId, true)
 
       try {
-        const falImageUrl = await resolveFalImageUrl(imageUrl)
+        const falImageUrl = await resolveFalImageUrl(target.imageUrl)
         const result = await editImage(prompt, falImageUrl)
 
         if (!result.success) {
@@ -145,28 +168,33 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        setSlideBackground(slideId, proxiedImageUrl(result.data.url))
-        toast.success('Background image updated')
+        applyEditedImage(target, result.data.url)
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to edit image')
       } finally {
-        setEditing(slideId, false)
+        setEditing(target.slideId, false)
       }
     },
-    [dialogTarget, setEditing, setSlideBackground],
+    [applyEditedImage, dialogTarget, setEditing],
   )
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const slideId = replaceTargetRef.current
+      const target = replaceTargetRef.current
       const file = event.target.files?.[0]
       event.target.value = ''
 
-      if (!slideId || !file) return
-      setSlideBackground(slideId, URL.createObjectURL(file))
+      if (!target || !file) return
+
+      const url = URL.createObjectURL(file)
+      if (target.kind === 'background') {
+        setSlideBackground(target.slideId, url)
+      } else {
+        setLayerImageUrl(target.slideId, target.layerId, url)
+      }
       replaceTargetRef.current = null
     },
-    [setSlideBackground],
+    [setLayerImageUrl, setSlideBackground],
   )
 
   const value = useMemo<SlideImageEditContextValue>(
@@ -181,6 +209,7 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
       openEditDialog,
       openAdjustMode,
       closeAdjustMode,
+      replaceImage,
       replaceSlideImage,
       removeSlideImage,
     }),
@@ -192,6 +221,7 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
       editingSlideIds,
       openAdjustMode,
       openEditDialog,
+      replaceImage,
       replaceSlideImage,
       removeSlideImage,
       selectBackgroundEdit,

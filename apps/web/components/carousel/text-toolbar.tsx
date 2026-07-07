@@ -30,7 +30,7 @@ export function TextToolbar() {
     )
   }
 
-  if (!layer) {
+  if (!layer || layer.type !== 'text') {
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center">
         <p className="text-xs text-muted-foreground">

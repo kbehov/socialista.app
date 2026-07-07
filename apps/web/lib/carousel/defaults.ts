@@ -1,4 +1,13 @@
-import type { BackgroundImageAdjustment, BackgroundImageFilter, BackgroundImageTransform, Slide, TextLayer } from '@socialista/types'
+import type {
+  BackgroundImageAdjustment,
+  BackgroundImageFilter,
+  BackgroundImageTransform,
+  ImageLayer,
+  Slide,
+  SlideLayer,
+  TextLayer,
+} from '@socialista/types'
+import { createLayerId, createSlideId } from './id'
 
 export const DEFAULT_BACKGROUND_TRANSFORM: BackgroundImageTransform = {
   scale: 1,
@@ -78,7 +87,7 @@ export const DEFAULT_LAYER_STYLE: TextLayer['style'] = {
 
 export function createTextLayer(partial: Partial<TextLayer> & { zIndex: number }): TextLayer {
   return {
-    id: `layer_${Math.random().toString(36).slice(2, 10)}`,
+    id: createLayerId(),
     type: 'text',
     content: 'Your text here',
     x: 10,
@@ -91,9 +100,28 @@ export function createTextLayer(partial: Partial<TextLayer> & { zIndex: number }
   }
 }
 
+export function createImageLayer(
+  partial: Partial<ImageLayer> & { zIndex: number; imageUrl?: string },
+): ImageLayer {
+  return {
+    id: createLayerId(),
+    type: 'image',
+    imageUrl: partial.imageUrl ?? '',
+    x: 30,
+    y: 30,
+    width: 40,
+    height: 40,
+    rotation: 0,
+    objectFit: 'contain',
+    opacity: 1,
+    filters: [],
+    ...partial,
+  }
+}
+
 export function createSlide(order: number, backgroundImageUrl = '', backgroundColor = DEFAULT_SLIDE_BACKGROUND): Slide {
   return {
-    id: `slide_${Math.random().toString(36).slice(2, 10)}`,
+    id: createSlideId(),
     backgroundColor,
     backgroundImageUrl,
     backgroundImageAdjustment: DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
@@ -179,13 +207,32 @@ export function mergeGeneratedTextsIntoSlides(existingSlides: Slide[], texts: st
   return merged.map((slide, order) => ({ ...slide, order }))
 }
 
-export function sortLayers(layers: TextLayer[]): TextLayer[] {
+export function sortLayers(layers: SlideLayer[]): SlideLayer[] {
   return [...layers].sort((a, b) => a.zIndex - b.zIndex)
 }
 
-/** Reassign zIndex values sequentially based on current order (0..n-1). */
-export function reindexLayers(layers: TextLayer[]): TextLayer[] {
-  return sortLayers(layers).map((layer, index) => ({ ...layer, zIndex: index }))
+/** Reassign zIndex values sequentially from array order (0 = back, n-1 = front). */
+export function reindexLayers(layers: SlideLayer[]): SlideLayer[] {
+  return layers.map((layer, index) => ({ ...layer, zIndex: index }))
+}
+
+export function cloneLayer(layer: SlideLayer): SlideLayer {
+  if (layer.type === 'text') {
+    return { ...layer, style: { ...layer.style } }
+  }
+  return { ...layer, filters: [...layer.filters] }
+}
+
+export function normalizeLayer(layer: SlideLayer): SlideLayer {
+  if (layer.type === 'text') {
+    return layer
+  }
+  return {
+    ...layer,
+    objectFit: layer.objectFit === 'cover' ? 'cover' : 'contain',
+    opacity: typeof layer.opacity === 'number' ? layer.opacity : 1,
+    filters: normalizeSlideBackgroundFilters(layer.filters),
+  }
 }
 
 export function clamp(value: number, min: number, max: number): number {
@@ -242,5 +289,6 @@ export function normalizeSlide(slide: Slide): Slide {
     ...slide,
     backgroundImageAdjustment: normalizeSlideBackgroundAdjustment(slide.backgroundImageAdjustment),
     backgroundImageFilters: normalizeSlideBackgroundFilters(slide.backgroundImageFilters),
+    layers: slide.layers.map(normalizeLayer),
   }
 }

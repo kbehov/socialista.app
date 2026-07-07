@@ -1,9 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Slide } from '@socialista/types'
 import {
   CropIcon,
+  FolderOpenIcon,
+  ImagePlusIcon,
   Loader2Icon,
   SparklesIcon,
   Trash2Icon,
@@ -21,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { useSlideImageEdit } from './slide-image-edit-provider'
+import { WorkspaceImagePickerDialog } from './workspace-image-picker-dialog'
 import { SlideCanvas } from './slide-canvas'
 import { SlideImageAdjustOverlay } from './slide-image-adjust-overlay'
 
@@ -42,6 +45,9 @@ export function SlideCanvasShell({
   canvasHint,
 }: SlideCanvasShellProps) {
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
+  const addImageLayer = useEditorStore(s => s.addImageLayer)
+  const [filesDialogOpen, setFilesDialogOpen] = useState(false)
+  const addImageFileRef = useRef<HTMLInputElement>(null)
   const {
     isEditingSlide,
     adjustTarget,
@@ -82,7 +88,7 @@ export function SlideCanvasShell({
   const handleEditImage = useCallback(() => {
     if (!slide.backgroundImageUrl) return
     deselectBackgroundEdit()
-    openEditDialog(slide.id, slide.backgroundImageUrl)
+    openEditDialog({ kind: 'background', slideId: slide.id, imageUrl: slide.backgroundImageUrl })
   }, [deselectBackgroundEdit, openEditDialog, slide.backgroundImageUrl, slide.id])
 
   const handleCropAdjust = useCallback(() => {
@@ -100,6 +106,34 @@ export function SlideCanvasShell({
     deselectBackgroundEdit()
     removeSlideImage(slide.id)
   }, [deselectBackgroundEdit, removeSlideImage, slide.id])
+
+  const handleAddImageLayer = useCallback(() => {
+    deselectBackgroundEdit()
+    addImageLayer(slide.id)
+  }, [addImageLayer, deselectBackgroundEdit, slide.id])
+
+  const handleAddImageFromFile = useCallback(() => {
+    deselectBackgroundEdit()
+    addImageFileRef.current?.click()
+  }, [deselectBackgroundEdit])
+
+  const handleAddImageFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      event.target.value = ''
+      if (!file) return
+      addImageLayer(slide.id, URL.createObjectURL(file))
+    },
+    [addImageLayer, slide.id],
+  )
+
+  const handleAddImageFromFiles = useCallback(
+    (imageUrl: string) => {
+      addImageLayer(slide.id, imageUrl)
+      setFilesDialogOpen(false)
+    },
+    [addImageLayer, slide.id],
+  )
 
   useEffect(() => {
     deselectBackgroundEdit()
@@ -153,36 +187,66 @@ export function SlideCanvasShell({
   if (!interactive) return canvas
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{canvas}</ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleEditImage}>
-          <SparklesIcon />
-          Edit with AI
-        </ContextMenuItem>
-        <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleCropAdjust}>
-          <CropIcon />
-          Crop image
-        </ContextMenuItem>
-        <ContextMenuItem disabled={isEditing || isAdjusting} onSelect={handleReplace}>
-          <UploadIcon />
-          {hasBackground ? 'Replace image' : 'Upload image'}
-        </ContextMenuItem>
-        {hasBackground ? (
-          <>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              variant="destructive"
-              disabled={isEditing || isAdjusting}
-              onSelect={handleRemove}
-            >
-              <Trash2Icon />
-              Remove image
-            </ContextMenuItem>
-          </>
-        ) : null}
-      </ContextMenuContent>
-    </ContextMenu>
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{canvas}</ContextMenuTrigger>
+        <ContextMenuContent className="w-52">
+          <ContextMenuItem disabled={isEditing || isAdjusting} onSelect={handleAddImageLayer}>
+            <ImagePlusIcon />
+            Add image layer
+          </ContextMenuItem>
+          <ContextMenuItem disabled={isEditing || isAdjusting} onSelect={handleAddImageFromFile}>
+            <UploadIcon />
+            Upload image layer
+          </ContextMenuItem>
+          <ContextMenuItem
+            disabled={isEditing || isAdjusting}
+            onSelect={() => setFilesDialogOpen(true)}
+          >
+            <FolderOpenIcon />
+            Image from files
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleEditImage}>
+            <SparklesIcon />
+            Edit background with AI
+          </ContextMenuItem>
+          <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleCropAdjust}>
+            <CropIcon />
+            Crop background
+          </ContextMenuItem>
+          <ContextMenuItem disabled={isEditing || isAdjusting} onSelect={handleReplace}>
+            <UploadIcon />
+            {hasBackground ? 'Replace background' : 'Upload background'}
+          </ContextMenuItem>
+          {hasBackground ? (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                variant="destructive"
+                disabled={isEditing || isAdjusting}
+                onSelect={handleRemove}
+              >
+                <Trash2Icon />
+                Remove background
+              </ContextMenuItem>
+            </>
+          ) : null}
+        </ContextMenuContent>
+      </ContextMenu>
+      <input
+        ref={addImageFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAddImageFileChange}
+      />
+      <WorkspaceImagePickerDialog
+        open={filesDialogOpen}
+        onOpenChange={setFilesDialogOpen}
+        onSelect={handleAddImageFromFiles}
+      />
+    </>
   )
 }
 

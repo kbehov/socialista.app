@@ -6,6 +6,7 @@ import {
   type SlideshowBackgroundImageAdjustment,
   type SlideshowBackgroundImageFilter,
   type SlideshowSlide,
+  type SlideshowImageLayer,
   type SlideshowTextLayer,
   type SlideshowTextLayerStyle,
   type SlideshowTextShadow,
@@ -43,7 +44,6 @@ const textLayerStyleSchema = new Schema<SlideshowTextLayerStyle>(
 const textLayerSchema = new Schema<SlideshowTextLayer>(
   {
     id: { type: String, required: true },
-    type: { type: String, enum: ['text'], required: true },
     content: { type: String, required: true },
     x: { type: Number, required: true },
     y: { type: Number, required: true },
@@ -55,6 +55,39 @@ const textLayerSchema = new Schema<SlideshowTextLayer>(
   },
   { _id: false },
 )
+
+const backgroundImageFilterSchema = new Schema<SlideshowBackgroundImageFilter>(
+  {
+    type: {
+      type: String,
+      enum: ['brightness', 'contrast', 'saturation', 'blur', 'grayscale'],
+      required: true,
+    },
+    value: { type: Number, required: true },
+  },
+  { _id: false },
+)
+
+const imageLayerSchema = new Schema<SlideshowImageLayer>(
+  {
+    id: { type: String, required: true },
+    imageUrl: { type: String, required: true },
+    x: { type: Number, required: true },
+    y: { type: Number, required: true },
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    rotation: { type: Number, required: true },
+    zIndex: { type: Number, required: true },
+    objectFit: { type: String, enum: ['contain', 'cover'], required: true },
+    opacity: { type: Number, required: true },
+    filters: { type: [backgroundImageFilterSchema], default: [] },
+  },
+  { _id: false },
+)
+
+const layerSchema = new Schema({}, { discriminatorKey: 'type', _id: false })
+layerSchema.discriminator('text', textLayerSchema)
+layerSchema.discriminator('image', imageLayerSchema)
 
 const backgroundImageAdjustmentSchema = new Schema<SlideshowBackgroundImageAdjustment>(
   {
@@ -79,18 +112,6 @@ const backgroundImageAdjustmentSchema = new Schema<SlideshowBackgroundImageAdjus
   { _id: false },
 )
 
-const backgroundImageFilterSchema = new Schema<SlideshowBackgroundImageFilter>(
-  {
-    type: {
-      type: String,
-      enum: ['brightness', 'contrast', 'saturation', 'blur', 'grayscale'],
-      required: true,
-    },
-    value: { type: Number, required: true },
-  },
-  { _id: false },
-)
-
 const slideSchema = new Schema<SlideshowSlide>(
   {
     id: { type: String, required: true },
@@ -98,7 +119,7 @@ const slideSchema = new Schema<SlideshowSlide>(
     backgroundImageUrl: { type: String, default: '' },
     backgroundImageAdjustment: { type: backgroundImageAdjustmentSchema, required: true },
     backgroundImageFilters: { type: [backgroundImageFilterSchema], default: [] },
-    layers: { type: [textLayerSchema], default: [] },
+    layers: { type: [layerSchema], default: [] },
     order: { type: Number, required: true },
   },
   { _id: false },

@@ -6,7 +6,8 @@ import { ArrowDownIcon, ArrowUpIcon, AlignVerticalJustifyCenterIcon, AlignVertic
 import type { SlideId, TextLayer } from '@socialista/types'
 import { useEditorStore } from '@/lib/carousel/store'
 import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
-import { useDragResize, type Corner } from '@/hooks/carousel/use-drag-resize'
+import { useDragResize } from '@/hooks/carousel/use-drag-resize'
+import { LayerTransformHandles } from '@/components/carousel/layer-transform-handles'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { clamp } from '@/lib/carousel/defaults'
 import {
@@ -63,10 +64,12 @@ export function TextLayerNode({
   const sendBackward = useEditorStore(s => s.sendBackward)
   const [isEditing, setIsEditing] = useState(false)
   const editRef = useRef<HTMLDivElement>(null)
+  const layerRef = useRef<HTMLDivElement>(null)
 
   const { draft, beginDrag, beginResize, beginRotate } = useDragResize({
     layer,
     canvasRef,
+    layerRef,
     onCommit: partial => updateLayer(slideId, layer.id, partial),
   })
 
@@ -151,8 +154,11 @@ export function TextLayerNode({
 
   const layerEl = (
     <div
+      ref={layerRef}
+      data-layer-root
       className={cn(
         'absolute select-none',
+        selected && interactive && !isEditing && 'overflow-visible',
         !selectable && !interactive && 'pointer-events-none',
         canDrag && 'cursor-move',
         canSelect && !canDrag && 'cursor-pointer',
@@ -203,14 +209,11 @@ export function TextLayerNode({
       </div>
 
       {selected && interactive && !isEditing ? (
-        <>
-          <div className="pointer-events-none absolute inset-0 rounded-sm border border-dashed border-muted-foreground/70" />
-          {(['nw', 'ne', 'se', 'sw'] as Corner[]).map(corner => (
-            <Handle key={corner} corner={corner} onPointerDown={beginResize(corner)} />
-          ))}
-          <RotateHandle onPointerDown={beginRotate} />
-          <TextLayerAlignToolbar onAlign={alignLayer} />
-        </>
+        <LayerTransformHandles
+          onResize={beginResize}
+          onRotate={beginRotate}
+          toolbar={<TextLayerAlignToolbar onAlign={alignLayer} />}
+        />
       ) : null}
     </div>
   )
@@ -240,42 +243,6 @@ export function TextLayerNode({
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  )
-}
-
-type HandleProps = {
-  corner: Corner
-  onPointerDown: (e: React.PointerEvent) => void
-}
-
-const HANDLE_POSITION: Record<Corner, string> = {
-  nw: '-left-1.5 -top-1.5 cursor-nwse-resize',
-  ne: '-right-1.5 -top-1.5 cursor-nesw-resize',
-  se: '-right-1.5 -bottom-1.5 cursor-nwse-resize',
-  sw: '-left-1.5 -bottom-1.5 cursor-nesw-resize',
-}
-
-function Handle({ corner, onPointerDown }: HandleProps) {
-  return (
-    <div
-      onPointerDown={onPointerDown}
-      className={cn(
-        'absolute size-3 rounded-sm border border-dashed border-muted-foreground bg-background shadow-sm',
-        HANDLE_POSITION[corner],
-      )}
-    />
-  )
-}
-
-function RotateHandle({ onPointerDown }: { onPointerDown: (e: React.PointerEvent) => void }) {
-  return (
-    <>
-      <div className="pointer-events-none absolute -top-7 left-1/2 h-5 w-px -translate-x-1/2 bg-muted-foreground/50" />
-      <div
-        onPointerDown={onPointerDown}
-        className="absolute -top-8 left-1/2 size-3.5 -translate-x-1/2 cursor-grab rounded-full border border-dashed border-muted-foreground bg-background shadow-sm"
-      />
-    </>
   )
 }
 

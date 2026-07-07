@@ -8,7 +8,7 @@ import { transformToAdjustment, usesFrame } from '@/lib/carousel/background-imag
 import { fitArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
 import { useCarouselPreviewLayout } from '@/components/carousel/carousel-preview-layout'
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
-import { TextLayerNode } from './text-layer-node'
+import { SlideLayerNode } from './slide-layer-node'
 import { SlideBackgroundImage } from './slide-background-image'
 import { cn } from '@/lib/utils'
 import { MousePointer2Icon } from 'lucide-react'
@@ -137,6 +137,25 @@ export function SlideCanvas({
   const isAdjustingBackground = isBackgroundSelected && Boolean(slide.backgroundImageUrl)
 
   const isActiveSlide = activeSlideId === slide.id
+
+  const layerStack =
+    scale > 0 ? (
+      <div className="pointer-events-none absolute inset-0 [&>*]:pointer-events-auto [&>*]:overflow-visible">
+        {sortLayers(slide.layers).map(layer => (
+          <SlideLayerNode
+            key={layer.id}
+            layer={layer}
+            slideId={slide.id}
+            scale={scale}
+            canvasRef={innerRef}
+            selected={interactive && isActiveSlide && activeLayerId === layer.id}
+            interactive={interactive && !isAdjustingBackground}
+            selectable={interactive}
+          />
+        ))}
+      </div>
+    ) : null
+
   const onCanvasPointerDown = (e: React.PointerEvent) => {
     if (!interactive) return
     const target = e.target as HTMLElement
@@ -190,7 +209,8 @@ export function SlideCanvas({
             data-slide-canvas={slide.id}
             onPointerDown={onCanvasPointerDown}
             className={cn(
-              'absolute inset-0 overflow-hidden',
+              'absolute inset-0',
+              interactive ? 'overflow-visible' : 'overflow-hidden',
               interactive && 'rounded-sm shadow-lg ring-1 ring-inset ring-black/10',
               isAdjustingBackground && 'ring-2 ring-inset ring-primary/40',
             )}
@@ -222,35 +242,9 @@ export function SlideCanvas({
                 onTransformCommit={interactive ? handleTransformCommit : undefined}
                 layoutWidth={isMeasured ? baseWidth : undefined}
                 layoutHeight={isMeasured ? baseHeight : undefined}
-              >
-                {scale > 0
-                  ? sortLayers(slide.layers).map(layer => (
-                      <TextLayerNode
-                        key={layer.id}
-                        layer={layer}
-                        slideId={slide.id}
-                        scale={scale}
-                        canvasRef={innerRef}
-                        selected={interactive && isActiveSlide && activeLayerId === layer.id}
-                        interactive={interactive && !isAdjustingBackground}
-                        selectable={interactive}
-                      />
-                    ))
-                  : null}
-              </SlideBackgroundImage>
-            ) : scale > 0 ? (
-              sortLayers(slide.layers).map(layer => (
-                <TextLayerNode
-                  key={layer.id}
-                  layer={layer}
-                  slideId={slide.id}
-                  scale={scale}
-                  canvasRef={innerRef}
-                  selected={interactive && isActiveSlide && activeLayerId === layer.id}
-                  interactive={interactive}
-                />
-              ))
+              />
             ) : null}
+            {layerStack}
           </div>
         </div>
 

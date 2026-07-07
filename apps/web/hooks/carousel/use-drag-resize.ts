@@ -2,17 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import type { TextLayer } from '@socialista/types'
+import type { LayerGeometry } from '@socialista/types'
 import { clamp } from '@/lib/carousel/defaults'
 
 export type Corner = 'nw' | 'ne' | 'se' | 'sw'
+
+type LayerBounds = Pick<LayerGeometry, 'x' | 'y' | 'width' | 'height' | 'rotation'>
+type LayerDraft = Partial<LayerBounds>
+
+function normalizeRotation(degrees: number): number {
+  return Math.round(((degrees % 360) + 360) % 360)
+}
 
 type Interaction =
   | {
       kind: 'drag'
       startPointerX: number
       startPointerY: number
-      start: Pick<TextLayer, 'x' | 'y' | 'width' | 'height' | 'rotation'>
+      start: LayerBounds
       canvasWidthPx: number
       canvasHeightPx: number
     }
@@ -21,7 +28,7 @@ type Interaction =
       corner: Corner
       startPointerX: number
       startPointerY: number
-      start: Pick<TextLayer, 'x' | 'y' | 'width' | 'height' | 'rotation'>
+      start: LayerBounds
       canvasWidthPx: number
       canvasHeightPx: number
     }
@@ -42,24 +49,26 @@ const W_MIN = 5
 const H_MIN = 4
 
 export function useDragResize(opts: {
-  layer: TextLayer
+  layer: LayerBounds
   canvasRef: RefObject<HTMLElement | null>
-  onCommit: (partial: Partial<TextLayer>) => void
+  layerRef: RefObject<HTMLElement | null>
+  onCommit: (partial: LayerDraft) => void
 }) {
-  const { layer, canvasRef, onCommit } = opts
-  const [draft, setDraft] = useState<Partial<TextLayer> | null>(null)
+  const { layer, canvasRef, layerRef, onCommit } = opts
+  const [draft, setDraft] = useState<LayerDraft | null>(null)
   const [isInteracting, setIsInteracting] = useState(false)
   const interaction = useRef<Interaction | null>(null)
-  const draftRef = useRef<Partial<TextLayer> | null>(null)
+  const draftRef = useRef<LayerDraft | null>(null)
   const onCommitRef = useRef(onCommit)
 
   useEffect(() => {
     onCommitRef.current = onCommit
   }, [onCommit])
 
-  const updateDraft = useCallback((partial: Partial<TextLayer>) => {
-    draftRef.current = partial
-    setDraft(partial)
+  const updateDraft = useCallback((partial: LayerDraft) => {
+    const next = { ...draftRef.current, ...partial }
+    draftRef.current = next
+    setDraft(next)
   }, [])
 
   const stop = useCallback(() => {
@@ -139,7 +148,7 @@ export function useDragResize(opts: {
         const startAngle = Math.atan2(it.startPointerY - it.centerY, it.startPointerX - it.centerX)
         const currentAngle = Math.atan2(e.clientY - it.centerY, e.clientX - it.centerX)
         const delta = ((currentAngle - startAngle) * 180) / Math.PI
-        updateDraft({ rotation: Math.round((it.startRotation + delta) % 360) })
+        updateDraft({ rotation: normalizeRotation(it.startRotation + delta) })
       }
     },
     [updateDraft],
@@ -199,15 +208,16 @@ export function useDragResize(opts: {
 
   const beginRotate = (e: React.PointerEvent) => {
     if (e.button !== 0) return
-    const layerEl = (e.currentTarget.parentElement as HTMLElement | null)?.getBoundingClientRect()
+    const layerEl = layerRef.current
     if (!layerEl) return
+    const rect = layerEl.getBoundingClientRect()
     e.preventDefault()
     e.stopPropagation()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     interaction.current = {
       kind: 'rotate',
-      centerX: layerEl.left + layerEl.width / 2,
-      centerY: layerEl.top + layerEl.height / 2,
+      centerX: rect.left + rect.width / 2,
+      centerY: rect.top + rect.height / 2,
       startPointerX: e.clientX,
       startPointerY: e.clientY,
       startRotation: layer.rotation,

@@ -38,10 +38,7 @@ export interface TextLayerStyle {
   textShadow?: TextShadow[] | null
 }
 
-export interface TextLayer {
-  id: LayerId
-  type: 'text'
-  content: string
+export interface LayerGeometry {
   /** Position and size in percent (0–100) of the canvas, so the slide scales freely. */
   x: number
   y: number
@@ -50,8 +47,28 @@ export interface TextLayer {
   /** Rotation in degrees. */
   rotation: number
   zIndex: number
+}
+
+export interface TextLayer extends LayerGeometry {
+  id: LayerId
+  type: 'text'
+  content: string
   style: TextLayerStyle
 }
+
+export type ImageLayerObjectFit = 'contain' | 'cover'
+
+export interface ImageLayer extends LayerGeometry {
+  id: LayerId
+  type: 'image'
+  imageUrl: string
+  objectFit: ImageLayerObjectFit
+  /** 0–1 */
+  opacity: number
+  filters: BackgroundImageFilter[]
+}
+
+export type SlideLayer = TextLayer | ImageLayer
 
 /** Percentage rectangle of the source image (react-easy-crop). */
 export interface CropAreaPercentages {
@@ -110,7 +127,7 @@ export interface Slide {
   backgroundImageAdjustment: BackgroundImageAdjustment
   /** CSS-style image filters applied to the background photo. */
   backgroundImageFilters: BackgroundImageFilter[]
-  layers: TextLayer[]
+  layers: SlideLayer[]
   order: number
 }
 

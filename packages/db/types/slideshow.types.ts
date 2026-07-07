@@ -46,6 +46,23 @@ export type SlideshowTextLayer = {
   style: SlideshowTextLayerStyle
 }
 
+export type SlideshowImageLayer = {
+  id: string
+  type: 'image'
+  imageUrl: string
+  x: number
+  y: number
+  width: number
+  height: number
+  rotation: number
+  zIndex: number
+  objectFit: 'contain' | 'cover'
+  opacity: number
+  filters: SlideshowBackgroundImageFilter[]
+}
+
+export type SlideshowSlideLayer = SlideshowTextLayer | SlideshowImageLayer
+
 export type SlideshowCropArea = {
   x: number
   y: number
@@ -92,7 +109,7 @@ export type SlideshowSlide = {
   backgroundImageUrl: string
   backgroundImageAdjustment: SlideshowBackgroundImageAdjustment
   backgroundImageFilters: SlideshowBackgroundImageFilter[]
-  layers: SlideshowTextLayer[]
+  layers: SlideshowSlideLayer[]
   order: number
 }
 
