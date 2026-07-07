@@ -24,7 +24,7 @@ export function TextToolbar() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center text-xs text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
         Select a slide in the filmstrip to edit its background.
       </div>
     )
@@ -32,7 +32,7 @@ export function TextToolbar() {
 
   if (!layer || layer.type !== 'text') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center">
         <p className="text-xs text-muted-foreground">
           Click a text box on the canvas, or add one below.
         </p>

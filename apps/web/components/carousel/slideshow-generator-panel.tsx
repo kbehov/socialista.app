@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { generateSlideshowSlides } from '@/actions/slideshow.actions'
 import { isBlankSlide } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
+import { StudioPanelScrollArea } from '@/components/carousel/studio-segmented-tabs'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -81,7 +82,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         </div>
       ) : null}
 
-      <div data-studio-scroll="source" className="sidebar-scrollbar flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto p-3.5">
+      <StudioPanelScrollArea>
         <div className="space-y-1.5">
           <Label htmlFor="slideshow-hook" className="text-xs font-medium">
             Hook or topic
@@ -92,7 +93,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
             value={hook}
             onChange={e => setHook(e.target.value)}
             rows={4}
-            className="min-h-[5.5rem] resize-none bg-background/60 text-sm"
+            className="min-h-[5.5rem] resize-none text-sm"
             disabled={isPending}
           />
           <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -125,7 +126,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           {isPending ? 'Generating…' : 'Generate slides'}
         </Button>
 
-        <div className="rounded-lg border border-dashed border-border/70 bg-muted/15 px-3 py-2.5">
+        <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-2.5">
           <p className="text-[11px] font-medium text-foreground/80">Next steps</p>
           <ol className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
             <li>1. Pick a slide in the filmstrip</li>
@@ -133,7 +134,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
             <li>3. Add a background in the Slide tab</li>
           </ol>
         </div>
-      </div>
+      </StudioPanelScrollArea>
     </aside>
   )
 }

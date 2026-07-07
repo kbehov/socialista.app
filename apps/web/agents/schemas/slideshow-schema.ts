@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const slideshowContentTypeSchema = z.enum(['story', 'guide', 'list', 'routine'])
+export const slideshowContentTypeSchema = z.enum(['story', 'guide', 'list', 'routine', 'comparison', 'myth'])
 
 export type SlideshowContentType = z.infer<typeof slideshowContentTypeSchema>
 
@@ -15,7 +15,7 @@ export function createSlideshowGeneratedSchema(slideCount: number) {
 
   return z.object({
     contentType: slideshowContentTypeSchema.describe(
-      'Best-fit format for this hook: story (personal journey), guide (how-to), list (fast tips), routine (habit flow)',
+      'Best-fit format for this hook: story (personal journey), guide (how-to), list (fast tips), routine (habit flow), comparison (X vs Y), myth (debunking a belief)',
     ),
     hook: z
       .string()

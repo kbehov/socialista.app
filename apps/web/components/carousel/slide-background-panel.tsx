@@ -24,7 +24,7 @@ export function SlideBackgroundPanel() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center text-xs text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
         Select a slide to edit its background.
       </div>
     )

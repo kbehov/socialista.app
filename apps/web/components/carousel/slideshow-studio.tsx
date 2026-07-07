@@ -13,7 +13,7 @@ const STUDIO_PANELS = (
 
 export function SlideshowStudio() {
   return (
-    <div className="slideshow-studio flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="slideshow-studio flex h-full max-h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden overscroll-none bg-background">
       <CollapseAppSidebarOnMount />
       <CarouselEditor panels={STUDIO_PANELS} />
     </div>

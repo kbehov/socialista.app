@@ -60,5 +60,9 @@ export function SlideshowEditorLoader({ slideshowId }: SlideshowEditorLoaderProp
     return <ErrorState title={error} description="This slideshow may have been deleted." className="flex-1" />
   }
 
-  return <SlideshowStudio />
+  return (
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <SlideshowStudio />
+    </div>
+  )
 }

@@ -88,7 +88,7 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center text-xs text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
         Select a slide to view its layers.
       </div>
     )
@@ -164,7 +164,7 @@ function LayerListActions({ slideId }: { slideId: SlideId }) {
 
 function LayerListEmpty({ slideId }: { slideId: SlideId }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center">
       <p className="text-xs text-muted-foreground">No layers on this slide yet.</p>
       <LayerListActions slideId={slideId} />
     </div>

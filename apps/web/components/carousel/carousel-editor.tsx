@@ -1,28 +1,28 @@
 'use client'
 
+import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
+import { CanvasZoomControls } from '@/components/carousel/canvas-zoom-controls'
+import { CarouselPreviewLayoutProvider } from '@/components/carousel/carousel-preview-layout'
+import { FormatSelector } from '@/components/carousel/format-selector'
+import { SlideshowSaveBar } from '@/components/carousel/slideshow-save-bar'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditorShortcuts } from '@/hooks/carousel/use-editor-shortcuts'
 import { exportSlidesAsZip } from '@/lib/carousel/export'
 import { useEditorStore } from '@/lib/carousel/store'
+import { cn } from '@/lib/utils'
 import { DownloadIcon, ImageIcon, Loader2Icon, Redo2Icon, Undo2Icon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
-import { CarouselPreviewLayoutProvider } from '@/components/carousel/carousel-preview-layout'
-import { CanvasZoomControls } from '@/components/carousel/canvas-zoom-controls'
-import { FormatSelector } from '@/components/carousel/format-selector'
-import { SlideshowSaveBar } from '@/components/carousel/slideshow-save-bar'
 import { SlideImageEditProvider, useSlideImageEdit } from './slide-image-edit-provider'
 import { SlidePreviewStack } from './slide-preview-stack'
-import { cn } from '@/lib/utils'
-import type { ReactNode } from 'react'
 
 export function CarouselEditor({ panels }: { panels?: ReactNode }) {
   return (
     <SlideImageEditProvider>
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="flex h-full min-h-0 min-w-0 flex-col flex-1 overflow-hidden lg:flex-row">
         {panels}
         <CarouselEditorMain />
       </div>
@@ -157,7 +157,7 @@ function CarouselEditorMain() {
           </div>
         </CanvasWorkspaceProvider>
 
-        <div className="slideshow-editor-status-bar mt-auto flex min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 py-1.5">
+        <div className="slideshow-editor-status-bar flex min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 py-1.5">
           <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
             <span className="font-medium text-foreground">Pages</span>
             <span>

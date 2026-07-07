@@ -463,7 +463,7 @@
   }
 
   .studio-source-panel {
-    background-color: color-mix(in oklch, var(--card) 85%, var(--muted));
+    background-color: var(--background);
   }
 
   .studio-filmstrip-mask {
@@ -499,20 +499,26 @@
     max-width: 100%;
   }
 
-  .video-editor-rail,
-  .slideshow-editor-rail {
+  .video-editor-rail {
     background-color: var(--surface-2);
+  }
+
+  .slideshow-editor-rail {
+    background-color: var(--background);
   }
 
   .video-editor-panel,
   .video-editor-transport,
   .video-editor-canvas-bar,
-  .video-editor-status-bar,
+  .video-editor-status-bar {
+    background-color: var(--surface-1);
+  }
+
   .slideshow-editor-panel,
   .slideshow-editor-transport,
   .slideshow-editor-canvas-bar,
   .slideshow-editor-status-bar {
-    background-color: var(--surface-1);
+    background-color: var(--background);
   }
 
   .video-editor-canvas-area,

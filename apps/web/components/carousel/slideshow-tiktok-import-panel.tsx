@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { DownloadIcon, Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { TikTokPostCard } from '@/components/tiktok/tiktok-post-card'
+import { StudioPanelScrollArea } from '@/components/carousel/studio-segmented-tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -91,7 +92,7 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
         </div>
       ) : null}
 
-      <div data-studio-scroll="source" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+      <StudioPanelScrollArea contentClassName="gap-4 p-4">
         <div className="space-y-1.5">
           <Label htmlFor="tiktok-url" className="text-xs font-medium">
             TikTok slideshow URL
@@ -135,7 +136,7 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
             <li>· Export as ZIP when ready</li>
           </ul>
         </div>
-      </div>
+      </StudioPanelScrollArea>
     </aside>
   )
 }
