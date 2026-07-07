@@ -10,7 +10,7 @@ import {
   XIcon,
 } from 'lucide-react'
 import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
-import { PinterestImageSearchDialog } from '@/components/carousel/pinterest-image-search-dialog'
+import { UnsplashImageSearchDialog } from '@/components/carousel/unsplash-image-search-dialog'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -35,7 +35,7 @@ export function ImageSourcePicker({
   const [urlVisible, setUrlVisible] = useState(false)
   const [urlValue, setUrlValue] = useState('')
   const [filesDialogOpen, setFilesDialogOpen] = useState(false)
-  const [pinterestDialogOpen, setPinterestDialogOpen] = useState(false)
+  const [unsplashDialogOpen, setUnsplashDialogOpen] = useState(false)
   const urlInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -71,7 +71,7 @@ export function ImageSourcePicker({
     setUrlValue('')
   }
 
-  const handleSelectFromPinterest = (imageUrl: string) => {
+  const handleSelectFromUnsplash = (imageUrl: string) => {
     onImageSelected(imageUrl)
     setUrlVisible(false)
     setUrlValue('')
@@ -85,10 +85,10 @@ export function ImageSourcePicker({
         description={filesDescription}
         onSelect={handleSelectFromFiles}
       />
-      <PinterestImageSearchDialog
-        open={pinterestDialogOpen}
-        onOpenChange={setPinterestDialogOpen}
-        onSelect={handleSelectFromPinterest}
+      <UnsplashImageSearchDialog
+        open={unsplashDialogOpen}
+        onOpenChange={setUnsplashDialogOpen}
+        onSelect={handleSelectFromUnsplash}
       />
     </>
   )
@@ -120,7 +120,7 @@ export function ImageSourcePicker({
           <ImageActionButton label="Select from files" disabled={disabled} onClick={() => setFilesDialogOpen(true)}>
             <FolderOpenIcon className="size-3" />
           </ImageActionButton>
-          <ImageActionButton label="Search Pinterest" disabled={disabled} onClick={() => setPinterestDialogOpen(true)}>
+          <ImageActionButton label="Search images" disabled={disabled} onClick={() => setUnsplashDialogOpen(true)}>
             <SearchIcon className="size-3" />
           </ImageActionButton>
           {showUrl ? (
@@ -160,7 +160,7 @@ export function ImageSourcePicker({
         <FolderOpenIcon className="size-3.5" />
         Select from files
       </Button>
-      <Button size="sm" variant="outline" className="w-full" disabled={disabled} onClick={() => setPinterestDialogOpen(true)}>
+      <Button size="sm" variant="outline" className="w-full" disabled={disabled} onClick={() => setUnsplashDialogOpen(true)}>
         <SearchIcon className="size-3.5" />
         Search images
       </Button>

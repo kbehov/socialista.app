@@ -21,7 +21,11 @@
     "R2_CDN_BASE_URL",
     "R2_ACCESS_KEY_ID",
     "R2_SECRET_ACCESS_KEY",
-    "PINTEREST_API_TOKEN"
+    "UNSPLASH_ACCESS_KEY",
+    "UNSPLASH_SECRET_KEY",
+    "UNSPLASH_APP_ID",
+    "PINTEREST_API_TOKEN",
+    "PINTEREST_APP_ID"
   ],
   "tasks": {
     "build": {
