@@ -3,6 +3,7 @@
 import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
 import { SidebarStorageFooter } from '@/components/sidebar-storage-footer'
+import { SidebarUpgradeCard } from '@/components/sidebar-upgrade-card'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import { WorkspaceResponse } from '@socialista/types'
@@ -107,6 +108,7 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
       </SidebarContent>
 
       <SidebarFooter>
+        <SidebarUpgradeCard />
         <SidebarStorageFooter />
         <NavUser user={user} />
       </SidebarFooter>

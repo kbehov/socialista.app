@@ -1,4 +1,3 @@
-import { createStripeCustomer } from '@/lib/stripe.js'
 import { issueTokens, verifyToken, type JwtUserPayload } from '@/lib/jwt.js'
 import { HttpError } from '@/utils/http-response.js'
 import { assertEmailUnique } from '@/utils/user.utils.js'
@@ -13,7 +12,6 @@ import {
   isValidEmail,
   isValidPassword,
   updateUser,
-  updateWorkspace,
   UserStatus,
   type UserDocument,
 } from '@socialista/db'
@@ -180,16 +178,10 @@ export const authenticateActiveUser = async (email: string, password: string) =>
 }
 
 export const setupDefaultWorkspace = async (user: UserDocument, name: string): Promise<void> => {
-  const workspace = await createWorkspace(
+  await createWorkspace(
     { name: `${name.split(' ')[0]}'s Workspace`, billing: defaultWorkspaceBilling(), ...defaultWorkspaceSettings() },
     user._id,
   )
-
-  const stripeCustomer = await createStripeCustomer(user.email, name, workspace._id.toString())
-
-  await updateWorkspace(workspace._id.toString(), {
-    billing: { ...defaultWorkspaceBilling(), stripeCustomerId: stripeCustomer.id },
-  })
 }
 
 export const registerUser = async (email: string, password: string, name: string) => {

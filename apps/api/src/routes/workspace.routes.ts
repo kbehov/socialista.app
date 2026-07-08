@@ -4,7 +4,10 @@ import {
   deleteWorkspace,
   getUserWorkspaces,
   getWorkspace,
+  getWorkspaceBalance,
+  getWorkspaceBilling,
   getWorkspaceMembers,
+  getWorkspaceUsage,
   removeWorkspaceMember,
   updateWorkspace,
   updateWorkspaceMember,
@@ -19,6 +22,9 @@ workspaceRoutes.use('/*', authMiddleware)
 workspaceRoutes.get('/', getUserWorkspaces)
 workspaceRoutes.post('/', createWorkspace)
 workspaceRoutes.get('/:id/members', getWorkspaceMembers)
+workspaceRoutes.get('/:id/billing', getWorkspaceBilling)
+workspaceRoutes.get('/:id/usage', getWorkspaceUsage)
+workspaceRoutes.get('/:id/balance', getWorkspaceBalance)
 workspaceRoutes.post('/:id/members', addWorkspaceMember)
 workspaceRoutes.patch('/:id/members/:userId', updateWorkspaceMember)
 workspaceRoutes.delete('/:id/members/:userId', removeWorkspaceMember)

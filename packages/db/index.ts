@@ -63,11 +63,14 @@ export {
 
 export {
   BillingStatus,
+  PLAN_LIMITS,
   Plan,
   WorkspaceMemberRole,
   WorkspaceStatus,
   type IWorkspace,
+  type PlanLimits,
   type WorkspaceBilling,
+  type WorkspaceBillingUpdate,
   type WorkspaceDocument,
   type WorkspaceLimits,
   type WorkspaceMember,

@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { AppSidebar } from '@/components/app-sidebar'
 import { UserDropdown } from '@/components/common/user-dropdown'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { WorkspaceBalanceHeader } from '@/components/workspace-balance-header'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { WorkspaceProvider } from '@/context/workspace-provider'
 import { getUserWorkspaces } from '@/services/workspace.service'
@@ -29,7 +30,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <SidebarInset className="flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden bg-background">
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-4">
             <SidebarTrigger className="-ml-1" />
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <WorkspaceBalanceHeader />
               <ThemeToggle />
               <UserDropdown />
             </div>

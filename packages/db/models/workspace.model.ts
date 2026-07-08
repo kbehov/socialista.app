@@ -54,7 +54,11 @@ const workspaceBillingSchema = new Schema(
       enum: enumValues(BillingStatus),
       default: BillingStatus.ACTIVE,
     },
-    stripeCustomerId: { type: String },
+    polarCustomerId: { type: String },
+    polarSubscriptionId: { type: String },
+    currentPeriodStart: { type: Date },
+    currentPeriodEnd: { type: Date },
+    aiCreditsBalance: { type: Number, required: true, default: 0, min: 0 },
     nextBillingDate: { type: Date, required: true },
     nextBillingAmount: { type: Number, required: true, min: 0 },
   },
@@ -88,5 +92,7 @@ const workspaceSchema = new Schema<IWorkspace>(
 )
 
 workspaceSchema.index({ 'members.userId': 1 })
+workspaceSchema.index({ 'billing.polarCustomerId': 1 }, { sparse: true })
+workspaceSchema.index({ 'billing.polarSubscriptionId': 1 }, { sparse: true })
 
 export const WorkspaceModel = model<IWorkspace>('Workspace', workspaceSchema)

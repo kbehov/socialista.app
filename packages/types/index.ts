@@ -1,3 +1,4 @@
+export * from './billing.types.js'
 export * from './collection.types.js'
 export * from './carousel.types.js'
 export * from './slideshow.types.js'

@@ -1,5 +1,6 @@
 export const DASHBOARD_ROUTES = {
   HOME: '/dashboard/files',
+  UPGRADE: '/dashboard/upgrade',
   folder: (id: string) => `/dashboard/files/${id}`,
 } as const
 

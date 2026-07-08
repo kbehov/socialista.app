@@ -16,15 +16,24 @@ export const USER_ROUTES = {
 }
 
 export const WORKSPACE_ROUTES = {
-  GET_WORKSPACE: `/workspace/:id`,
+  GET_WORKSPACE: (workspaceId: string) => `/workspaces/${workspaceId}`,
   GET_WORKSPACES: `/workspaces`,
-  CREATE_WORKSPACE: `/workspace`,
-  UPDATE_WORKSPACE: `/workspace/:id`,
-  DELETE_WORKSPACE: `/workspace/:id`,
-  ADD_MEMBER: `/workspace/:id/member`,
-  REMOVE_MEMBER: `/workspace/:id/member/:memberId`,
-  UPDATE_MEMBER: `/workspace/:id/member/:memberId`,
-}
+  GET_WORKSPACE_BILLING: (workspaceId: string) => `/workspaces/${workspaceId}/billing`,
+  GET_WORKSPACE_USAGE: (workspaceId: string) => `/workspaces/${workspaceId}/usage`,
+  GET_WORKSPACE_BALANCE: (workspaceId: string) => `/workspaces/${workspaceId}/balance`,
+  CREATE_WORKSPACE: `/workspaces`,
+  UPDATE_WORKSPACE: (workspaceId: string) => `/workspaces/${workspaceId}`,
+  DELETE_WORKSPACE: (workspaceId: string) => `/workspaces/${workspaceId}`,
+  GET_MEMBERS: (workspaceId: string) => `/workspaces/${workspaceId}/members`,
+  ADD_MEMBER: (workspaceId: string) => `/workspaces/${workspaceId}/members`,
+  REMOVE_MEMBER: (workspaceId: string, memberId: string) => `/workspaces/${workspaceId}/members/${memberId}`,
+  UPDATE_MEMBER: (workspaceId: string, memberId: string) => `/workspaces/${workspaceId}/members/${memberId}`,
+} as const
+
+export const BILLING_ROUTES = {
+  CHECKOUT: '/api/checkout',
+  PORTAL: '/api/portal',
+} as const
 
 export const INSPIRATION_ROUTES = {
   GET_INSPIRATIONS: `/inspirations`,

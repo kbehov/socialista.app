@@ -2,8 +2,10 @@ import { assertHasUpdates, parseParamId, type AuthContext } from '@/utils/common
 import { successResponse } from '@/utils/http-response.js'
 import { getUserOrThrow } from '@/utils/user.utils.js'
 import {
+  assertMemberLimit,
   assertModifiableMember,
-  defaultWorkspaceBilling,
+  buildWorkspaceBalance,
+  buildWorkspaceUsageSummary,
   getWorkspaceAsAdmin,
   getWorkspaceAsMember,
   getWorkspaceAsOwner,
@@ -26,12 +28,12 @@ import {
 
 export const getUserWorkspaces = async (c: AuthContext) => {
   const workspaces = await getUserWorkspacesFromDb(c.get('userId'))
-  return successResponse(c, 200, workspaces)
+  return successResponse(c, 200, workspaces.map(serializeWorkspace))
 }
 
 export const createWorkspace = async (c: AuthContext) => {
   const input = parseCreateWorkspaceInput(await c.req.json())
-  const workspace = await createWorkspaceRecord({ ...input, billing: defaultWorkspaceBilling() }, c.get('userId'))
+  const workspace = await createWorkspaceRecord(input, c.get('userId'))
 
   return successResponse(c, 201, { workspace: serializeWorkspace(workspace) })
 }
@@ -75,7 +77,8 @@ export const addWorkspaceMember = async (c: AuthContext) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'workspace ID')
 
-  await getWorkspaceAsAdmin(id, userId)
+  const workspace = await getWorkspaceAsAdmin(id, userId)
+  assertMemberLimit(workspace)
 
   const { memberId, role } = parseAddMemberInput(await c.req.json())
   await getUserOrThrow(memberId)
@@ -108,4 +111,28 @@ export const removeWorkspaceMember = async (c: AuthContext) => {
 
   const updated = await removeWorkspaceMemberRecord(workspaceId, memberId)
   return successResponse(c, 200, { workspace: serializeWorkspace(updated!) })
+}
+
+export const getWorkspaceBilling = async (c: AuthContext) => {
+  const workspace = await getWorkspaceAsMember(parseParamId(c.req.param('id'), 'workspace ID'), c.get('userId'))
+
+  return successResponse(c, 200, {
+    billing: workspace.billing,
+    limits: workspace.limits,
+    usage: workspace.usage,
+  })
+}
+
+export const getWorkspaceUsage = async (c: AuthContext) => {
+  const workspace = await getWorkspaceAsMember(parseParamId(c.req.param('id'), 'workspace ID'), c.get('userId'))
+
+  return successResponse(c, 200, {
+    usage: buildWorkspaceUsageSummary(workspace),
+  })
+}
+
+export const getWorkspaceBalance = async (c: AuthContext) => {
+  const workspace = await getWorkspaceAsMember(parseParamId(c.req.param('id'), 'workspace ID'), c.get('userId'))
+
+  return successResponse(c, 200, buildWorkspaceBalance(workspace))
 }
