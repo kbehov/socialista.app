@@ -1,8 +1,8 @@
-import { FilesBrowser } from '@/components/files/files-browser'
 import { PageHeader } from '@/components/common/page-header'
+import { FilesBrowser } from '@/components/files/files-browser'
 import { MANAGER_FILES_ROUTES } from '@/constants/app-routes'
-import { formatFileCount } from '@/lib/format'
 import { getFolderById } from '@/services/files.service'
+import { formatFileCount } from '@/utils/format'
 import { notFound } from 'next/navigation'
 
 const ManagerFolderPage = async ({ params }: { params: Promise<{ id: string }> }) => {

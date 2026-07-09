@@ -12,10 +12,13 @@ import {
   updateWorkspace,
   updateWorkspaceMember,
 } from '@/controllers/workspace.controller.js'
+import workspaceBillingRoutes from '@/routes/workspace-billing.routes.js'
 import { authMiddleware, type AppContext } from '@/middlewares/auth.middleware.js'
 import { Hono } from 'hono'
 
 const workspaceRoutes = new Hono<AppContext>()
+
+workspaceRoutes.route('/billing', workspaceBillingRoutes)
 
 workspaceRoutes.use('/*', authMiddleware)
 

@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { DownloadIcon, Loader2Icon } from 'lucide-react'
-import { toast } from 'sonner'
-import { TikTokPostCard } from '@/components/tiktok/tiktok-post-card'
+import { TikTokPostCard } from '@/components/cards/tiktok-post-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { importMediaFromUrl, MediaImportError } from '@/lib/video/media-import'
-import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
 import type { TikTokExtractResult } from '@/lib/tiktok/extract'
 import { isTikTokUrl } from '@/lib/tiktok/extract'
+import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
+import { importMediaFromUrl, MediaImportError } from '@/lib/video/media-import'
+import { DownloadIcon, Loader2Icon } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 
 export function VideoTikTokImportPanel({ embedded = false }: { embedded?: boolean }) {
   const [url, setUrl] = useState('')
@@ -95,7 +95,10 @@ export function VideoTikTokImportPanel({ embedded = false }: { embedded?: boolea
           : 'flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm'
       }
     >
-      <div data-studio-scroll="source" className="sidebar-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3.5">
+      <div
+        data-studio-scroll="source"
+        className="sidebar-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3.5"
+      >
         <div className="space-y-1.5">
           <Label htmlFor="video-tiktok-url" className="text-xs font-medium">
             TikTok video URL

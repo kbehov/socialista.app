@@ -1,9 +1,10 @@
 'use client'
 
-import { fal } from '@/lib/fal'
+import { fal } from '@/lib/fal/fal'
 
 async function uploadBlob(blob: Blob, filename: string): Promise<string> {
-  const file = blob instanceof File ? blob : new File([blob], filename, { type: blob.type || 'application/octet-stream' })
+  const file =
+    blob instanceof File ? blob : new File([blob], filename, { type: blob.type || 'application/octet-stream' })
   return fal.storage.upload(file)
 }
 

@@ -3,13 +3,17 @@
 import { Progress } from '@/components/ui/progress'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatStorageSize } from '@/lib/format'
-import { getWorkspaceStorageStats, type WorkspaceStorageStats } from '@/lib/workspace-storage'
 import { cn } from '@/lib/utils'
+import { getWorkspaceStorageStats, type WorkspaceStorageStats } from '@/lib/workspace-storage'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import { formatStorageSize } from '@/utils/format'
 import { HardDriveIcon } from 'lucide-react'
 
-function StorageProgress({ percentUsed, isFull, isNearFull }: Pick<WorkspaceStorageStats, 'percentUsed' | 'isFull' | 'isNearFull'>) {
+function StorageProgress({
+  percentUsed,
+  isFull,
+  isNearFull,
+}: Pick<WorkspaceStorageStats, 'percentUsed' | 'isFull' | 'isNearFull'>) {
   return (
     <Progress
       value={percentUsed}
@@ -23,13 +27,7 @@ function StorageProgress({ percentUsed, isFull, isNearFull }: Pick<WorkspaceStor
   )
 }
 
-function StorageSummary({
-  usedBytes,
-  remainingBytes,
-  percentUsed,
-  isFull,
-  isNearFull,
-}: WorkspaceStorageStats) {
+function StorageSummary({ usedBytes, remainingBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
     <div className="rounded-lg border border-sidebar-border/80 bg-sidebar-accent/30 px-4 py-3.5 group-data-[collapsible=icon]:hidden">
       <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -40,7 +38,11 @@ function StorageSummary({
         <span
           className={cn(
             'shrink-0 text-xs font-medium tabular-nums',
-            isFull ? 'text-destructive' : isNearFull ? 'text-amber-600 dark:text-amber-400' : 'text-sidebar-foreground/60',
+            isFull
+              ? 'text-destructive'
+              : isNearFull
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-sidebar-foreground/60',
           )}
         >
           {Math.round(percentUsed)}%
@@ -59,7 +61,12 @@ function StorageSummary({
   )
 }
 
-function StorageCollapsedIcon({ usedBytes, limitBytes, percentUsed, isFull }: Pick<WorkspaceStorageStats, 'usedBytes' | 'limitBytes' | 'percentUsed' | 'isFull'>) {
+function StorageCollapsedIcon({
+  usedBytes,
+  limitBytes,
+  percentUsed,
+  isFull,
+}: Pick<WorkspaceStorageStats, 'usedBytes' | 'limitBytes' | 'percentUsed' | 'isFull'>) {
   return (
     <SidebarMenu className="hidden group-data-[collapsible=icon]:flex">
       <SidebarMenuItem>
@@ -67,10 +74,7 @@ function StorageCollapsedIcon({ usedBytes, limitBytes, percentUsed, isFull }: Pi
           <TooltipTrigger asChild>
             <SidebarMenuButton
               size="sm"
-              className={cn(
-                'relative',
-                isFull && 'text-destructive hover:text-destructive',
-              )}
+              className={cn('relative', isFull && 'text-destructive hover:text-destructive')}
             >
               <HardDriveIcon />
               <span

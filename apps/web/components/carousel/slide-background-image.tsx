@@ -1,25 +1,26 @@
 'use client'
 
-import type { BackgroundImageAdjustment, BackgroundImageFilter, BackgroundImageTransform } from '@socialista/types'
+import { useBackgroundImageTransform, type TransformCorner } from '@/hooks/carousel/use-background-image-transform'
 import {
   backgroundImageStyle,
   backgroundImageTransformStyle,
   resolveBackgroundTransform,
   usesFrame,
 } from '@/lib/carousel/background-image-style'
-import { filtersToCss } from '@/lib/media-filters'
-import {
-  useBackgroundImageTransform,
-  type TransformCorner,
-} from '@/hooks/carousel/use-background-image-transform'
-import { cn } from '@/lib/utils'
-import type { ReactNode, RefObject } from 'react'
-import { useEffect, useRef, useState } from 'react'
-import type { SlideId } from '@socialista/types'
 import {
   registerBackgroundTransformFlusher,
   unregisterBackgroundTransformFlusher,
 } from '@/lib/carousel/background-transform-flush'
+import { cn } from '@/lib/utils'
+import { filtersToCss } from '@/utils/media-filters'
+import type {
+  BackgroundImageAdjustment,
+  BackgroundImageFilter,
+  BackgroundImageTransform,
+  SlideId,
+} from '@socialista/types'
+import type { ReactNode, RefObject } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type SlideBackgroundImageProps = {
   imageUrl: string
@@ -91,12 +92,7 @@ export function SlideBackgroundImage({
   const height = layoutHeight ?? 0
   const isMeasured = width > 0 && height > 0
 
-  const canEdit =
-    interactive &&
-    isFrame &&
-    isBackgroundSelected &&
-    Boolean(canvasRef) &&
-    Boolean(onTransformCommit)
+  const canEdit = interactive && isFrame && isBackgroundSelected && Boolean(canvasRef) && Boolean(onTransformCommit)
 
   const { draft, beginPan, beginScale, flushPendingCommit } = useBackgroundImageTransform({
     transform,
@@ -144,10 +140,7 @@ export function SlideBackgroundImage({
     return (
       <>
         <div data-slot="canvas-bg-image-wrap" className="absolute inset-0 overflow-hidden">
-          <div
-            className="h-full w-full"
-            style={backgroundImageTransformStyle(effectiveTransform, width, height)}
-          >
+          <div className="h-full w-full" style={backgroundImageTransformStyle(effectiveTransform, width, height)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               ref={imageRef}

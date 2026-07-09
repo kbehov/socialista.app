@@ -1,6 +1,6 @@
 'use server'
 
-import { getPolarProductById, getPolarProducts as loadPolarProducts } from '@/lib/polar-products'
+import { getPolarProductById, getPolarProducts as loadPolarProducts } from '@/lib/polar/polar-products'
 import type { ApiResponse, PolarProduct, PolarProductsResponse } from '@socialista/types'
 
 type GetPolarProductsOptions = {

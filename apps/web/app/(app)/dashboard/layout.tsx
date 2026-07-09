@@ -1,9 +1,7 @@
 import { auth } from '@/auth'
 import { AppSidebar } from '@/components/app-sidebar'
-import { UserDropdown } from '@/components/common/user-dropdown'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { WorkspaceBalanceHeader } from '@/components/workspace-balance-header'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import DashboardHeader from '@/components/dashboard/header'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { WorkspaceProvider } from '@/context/workspace-provider'
 import { getUserWorkspaces } from '@/services/workspace.service'
 import { redirect } from 'next/navigation'
@@ -28,14 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }}
         />
         <SidebarInset className="flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden bg-background">
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex items-center gap-2">
-              <WorkspaceBalanceHeader />
-              <ThemeToggle />
-              <UserDropdown />
-            </div>
-          </header>
+          <DashboardHeader />
 
           <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-7xl flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-4 py-6 lg:px-6 [&:has(.studio-shell,.video-studio,.slideshow-studio)]:mx-0 [&:has(.studio-shell,.video-studio,.slideshow-studio)]:max-w-none [&:has(.studio-shell,.video-studio,.slideshow-studio)]:gap-0 [&:has(.studio-shell,.video-studio,.slideshow-studio)]:overflow-hidden [&:has(.studio-shell,.video-studio,.slideshow-studio)]:p-0">
             {children}

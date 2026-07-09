@@ -3,9 +3,9 @@
 import { Paywall } from '@/components/paywall'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { getBillingPortalUrl } from '@/lib/billing-urls'
 import { getWorkspaceBilling } from '@/services/workspace.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
+import { getBillingPortalUrl } from '@/utils/billing-urls'
 import type { PolarProduct } from '@socialista/types'
 import { ArrowUpRightIcon, CheckCircle2Icon } from 'lucide-react'
 import Link from 'next/link'
@@ -19,11 +19,7 @@ type UpgradePageContentProps = {
   checkoutSuccess?: boolean
 }
 
-export function UpgradePageContent({
-  products,
-  loadError = null,
-  checkoutSuccess = false,
-}: UpgradePageContentProps) {
+export function UpgradePageContent({ products, loadError = null, checkoutSuccess = false }: UpgradePageContentProps) {
   const router = useRouter()
   const currentWorkspace = useWorkspaceStore(state => state.currentWorkspace)
   const { updateWorkspace } = useWorkspaceStoreActions()

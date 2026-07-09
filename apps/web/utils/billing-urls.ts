@@ -1,9 +1,7 @@
 import { BILLING_ROUTES } from '@/constants/routes'
 
 export const getProductCheckoutUrl = (productId: string, workspaceId?: string) => {
-  const metadata = workspaceId
-    ? `&metadata=${encodeURIComponent(JSON.stringify({ workspaceId }))}`
-    : ''
+  const metadata = workspaceId ? `&metadata=${encodeURIComponent(JSON.stringify({ workspaceId }))}` : ''
 
   return `${BILLING_ROUTES.CHECKOUT}?products=${productId}${metadata}`
 }

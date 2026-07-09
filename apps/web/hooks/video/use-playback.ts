@@ -1,11 +1,11 @@
 'use client'
 
-import { filtersToCss } from '@/lib/media-filters'
-import { useEffect, useRef, useState } from 'react'
+import { pickActiveVideoClip } from '@/lib/video/active-clip'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
+import { filtersToCss } from '@/utils/media-filters'
 import type { Clip, ClipId, Project, VideoClip, VideoFilter } from '@socialista/types'
-import { pickActiveVideoClip } from '@/lib/video/active-clip'
+import { useEffect, useRef, useState } from 'react'
 
 type VideoSlot = {
   video: HTMLVideoElement
@@ -498,12 +498,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   useEffect(() => {
     if (isPlaying) return
     const state = useVideoEditorStore.getState()
-    const activeVideoClip = pickActiveVideoClip(
-      state.project.tracks,
-      state.project.clips,
-      state.assets,
-      playhead,
-    )
+    const activeVideoClip = pickActiveVideoClip(state.project.tracks, state.project.clips, state.assets, playhead)
     if (activeVideoClip) {
       if (activeVideoClip.type === 'image') {
         const slot = getImageSlot(activeVideoClip)

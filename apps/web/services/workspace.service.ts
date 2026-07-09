@@ -48,9 +48,7 @@ export const getWorkspace = async (workspaceId: string): Promise<ApiResponse<{ w
   })
 }
 
-export const getWorkspaceBilling = async (
-  workspaceId: string,
-): Promise<ApiResponse<WorkspaceBillingResponse>> => {
+export const getWorkspaceBilling = async (workspaceId: string): Promise<ApiResponse<WorkspaceBillingResponse>> => {
   return api.get<WorkspaceBillingResponse>(WORKSPACE_ROUTES.GET_WORKSPACE_BILLING(workspaceId), {
     next: {
       revalidate: 30,
@@ -70,9 +68,7 @@ export const getWorkspaceUsage = async (
   })
 }
 
-export const getWorkspaceBalance = async (
-  workspaceId: string,
-): Promise<ApiResponse<WorkspaceBalanceResponse>> => {
+export const getWorkspaceBalance = async (workspaceId: string): Promise<ApiResponse<WorkspaceBalanceResponse>> => {
   return api.get<WorkspaceBalanceResponse>(WORKSPACE_ROUTES.GET_WORKSPACE_BALANCE(workspaceId), {
     next: {
       revalidate: 30,
@@ -122,10 +118,7 @@ export const addWorkspaceMember = async (
   workspaceId: string,
   payload: AddWorkspaceMemberPayload,
 ): Promise<ApiResponse<{ workspace: WorkspaceResponse }>> => {
-  const response = await api.post<{ workspace: WorkspaceResponse }>(
-    WORKSPACE_ROUTES.ADD_MEMBER(workspaceId),
-    payload,
-  )
+  const response = await api.post<{ workspace: WorkspaceResponse }>(WORKSPACE_ROUTES.ADD_MEMBER(workspaceId), payload)
   revalidateWorkspaces(workspaceId)
   return response
 }
@@ -152,4 +145,15 @@ export const removeWorkspaceMember = async (
   )
   revalidateWorkspaces(workspaceId)
   return response
+}
+
+export const getWorkspaceBillingStatus = async (
+  workspaceId: string,
+): Promise<ApiResponse<WorkspaceResponse['billing']>> => {
+  return api.get<WorkspaceResponse['billing']>(WORKSPACE_ROUTES.GET_WORKSPACE_BILLING_STATUS(workspaceId), {
+    next: {
+      revalidate: 30,
+      tags: [`workspace-billing-${workspaceId}`],
+    },
+  })
 }

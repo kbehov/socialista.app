@@ -1,6 +1,6 @@
 'use client'
 
-import { MEDIA_FILTER_DEFS, type MediaFilter, type MediaFilterType } from '@/lib/media-filters'
+import { MEDIA_FILTER_DEFS, type MediaFilter, type MediaFilterType } from '@/utils/media-filters'
 import { InspectorSlider } from './inspector-slider'
 
 type FilterControlsProps = {
@@ -11,13 +11,7 @@ type FilterControlsProps = {
   onRemoveCommit?: (type: MediaFilterType) => void
 }
 
-export function FilterControls({
-  filters,
-  onChange,
-  onCommit,
-  onRemove,
-  onRemoveCommit,
-}: FilterControlsProps) {
+export function FilterControls({ filters, onChange, onCommit, onRemove, onRemoveCommit }: FilterControlsProps) {
   return (
     <div className="my-2 flex flex-col gap-3">
       <div className="text-xs font-medium text-muted-foreground">Filters</div>

@@ -1,7 +1,7 @@
 'use client'
 
+import { TikTokPostCard } from '@/components/cards/tiktok-post-card'
 import { FieldError, FieldLabel } from '@/components/forms/auth-form-shared'
-import { TikTokPostCard } from '@/components/tiktok/tiktok-post-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { generateSlideshowPrompt } from '@/lib/ai'

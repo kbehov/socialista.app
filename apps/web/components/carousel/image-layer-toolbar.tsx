@@ -1,24 +1,17 @@
 'use client'
 
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  CopyIcon,
-  ImageIcon,
-  SparklesIcon,
-  Trash2Icon,
-} from 'lucide-react'
-import { useEditorStore } from '@/lib/carousel/store'
-import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { ImageSourcePicker } from '@/components/carousel/image-source-picker'
 import { InspectorImageFilters } from '@/components/carousel/inspector-image-filters'
 import { InspectorImagePreview } from '@/components/carousel/inspector-image-preview'
-import { filtersToCss } from '@/lib/media-filters'
-import { useActiveLayer } from '@/hooks/carousel/use-active-layer'
+import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { useActiveLayer } from '@/hooks/carousel/use-active-layer'
+import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import { filtersToCss } from '@/utils/media-filters'
 import type { ImageLayerObjectFit } from '@socialista/types'
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, ImageIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
 
 export function ImageLayerToolbar() {
   const { slide, layer } = useActiveLayer()
@@ -93,10 +86,7 @@ export function ImageLayerToolbar() {
       )}
 
       {!imageLayer.imageUrl ? (
-        <ImageSourcePicker
-          disabled={editing}
-          onImageSelected={setImageUrl}
-        />
+        <ImageSourcePicker disabled={editing} onImageSelected={setImageUrl} />
       ) : (
         <>
           <InspectorImageFilters
@@ -114,9 +104,7 @@ export function ImageLayerToolbar() {
               min={0}
               max={100}
               value={Math.round(imageLayer.opacity * 100)}
-              onChange={e =>
-                updateLayer(slide.id, imageLayer.id, { opacity: Number(e.target.value) / 100 })
-              }
+              onChange={e => updateLayer(slide.id, imageLayer.id, { opacity: Number(e.target.value) / 100 })}
               className="w-full accent-primary"
             />
           </div>
@@ -155,12 +143,7 @@ export function ImageLayerToolbar() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Button
-              size="sm"
-              className="w-full"
-              disabled={editing}
-              onClick={() => openEditDialog(editTarget)}
-            >
+            <Button size="sm" className="w-full" disabled={editing} onClick={() => openEditDialog(editTarget)}>
               <SparklesIcon className="size-3.5" />
               Edit with AI
             </Button>
@@ -174,11 +157,7 @@ export function ImageLayerToolbar() {
               <ImageIcon className="size-3.5" />
               Set as background
             </Button>
-            <ImageSourcePicker
-              disabled={editing}
-              layout="compact"
-              onImageSelected={setImageUrl}
-            />
+            <ImageSourcePicker disabled={editing} layout="compact" onImageSelected={setImageUrl} />
             <div className="grid grid-cols-4 gap-1">
               <Button size="icon-sm" variant="outline" onClick={() => bringForward(slide.id, imageLayer.id)}>
                 <ArrowUpIcon className="size-3.5" />

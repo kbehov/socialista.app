@@ -1,9 +1,10 @@
 'use client'
 
-import { fal } from '@/lib/fal'
+import { fal } from '@/lib/fal/fal'
 
 async function uploadBlob(blob: Blob): Promise<string> {
-  const file = blob instanceof File ? blob : new File([blob], 'slide-background.jpg', { type: blob.type || 'image/jpeg' })
+  const file =
+    blob instanceof File ? blob : new File([blob], 'slide-background.jpg', { type: blob.type || 'image/jpeg' })
   return fal.storage.upload(file)
 }
 

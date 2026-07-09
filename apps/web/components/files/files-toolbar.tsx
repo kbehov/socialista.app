@@ -1,8 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { formatFileCount, formatItemCount } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { formatFileCount, formatItemCount } from '@/utils/format'
 import { FilesIcon, FolderIcon, Loader2Icon, Trash2Icon, UploadCloudIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 

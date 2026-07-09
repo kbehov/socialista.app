@@ -1,18 +1,16 @@
 import { CustomerPortal } from '@polar-sh/nextjs'
 
-import { ensureDb } from '@/lib/db'
-import { appUrl, polarServer } from '@/lib/polar'
-import { getWorkspaceById } from '@socialista/db'
-
+import { appUrl, polarServer } from '@/lib/polar/polar'
+import { getWorkspaceBillingStatus } from '@/services/workspace.service'
 export const GET = CustomerPortal({
   accessToken: process.env.POLAR_ACCESS_TOKEN as string,
   getCustomerId: async (req: Request) => {
     const workspaceId = new URL(req.url).searchParams.get('workspaceId')
     if (!workspaceId) return ''
 
-    await ensureDb()
-    const workspace = await getWorkspaceById(workspaceId)
-    return workspace?.billing.polarCustomerId ?? ''
+    const { data } = await getWorkspaceBillingStatus(workspaceId)
+    console.log('data', data)
+    return data?.polarCustomerId ?? ''
   },
   returnUrl: `${appUrl}/dashboard/upgrade`,
   server: polarServer,

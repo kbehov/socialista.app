@@ -1,3 +1,4 @@
+'use server'
 import { AUTH_ROUTES } from '@/constants/routes'
 import { publicApi } from '@/lib/api-public'
 import type { ApiResponse, AuthResponse, RefreshTokenResponse, SocialLoginInput } from '@socialista/types'

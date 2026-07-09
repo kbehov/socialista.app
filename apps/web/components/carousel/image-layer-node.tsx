@@ -1,23 +1,7 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
-import type { RefObject } from 'react'
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  CopyIcon,
-  ImageIcon,
-  SparklesIcon,
-  Trash2Icon,
-  UploadIcon,
-} from 'lucide-react'
-import type { ImageLayer, SlideId } from '@socialista/types'
-import { useEditorStore } from '@/lib/carousel/store'
-import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
-import { useDragResize } from '@/hooks/carousel/use-drag-resize'
 import { LayerTransformHandles } from '@/components/carousel/layer-transform-handles'
-import { filtersToCss } from '@/lib/media-filters'
-import { cn } from '@/lib/utils'
+import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -25,6 +9,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { useDragResize } from '@/hooks/carousel/use-drag-resize'
+import { useEditorStore } from '@/lib/carousel/store'
+import { cn } from '@/lib/utils'
+import { filtersToCss } from '@/utils/media-filters'
+import type { ImageLayer, SlideId } from '@socialista/types'
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, ImageIcon, SparklesIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import type { RefObject } from 'react'
+import { useMemo, useRef } from 'react'
 
 type ImageLayerNodeProps = {
   layer: ImageLayer
@@ -125,9 +117,7 @@ export function ImageLayerNode({
         </div>
       )}
 
-      {selected && interactive ? (
-        <LayerTransformHandles onResize={beginResize} onRotate={beginRotate} />
-      ) : null}
+      {selected && interactive ? <LayerTransformHandles onResize={beginResize} onRotate={beginRotate} /> : null}
     </div>
   )
 
@@ -137,16 +127,10 @@ export function ImageLayerNode({
     <ContextMenu>
       <ContextMenuTrigger asChild>{layerEl}</ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem
-          disabled={!layer.imageUrl}
-          onSelect={() => imageEdit?.openEditDialog(editTarget)}
-        >
+        <ContextMenuItem disabled={!layer.imageUrl} onSelect={() => imageEdit?.openEditDialog(editTarget)}>
           <SparklesIcon /> Edit with AI
         </ContextMenuItem>
-        <ContextMenuItem
-          disabled={!layer.imageUrl}
-          onSelect={() => promoteImageLayerToBackground(slideId, layer.id)}
-        >
+        <ContextMenuItem disabled={!layer.imageUrl} onSelect={() => promoteImageLayerToBackground(slideId, layer.id)}>
           <ImageIcon /> Set as background
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => imageEdit?.replaceImage(editTarget)}>

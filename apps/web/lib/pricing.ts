@@ -1,4 +1,4 @@
-import { getProductCheckoutUrl } from '@/lib/billing-urls'
+import { getProductCheckoutUrl } from '@/utils/billing-urls'
 import type { PolarProduct, PolarProductPrice, PolarRecurringInterval } from '@socialista/types'
 
 export { getProductCheckoutUrl }
@@ -130,12 +130,13 @@ export const formatProductPrice = (product: PolarProduct): FormattedProductPrice
 export const getProductFeatures = (product: PolarProduct, overrides?: string[]) => {
   if (overrides?.length) return overrides
 
-  return product.benefits
-    .map(benefit => benefit.description.trim())
-    .filter(description => description.length > 0)
+  return product.benefits.map(benefit => benefit.description.trim()).filter(description => description.length > 0)
 }
 
-export const getDefaultCtaLabel = (product: PolarProduct, options?: { isCurrentPlan?: boolean; isFeatured?: boolean }) => {
+export const getDefaultCtaLabel = (
+  product: PolarProduct,
+  options?: { isCurrentPlan?: boolean; isFeatured?: boolean },
+) => {
   if (options?.isCurrentPlan) return 'Current plan'
 
   const pricing = formatProductPrice(product)

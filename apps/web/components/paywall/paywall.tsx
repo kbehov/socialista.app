@@ -5,7 +5,6 @@ import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { getProductCheckoutUrl } from '@/lib/billing-urls'
 import {
   getPaywallCopy,
   mapWorkspacePlanToProduct,
@@ -14,6 +13,7 @@ import {
   type PaywallReason,
 } from '@/lib/paywall'
 import { cn } from '@/lib/utils'
+import { getProductCheckoutUrl } from '@/utils/billing-urls'
 import type { PolarProduct } from '@socialista/types'
 import { LockIcon, RefreshCwIcon, ShieldCheckIcon, SparklesIcon, ZapIcon } from 'lucide-react'
 
@@ -41,13 +41,7 @@ const trustSignals = [
   { icon: ZapIcon, label: 'Instant access' },
 ] as const
 
-function PaywallHeader({
-  copy,
-  variant,
-}: {
-  copy: PaywallCopy
-  variant: NonNullable<PaywallProps['variant']>
-}) {
+function PaywallHeader({ copy, variant }: { copy: PaywallCopy; variant: NonNullable<PaywallProps['variant']> }) {
   const isPage = variant === 'page'
 
   return (
@@ -116,11 +110,7 @@ function PaywallProductGrid({
     <div
       className={cn(
         'grid gap-4',
-        variant === 'page'
-          ? 'md:grid-cols-2 xl:grid-cols-3'
-          : products.length > 1
-            ? 'sm:grid-cols-2'
-            : 'grid-cols-1',
+        variant === 'page' ? 'md:grid-cols-2 xl:grid-cols-3' : products.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1',
       )}
     >
       {products.map(product => (
@@ -166,7 +156,8 @@ export function Paywall({
     <section
       className={cn(
         'relative w-full',
-        isPage && 'rounded-3xl border border-border/70 bg-gradient-to-b from-muted/30 via-background to-background px-4 py-10 sm:px-8 sm:py-14',
+        isPage &&
+          'rounded-3xl border border-border/70 bg-gradient-to-b from-muted/30 via-background to-background px-4 py-10 sm:px-8 sm:py-14',
         className,
       )}
     >

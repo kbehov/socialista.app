@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
-import { SparklesIcon } from 'lucide-react'
 
 function formatCredits(amount: number) {
   return new Intl.NumberFormat('en-US', {
@@ -31,8 +30,7 @@ export function WorkspaceBalanceHeader() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs font-medium tabular-nums">
-          <SparklesIcon className="size-3.5 text-amber-500" />
+        <Badge variant="outline" className=" tabular-nums">
           {formatCredits(credits)}
         </Badge>
       </TooltipTrigger>

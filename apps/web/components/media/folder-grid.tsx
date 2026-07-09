@@ -7,9 +7,9 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import { formatFileCount } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import type { FilesRoutePaths } from '@/constants/app-routes'
+import { cn } from '@/lib/utils'
+import { formatFileCount } from '@/utils/format'
 import type { CollectionResponse } from '@socialista/types'
 import { FolderIcon, FolderOpenIcon, Trash2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'

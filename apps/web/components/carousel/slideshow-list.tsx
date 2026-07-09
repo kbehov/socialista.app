@@ -1,23 +1,23 @@
 'use client'
 
-import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
-import { ErrorState } from '@/components/common/error-state'
-import { LoadingState } from '@/components/common/loading-state'
 import { PlatformIcon } from '@/components/carousel/format-selector'
 import {
   SlideshowCardPreview,
   SlideshowCardSlideBadge,
   SlideshowCardStoryBars,
 } from '@/components/carousel/slideshow-card-preview'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { ErrorState } from '@/components/common/error-state'
+import { LoadingState } from '@/components/common/loading-state'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { getAspectRatioPreset } from '@/lib/carousel/aspect-ratios'
-import { formatRelativeTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/services/slideshow.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import { formatRelativeTime } from '@/utils/format'
 import type { SlideshowSummaryResponse } from '@socialista/types'
-import { ImagesIcon, LayersIcon, CopyIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { CopyIcon, ImagesIcon, LayersIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -275,9 +275,7 @@ export function SlideshowList() {
         }}
         title="Delete slideshow?"
         description={
-          deleteTarget
-            ? `“${deleteTarget.name}” will be permanently removed. This action cannot be undone.`
-            : ''
+          deleteTarget ? `“${deleteTarget.name}” will be permanently removed. This action cannot be undone.` : ''
         }
         confirmLabel="Delete slideshow"
         isDeleting={isDeleting}

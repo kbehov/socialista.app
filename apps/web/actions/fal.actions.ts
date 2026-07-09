@@ -1,6 +1,6 @@
 'use server'
 
-import { fal } from '@/lib/fal-server'
+import { fal } from '@/lib/fal/fal-server'
 
 export type GeneratedImage = {
   url: string
@@ -109,11 +109,7 @@ export async function editVideo(
   }
 }
 
-export async function animateImage(
-  prompt: string,
-  imageUrl: string,
-  duration: number,
-): Promise<AnimateImageResult> {
+export async function animateImage(prompt: string, imageUrl: string, duration: number): Promise<AnimateImageResult> {
   const trimmedPrompt = prompt.trim()
   if (!trimmedPrompt) {
     return { success: false, error: 'Prompt is required' }

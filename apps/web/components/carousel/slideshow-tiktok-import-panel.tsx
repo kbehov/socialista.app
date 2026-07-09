@@ -1,9 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { DownloadIcon, Loader2Icon } from 'lucide-react'
-import { toast } from 'sonner'
-import { TikTokPostCard } from '@/components/tiktok/tiktok-post-card'
+import { TikTokPostCard } from '@/components/cards/tiktok-post-card'
 import { StudioPanelScrollArea } from '@/components/carousel/studio-segmented-tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +8,9 @@ import { Label } from '@/components/ui/label'
 import { useEditorStore } from '@/lib/carousel/store'
 import type { TikTokExtractResult } from '@/lib/tiktok/extract'
 import { isTikTokUrl } from '@/lib/tiktok/extract'
+import { DownloadIcon, Loader2Icon } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 
 export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: boolean }) {
   const applyTikTokImport = useEditorStore(s => s.applyTikTokImport)

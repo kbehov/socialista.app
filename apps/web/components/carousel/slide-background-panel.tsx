@@ -1,21 +1,17 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { CropIcon, FolderOpenIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
-import type { Slide } from '@socialista/types'
-import { useEditorStore } from '@/lib/carousel/store'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
-import {
-  ImageActionButton,
-  ImageSourcePicker,
-  ImageUrlInput,
-} from '@/components/carousel/image-source-picker'
+import { ImageActionButton, ImageSourcePicker, ImageUrlInput } from '@/components/carousel/image-source-picker'
 import { InspectorImageFilters } from '@/components/carousel/inspector-image-filters'
 import { InspectorImagePreview } from '@/components/carousel/inspector-image-preview'
+import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
 import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
-import { filtersToCss } from '@/lib/media-filters'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { useEditorStore } from '@/lib/carousel/store'
+import { filtersToCss } from '@/utils/media-filters'
+import type { Slide } from '@socialista/types'
+import { CropIcon, FolderOpenIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { ColorPicker } from './primitives/color-picker'
 
 export function SlideBackgroundPanel() {
@@ -145,11 +141,7 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
                 >
                   <CropIcon className="size-3" />
                 </ImageActionButton>
-                <ImageActionButton
-                  label="Replace image"
-                  disabled={editing}
-                  onClick={() => replaceSlideImage(slide.id)}
-                >
+                <ImageActionButton label="Replace image" disabled={editing} onClick={() => replaceSlideImage(slide.id)}>
                   <ImageIcon className="size-3" />
                 </ImageActionButton>
                 <ImageActionButton
@@ -159,11 +151,7 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
                 >
                   <FolderOpenIcon className="size-3" />
                 </ImageActionButton>
-                <ImageActionButton
-                  label="Paste image URL"
-                  disabled={editing}
-                  onClick={() => setUrlVisible(true)}
-                >
+                <ImageActionButton label="Paste image URL" disabled={editing} onClick={() => setUrlVisible(true)}>
                   <LinkIcon className="size-3" />
                 </ImageActionButton>
                 <ImageActionButton

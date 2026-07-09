@@ -1,7 +1,7 @@
 'use client'
 
-import { getMediaKind, type MediaKind } from '@/lib/media'
 import { cn } from '@/lib/utils'
+import { getMediaKind, type MediaKind } from '@/utils/media'
 import { FileIcon, PlayIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -128,13 +128,7 @@ export function FilePreview({
           mediaClassName={mediaClassName}
         />
       ) : resolvedKind === 'image' ? (
-        <ImagePreview
-          src={src}
-          alt={alt}
-          objectFit={objectFit}
-          loading={loading}
-          mediaClassName={mediaClassName}
-        />
+        <ImagePreview src={src} alt={alt} objectFit={objectFit} loading={loading} mediaClassName={mediaClassName} />
       ) : (
         <UnknownPreview />
       )}

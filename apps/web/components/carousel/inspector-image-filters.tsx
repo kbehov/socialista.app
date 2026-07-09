@@ -1,7 +1,7 @@
 'use client'
 
 import { FilterControls } from '@/components/media/filter-controls'
-import type { MediaFilter, MediaFilterType } from '@/lib/media-filters'
+import type { MediaFilter, MediaFilterType } from '@/utils/media-filters'
 
 export type InspectorImageFilterHandlers = {
   filters: MediaFilter[]

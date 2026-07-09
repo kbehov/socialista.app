@@ -21,6 +21,8 @@ export const WORKSPACE_ROUTES = {
   GET_WORKSPACE_BILLING: (workspaceId: string) => `/workspaces/${workspaceId}/billing`,
   GET_WORKSPACE_USAGE: (workspaceId: string) => `/workspaces/${workspaceId}/usage`,
   GET_WORKSPACE_BALANCE: (workspaceId: string) => `/workspaces/${workspaceId}/balance`,
+  PROCESS_POLAR_WEBHOOK: `/workspaces/billing/polar/events`,
+  GET_WORKSPACE_BILLING_STATUS: (workspaceId: string) => `/workspaces/billing/status/${workspaceId}`,
   CREATE_WORKSPACE: `/workspaces`,
   UPDATE_WORKSPACE: (workspaceId: string) => `/workspaces/${workspaceId}`,
   DELETE_WORKSPACE: (workspaceId: string) => `/workspaces/${workspaceId}`,

@@ -1,25 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CollectionResponse, ImageResponse } from '@socialista/types'
-import { ChevronRightIcon, FolderIcon, Loader2Icon } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { FilePreview } from '@/components/media/file-preview'
-import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
 import { finderGridClassName } from '@/components/media/folder-grid'
-import { formatFileCount } from '@/lib/format'
-import { getMediaKind } from '@/lib/media'
+import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { proxiedImageUrl } from '@/lib/carousel/image-url'
+import { cn } from '@/lib/utils'
 import { getFolders, getWorkspaceFiles } from '@/services/files.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
-import { cn } from '@/lib/utils'
+import { formatFileCount } from '@/utils/format'
+import { getMediaKind } from '@/utils/media'
+import type { CollectionResponse, ImageResponse } from '@socialista/types'
+import { ChevronRightIcon, FolderIcon, Loader2Icon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 type WorkspaceImagePickerDialogProps = {
   open: boolean
@@ -43,10 +37,7 @@ export function WorkspaceImagePickerDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const imageFiles = useMemo(
-    () => images.filter(image => getMediaKind(image.url) === 'image'),
-    [images],
-  )
+  const imageFiles = useMemo(() => images.filter(image => getMediaKind(image.url) === 'image'), [images])
 
   const resetNavigation = useCallback(() => {
     setFolderId(undefined)
