@@ -104,7 +104,7 @@ export const updateWorkspace = async (workspaceId: string, data: Partial<IWorksp
 
   await getWorkspaceOrThrow(workspaceId)
 
-  return await WorkspaceModel.findByIdAndUpdate(workspaceId, { $set: data }, { new: true }).lean()
+  return await WorkspaceModel.findByIdAndUpdate(workspaceId, { $set: data }, { returnDocument: 'after' }).lean()
 }
 
 export const deleteWorkspace = async (workspaceId: string) => {
@@ -128,7 +128,7 @@ export const addWorkspaceMember = async (workspaceId: string, userId: string, ro
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     { $addToSet: { members: { userId: new Types.ObjectId(userId), role } } },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -146,7 +146,7 @@ export const removeWorkspaceMember = async (workspaceId: string, userId: string)
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     { $pull: { members: { userId: new Types.ObjectId(userId) } } },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -165,12 +165,10 @@ export const updateWorkspaceMemberRole = async (workspaceId: string, userId: str
     workspaceId,
     {
       $set: {
-        members: workspace.members.map(member =>
-          member.userId.toString() === userId ? { ...member, role } : member,
-        ),
+        members: workspace.members.map(member => (member.userId.toString() === userId ? { ...member, role } : member)),
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -184,7 +182,7 @@ export const incrementWorkspaceUsage = async (workspaceId: string, field: UsageF
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     { $inc: { [`usage.${field}`]: amount } },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -196,7 +194,7 @@ export const decrementWorkspaceUsage = async (workspaceId: string, field: UsageF
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     [{ $set: { [`usage.${field}`]: { $max: [0, { $subtract: [`$usage.${field}`, amount] }] } } }],
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -251,7 +249,7 @@ export const updateWorkspaceBilling = async (workspaceId: string, billing: Works
       ...(Object.keys(setFields).length > 0 ? { $set: setFields } : {}),
       ...(Object.keys(unsetFields).length > 0 ? { $unset: unsetFields } : {}),
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -270,22 +268,21 @@ export const provisionPlan = async (workspaceId: string, plan: Plan) => {
         },
         'billing.plan': plan,
         'billing.aiCreditsBalance': limits.aiCredits,
-        'billing.nextBillingAmount': limits.price,
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
 export const increaseAiCreditsBalance = async (workspaceId: string, amount: number) => {
   if (amount <= 0) {
-    return await getWorkspaceById(workspaceId)
+    return await getWorkspaceOrThrow(workspaceId)
   }
 
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     { $inc: { 'billing.aiCreditsBalance': amount } },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -305,7 +302,7 @@ export const deductAiCredits = async (workspaceId: string, amount: number) => {
         },
       },
     ],
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -321,6 +318,19 @@ export const resetBillingPeriodUsage = async (workspaceId: string) => {
         'billing.aiCreditsBalance': limits.aiCredits,
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
+}
+
+export const getWorkspaceBalance = async (workspaceId: string) => {
+  const workspace = await WorkspaceModel.findById(workspaceId).select('billing.aiCreditsBalance').lean()
+  return workspace?.billing.aiCreditsBalance ?? 0
+}
+
+export const getWorkspacePolarCustomerId = async (workspaceId: string) => {
+  const workspace = await WorkspaceModel.findById(workspaceId).select('billing.polarCustomerId').lean()
+  if (!workspace) {
+    throw new Error('Workspace not found')
+  }
+  return workspace.billing.polarCustomerId ?? null
 }

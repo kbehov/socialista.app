@@ -69,7 +69,6 @@ export type WorkspaceBilling = {
   nextBillingDate: Date
   nextBillingAmount: number
   aiCreditsBalance: number
-  stripeCustomerId?: string
   polarCustomerId?: string
   polarSubscriptionId?: string
   currentPeriodStart?: Date

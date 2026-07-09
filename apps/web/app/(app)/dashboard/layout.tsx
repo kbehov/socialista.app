@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { AppSidebar } from '@/components/app-sidebar'
+import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import DashboardHeader from '@/components/dashboard/header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { WorkspaceProvider } from '@/context/workspace-provider'

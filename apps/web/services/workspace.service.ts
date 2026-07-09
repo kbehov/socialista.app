@@ -146,14 +146,3 @@ export const removeWorkspaceMember = async (
   revalidateWorkspaces(workspaceId)
   return response
 }
-
-export const getWorkspaceBillingStatus = async (
-  workspaceId: string,
-): Promise<ApiResponse<WorkspaceResponse['billing']>> => {
-  return api.get<WorkspaceResponse['billing']>(WORKSPACE_ROUTES.GET_WORKSPACE_BILLING_STATUS(workspaceId), {
-    next: {
-      revalidate: 30,
-      tags: [`workspace-billing-${workspaceId}`],
-    },
-  })
-}

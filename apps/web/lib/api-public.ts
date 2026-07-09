@@ -1,6 +1,5 @@
+import { API_URL } from '@/lib/api-url'
 import type { ApiResponse } from '@socialista/types'
-
-const API_URL = 'http://localhost:8080'
 
 export class ApiError extends Error {
   constructor(

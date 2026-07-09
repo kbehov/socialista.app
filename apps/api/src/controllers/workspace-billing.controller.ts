@@ -1,11 +1,10 @@
 import { errorResponse, successResponse } from '@/utils/http-response.js'
-import { parsePolarWebhookEvent, processPolarWebhookEvent } from '@/utils/polar-billing.utils.js'
+import { parsePolarWebhookEvent, processPolarWebhookEvent } from '@/services/polar-billing.service.js'
 import { getWorkspaceById } from '@socialista/db'
 import type { Context } from 'hono'
 
 export const processPolarBillingWebhook = async (c: Context) => {
   const event = parsePolarWebhookEvent(await c.req.json())
-  console.log('event', event)
   const handled = await processPolarWebhookEvent(event)
 
   return successResponse(c, 200, {
@@ -15,7 +14,7 @@ export const processPolarBillingWebhook = async (c: Context) => {
   })
 }
 
-export const getWorkspaceBilling = async (c: Context) => {
+export const getWorkspaceBillingStatus = async (c: Context) => {
   const workspaceId = c.req.param('workspaceId')
   if (!workspaceId) {
     return errorResponse(c, 400, 'Workspace ID is required')

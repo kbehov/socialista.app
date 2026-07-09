@@ -4,10 +4,25 @@ import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
 import { SidebarStorageFooter } from '@/components/sidebar-storage-footer'
 import { SidebarUpgradeCard } from '@/components/sidebar-upgrade-card'
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+  SidebarSeparator,
+} from '@/components/ui/sidebar'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import { WorkspaceResponse } from '@socialista/types'
-import { FileTextIcon, FolderArchiveIcon, ImagesIcon, LayoutDashboardIcon, LightbulbIcon, UserIcon, VideoIcon } from 'lucide-react'
+import {
+  FileTextIcon,
+  FolderArchiveIcon,
+  ImagesIcon,
+  LayoutDashboardIcon,
+  LightbulbIcon,
+  UserIcon,
+  VideoIcon,
+} from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
@@ -25,6 +40,12 @@ const defaultUser = {
   avatar: '',
 }
 
+const iconProps = { className: 'nav-icon size-4 shrink-0', strokeWidth: 1.75 } as const
+
+function isPostsRoute(pathname: string) {
+  return pathname === '/dashboard/posts' || pathname.startsWith('/dashboard/posts/')
+}
+
 export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSidebarProps) {
   const pathname = usePathname()
 
@@ -32,19 +53,19 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
     {
       title: 'Dashboard',
       url: '/dashboard',
-      icon: <LayoutDashboardIcon />,
+      icon: <LayoutDashboardIcon {...iconProps} />,
       isActive: pathname === '/dashboard',
     },
     {
       title: 'Accounts',
       url: '/dashboard/accounts',
-      icon: <UserIcon />,
-      isActive: pathname === '/dashboard/accounts',
+      icon: <UserIcon {...iconProps} />,
+      isActive: pathname === '/dashboard/accounts' || pathname.startsWith('/dashboard/accounts/'),
     },
     {
       title: 'Posts',
       url: '/dashboard/posts',
-      icon: <FileTextIcon />,
+      icon: <FileTextIcon {...iconProps} />,
       items: [
         {
           title: 'Create post',
@@ -55,7 +76,7 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
           url: '/dashboard/posts/all',
         },
         {
-          title: 'Scheduled posts',
+          title: 'Scheduled',
           url: '/dashboard/posts/scheduled',
         },
         {
@@ -63,51 +84,55 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
           url: '/dashboard/posts/categories',
         },
       ],
-
-      isActive: pathname === '/dashboard/posts',
+      isActive: isPostsRoute(pathname),
     },
   ]
+
   const studioItems = [
     {
-      title: 'Slideshow Generator',
+      title: 'Slideshows',
       url: '/dashboard/studio/slideshows',
-      icon: <ImagesIcon />,
+      icon: <ImagesIcon {...iconProps} />,
       isActive: pathname === '/dashboard/studio/slideshows' || pathname.startsWith('/dashboard/studio/slideshows/'),
     },
     {
       title: 'Video Editor',
       url: '/dashboard/studio/videos',
-      icon: <VideoIcon />,
+      icon: <VideoIcon {...iconProps} />,
       isActive: pathname === '/dashboard/studio/videos' || pathname.startsWith('/dashboard/studio/videos/'),
     },
   ]
-  const databaseItems = [
+
+  const libraryItems = [
     {
       title: 'Inspirations',
       url: '/dashboard/inspirations',
-      icon: <LightbulbIcon />,
+      icon: <LightbulbIcon {...iconProps} />,
+      isActive: pathname === '/dashboard/inspirations' || pathname.startsWith('/dashboard/inspirations/'),
     },
     {
       title: 'Files',
       url: '/dashboard/files',
-      icon: <FolderArchiveIcon />,
+      icon: <FolderArchiveIcon {...iconProps} />,
       isActive: pathname === '/dashboard/files' || pathname.startsWith('/dashboard/files/'),
     },
   ]
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="pb-0">
         <TeamSwitcher workspaces={workspaces} />
       </SidebarHeader>
 
-      <SidebarContent>
-        <NavMain items={navItems} sectionTitle="Platform" />
+      <SidebarContent className="sidebar-scrollbar gap-0">
+        {/* <SidebarCreateAction /> */}
+        <SidebarSeparator className="mx-2 my-2" />
+        <NavMain items={navItems} sectionTitle="Overview" />
         <NavMain items={studioItems} sectionTitle="Studio" />
-        <NavMain items={databaseItems} sectionTitle="Database" />
+        <NavMain items={libraryItems} sectionTitle="Library" />
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="gap-1 border-t border-sidebar-border pt-2">
         <SidebarUpgradeCard />
         <SidebarStorageFooter />
         <NavUser user={user} />

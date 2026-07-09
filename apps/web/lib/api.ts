@@ -1,11 +1,10 @@
 import { auth } from '@/auth'
+import { API_URL } from '@/lib/api-url'
 import type { ApiResponse } from '@socialista/types'
 
 import { ApiError, parseJson, publicApi } from './api-public'
 
 export { ApiError, publicApi }
-
-const API_URL = 'http://localhost:8080'
 
 interface RequestOptions extends Omit<RequestInit, 'method' | 'body'> {
   body?: unknown

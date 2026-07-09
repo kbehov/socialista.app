@@ -15,15 +15,18 @@ export function useWorkspaceBilling() {
   useEffect(() => {
     const workspaceId = currentWorkspace?.id
     if (!workspaceId) {
-      setBalance(null)
-      setError(null)
+      setTimeout(() => {
+        setBalance(null)
+        setError(null)
+      }, 0)
       return
     }
 
     let cancelled = false
-
-    setIsLoading(true)
-    setError(null)
+    setTimeout(() => {
+      setIsLoading(true)
+      setError(null)
+    }, 0)
 
     void getWorkspaceBalance(workspaceId)
       .then(response => {

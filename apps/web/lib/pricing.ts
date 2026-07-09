@@ -1,3 +1,4 @@
+import { pickPrimaryPrice } from '@/lib/polar/polar-mappers'
 import { getProductCheckoutUrl } from '@/utils/billing-urls'
 import type { PolarProduct, PolarProductPrice, PolarRecurringInterval } from '@socialista/types'
 
@@ -36,21 +37,7 @@ const formatCurrency = (amountCents: number, currency: string) => {
   return formatter.format(amountCents / 100)
 }
 
-export const getPrimaryProductPrice = (product: PolarProduct): PolarProductPrice | null => {
-  const activePrices = product.prices.filter(price => !price.isArchived)
-  if (activePrices.length === 0) return null
-
-  const fixedPrice = activePrices.find(price => price.amountType === 'fixed' && price.priceAmount !== null)
-  if (fixedPrice) return fixedPrice
-
-  const freePrice = activePrices.find(price => price.amountType === 'free')
-  if (freePrice) return freePrice
-
-  const customPrice = activePrices.find(price => price.amountType === 'custom')
-  if (customPrice) return customPrice
-
-  return activePrices[0] ?? null
-}
+export const getPrimaryProductPrice = (product: PolarProduct): PolarProductPrice | null => pickPrimaryPrice(product)
 
 const formatInterval = (interval: PolarRecurringInterval, count: number | null) => {
   const unit = count && count > 1 ? `${count} ${interval}s` : interval

@@ -1,4 +1,6 @@
 import { HttpError } from '@/utils/http-response.js'
+import { resolvePlanFromProductId } from '@/services/polar-plan-mapping.js'
+import { acquireWebhookEvent, buildWebhookEventKey } from '@/services/polar-webhook-idempotency.js'
 import {
   BillingStatus,
   getWorkspaceById,
@@ -17,18 +19,7 @@ import type {
   PolarWebhookEventType,
   PolarWebhookMetadata,
 } from '@socialista/types'
-
-const SUPPORTED_EVENTS = new Set<PolarWebhookEventType>([
-  'subscription.created',
-  'subscription.updated',
-  'subscription.active',
-  'subscription.canceled',
-  'subscription.revoked',
-  'subscription.uncanceled',
-  'order.created',
-  'order.updated',
-  'order.paid',
-])
+import { POLAR_WEBHOOK_EVENT_TYPE_SET } from '@socialista/types'
 
 const toDate = (value?: string | null) => {
   if (!value) return undefined
@@ -39,16 +30,6 @@ const toDate = (value?: string | null) => {
 const getWorkspaceIdFromMetadata = (metadata?: PolarWebhookMetadata | null) => {
   const workspaceId = metadata?.workspaceId
   return typeof workspaceId === 'string' ? workspaceId : undefined
-}
-
-const resolvePlanFromProductId = (productId?: string | null): Plan => {
-  const proProductId = process.env.POLAR_PRO_PRODUCT_ID
-
-  if (proProductId && productId === proProductId) {
-    return Plan.PRO
-  }
-
-  return Plan.PRO
 }
 
 const mapPolarStatus = (status: string): BillingStatus => {
@@ -116,17 +97,8 @@ export const handleSubscriptionCreated = async (subscription: PolarSubscriptionW
 
   const workspaceId = workspace._id.toString()
   const plan = resolvePlanFromProductId(subscription.productId)
-  const currentPeriodEnd = toDate(subscription.currentPeriodEnd)
 
-  await updateWorkspaceBilling(workspaceId, {
-    polarCustomerId: subscription.customerId,
-    polarSubscriptionId: subscription.id,
-    status: mapPolarStatus(subscription.status),
-    currentPeriodStart: toDate(subscription.currentPeriodStart),
-    currentPeriodEnd,
-    nextBillingDate: currentPeriodEnd ?? new Date(),
-    nextBillingAmount: PLAN_LIMITS[plan].price,
-  })
+  await syncSubscriptionPeriod(workspaceId, subscription)
 
   if (mapPolarStatus(subscription.status) === BillingStatus.ACTIVE) {
     await provisionPlan(workspaceId, plan)
@@ -321,7 +293,11 @@ const parseOrder = (value: unknown): PolarOrderWebhookData => {
 }
 
 export const parsePolarWebhookEvent = (body: unknown): PolarWebhookEvent => {
-  if (!isRecord(body) || typeof body.type !== 'string' || !SUPPORTED_EVENTS.has(body.type as PolarWebhookEventType)) {
+  if (
+    !isRecord(body) ||
+    typeof body.type !== 'string' ||
+    !POLAR_WEBHOOK_EVENT_TYPE_SET.has(body.type as PolarWebhookEventType)
+  ) {
     throw new HttpError(400, 'Unsupported Polar webhook event')
   }
 
@@ -340,7 +316,15 @@ export const parsePolarWebhookEvent = (body: unknown): PolarWebhookEvent => {
   } as PolarWebhookEvent
 }
 
+const getEntityId = (event: PolarWebhookEvent) => event.data.id
+
 export const processPolarWebhookEvent = async (event: PolarWebhookEvent) => {
+  const eventKey = buildWebhookEventKey(event.type, getEntityId(event))
+  const acquired = await acquireWebhookEvent(eventKey)
+  if (!acquired) {
+    return true
+  }
+
   switch (event.type) {
     case 'subscription.created':
       return await handleSubscriptionCreated(event.data)

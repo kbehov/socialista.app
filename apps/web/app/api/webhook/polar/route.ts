@@ -1,41 +1,50 @@
 import { Webhooks } from '@polar-sh/nextjs'
+import { revalidateTag } from 'next/cache'
 
-import { forwardPolarWebhookEvent } from '@/lib/polar/polar-billing-api'
+import { forwardPolarWebhookEvent } from '@/lib/polar/internal-webhook-relay'
+import { POLAR_PRODUCTS_CACHE_TAG } from '@/lib/polar/polar-products'
+import type {
+  PolarOrderWebhookData,
+  PolarSubscriptionWebhookData,
+  PolarWebhookEventType,
+} from '@socialista/types'
 
-const forwardSubscription = async (type: Parameters<typeof forwardPolarWebhookEvent>[0], data: { id: string }) =>
+const forward = async (
+  type: PolarWebhookEventType,
+  data: PolarSubscriptionWebhookData | PolarOrderWebhookData,
+) => {
   await forwardPolarWebhookEvent(type, data)
-
-const forwardOrder = async (type: Parameters<typeof forwardPolarWebhookEvent>[0], data: { id: string }) =>
-  await forwardPolarWebhookEvent(type, data)
+  revalidateTag(POLAR_PRODUCTS_CACHE_TAG, 'max')
+}
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
 
   onSubscriptionCreated: async payload => {
-    await forwardSubscription('subscription.created', payload.data)
+    await forward('subscription.created', payload.data)
   },
   onSubscriptionUpdated: async payload => {
-    await forwardSubscription('subscription.updated', payload.data)
+    await forward('subscription.updated', payload.data)
   },
   onSubscriptionActive: async payload => {
-    await forwardSubscription('subscription.active', payload.data)
+    await forward('subscription.active', payload.data)
   },
   onSubscriptionCanceled: async payload => {
-    await forwardSubscription('subscription.canceled', payload.data)
+    await forward('subscription.canceled', payload.data)
   },
   onSubscriptionRevoked: async payload => {
-    await forwardSubscription('subscription.revoked', payload.data)
+    await forward('subscription.revoked', payload.data)
   },
   onSubscriptionUncanceled: async payload => {
-    await forwardSubscription('subscription.uncanceled', payload.data)
+    await forward('subscription.uncanceled', payload.data)
   },
   onOrderCreated: async payload => {
-    await forwardOrder('order.created', payload.data)
+    await forward('order.created', payload.data)
   },
   onOrderUpdated: async payload => {
-    await forwardOrder('order.updated', payload.data)
+    await forward('order.updated', payload.data)
   },
   onOrderPaid: async payload => {
-    await forwardOrder('order.paid', payload.data)
+    await forward('order.paid', payload.data)
   },
 })

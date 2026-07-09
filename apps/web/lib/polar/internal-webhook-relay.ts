@@ -2,9 +2,9 @@ import { API_URL, WORKSPACE_ROUTES } from '@/constants/routes'
 import type { PolarWebhookEventType } from '@socialista/types'
 
 const getInternalWebhookSecret = () => {
-  const secret = process.env.POLAR_WEBHOOK_SECRET
+  const secret = process.env.POLAR_INTERNAL_WEBHOOK_SECRET
   if (!secret) {
-    throw new Error('POLAR_WEBHOOK_SECRET is not configured')
+    throw new Error('POLAR_INTERNAL_WEBHOOK_SECRET is not configured')
   }
   return secret
 }

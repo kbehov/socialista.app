@@ -1,9 +1,14 @@
 import { Polar } from '@polar-sh/sdk'
 
+const accessToken = process.env.POLAR_ACCESS_TOKEN
+if (!accessToken) {
+  throw new Error('POLAR_ACCESS_TOKEN is not configured')
+}
+
 const server = process.env.POLAR_SERVER === 'production' ? 'production' : 'sandbox'
 
 export const polar = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN!,
+  accessToken,
   server,
 })
 

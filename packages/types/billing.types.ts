@@ -60,16 +60,21 @@ export type PolarOrderWebhookData = {
   subscription?: PolarSubscriptionWebhookData | null
 }
 
-export type PolarWebhookEventType =
-  | 'subscription.created'
-  | 'subscription.updated'
-  | 'subscription.active'
-  | 'subscription.canceled'
-  | 'subscription.revoked'
-  | 'subscription.uncanceled'
-  | 'order.created'
-  | 'order.updated'
-  | 'order.paid'
+export const POLAR_WEBHOOK_EVENT_TYPES = [
+  'subscription.created',
+  'subscription.updated',
+  'subscription.active',
+  'subscription.canceled',
+  'subscription.revoked',
+  'subscription.uncanceled',
+  'order.created',
+  'order.updated',
+  'order.paid',
+] as const
+
+export type PolarWebhookEventType = (typeof POLAR_WEBHOOK_EVENT_TYPES)[number]
+
+export const POLAR_WEBHOOK_EVENT_TYPE_SET = new Set<PolarWebhookEventType>(POLAR_WEBHOOK_EVENT_TYPES)
 
 export type PolarWebhookEvent =
   | { type: 'subscription.created'; data: PolarSubscriptionWebhookData }
