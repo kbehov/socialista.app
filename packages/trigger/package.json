@@ -1,16 +1,38 @@
 {
   "name": "@socialista/trigger",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "private": true,
   "type": "module",
+  "description": "Shared Trigger.dev background tasks for Socialista",
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc -p tsconfig.check.json",
+    "dev:trigger": "trigger dev",
+    "deploy:trigger": "trigger deploy"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/trigger/index.ts",
+      "import": "./src/trigger/index.ts"
+    },
+    "./trigger": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "license": "ISC",
   "dependencies": {
-    "@trigger.dev/sdk": "^4.5.3"
+    "@fal-ai/client": "^1.10.1",
+    "@trigger.dev/sdk": "^4.5.3",
+    "ai": "^6.0.208"
+  },
+  "devDependencies": {
+    "@socialista/eslint-config": "workspace:^",
+    "@socialista/typescript-config": "workspace:^",
+    "@trigger.dev/build": "^4.5.3",
+    "@types/node": "^25.9.3",
+    "eslint": "^9.39.1",
+    "trigger.dev": "^4.5.3",
+    "typescript": "^6.0.3"
   }
 }

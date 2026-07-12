@@ -17,6 +17,10 @@
     "dev:web": "turbo run dev --filter=@socialista/web",
     "build:types": "turbo run build --filter=@socialista/types",
     "check-types:api": "turbo run check-types --filter=@socialista/api",
+    "dev:trigger": "turbo run dev:trigger --filter=@socialista/trigger",
+    "deploy:trigger": "turbo run deploy:trigger --filter=@socialista/trigger",
+    "lint:trigger": "turbo run lint --filter=@socialista/trigger",
+    "check-types:trigger": "turbo run check-types --filter=@socialista/trigger",
     "clean": "pnpm exec turbo run clean 2>/dev/null || true && rm -rf node_modules .pnpm-store .turbo",
     "clean:all": "rm -rf node_modules apps/*/node_modules packages/*/node_modules .pnpm-store .turbo",
     "clean:lock": "rm -rf pnpm-lock.yaml"

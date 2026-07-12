@@ -3,6 +3,7 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  '@depot/cli': true
   bcrypt: true
   esbuild: true
   protobufjs: true

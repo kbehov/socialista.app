@@ -1,0 +1,13 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "dev:trigger": {
+      "cache": false,
+      "persistent": true
+    },
+    "deploy:trigger": {
+      "cache": false,
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    }
+  }
+}
