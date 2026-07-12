@@ -1,9 +1,21 @@
 import { useVideoEditorStore } from './store'
 import { isMediaAssetAvailable } from './types'
 import type { MediaAsset } from './types'
-import type { TrackId } from '@socialista/types'
+import type { Project, TrackId } from '@socialista/types'
 
 export const ASSET_DRAG_MIME = 'application/x-socialista-asset-id'
+
+export function getTrackEndTime(project: Project, trackId: TrackId): number {
+  const track = project.tracks.find(t => t.id === trackId)
+  if (!track) return 0
+
+  let end = 0
+  for (const id of track.clips) {
+    const clip = project.clips[id]
+    if (clip) end = Math.max(end, clip.startTime + clip.duration)
+  }
+  return end
+}
 
 export function findTrackForAsset(asset: MediaAsset, createAudioTrack = true): TrackId | null {
   const trackType = asset.type === 'audio' ? 'audio' : 'video'

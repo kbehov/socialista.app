@@ -255,19 +255,44 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
     const w = canvas.width
     const h = canvas.height
-    const scale = Math.max(w / mediaW, h / mediaH)
-    const drawW = mediaW * scale
-    const drawH = mediaH * scale
-    const dx = (w - drawW) / 2
-    const dy = (h - drawH) / 2
     if (clip.type !== 'audio') {
       const filterStr = filtersToCss(clip.filters)
       ctx.filter = filterStr || 'none'
     }
     ctx.fillStyle = '#000'
     ctx.fillRect(0, 0, w, h)
+
+    if (clip.type === 'audio') {
+      ctx.filter = 'none'
+      return
+    }
+
+    const videoClip = clip as VideoClip
+    const transform = videoClip.transform
+
     try {
-      ctx.drawImage(source, dx, dy, drawW, drawH)
+      if (transform) {
+        const widthPx = (transform.width / 100) * w
+        const heightPx = widthPx * (mediaH / mediaW)
+        const xPx = (transform.x / 100) * w
+        const yPx = (transform.y / 100) * h
+        const cx = xPx + widthPx / 2
+        const cy = yPx + heightPx / 2
+
+        ctx.save()
+        ctx.translate(cx, cy)
+        ctx.rotate((transform.rotation * Math.PI) / 180)
+        ctx.translate(-widthPx / 2, -heightPx / 2)
+        ctx.drawImage(source, 0, 0, widthPx, heightPx)
+        ctx.restore()
+      } else {
+        const scale = Math.max(w / mediaW, h / mediaH)
+        const drawW = mediaW * scale
+        const drawH = mediaH * scale
+        const dx = (w - drawW) / 2
+        const dy = (h - drawH) / 2
+        ctx.drawImage(source, dx, dy, drawW, drawH)
+      }
     } catch {
       // Media not ready
     }
@@ -601,5 +626,9 @@ function getActiveClipVisualKey(
   const clip = pickActiveVideoClip(tracks, clips, assets, time)
   if (!clip) return null
   const filtersKey = filtersVisualKey(clip.filters)
-  return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${filtersKey}`
+  const transformKey =
+    clip.type !== 'audio' && clip.transform
+      ? `${clip.transform.x}:${clip.transform.y}:${clip.transform.width}:${clip.transform.rotation}`
+      : 'cover'
+  return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${filtersKey}:${transformKey}`
 }

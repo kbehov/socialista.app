@@ -3,6 +3,7 @@ import type {
   CanvasDimensions,
   Clip,
   ClipId,
+  ClipTransform,
   ExportSettings,
   Project,
   SerializedMediaAsset,
@@ -24,14 +25,18 @@ import {
   createTrack,
   DEFAULT_PROJECT_NAME,
   DEFAULT_RESOLUTION,
+  DEFAULT_TEXT_OVERLAY_TRANSFORM,
   DEFAULT_ZOOM,
   DEFAULT_IMAGE_CLIP_DURATION,
   getClipSourceDuration,
+  withClipSpeed,
   HISTORY_LIMIT,
   MAX_CLIP_SPEED,
   MIN_CLIP_SPEED,
+  OVERLAY_ANCHOR_PRESETS,
   snapToZoomLevel,
   toSerializedAsset,
+  type OverlayAnchor,
   withClipMoved,
   withClipOnTrack,
   withClipReordered,
@@ -116,6 +121,9 @@ interface EditorState {
   replaceClipAsset: (clipId: ClipId, newAssetId: string) => void
   /** Register a generated asset and swap it onto an existing clip in one undo step. */
   applyClipAiResult: (clipId: ClipId, asset: MediaAsset) => void
+  updateClipTransform: (clipId: ClipId, partial: Partial<ClipTransform>) => void
+  updateClipTransformLive: (clipId: ClipId, partial: Partial<ClipTransform>) => void
+  resetClipTransform: (clipId: ClipId) => void
   selectClip: (clipId: ClipId | null) => void
 
   // Text overlays
@@ -127,6 +135,11 @@ interface EditorState {
   setOverlayTiming: (id: string, startTime: number, endTime: number) => void
   splitOverlay: (id: string, atTime: number) => void
   removeOverlay: (id: string) => void
+  duplicateOverlay: (id: string) => void
+  resetOverlayTransform: (id: string) => void
+  anchorOverlay: (id: string, anchor: OverlayAnchor) => void
+  bringOverlayToFront: (id: string) => void
+  sendOverlayToBack: (id: string) => void
   reorderOverlay: (id: string, direction: 1 | -1) => void
   selectOverlay: (id: string | null) => void
 
@@ -239,6 +252,29 @@ function clampCrossTrackStart(
   const candidate = Math.max(0, desiredStart)
   if (wouldOverlap(project, trackId, candidate, duration, clipId)) return null
   return candidate
+}
+
+function applySpeedChange(
+  project: Project,
+  assets: AssetMap,
+  clipId: ClipId,
+  speed: number,
+): Project | null {
+  const clip = project.clips[clipId]
+  if (!clip || clip.type === 'audio') return null
+
+  const oldSpeed = clip.speed ?? 1
+  const newSpeed = clamp(speed, MIN_CLIP_SPEED, MAX_CLIP_SPEED)
+  if (newSpeed === oldSpeed) return project
+
+  const asset = assets[clip.assetId]
+  const sourceDuration = getClipSourceDuration(clip, asset)
+  const updated = withClipSpeed(clip, sourceDuration, newSpeed)
+  const oldEnd = clip.startTime + clip.duration
+  const deltaSec = updated.duration - clip.duration
+  const clips = { ...project.clips, [clipId]: updated }
+  const withDuration = recomputeDuration({ ...project, clips })
+  return shiftSubsequentClips(withDuration, clip.trackId, clipId, oldEnd, deltaSec)
 }
 
 function applyTrim(
@@ -614,9 +650,11 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     },
 
     setClipSpeed: (clipId, speed) => {
-      record(state => ({
-        project: mutateClip(state.project, clipId, clip => ({ ...clip, speed: clamp(speed, MIN_CLIP_SPEED, MAX_CLIP_SPEED) })),
-      }))
+      record(state => {
+        const next = applySpeedChange(state.project, state.assets, clipId, speed)
+        if (!next) return {}
+        return { project: next }
+      })
     },
 
     setClipFilter: (clipId, filter) => {
@@ -654,12 +692,11 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       })),
 
     setClipSpeedLive: (clipId, speed) =>
-      set(state => ({
-        project: mutateClip(state.project, clipId, clip => ({
-          ...clip,
-          speed: clamp(speed, MIN_CLIP_SPEED, MAX_CLIP_SPEED),
-        })),
-      })),
+      set(state => {
+        const next = applySpeedChange(state.project, state.assets, clipId, speed)
+        if (!next) return {}
+        return { project: next }
+      }),
 
     setClipFilterLive: (clipId, filter) =>
       set(state => ({
@@ -765,6 +802,36 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
 
     selectClip: clipId => set({ selectedClipId: clipId, selectedOverlayId: null }),
 
+    updateClipTransform: (clipId, partial) => {
+      record(state => ({
+        project: mutateClip(state.project, clipId, clip => {
+          if (clip.type === 'audio') return clip
+          const base = clip.transform ?? { x: 0, y: 0, width: 100, rotation: 0 }
+          return { ...clip, transform: { ...base, ...partial } }
+        }),
+      }))
+    },
+
+    updateClipTransformLive: (clipId, partial) => {
+      set(state => ({
+        project: mutateClip(state.project, clipId, clip => {
+          if (clip.type === 'audio') return clip
+          const base = clip.transform ?? { x: 0, y: 0, width: 100, rotation: 0 }
+          return { ...clip, transform: { ...base, ...partial } }
+        }),
+      }))
+    },
+
+    resetClipTransform: clipId => {
+      record(state => ({
+        project: mutateClip(state.project, clipId, clip => {
+          if (clip.type === 'audio') return clip
+          const { transform: _removed, ...rest } = clip
+          return rest
+        }),
+      }))
+    },
+
     addTextOverlay: (startTime, endTime) => {
       const maxZ = get().project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
       const overlay = createTextOverlay(startTime, endTime, maxZ + 1)
@@ -853,6 +920,82 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         },
         selectedOverlayId: state.selectedOverlayId === id ? null : state.selectedOverlayId,
       }))
+    },
+
+    duplicateOverlay: id => {
+      record(state => {
+        const overlay = state.project.textOverlays.find(o => o.id === id)
+        if (!overlay) return {}
+        const maxZ = state.project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
+        const copy: TextOverlay = {
+          ...overlay,
+          id: createEntityId('overlay'),
+          startTime: overlay.startTime,
+          endTime: overlay.endTime,
+          x: clamp(overlay.x + 2, 0, 90),
+          y: clamp(overlay.y + 2, 0, 90),
+          zIndex: maxZ + 1,
+        }
+        return {
+          project: recomputeDuration({
+            ...state.project,
+            textOverlays: [...state.project.textOverlays, copy],
+          }),
+          selectedOverlayId: copy.id,
+          selectedClipId: null,
+        }
+      })
+    },
+
+    resetOverlayTransform: id => {
+      record(state => ({
+        project: {
+          ...state.project,
+          textOverlays: state.project.textOverlays.map(o =>
+            o.id === id ? { ...o, ...DEFAULT_TEXT_OVERLAY_TRANSFORM } : o,
+          ),
+        },
+      }))
+    },
+
+    anchorOverlay: (id, anchor) => {
+      const preset = OVERLAY_ANCHOR_PRESETS[anchor]
+      record(state => ({
+        project: {
+          ...state.project,
+          textOverlays: state.project.textOverlays.map(o =>
+            o.id === id ? { ...o, ...preset } : o,
+          ),
+        },
+      }))
+    },
+
+    bringOverlayToFront: id => {
+      record(state => {
+        const maxZ = state.project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
+        return {
+          project: {
+            ...state.project,
+            textOverlays: state.project.textOverlays.map(o =>
+              o.id === id ? { ...o, zIndex: maxZ + 1 } : o,
+            ),
+          },
+        }
+      })
+    },
+
+    sendOverlayToBack: id => {
+      record(state => {
+        const minZ = state.project.textOverlays.reduce((m, o) => Math.min(m, o.zIndex), 0)
+        return {
+          project: {
+            ...state.project,
+            textOverlays: state.project.textOverlays.map(o =>
+              o.id === id ? { ...o, zIndex: minZ - 1 } : o,
+            ),
+          },
+        }
+      })
     },
 
     reorderOverlay: (id, direction) => {

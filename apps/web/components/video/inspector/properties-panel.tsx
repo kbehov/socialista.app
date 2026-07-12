@@ -75,10 +75,10 @@ export function PropertiesPanel({ embedded = false }: { embedded?: boolean }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {!embedded ? (
-        <div className="shrink-0 border-b bg-muted/15 px-2.5 py-2">
-          <div className="flex gap-0.5 rounded-lg border border-border/50 bg-muted/40 p-0.5">
+        <div className="shrink-0 border-b bg-background px-2.5 py-2">
+          <div className="flex gap-0.5 rounded-lg border border-border/50 bg-background p-0.5">
             {TABS.map(({ id, label, icon: Icon }) => (
               <Button
                 key={id}
@@ -101,12 +101,12 @@ export function PropertiesPanel({ embedded = false }: { embedded?: boolean }) {
           </div>
         </div>
       ) : (
-        <div className="shrink-0 space-y-2 border-b px-3 py-2.5">
+        <div className="shrink-0 space-y-2 border-b bg-background px-3 py-2.5">
           <div>
             <p className="text-xs font-semibold tracking-tight">Edit</p>
             <p className="text-[11px] text-muted-foreground">Clip, text, and project settings</p>
           </div>
-          <div className="flex gap-0.5 rounded-md border border-border/50 bg-muted/30 p-0.5">
+          <div className="flex gap-0.5 rounded-md border border-border/50 bg-background p-0.5">
             {TABS.map(({ id, label, icon: Icon }) => (
               <Button
                 key={id}

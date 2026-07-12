@@ -1,4 +1,5 @@
-import type { Clip, Project } from '@socialista/types'
+import { getClipSourceEnd } from '@/lib/video/defaults'
+import type { Clip, Project, VideoClip } from '@socialista/types'
 import type { OverlayPng } from './export-text-png'
 
 export type FilterGraph = {
@@ -58,13 +59,47 @@ export function buildFilterGraph(
     const outLabel = `v${idx}`
     const parts: string[] = []
     if (clip.type === 'video') {
-      parts.push(`trim=${clip.trimIn.toFixed(3)}:${(clip.trimIn + clip.duration).toFixed(3)}`)
+      parts.push(`trim=${clip.trimIn.toFixed(3)}:${getClipSourceEnd(clip).toFixed(3)}`)
       parts.push('setpts=PTS-STARTPTS')
       parts.push(`setpts=PTS/${clip.speed}`)
     } else {
       // Image: trim is N/A; loop input already constrained to duration
       parts.push('setpts=PTS-STARTPTS')
     }
+    const transform = (clip as VideoClip).transform
+    if (transform) {
+      const targetW = Math.max(1, Math.round((transform.width / 100) * resolution.width))
+      const overlayX = Math.round((transform.x / 100) * resolution.width)
+      const overlayY = Math.round((transform.y / 100) * resolution.height)
+      const scaledLabel = `${outLabel}_s`
+      const baseLabel = `${outLabel}_b`
+      parts.push(`scale=${targetW}:-1`)
+      if (transform.rotation !== 0) {
+        parts.push(`rotate=${((transform.rotation * Math.PI) / 180).toFixed(6)}:c=black@0`)
+      }
+      parts.push(`fps=${fps}`)
+      const eqParts: string[] = []
+      let blurPart = ''
+      let grayscalePart = ''
+      for (const f of clip.filters) {
+        if (f.type === 'brightness') eqParts.push(`brightness=${1 + f.value}`)
+        if (f.type === 'contrast') eqParts.push(`contrast=${1 + f.value}`)
+        if (f.type === 'saturation') eqParts.push(`saturation=${1 + f.value}`)
+        if (f.type === 'blur' && f.value > 0) blurPart = `gblur=sigma=${f.value}`
+        if (f.type === 'grayscale' && f.value > 0) grayscalePart = `hue=s=0${f.value < 1 ? `:s=${1 - f.value}` : ''}`
+      }
+      if (eqParts.length) parts.push(`eq=${eqParts.join(':')}`)
+      if (blurPart) parts.push(blurPart)
+      if (grayscalePart) parts.push(grayscalePart)
+      filterParts.push(`[${inLabel}]${parts.join(',')}[${scaledLabel}]`)
+      filterParts.push(
+        `color=c=black:s=${resolution.width}x${resolution.height}:d=${clip.duration.toFixed(3)}:r=${fps}[${baseLabel}]`,
+      )
+      filterParts.push(`[${baseLabel}][${scaledLabel}]overlay=x=${overlayX}:y=${overlayY}[${outLabel}]`)
+      videoLabels.push(`[${outLabel}]`)
+      return
+    }
+
     parts.push(`scale=${resolution.width}:${resolution.height}:force_original_aspect_ratio=increase`)
     parts.push(`crop=${resolution.width}:${resolution.height}`)
     parts.push(`fps=${fps}`)

@@ -4,11 +4,14 @@ import type {
   Clip,
   ClipId,
   Project,
+  TextLayerStyle,
   TextOverlay,
   Track,
   TrackId,
   VideoClip,
 } from '@socialista/types'
+
+import { getTextPreset, mergeTextPreset } from '@/lib/carousel/text-presets'
 
 import type { MediaAsset } from './types'
 import type { SerializedMediaAsset } from '@socialista/types'
@@ -18,7 +21,7 @@ export const DEFAULT_FPS = 30
 export const DEFAULT_PROJECT_NAME = 'Untitled video'
 
 export const ZOOM_LEVELS = [20, 40, 60, 100, 150, 220, 300] as const
-export const DEFAULT_ZOOM = 60
+export const DEFAULT_ZOOM = 20
 export const MIN_ZOOM = ZOOM_LEVELS[0]
 export const MAX_ZOOM = ZOOM_LEVELS[ZOOM_LEVELS.length - 1]
 
@@ -35,11 +38,43 @@ export const HARD_IMPORT_LIMIT = 500 * 1024 * 1024
 export const MIN_CLIP_SPEED = 0.25
 export const MAX_CLIP_SPEED = 4
 
+export const CLIP_SPEED_PRESETS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4] as const
+
+export function formatClipSpeed(speed: number): string {
+  if (speed === 1) return '1x'
+  const formatted = Number.isInteger(speed)
+    ? String(speed)
+    : speed.toFixed(2).replace(/\.?0+$/, '')
+  return `${formatted}x`
+}
+
+export function clipSpeedLabel(speed: number): string {
+  return speed === 1 ? 'Normal' : formatClipSpeed(speed)
+}
+
 export const DEFAULT_FONT = 'Inter, system-ui, sans-serif'
 
 export const DEFAULT_IMAGE_CLIP_DURATION = 5
 
-export const DEFAULT_TEXT_OVERLAY_STYLE: TextOverlay['style'] = {
+export type OverlayAnchor = 'top' | 'middle' | 'bottom'
+
+export const OVERLAY_ANCHOR_PRESETS: Record<
+  OverlayAnchor,
+  Pick<TextOverlay, 'x' | 'y' | 'width'>
+> = {
+  top: { x: 10, y: 8, width: 80 },
+  middle: { x: 10, y: 42, width: 80 },
+  bottom: { x: 10, y: 78, width: 80 },
+}
+
+export const DEFAULT_TEXT_OVERLAY_TRANSFORM: Pick<TextOverlay, 'x' | 'y' | 'width' | 'rotation'> = {
+  x: 10,
+  y: 40,
+  width: 80,
+  rotation: 0,
+}
+
+export const DEFAULT_TEXT_LAYER_BASE: TextLayerStyle = {
   fontFamily: DEFAULT_FONT,
   fontSize: 64,
   fontWeight: 'bold',
@@ -50,8 +85,56 @@ export const DEFAULT_TEXT_OVERLAY_STYLE: TextOverlay['style'] = {
   lineHeight: 1.2,
   padding: 0,
   borderRadius: 0,
-  animation: 'none',
+  textStrokeColor: null,
+  textStrokeWidth: 0,
+  textShadow: null,
 }
+
+export function overlayStyleFromLayer(layer: TextLayerStyle): TextOverlay['style'] {
+  return {
+    fontFamily: layer.fontFamily,
+    fontSize: layer.fontSize,
+    fontWeight: layer.fontWeight,
+    color: layer.color,
+    backgroundColor: layer.backgroundColor,
+    textAlign: layer.textAlign,
+    letterSpacing: layer.letterSpacing,
+    lineHeight: layer.lineHeight,
+    padding: layer.padding,
+    borderRadius: layer.borderRadius,
+    textStrokeColor: layer.textStrokeColor ?? null,
+    textStrokeWidth: layer.textStrokeWidth ?? 0,
+    textShadow: layer.textShadow ?? null,
+    animation: 'none',
+  }
+}
+
+export function layerStyleFromOverlay(style: TextOverlay['style']): TextLayerStyle {
+  return {
+    ...DEFAULT_TEXT_LAYER_BASE,
+    fontFamily: style.fontFamily,
+    fontSize: style.fontSize,
+    fontWeight: style.fontWeight,
+    color: style.color,
+    backgroundColor: style.backgroundColor,
+    textAlign: style.textAlign,
+    letterSpacing: style.letterSpacing,
+    lineHeight: style.lineHeight,
+    padding: style.padding,
+    borderRadius: style.borderRadius,
+    textStrokeColor: style.textStrokeColor ?? null,
+    textStrokeWidth: style.textStrokeWidth ?? 0,
+    textShadow: style.textShadow ?? null,
+  }
+}
+
+function defaultTextOverlayStyle(): TextOverlay['style'] {
+  const preset = getTextPreset('tiktok-classic')
+  if (!preset) return overlayStyleFromLayer(DEFAULT_TEXT_LAYER_BASE)
+  return overlayStyleFromLayer(mergeTextPreset(DEFAULT_TEXT_LAYER_BASE, preset.style))
+}
+
+export const DEFAULT_TEXT_OVERLAY_STYLE: TextOverlay['style'] = defaultTextOverlayStyle()
 
 export function createEntityId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`
@@ -182,6 +265,31 @@ export function snapToZoomLevel(zoom: number, direction: 1 | -1): number {
   }
   const next = clamp(idx + direction, 0, ZOOM_LEVELS.length - 1)
   return ZOOM_LEVELS[next]!
+}
+
+/** Seconds of source media covered by a clip at its current speed. */
+export function getClipSourceSpan(clip: Pick<VideoClip, 'duration' | 'speed'>): number {
+  return clip.duration * (clip.speed ?? 1)
+}
+
+/** End time in source media for a video clip (exclusive). */
+export function getClipSourceEnd(clip: Pick<VideoClip, 'trimIn' | 'duration' | 'speed'>): number {
+  return clip.trimIn + getClipSourceSpan(clip)
+}
+
+/**
+ * Apply a new playback speed while preserving source coverage.
+ * Timeline duration scales inversely with speed; trimOut is updated for video.
+ */
+export function withClipSpeed(clip: VideoClip, sourceDuration: number, speed: number): VideoClip {
+  const sourceSpan = getClipSourceSpan(clip)
+  const nextSpeed = clamp(speed, MIN_CLIP_SPEED, MAX_CLIP_SPEED)
+  const duration = Math.max(0.1, sourceSpan / nextSpeed)
+  const trimOut =
+    clip.type === 'video'
+      ? Math.max(0, sourceDuration - clip.trimIn - duration * nextSpeed)
+      : clip.trimOut
+  return { ...clip, speed: nextSpeed, duration, trimOut }
 }
 
 /**

@@ -1,22 +1,27 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
 import { seekPreview } from '@/hooks/video/use-playback'
 import { fitVideoPreviewInWorkspace } from '@/lib/carousel/canvas-viewport'
 import { pickActiveVideoClip } from '@/lib/video/active-clip'
+import { hitTestOverlayAt, pointerToCanvasPercent } from '@/lib/video/canvas-hit-test'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import { cn } from '@/lib/utils'
 import { FilmIcon, Loader2Icon } from 'lucide-react'
-import { SafeZoneOverlay, isVerticalReelsFormat } from './safe-zone-overlay'
 import { SelectedClipActionBar } from '../timeline/selected-clip-action-bar'
 import { TextOverlayRenderer } from './text-overlay-renderer'
+import { ClipInteractionLayer } from './clip-interaction-layer'
+import {
+  CanvasElementContextMenu,
+  type CanvasContextTarget,
+} from './element-context-menu'
+import { SelectedOverlayActionBar } from './selected-overlay-action-bar'
 
 type PreviewCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>
   previewZoom: number
-  showSafeZone: boolean
   isBuffering?: boolean
 }
 
@@ -35,7 +40,6 @@ function PreviewEmptyState() {
 export function PreviewCanvas({
   canvasRef,
   previewZoom,
-  showSafeZone,
   isBuffering = false,
 }: PreviewCanvasProps) {
   const artboardRef = useRef<HTMLDivElement>(null)
@@ -47,14 +51,15 @@ export function PreviewCanvas({
   const clips = useVideoEditorStore(s => s.project.clips)
   const assets = useVideoEditorStore(s => s.assets)
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
+  const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
+  const textOverlays = useVideoEditorStore(s => s.project.textOverlays)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const workspaceSize = useCanvasWorkspaceSize()
+  const [contextTarget, setContextTarget] = useState<CanvasContextTarget | null>(null)
+  const [editOverlayRequestId, setEditOverlayRequestId] = useState<string | null>(null)
 
   const isEmpty = duration <= 0
-  const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
-  const isReelsFormat = isVerticalReelsFormat(resolution.width, resolution.height)
-  const showReelsSafeZone = showSafeZone && isReelsFormat
   const zoom = Math.max(previewZoom, 0.01)
 
   const activeClip = useMemo(
@@ -67,6 +72,32 @@ export function PreviewCanvas({
     !isPlaying && activeClip && activeAsset && isMediaAssetAvailable(activeAsset),
   )
   const isActiveClipSelected = canSelectClip && selectedClipId === activeClip?.id
+  const isOverlaySelected = Boolean(selectedOverlayId && !isPlaying)
+
+  const handleContextMenuResolve = useCallback(
+    (e: React.MouseEvent): CanvasContextTarget => {
+      const rect = artboardRef.current?.getBoundingClientRect()
+      if (!rect) return { kind: 'empty' }
+
+      const { x, y } = pointerToCanvasPercent(e.clientX, e.clientY, rect)
+      const hitOverlay = hitTestOverlayAt(textOverlays, playhead, x, y)
+      if (hitOverlay) {
+        selectOverlay(hitOverlay.id)
+        return { kind: 'overlay', overlayId: hitOverlay.id }
+      }
+
+      if (activeClip) {
+        selectClip(activeClip.id)
+        return { kind: 'clip', clipId: activeClip.id }
+      }
+
+      return { kind: 'empty' }
+    },
+    [activeClip, playhead, selectClip, selectOverlay, textOverlays],
+  )
+
+  const mediaWidth = activeAsset?.width ?? (activeClip?.type === 'image' ? 1080 : 1920)
+  const mediaHeight = activeAsset?.height ?? (activeClip?.type === 'image' ? 1080 : 1080)
 
   const baseSize = useMemo(() => {
     if (workspaceSize.width <= 0 || workspaceSize.height <= 0) {
@@ -83,10 +114,11 @@ export function PreviewCanvas({
 
   const baseWidth = baseSize.width
   const baseHeight = baseSize.height
-  const visualWidth = Math.round(baseWidth * zoom)
-  const visualHeight = Math.round(baseHeight * zoom)
+  const artboardFrameInset = 8
+  const visualWidth = Math.round(baseWidth * zoom) + artboardFrameInset
+  const showCanvasActions = isActiveClipSelected || isOverlaySelected
   const isMeasured = baseWidth > 0 && baseHeight > 0
-  const scale = isMeasured ? visualWidth / resolution.width : 0
+  const scale = isMeasured ? (baseWidth * zoom) / resolution.width : 0
 
   const handleCanvasPointerDown = useCallback(() => {
     if (isPlaying) return
@@ -112,56 +144,95 @@ export function PreviewCanvas({
 
   return (
     <div className="video-editor-preview-scroll h-full min-h-0 w-full overflow-auto overscroll-contain">
-      <div className="flex min-h-full min-w-full items-center justify-center p-8">
+      <div className="box-border flex h-full w-max min-w-full items-center justify-center p-4">
         <div
-          className={cn('relative shrink-0', !isMeasured && 'invisible')}
-          style={{
-            width: isMeasured ? visualWidth : undefined,
-            height: isMeasured ? visualHeight : undefined,
-          }}
+          className={cn('relative flex w-auto shrink-0 flex-col items-center gap-2', !isMeasured && 'invisible')}
         >
-          <div
-            ref={artboardRef}
-            data-video-canvas
-            className={cn(
-              'relative overflow-hidden rounded-lg bg-black shadow-md',
-              isActiveClipSelected
-                ? 'ring-2 ring-primary/25'
-                : 'ring-1 ring-border/40',
-            )}
-            style={{
-              width: isMeasured ? baseWidth : undefined,
-              height: isMeasured ? baseHeight : undefined,
-              transform: isMeasured && zoom !== 1 ? `scale(${zoom})` : undefined,
-              transformOrigin: 'top left',
-            }}
-          >
-            <canvas
-              ref={canvasRef}
-              className="pointer-events-none block"
-              style={isMeasured ? { width: baseWidth, height: baseHeight } : undefined}
-            />
-            <TextOverlayRenderer
-              artboardRef={artboardRef}
-              scale={scale}
-              canSelectClip={canSelectClip}
-              onBackgroundPointerDown={handleCanvasPointerDown}
-            />
-            <SafeZoneOverlay
-              visible={showReelsSafeZone}
-              canvasWidth={resolution.width}
-              canvasHeight={resolution.height}
-              formatId={formatPresetId}
-            />
-            {isActiveClipSelected && activeClip ? (
-              <SelectedClipActionBar clipId={activeClip.id} variant="floating" />
-            ) : null}
-            {isBuffering && isPlaying ? (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
-                <Loader2Icon className="size-6 animate-spin text-white/70" aria-hidden />
+          <div style={{ width: isMeasured ? visualWidth : undefined }}>
+            <CanvasElementContextMenu
+              target={contextTarget}
+              onTargetChange={setContextTarget}
+              onContextMenuResolve={handleContextMenuResolve}
+              onEditOverlay={id => {
+                selectOverlay(id)
+                setEditOverlayRequestId(id)
+              }}
+            >
+              <div
+                className={cn(
+                  'rounded-xl bg-background/80 p-1 shadow-lg ring-1 ring-border/50 backdrop-blur-[2px]',
+                  showCanvasActions ? 'ring-primary/35' : undefined,
+                )}
+              >
+                <div
+                  className="relative"
+                  style={
+                    isMeasured
+                      ? {
+                          width: Math.round(baseWidth * zoom),
+                          height: Math.round(baseHeight * zoom),
+                        }
+                      : undefined
+                  }
+                >
+                  <div
+                    ref={artboardRef}
+                    data-video-canvas
+                    className={cn(
+                      'absolute left-0 top-0 overflow-hidden rounded-lg bg-black shadow-[0_12px_40px_-12px_rgba(0,0,0,0.55)]',
+                      showCanvasActions ? 'ring-2 ring-primary/40' : 'ring-1 ring-black/20',
+                    )}
+                    style={{
+                      width: isMeasured ? baseWidth : undefined,
+                      height: isMeasured ? baseHeight : undefined,
+                      transform: isMeasured && zoom !== 1 ? `scale(${zoom})` : undefined,
+                      transformOrigin: 'top left',
+                    }}
+                  >
+                  <canvas
+                    ref={canvasRef}
+                    className="pointer-events-none block"
+                    style={isMeasured ? { width: baseWidth, height: baseHeight } : undefined}
+                  />
+                  <TextOverlayRenderer
+                    artboardRef={artboardRef}
+                    scale={scale}
+                    canSelectClip={canSelectClip}
+                    onBackgroundPointerDown={handleCanvasPointerDown}
+                    editRequestId={editOverlayRequestId}
+                    onEditRequestHandled={() => setEditOverlayRequestId(null)}
+                  />
+                  {isActiveClipSelected && activeClip ? (
+                    <ClipInteractionLayer
+                      clipId={activeClip.id}
+                      artboardRef={artboardRef}
+                      canvasWidth={resolution.width}
+                      canvasHeight={resolution.height}
+                      mediaWidth={mediaWidth}
+                      mediaHeight={mediaHeight}
+                    />
+                  ) : null}
+                  {isBuffering && isPlaying ? (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                      <Loader2Icon className="size-6 animate-spin text-white/70" aria-hidden />
+                    </div>
+                  ) : null}
+                  </div>
+                </div>
               </div>
-            ) : null}
+            </CanvasElementContextMenu>
           </div>
+
+          {isActiveClipSelected && activeClip ? (
+            <SelectedClipActionBar clipId={activeClip.id} variant="floating" />
+          ) : null}
+          {isOverlaySelected && selectedOverlayId ? (
+            <SelectedOverlayActionBar
+              overlayId={selectedOverlayId}
+              variant="floating"
+              onEditText={() => setEditOverlayRequestId(selectedOverlayId)}
+            />
+          ) : null}
         </div>
       </div>
     </div>

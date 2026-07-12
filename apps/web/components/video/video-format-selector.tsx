@@ -9,15 +9,16 @@ import {
   SelectLabel,
   SelectTrigger,
 } from '@/components/ui/select'
-import { formatAspectRatio, type AspectRatioPreset } from '@/lib/carousel/aspect-ratios'
+import { formatAspectRatio } from '@/lib/carousel/aspect-ratios'
 import {
   VIDEO_FORMAT_PRESETS,
+  type VideoFormatPreset,
   type VideoFormatPresetId,
 } from '@/lib/video/format-presets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { cn } from '@/lib/utils'
 
-function FormatOption({ preset, className }: { preset: AspectRatioPreset; className?: string }) {
+function FormatOption({ preset, className }: { preset: VideoFormatPreset; className?: string }) {
   return (
     <div className={cn('flex min-w-0 items-center gap-2', className)}>
       <PlatformIcon platform={preset.platform} />
@@ -36,7 +37,7 @@ function FormatOption({ preset, className }: { preset: AspectRatioPreset; classN
   )
 }
 
-function FormatTriggerLabel({ preset }: { preset: AspectRatioPreset }) {
+function FormatTriggerLabel({ preset }: { preset: VideoFormatPreset }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
       <PlatformIcon platform={preset.platform} size={14} />

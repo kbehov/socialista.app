@@ -14,6 +14,7 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { ClipSpeedContextMenuSection } from '@/components/video/clip-speed-menu'
 import {
   CopyIcon,
   FilmIcon,
@@ -30,9 +31,10 @@ import { TrackList } from './track-list'
 import { TextOverlayBar } from './text-overlay-bar'
 import type { Clip } from '@socialista/types'
 
-const TRACK_HEADER_WIDTH = 160
-const TRACK_ROW_HEIGHT = 64
-const RULER_HEIGHT = 28
+const TRACK_HEADER_WIDTH = 120
+const TRACK_ROW_HEIGHT = 48
+const RULER_HEIGHT = 22
+const TEXT_OVERLAY_ROW_HEIGHT = 28
 const MIN_TIMELINE_WIDTH = 800
 
 type TimelineMenuTarget =
@@ -174,7 +176,7 @@ export function Timeline() {
                 <div className="sticky top-0 z-10 flex bg-background">
                   <div
                     data-timeline-chrome
-                    className="shrink-0 border-b border-r bg-muted/40"
+                    className="shrink-0 border-b border-r bg-background"
                     style={{ width: TRACK_HEADER_WIDTH, height: RULER_HEIGHT }}
                   />
                   <div
@@ -192,14 +194,14 @@ export function Timeline() {
                 <div className="flex border-b">
                   <div
                     data-timeline-chrome
-                    className="shrink-0 border-r px-2 py-1 text-xs font-medium text-muted-foreground"
-                    style={{ width: TRACK_HEADER_WIDTH, height: 36 }}
+                    className="flex shrink-0 items-center border-r px-2 text-[11px] font-medium text-muted-foreground"
+                    style={{ width: TRACK_HEADER_WIDTH, height: TEXT_OVERLAY_ROW_HEIGHT }}
                   >
-                    Text overlays
+                    Text
                   </div>
                   <div
                     className="relative cursor-crosshair touch-none"
-                    style={{ width: timelineWidth, height: 36 }}
+                    style={{ width: timelineWidth, height: TEXT_OVERLAY_ROW_HEIGHT }}
                     onPointerDown={handleScrubPointerDown}
                     onPointerMove={handleScrubPointerMove}
                   >
@@ -244,6 +246,7 @@ function TimelineContextMenuContent({
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
   const duplicateClip = useVideoEditorStore(s => s.duplicateClip)
+  const duplicateOverlay = useVideoEditorStore(s => s.duplicateOverlay)
   const removeClip = useVideoEditorStore(s => s.removeClip)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
@@ -284,6 +287,7 @@ function TimelineContextMenuContent({
           Duplicate
           <ContextMenuShortcut>⌘D</ContextMenuShortcut>
         </ContextMenuItem>
+        <ClipSpeedContextMenuSection clipId={target.clipId} disabled={locked} />
         <ContextMenuSeparator />
         <ContextMenuItem disabled={locked} variant="destructive" onSelect={() => removeClip(target.clipId)}>
           <Trash2Icon />
@@ -307,6 +311,11 @@ function TimelineContextMenuContent({
           Go to overlay start
         </ContextMenuItem>
         <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => duplicateOverlay(target.overlayId)}>
+          <CopyIcon />
+          Duplicate
+          <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+        </ContextMenuItem>
         <ContextMenuItem disabled={!canSplit} onSelect={() => splitOverlay(target.overlayId, playhead)}>
           <ScissorsIcon />
           Split at playhead

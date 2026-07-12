@@ -73,10 +73,10 @@ export function VideoStudioSidebar({ className }: { className?: string }) {
   }, [])
 
   return (
-    <div className={cn('relative flex h-full min-h-0 min-w-0 shrink-0', className)}>
+    <div className={cn('relative flex h-full min-h-0 min-w-0 shrink-0 bg-background', className)}>
       <nav
         aria-label="Editor panels"
-        className="video-editor-rail flex w-14 shrink-0 flex-col gap-1 border-r px-1.5 py-2"
+        className="video-editor-rail flex w-14 shrink-0 flex-col gap-1 border-r bg-background px-1.5 py-2"
       >
         <RailButton
           active={tab === 'media'}
@@ -94,7 +94,7 @@ export function VideoStudioSidebar({ className }: { className?: string }) {
 
       <div
         className={cn(
-          'video-editor-panel relative flex min-w-0 shrink-0 flex-col overflow-hidden border-r transition-[width,opacity] duration-200 ease-out',
+          'video-editor-panel relative flex min-w-0 shrink-0 flex-col overflow-hidden border-r bg-background transition-[width,opacity] duration-200 ease-out',
           panelOpen ? 'w-60 opacity-100 lg:w-64 xl:w-[280px]' : 'w-0 border-r-0 opacity-0',
         )}
         aria-hidden={!panelOpen}

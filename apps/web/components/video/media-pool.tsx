@@ -9,6 +9,7 @@ import {
   ASSET_DRAG_MIME,
 } from '@/lib/video/timeline-placement'
 import { placeAssetAtPlayhead } from '@/lib/video/import-placement'
+import { VideoUrlImportForm } from '@/components/video/video-url-import-panel'
 import { FilmIcon, ImageIcon, Loader2Icon, MusicIcon, PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -102,6 +103,8 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
           Import
         </Button>
       </div>
+
+      <VideoUrlImportForm className="shrink-0" />
 
       <div
         className={cn(

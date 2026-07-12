@@ -5,73 +5,45 @@ import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ClipAiProvider } from '@/components/video/ai/clip-ai-provider'
+import { AiComingSoonProvider, useAiComingSoon } from '@/components/video/ai/ai-coming-soon-dialog'
 import { usePlayback } from '@/hooks/video/use-playback'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
 import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/carousel/defaults'
-import { formatTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { VideoFormatSelector, VideoResolutionBadge } from '@/components/video/video-format-selector'
+import { VideoFormatSelector } from '@/components/video/video-format-selector'
 import { VideoSaveBar } from '@/components/video/video-save-bar'
-import { isVerticalReelsFormat } from '@/components/video/preview/safe-zone-overlay'
-import { DownloadIcon, Redo2Icon, ShieldCheckIcon, Undo2Icon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { DownloadIcon, LayoutTemplateIcon, Redo2Icon, Undo2Icon } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 import { ExportModal } from './export/export-modal'
 import { PreviewCanvas } from './preview/preview-canvas'
-import { VideoZoomControls } from './preview/video-zoom-controls'
 import { Timeline } from './timeline/timeline'
 import { SelectedClipActionBar } from './timeline/selected-clip-action-bar'
+import { SelectedOverlayActionBar } from './preview/selected-overlay-action-bar'
 import { TimelineTransport } from './timeline/timeline-transport'
 
 export function VideoEditor() {
   return (
     <ClipAiProvider>
-      <VideoEditorContent />
+      <AiComingSoonProvider>
+        <VideoEditorContent />
+      </AiComingSoonProvider>
     </ClipAiProvider>
-  )
-}
-
-function VideoEditorTimecode({ fps, duration }: { fps: number; duration: number }) {
-  const spanRef = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    const formatTime = (playhead: number) =>
-      `${formatTimecode(playhead, fps)} / ${formatTimecode(duration, fps)}`
-
-    if (spanRef.current) {
-      spanRef.current.textContent = formatTime(useVideoEditorStore.getState().playhead)
-    }
-
-    return useVideoEditorStore.subscribe((state, prevState) => {
-      if (state.playhead === prevState.playhead) return
-      if (spanRef.current) {
-        spanRef.current.textContent = formatTime(state.playhead)
-      }
-    })
-  }, [fps, duration])
-
-  const initialPlayhead = useVideoEditorStore.getState().playhead
-  return (
-    <span ref={spanRef}>
-      {formatTimecode(initialPlayhead, fps)} / {formatTimecode(duration, fps)}
-    </span>
   )
 }
 
 function VideoEditorContent() {
   useVideoShortcuts()
+  const aiComingSoon = useAiComingSoon()
   const workspaceRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const playback = usePlayback(canvasRef)
   const [previewZoom, setPreviewZoom] = useState(DEFAULT_VIDEO_PREVIEW_ZOOM)
-  const [showSafeZone, setShowSafeZone] = useState(true)
   const undo = useVideoEditorStore(s => s.undo)
   const redo = useVideoEditorStore(s => s.redo)
   const past = useVideoEditorStore(s => s.past)
   const future = useVideoEditorStore(s => s.future)
   const duration = useVideoEditorStore(s => s.project.duration)
-  const fps = useVideoEditorStore(s => s.project.fps)
-  const resolution = useVideoEditorStore(s => s.project.resolution)
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectClip = useVideoEditorStore(s => s.selectClip)
@@ -84,7 +56,6 @@ function VideoEditorContent() {
   const canRedo = future.length > 0
   const canSplit = Boolean(selectedClipId || selectedOverlayId)
   const canExport = duration > 0
-  const isReelsFormat = isVerticalReelsFormat(resolution.width, resolution.height)
 
   const handleSplit = useCallback(() => {
     const playhead = useVideoEditorStore.getState().playhead
@@ -113,7 +84,7 @@ function VideoEditorContent() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-      <div className="video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-1.5 sm:gap-2 sm:px-3">
+      <div className="video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b bg-background px-2 py-1.5 sm:gap-2 sm:px-3">
         <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -139,6 +110,22 @@ function VideoEditorContent() {
 
         <div className="min-w-0 flex-1" />
 
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="hidden h-8 gap-1.5 px-2 text-xs text-muted-foreground md:flex"
+              onClick={() => aiComingSoon.open('smart-layout')}
+            >
+              <LayoutTemplateIcon className="size-3.5" />
+              <span className="hidden lg:inline">Auto-arrange</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Smart layout (coming soon)</TooltipContent>
+        </Tooltip>
+
         <VideoFormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
         <VideoSaveBar showLabel={false} className="hidden min-w-0 max-w-[160px] shrink-0 md:flex lg:max-w-[180px]" />
 
@@ -162,69 +149,32 @@ function VideoEditorContent() {
         </Tooltip>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
-          <div
-            ref={workspaceRef}
-            className="video-editor-canvas-area relative min-h-0 w-full flex-1 overflow-hidden"
-            onPointerDown={handleWorkspacePointerDown}
-          >
-            <PreviewCanvas
-              canvasRef={canvasRef}
-              previewZoom={previewZoom}
-              showSafeZone={showSafeZone}
-              isBuffering={playback.isBuffering}
-            />
-          </div>
-        </CanvasWorkspaceProvider>
-
-        <div className="video-editor-status-bar mt-auto flex min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 py-1.5">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
-              <span className="font-medium text-foreground">Time</span>
-              <VideoEditorTimecode fps={fps} duration={duration} />
-            </div>
-            <span className="hidden h-4 w-px shrink-0 bg-border sm:block" aria-hidden />
-            <VideoResolutionBadge className="hidden sm:inline-flex" />
-            {isReelsFormat ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    data-canvas-controls
-                    className={cn(
-                      'h-7 gap-1.5 px-2 text-xs text-muted-foreground',
-                      showSafeZone && 'bg-primary/10 text-primary',
-                    )}
-                    onClick={() => setShowSafeZone(value => !value)}
-                    aria-pressed={showSafeZone}
-                    aria-label={showSafeZone ? 'Hide safe area guides' : 'Show safe area guides'}
-                  >
-                    <ShieldCheckIcon className="size-3.5 shrink-0" />
-                    <span className="hidden md:inline">Safe area</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[200px]">
-                  {showSafeZone ? 'Hide safe area guides' : 'Show safe area for Reels & TikTok UI'}
-                </TooltipContent>
-              </Tooltip>
-            ) : null}
-          </div>
-          <VideoZoomControls zoom={previewZoom} onZoomChange={setPreviewZoom} />
+      <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
+        <div
+          ref={workspaceRef}
+          className="video-editor-canvas-area relative min-h-0 w-full flex-1 overflow-hidden"
+          onPointerDown={handleWorkspacePointerDown}
+        >
+          <PreviewCanvas
+            canvasRef={canvasRef}
+            previewZoom={previewZoom}
+            isBuffering={playback.isBuffering}
+          />
         </div>
-      </div>
+      </CanvasWorkspaceProvider>
 
-      <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t">
+      <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t bg-background">
         <TimelineTransport
           playback={playback}
           onAddText={handleAddText}
           onSplit={handleSplit}
           canSplit={canSplit}
+          previewZoom={previewZoom}
+          onPreviewZoomChange={setPreviewZoom}
         />
         {selectedClipId ? <SelectedClipActionBar clipId={selectedClipId} /> : null}
-        <div className="h-[min(240px,32vh)] min-h-[180px] min-w-0 overflow-hidden lg:h-[220px]">
+        {selectedOverlayId ? <SelectedOverlayActionBar overlayId={selectedOverlayId} variant="toolbar" /> : null}
+        <div className="h-[min(168px,24vh)] min-h-[128px] min-w-0 overflow-hidden lg:h-[152px]">
           <Timeline />
         </div>
       </div>

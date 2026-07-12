@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
+import { layerStyleFromOverlay } from '@/lib/video/defaults'
 import { useOverlayInteraction } from '@/hooks/video/use-overlay-interaction'
 import { useVideoEditorStore } from '@/lib/video/store'
 import type { TextOverlay } from '@socialista/types'
@@ -13,6 +14,8 @@ type TextOverlayRendererProps = {
   scale: number
   canSelectClip?: boolean
   onBackgroundPointerDown?: () => void
+  editRequestId?: string | null
+  onEditRequestHandled?: () => void
 }
 
 export function TextOverlayRenderer({
@@ -20,6 +23,8 @@ export function TextOverlayRenderer({
   scale,
   canSelectClip = false,
   onBackgroundPointerDown,
+  editRequestId,
+  onEditRequestHandled,
 }: TextOverlayRendererProps) {
   const overlays = useVideoEditorStore(s => s.project.textOverlays)
   const playhead = useVideoEditorStore(s => s.playhead)
@@ -40,6 +45,7 @@ export function TextOverlayRenderer({
         interactive && canSelectClip && 'cursor-pointer',
       )}
       onPointerDown={e => {
+        if ((e.target as HTMLElement).closest('[data-clip-actions]')) return
         if (e.target === e.currentTarget) {
           onBackgroundPointerDown?.()
         }
@@ -53,6 +59,8 @@ export function TextOverlayRenderer({
           scale={scale}
           selected={overlay.id === selectedOverlayId}
           interactive={interactive}
+          editRequested={editRequestId === overlay.id}
+          onEditRequestHandled={onEditRequestHandled}
           onSelect={() => selectOverlay(overlay.id)}
           onCommit={partial => updateOverlay(overlay.id, partial)}
         />
@@ -67,6 +75,8 @@ function OverlayNode({
   scale,
   selected,
   interactive,
+  editRequested,
+  onEditRequestHandled,
   onSelect,
   onCommit,
 }: {
@@ -75,11 +85,19 @@ function OverlayNode({
   scale: number
   selected: boolean
   interactive: boolean
+  editRequested?: boolean
+  onEditRequestHandled?: () => void
   onSelect: () => void
   onCommit: (partial: Partial<TextOverlay>) => void
 }) {
   const [isEditingContent, setIsEditingContent] = useState(false)
   const editRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!editRequested) return
+    setIsEditingContent(true)
+    onEditRequestHandled?.()
+  }, [editRequested, onEditRequestHandled])
 
   const { draft, beginDrag, beginResize, beginRotate } = useOverlayInteraction({
     overlay,
@@ -88,7 +106,10 @@ function OverlayNode({
   })
 
   const effective = useMemo(() => (draft ? { ...overlay, ...draft } : overlay), [overlay, draft])
-  const textCss = useMemo(() => buildTextLayerCss(effective.style, scale), [effective.style, scale])
+  const textCss = useMemo(
+    () => buildTextLayerCss(layerStyleFromOverlay(effective.style), scale),
+    [effective.style, scale],
+  )
 
   useEffect(() => {
     if (!isEditingContent || !editRef.current) return

@@ -3,15 +3,28 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  formatPlanLimitValue,
   formatProductPrice,
   getDefaultCtaLabel,
   getDefaultPricingFootnote,
-  getProductFeatures,
+  getProductBenefitItems,
+  getProductPlanLimits,
+  type ProductBenefitItem,
+  type ProductPlanLimit,
 } from '@/lib/pricing'
 import { cn } from '@/lib/utils'
 import type { PolarProduct } from '@socialista/types'
-import { ArrowRightIcon, CheckIcon, SparklesIcon } from 'lucide-react'
+import {
+  ArrowRightIcon,
+  AtSignIcon,
+  CalendarDaysIcon,
+  CheckIcon,
+  CoinsIcon,
+  SparklesIcon,
+  UsersIcon,
+} from 'lucide-react'
 import Link from 'next/link'
+import type { ComponentType } from 'react'
 
 export type PricingCardProps = {
   product: PolarProduct
@@ -27,19 +40,79 @@ export type PricingCardProps = {
   className?: string
 }
 
-function PricingFeatureList({ features }: { features: string[] }) {
-  if (features.length === 0) return null
+const PLAN_LIMIT_ICONS: Record<ProductPlanLimit['key'], ComponentType<{ className?: string }>> = {
+  posts: CalendarDaysIcon,
+  members: UsersIcon,
+  accounts: AtSignIcon,
+}
+
+function PricingPlanLimits({ limits }: { limits: ProductPlanLimit[] }) {
+  if (limits.length === 0) return null
 
   return (
-    <ul className="space-y-3">
-      {features.map((feature, index) => (
-        <li key={`${feature}-${index}`} className="flex items-start gap-3 text-sm leading-5 text-foreground/90">
-          <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <CheckIcon className="size-2.5 stroke-[3]" />
-          </span>
-          <span>{feature}</span>
-        </li>
-      ))}
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/25">
+      <div
+        className={cn(
+          'grid divide-x divide-border/60',
+          limits.length === 1 && 'grid-cols-1',
+          limits.length === 2 && 'grid-cols-2',
+          limits.length >= 3 && 'grid-cols-3',
+        )}
+      >
+        {limits.map(limit => {
+          const Icon = PLAN_LIMIT_ICONS[limit.key]
+
+          return (
+            <div
+              key={limit.key}
+              className="flex flex-col items-center px-2 py-3.5 text-center"
+              aria-label={`${formatPlanLimitValue(limit.value)} ${limit.label}`}
+            >
+              <span className="flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border/50">
+                <Icon className="size-3.5" />
+              </span>
+              <p className="mt-2 text-xl font-semibold tracking-tight text-foreground tabular-nums">
+                {formatPlanLimitValue(limit.value)}
+              </p>
+              <p className="mt-0.5 text-[11px] leading-4 font-medium text-muted-foreground">{limit.shortLabel}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function PricingBenefitIcon({ type }: { type: string }) {
+  if (type === 'meter_credit') {
+    return <CoinsIcon className="size-3 stroke-[2.5]" />
+  }
+
+  return <CheckIcon className="size-2.5 stroke-[3]" />
+}
+
+function PricingBenefitsList({ benefits }: { benefits: ProductBenefitItem[] }) {
+  if (benefits.length === 0) return null
+
+  return (
+    <ul className="space-y-2.5">
+      {benefits.map(benefit => {
+        const isCredit = benefit.type === 'meter_credit'
+
+        return (
+          <li key={benefit.id} className="flex items-start gap-3 text-sm leading-5 text-foreground/90">
+            <span
+              className={cn(
+                'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full',
+                isCredit ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary',
+              )}
+            >
+              <PricingBenefitIcon type={benefit.type} />
+            </span>
+            <span className="min-w-0 pt-px">{benefit.description}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -104,7 +177,9 @@ export function PricingCard({
   className,
 }: PricingCardProps) {
   const pricing = formatProductPrice(product)
-  const featureList = getProductFeatures(product, features)
+  const planLimits = getProductPlanLimits(product)
+  const benefits = getProductBenefitItems(product, features)
+  const hasPlanContent = planLimits.length > 0 || benefits.length > 0
   const resolvedFeatured = isFeatured || product.metadata.featured === true
   const resolvedBadge =
     badge ??
@@ -164,9 +239,29 @@ export function PricingCard({
         {pricing.billingNote ? <p className="mt-2 text-xs text-muted-foreground">{pricing.billingNote}</p> : null}
       </div>
 
-      <div className="mt-6 flex-1">
-        <PricingFeatureList features={featureList} />
-      </div>
+      {hasPlanContent ? (
+        <div className="mt-6 flex-1 space-y-5">
+          {planLimits.length > 0 ? (
+            <div className="space-y-2.5">
+              <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">Plan capacity</p>
+              <PricingPlanLimits limits={planLimits} />
+            </div>
+          ) : null}
+
+          {benefits.length > 0 ? (
+            <div className="space-y-2.5">
+              {planLimits.length > 0 ? (
+                <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                  Also included
+                </p>
+              ) : null}
+              <PricingBenefitsList benefits={benefits} />
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-6 flex-1" />
+      )}
 
       <div className="mt-8 space-y-2">
         <PricingCardCta

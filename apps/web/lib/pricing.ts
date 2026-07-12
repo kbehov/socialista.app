@@ -114,11 +114,61 @@ export const formatProductPrice = (product: PolarProduct): FormattedProductPrice
   }
 }
 
-export const getProductFeatures = (product: PolarProduct, overrides?: string[]) => {
-  if (overrides?.length) return overrides
+export type PlanLimitKey = 'posts' | 'members' | 'accounts'
 
-  return product.benefits.map(benefit => benefit.description.trim()).filter(description => description.length > 0)
+export type ProductPlanLimit = {
+  key: PlanLimitKey
+  value: number
+  label: string
+  shortLabel: string
 }
+
+export type ProductBenefitItem = {
+  id: string
+  type: string
+  description: string
+}
+
+const PLAN_LIMIT_KEYS: PlanLimitKey[] = ['posts', 'members', 'accounts']
+
+const PLAN_LIMIT_LABELS: Record<PlanLimitKey, { label: string; shortLabel: string }> = {
+  posts: { label: 'Scheduled posts', shortLabel: 'Posts' },
+  members: { label: 'Team members', shortLabel: 'Members' },
+  accounts: { label: 'Social accounts', shortLabel: 'Accounts' },
+}
+
+const limitNumberFormatter = new Intl.NumberFormat('en-US')
+
+export const formatPlanLimitValue = (value: number) => limitNumberFormatter.format(value)
+
+export const getProductPlanLimits = (product: PolarProduct): ProductPlanLimit[] =>
+  PLAN_LIMIT_KEYS.flatMap(key => {
+    const raw = product.metadata[key]
+    if (typeof raw !== 'number' || raw <= 0) return []
+
+    return [{ key, value: raw, ...PLAN_LIMIT_LABELS[key] }]
+  })
+
+export const getProductBenefitItems = (product: PolarProduct, overrides?: string[]): ProductBenefitItem[] => {
+  if (overrides?.length) {
+    return overrides.map((description, index) => ({
+      id: `override-${index}`,
+      type: 'custom',
+      description: description.trim(),
+    }))
+  }
+
+  return product.benefits
+    .map(benefit => ({
+      id: benefit.id,
+      type: benefit.type,
+      description: benefit.description.trim(),
+    }))
+    .filter(benefit => benefit.description.length > 0)
+}
+
+export const getProductFeatures = (product: PolarProduct, overrides?: string[]) =>
+  getProductBenefitItems(product, overrides).map(benefit => benefit.description)
 
 export const getDefaultCtaLabel = (
   product: PolarProduct,

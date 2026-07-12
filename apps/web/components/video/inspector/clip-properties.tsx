@@ -3,13 +3,17 @@
 import { useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
-import type { ClipId } from '@socialista/types'
-import { Loader2Icon, SparklesIcon } from 'lucide-react'
+import { clipHasCustomTransform } from '@/lib/video/clip-transform'
+import type { ClipId, ClipTransform } from '@socialista/types'
+import { ChevronDownIcon, Loader2Icon, RotateCcwIcon, SparklesIcon } from 'lucide-react'
 import { useClipAiOptional } from '@/components/video/ai/clip-ai-provider'
+import { useAiComingSoonOptional } from '@/components/video/ai/ai-coming-soon-dialog'
+import { isVerticalReelsFormat } from '@/lib/video/format'
 import { Button } from '@/components/ui/button'
 import { FilterControls } from './filter-controls'
 import { Slider } from './slider'
 import { TransitionPicker } from './transition-picker'
+import { cn } from '@/lib/utils'
 
 export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const clip = useVideoEditorStore(s => s.project.clips[clipId])
@@ -25,10 +29,15 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const removeClipFilterLive = useVideoEditorStore(s => s.removeClipFilterLive)
   const setClipTransition = useVideoEditorStore(s => s.setClipTransition)
   const trimClip = useVideoEditorStore(s => s.trimClip)
+  const updateClipTransform = useVideoEditorStore(s => s.updateClipTransform)
+  const resetClipTransform = useVideoEditorStore(s => s.resetClipTransform)
+  const resolution = useVideoEditorStore(s => s.project.resolution)
   const clipAi = useClipAiOptional()
+  const aiComingSoon = useAiComingSoonOptional()
 
   const [trimInDraft, setTrimInDraft] = useState(() => clip?.trimIn.toFixed(2) ?? '0')
   const [trimOutDraft, setTrimOutDraft] = useState(() => clip?.trimOut.toFixed(2) ?? '0')
+  const [positionOpen, setPositionOpen] = useState(false)
 
   if (!clip) {
     return <div className="text-xs text-muted-foreground">No clip selected.</div>
@@ -44,6 +53,16 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
     aiMode === 'animate-image'
       ? 'Turn this still image into a short animated video clip.'
       : 'Apply AI edits to this video while keeping the same clip on the timeline.'
+  const isVertical = isVerticalReelsFormat(resolution.width, resolution.height)
+  const hasTransform = clip.type !== 'audio' && clipHasCustomTransform(clip)
+  const transform = clip.type !== 'audio' ? clip.transform : undefined
+
+  const setTransformField = (field: keyof ClipTransform, raw: string) => {
+    const value = parseFloat(raw)
+    if (Number.isNaN(value)) return
+    const base = transform ?? { x: 0, y: 0, width: 100, rotation: 0 }
+    updateClipTransform(clipId, { ...base, [field]: value })
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -73,6 +92,67 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
               </Button>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {clip.type !== 'audio' && isVertical && aiComingSoon ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 w-full gap-1.5"
+          onClick={() => aiComingSoon.open('auto-reframe')}
+        >
+          <SparklesIcon className="size-3.5 text-primary" />
+          Auto-reframe
+        </Button>
+      ) : null}
+
+      {clip.type !== 'audio' ? (
+        <div className="rounded-lg border">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
+            onClick={() => setPositionOpen(v => !v)}
+          >
+            Canvas position
+            <ChevronDownIcon className={cn('size-3.5 transition-transform', positionOpen && 'rotate-180')} />
+          </button>
+          {positionOpen ? (
+            <div className="flex flex-col gap-2 border-t px-3 py-3">
+              <p className="text-[10px] text-muted-foreground">
+                Drag handles on the preview to resize and reposition this clip.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(['x', 'y', 'width', 'rotation'] as const).map(field => (
+                  <label key={field} className="flex flex-col gap-1 text-xs">
+                    <span className="text-muted-foreground">
+                      {field === 'width' ? 'Width %' : field === 'rotation' ? 'Rotation °' : `${field.toUpperCase()} %`}
+                    </span>
+                    <input
+                      type="number"
+                      step={field === 'rotation' ? 1 : 0.1}
+                      defaultValue={transform?.[field] ?? (field === 'width' ? 100 : 0)}
+                      key={`${clipId}-${field}-${transform?.[field] ?? 'default'}`}
+                      onBlur={e => setTransformField(field, e.target.value)}
+                      className="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-xs tabular-nums"
+                    />
+                  </label>
+                ))}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 w-full gap-1.5"
+                disabled={!hasTransform}
+                onClick={() => resetClipTransform(clipId)}
+              >
+                <RotateCcwIcon className="size-3.5" />
+                Reset transform
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

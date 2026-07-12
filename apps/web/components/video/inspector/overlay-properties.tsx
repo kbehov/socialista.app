@@ -6,8 +6,19 @@ import { ColorPicker } from '@/components/carousel/primitives/color-picker'
 import { FontPicker } from '@/components/carousel/primitives/font-picker'
 import { AlignmentControl } from '@/components/carousel/primitives/alignment-control'
 import type { TextAnimation } from '@socialista/types'
+import type { OverlayAnchor } from '@/lib/video/defaults'
 import { Slider } from './slider'
 import { VideoTextPresetPicker } from './video-text-preset-picker'
+import { useAiComingSoonOptional } from '@/components/video/ai/ai-coming-soon-dialog'
+import { Button } from '@/components/ui/button'
+import { AlignCenterIcon, AlignEndVerticalIcon, AlignStartVerticalIcon, SparklesIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const ANCHORS: { id: OverlayAnchor; label: string; icon: typeof AlignStartVerticalIcon }[] = [
+  { id: 'top', label: 'Top', icon: AlignStartVerticalIcon },
+  { id: 'middle', label: 'Middle', icon: AlignCenterIcon },
+  { id: 'bottom', label: 'Bottom', icon: AlignEndVerticalIcon },
+]
 
 const ANIMATIONS: { value: TextAnimation; label: string }[] = [
   { value: 'none', label: 'None' },
@@ -24,6 +35,8 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
   const updateOverlayStyle = useVideoEditorStore(s => s.updateOverlayStyle)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const reorderOverlay = useVideoEditorStore(s => s.reorderOverlay)
+  const anchorOverlay = useVideoEditorStore(s => s.anchorOverlay)
+  const aiComingSoon = useAiComingSoonOptional()
   const [contentDraft, setContentDraft] = useState('')
   const [startDraft, setStartDraft] = useState('')
   const [endDraft, setEndDraft] = useState('')
@@ -71,6 +84,45 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
       <p className="text-[10px] text-muted-foreground">
         Drag on the timeline to move or trim. Press <kbd className="rounded border px-1">S</kbd> to split at the playhead.
       </p>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs text-muted-foreground">Position</span>
+        <div className="grid grid-cols-3 gap-1">
+          {ANCHORS.map(({ id, label, icon: Icon }) => (
+            <Button
+              key={id}
+              type="button"
+              size="sm"
+              variant="outline"
+              className={cn(
+                'h-8 gap-1 px-2 text-xs',
+                (id === 'top' && overlay.y <= 12) ||
+                  (id === 'middle' && overlay.y > 12 && overlay.y < 60) ||
+                  (id === 'bottom' && overlay.y >= 60)
+                  ? 'border-primary/50 bg-primary/10 text-primary'
+                  : '',
+              )}
+              onClick={() => anchorOverlay(overlay.id, id)}
+            >
+              <Icon className="size-3.5 shrink-0" />
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {aiComingSoon ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="h-8 w-full gap-1.5 bg-primary/10 text-primary hover:bg-primary/15"
+          onClick={() => aiComingSoon.open('smart-text')}
+        >
+          <SparklesIcon className="size-3.5" />
+          Generate caption
+        </Button>
+      ) : null}
 
       <VideoTextPresetPicker
         currentStyle={overlay.style}

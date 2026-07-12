@@ -1,12 +1,15 @@
 'use client'
 
 import { useClipAiOptional } from '@/components/video/ai/clip-ai-provider'
+import { useAiComingSoonOptional } from '@/components/video/ai/ai-coming-soon-dialog'
+import { ClipSpeedDropdown } from '@/components/video/clip-speed-menu'
+import { isVerticalReelsFormat } from '@/lib/video/format'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { cn } from '@/lib/utils'
 import type { ClipId } from '@socialista/types'
-import { CopyIcon, Loader2Icon, ScissorsIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
+import { CopyIcon, Loader2Icon, RotateCcwIcon, ScissorsIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
 
 type SelectedClipActionBarProps = {
   clipId: ClipId
@@ -21,7 +24,9 @@ function useClipActionState(clipId: ClipId) {
     clip ? s.project.tracks.find(t => t.id === clip.trackId) : undefined,
   )
   const playhead = useVideoEditorStore(s => s.playhead)
+  const resolution = useVideoEditorStore(s => s.project.resolution)
   const clipAi = useClipAiOptional()
+  const aiComingSoon = useAiComingSoonOptional()
 
   if (!clip) return null
 
@@ -42,6 +47,8 @@ function useClipActionState(clipId: ClipId) {
     canUseAi,
     isAiProcessing,
     aiLabel,
+    isVertical: isVerticalReelsFormat(resolution.width, resolution.height),
+    aiComingSoon,
   }
 }
 
@@ -54,10 +61,12 @@ export function SelectedClipActionBar({
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const duplicateClip = useVideoEditorStore(s => s.duplicateClip)
   const removeClip = useVideoEditorStore(s => s.removeClip)
+  const resetClipTransform = useVideoEditorStore(s => s.resetClipTransform)
 
   if (!state) return null
 
-  const { clip, asset, locked, canSplit, clipAi, canUseAi, isAiProcessing, aiLabel } = state
+  const { clip, asset, locked, canSplit, clipAi, canUseAi, isAiProcessing, aiLabel, isVertical, aiComingSoon } =
+    state
 
   const handleSplit = () => {
     const playhead = useVideoEditorStore.getState().playhead
@@ -67,30 +76,58 @@ export function SelectedClipActionBar({
   const showAi = clip.type !== 'audio' && clipAi
 
   if (variant === 'floating') {
-    if (!showAi) return null
-
     return (
-      <div data-clip-actions className={cn('pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center', className)}>
-        <div className="pointer-events-auto flex items-center gap-0.5 rounded-xl border bg-background/95 p-0.5 shadow-md backdrop-blur-sm">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                className="h-8 gap-1.5 bg-primary/10 px-3 text-primary hover:bg-primary/15"
-                onClick={() => clipAi.openClipAi(clipId)}
-                disabled={!canUseAi || isAiProcessing}
-              >
-                {isAiProcessing ? (
-                  <Loader2Icon className="size-3.5 animate-spin" />
-                ) : (
-                  <SparklesIcon className="size-3.5" />
-                )}
-                {isAiProcessing ? 'Generating…' : aiLabel}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{isAiProcessing ? 'Generating…' : aiLabel}</TooltipContent>
-          </Tooltip>
+      <div
+        data-clip-actions
+        className={cn('flex w-auto shrink-0 justify-center', className)}
+        onPointerDown={e => e.stopPropagation()}
+      >
+        <div
+          className="flex w-auto shrink-0 items-center gap-0.5 rounded-xl border bg-background p-0.5 shadow-md"
+          onPointerDown={e => e.stopPropagation()}
+        >
+          {showAi ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 gap-1.5 bg-primary/10 px-3 text-primary hover:bg-primary/15"
+                  onClick={() => clipAi.openClipAi(clipId)}
+                  onPointerDown={e => e.stopPropagation()}
+                  disabled={!canUseAi || isAiProcessing}
+                >
+                  {isAiProcessing ? (
+                    <Loader2Icon className="size-3.5 animate-spin" />
+                  ) : (
+                    <SparklesIcon className="size-3.5" />
+                  )}
+                  {isAiProcessing ? 'Generating…' : aiLabel}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isAiProcessing ? 'Generating…' : aiLabel}</TooltipContent>
+            </Tooltip>
+          ) : null}
+          {isVertical && aiComingSoon ? (
+            <ActionIconButton label="Auto-reframe" onClick={() => aiComingSoon.open('auto-reframe')}>
+              <SparklesIcon className="size-3.5 text-primary" />
+            </ActionIconButton>
+          ) : null}
+          <ActionIconButton label="Split at playhead" onClick={handleSplit} disabled={!canSplit}>
+            <ScissorsIcon className="size-3.5" />
+          </ActionIconButton>
+          <ClipSpeedDropdown clipId={clipId} disabled={locked} />
+          <ActionIconButton label="Duplicate clip" onClick={() => duplicateClip(clipId)} disabled={locked}>
+            <CopyIcon className="size-3.5" />
+          </ActionIconButton>
+          {clip.type !== 'audio' && clip.transform ? (
+            <ActionIconButton label="Reset transform" onClick={() => resetClipTransform(clipId)}>
+              <RotateCcwIcon className="size-3.5" />
+            </ActionIconButton>
+          ) : null}
+          <ActionIconButton label="Delete clip" onClick={() => removeClip(clipId)} disabled={locked} destructive>
+            <Trash2Icon className="size-3.5" />
+          </ActionIconButton>
         </div>
       </div>
     )
@@ -100,7 +137,7 @@ export function SelectedClipActionBar({
     <div
       data-clip-actions
       className={cn(
-        'flex min-w-0 shrink-0 items-center gap-2 overflow-x-auto border-b bg-muted/30 px-2 py-1.5 sm:gap-3 sm:px-3',
+        'flex min-w-0 shrink-0 items-center gap-2 overflow-x-auto border-b bg-background px-2 py-1 sm:gap-2.5 sm:px-2.5',
         className,
       )}
     >
@@ -138,6 +175,8 @@ export function SelectedClipActionBar({
         <ActionIconButton label="Split at playhead" onClick={handleSplit} disabled={!canSplit}>
           <ScissorsIcon className="size-3.5" />
         </ActionIconButton>
+
+        <ClipSpeedDropdown clipId={clipId} disabled={locked} />
 
         <ActionIconButton label="Duplicate clip" onClick={() => duplicateClip(clipId)} disabled={locked}>
           <CopyIcon className="size-3.5" />
@@ -178,6 +217,7 @@ function ActionIconButton({
           variant="ghost"
           className={cn('size-7', destructive && 'text-destructive hover:text-destructive')}
           onClick={onClick}
+          onPointerDown={e => e.stopPropagation()}
           disabled={disabled}
           aria-label={label}
         >

@@ -10,6 +10,13 @@ export default async function UpgradePage({ searchParams }: UpgradePageProps) {
   const checkoutSuccess = params.success === 'true'
 
   const response = await getPolarProducts({ recurringOnly: true })
+  console.log(
+    'response',
+    response.data?.products.map(product => ({
+      benefits: product.benefits,
+      metadata: product.metadata,
+    })),
+  )
 
   return (
     <UpgradePageContent

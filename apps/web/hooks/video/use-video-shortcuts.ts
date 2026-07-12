@@ -14,6 +14,7 @@ export function useVideoShortcuts(): void {
   const removeClip = useVideoEditorStore(s => s.removeClip)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const duplicateClip = useVideoEditorStore(s => s.duplicateClip)
+  const duplicateOverlay = useVideoEditorStore(s => s.duplicateOverlay)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const zoomIn = useVideoEditorStore(s => s.zoomIn)
@@ -48,6 +49,7 @@ export function useVideoShortcuts(): void {
         e.preventDefault()
         const state = useVideoEditorStore.getState()
         if (state.selectedClipId) duplicateClip(state.selectedClipId)
+        else if (state.selectedOverlayId) duplicateOverlay(state.selectedOverlayId)
         return
       }
 
@@ -124,6 +126,7 @@ export function useVideoShortcuts(): void {
     return () => window.removeEventListener('keydown', handler)
   }, [
     duplicateClip,
+    duplicateOverlay,
     pause,
     play,
     redo,

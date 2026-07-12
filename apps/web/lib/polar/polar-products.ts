@@ -1,9 +1,9 @@
 import type { PolarProduct } from '@socialista/types'
 import { unstable_cache } from 'next/cache'
 
-import { getPrimaryPriceAmount, serializePolarProduct } from './polar-mappers'
-import { polar } from './polar'
 import type { Product } from '@polar-sh/sdk/models/components/product.js'
+import { polar } from './polar'
+import { getPrimaryPriceAmount, serializePolarProduct } from './polar-mappers'
 
 type PolarListOptions = {
   recurringOnly?: boolean
@@ -11,8 +11,7 @@ type PolarListOptions = {
 
 export const POLAR_PRODUCTS_CACHE_TAG = 'polar-products'
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 
 const sortProductsForPricing = (products: PolarProduct[]) =>
   products.toSorted((a, b) => {
@@ -44,6 +43,7 @@ const fetchPolarProductsUncached = async (options: PolarListOptions = {}) => {
 
     products.push(...(page.result.items as Product[]))
   }
+  console.log('products', products)
 
   return sortProductsForPricing(products.map(serializePolarProduct))
 }

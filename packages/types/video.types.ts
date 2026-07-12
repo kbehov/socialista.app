@@ -1,4 +1,4 @@
-import type { CanvasDimensions, LayerId, TextAlign, FontWeight } from './carousel.types.js'
+import type { CanvasDimensions, LayerId, TextAlign, FontWeight, TextShadow } from './carousel.types.js'
 import type { MetaResponse } from './common.types.js'
 
 export type TrackId = string
@@ -45,6 +45,14 @@ export interface VideoFilter {
   value: number
 }
 
+/** Spatial transform on the canvas preview (percent of frame, 0–100). */
+export interface ClipTransform {
+  x: number
+  y: number
+  width: number
+  rotation: number
+}
+
 export interface VideoClip {
   id: ClipId
   type: 'video' | 'image'
@@ -65,6 +73,8 @@ export interface VideoClip {
   filters: VideoFilter[]
   /** Transition into this clip. */
   transition?: Transition
+  /** Canvas position/size. When omitted, media is cover-fit centered. */
+  transform?: ClipTransform
 }
 
 export interface AudioClip {
@@ -108,6 +118,12 @@ export interface TextOverlayStyle {
   borderRadius?: number
   letterSpacing?: number
   lineHeight?: number
+  /** Outline stroke color, or null for none. */
+  textStrokeColor?: string | null
+  /** Outline width in px at reference canvas width. */
+  textStrokeWidth?: number
+  /** Drop shadows / glows at reference canvas scale. */
+  textShadow?: TextShadow[] | null
   animation?: TextAnimation
 }
 

@@ -3,6 +3,7 @@
 import { FacebookIcon } from '@/components/icons/facebook-icon'
 import { InstagramIcon } from '@/components/icons/instagram-icon'
 import { LinkedInIcon } from '@/components/icons/linkedin-icon'
+import { PinterestIcon } from '@/components/icons/pinterest-icon'
 import { TikTokIcon } from '@/components/icons/tiktok-icon'
 import type { SocialIconProps } from '@/components/icons/types'
 import { XIcon } from '@/components/icons/x-icon'
@@ -23,6 +24,7 @@ const PLATFORM_ICONS: Record<string, ComponentType<SocialIconProps>> = {
   LinkedIn: LinkedInIcon,
   X: XIcon,
   Facebook: FacebookIcon,
+  Pinterest: PinterestIcon,
 }
 
 const PLATFORM_ACCENTS: Record<string, string> = {
@@ -31,6 +33,7 @@ const PLATFORM_ACCENTS: Record<string, string> = {
   LinkedIn: 'bg-[#0a66c2]/10 text-[#0a66c2]',
   X: 'bg-foreground/5 text-foreground',
   Facebook: 'bg-[#1877f2]/10 text-[#1877f2]',
+  Pinterest: 'bg-[#e60023]/10 text-[#e60023]',
 }
 
 export function PlatformIcon({ platform, className, size = 16 }: { platform: string; className?: string; size?: number }) {
