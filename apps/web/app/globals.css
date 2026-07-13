@@ -625,7 +625,8 @@
   /* ── Video / slideshow editors ────────────────────────────────────────── */
 
   .video-studio,
-  .slideshow-studio {
+  .slideshow-studio,
+  .image-studio {
     background-color: var(--background);
     max-width: 100%;
   }

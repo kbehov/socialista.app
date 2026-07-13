@@ -101,6 +101,12 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
       icon: <VideoIcon {...iconProps} />,
       isActive: pathname === '/dashboard/studio/videos' || pathname.startsWith('/dashboard/studio/videos/'),
     },
+    {
+      title: 'Images',
+      url: '/dashboard/studio/images',
+      icon: <ImagesIcon {...iconProps} />,
+      isActive: pathname === '/dashboard/studio/images' || pathname.startsWith('/dashboard/studio/images/'),
+    },
   ]
 
   const libraryItems = [

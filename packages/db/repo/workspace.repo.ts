@@ -194,7 +194,7 @@ export const decrementWorkspaceUsage = async (workspaceId: string, field: UsageF
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     [{ $set: { [`usage.${field}`]: { $max: [0, { $subtract: [`$usage.${field}`, amount] }] } } }],
-    { returnDocument: 'after' },
+    { returnDocument: 'after', updatePipeline: true },
   ).lean()
 }
 
@@ -302,7 +302,7 @@ export const deductAiCredits = async (workspaceId: string, amount: number) => {
         },
       },
     ],
-    { returnDocument: 'after' },
+    { returnDocument: 'after', updatePipeline: true },
   ).lean()
 }
 

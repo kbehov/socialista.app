@@ -10,7 +10,9 @@ export const COST_UNIT_OPTIONS = [
 ] as const
 
 export const createModelSchema = z.object({
+  chef: z.string().trim().min(1, 'Chef is required').max(100, 'Chef must be 100 characters or less'),
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
+  value: z.string().trim().min(1, 'Value is required').max(100, 'Value must be 100 characters or less'),
   cost: z
     .string()
     .trim()

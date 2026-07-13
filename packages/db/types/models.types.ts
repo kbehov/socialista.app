@@ -22,6 +22,8 @@ export enum CostUnit {
 
 export interface IModel {
   _id: Types.ObjectId
+  chef: string
+  value: string
   name: string
   cost: number // cost per unit of costUnit
   costUnit: CostUnit

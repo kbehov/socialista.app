@@ -10,6 +10,10 @@ export const getModelById = async (id: string) => {
   return await ModelModel.findById(id)
 }
 
+export const getModelByValue = async (value: string) => {
+  return await ModelModel.findOne({ value }).lean()
+}
+
 export const getModels = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const models = await ModelModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean()

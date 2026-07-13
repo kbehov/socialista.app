@@ -1,18 +1,11 @@
 'use client'
 
 import { FieldError, FieldLabel } from '@/components/forms/auth-form-shared'
+import { ModelTypePicker } from '@/components/models/model-type-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import { ModelTypePicker } from '@/components/models/model-type-picker'
 import { COST_UNIT_OPTIONS, createModelSchema, type CreateModelFormValues } from '@/lib/zod/model.schema'
 import { createModel, updateModel } from '@/services/models.service'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -22,12 +15,15 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { ScrollArea } from '../ui/scroll-area'
 
 const selectClassName = cn(
   'h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30',
 )
 
 const emptyFormValues: CreateModelFormValues = {
+  chef: '',
+  value: '',
   name: '',
   cost: '',
   costUnit: CostUnit.TOKENS,
@@ -42,6 +38,8 @@ function toFormValues(model: Model): CreateModelFormValues {
     costUnit: model.costUnit,
     modelType: model.modelType,
     modelProvider: model.modelProvider,
+    chef: model.chef,
+    value: model.value,
   }
 }
 
@@ -78,6 +76,8 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
 
   const onSubmit = handleSubmit(async values => {
     const payload = {
+      chef: values.chef,
+      value: values.value,
       name: values.name,
       cost: Number(values.cost),
       costUnit: values.costUnit,
@@ -86,9 +86,7 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
     }
 
     try {
-      const result = isEditing
-        ? await updateModel(model!._id, payload)
-        : await createModel(payload)
+      const result = isEditing ? await updateModel(model!._id, payload) : await createModel(payload)
 
       if (!result.success) {
         setError('root', {
@@ -108,114 +106,136 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? 'Edit model' : 'Create model'}</SheetTitle>
-          <SheetDescription>
-            {isEditing
-              ? 'Update pricing and metadata for this AI model.'
-              : 'Add an AI model with pricing details for generation workflows.'}
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent className="sm:max-w-md p-2">
+        <ScrollArea className="h-full">
+          <SheetHeader>
+            <SheetTitle>{isEditing ? 'Edit model' : 'Create model'}</SheetTitle>
+            <SheetDescription>
+              {isEditing
+                ? 'Update pricing and metadata for this AI model.'
+                : 'Add an AI model with pricing details for generation workflows.'}
+            </SheetDescription>
+          </SheetHeader>
 
-        <form id="model-form" onSubmit={onSubmit} className="flex flex-1 flex-col gap-4 px-4">
-          <div className="space-y-2">
-            <FieldLabel htmlFor="model-name">Name</FieldLabel>
-            <Input
-              id="model-name"
-              placeholder="e.g. GPT-4o"
-              aria-invalid={Boolean(errors.name)}
-              {...register('name')}
-            />
-            <FieldError message={errors.name?.message} />
-          </div>
-
-          <div className="space-y-2">
-            <FieldLabel htmlFor="model-provider">Provider</FieldLabel>
-            <Input
-              id="model-provider"
-              placeholder="e.g. OpenAI"
-              aria-invalid={Boolean(errors.modelProvider)}
-              {...register('modelProvider')}
-            />
-            <FieldError message={errors.modelProvider?.message} />
-          </div>
-
-          <div className="space-y-2">
-            <FieldLabel htmlFor="model-type">Type</FieldLabel>
-            <Controller
-              name="modelType"
-              control={control}
-              render={({ field }) => (
-                <ModelTypePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={isSubmitting}
-                  aria-invalid={Boolean(errors.modelType)}
-                />
-              )}
-            />
-            <FieldError message={errors.modelType?.message} />
-          </div>
-
-          <div className="space-y-2">
-            <FieldLabel htmlFor="model-cost-unit">Cost unit</FieldLabel>
-            <select
-              id="model-cost-unit"
-              className={selectClassName}
-              aria-invalid={Boolean(errors.costUnit)}
-              {...register('costUnit')}
-            >
-              {COST_UNIT_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <FieldError message={errors.costUnit?.message} />
-          </div>
-
-          <div className="space-y-2">
-            <FieldLabel htmlFor="model-cost">Cost</FieldLabel>
-            <Input
-              id="model-cost"
-              type="number"
-              min={0}
-              step="any"
-              placeholder="0.00"
-              aria-invalid={Boolean(errors.cost)}
-              {...register('cost')}
-            />
-            <FieldError message={errors.cost?.message} />
-          </div>
-
-          {errors.root?.message && (
-            <div
-              className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-              role="alert"
-            >
-              {errors.root.message}
+          <form id="model-form" onSubmit={onSubmit} className="flex flex-1 flex-col gap-4 px-4">
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-chef">Chef</FieldLabel>
+              <Input
+                id="model-chef"
+                placeholder="e.g. GPT-4o"
+                aria-invalid={Boolean(errors.chef)}
+                {...register('chef')}
+              />
+              <FieldError message={errors.chef?.message} />
             </div>
-          )}
-        </form>
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-value">Value</FieldLabel>
+              <Input
+                id="model-value"
+                placeholder="e.g. GPT-4o"
+                aria-invalid={Boolean(errors.value)}
+                {...register('value')}
+              />
+              <FieldError message={errors.value?.message} />
+            </div>
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-name">Name</FieldLabel>
+              <Input
+                id="model-name"
+                placeholder="e.g. GPT-4o"
+                aria-invalid={Boolean(errors.name)}
+                {...register('name')}
+              />
+              <FieldError message={errors.name?.message} />
+            </div>
 
-        <SheetFooter className="flex-row justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="submit" form="model-form" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="animate-spin" />
-                {isEditing ? 'Saving…' : 'Creating…'}
-              </>
-            ) : isEditing ? (
-              'Save changes'
-            ) : (
-              'Create model'
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-provider">Provider</FieldLabel>
+              <Input
+                id="model-provider"
+                placeholder="e.g. OpenAI"
+                aria-invalid={Boolean(errors.modelProvider)}
+                {...register('modelProvider')}
+              />
+              <FieldError message={errors.modelProvider?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-type">Type</FieldLabel>
+              <Controller
+                name="modelType"
+                control={control}
+                render={({ field }) => (
+                  <ModelTypePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting}
+                    aria-invalid={Boolean(errors.modelType)}
+                  />
+                )}
+              />
+              <FieldError message={errors.modelType?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-cost-unit">Cost unit</FieldLabel>
+              <select
+                id="model-cost-unit"
+                className={selectClassName}
+                aria-invalid={Boolean(errors.costUnit)}
+                {...register('costUnit')}
+              >
+                {COST_UNIT_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <FieldError message={errors.costUnit?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-cost">Cost</FieldLabel>
+              <Input
+                id="model-cost"
+                type="number"
+                min={0}
+                step="any"
+                placeholder="0.00"
+                aria-invalid={Boolean(errors.cost)}
+                {...register('cost')}
+              />
+              <FieldError message={errors.cost?.message} />
+            </div>
+
+            {errors.root?.message && (
+              <div
+                className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {errors.root.message}
+              </div>
             )}
-          </Button>
-        </SheetFooter>
+          </form>
+
+          <SheetFooter className="flex-row justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" form="model-form" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  {isEditing ? 'Saving…' : 'Creating…'}
+                </>
+              ) : isEditing ? (
+                'Save changes'
+              ) : (
+                'Create model'
+              )}
+            </Button>
+          </SheetFooter>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   )

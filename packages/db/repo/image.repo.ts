@@ -1,9 +1,30 @@
 import { ImageCollectionModel, ImageModel } from '../models/image.model.js'
 import type { IImage, IImageCollection } from '../types/image.types.js'
 import { buildFilters } from '../utils/build-filters.js'
+import { toObjectId } from '../utils/isValid.js'
 
 export const createImage = async (image: Partial<IImage>) => {
   return await ImageModel.create(image)
+}
+
+export const createWorkspaceImageFile = async (input: {
+  workspaceId: string
+  userId: string
+  url: string
+  key: string
+  width: number
+  height: number
+  size: number
+}) => {
+  return createImage({
+    url: input.url,
+    key: input.key,
+    width: input.width,
+    height: input.height,
+    size: input.size,
+    workspace: toObjectId(input.workspaceId),
+    uploadedBy: toObjectId(input.userId),
+  })
 }
 
 export const getImage = async (id: string) => {

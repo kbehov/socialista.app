@@ -14,17 +14,16 @@
     ".": {
       "types": "./src/trigger/index.ts",
       "import": "./src/trigger/index.ts"
-    },
-    "./trigger": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
     }
   },
   "license": "ISC",
   "dependencies": {
+    "@socialista/db": "workspace:^",
     "@fal-ai/client": "^1.10.1",
+    "@fal-ai/serverless-client": "^0.15.0",
     "@trigger.dev/sdk": "^4.5.3",
-    "ai": "^6.0.208"
+    "ai": "^6.0.208",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@socialista/eslint-config": "workspace:^",

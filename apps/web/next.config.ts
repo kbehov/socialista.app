@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   serverExternalPackages: ['@google-cloud/vision'],
   transpilePackages: ['@socialista/types'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
   turbopack: {
     root: monorepoRoot,
   },

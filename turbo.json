@@ -1,5 +1,5 @@
 {
-  "$schema": "https://turborepo.dev/schema.json",
+  "$schema": "https://v2-10-4.turborepo.dev/schema.json",
   "ui": "tui",
   "globalEnv": [
     "MONGODB_URI",
@@ -41,7 +41,10 @@
     "TRIGGER_PREVIEW_BRANCH",
     "TRIGGER_VERSION",
     "TRIGGER_API_URL",
-    "TRIGGER_ACCESS_TOKEN"
+    "TRIGGER_ACCESS_TOKEN",
+    "FAL_KEY",
+    "AI_GATEWAY_API_KEY",
+    "INTERNAL_API_SECRET"
   ],
   "tasks": {
     "build": {

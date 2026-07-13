@@ -4,6 +4,8 @@ import { CostUnit, IModel, ModelType } from '../types/models.types.js'
 
 const modelSchema = new Schema<IModel>(
   {
+    chef: { type: String, required: true },
+    value: { type: String, required: true },
     name: { type: String, required: true },
     cost: { type: Number, required: true },
     costUnit: { type: String, required: true, enum: enumValues(CostUnit) },
