@@ -1,6 +1,6 @@
 'use client'
 
-import { CollapseAppSidebarOnMount } from '@/components/collapse-app-sidebar-on-mount'
+import { CollapseAppSidebarOnMount } from '@/components/sidebars/collapse-app-sidebar-on-mount'
 import { VideoEditor } from '@/components/video/video-editor'
 import { VideoSourcePanel } from '@/components/video/video-source-panel'
 import { VideoStudioSidebar } from '@/components/video/video-studio-sidebar'

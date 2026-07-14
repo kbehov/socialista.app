@@ -1,7 +1,12 @@
 export {
   realtimeImageGeneration,
-  type RealtimeImageGenerationTask,
-  type ImageGenerationOutput,
   type ImageGenerationPayload,
-  type ImageGenerationStatus,
+  type RealtimeImageGenerationTask,
 } from './generate-image-realtime.js'
+
+export type {
+  ImageGenerationError,
+  ImageGenerationOutput,
+  ImageGenerationStatus,
+  ImageGenerator,
+} from '../types/image-generation.types.js'

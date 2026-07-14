@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/common/page-header'
+import { PageHeader } from '@/components/headers/page-header'
 import { getInspirationCategories, getInspirationNiches } from '@/services/inspiration.service'
 import { InspirationCreateWrapper } from '../_components/inspiration-create'
 export default async function CreateInspirationPage() {

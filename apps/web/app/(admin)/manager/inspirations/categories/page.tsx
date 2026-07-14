@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/common/page-header'
+import { PageHeader } from '@/components/headers/page-header'
 import { InspirationActions } from '@/components/inspirations/inspiration-actions'
 import { getInspirationCategories } from '@/services/inspiration.service'
 export default async function CategoriesPage() {

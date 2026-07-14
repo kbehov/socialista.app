@@ -28,6 +28,7 @@ export interface IModel {
   cost: number // cost per unit of costUnit
   costUnit: CostUnit
   modelType: ModelType
+  usageCount: number
   modelProvider: string
   createdAt: Date
   updatedAt: Date

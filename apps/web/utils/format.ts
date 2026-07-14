@@ -62,3 +62,23 @@ export function formatRelativeTime(date: Date | string | number): string {
 
   return formatter.format(0, 'second')
 }
+
+export function formatCost(cost: number | undefined): string {
+  if (typeof cost !== 'number' || Number.isNaN(cost)) return '—'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cost)
+}
+
+export function formatDuration(ms: number | undefined): string {
+  if (!ms || ms <= 0) return '—'
+  if (ms < 1000) return `${Math.round(ms)}ms`
+  const seconds = ms / 1000
+  if (seconds < 60) return `${seconds.toFixed(1)}s`
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.round(seconds % 60)
+  return `${minutes}m ${remainingSeconds}s`
+}

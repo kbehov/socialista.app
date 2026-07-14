@@ -1,16 +1,21 @@
 import {
   connectDb,
   deductAiCredits,
+  disconnectDb,
   getModelByValue,
   getWorkspaceById,
+  updateModel,
 } from '@socialista/db'
 import { metadata, schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import { z } from 'zod'
 import { generateImagePromptSystemPrompt } from '../ai/prompts.js'
-import { generateImageFal } from '../lib/fal.js'
-import { generateImageVercel } from '../lib/vercel.js'
-
+import type {
+  ImageGenerationError,
+  ImageGenerationOutput,
+  ImageGenerationStatus,
+} from '../types/image-generation.types.js'
+import { resolveImageGenerator } from '../utils/common.js'
 export const payloadSchema = z.object({
   prompt: z.string().min(1),
   model: z.string().min(1),
@@ -22,30 +27,6 @@ export const payloadSchema = z.object({
 
 export type ImageGenerationPayload = z.infer<typeof payloadSchema>
 
-export type ImageGenerationStatus = {
-  progress: number
-  label: string
-}
-
-export type ImageGenerationError = {
-  message: string
-}
-
-export type ImageGenerationOutput = {
-  imageUrl: string
-  cost: number
-}
-
-type ImageGenerator = (options: {
-  model: string
-  prompt: string
-  aspectRatio: ImageGenerationPayload['aspectRatio']
-  workspaceId: string
-  userId: string
-  imageUrl?: string
-  onProgress?: (progress: number, label: string) => void
-}) => Promise<string>
-
 function setStatus(progress: number, label: string) {
   const status: ImageGenerationStatus = { progress, label }
   metadata.set('status', status)
@@ -55,24 +36,6 @@ function setFailure(error: unknown) {
   const message = error instanceof Error ? error.message : 'Image generation failed'
   setStatus(100, 'Generation failed')
   metadata.set('error', { message } satisfies ImageGenerationError)
-}
-
-function normalizeProvider(provider: string): string {
-  return provider.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')
-}
-
-function resolveImageGenerator(modelProvider: string): ImageGenerator {
-  const provider = normalizeProvider(modelProvider)
-
-  if (provider === 'fal' || provider === 'fal-ai') {
-    return generateImageFal
-  }
-
-  if (provider === 'vercel') {
-    return generateImageVercel
-  }
-
-  throw new Error(`Unsupported image provider: ${modelProvider}`)
 }
 
 export const realtimeImageGeneration = schemaTask({
@@ -86,16 +49,16 @@ export const realtimeImageGeneration = schemaTask({
 
       const model = await getModelByValue(payload.model)
       if (!model) {
-        throw new Error(`Model not found: ${payload.model}`)
+        throw new Error(`Model not found: ${payload.model}. Please contact support.`)
       }
 
       const workspace = await getWorkspaceById(payload.workspaceId)
       if (!workspace) {
-        throw new Error('Workspace not found')
+        throw new Error('Workspace not found. Please contact support.')
       }
 
       if (workspace.billing.aiCreditsBalance < model.cost) {
-        throw new Error('Insufficient AI credits')
+        throw new Error('Insufficient AI credits. Please top up your credits.')
       }
 
       setStatus(10, 'Preparing your prompt')
@@ -121,12 +84,16 @@ export const realtimeImageGeneration = schemaTask({
 
       await deductAiCredits(payload.workspaceId, model.cost)
 
+      await updateModel(model._id.toString(), { usageCount: model.usageCount + 1 })
+
       setStatus(100, 'Complete')
 
       return { imageUrl, cost: model.cost }
     } catch (error) {
       setFailure(error)
-      throw error
+      throw error as Error
+    } finally {
+      await disconnectDb()
     }
   },
 })

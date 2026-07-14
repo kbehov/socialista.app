@@ -8,6 +8,7 @@ const modelSchema = new Schema<IModel>(
     value: { type: String, required: true },
     name: { type: String, required: true },
     cost: { type: Number, required: true },
+    usageCount: { type: Number, default: 0 },
     costUnit: { type: String, required: true, enum: enumValues(CostUnit) },
     modelType: { type: String, required: true, enum: enumValues(ModelType) },
     modelProvider: { type: String, required: true },

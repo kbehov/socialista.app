@@ -1,6 +1,6 @@
 'use client'
 
-import { PaywallDialog, type PaywallDialogProps } from '@/components/paywall/paywall-dialog'
+import { type PaywallDialogProps } from '@/components/paywall/paywall-dialog'
 import type { PaywallReason } from '@/lib/paywall'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { useCallback, useMemo, useState } from 'react'

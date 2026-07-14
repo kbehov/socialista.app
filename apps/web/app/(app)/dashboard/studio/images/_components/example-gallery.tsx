@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils'
 import { CopyIcon, SparklesIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useMemo } from 'react'
+import { useCopyPrompt } from '../../../../../../hooks/use-copy-prompt'
 import { filterExamplesByVibe, VIBE_LABELS, type ImageExample } from '../_lib/examples'
 import { useImageStudio } from '../_lib/studio-context'
-import { useCopyPrompt } from '../_lib/use-copy-prompt'
 import { VibeSelector } from './vibe-selector'
 
 function getAspectClass(aspectRatio: ImageExample['aspectRatio']) {
@@ -105,10 +105,7 @@ export function ExampleGallery() {
     <section className="space-y-5" aria-labelledby="examples-gallery-heading">
       <div className="space-y-4">
         <div>
-          <h2
-            id="examples-gallery-heading"
-            className="text-[15px] font-semibold tracking-[-0.01em] text-foreground"
-          >
+          <h2 id="examples-gallery-heading" className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
             Examples
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">

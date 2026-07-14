@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
-import DashboardHeader from '@/components/dashboard/header'
+import { AppSidebar } from '@/components/sidebars/app-sidebar'
+import DashboardHeader from '@/components/headers/dashboard-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { WorkspaceProvider } from '@/context/workspace-provider'
 import { getUserWorkspaces } from '@/services/workspace.service'

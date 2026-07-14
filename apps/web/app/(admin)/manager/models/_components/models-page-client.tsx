@@ -2,7 +2,7 @@
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
-import { PageHeader } from '@/components/common/page-header'
+import { PageHeader } from '@/components/headers/page-header'
 import { CreateModelSheet } from '@/components/models/create-model-sheet'
 import { ModelsTable } from '@/components/tables/models.table'
 import { Button } from '@/components/ui/button'

@@ -1,5 +1,5 @@
 import { FilesBrowser } from '@/components/files/files-browser'
-import { PageHeader } from '@/components/common/page-header'
+import { PageHeader } from '@/components/headers/page-header'
 import { getFolders } from '@/services/files.service'
 
 export default async function ManagerFilesPage() {

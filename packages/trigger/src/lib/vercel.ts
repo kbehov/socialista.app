@@ -1,6 +1,6 @@
 import { generateImage } from 'ai'
 import { logger } from '@trigger.dev/sdk/v3'
-import { uploadGeneratedImage } from './upload-generated-image.js'
+import { uploadGeneratedImage } from './img-upload.js'
 
 export type GenerateVercelImageOptions = {
   model: string

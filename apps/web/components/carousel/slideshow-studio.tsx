@@ -2,7 +2,7 @@
 
 import { CarouselEditor } from '@/components/carousel/carousel-editor'
 import { SlideshowStudioMobilePanel, SlideshowStudioSidebar } from '@/components/carousel/slideshow-studio-sidebar'
-import { CollapseAppSidebarOnMount } from '@/components/collapse-app-sidebar-on-mount'
+import { CollapseAppSidebarOnMount } from '@/components/sidebars/collapse-app-sidebar-on-mount'
 
 const STUDIO_PANELS = (
   <>

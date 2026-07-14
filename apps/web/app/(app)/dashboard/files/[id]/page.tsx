@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/common/page-header'
 import { FilesBrowser } from '@/components/files/files-browser'
+import { PageHeader } from '@/components/headers/page-header'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getFolderById } from '@/services/files.service'
 import { formatFileCount } from '@/utils/format'

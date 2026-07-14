@@ -14,7 +14,7 @@ export default async function ImageGenerationRunPage({ params }: ImageGeneration
   const models = modelsRes.success ? (modelsRes.data?.models ?? []) : []
 
   return (
-    <div className="image-studio flex min-h-0 flex-1 flex-col">
+    <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <GenerationProgress models={models} runId={runId} />
     </div>
   )

@@ -88,7 +88,7 @@ function PricingBenefitIcon({ type }: { type: string }) {
     return <CoinsIcon className="size-3 stroke-[2.5]" />
   }
 
-  return <CheckIcon className="size-2.5 stroke-[3]" />
+  return <CheckIcon className="size-2.5 stroke-3" />
 }
 
 function PricingBenefitsList({ benefits }: { benefits: ProductBenefitItem[] }) {
@@ -201,7 +201,7 @@ export function PricingCard({
       {resolvedFeatured ? (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent"
         />
       ) : null}
 
@@ -233,7 +233,9 @@ export function PricingCard({
         <div className="flex items-end gap-2">
           <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{pricing.amount}</p>
           {pricing.intervalLabel ? (
-            <p className="pb-1 text-sm font-medium text-muted-foreground">/{pricing.intervalLabel.replace('per ', '')}</p>
+            <p className="pb-1 text-sm font-medium text-muted-foreground">
+              /{pricing.intervalLabel.replace('per ', '')}
+            </p>
           ) : null}
         </div>
         {pricing.billingNote ? <p className="mt-2 text-xs text-muted-foreground">{pricing.billingNote}</p> : null}
@@ -243,7 +245,9 @@ export function PricingCard({
         <div className="mt-6 flex-1 space-y-5">
           {planLimits.length > 0 ? (
             <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">Plan capacity</p>
+              <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                Plan capacity
+              </p>
               <PricingPlanLimits limits={planLimits} />
             </div>
           ) : null}
@@ -273,7 +277,9 @@ export function PricingCard({
           onSelect={onSelect}
           product={product}
         />
-        {resolvedFootnote ? <p className="text-center text-[11px] leading-4 text-muted-foreground">{resolvedFootnote}</p> : null}
+        {resolvedFootnote ? (
+          <p className="text-center text-[11px] leading-4 text-muted-foreground">{resolvedFootnote}</p>
+        ) : null}
       </div>
     </article>
   )

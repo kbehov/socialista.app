@@ -1,7 +1,6 @@
 import { BoxIcon, FolderArchive, LayoutDashboardIcon, LightbulbIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { NavMain } from './nav-main'
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +9,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from './ui/sidebar'
+} from '../ui/sidebar'
+import { NavMain } from './nav-main'
 
 const items = [
   {

@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/common/page-header'
+import { PageHeader } from '@/components/headers/page-header'
 import { InspirationActions } from '@/components/inspirations/inspiration-actions'
 import { parseFiltersFromSearchParams, toSearchParamsRecord } from '@/lib/inspiration-filters'
 import { getInspirationCategories, getInspirationNiches, getInspirations } from '@/services/inspiration.service'

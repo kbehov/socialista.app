@@ -1,9 +1,9 @@
 'use client'
 
-import { NavMain } from '@/components/nav-main'
-import { NavUser } from '@/components/nav-user'
-import { SidebarStorageFooter } from '@/components/sidebar-storage-footer'
-import { SidebarUpgradeCard } from '@/components/sidebar-upgrade-card'
+import { NavMain } from '@/components/sidebars/nav-main'
+import { NavUser } from '@/components/sidebars/nav-user'
+import { SidebarStorageFooter } from '@/components/sidebars/sidebar-storage-footer'
+import { SidebarUpgradeCard } from '@/components/sidebars/sidebar-upgrade-card'
 import {
   Sidebar,
   SidebarContent,

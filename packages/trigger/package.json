@@ -6,6 +6,7 @@
   "description": "Shared Trigger.dev background tasks for Socialista",
   "scripts": {
     "lint": "eslint . --max-warnings 0",
+    "build": "trigger build --env-file=.env",
     "check-types": "tsc -p tsconfig.check.json",
     "dev:trigger": "trigger dev",
     "deploy:trigger": "trigger deploy"

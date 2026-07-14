@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
-import { AdminSidebar } from '@/components/admin-sidebar'
 import { UserDropdown } from '@/components/common/user-dropdown'
+import { AdminSidebar } from '@/components/sidebars/admin-sidebar'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { WorkspaceProvider } from '@/context/workspace-provider'
 import { getUserWorkspaces } from '@/services/workspace.service'
