@@ -16,6 +16,7 @@ export const getModelByValue = async (value: string) => {
 
 export const getModels = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
+  console.log(sort)
   const models = await ModelModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean()
   const total = await ModelModel.countDocuments(match)
   return {

@@ -1,12 +1,12 @@
 'use client'
 
+import { useImageStudio } from '@/context/image-studio-provider'
 import { cn } from '@/lib/utils'
 import { CopyIcon, SparklesIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useMemo } from 'react'
 import { useCopyPrompt } from '../../../../../../hooks/use-copy-prompt'
 import { filterExamplesByVibe, VIBE_LABELS, type ImageExample } from '../_lib/examples'
-import { useImageStudio } from '../_lib/studio-context'
 import { VibeSelector } from './vibe-selector'
 
 function getAspectClass(aspectRatio: ImageExample['aspectRatio']) {
@@ -58,7 +58,7 @@ function ExampleCard({
 
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/20"
+          className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-black/20"
         />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
@@ -104,15 +104,6 @@ export function ExampleGallery() {
   return (
     <section className="space-y-5" aria-labelledby="examples-gallery-heading">
       <div className="space-y-4">
-        <div>
-          <h2 id="examples-gallery-heading" className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-            Examples
-          </h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Click an image to remix its prompt into the composer.
-          </p>
-        </div>
-
         <VibeSelector value={selectedVibe} onChange={setSelectedVibe} />
       </div>
 

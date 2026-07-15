@@ -1,7 +1,7 @@
 'use client'
 
+import { ImageStudioProvider } from '@/context/image-studio-provider'
 import type { Model } from '@socialista/types'
-import { ImageStudioProvider } from '../_lib/studio-context'
 import { ExampleGallery } from './example-gallery'
 import ImageGenerationPromptInput from './prompt-input'
 import { StudioHero } from './studio-hero'
@@ -16,7 +16,7 @@ export function ImageStudioWorkspace({ models }: ImageStudioWorkspaceProps) {
       <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-y-auto">
         <div
           aria-hidden
-          className="pointer-events-none sticky top-0 z-10 h-8 bg-gradient-to-b from-background via-background/80 to-transparent motion-reduce:hidden"
+          className="pointer-events-none sticky top-0 z-10 h-8 bg-linear-to-b from-background via-background/80 to-transparent motion-reduce:hidden"
         />
 
         <div className="flex flex-1 flex-col px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8">

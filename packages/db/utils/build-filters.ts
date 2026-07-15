@@ -37,7 +37,9 @@ export const normalizeQuery = (query: FilterQuery | string): Record<string, stri
 export const toObjectId = (id: string): Types.ObjectId => new Types.ObjectId(id)
 
 export const parseSort = (sort?: string): Record<string, 1 | -1> => {
+  console.log('parseSort', sort)
   const raw = typeof sort === 'string' && sort.trim().length > 0 ? sort : '-createdAt'
+  console.log('raw', raw)
   return Object.fromEntries(
     raw.split(',').map(token => {
       const trimmed = token.trim()
@@ -50,6 +52,7 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
 const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query'])
 export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
   const normalized = normalizeQuery(query as FilterQuery)
+
   const { page, limit, sort, query: textSearch, ...rest } = normalized
 
   const match: Record<string, unknown> = {}
@@ -65,7 +68,7 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
       match[key] = value
     }
   }
-
+  console.log('match', match)
   const trimmedSearch = textSearch?.trim()
 
   return {

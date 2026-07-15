@@ -7,7 +7,7 @@ function normalizeProvider(provider: string): string {
 export function resolveImageGenerator(modelProvider: string): ImageGenerator {
   const provider = normalizeProvider(modelProvider)
 
-  if (provider === 'fal' || provider === 'fal-ai') {
+  if (provider.includes('fal')) {
     return generateImageFal
   }
 

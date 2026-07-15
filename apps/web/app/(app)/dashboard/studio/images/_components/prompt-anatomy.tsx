@@ -1,8 +1,8 @@
 'use client'
 
+import { useImageStudio } from '@/context/image-studio-provider'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { useImageStudio } from '../_lib/studio-context'
 
 const ANATOMY_SEGMENTS = [
   {
@@ -19,8 +19,7 @@ const ANATOMY_SEGMENTS = [
     color: 'text-violet-600 dark:text-violet-400',
     bg: 'bg-violet-500/10 hover:bg-violet-500/15',
     snippet: 'first-person POV, front-facing iPhone camera selfie, ',
-    exampleText:
-      'taking a casual iPhone selfie in her bedroom, first-person POV, front-facing iPhone camera selfie',
+    exampleText: 'taking a casual iPhone selfie in her bedroom, first-person POV, front-facing iPhone camera selfie',
   },
   {
     id: 'lighting',
@@ -36,8 +35,7 @@ const ANATOMY_SEGMENTS = [
     color: 'text-emerald-700 dark:text-emerald-400',
     bg: 'bg-emerald-500/10 hover:bg-emerald-500/15',
     snippet: 'UGC creator aesthetic, scroll-stopping, not staged',
-    exampleText:
-      'natural relaxed expression, slightly messy authentic background, UGC creator aesthetic, not staged',
+    exampleText: 'natural relaxed expression, slightly messy authentic background, UGC creator aesthetic, not staged',
   },
 ] as const
 
@@ -49,14 +47,12 @@ export function PromptAnatomy() {
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] leading-snug text-muted-foreground/75">
-        <span className="mr-1.5 inline-flex rounded bg-muted/60 px-1.5 py-px font-medium text-muted-foreground">
-          Tip
-        </span>
+      <p className="text-xs leading-snug text-muted-foreground/75">
+        <span className="mr-1.5 inline-flex rounded text-foreground  font-medium ">Tip:</span>
         Tap a colored segment or button below to insert it into your prompt.
       </p>
 
-      <div className="rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5 text-[13px] leading-relaxed text-foreground">
+      <div className="text-xs font-normal leading-relaxed text-foreground">
         {ANATOMY_SEGMENTS.map((segment, index) => {
           const isActive = activeSegment === segment.id
           return (
@@ -77,9 +73,7 @@ export function PromptAnatomy() {
               >
                 {segment.exampleText}
               </button>
-              {index < ANATOMY_SEGMENTS.length - 1 ? (
-                <span className="text-muted-foreground/50">, </span>
-              ) : null}
+              {index < ANATOMY_SEGMENTS.length - 1 ? <span className="text-muted-foreground/50">, </span> : null}
             </span>
           )
         })}

@@ -82,3 +82,11 @@ export function formatDuration(ms: number | undefined): string {
   const remainingSeconds = Math.round(seconds % 60)
   return `${minutes}m ${remainingSeconds}s`
 }
+
+export function formatModelCost(cost: number, costUnit: string): string {
+  const credits = `${cost}$`
+  if (costUnit === 'generation') {
+    return credits
+  }
+  return `${credits} / ${costUnit}`
+}

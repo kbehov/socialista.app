@@ -1,11 +1,4 @@
-import {
-  connectDb,
-  deductAiCredits,
-  disconnectDb,
-  getModelByValue,
-  getWorkspaceById,
-  updateModel,
-} from '@socialista/db'
+import { connectDb, deductAiCredits, disconnectDb, getModelByValue, getWorkspaceById, ModelModel } from '@socialista/db'
 import { metadata, schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import { z } from 'zod'
@@ -84,7 +77,7 @@ export const realtimeImageGeneration = schemaTask({
 
       await deductAiCredits(payload.workspaceId, model.cost)
 
-      await updateModel(model._id.toString(), { usageCount: model.usageCount + 1 })
+      await ModelModel.updateOne({ _id: model._id.toString() }, { $inc: { usageCount: 1 } })
 
       setStatus(100, 'Complete')
 

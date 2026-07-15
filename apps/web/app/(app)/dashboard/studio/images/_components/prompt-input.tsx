@@ -10,6 +10,7 @@ import {
   ModelSelectorList,
   ModelSelectorLogo,
   ModelSelectorName,
+  ModelSelectorShortcut,
   ModelSelectorTrigger,
 } from '@/components/ai-elements/model-selector'
 import {
@@ -17,26 +18,29 @@ import {
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
-  type PromptInputMessage,
   PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
   usePromptInputController,
+  type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
+import { Badge } from '@/components/ui/badge'
+import { Kbd } from '@/components/ui/kbd'
+import { Separator } from '@/components/ui/separator'
+import { useImageStudio } from '@/context/image-studio-provider'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
+import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import { formatModelCost } from '@/utils/format'
+import { commitHaptic } from '@/utils/haptics'
 import type { Model } from '@socialista/types'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { CheckIcon, ChevronDownIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { ChevronDownIcon, SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { getVibePlaceholder, type AspectRatioId } from '../_lib/examples'
-import { useImageStudio } from '../_lib/studio-context'
 import { startImageGeneration } from '../actions'
 import { PromptAnatomy } from './prompt-anatomy'
 
@@ -47,36 +51,18 @@ const ASPECT_RATIOS = [
   { id: '4:3', label: 'Classic', ratio: 4 / 3 },
 ] as const satisfies ReadonlyArray<{ id: AspectRatioId; label: string; ratio: number }>
 
+const modelsBadgeClassNames = {
+  cheapest: 'bg-green-500 text-white',
+  newest: 'bg-blue-500 text-white',
+  mostUsed: 'bg-yellow-500 text-white',
+}
+
 function getProviderSlug(model: Model): string {
   return model.modelProvider.toLowerCase().replace(/\s+/g, '-')
 }
 
-function formatModelCost(model: Model): string {
-  const credits = `${model.cost} credit${model.cost === 1 ? '' : 's'}`
-  if (model.costUnit === 'generation') {
-    return credits
-  }
-  return `${credits} / ${model.costUnit}`
-}
-
-function AspectRatioIcon({ ratio }: { ratio: number }) {
-  const maxSize = 10
-  const width = ratio >= 1 ? maxSize : maxSize * ratio
-  const height = ratio >= 1 ? maxSize / ratio : maxSize
-
-  return (
-    <span aria-hidden className="inline-flex size-3 items-center justify-center">
-      <span
-        className="rounded-[1.5px] border border-current/70"
-        style={{ width, height }}
-      />
-    </span>
-  )
-}
-
 function ImagePromptComposer({ models }: { models: Model[] }) {
   const router = useRouter()
-  const reduceMotion = useReducedMotion()
   const { textInput } = usePromptInputController()
   const { selectedVibe, composerRef, registerPromptHandlers, setActiveExampleId } = useImageStudio()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
@@ -84,10 +70,6 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
   const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? '')
   const [aspectRatio, setAspectRatio] = useState<AspectRatioId>('1:1')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [negativePrompt, setNegativePrompt] = useState('')
-  const [styleIntensity, setStyleIntensity] = useState([60])
-  const [seed, setSeed] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const selectedModel = useMemo(
@@ -95,12 +77,11 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     [models, selectedModelId],
   )
 
-  const chefs = useMemo(
-    () => [...new Set(models.map(model => model.chef))].sort(),
-    [models],
-  )
+  const chefs = useMemo(() => [...new Set(models.map(model => model.chef))].sort(), [models])
 
   const placeholder = useMemo(() => getVibePlaceholder(selectedVibe), [selectedVibe])
+  const hasPrompt = textInput.value.trim().length > 0
+  const canSubmit = hasPrompt && !!selectedModel && !isPending
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -142,10 +123,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      const isTyping =
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
 
       if (event.key === '/' && !isTyping && !event.metaKey && !event.ctrlKey && !event.altKey) {
         event.preventDefault()
@@ -160,12 +138,6 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   const handleModelSelect = (modelId: string) => {
     setSelectedModelId(modelId)
     setModelSelectorOpen(false)
-  }
-
-  const commitHaptic = () => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(10)
-    }
   }
 
   const handleSubmit = (message: PromptInputMessage) => {
@@ -195,7 +167,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         return
       }
 
-      commitHaptic()
+      commitHaptic({ vibrateDuration: 10 })
       storeGenerationAccessToken(result.runId, result.publicAccessToken)
       router.push(`/dashboard/studio/images/${result.runId}`)
     })
@@ -205,38 +177,79 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
       <ModelSelectorTrigger asChild>
         <PromptInputButton
-          className="max-w-[12rem] gap-2 px-2.5"
+          aria-expanded={modelSelectorOpen}
+          aria-haspopup="dialog"
+          className={cn(
+            'h-7 max-w-[min(100%,12.5rem)] gap-1.5 rounded-lg border px-2 shadow-xs',
+            'border-border/50 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
+            'hover:border-border hover:bg-background',
+            modelSelectorOpen && 'border-border bg-background shadow-sm',
+          )}
           disabled={isPending}
           type="button"
         >
-          <ModelSelectorLogo className="size-3.5" provider={getProviderSlug(selectedModel)} />
-          <ModelSelectorName className="text-xs font-medium">{selectedModel.name}</ModelSelectorName>
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted/60 ring-1 ring-border/35">
+            <ModelSelectorLogo className="size-3" provider={getProviderSlug(selectedModel)} />
+          </span>
+          <ModelSelectorName className="text-xs font-medium leading-none">{selectedModel.name}</ModelSelectorName>
+          <ChevronDownIcon
+            className={cn(
+              'size-3 shrink-0 text-muted-foreground transition-transform duration-200',
+              modelSelectorOpen && 'rotate-180',
+            )}
+          />
         </PromptInputButton>
       </ModelSelectorTrigger>
 
-      <ModelSelectorContent title="Choose model">
+      <ModelSelectorContent
+        className="gap-0 overflow-hidden p-0 sm:max-w-104"
+        showCloseButton={false}
+        title="Choose model"
+      >
         <ModelSelectorInput placeholder="Search models…" />
-        <ModelSelectorList>
+        <ModelSelectorList className="max-h-80">
           <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
           {chefs.map(chef => (
             <ModelSelectorGroup heading={chef} key={chef}>
               {models
                 .filter(model => model.chef === chef)
-                .map(model => (
-                  <ModelSelectorItem
-                    key={model._id}
-                    onSelect={() => handleModelSelect(model._id)}
-                    value={`${model.name} ${model.modelProvider}`}
-                  >
-                    <ModelSelectorLogo className="size-3.5" provider={getProviderSlug(model)} />
-                    <ModelSelectorName className="text-sm">{model.name}</ModelSelectorName>
-                    {selectedModelId === model._id ? (
-                      <CheckIcon className="ml-auto size-4 shrink-0" />
-                    ) : (
-                      <span className="ml-auto size-4 shrink-0" />
-                    )}
-                  </ModelSelectorItem>
-                ))}
+                .map(model => {
+                  const isSelected = selectedModelId === model._id
+                  const isNewest =
+                    model.createdAt ===
+                    models.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+                      .createdAt
+                  const isCheapest = model.cost === models.sort((a, b) => a.cost - b.cost)[0].cost
+                  // const isMostUsed =
+                  //   model.usageCount === models.sort((a, b) => b.usageCount - a.usageCount)[0].usageCount
+
+                  return (
+                    <ModelSelectorItem
+                      key={model._id}
+                      className="gap-3 rounded-lg px-2.5 py-2.5"
+                      data-checked={isSelected ? true : undefined}
+                      onSelect={() => handleModelSelect(model._id)}
+                      value={`${model.name} ${model.modelProvider}`}
+                    >
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/55 ring-1 ring-border/40">
+                        <ModelSelectorLogo className="size-3.5" provider={getProviderSlug(model)} />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-1.5 text-left">
+                        <span className="truncate text-sm font-medium leading-tight">{model.name}</span>
+                        {isNewest && (
+                          <Badge className={cn(modelsBadgeClassNames.newest, 'text-xs w-fit h-3.5')}>Newest</Badge>
+                        )}
+                        {isCheapest && (
+                          <Badge className={cn(modelsBadgeClassNames.cheapest, 'text-xs w-fit h-3.5')}>Cheapest</Badge>
+                        )}
+                        {/* {isMostUsed && <Badge className={cn(modelsBadgeClassNames.mostUsed)}>Most Used</Badge>} */}
+                      </span>
+                      <ModelSelectorShortcut className="rounded-md bg-muted/45 px-1.5 py-0.5 text-[11px] tracking-normal tabular-nums">
+                        {formatModelCost(model.cost, model.costUnit)}
+                      </ModelSelectorShortcut>
+                    </ModelSelectorItem>
+                  )
+                })}
             </ModelSelectorGroup>
           ))}
         </ModelSelectorList>
@@ -248,18 +261,23 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     <div ref={composerRef} className="w-full scroll-mt-6">
       <PromptInput
         className={cn(
-          'rounded-xl border border-border/60 bg-background shadow-sm',
-          'ring-1 ring-foreground/[0.03]',
-          '[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.06)]',
-          'motion-reduce:backdrop-blur-none',
-          '[@media_(prefers-reduced-transparency:reduce)]:bg-background',
+          'overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm',
+          'transition-[border-color,box-shadow] duration-200',
+          'has-[[data-slot=input-group-control]:focus-visible]:border-ring/50',
+          'has-[[data-slot=input-group-control]:focus-visible]:shadow-md',
+          'has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/15',
+          '[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.05)]',
         )}
         onSubmit={handleSubmit}
       >
-        <PromptInputBody>
+        <PromptInputBody className="relative">
           <PromptInputTextarea
             ref={textareaRef}
-            className="min-h-[7.5rem] px-4 pt-4 text-[15px] leading-relaxed placeholder:text-muted-foreground/60"
+            className={cn(
+              'min-h-32 px-4 pt-4 pb-8 text-[15px] leading-[1.6] tracking-[-0.01em]',
+              'placeholder:text-muted-foreground/55 placeholder:transition-opacity placeholder:duration-300',
+              'focus:outline-none focus:ring-0',
+            )}
             disabled={isPending}
             placeholder={placeholder}
             onChange={() => setActiveExampleId(null)}
@@ -270,79 +288,20 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               }
             }}
           />
+          {hasPrompt ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-3.5 bottom-2.5 text-[10px] tabular-nums text-muted-foreground/45"
+            >
+              {textInput.value.length}
+            </span>
+          ) : null}
         </PromptInputBody>
 
-        <AnimatePresence initial={false}>
-          {advancedOpen ? (
-            <motion.div
-              key="advanced-panel"
-              initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
-              transition={reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.3 }}
-              className="overflow-hidden border-t border-border/50 bg-muted/25 px-4 py-4"
-            >
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Model</Label>
-                  <div>{modelSelector}</div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="negative-prompt" className="text-xs text-muted-foreground">
-                    Negative prompt
-                    <span className="ml-1 text-[10px] text-muted-foreground/70">(coming soon)</span>
-                  </Label>
-                  <Input
-                    id="negative-prompt"
-                    value={negativePrompt}
-                    onChange={event => setNegativePrompt(event.target.value)}
-                    disabled
-                    placeholder="What to avoid in the image…"
-                    className="h-9 text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="style-intensity" className="text-xs text-muted-foreground">
-                    Style intensity
-                    <span className="ml-1 text-[10px] text-muted-foreground/70">(coming soon)</span>
-                  </Label>
-                  <input
-                    id="style-intensity"
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={styleIntensity[0]}
-                    disabled
-                    className="w-full accent-foreground"
-                    onChange={event => setStyleIntensity([Number(event.target.value)])}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="seed" className="text-xs text-muted-foreground">
-                    Seed
-                    <span className="ml-1 text-[10px] text-muted-foreground/70">(coming soon)</span>
-                  </Label>
-                  <Input
-                    id="seed"
-                    value={seed}
-                    onChange={event => setSeed(event.target.value)}
-                    disabled
-                    placeholder="Optional reproducibility seed"
-                    className="h-9 text-sm"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-
-        <PromptInputFooter className="border-t border-border/50 px-3 py-2">
-          <PromptInputTools className="flex-wrap gap-1.5">
+        <PromptInputFooter className="border-t border-border/45 px-3 py-2 sm:px-3.5 sm:py-2.5">
+          <PromptInputTools className="min-w-0 flex-wrap gap-1.5">
             <div
-              className="flex items-center gap-0.5 rounded-lg bg-muted/40 p-0.5"
+              className="flex items-center gap-0.5 rounded-lg border border-border/35 bg-background/70 p-0.5 shadow-xs"
               role="group"
               aria-label="Aspect ratio"
             >
@@ -354,70 +313,66 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                     key={option.id}
                     aria-pressed={isSelected}
                     className={cn(
-                      'h-7 gap-1.5 rounded-md px-2 text-xs active:scale-[0.97]',
-                      isSelected && 'bg-background text-foreground shadow-xs hover:bg-background',
+                      'h-7 gap-1.5 rounded-md px-2 text-xs transition-[background-color,box-shadow,color] duration-150',
+                      'active:scale-[0.97]',
+                      isSelected
+                        ? 'bg-background text-foreground shadow-xs ring-1 ring-border/50 hover:bg-background'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                     disabled={isPending}
                     onClick={() => setAspectRatio(option.id)}
                     tooltip={option.label}
                     type="button"
                   >
-                    <AspectRatioIcon ratio={option.ratio} />
+                    <AspectRatioIcon active={isSelected} ratio={option.ratio} />
                     <span className="max-[360px]:sr-only">{option.id}</span>
                   </PromptInputButton>
                 )
               })}
             </div>
 
-            {!advancedOpen ? modelSelector : null}
+            <Separator className="hidden h-5 sm:block" orientation="vertical" />
 
-            <PromptInputButton
-              type="button"
-              aria-expanded={advancedOpen}
-              className="gap-1.5 px-2.5 text-xs active:scale-[0.97]"
-              disabled={isPending}
-              onClick={() => setAdvancedOpen(open => !open)}
-              tooltip="Tune generation"
-            >
-              <SlidersHorizontalIcon className="size-3.5" />
-              Tune
-              <ChevronDownIcon
-                className={cn('size-3.5 transition-transform', advancedOpen && 'rotate-180')}
-              />
-            </PromptInputButton>
+            {modelSelector}
           </PromptInputTools>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {selectedModel ? (
-              <span className="hidden text-[11px] tabular-nums text-muted-foreground sm:inline">
-                {formatModelCost(selectedModel)}
+              <span className="hidden text-[11px] tabular-nums text-muted-foreground/80 md:inline">
+                {formatModelCost(selectedModel.cost, selectedModel.costUnit)}
               </span>
             ) : null}
             <PromptInputSubmit
-              className="h-8 gap-1.5 rounded-lg px-3.5 text-[13px] font-medium active:scale-[0.97]"
-              disabled={!selectedModel || isPending}
+              className={cn(
+                'h-8 gap-1.5 rounded-lg px-3.5 text-[13px] font-medium shadow-sm',
+                'transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.98]',
+                !canSubmit && 'opacity-55',
+              )}
+              disabled={!canSubmit}
               size="sm"
               status={isPending ? 'submitted' : undefined}
             >
+              <SparklesIcon className="size-3.5 shrink-0" />
               <span className="hidden sm:inline">Generate</span>
-              <kbd className="ml-0.5 hidden rounded border border-border/60 bg-background/50 px-1 py-px text-[10px] font-normal text-muted-foreground lg:inline">
+              <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
                 ⌘↵
-              </kbd>
+              </Kbd>
             </PromptInputSubmit>
           </div>
         </PromptInputFooter>
       </PromptInput>
 
       <div className="mt-2.5 space-y-2.5">
-        <p className="text-[12px] text-muted-foreground/80">
-          <kbd className="rounded border border-border/60 bg-muted/40 px-1 py-px font-sans text-[11px] text-muted-foreground">
-            /
-          </kbd>{' '}
-          to focus ·{' '}
-          <kbd className="rounded border border-border/60 bg-muted/40 px-1 py-px font-sans text-[11px] text-muted-foreground">
-            ⌘↵
-          </kbd>{' '}
-          to generate
+        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground/75">
+          <span>Press</span>
+          <Kbd className="h-4 min-w-4 px-1 text-[10px]">/</Kbd>
+          <span>to focus</span>
+          <span aria-hidden className="text-muted-foreground/35">
+            ·
+          </span>
+          <span>Press</span>
+          <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘↵</Kbd>
+          <span>to generate</span>
         </p>
         <PromptAnatomy />
       </div>
@@ -428,7 +383,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
   if (models.length === 0) {
     return (
-      <div className="rounded-xl border border-border/60 bg-muted/20 px-6 py-10 text-center">
+      <div className="rounded-2xl border border-border/60 bg-muted/20 px-6 py-10 text-center">
         <p className="text-[15px] font-medium text-foreground">No image models yet</p>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           Add a text-to-image model in the manager to start creating social visuals.
