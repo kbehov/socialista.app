@@ -477,9 +477,19 @@
   }
 
   [data-sidebar='sidebar'] [data-active='true'] {
-    background-color: var(--sidebar-active) !important;
-    color: var(--sidebar-active-foreground) !important;
+    background-color: var(--sidebar-active);
+    color: var(--sidebar-active-foreground);
     font-weight: 500;
+  }
+
+  [data-sidebar='sidebar'] [data-slot='sidebar-menu-button']:active:not([data-state='open']) {
+    transform: scale(0.98);
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  [data-sidebar='sidebar'] [data-slot='sidebar-menu-sub-button']:active {
+    transform: scale(0.98);
+    transition: transform var(--duration-fast) var(--ease-out);
   }
 
   [data-sidebar='sidebar'] [data-slot='sidebar-group-label'] {

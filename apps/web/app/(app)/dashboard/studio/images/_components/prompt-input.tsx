@@ -8,7 +8,6 @@ import {
   ModelSelectorInput,
   ModelSelectorItem,
   ModelSelectorList,
-  ModelSelectorLogo,
   ModelSelectorName,
   ModelSelectorShortcut,
   ModelSelectorTrigger,
@@ -26,6 +25,7 @@ import {
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
+import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
 import { Badge } from '@/components/ui/badge'
 import { Kbd } from '@/components/ui/kbd'
 import { Separator } from '@/components/ui/separator'
@@ -51,14 +51,72 @@ const ASPECT_RATIOS = [
   { id: '4:3', label: 'Classic', ratio: 4 / 3 },
 ] as const satisfies ReadonlyArray<{ id: AspectRatioId; label: string; ratio: number }>
 
-const modelsBadgeClassNames = {
-  cheapest: 'bg-green-500 text-white',
-  newest: 'bg-blue-500 text-white',
-  mostUsed: 'bg-yellow-500 text-white',
+type ModelHighlight = 'cheapest' | 'newest' | 'mostUsed'
+
+const MODEL_HIGHLIGHT_CONFIG = {
+  cheapest: {
+    emoji: '💸',
+    label: 'Cheapest',
+    className: 'border-success/25 bg-success/10 text-success',
+  },
+  newest: {
+    emoji: '✨',
+    label: 'Newest',
+    className: 'border-info/25 bg-info/10 text-info',
+  },
+  mostUsed: {
+    emoji: '🔥',
+    label: 'Most used',
+    className: 'border-warning/25 bg-warning/10 text-warning-foreground',
+  },
+} as const satisfies Record<ModelHighlight, { emoji: string; label: string; className: string }>
+
+function getModelUsageCount(model: Model): number {
+  if ('usageCount' in model && typeof model.usageCount === 'number') {
+    return model.usageCount
+  }
+  return 0
 }
 
-function getProviderSlug(model: Model): string {
-  return model.modelProvider.toLowerCase().replace(/\s+/g, '-')
+function buildModelHighlights(models: Model[]): Map<string, ModelHighlight[]> {
+  const highlights = new Map<string, ModelHighlight[]>()
+  if (models.length === 0) return highlights
+
+  const newestId = [...models].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )[0]?._id
+  const cheapestId = [...models].sort((a, b) => a.cost - b.cost)[0]?._id
+  const mostUsedModel = [...models].sort((a, b) => getModelUsageCount(b) - getModelUsageCount(a))[0]
+  const mostUsedId =
+    mostUsedModel && getModelUsageCount(mostUsedModel) > 0 ? mostUsedModel._id : undefined
+
+  for (const model of models) {
+    const modelHighlights: ModelHighlight[] = []
+    if (model._id === newestId) modelHighlights.push('newest')
+    if (model._id === cheapestId) modelHighlights.push('cheapest')
+    if (mostUsedId && model._id === mostUsedId) modelHighlights.push('mostUsed')
+    if (modelHighlights.length > 0) highlights.set(model._id, modelHighlights)
+  }
+
+  return highlights
+}
+
+function ModelHighlightBadge({ highlight }: { highlight: ModelHighlight }) {
+  const config = MODEL_HIGHLIGHT_CONFIG[highlight]
+
+  return (
+    <Badge
+      className={cn(
+        config.className,
+        'h-[18px] gap-0.5 rounded-md border px-1.5 py-0 text-[10px] font-medium leading-none',
+      )}
+    >
+      <span aria-hidden className="text-[11px] leading-none">
+        {config.emoji}
+      </span>
+      <span>{config.label}</span>
+    </Badge>
+  )
 }
 
 function ImagePromptComposer({ models }: { models: Model[] }) {
@@ -78,6 +136,11 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   )
 
   const chefs = useMemo(() => [...new Set(models.map(model => model.chef))].sort(), [models])
+  const modelHighlights = useMemo(() => buildModelHighlights(models), [models])
+  const selectedModelHighlights = useMemo(
+    () => (selectedModel ? (modelHighlights.get(selectedModel._id) ?? []) : []),
+    [modelHighlights, selectedModel],
+  )
 
   const placeholder = useMemo(() => getVibePlaceholder(selectedVibe), [selectedVibe])
   const hasPrompt = textInput.value.trim().length > 0
@@ -180,7 +243,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           aria-expanded={modelSelectorOpen}
           aria-haspopup="dialog"
           className={cn(
-            'h-7 max-w-[min(100%,12.5rem)] gap-1.5 rounded-lg border px-2 shadow-xs',
+            'h-7 max-w-[min(100%,14rem)] gap-1.5 rounded-lg border px-2 shadow-xs',
             'border-border/50 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
             'hover:border-border hover:bg-background',
             modelSelectorOpen && 'border-border bg-background shadow-sm',
@@ -189,8 +252,13 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           type="button"
         >
           <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted/60 ring-1 ring-border/35">
-            <ModelSelectorLogo className="size-3" provider={getProviderSlug(selectedModel)} />
+            <ModelProviderIcon className="size-3" provider={selectedModel.modelProvider} />
           </span>
+          {selectedModelHighlights[0] ? (
+            <span aria-hidden className="shrink-0 text-[11px] leading-none">
+              {MODEL_HIGHLIGHT_CONFIG[selectedModelHighlights[0]].emoji}
+            </span>
+          ) : null}
           <ModelSelectorName className="text-xs font-medium leading-none">{selectedModel.name}</ModelSelectorName>
           <ChevronDownIcon
             className={cn(
@@ -206,8 +274,25 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         showCloseButton={false}
         title="Choose model"
       >
+        <div className="border-b border-border/50 px-3.5 py-3">
+          <p className="text-sm font-medium tracking-[-0.01em] text-foreground">Choose your model</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            <span className="mr-2 inline-flex items-center gap-1">
+              <span aria-hidden>💸</span>
+              Cheapest
+            </span>
+            <span className="mr-2 inline-flex items-center gap-1">
+              <span aria-hidden>✨</span>
+              Newest
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden>🔥</span>
+              Most used
+            </span>
+          </p>
+        </div>
         <ModelSelectorInput placeholder="Search models…" />
-        <ModelSelectorList className="max-h-80">
+        <ModelSelectorList className="max-h-80 px-1 pb-1">
           <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
           {chefs.map(chef => (
             <ModelSelectorGroup heading={chef} key={chef}>
@@ -215,34 +300,31 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                 .filter(model => model.chef === chef)
                 .map(model => {
                   const isSelected = selectedModelId === model._id
-                  const isNewest =
-                    model.createdAt ===
-                    models.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-                      .createdAt
-                  const isCheapest = model.cost === models.sort((a, b) => a.cost - b.cost)[0].cost
-                  // const isMostUsed =
-                  //   model.usageCount === models.sort((a, b) => b.usageCount - a.usageCount)[0].usageCount
+                  const highlights = modelHighlights.get(model._id) ?? []
 
                   return (
                     <ModelSelectorItem
                       key={model._id}
-                      className="gap-3 rounded-lg px-2.5 py-2.5"
+                      className={cn(
+                        'gap-3 rounded-lg px-2.5 py-2.5',
+                        isSelected && 'bg-muted/40',
+                      )}
                       data-checked={isSelected ? true : undefined}
                       onSelect={() => handleModelSelect(model._id)}
                       value={`${model.name} ${model.modelProvider}`}
                     >
                       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/55 ring-1 ring-border/40">
-                        <ModelSelectorLogo className="size-3.5" provider={getProviderSlug(model)} />
+                        <ModelProviderIcon className="size-3.5" provider={model.modelProvider} />
                       </span>
-                      <span className="flex min-w-0 flex-1 flex-col gap-1.5 text-left">
+                      <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
                         <span className="truncate text-sm font-medium leading-tight">{model.name}</span>
-                        {isNewest && (
-                          <Badge className={cn(modelsBadgeClassNames.newest, 'text-xs w-fit h-3.5')}>Newest</Badge>
-                        )}
-                        {isCheapest && (
-                          <Badge className={cn(modelsBadgeClassNames.cheapest, 'text-xs w-fit h-3.5')}>Cheapest</Badge>
-                        )}
-                        {/* {isMostUsed && <Badge className={cn(modelsBadgeClassNames.mostUsed)}>Most Used</Badge>} */}
+                        {highlights.length > 0 ? (
+                          <span className="flex flex-wrap gap-1">
+                            {highlights.map(highlight => (
+                              <ModelHighlightBadge key={highlight} highlight={highlight} />
+                            ))}
+                          </span>
+                        ) : null}
                       </span>
                       <ModelSelectorShortcut className="rounded-md bg-muted/45 px-1.5 py-0.5 text-[11px] tracking-normal tabular-nums">
                         {formatModelCost(model.cost, model.costUnit)}

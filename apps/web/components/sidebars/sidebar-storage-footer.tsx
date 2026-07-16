@@ -13,24 +13,59 @@ function StorageProgress({
   percentUsed,
   isFull,
   isNearFull,
-}: Pick<WorkspaceStorageStats, 'percentUsed' | 'isFull' | 'isNearFull'>) {
+  className,
+}: Pick<WorkspaceStorageStats, 'percentUsed' | 'isFull' | 'isNearFull'> & { className?: string }) {
   return (
     <Progress
       value={percentUsed}
       className={cn(
-        'h-1.5 bg-sidebar-border/80',
+        'bg-sidebar-border/80',
         isFull && '[&_[data-slot=progress-indicator]]:bg-destructive',
         isNearFull && !isFull && '[&_[data-slot=progress-indicator]]:bg-amber-500',
         !isNearFull && !isFull && '[&_[data-slot=progress-indicator]]:bg-primary',
+        className,
       )}
     />
   )
 }
 
-function StorageSummary({ usedBytes, remainingBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
+function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
-    <div className="rounded-lg border border-sidebar-border/80 bg-sidebar-accent/30 px-4 py-3.5 group-data-[collapsible=icon]:hidden">
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+    <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
+      <div className="flex items-center gap-2">
+        <HardDriveIcon className="size-3.5 shrink-0 text-sidebar-foreground/50" />
+        <div className="min-w-0 flex-1">
+          <StorageProgress
+            percentUsed={percentUsed}
+            isFull={isFull}
+            isNearFull={isNearFull}
+            className="h-1"
+          />
+        </div>
+        <span
+          className={cn(
+            'shrink-0 text-[11px] font-medium tabular-nums',
+            isFull
+              ? 'text-destructive'
+              : isNearFull
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-sidebar-foreground/50',
+          )}
+        >
+          {Math.round(percentUsed)}%
+        </span>
+      </div>
+      <p className="mt-1.5 truncate text-[10px] tabular-nums text-sidebar-foreground/45">
+        {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
+      </p>
+    </div>
+  )
+}
+
+function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
+  return (
+    <div className="rounded-lg border border-sidebar-border/80 bg-sidebar-accent/30 px-3.5 py-3 group-data-[collapsible=icon]:hidden">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <HardDriveIcon className="size-3.5 shrink-0 text-sidebar-foreground/60" />
           <span className="text-xs font-medium text-sidebar-foreground">Storage</span>
@@ -49,14 +84,11 @@ function StorageSummary({ usedBytes, remainingBytes, percentUsed, isFull, isNear
         </span>
       </div>
 
-      <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} />
+      <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} className="h-1.5" />
 
-      <div className="mt-2.5 flex items-center justify-between gap-2 text-[11px] leading-none text-sidebar-foreground/55">
-        <span className="truncate tabular-nums">{formatStorageSize(usedBytes)} used</span>
-        <span className={cn('shrink-0 tabular-nums', isFull && 'text-destructive/90')}>
-          {formatStorageSize(remainingBytes)} left
-        </span>
-      </div>
+      <p className="mt-2 truncate text-[11px] leading-none tabular-nums text-sidebar-foreground/55">
+        {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
+      </p>
     </div>
   )
 }
@@ -105,10 +137,11 @@ export function SidebarStorageFooter() {
   }
 
   const stats = getWorkspaceStorageStats(currentWorkspace)
+  const showDetailedStorage = stats.isNearFull || stats.isFull
 
   return (
     <div className="px-1 pb-1">
-      <StorageSummary {...stats} />
+      {showDetailedStorage ? <StorageSummary {...stats} /> : <StorageQuietRow {...stats} />}
       <StorageCollapsedIcon
         usedBytes={stats.usedBytes}
         limitBytes={stats.limitBytes}

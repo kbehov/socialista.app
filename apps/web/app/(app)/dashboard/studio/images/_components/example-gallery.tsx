@@ -1,26 +1,15 @@
 'use client'
 
+import { EmptyState } from '@/components/common/empty-state'
 import { useImageStudio } from '@/context/image-studio-provider'
 import { cn } from '@/lib/utils'
-import { CopyIcon, SparklesIcon } from 'lucide-react'
+import { CopyIcon, ImagesIcon, SparklesIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useMemo } from 'react'
 import { useCopyPrompt } from '../../../../../../hooks/use-copy-prompt'
+import { getAspectRatioClass } from '../_lib/aspect-ratio'
 import { filterExamplesByVibe, VIBE_LABELS, type ImageExample } from '../_lib/examples'
 import { VibeSelector } from './vibe-selector'
-
-function getAspectClass(aspectRatio: ImageExample['aspectRatio']) {
-  switch (aspectRatio) {
-    case '9:16':
-      return 'aspect-[9/16]'
-    case '16:9':
-      return 'aspect-video'
-    case '4:3':
-      return 'aspect-[4/3]'
-    default:
-      return 'aspect-square'
-  }
-}
 
 function ExampleCard({
   example,
@@ -40,7 +29,7 @@ function ExampleCard({
         isActive && 'ring-2 ring-foreground/25 ring-offset-2 ring-offset-background',
       )}
     >
-      <div className={cn('relative w-full bg-muted/30', getAspectClass(example.aspectRatio))}>
+      <div className={cn('relative w-full bg-muted/30', getAspectRatioClass(example.aspectRatio))}>
         <button
           type="button"
           onClick={onRemix}
@@ -104,15 +93,22 @@ export function ExampleGallery() {
   return (
     <section className="space-y-5" aria-labelledby="examples-gallery-heading">
       <div className="space-y-4">
+        <div className="space-y-1">
+          <h2 id="examples-gallery-heading" className="text-base font-semibold tracking-[-0.01em] text-foreground">
+            Examples
+          </h2>
+          <p className="text-sm text-muted-foreground">Remix a prompt or copy one to get started faster.</p>
+        </div>
         <VibeSelector value={selectedVibe} onChange={setSelectedVibe} />
       </div>
 
       {examples.length === 0 ? (
-        <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20 px-6 text-center">
-          <p className="max-w-sm text-sm text-muted-foreground">
-            More coming soon — be the first to set the vibe for {VIBE_LABELS[selectedVibe]}.
-          </p>
-        </div>
+        <EmptyState
+          description={`More coming soon — be the first to set the vibe for ${VIBE_LABELS[selectedVibe]}.`}
+          icon={ImagesIcon}
+          minHeight="sm"
+          title="No examples yet"
+        />
       ) : (
         <div
           key={selectedVibe}

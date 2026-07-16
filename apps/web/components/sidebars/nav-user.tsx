@@ -1,10 +1,6 @@
-"use client"
+'use client'
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,14 +9,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+} from '@/components/ui/dropdown-menu'
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { useWorkspaceStore } from '@/store/workspace.store'
+import { getBillingPortalUrl } from '@/utils/billing-urls'
+import { getInitials } from '@/utils/user'
+import { ChevronsUpDownIcon, CreditCardIcon, LogOutIcon } from 'lucide-react'
+import { signOut } from 'next-auth/react'
+import Link from 'next/link'
 
 export function NavUser({
   user,
@@ -32,6 +29,12 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
+  const plan = currentWorkspace?.billing.plan ?? 'free'
+  const workspaceId = currentWorkspace?.id
+  const billingHref = plan !== 'free' && workspaceId ? getBillingPortalUrl(workspaceId) : DASHBOARD_ROUTES.UPGRADE
+  const showUpgradeInMenu = plan !== 'free'
+  const initials = getInitials(user.name)
 
   return (
     <SidebarMenu>
@@ -44,7 +47,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg text-xs font-medium">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -54,8 +57,8 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-fit"
-            side={isMobile ? "bottom" : "right"}
+            className="w-56"
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
@@ -63,7 +66,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg text-xs font-medium">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -73,34 +76,32 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <SparklesIcon
-                />
-                Upgrade to Pro
+              {showUpgradeInMenu ? (
+                <DropdownMenuItem asChild>
+                  <Link href={DASHBOARD_ROUTES.UPGRADE}>
+                    <CreditCardIcon />
+                    Upgrade plan
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem asChild>
+                <Link href={billingHref}>
+                  <CreditCardIcon />
+                  {plan !== 'free' ? 'Manage billing' : 'Billing'}
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheckIcon
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOutIcon
-              />
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() =>
+                void signOut({
+                  redirect: true,
+                  redirectTo: '/',
+                })
+              }
+            >
+              <LogOutIcon />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

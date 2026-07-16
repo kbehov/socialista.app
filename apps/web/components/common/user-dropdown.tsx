@@ -19,16 +19,8 @@ import { getBillingPortalUrl } from '@/utils/billing-urls'
 import { CreditCardIcon, LogOutIcon } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { getInitials } from '@/utils/user'
 import { Badge } from '../ui/badge'
-
-function getInitials(name?: string | null) {
-  if (!name?.trim()) return '?'
-
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase()
-
-  return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase()
-}
 
 export function UserDropdown() {
   const { data: session, status } = useSession()

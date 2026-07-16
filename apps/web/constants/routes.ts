@@ -90,3 +90,9 @@ export const MODEL_ROUTES = {
   UPDATE_MODEL: (id: string) => `/models/${id}`,
   DELETE_MODEL: (id: string) => `/models/${id}`,
 } as const
+
+export const PRODUCT_ROUTES = {
+  EXTRACT_PRODUCT: `/products/extract`,
+  GET_PRODUCTS: `/products`,
+  GET_PRODUCT: (id: string) => `/products/${id}`,
+} as const

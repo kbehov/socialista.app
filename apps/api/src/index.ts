@@ -2,12 +2,13 @@ import '@/env.js'
 import authRoutes from '@/routes/auth.routes.js'
 import { collectionRoutes } from '@/routes/collection.routes.js'
 import { generatedImageRoutes } from '@/routes/generated-image.routes.js'
-import { slideshowRoutes } from '@/routes/slideshow.routes.js'
-import { videoRoutes } from '@/routes/video.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
 import modelRoutes from '@/routes/model.routes.js'
+import productRoutes from '@/routes/product.routes.js'
+import { slideshowRoutes } from '@/routes/slideshow.routes.js'
 import userRoutes from '@/routes/user.routes.js'
+import { videoRoutes } from '@/routes/video.routes.js'
 import workspaceRoutes from '@/routes/workspace.routes.js'
 import { toHttpError } from '@/utils/common.utils.js'
 import { errorResponse } from '@/utils/http-response.js'
@@ -16,7 +17,6 @@ import { connectDb } from '@socialista/db'
 import { Hono } from 'hono'
 import { compress } from 'hono/compress'
 import { logger } from 'hono/logger'
-
 const app = new Hono()
 
 app.use(logger())
@@ -43,6 +43,7 @@ app.route('/generated-images', generatedImageRoutes)
 app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)
+app.route('/products', productRoutes)
 serve(
   {
     fetch: app.fetch,

@@ -17,7 +17,9 @@ import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGenerationRun } from '../../../../../../../hooks/use-generation-run'
 import { GeneratedImage } from '../../_components/generated-image'
+import { GenerationPreviewFrame } from '../../_components/generation-preview-frame'
 import { PipelineStep } from '../../_components/pipeline-step'
+
 type GenerationProgressProps = {
   runId: string
   models: Model[]
@@ -75,25 +77,13 @@ function stepState(
   return 'pending'
 }
 
-function PromptContext({ payload, model }: { payload: ImageGenerationPayload; model?: Model }) {
+function PromptMetaStrip({ payload, model }: { payload: ImageGenerationPayload; model?: Model }) {
   const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
 
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-      <p className="text-[14px] leading-relaxed text-foreground">{payload.prompt}</p>
-      {payload.imageUrl ? (
-        <div className="relative mt-3 aspect-square w-full max-w-[140px] overflow-hidden rounded-lg border border-border/60 bg-muted/30">
-          <Image
-            alt="Reference"
-            className="object-cover"
-            fill
-            sizes="140px"
-            src={resolveGeneratedImagePreviewUrl(payload.imageUrl)}
-            unoptimized
-          />
-        </div>
-      ) : null}
-      <div className="mt-3 flex flex-wrap gap-1.5">
+    <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
+      <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
           {aspectLabel} · {payload.aspectRatio}
         </span>
@@ -101,6 +91,18 @@ function PromptContext({ payload, model }: { payload: ImageGenerationPayload; mo
           <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
             {model.name}
           </span>
+        ) : null}
+        {payload.imageUrl ? (
+          <div className="relative ml-auto size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30">
+            <Image
+              alt="Reference"
+              className="object-cover"
+              fill
+              sizes="32px"
+              src={resolveGeneratedImagePreviewUrl(payload.imageUrl)}
+              unoptimized
+            />
+          </div>
         ) : null}
       </div>
     </div>
@@ -137,6 +139,7 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
   const [accessToken] = useState(() => readGenerationAccessToken(runId))
   const activeStepRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
+  const lastScrolledStepRef = useRef<number | null>(null)
 
   const { run, error } = useGenerationRun({ runId, accessToken })
 
@@ -153,6 +156,7 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
     Boolean(metadataError) ||
     status.label === 'Generation failed'
   const isRunning = Boolean(run) && !isComplete && !isFailed
+  const isConnecting = !isRunning && !isComplete && !isFailed
 
   const model = useMemo(() => findModel(models, payload?.model), [models, payload?.model])
 
@@ -173,20 +177,16 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
   const progressWidth = isComplete || isFailed ? 100 : Math.min(status.progress, 100)
 
   useEffect(() => {
-    const scrollTo = (node: HTMLElement | null, block: ScrollLogicalPosition) => {
-      if (!node) return
-      node.scrollIntoView({ behavior: 'smooth', block })
-    }
-
     if (isComplete && output?.imageUrl) {
-      scrollTo(imageRef.current, 'nearest')
+      imageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       return
     }
 
-    if (isRunning || isFailed) {
-      scrollTo(activeStepRef.current, 'nearest')
+    if ((isRunning || isFailed) && lastScrolledStepRef.current !== activeStepIndex) {
+      lastScrolledStepRef.current = activeStepIndex
+      activeStepRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
-  }, [status.progress, status.label, isComplete, isFailed, output?.imageUrl, isRunning, activeStepIndex])
+  }, [activeStepIndex, isComplete, isFailed, isRunning, output?.imageUrl])
 
   if (!accessToken) {
     return (
@@ -241,7 +241,7 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
         <div className="h-0.5 w-full bg-muted/60">
           <div
             className={cn(
-              'h-full transition-[width] duration-500 ease-out',
+              'h-full transition-[width] duration-500 ease-[var(--ease-out)] motion-reduce:transition-none',
               isFailed ? 'bg-destructive' : 'bg-foreground',
             )}
             style={{ width: `${progressWidth}%` }}
@@ -250,26 +250,49 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
       </header>
 
       <div
-        className={cn('mx-auto w-full max-w-3xl flex-1 px-4 sm:px-6', isComplete ? 'py-4 sm:py-5' : 'py-8 sm:py-10')}
+        className={cn('mx-auto w-full max-w-3xl flex-1 px-4 sm:px-6', isComplete ? 'py-4 sm:py-5' : 'py-6 sm:py-8')}
       >
-        <div className={cn(isComplete ? 'space-y-4' : 'space-y-8')}>
-          {payload && !isComplete ? <PromptContext model={model} payload={payload} /> : null}
+        <div className={cn(isComplete ? 'space-y-4' : 'space-y-5')}>
+          {payload && !isComplete ? <PromptMetaStrip model={model} payload={payload} /> : null}
 
-          {isRunning && run ? (
-            <section className="space-y-4" aria-labelledby="generation-progress-heading">
-              <div className="space-y-1">
+          {isRunning || isConnecting ? (
+            <section aria-labelledby="generation-preview-heading" className="space-y-4">
+              <div className="space-y-1 text-center">
                 <h2
-                  id="generation-progress-heading"
+                  id="generation-preview-heading"
                   className="text-[15px] font-semibold tracking-[-0.01em] text-foreground"
                 >
-                  Generating
+                  {isConnecting ? 'Connecting' : 'Generating'}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  <Shimmer as="span">{status.label}</Shimmer>
+                  {isConnecting ? (
+                    'Linking to your generation…'
+                  ) : (
+                    <Shimmer as="span">{status.label}</Shimmer>
+                  )}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border/60 bg-background p-4">
+              <GenerationPreviewFrame aspectRatio={payload?.aspectRatio} isLoading>
+                {isConnecting ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Spinner className="size-5 text-muted-foreground" />
+                  </div>
+                ) : null}
+              </GenerationPreviewFrame>
+            </section>
+          ) : null}
+
+          {isRunning && run ? (
+            <section aria-labelledby="generation-progress-heading" className="space-y-3">
+              <h3
+                id="generation-progress-heading"
+                className="label-caps"
+              >
+                Progress
+              </h3>
+
+              <div className="rounded-xl border border-border/50 bg-background p-3.5">
                 {PIPELINE_STEPS.map((step, index) => {
                   const nextThreshold = PIPELINE_STEPS[index + 1]?.threshold
                   const state = stepState(status.progress, step.threshold, nextThreshold, false)
@@ -288,13 +311,6 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
                 })}
               </div>
             </section>
-          ) : null}
-
-          {!isRunning && !isComplete && !isFailed ? (
-            <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-              <Spinner className="size-4" />
-              Connecting to your generation…
-            </div>
           ) : null}
 
           {isFailed ? (
@@ -329,6 +345,7 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
               cost={output.cost}
               durationMs={run?.durationMs}
               imageRef={imageRef}
+              modelName={model?.name}
               output={output}
               prompt={payload?.prompt}
             />

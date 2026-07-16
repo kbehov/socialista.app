@@ -4,6 +4,7 @@ import { downloadGeneratedImage, saveGeneratedImageToWorkspace } from '@/lib/ima
 import { dataImageUrlToBlobUrl, isDataImageUrl, resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCost, formatDuration } from '@/utils/format'
+import { ASPECT_RATIO_LABELS } from '@/constants/generation.const'
 import type { ImageGenerationOutput } from '@socialista/trigger'
 import { AlertCircleIcon, CheckIcon, DownloadIcon, FolderInputIcon, PlusIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -11,6 +12,7 @@ import Link from 'next/link'
 import type { RefObject } from 'react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { GenerationPreviewFrame } from './generation-preview-frame'
 
 type GeneratedImageProps = {
   output: ImageGenerationOutput
@@ -19,17 +21,18 @@ type GeneratedImageProps = {
   imageRef: RefObject<HTMLDivElement | null>
   prompt?: string
   aspectRatio?: string
+  modelName?: string
 }
-const ASPECT_RATIO_LABELS: Record<string, string> = {
-  '1:1': 'Square',
-  '16:9': 'Landscape',
-  '9:16': 'Portrait',
-  '4:3': 'Classic',
-}
-const PREVIEW_FRAME_CLASS =
-  'relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-muted/20 shadow-sm h-[min(58dvh,640px)] max-h-[calc(100dvh-14rem)] sm:h-[min(62dvh,680px)]'
 
-export function GeneratedImage({ output, durationMs, cost, imageRef, prompt, aspectRatio }: GeneratedImageProps) {
+export function GeneratedImage({
+  output,
+  durationMs,
+  cost,
+  imageRef,
+  prompt,
+  aspectRatio,
+  modelName,
+}: GeneratedImageProps) {
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const [isDownloading, setIsDownloading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -118,59 +121,74 @@ export function GeneratedImage({ output, durationMs, cost, imageRef, prompt, asp
   }
 
   const isBusy = isDownloading || isSaving
+  const aspectLabel = aspectRatio ? (ASPECT_RATIO_LABELS[aspectRatio] ?? aspectRatio) : undefined
 
   return (
-    <div ref={imageRef} className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="space-y-0.5">
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Your image</h2>
-          <p className="text-sm text-muted-foreground">Ready to download or save to your workspace.</p>
-        </div>
-        {aspectRatio ? (
-          <span className="rounded-md bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-            {ASPECT_RATIO_LABELS[aspectRatio] ?? aspectRatio} · {aspectRatio}
-          </span>
-        ) : null}
+    <div ref={imageRef} className="space-y-4">
+      <div className="space-y-1">
+        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Your image</h2>
+        <p className="text-sm text-muted-foreground">Ready to download or save to your workspace.</p>
       </div>
 
-      <div className={PREVIEW_FRAME_CLASS}>
-        {isPreviewLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Spinner className="size-5 text-muted-foreground" />
+      {prompt ? (
+        <div className="space-y-2 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
+          <p className="line-clamp-3 text-[13px] leading-relaxed text-foreground/90">{prompt}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {aspectLabel ? (
+              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+                {aspectLabel} · {aspectRatio}
+              </span>
+            ) : null}
+            {modelName ? (
+              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+                {modelName}
+              </span>
+            ) : null}
           </div>
-        ) : previewError || !previewSrc ? (
+        </div>
+      ) : null}
+
+      <GenerationPreviewFrame
+        aspectRatio={aspectRatio}
+        isLoading={isPreviewLoading}
+        maxHeightClass="max-h-[calc(100dvh-14rem)]"
+        variant="viewport"
+      >
+        {previewError || (!isPreviewLoading && !previewSrc) ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
             <AlertCircleIcon className="size-5 text-destructive" />
             <p className="text-sm text-destructive">Could not load the generated image preview.</p>
           </div>
-        ) : isDataImageUrl(output.imageUrl) || previewSrc.startsWith('blob:') ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            alt="Generated image"
-            className="max-h-full max-w-full object-contain"
-            onError={() => setPreviewError(true)}
-            src={previewSrc}
-          />
-        ) : (
-          <Image
-            alt="Generated image"
-            className="object-contain"
-            fill
-            onError={() => setPreviewError(true)}
-            sizes="(max-width: 768px) 100vw, 672px"
-            src={previewSrc}
-            unoptimized
-          />
-        )}
-      </div>
+        ) : previewSrc ? (
+          isDataImageUrl(output.imageUrl) || previewSrc.startsWith('blob:') ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              alt="Generated image"
+              className="absolute inset-0 size-full object-contain"
+              onError={() => setPreviewError(true)}
+              src={previewSrc}
+            />
+          ) : (
+            <Image
+              alt="Generated image"
+              className="object-contain"
+              fill
+              onError={() => setPreviewError(true)}
+              sizes="(max-width: 768px) 100vw, 672px"
+              src={previewSrc}
+              unoptimized
+            />
+          )
+        ) : null}
+      </GenerationPreviewFrame>
 
-      <p className="text-[12px] tabular-nums text-muted-foreground">
+      <p className="text-center text-[12px] tabular-nums text-muted-foreground">
         {formatDuration(durationMs)} · {formatCost(cost)}
       </p>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
         <Button
-          className="h-9 gap-1.5 px-3.5 text-[13px]"
+          className="h-9 gap-1.5 px-4 text-[13px]"
           disabled={isBusy}
           onClick={() => void handleDownload()}
           size="sm"
@@ -196,7 +214,7 @@ export function GeneratedImage({ output, durationMs, cost, imageRef, prompt, asp
           )}
           {saved ? 'Saved' : 'Save to files'}
         </Button>
-        <Button asChild className="h-9 gap-1.5 px-3.5 text-[13px]" size="sm" type="button" variant="ghost">
+        <Button asChild className="h-9 gap-1.5 px-3.5 text-[13px] text-muted-foreground" size="sm" type="button" variant="ghost">
           <Link href="/dashboard/studio/images">
             <PlusIcon className="size-3.5" />
             New generation

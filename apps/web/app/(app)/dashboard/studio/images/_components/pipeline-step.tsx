@@ -17,28 +17,28 @@ export function PipelineStep({ label, state, detail, isLast, stepRef }: Pipeline
       <div className="flex w-4 shrink-0 flex-col items-center">
         <div
           className={cn(
-            'flex size-4 items-center justify-center rounded-full border',
-            state === 'complete' && 'border-foreground bg-emerald-500 text-background',
-            state === 'active' && 'border-yellow-400 bg-yellow-200',
-            state === 'pending' && 'border-border/80 bg-background ',
+            'flex size-4 items-center justify-center rounded-full border transition-colors duration-150',
+            state === 'complete' && 'border-foreground bg-foreground text-background',
+            state === 'active' && 'border-foreground bg-background',
+            state === 'pending' && 'border-border/70 bg-muted/30',
           )}
         >
           {state === 'complete' ? (
             <CheckIcon className="size-2" strokeWidth={3} />
           ) : state === 'active' ? (
-            <span className="size-1 rounded-full bg-black" />
+            <span className="size-1.5 animate-pulse rounded-full bg-foreground motion-reduce:animate-none" />
           ) : (
             <span className="size-1 rounded-full bg-border" />
           )}
         </div>
         {!isLast ? (
           <div
-            className={cn('mt-0.5 w-px flex-1 min-h-5', state === 'complete' ? 'bg-foreground/70' : 'bg-border/80')}
+            className={cn('mt-0.5 min-h-5 w-px flex-1', state === 'complete' ? 'bg-foreground/40' : 'bg-border/70')}
           />
         ) : null}
       </div>
 
-      <div className={cn('min-w-0 flex-1', !isLast && 'pb-4')}>
+      <div className={cn('min-w-0 flex-1', !isLast && 'pb-3.5')}>
         <p
           className={cn(
             'text-[13px] leading-snug',

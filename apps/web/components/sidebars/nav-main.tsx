@@ -11,7 +11,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
-import { cn } from '@/lib/utils'
 import { ChevronRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -29,7 +28,11 @@ type NavMainItem = {
 
 function isItemActive(pathname: string, item: NavMainItem) {
   if (item.isActive !== undefined) return item.isActive
-  return pathname === item.url
+  return pathname === item.url || pathname.startsWith(`${item.url}/`)
+}
+
+function isSubItemActive(pathname: string, url: string) {
+  return pathname === url || pathname.startsWith(`${url}/`)
 }
 
 export function NavMain({ items, sectionTitle }: { items: NavMainItem[]; sectionTitle: string }) {
@@ -49,17 +52,9 @@ export function NavMain({ items, sectionTitle }: { items: NavMainItem[]; section
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    tooltip={item.title}
-                    className={cn(
-                      'font-medium',
-                      isItemActive(pathname, item)
-                        ? 'bg-sidebar-accent rounded-md text-foreground font-medium'
-                        : 'text-muted-foreground font-normal',
-                    )}
-                  >
+                  <SidebarMenuButton tooltip={item.title} isActive={isItemActive(pathname, item)}>
                     {item.icon}
-                    <span className="text-sm">{item.title}</span>
+                    <span>{item.title}</span>
                     <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -67,10 +62,7 @@ export function NavMain({ items, sectionTitle }: { items: NavMainItem[]; section
                   <SidebarMenuSub>
                     {item.items.map(subItem => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          className={cn(pathname === subItem.url ? 'text-foreground' : 'text-muted-foreground')}
-                        >
+                        <SidebarMenuSubButton asChild isActive={isSubItemActive(pathname, subItem.url)}>
                           <Link href={subItem.url}>
                             <span>{subItem.title}</span>
                           </Link>
@@ -82,14 +74,9 @@ export function NavMain({ items, sectionTitle }: { items: NavMainItem[]; section
               </SidebarMenuItem>
             </Collapsible>
           ) : (
-            <SidebarMenuItem
-              key={item.title}
-              className={
-                isItemActive(pathname, item) ? 'bg-sidebar-accent rounded-md text-foreground' : 'text-muted-foreground'
-              }
-            >
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <Link href={item.url} className="text-sm">
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title} isActive={isItemActive(pathname, item)}>
+                <Link href={item.url}>
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>
