@@ -1,15 +1,16 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
-import type { Slide, SlideId } from '@socialista/types'
-import { CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { useCarouselPreviewLayout } from '@/components/carousel/carousel-preview-layout'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useForwardWheelScroll } from '@/hooks/carousel/use-forward-wheel-scroll'
-import { VERTICAL_STACK_SECTION_PADDING } from '@/lib/carousel/canvas-viewport'
+import { VERTICAL_STACK_SECTION_PADDING, SLIDESHOW_STACK_SCROLLBAR_CLASS } from '@/lib/carousel/canvas-viewport'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import type { Slide, SlideId } from '@socialista/types'
+import { CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { SlideCanvasShell } from './slide-canvas-shell'
 
 type SlidePreviewStackProps = {
@@ -34,12 +35,12 @@ function SlideStackActions({
   slideId,
   slideCount,
   onDuplicate,
-  onDelete,
+  onRequestDelete,
 }: {
   slideId: SlideId
   slideCount: number
   onDuplicate: (id: SlideId) => void
-  onDelete: (id: SlideId) => void
+  onRequestDelete: (id: SlideId) => void
 }) {
   return (
     <div data-slide-actions className="pointer-events-auto flex w-full items-center justify-end gap-0.5 px-1">
@@ -49,7 +50,7 @@ function SlideStackActions({
             type="button"
             size="icon-sm"
             variant="ghost"
-            className="size-7"
+            className="size-8"
             onClick={() => onDuplicate(slideId)}
             aria-label="Duplicate slide"
           >
@@ -64,8 +65,8 @@ function SlideStackActions({
             type="button"
             size="icon-sm"
             variant="ghost"
-            className="size-7 text-destructive hover:text-destructive"
-            onClick={() => onDelete(slideId)}
+            className="size-8 text-destructive hover:text-destructive"
+            onClick={() => onRequestDelete(slideId)}
             disabled={slideCount <= 1}
             aria-label="Delete slide"
           >
@@ -87,7 +88,7 @@ function SlideStackItem({
   slideWidth,
   onActivate,
   onDuplicate,
-  onDelete,
+  onRequestDelete,
   onRegisterRef,
 }: {
   slide: Slide
@@ -98,7 +99,7 @@ function SlideStackItem({
   slideWidth?: number
   onActivate: () => void
   onDuplicate: (id: SlideId) => void
-  onDelete: (id: SlideId) => void
+  onRequestDelete: (id: SlideId) => void
   onRegisterRef: (id: SlideId, el: HTMLDivElement | null) => void
 }) {
   return (
@@ -114,20 +115,30 @@ function SlideStackItem({
           slideId={slide.id}
           slideCount={slideCount}
           onDuplicate={onDuplicate}
-          onDelete={onDelete}
+          onRequestDelete={onRequestDelete}
         />
       ) : (
-        <div className="h-7 w-full shrink-0" aria-hidden />
+        <div className="h-8 w-full shrink-0" aria-hidden />
       )}
 
       <div
-        role="presentation"
+        role="button"
+        tabIndex={isActive ? 0 : -1}
+        aria-label={`Page ${index + 1}${isActive ? ', selected' : ''}`}
+        aria-current={isActive ? 'true' : undefined}
         onClick={isActive ? undefined : onActivate}
+        onKeyDown={event => {
+          if (isActive) return
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onActivate()
+          }
+        }}
         className={cn(
-          'w-full overflow-hidden rounded-lg bg-background transition-[opacity,box-shadow] duration-200',
+          'w-full overflow-hidden rounded-lg bg-background outline-none transition-[opacity,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-ring',
           isActive
             ? 'cursor-default shadow-md ring-2 ring-primary/25'
-            : 'cursor-pointer opacity-55 hover:opacity-80',
+            : 'cursor-pointer opacity-60 hover:opacity-90',
         )}
       >
         <SlideCanvasShell
@@ -136,8 +147,6 @@ function SlideStackItem({
           canvasHint={isActive ? canvasHint : undefined}
         />
       </div>
-
-      {!isActive ? <span className="sr-only">Slide {index + 1}, click to select</span> : null}
     </div>
   )
 }
@@ -158,6 +167,7 @@ export function SlidePreviewStack({ canvasHint }: SlidePreviewStackProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef(new Map<SlideId, HTMLDivElement>())
   const skipScrollRef = useRef(false)
+  const [deleteSlideId, setDeleteSlideId] = useState<SlideId | null>(null)
 
   useForwardWheelScroll(scrollRef)
 
@@ -187,12 +197,13 @@ export function SlidePreviewStack({ canvasHint }: SlidePreviewStackProps) {
     const el = slideRefs.current.get(activeId)
     if (!el) return
 
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion ? 'auto' : 'smooth' })
   }, [activeSlideId])
 
   if (slides.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-center" role="status">
         <p className="text-sm font-medium text-muted-foreground">No slides yet</p>
         <p className="max-w-xs text-xs text-muted-foreground/80">
           Use AI generate or TikTok import to create your first slides.
@@ -204,43 +215,62 @@ export function SlidePreviewStack({ canvasHint }: SlidePreviewStackProps) {
   const isLayoutReady = slideWidth != null && slideWidth > 0
 
   return (
-    <div
-      ref={scrollRef}
-      className="slideshow-editor-stack h-full min-h-0 w-full overflow-x-hidden overflow-y-auto overscroll-contain"
-    >
+    <>
       <div
-        className="mx-auto flex w-full flex-col items-center"
-        style={{
-          gap: slideGap,
-          maxWidth: slideWidth ? slideWidth + 64 : undefined,
-          padding: `${VERTICAL_STACK_SECTION_PADDING}px 24px`,
-        }}
-      >
-        {slides.map((slide, index) =>
-          isLayoutReady ? (
-            <SlideStackItem
-              key={slide.id}
-              slide={slide}
-              index={index}
-              isActive={slide.id === activeSlideId}
-              slideCount={slides.length}
-              canvasHint={canvasHint}
-              slideWidth={slideWidth}
-              onActivate={() => handleActivate(slide.id)}
-              onDuplicate={duplicateSlide}
-              onDelete={removeSlide}
-              onRegisterRef={registerSlideRef}
-            />
-          ) : (
-            <div
-              key={slide.id}
-              className="w-full max-w-[440px] animate-pulse rounded-lg bg-muted"
-              style={{ aspectRatio: `${canvas.width}/${canvas.height}`, maxWidth: slideWidth }}
-            />
-          ),
+        ref={scrollRef}
+        className={cn(
+          'slideshow-editor-stack h-full min-h-0 w-full overflow-x-hidden overflow-y-auto overscroll-contain',
+          SLIDESHOW_STACK_SCROLLBAR_CLASS,
         )}
-        <AddPageButton onClick={() => addSlide()} />
+      >
+        <div
+          className="mx-auto flex w-full flex-col items-center"
+          style={{
+            gap: slideGap,
+            maxWidth: slideWidth ? slideWidth + 64 : undefined,
+            padding: `${VERTICAL_STACK_SECTION_PADDING}px 24px`,
+          }}
+        >
+          {slides.map((slide, index) =>
+            isLayoutReady ? (
+              <SlideStackItem
+                key={slide.id}
+                slide={slide}
+                index={index}
+                isActive={slide.id === activeSlideId}
+                slideCount={slides.length}
+                canvasHint={canvasHint}
+                slideWidth={slideWidth}
+                onActivate={() => handleActivate(slide.id)}
+                onDuplicate={duplicateSlide}
+                onRequestDelete={setDeleteSlideId}
+                onRegisterRef={registerSlideRef}
+              />
+            ) : (
+              <div
+                key={slide.id}
+                className="w-full max-w-[440px] animate-pulse rounded-lg bg-muted"
+                style={{ aspectRatio: `${canvas.width}/${canvas.height}`, maxWidth: slideWidth }}
+              />
+            ),
+          )}
+          <AddPageButton onClick={() => addSlide()} />
+        </div>
       </div>
-    </div>
+
+      <DeleteConfirmDialog
+        open={deleteSlideId != null}
+        onOpenChange={open => {
+          if (!open) setDeleteSlideId(null)
+        }}
+        title="Delete this page?"
+        description="This removes the page and its layers. You can undo with ⌘Z after deleting."
+        confirmLabel="Delete page"
+        onConfirm={() => {
+          if (deleteSlideId) removeSlide(deleteSlideId)
+          setDeleteSlideId(null)
+        }}
+      />
+    </>
   )
 }

@@ -31,7 +31,7 @@ export const VIEWPORT_ZOOM_STEP = 0.1
 
 export const DEFAULT_CANVAS = { width: 1080, height: 1350 } as const
 
-export const DEFAULT_SLIDE_BACKGROUND = '#22c55e'
+export const DEFAULT_SLIDE_BACKGROUND = '#f4f4f5'
 
 export const FONT_FAMILIES = [
   'Arial, Helvetica, sans-serif',

@@ -46,6 +46,9 @@ export const VERTICAL_STACK_SECTION_PADDING = 32
 /** Extra inset so one slide fits fully in the viewport (action bar + breathing room). */
 export const VERTICAL_STACK_VIEWPORT_CHROME = 48
 
+/** Minimal custom scrollbar for slideshow canvas / stack scrollers (see globals.css). */
+export const SLIDESHOW_STACK_SCROLLBAR_CLASS = 'sidebar-scrollbar' as const
+
 type SlideshowFitOptions = {
   capPreviewHeight?: boolean
 }

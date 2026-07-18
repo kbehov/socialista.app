@@ -1,10 +1,12 @@
 'use client'
 
 import { TikTokPostCard } from '@/components/cards/tiktok-post-card'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { StudioPanelScrollArea } from '@/components/carousel/studio-segmented-tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { isBlankSlide } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
 import type { TikTokExtractResult } from '@/lib/tiktok/extract'
 import { isTikTokUrl } from '@/lib/tiktok/extract'
@@ -14,9 +16,11 @@ import { toast } from 'sonner'
 
 export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: boolean }) {
   const applyTikTokImport = useEditorStore(s => s.applyTikTokImport)
+  const currentSlideCount = useEditorStore(s => s.slides.length)
 
   const [url, setUrl] = useState('')
   const [preview, setPreview] = useState<TikTokExtractResult | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const handleExtract = () => {
@@ -59,16 +63,34 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
     })
   }
 
-  const handleImport = () => {
+  const runImport = () => {
     if (!preview || preview.imageUrls.length === 0) return
 
     applyTikTokImport(preview.imageUrls)
+    useEditorStore.getState().setStudioPanelTab('edit')
     toast.success(`Imported ${preview.imageUrls.length} slides from TikTok`)
     setPreview(null)
     setUrl('')
+    setConfirmOpen(false)
   }
 
-  const canImport = preview && preview.imageUrls.length > 0 && !isPending
+  const handleImport = () => {
+    if (!preview || preview.imageUrls.length === 0) return
+
+    const slides = useEditorStore.getState().slides
+    const hasExistingWork =
+      slides.length > 1 || (slides[0] != null && !isBlankSlide(slides[0]))
+
+    if (hasExistingWork) {
+      setConfirmOpen(true)
+      return
+    }
+
+    runImport()
+  }
+
+  const canImport = Boolean(preview && preview.imageUrls.length > 0 && !isPending)
+  const importCount = preview?.imageUrls.length ?? 0
 
   return (
     <aside
@@ -132,11 +154,20 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
           <p className="text-[11px] font-medium">After importing</p>
           <ul className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
             <li>· Canvas switches to TikTok 9:16 format</li>
-            <li>· Add text layers or replace backgrounds per slide</li>
+            <li>· Add text layers or replace backgrounds per page</li>
             <li>· Export as ZIP when ready</li>
           </ul>
         </div>
       </StudioPanelScrollArea>
+
+      <DeleteConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Replace current slides?"
+        description={`Importing from TikTok will replace all ${currentSlideCount} current pages with ${importCount} imported slides. This cannot be undone.`}
+        confirmLabel="Replace slides"
+        onConfirm={runImport}
+      />
     </aside>
   )
 }

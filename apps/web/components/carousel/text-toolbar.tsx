@@ -25,7 +25,7 @@ export function TextToolbar() {
   if (!slide) {
     return (
       <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
-        Select a slide in the filmstrip to edit its background.
+        Select a page to edit text. Use the pages bar or canvas stack to switch pages.
       </div>
     )
   }
@@ -77,8 +77,9 @@ export function TextToolbar() {
         onApply={next => updateLayerStyle(slide.id, layer.id, next)}
       />
 
-      <Field label="Text">
+      <Field label="Text" htmlFor="text-layer-content">
         <textarea
+          id="text-layer-content"
           value={layer.content}
           onChange={e => updateLayer(slide.id, layer.id, { content: e.target.value })}
           rows={2}
@@ -186,10 +187,12 @@ export function TextToolbar() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, htmlFor }: { label: string; children: React.ReactNode; htmlFor?: string }) {
   return (
     <div className={cn('flex flex-col gap-1.5')}>
-      <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
+      <Label htmlFor={htmlFor} className="text-[11px] font-medium text-muted-foreground">
+        {label}
+      </Label>
       {children}
     </div>
   )

@@ -44,6 +44,9 @@ interface EditorState {
 
   slideshowId: string | null
   slideshowName: string
+  isDirty: boolean
+  lastSavedAt: number | null
+  studioPanelTab: 'generate' | 'edit'
 
   addSlide: (backgroundImageUrl?: string) => void
   removeSlide: (slideId: SlideId) => void
@@ -89,6 +92,8 @@ interface EditorState {
     slides: Slide[]
   }) => void
   setSlideshowName: (name: string) => void
+  markClean: () => void
+  setStudioPanelTab: (tab: 'generate' | 'edit') => void
   getProjectPayload: () => {
     name: string
     canvas: CanvasDimensions
@@ -127,7 +132,7 @@ function withHistory<T extends EditorState>(set: (partial: Partial<T> | ((state:
       const snapshot = takeSnapshot(state as unknown as EditorState)
       const past = [...(state as unknown as EditorState).past, snapshot].slice(-HISTORY_LIMIT)
       const next = updater(state)
-      return { ...next, past, future: [] } as Partial<T>
+      return { ...next, past, future: [], isDirty: true } as Partial<T>
     })
 }
 
@@ -167,6 +172,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
     future: [],
     slideshowId: null,
     slideshowName: 'Untitled slideshow',
+    isDirty: false,
+    lastSavedAt: null,
+    studioPanelTab: 'generate',
 
     addSlide: backgroundImageUrl => {
       record(state => {
@@ -545,6 +553,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
         activeLayerId: null,
         past: [],
         future: [],
+        isDirty: false,
+        lastSavedAt: null,
+        studioPanelTab: 'generate',
       })
     },
 
@@ -560,10 +571,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
         activeLayerId: null,
         past: [],
         future: [],
+        isDirty: false,
+        lastSavedAt: Date.now(),
+        studioPanelTab: 'edit',
       })
     },
 
-    setSlideshowName: name => set({ slideshowName: name }),
+    setSlideshowName: name => set(state => (state.slideshowName === name ? {} : { slideshowName: name, isDirty: true })),
+
+    markClean: () => set({ isDirty: false, lastSavedAt: Date.now() }),
+
+    setStudioPanelTab: tab => set({ studioPanelTab: tab }),
 
     getProjectPayload: () => {
       const state = get()
@@ -588,6 +606,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
         activeLayerId: null,
         past: [],
         future: [],
+        isDirty: false,
+        lastSavedAt: null,
+        studioPanelTab: 'generate',
       })
     },
 
@@ -595,11 +616,21 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set({
         canvas: dimensions,
         aspectRatioId: findAspectRatioId(dimensions),
+        isDirty: true,
       }),
 
     setAspectRatio: id => {
       const preset = getAspectRatioPreset(id)
-      set({ aspectRatioId: id, canvas: preset.dimensions, viewportZoom: DEFAULT_VIEWPORT_ZOOM })
+      set(state =>
+        state.aspectRatioId === id
+          ? {}
+          : {
+              aspectRatioId: id,
+              canvas: preset.dimensions,
+              viewportZoom: DEFAULT_VIEWPORT_ZOOM,
+              isDirty: true,
+            },
+      )
     },
 
     setViewportZoom: zoom =>
@@ -650,6 +681,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         activeLayerId: null,
         past: [],
         future: [],
+        isDirty: true,
       })
     },
   }

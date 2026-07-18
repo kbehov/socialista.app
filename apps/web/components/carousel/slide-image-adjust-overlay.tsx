@@ -87,6 +87,9 @@ function CropAdjustOverlay({ imageUrl, aspect, initial, onApply, onCancel }: Cro
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Crop and adjust image"
       className="absolute inset-0 z-40 overflow-hidden bg-black"
       onPointerDown={event => event.stopPropagation()}
     >

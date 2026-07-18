@@ -47,6 +47,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           : slidesBefore.length
 
       applyGeneratedContent(result.texts)
+      useEditorStore.getState().setStudioPanelTab('edit')
 
       const updated = Math.min(existingCount, result.texts.length)
       const created = Math.max(0, result.texts.length - existingCount)
@@ -129,7 +130,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-2.5">
           <p className="text-[11px] font-medium text-foreground/80">Next steps</p>
           <ol className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
-            <li>1. Pick a slide in the filmstrip</li>
+            <li>1. Pick a page in the pages bar</li>
             <li>2. Style text in the Text tab</li>
             <li>3. Add a background in the Slide tab</li>
           </ol>

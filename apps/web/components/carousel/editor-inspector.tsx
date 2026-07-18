@@ -5,9 +5,11 @@ import {
   StudioPanelScrollArea,
   StudioSegmentedTabs,
 } from '@/components/carousel/studio-segmented-tabs'
+import { Button } from '@/components/ui/button'
 import { useEditorStore } from '@/lib/carousel/store'
+import { cn } from '@/lib/utils'
 import { ImageIcon, LayersIcon, TypeIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ImageLayerToolbar } from './image-layer-toolbar'
 import { LayerList } from './layer-list'
 import { SlideBackgroundPanel } from './slide-background-panel'
@@ -17,11 +19,10 @@ type InspectorTab = 'slide' | 'text' | 'image' | 'layers'
 
 export type { InspectorTab }
 
-const TABS = [
+const PRIMARY_TABS = [
   { id: 'slide' as const, label: 'Slide', icon: ImageIcon },
   { id: 'text' as const, label: 'Text', icon: TypeIcon },
   { id: 'image' as const, label: 'Image', icon: ImageIcon },
-  { id: 'layers' as const, label: 'Layers', icon: LayersIcon },
 ]
 
 export function EditorInspector({
@@ -56,6 +57,7 @@ export function EditorInspector({
   }, [activeLayerId, activeLayerType, onTabChange, tab])
 
   const panelHeaderVisible = showPanelHeader ?? embedded
+  const visibleTabs = useMemo(() => PRIMARY_TABS, [])
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -63,7 +65,27 @@ export function EditorInspector({
         {panelHeaderVisible ? (
           <StudioPanelHeader title="Edit" description="Background, layers, text, and images" />
         ) : null}
-        <StudioSegmentedTabs tabs={TABS} value={tab} onChange={onTabChange} size="xs" />
+        <div className="flex items-center gap-1">
+          <StudioSegmentedTabs
+            tabs={visibleTabs}
+            value={tab === 'layers' ? null : (tab as 'slide' | 'text' | 'image')}
+            onChange={next => onTabChange(next)}
+            size="xs"
+            className="min-w-0 flex-1"
+            ariaLabel="Edit sections"
+          />
+          <Button
+            type="button"
+            size="icon-sm"
+            variant={tab === 'layers' ? 'secondary' : 'ghost'}
+            className={cn('size-8 shrink-0', tab === 'layers' && 'shadow-sm')}
+            aria-label="Layers"
+            aria-pressed={tab === 'layers'}
+            onClick={() => onTabChange('layers')}
+          >
+            <LayersIcon className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       <StudioPanelScrollArea>

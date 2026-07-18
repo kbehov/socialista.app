@@ -98,11 +98,15 @@ export function ImageLayerToolbar() {
           />
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-medium text-muted-foreground">Opacity</Label>
+            <Label htmlFor="image-layer-opacity" className="text-[11px] font-medium text-muted-foreground">
+              Opacity
+            </Label>
             <input
+              id="image-layer-opacity"
               type="range"
               min={0}
               max={100}
+              aria-label="Opacity"
               value={Math.round(imageLayer.opacity * 100)}
               onChange={e => updateLayer(slide.id, imageLayer.id, { opacity: Number(e.target.value) / 100 })}
               className="w-full accent-primary"
@@ -111,13 +115,17 @@ export function ImageLayerToolbar() {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <Label className="text-[11px] font-medium text-muted-foreground">Rotation</Label>
+              <Label htmlFor="image-layer-rotation" className="text-[11px] font-medium text-muted-foreground">
+                Rotation
+              </Label>
               <span className="text-[11px] tabular-nums text-muted-foreground">{imageLayer.rotation}°</span>
             </div>
             <input
+              id="image-layer-rotation"
               type="range"
               min={0}
               max={359}
+              aria-label="Rotation"
               value={((imageLayer.rotation % 360) + 360) % 360}
               onChange={e => updateLayer(slide.id, imageLayer.id, { rotation: Number(e.target.value) })}
               className="w-full accent-primary"

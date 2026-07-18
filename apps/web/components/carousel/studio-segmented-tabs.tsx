@@ -27,12 +27,14 @@ export function StudioSegmentedTabs<T extends string>({
   onChange,
   size = 'sm',
   className,
+  ariaLabel = 'Panel sections',
 }: {
   tabs: StudioSegmentedTab<T>[]
-  value: T
+  value: T | null
   onChange: (id: T) => void
   size?: 'xs' | 'sm'
   className?: string
+  ariaLabel?: string
 }) {
   const isXs = size === 'xs'
 
@@ -40,7 +42,7 @@ export function StudioSegmentedTabs<T extends string>({
     <div
       className={cn('flex gap-0.5 rounded-lg bg-muted/25 p-0.5', className)}
       role="tablist"
-      aria-label="Panel sections"
+      aria-label={ariaLabel}
     >
       {tabs.map(({ id, label, icon: Icon }) => {
         const active = value === id
@@ -49,8 +51,27 @@ export function StudioSegmentedTabs<T extends string>({
             key={id}
             type="button"
             role="tab"
+            id={`studio-tab-${id}`}
             aria-selected={active}
+            aria-controls={`studio-tabpanel-${id}`}
+            tabIndex={active || value == null ? 0 : -1}
             onClick={() => onChange(id)}
+            onKeyDown={event => {
+              const currentIndex = Math.max(
+                0,
+                tabs.findIndex(tab => tab.id === (value ?? tabs[0]?.id)),
+              )
+              if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                event.preventDefault()
+                const next = tabs[(currentIndex + 1) % tabs.length]
+                if (next) onChange(next.id)
+              }
+              if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                event.preventDefault()
+                const prev = tabs[(currentIndex - 1 + tabs.length) % tabs.length]
+                if (prev) onChange(prev.id)
+              }
+            }}
             className={cn(
               'flex min-w-0 flex-1 items-center justify-center rounded-md font-medium transition-colors duration-150',
               isXs ? 'h-7 gap-1 px-1 text-[11px]' : 'h-8 gap-1.5 px-2 text-xs',

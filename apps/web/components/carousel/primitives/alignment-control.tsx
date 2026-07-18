@@ -18,7 +18,11 @@ const OPTIONS: { value: TextAlign; icon: typeof AlignLeftIcon; label: string }[]
 
 export function AlignmentControl({ value, onChange, className }: AlignmentControlProps) {
   return (
-    <div className={cn('inline-flex rounded-md border bg-muted/40 p-0.5', className)} role="radiogroup">
+    <div
+      className={cn('inline-flex rounded-md border bg-muted/40 p-0.5', className)}
+      role="radiogroup"
+      aria-label="Text alignment"
+    >
       {OPTIONS.map(opt => {
         const Icon = opt.icon
         const active = value === opt.value

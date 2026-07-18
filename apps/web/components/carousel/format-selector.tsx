@@ -28,12 +28,12 @@ const PLATFORM_ICONS: Record<string, ComponentType<SocialIconProps>> = {
 }
 
 const PLATFORM_ACCENTS: Record<string, string> = {
-  Instagram: 'bg-gradient-to-br from-[#f9ce34]/20 via-[#ee2a7b]/15 to-[#6228d7]/20 text-[#ee2a7b]',
-  TikTok: 'bg-foreground/5 text-foreground',
-  LinkedIn: 'bg-[#0a66c2]/10 text-[#0a66c2]',
-  X: 'bg-foreground/5 text-foreground',
-  Facebook: 'bg-[#1877f2]/10 text-[#1877f2]',
-  Pinterest: 'bg-[#e60023]/10 text-[#e60023]',
+  Instagram: 'bg-muted text-foreground',
+  TikTok: 'bg-muted text-foreground',
+  LinkedIn: 'bg-muted text-foreground',
+  X: 'bg-muted text-foreground',
+  Facebook: 'bg-muted text-foreground',
+  Pinterest: 'bg-muted text-foreground',
 }
 
 export function PlatformIcon({ platform, className, size = 16 }: { platform: string; className?: string; size?: number }) {

@@ -67,7 +67,7 @@ function PresetButton({
       )}
     >
       <span
-        className="flex h-7 w-full items-center justify-center overflow-hidden rounded-sm bg-neutral-800 text-sm font-bold leading-none"
+        className="flex h-7 w-full items-center justify-center overflow-hidden rounded-sm bg-muted text-sm font-bold leading-none"
         style={previewStyle}
         aria-hidden
       >

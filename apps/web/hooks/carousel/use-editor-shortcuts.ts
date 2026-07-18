@@ -9,6 +9,8 @@ export function useEditorShortcuts(): void {
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
   const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
+  const setActiveSlide = useEditorStore(s => s.setActiveSlide)
+  const reorderSlides = useEditorStore(s => s.reorderSlides)
   const { deselectBackgroundEdit } = useSlideImageEdit()
 
   useEffect(() => {
@@ -27,6 +29,9 @@ export function useEditorShortcuts(): void {
         return
       }
 
+      // Keep native text undo/redo inside form fields and contenteditable
+      if (isEditable) return
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         if (e.shiftKey) redo()
@@ -40,10 +45,44 @@ export function useEditorShortcuts(): void {
         return
       }
 
-      if (isEditable) return
+      const { slides, activeSlideId, activeLayerId } = useEditorStore.getState()
+      const activeIndex = slides.findIndex(slide => slide.id === activeSlideId)
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        if (e.metaKey || e.ctrlKey) {
+          if (activeIndex > 0 && activeSlideId) {
+            e.preventDefault()
+            const targetSlide = slides[activeIndex - 1]
+            if (targetSlide) reorderSlides(activeSlideId, targetSlide.id)
+          }
+          return
+        }
+        if (activeIndex > 0) {
+          e.preventDefault()
+          const prev = slides[activeIndex - 1]
+          if (prev) setActiveSlide(prev.id)
+        }
+        return
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        if (e.metaKey || e.ctrlKey) {
+          if (activeIndex >= 0 && activeIndex < slides.length - 1 && activeSlideId) {
+            e.preventDefault()
+            const targetSlide = slides[activeIndex + 1]
+            if (targetSlide) reorderSlides(activeSlideId, targetSlide.id)
+          }
+          return
+        }
+        if (activeIndex >= 0 && activeIndex < slides.length - 1) {
+          e.preventDefault()
+          const next = slides[activeIndex + 1]
+          if (next) setActiveSlide(next.id)
+        }
+        return
+      }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        const { activeSlideId, activeLayerId } = useEditorStore.getState()
         if (activeSlideId && activeLayerId) {
           e.preventDefault()
           removeLayer(activeSlideId, activeLayerId)
@@ -53,5 +92,13 @@ export function useEditorShortcuts(): void {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [deselectBackgroundEdit, removeLayer, undo, redo, clearLayerSelection])
+  }, [
+    clearLayerSelection,
+    deselectBackgroundEdit,
+    redo,
+    removeLayer,
+    reorderSlides,
+    setActiveSlide,
+    undo,
+  ])
 }
