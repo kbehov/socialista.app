@@ -1,5 +1,6 @@
 'use server'
 
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { VIDEO_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
 import type {
@@ -12,12 +13,12 @@ import type {
 } from '@socialista/types'
 import { revalidatePath } from 'next/cache'
 
-const STUDIO_VIDEOS_PATH = '/dashboard/studio/videos'
+const STUDIO_VIDEOS_PATH = DASHBOARD_ROUTES.STUDIO.VIDEOS
 
 function revalidateVideoPaths(videoId?: string) {
   revalidatePath(STUDIO_VIDEOS_PATH)
   if (videoId) {
-    revalidatePath(`${STUDIO_VIDEOS_PATH}/${videoId}`)
+    revalidatePath(DASHBOARD_ROUTES.STUDIO.video(videoId))
   }
 }
 

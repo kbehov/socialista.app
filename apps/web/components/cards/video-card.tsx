@@ -3,6 +3,7 @@
 import { VideoCardPreview } from '@/components/cards/video-card-preview'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { formatRelativeTime } from '@/utils/format'
 import type { VideoSummaryResponse } from '@socialista/types'
@@ -17,7 +18,7 @@ type VideoCardProps = {
 }
 
 export function VideoCard({ video, onDelete, onDuplicate, isDuplicating }: VideoCardProps) {
-  const href = `/dashboard/studio/videos/${video.id}`
+  const href = DASHBOARD_ROUTES.STUDIO.video(video.id)
   const aspectRatio = video.resolution.width / video.resolution.height
 
   return (

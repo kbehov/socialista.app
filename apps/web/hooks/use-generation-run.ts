@@ -2,7 +2,7 @@
 
 import { useRealtimeRun, useRun } from '@trigger.dev/react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { RealtimeImageGenerationTask } from '@socialista/trigger'
+import type { RealtimeImageGenerationTask } from '@socialista/trigger/task-types'
 
 const TERMINAL_STATUSES = new Set([
   'COMPLETED',

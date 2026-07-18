@@ -27,6 +27,9 @@ type FilesBrowserProps = {
   folderName?: string
   folderFileCount?: number
   pathsVariant?: FilesPathsVariant
+  workspaceId?: string
+  initialFiles?: ImageResponse[]
+  initialError?: string | null
 }
 
 type DeleteTarget =
@@ -104,15 +107,22 @@ export function FilesBrowser({
   folderName,
   folderFileCount = 0,
   pathsVariant = 'dashboard',
+  workspaceId,
+  initialFiles,
+  initialError = null,
 }: FilesBrowserProps) {
   const paths = getFilesPaths(pathsVariant)
   const router = useRouter()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const { updateWorkspace } = useWorkspaceStoreActions()
   const isRootView = !folderId
+  const resolvedWorkspaceId = workspaceId ?? currentWorkspace?.id ?? currentWorkspace?._id
 
   const { files, isLoading, isUploading, error, refetch, uploadState, uploadActions } = useWorkspaceFiles({
+    workspaceId: resolvedWorkspaceId,
     folderId,
+    initialFiles,
+    initialError,
   })
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
@@ -136,12 +146,12 @@ export function FilesBrowser({
   )
 
   const handleConfirmDelete = useCallback(async () => {
-    if (!deleteTarget || !currentWorkspace) return
+    if (!deleteTarget || !resolvedWorkspaceId) return
 
     setIsDeleting(true)
     try {
       if (deleteTarget.type === 'file') {
-        const response = await deleteWorkspaceFile(currentWorkspace._id, deleteTarget.id, folderId)
+        const response = await deleteWorkspaceFile(resolvedWorkspaceId, deleteTarget.id, folderId)
         if (!response.success) {
           throw new Error(response.message ?? 'Failed to delete file')
         }
@@ -150,7 +160,7 @@ export function FilesBrowser({
         return
       }
 
-      const response = await deleteWorkspaceFolder(currentWorkspace._id, deleteTarget.id)
+      const response = await deleteWorkspaceFolder(resolvedWorkspaceId, deleteTarget.id)
       if (!response.success) {
         throw new Error(response.message ?? 'Failed to delete folder')
       }
@@ -166,7 +176,7 @@ export function FilesBrowser({
     } finally {
       setIsDeleting(false)
     }
-  }, [currentWorkspace, deleteTarget, folderId, handleDeleteSuccess, paths.root, router])
+  }, [resolvedWorkspaceId, deleteTarget, folderId, handleDeleteSuccess, paths.root, router])
 
   const handleDeleteFile = useCallback((item: MediaGridItem) => {
     setDeleteTarget({

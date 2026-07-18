@@ -11,20 +11,17 @@ import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getAspectRatioPreset } from '@/lib/carousel/aspect-ratios'
 import { cn } from '@/lib/utils'
 import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/services/slideshow.service'
-import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatRelativeTime } from '@/utils/format'
 import type { SlideshowSummaryResponse } from '@socialista/types'
 import { CopyIcon, ImagesIcon, LayersIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
-function getWorkspaceId(workspace: { id?: string; _id?: string } | null | undefined): string | undefined {
-  return workspace?.id ?? workspace?._id
-}
 
 function SlideshowCard({
   slideshow,
@@ -38,7 +35,7 @@ function SlideshowCard({
   isDuplicating: boolean
 }) {
   const preset = getAspectRatioPreset(slideshow.aspectRatioId)
-  const href = `/dashboard/studio/slideshows/${slideshow.id}`
+  const href = DASHBOARD_ROUTES.STUDIO.slideshow(slideshow.id)
   const aspectRatio = slideshow.canvas.width / slideshow.canvas.height
 
   return (
@@ -127,23 +124,33 @@ function SlideshowCard({
   )
 }
 
-export function SlideshowList() {
-  const workspace = useWorkspaceStore(s => s.currentWorkspace)
-  const workspaceId = getWorkspaceId(workspace)
-  const [slideshows, setSlideshows] = useState<SlideshowSummaryResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+type SlideshowListProps = {
+  workspaceId: string
+  workspaceName: string
+  initialSlideshows: SlideshowSummaryResponse[]
+  initialError?: string | null
+}
+
+export function SlideshowList({
+  workspaceId,
+  workspaceName,
+  initialSlideshows,
+  initialError = null,
+}: SlideshowListProps) {
+  const router = useRouter()
+  const [slideshows, setSlideshows] = useState(initialSlideshows)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(initialError)
   const [deleteTarget, setDeleteTarget] = useState<SlideshowSummaryResponse | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
-  const loadSlideshows = useCallback(async () => {
-    if (!workspaceId) {
-      setSlideshows([])
-      setIsLoading(false)
-      return
-    }
+  useEffect(() => {
+    setSlideshows(initialSlideshows)
+    setError(initialError)
+  }, [initialSlideshows, initialError])
 
+  const loadSlideshows = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -159,10 +166,6 @@ export function SlideshowList() {
     setIsLoading(false)
   }, [workspaceId])
 
-  useEffect(() => {
-    void loadSlideshows()
-  }, [loadSlideshows])
-
   const handleDelete = async () => {
     if (!deleteTarget || isDeleting) return
     setIsDeleting(true)
@@ -177,7 +180,7 @@ export function SlideshowList() {
 
     toast.success('Slideshow deleted')
     setDeleteTarget(null)
-    void loadSlideshows()
+    router.refresh()
   }
 
   const handleDuplicate = async (slideshow: SlideshowSummaryResponse) => {
@@ -193,15 +196,7 @@ export function SlideshowList() {
     }
 
     toast.success(`Duplicated as “${response.data.slideshow.name}”`)
-    void loadSlideshows()
-  }
-
-  if (!workspace) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-        Select a workspace to view slideshows.
-      </div>
-    )
+    router.refresh()
   }
 
   const draftCount = slideshows.length
@@ -212,11 +207,13 @@ export function SlideshowList() {
         <div className="min-w-0">
           <h1 className="text-base font-semibold tracking-tight">Slideshows</h1>
           <p className="truncate text-xs text-muted-foreground">
-            {isLoading ? 'Loading drafts…' : `${draftCount} draft${draftCount === 1 ? '' : 's'} in ${workspace.name}`}
+            {isLoading
+              ? 'Loading drafts…'
+              : `${draftCount} draft${draftCount === 1 ? '' : 's'} in ${workspaceName}`}
           </p>
         </div>
         <Button size="sm" className="h-8 shrink-0 rounded-full px-3.5" asChild>
-          <Link href="/dashboard/studio/slideshows/create">
+          <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}>
             <PlusIcon className="size-3.5" />
             Create
           </Link>
@@ -246,7 +243,7 @@ export function SlideshowList() {
             Build carousel posts for Instagram, TikTok, and more — then save drafts here.
           </p>
           <Button size="sm" className="mt-5 h-8 rounded-full px-4" asChild>
-            <Link href="/dashboard/studio/slideshows/create">
+            <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}>
               <PlusIcon className="size-3.5" />
               Create slideshow
             </Link>

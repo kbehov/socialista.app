@@ -1,14 +1,16 @@
 'use client'
 
 import { getWorkspaceFiles, uploadToFolder, uploadToWorkspace } from '@/services/files.service'
-import { useWorkspaceStore } from '@/store/workspace.store'
 import type { ImageResponse } from '@socialista/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type FileWithPreview, useFileUpload } from './use-file-upload'
 
 type UseWorkspaceFilesOptions = {
-  /** Scope files to a folder; omit for workspace root. */
+  workspaceId?: string
   folderId?: string
+  /** When provided (including empty), skip the initial client fetch. */
+  initialFiles?: ImageResponse[]
+  initialError?: string | null
 }
 
 type UseWorkspaceFilesReturn = {
@@ -21,13 +23,23 @@ type UseWorkspaceFilesReturn = {
   uploadActions: ReturnType<typeof useFileUpload>[1]
 }
 
-export function useWorkspaceFiles({ folderId }: UseWorkspaceFilesOptions = {}): UseWorkspaceFilesReturn {
-  const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
-
-  const [files, setFiles] = useState<ImageResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export function useWorkspaceFiles({
+  workspaceId,
+  folderId,
+  initialFiles,
+  initialError = null,
+}: UseWorkspaceFilesOptions = {}): UseWorkspaceFilesReturn {
+  const hasServerData = initialFiles !== undefined
+  const [files, setFiles] = useState(initialFiles ?? [])
+  const [isLoading, setIsLoading] = useState(!hasServerData && Boolean(workspaceId))
   const [isUploading, setIsUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(initialError)
+
+  useEffect(() => {
+    if (!hasServerData) return
+    setFiles(initialFiles)
+    setError(initialError)
+  }, [hasServerData, initialFiles, initialError])
 
   const uploadFnRef = useRef<(files: File[]) => Promise<void>>(async () => {})
 
@@ -47,14 +59,14 @@ export function useWorkspaceFiles({ folderId }: UseWorkspaceFilesOptions = {}): 
   })
 
   const fetchFiles = useCallback(async () => {
-    if (!currentWorkspace) {
+    if (!workspaceId) {
       setIsLoading(false)
       return
     }
     setIsLoading(true)
     setError(null)
     try {
-      const response = await getWorkspaceFiles(currentWorkspace._id, folderId)
+      const response = await getWorkspaceFiles(workspaceId, folderId)
       if (response.data) {
         setFiles(response.data.images)
       }
@@ -63,15 +75,16 @@ export function useWorkspaceFiles({ folderId }: UseWorkspaceFilesOptions = {}): 
     } finally {
       setIsLoading(false)
     }
-  }, [currentWorkspace, folderId])
+  }, [workspaceId, folderId])
 
   useEffect(() => {
+    if (hasServerData) return
     void fetchFiles()
-  }, [fetchFiles])
+  }, [hasServerData, fetchFiles])
 
   const upload = useCallback(
     async (incomingFiles: File[]) => {
-      if (!currentWorkspace || incomingFiles.length === 0) return
+      if (!workspaceId || incomingFiles.length === 0) return
       setIsUploading(true)
       setError(null)
       try {
@@ -80,9 +93,9 @@ export function useWorkspaceFiles({ folderId }: UseWorkspaceFilesOptions = {}): 
           formData.append('file', file)
 
           if (folderId) {
-            await uploadToFolder(currentWorkspace._id, folderId, formData)
+            await uploadToFolder(workspaceId, folderId, formData)
           } else {
-            await uploadToWorkspace(currentWorkspace._id, formData)
+            await uploadToWorkspace(workspaceId, formData)
           }
         }
         await fetchFiles()
@@ -92,7 +105,7 @@ export function useWorkspaceFiles({ folderId }: UseWorkspaceFilesOptions = {}): 
         setIsUploading(false)
       }
     },
-    [currentWorkspace, folderId, fetchFiles],
+    [workspaceId, folderId, fetchFiles],
   )
 
   useEffect(() => {

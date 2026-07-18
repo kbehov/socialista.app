@@ -93,6 +93,9 @@ export const MODEL_ROUTES = {
 
 export const PRODUCT_ROUTES = {
   EXTRACT_PRODUCT: `/products/extract`,
-  GET_PRODUCTS: `/products`,
-  GET_PRODUCT: (id: string) => `/products/${id}`,
+  CREATE: '/products',
+  GET_BY_ID: (id: string) => `/products/${id}`,
+  UPDATE: (id: string) => `/products/${id}`,
+  DELETE: (id: string) => `/products/${id}`,
+  GET_WORKSPACE_PRODUCTS: (workspaceId: string) => `/products/workspace/${workspaceId}`,
 } as const

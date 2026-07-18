@@ -6,23 +6,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { ImagesIcon, LayersIcon, PenLineIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 
 const createOptions = [
   {
     title: 'Image',
-    url: '/dashboard/studio/images',
+    url: DASHBOARD_ROUTES.STUDIO.IMAGES,
     icon: ImagesIcon,
   },
   {
     title: 'Slideshow',
-    url: '/dashboard/studio/slideshows/create',
+    url: DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE,
     icon: LayersIcon,
   },
   {
     title: 'Video',
-    url: '/dashboard/studio/videos/create',
+    url: DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE,
     icon: VideoIcon,
   },
 ] as const

@@ -1,5 +1,6 @@
 'use server'
 
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { SLIDESHOW_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
 import type {
@@ -12,12 +13,12 @@ import type {
 } from '@socialista/types'
 import { revalidatePath } from 'next/cache'
 
-const STUDIO_SLIDESHOWS_PATH = '/dashboard/studio/slideshows'
+const STUDIO_SLIDESHOWS_PATH = DASHBOARD_ROUTES.STUDIO.SLIDESHOWS
 
 function revalidateSlideshowPaths(slideshowId?: string) {
   revalidatePath(STUDIO_SLIDESHOWS_PATH)
   if (slideshowId) {
-    revalidatePath(`${STUDIO_SLIDESHOWS_PATH}/${slideshowId}`)
+    revalidatePath(DASHBOARD_ROUTES.STUDIO.slideshow(slideshowId))
   }
 }
 

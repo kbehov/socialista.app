@@ -5,7 +5,7 @@ interface ProductData {
   name?: string
   description?: string
   image?: string[]
-  price?: string
+  price?: string | number
   currency?: string
   availability?: string
   sku?: string
@@ -48,12 +48,13 @@ export async function extractProductFromUrl(url: string): Promise<ProductData | 
   if (!productNode) return fallbackToMetaTags($, url) // see step 3
 
   const offer = Array.isArray(productNode.offers) ? productNode.offers[0] : productNode.offers
+  const rawPrice = offer?.price ?? offer?.priceSpecification?.price
 
   return {
     name: productNode.name,
     description: productNode.description,
     image: Array.isArray(productNode.image) ? productNode.image : productNode.image ? [productNode.image] : undefined,
-    price: offer?.price ?? offer?.priceSpecification?.price,
+    price: normalizeExtractedPrice(rawPrice),
     currency: offer?.priceCurrency ?? offer?.priceSpecification?.priceCurrency,
     availability: offer?.availability,
     sku: productNode.sku,
@@ -61,6 +62,13 @@ export async function extractProductFromUrl(url: string): Promise<ProductData | 
     url,
   }
 }
+function normalizeExtractedPrice(price: unknown): string | number | undefined {
+  if (price === undefined || price === null) return undefined
+  if (typeof price === 'number' && Number.isFinite(price)) return price
+  if (typeof price === 'string' && price.trim()) return price.trim()
+  return undefined
+}
+
 function fallbackToMetaTags($: ReturnType<typeof load>, url: string): ProductData {
   const get = (name: string) =>
     $(`meta[property="${name}"]`).attr('content') ?? $(`meta[name="${name}"]`).attr('content')
@@ -69,7 +77,7 @@ function fallbackToMetaTags($: ReturnType<typeof load>, url: string): ProductDat
     name: get('og:title') ?? $('title').text(),
     description: get('og:description'),
     image: get('og:image') ? [get('og:image')!] : undefined,
-    price: get('product:price:amount') ?? get('og:price:amount'),
+    price: normalizeExtractedPrice(get('product:price:amount') ?? get('og:price:amount')),
     currency: get('product:price:currency') ?? get('og:price:currency'),
     url,
   }

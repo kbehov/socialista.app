@@ -1,8 +1,10 @@
+import type { MetaResponse } from './common.types.js'
+
 export type ProductData = {
   name?: string
   description?: string
   image?: string[]
-  price?: string
+  price?: string | number
   currency?: string
   availability?: string
   sku?: string
@@ -24,4 +26,24 @@ export type Product = {
   updatedAt: Date
 }
 
-export type GetProductsResponse = Product[]
+export type CreateProductPayload = {
+  workspaceId: string
+  name: string
+  description?: string
+  url: string
+  price: number
+  images?: string[]
+}
+
+export type UpdateProductPayload = {
+  name?: string
+  description?: string
+  url?: string
+  price?: number
+  images?: string[]
+}
+
+export type GetProductsResponse = {
+  products: Product[]
+  meta: MetaResponse
+}

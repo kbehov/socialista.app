@@ -1,5 +1,5 @@
 import { getModels } from '@/services/models.service'
-import { GenerationProgress } from './_components/generation-progress'
+import { GenerationProgress } from '../_components/studio/generation-progress'
 
 type ImageGenerationRunPageProps = {
   params: Promise<{ runId: string }>

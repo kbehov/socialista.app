@@ -1,5 +1,5 @@
 import { getModels } from '@/services/models.service'
-import { ImageStudioWorkspace } from './_components/image-studio-workspace'
+import { ImageStudioWorkspace } from './_components/studio/image-studio-workspace'
 
 const ImagesPage = async () => {
   const { data, success } = await getModels('limit=10&modelType=text-to-image&sort=-usageCount')

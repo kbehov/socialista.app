@@ -14,6 +14,7 @@ import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.s
 import { WorkspaceResponse } from '@socialista/types'
 import { ChevronsUpDownIcon, PlusIcon } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 function WorkspaceAvatar({ workspace }: { workspace: WorkspaceResponse }) {
@@ -29,6 +30,7 @@ function WorkspaceAvatar({ workspace }: { workspace: WorkspaceResponse }) {
 }
 
 export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }) {
+  const router = useRouter()
   const { isMobile } = useSidebar()
   const { currentWorkspace } = useWorkspaceStore()
   const { setCurrentWorkspace } = useWorkspaceStoreActions()
@@ -36,17 +38,23 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey)) return
+      // Only ⌘/Ctrl + 1–9 — ignore bare Meta/Control (parseInt("Meta") is NaN and bypasses bounds checks)
+      if (!/^[1-9]$/.test(event.key)) return
 
       const index = Number.parseInt(event.key, 10) - 1
       if (index < 0 || index >= workspaces.length) return
 
+      const workspace = workspaces[index]
+      if (!workspace) return
+
       event.preventDefault()
-      setCurrentWorkspace(workspaces[index] ?? null)
+      setCurrentWorkspace(workspace)
+      router.refresh()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [workspaces, setCurrentWorkspace])
+  }, [workspaces, setCurrentWorkspace, router])
 
   if (!currentWorkspace) {
     return null
@@ -87,7 +95,10 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
             {workspaces.map((workspace, index) => (
               <DropdownMenuItem
                 key={workspace._id}
-                onClick={() => setCurrentWorkspace(workspace)}
+                onClick={() => {
+                  setCurrentWorkspace(workspace)
+                  router.refresh()
+                }}
                 className="gap-2 p-2"
               >
                 <WorkspaceAvatar workspace={workspace} />

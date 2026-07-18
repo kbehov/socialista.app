@@ -13,15 +13,27 @@
   },
   "exports": {
     ".": {
-      "types": "./src/trigger/index.ts",
-      "import": "./src/trigger/index.ts"
+      "types": "./src/client.ts",
+      "import": "./src/client.ts"
+    },
+    "./schemas/image-generation": {
+      "types": "./src/schemas/image-generation.schema.ts",
+      "import": "./src/schemas/image-generation.schema.ts"
+    },
+    "./schemas/static-ad": {
+      "types": "./src/schemas/static-ad.schema.ts",
+      "import": "./src/schemas/static-ad.schema.ts"
+    },
+    "./task-types": {
+      "types": "./src/task-types.ts",
+      "import": "./src/task-types.ts"
     }
   },
   "license": "ISC",
   "dependencies": {
     "@socialista/db": "workspace:^",
+    "@socialista/types": "workspace:^",
     "@fal-ai/client": "^1.10.1",
-    "@fal-ai/serverless-client": "^0.15.0",
     "@trigger.dev/sdk": "^4.5.3",
     "ai": "^6.0.208",
     "zod": "^4.4.3"

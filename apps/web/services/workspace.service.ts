@@ -33,7 +33,7 @@ function revalidateWorkspaces(workspaceId?: string) {
 export const getUserWorkspaces = async (): Promise<ApiResponse<WorkspaceResponse[]>> => {
   return api.get<WorkspaceResponse[]>(WORKSPACE_ROUTES.GET_WORKSPACES, {
     next: {
-      revalidate: 60,
+      revalidate: 300, // 5 minutes
       tags: ['workspaces'],
     },
   })
@@ -42,7 +42,7 @@ export const getUserWorkspaces = async (): Promise<ApiResponse<WorkspaceResponse
 export const getWorkspace = async (workspaceId: string): Promise<ApiResponse<{ workspace: WorkspaceResponse }>> => {
   return api.get<{ workspace: WorkspaceResponse }>(WORKSPACE_ROUTES.GET_WORKSPACE(workspaceId), {
     next: {
-      revalidate: 60,
+      revalidate: 300, // 5 minutes
       tags: [`workspace-${workspaceId}`],
     },
   })
@@ -51,7 +51,7 @@ export const getWorkspace = async (workspaceId: string): Promise<ApiResponse<{ w
 export const getWorkspaceBilling = async (workspaceId: string): Promise<ApiResponse<WorkspaceBillingResponse>> => {
   return api.get<WorkspaceBillingResponse>(WORKSPACE_ROUTES.GET_WORKSPACE_BILLING(workspaceId), {
     next: {
-      revalidate: 30,
+      revalidate: 300, // 5 minutes
       tags: [`workspace-billing-${workspaceId}`],
     },
   })
@@ -62,7 +62,7 @@ export const getWorkspaceUsage = async (
 ): Promise<ApiResponse<{ usage: WorkspaceUsageSummary }>> => {
   return api.get<{ usage: WorkspaceUsageSummary }>(WORKSPACE_ROUTES.GET_WORKSPACE_USAGE(workspaceId), {
     next: {
-      revalidate: 30,
+      revalidate: 300, // 5 minutes
       tags: [`workspace-${workspaceId}`],
     },
   })
@@ -71,7 +71,7 @@ export const getWorkspaceUsage = async (
 export const getWorkspaceBalance = async (workspaceId: string): Promise<ApiResponse<WorkspaceBalanceResponse>> => {
   return api.get<WorkspaceBalanceResponse>(WORKSPACE_ROUTES.GET_WORKSPACE_BALANCE(workspaceId), {
     next: {
-      revalidate: 30,
+      revalidate: 300, // 5 minutes
       tags: [`workspace-billing-${workspaceId}`],
     },
   })

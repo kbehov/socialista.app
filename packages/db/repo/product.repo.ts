@@ -1,6 +1,7 @@
 import { ProductModel } from '../models/product.model.js'
 import type { Iproduct, ProductDocument } from '../types/product.types.js'
 import { buildFilters } from '../utils/build-filters.js'
+
 export const createProduct = async (product: Partial<Iproduct>): Promise<ProductDocument> => {
   const newProduct = await ProductModel.create(product)
   return newProduct
@@ -11,14 +12,26 @@ export const getProductById = async (id: string): Promise<Iproduct | null> => {
   return product
 }
 
-export const getAllProducts = async (query: string): Promise<Iproduct[]> => {
+export const getProducts = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const data = await ProductModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean()
-  return data
+  const products = await ProductModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean()
+  const total = await ProductModel.countDocuments(match)
+
+  return {
+    products,
+    meta: {
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
+      hasPreviousPage: pagination.page > 1,
+      sort,
+    },
+  }
 }
 
 export const updateProduct = async (id: string, product: Partial<Iproduct>): Promise<ProductDocument | null> => {
-  const updatedProduct = await ProductModel.findByIdAndUpdate(id, product, { new: true })
+  const updatedProduct = await ProductModel.findByIdAndUpdate(id, { $set: product }, { new: true })
   return updatedProduct
 }
 

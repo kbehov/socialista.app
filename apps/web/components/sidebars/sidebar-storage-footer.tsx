@@ -20,9 +20,9 @@ function StorageProgress({
       value={percentUsed}
       className={cn(
         'bg-sidebar-border/80',
-        isFull && '[&_[data-slot=progress-indicator]]:bg-destructive',
-        isNearFull && !isFull && '[&_[data-slot=progress-indicator]]:bg-amber-500',
-        !isNearFull && !isFull && '[&_[data-slot=progress-indicator]]:bg-primary',
+        isFull && '**:data-[slot=progress-indicator]:bg-destructive',
+        isNearFull && !isFull && '**:data-[slot=progress-indicator]:bg-amber-500',
+        !isNearFull && !isFull && '**:data-[slot=progress-indicator]:bg-primary',
         className,
       )}
     />

@@ -7,8 +7,8 @@ const monorepoRoot = path.join(dirname, '..', '..')
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
-  serverExternalPackages: ['@google-cloud/vision'],
-  transpilePackages: ['@socialista/types'],
+  serverExternalPackages: ['@google-cloud/vision', 'mongoose', '@socialista/db'],
+  transpilePackages: ['@socialista/types', '@socialista/trigger'],
   images: {
     remotePatterns: [
       {

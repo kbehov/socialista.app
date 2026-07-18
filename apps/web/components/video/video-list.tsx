@@ -5,34 +5,42 @@ import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
 import { Button } from '@/components/ui/button'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { deleteVideo, duplicateVideo, getWorkspaceVideos } from '@/services/video.service'
-import { useWorkspaceStore } from '@/store/workspace.store'
 import type { VideoSummaryResponse } from '@socialista/types'
 import { PlusIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-function getWorkspaceId(workspace: { id?: string; _id?: string } | null | undefined): string | undefined {
-  return workspace?.id ?? workspace?._id
+type VideoListProps = {
+  workspaceId: string
+  workspaceName: string
+  initialVideos: VideoSummaryResponse[]
+  initialError?: string | null
 }
 
-export function VideoList() {
-  const workspace = useWorkspaceStore(s => s.currentWorkspace)
-  const workspaceId = getWorkspaceId(workspace)
-  const [videos, setVideos] = useState<VideoSummaryResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export function VideoList({
+  workspaceId,
+  workspaceName,
+  initialVideos,
+  initialError = null,
+}: VideoListProps) {
+  const router = useRouter()
+  const [videos, setVideos] = useState(initialVideos)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(initialError)
   const [deleteTarget, setDeleteTarget] = useState<VideoSummaryResponse | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
+  useEffect(() => {
+    setVideos(initialVideos)
+    setError(initialError)
+  }, [initialVideos, initialError])
+
   const loadVideos = useCallback(async () => {
-    if (!workspaceId) {
-      setVideos([])
-      setIsLoading(false)
-      return
-    }
     setIsLoading(true)
     setError(null)
     const response = await getWorkspaceVideos(workspaceId, 'draft')
@@ -46,10 +54,6 @@ export function VideoList() {
     setIsLoading(false)
   }, [workspaceId])
 
-  useEffect(() => {
-    void loadVideos()
-  }, [loadVideos])
-
   const handleDelete = async () => {
     if (!deleteTarget || isDeleting) return
     setIsDeleting(true)
@@ -61,7 +65,7 @@ export function VideoList() {
     }
     toast.success('Video deleted')
     setDeleteTarget(null)
-    void loadVideos()
+    router.refresh()
   }
 
   const handleDuplicate = async (video: VideoSummaryResponse) => {
@@ -74,15 +78,7 @@ export function VideoList() {
       return
     }
     toast.success(`Duplicated as “${response.data.video.name}”`)
-    void loadVideos()
-  }
-
-  if (!workspace) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-        Select a workspace to view videos.
-      </div>
-    )
+    router.refresh()
   }
 
   const draftCount = videos.length
@@ -93,11 +89,11 @@ export function VideoList() {
         <div className="min-w-0">
           <h1 className="text-base font-semibold tracking-tight">Videos</h1>
           <p className="truncate text-xs text-muted-foreground">
-            {isLoading ? 'Loading drafts…' : `${draftCount} draft${draftCount === 1 ? '' : 's'} in ${workspace.name}`}
+            {isLoading ? 'Loading drafts…' : `${draftCount} draft${draftCount === 1 ? '' : 's'} in ${workspaceName}`}
           </p>
         </div>
         <Button size="sm" className="h-8 shrink-0 rounded-full px-3.5" asChild>
-          <Link href="/dashboard/studio/videos/create">
+          <Link href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}>
             <PlusIcon className="size-3.5" />
             Create
           </Link>
@@ -127,7 +123,7 @@ export function VideoList() {
             Build short-form videos entirely in your browser — import, trim, overlay text, export MP4.
           </p>
           <Button size="sm" className="mt-5 h-8 rounded-full px-4" asChild>
-            <Link href="/dashboard/studio/videos/create">
+            <Link href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}>
               <PlusIcon className="size-3.5" />
               Create video
             </Link>

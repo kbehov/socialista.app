@@ -32,7 +32,12 @@ export const createFolder = async (payload: CreateCollectionPayload): Promise<Ap
 }
 
 export const getFolders = async (): Promise<ApiResponse<GetCollectionsResponse>> => {
-  return api.get<GetCollectionsResponse>(FILES_API_ROUTES.GET_FOLDERS)
+  return api.get<GetCollectionsResponse>(FILES_API_ROUTES.GET_FOLDERS, {
+    next: {
+      revalidate: 60,
+      tags: ['workspace-folders'],
+    },
+  })
 }
 
 export const getFolderById = async (id: string): Promise<ApiResponse<CollectionResponse>> => {
@@ -47,7 +52,11 @@ export const getWorkspaceFiles = async (
   if (folderId) params.set('collectionId', folderId)
   const query = params.toString()
   const path = `${FILES_API_ROUTES.GET_WORKSPACE_FILES(workspaceId)}${query ? `?${query}` : ''}`
-  return api.get<GetImagesResponse>(path)
+  return api.get<GetImagesResponse>(path, {
+    next: {
+      tags: ['workspace-files'],
+    },
+  })
 }
 
 export const uploadToWorkspace = async (

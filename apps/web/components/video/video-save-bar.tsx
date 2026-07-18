@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { persistVideoAssets } from '@/lib/video/persist-video-assets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable, type MediaAsset } from '@/lib/video/types'
@@ -124,7 +125,7 @@ export function VideoSaveBar({ className, showLabel = true }: { className?: stri
             : asset
         }),
       )
-      router.replace(`/dashboard/studio/videos/${video.id}`)
+      router.replace(DASHBOARD_ROUTES.STUDIO.video(video.id))
       toast.success('Draft saved')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save video')

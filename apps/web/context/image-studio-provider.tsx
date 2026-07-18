@@ -1,6 +1,6 @@
 'use client'
 
-import type { AspectRatioId, ImageExample, VibeId } from '@/app/(app)/dashboard/studio/images/_lib/examples'
+import type { AspectRatioId, ImageExample, VibeId } from '@/lib/studio/images/examples'
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 
 type ImageStudioContextValue = {

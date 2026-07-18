@@ -3,6 +3,7 @@
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
 import { VideoStudio } from '@/components/video/video-studio'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { importSlideshowToTimeline, type SlideshowImportProgress } from '@/lib/video/slideshow-import'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { fetchSlideshow } from '@/services/slideshow.client'
@@ -74,7 +75,7 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
         }
 
         importedRef.current = true
-        router.replace('/dashboard/studio/videos/create')
+        router.replace(DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE)
         setReady(true)
         setImportProgress(null)
         toast.success(`Imported ${count} slide${count === 1 ? '' : 's'} to timeline`)

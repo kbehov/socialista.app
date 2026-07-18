@@ -2,6 +2,13 @@ import { WorkspaceResponse } from '@socialista/types'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
+import { removeCurrentWorkspaceIdClient, setCurrentWorkspaceIdClient } from '@/utils/cookie.utils'
+
+export function getWorkspaceId(workspace: { id?: string; _id?: string } | null | undefined): string | undefined {
+  const id = workspace?.id || workspace?._id
+  return id || undefined
+}
+
 type WorkspaceData = {
   workspaces: WorkspaceResponse[]
   isLoading: boolean
@@ -30,13 +37,26 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       ...initialData,
       setWorkspaces: workspaces => set({ workspaces }),
       setIsLoading: isLoading => set({ isLoading }),
-      setCurrentWorkspace: currentWorkspace => set({ currentWorkspace }),
+      setCurrentWorkspace: currentWorkspace => {
+        const workspaceId = getWorkspaceId(currentWorkspace)
+        if (workspaceId) {
+          setCurrentWorkspaceIdClient(workspaceId)
+        }
+        // Only clear the cookie on an explicit null selection — never write "undefined"
+        if (currentWorkspace === null) {
+          removeCurrentWorkspaceIdClient()
+        }
+        set({ currentWorkspace })
+      },
       updateWorkspace: workspace =>
         set(state => ({
           workspaces: state.workspaces.map(w => (w.id === workspace.id ? workspace : w)),
           currentWorkspace: state.currentWorkspace?.id === workspace.id ? workspace : state.currentWorkspace,
         })),
-      reset: () => set(initialData),
+      reset: () => {
+        removeCurrentWorkspaceIdClient()
+        set(initialData)
+      },
     }),
     {
       name: 'so_workspace_store',

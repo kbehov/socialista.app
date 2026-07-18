@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useEditorStore } from '@/lib/carousel/store'
 import { flushAllBackgroundTransforms } from '@/lib/carousel/background-transform-flush'
 import { createSlideshow, updateSlideshow } from '@/services/slideshow.service'
@@ -105,7 +106,7 @@ export function SlideshowSaveBar({
       if (!result) return
 
       if (result.isNew) {
-        router.replace(`/dashboard/studio/slideshows/${result.id}`)
+        router.replace(DASHBOARD_ROUTES.STUDIO.slideshow(result.id))
       }
 
       toast.success('Draft saved')
@@ -122,7 +123,7 @@ export function SlideshowSaveBar({
       const result = await persistSlideshowDraft()
       if (!result) return
 
-      router.push(`/dashboard/studio/videos/create?slideshowId=${result.id}`)
+      router.push(`${DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}?slideshowId=${result.id}`)
     } finally {
       setBusyAction(null)
     }

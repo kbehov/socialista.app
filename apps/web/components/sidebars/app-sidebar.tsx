@@ -7,12 +7,21 @@ import { SidebarStorageFooter } from '@/components/sidebars/sidebar-storage-foot
 import { SidebarUpgradeCard } from '@/components/sidebars/sidebar-upgrade-card'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import { TeamSwitcher } from '@/components/workspace-switcher'
+import {
+  DASHBOARD_ROUTES,
+  isDashboardFilesPath,
+  isDashboardProductsPath,
+  isStaticAdsPath,
+  isStudioImagesPath,
+  isStudioSegmentPath,
+} from '@/constants/app-routes'
 import { WorkspaceResponse } from '@socialista/types'
 import {
   FolderArchiveIcon,
   ImagesIcon,
   LayersIcon,
   LayoutDashboardIcon,
+  MegaphoneIcon,
   ShoppingBagIcon,
   VideoIcon,
 } from 'lucide-react'
@@ -35,8 +44,9 @@ const defaultUser = {
 
 const iconProps = { className: 'nav-icon size-4 shrink-0', strokeWidth: 1.75 } as const
 
-function isStudioRoute(pathname: string, segment: string) {
-  return pathname === `/dashboard/studio/${segment}` || pathname.startsWith(`/dashboard/studio/${segment}/`)
+function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'videos') {
+  if (segment === 'images') return isStudioImagesPath(pathname)
+  return isStudioSegmentPath(pathname, segment)
 }
 
 export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSidebarProps) {
@@ -45,19 +55,25 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
   const studioItems = [
     {
       title: 'Images',
-      url: '/dashboard/studio/images',
+      url: DASHBOARD_ROUTES.STUDIO.IMAGES,
       icon: <ImagesIcon {...iconProps} />,
       isActive: isStudioRoute(pathname, 'images'),
     },
     {
+      title: 'Static ads',
+      url: DASHBOARD_ROUTES.STUDIO.STATIC_ADS,
+      icon: <MegaphoneIcon {...iconProps} />,
+      isActive: isStaticAdsPath(pathname),
+    },
+    {
       title: 'Slideshows',
-      url: '/dashboard/studio/slideshows',
+      url: DASHBOARD_ROUTES.STUDIO.SLIDESHOWS,
       icon: <LayersIcon {...iconProps} />,
       isActive: isStudioRoute(pathname, 'slideshows'),
     },
     {
       title: 'Videos',
-      url: '/dashboard/studio/videos',
+      url: DASHBOARD_ROUTES.STUDIO.VIDEOS,
       icon: <VideoIcon {...iconProps} />,
       isActive: isStudioRoute(pathname, 'videos'),
     },
@@ -66,21 +82,21 @@ export function AppSidebar({ workspaces, user = defaultUser, ...props }: AppSide
   const workspaceItems = [
     {
       title: 'Files',
-      url: '/dashboard/files',
+      url: DASHBOARD_ROUTES.FILES,
       icon: <FolderArchiveIcon {...iconProps} />,
-      isActive: pathname === '/dashboard/files' || pathname.startsWith('/dashboard/files/'),
+      isActive: isDashboardFilesPath(pathname),
     },
     {
       title: 'Products',
-      url: '/dashboard/products',
+      url: DASHBOARD_ROUTES.PRODUCTS,
       icon: <ShoppingBagIcon {...iconProps} />,
-      isActive: pathname === '/dashboard/products' || pathname.startsWith('/dashboard/products/'),
+      isActive: isDashboardProductsPath(pathname),
     },
     {
       title: 'Dashboard',
-      url: '/dashboard',
+      url: DASHBOARD_ROUTES.ROOT,
       icon: <LayoutDashboardIcon {...iconProps} />,
-      isActive: pathname === '/dashboard',
+      isActive: pathname === DASHBOARD_ROUTES.ROOT,
     },
   ]
 
