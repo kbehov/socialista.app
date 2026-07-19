@@ -110,6 +110,11 @@ export const ACCOUNT_ROUTES = {
   GET_WORKSPACE_ACCOUNTS: (workspaceId: string) => `/accounts/workspace/${workspaceId}`,
 } as const
 
+export const GENERATION_ROUTES = {
+  GET_BY_ID: (id: string) => `/generations/${id}`,
+  GET_WORKSPACE_GENERATIONS: (workspaceId: string) => `/generations/workspace/${workspaceId}`,
+} as const
+
 export const WAITLIST_ROUTES = {
   JOIN: '/waitlist',
 } as const

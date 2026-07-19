@@ -6,6 +6,7 @@ export const DASHBOARD_ROUTES = {
   folder: (id: string) => `/dashboard/files/${id}`,
   PRODUCTS: '/dashboard/products',
   ACCOUNTS: '/dashboard/accounts',
+  GENERATIONS: '/dashboard/generations',
   STUDIO: {
     IMAGES: '/dashboard/studio/images',
     imageRun: (runId: string) => `/dashboard/studio/images/${runId}`,
@@ -33,6 +34,13 @@ export function isDashboardProductsPath(pathname: string) {
 export function isDashboardAccountsPath(pathname: string) {
   return (
     pathname === DASHBOARD_ROUTES.ACCOUNTS || pathname.startsWith(`${DASHBOARD_ROUTES.ACCOUNTS}/`)
+  )
+}
+
+export function isDashboardGenerationsPath(pathname: string) {
+  return (
+    pathname === DASHBOARD_ROUTES.GENERATIONS ||
+    pathname.startsWith(`${DASHBOARD_ROUTES.GENERATIONS}/`)
   )
 }
 

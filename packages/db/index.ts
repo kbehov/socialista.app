@@ -2,6 +2,8 @@ export { connectDb, disconnectDb, getMongoUri, mongoose } from './connect.js'
 
 export { AccountModel } from './models/account.model.js'
 export * from './repo/account.repo.js'
+export { GenerationModel } from './models/generation.model.js'
+export * from './repo/generation.repo.js'
 export { ImageCollectionModel, ImageModel } from './models/image.model.js'
 export * from './models/inspiration.model.js'
 export { InvitationModel } from './models/invitation.model.js'
@@ -49,6 +51,19 @@ export {
   type IAccount,
   type UpdateAccountInput,
 } from './types/account.types.js'
+
+export {
+  GenerationKind,
+  GenerationResultType,
+  GenerationStatus,
+  type CreateGenerationInput,
+  type GenerationAdCopy,
+  type GenerationDocument,
+  type GenerationInputs,
+  type GenerationResult,
+  type IGeneration,
+  type UpdateGenerationInput,
+} from './types/generation.types.js'
 
 export { InvitationStatus, type Invitation, type InvitationDocument } from './types/invitation.types.js'
 export type {

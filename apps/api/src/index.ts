@@ -2,6 +2,7 @@ import '@/env.js'
 import accountRoutes from '@/routes/account.routes.js'
 import authRoutes from '@/routes/auth.routes.js'
 import { collectionRoutes } from '@/routes/collection.routes.js'
+import generationRoutes from '@/routes/generation.routes.js'
 import { generatedImageRoutes } from '@/routes/generated-image.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
@@ -42,6 +43,7 @@ app.route('/invitations', invitationRoutes)
 app.route('/inspirations', inspirationRoutes)
 app.route('/collections', collectionRoutes)
 app.route('/generated-images', generatedImageRoutes)
+app.route('/generations', generationRoutes)
 app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)

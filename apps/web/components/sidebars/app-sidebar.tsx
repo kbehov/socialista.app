@@ -11,6 +11,7 @@ import {
   DASHBOARD_ROUTES,
   isDashboardAccountsPath,
   isDashboardFilesPath,
+  isDashboardGenerationsPath,
   isDashboardProductsPath,
   isStaticAdsPath,
   isStudioImagesPath,
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { WorkspaceResponse } from '@socialista/types'
 import {
   FolderArchiveIcon,
+  HistoryIcon,
   ImagesIcon,
   LayersIcon,
   LayoutDashboardIcon,
@@ -97,6 +99,12 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
       url: DASHBOARD_ROUTES.STUDIO.VIDEOS,
       icon: <VideoIcon {...iconProps} />,
       isActive: isStudioRoute(pathname, 'videos'),
+    },
+    {
+      title: 'Generations',
+      url: DASHBOARD_ROUTES.GENERATIONS,
+      icon: <HistoryIcon {...iconProps} />,
+      isActive: isDashboardGenerationsPath(pathname),
     },
   ]
 

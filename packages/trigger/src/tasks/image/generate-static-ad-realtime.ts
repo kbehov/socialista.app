@@ -10,6 +10,14 @@ import {
 } from '../../ai/static-ad-prompts.js'
 import { resolveImageGenerator } from '../../providers/resolve-provider.js'
 import { staticAdPayloadSchema } from '../../schemas/static-ad.schema.js'
+import {
+  completeGenerationRecord,
+  failGenerationRecord,
+  GenerationKind,
+  GenerationResultType,
+  setGenerationEnhancedPrompt,
+  startGenerationRecord,
+} from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
@@ -20,7 +28,9 @@ export const realtimeStaticAdGeneration = schemaTask({
   schema: staticAdPayloadSchema,
   maxDuration: 300,
   retry: { maxAttempts: 1 },
-  run: async (payload): Promise<ImageGenerationOutput> => {
+  run: async (payload, { ctx }): Promise<ImageGenerationOutput> => {
+    let startedAt: Date | undefined
+
     try {
       await connectDb()
 
@@ -28,6 +38,23 @@ export const realtimeStaticAdGeneration = schemaTask({
         modelNotFoundMessage: `Model not found: ${payload.model}. Add openai/gpt-image-2 in the manager before generating static ads.`,
       })
       assertSufficientCredits(workspace, model.cost)
+
+      const started = await startGenerationRecord({
+        kind: GenerationKind.STATIC_AD,
+        taskId: TASK_IDS.staticAdGeneration,
+        triggerRunId: ctx.run.id,
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
+        prompt: payload.prompt,
+        model,
+        inputs: {
+          aspectRatio: payload.aspectRatio,
+          productImageUrl: payload.productImage,
+          language: payload.language,
+          ...(payload.adCopy ? { adCopy: payload.adCopy } : {}),
+        },
+      })
+      startedAt = started.startedAt
 
       setGenerationStatus(10, 'Analyzing product photo')
 
@@ -52,14 +79,15 @@ export const realtimeStaticAdGeneration = schemaTask({
         ],
       })
 
-      const finalPrompt = sanitizeStaticAdModelPrompt(planned.text)
+      const enhancedPrompt = sanitizeStaticAdModelPrompt(planned.text)
+      await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
 
       setGenerationStatus(30, 'Generating static ad')
 
       const generateImage = resolveImageGenerator(model.modelProvider)
       const imageUrl = await generateImage({
         model: model.value,
-        prompt: finalPrompt,
+        prompt: enhancedPrompt,
         aspectRatio: payload.aspectRatio,
         workspaceId: payload.workspaceId,
         userId: payload.userId,
@@ -69,11 +97,26 @@ export const realtimeStaticAdGeneration = schemaTask({
 
       await finalizeGeneration(payload.workspaceId, model)
 
+      await completeGenerationRecord({
+        triggerRunId: ctx.run.id,
+        result: { type: GenerationResultType.IMAGE, url: imageUrl },
+        cost: model.cost,
+        startedAt,
+        enhancedPrompt,
+      })
+
       setGenerationStatus(100, 'Complete')
 
       return { imageUrl, cost: model.cost }
     } catch (error) {
       setGenerationFailure(error, 'Static ad generation failed')
+      if (startedAt) {
+        await failGenerationRecord({
+          triggerRunId: ctx.run.id,
+          error,
+          startedAt,
+        })
+      }
       throw error
     } finally {
       await disconnectDb()
