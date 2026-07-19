@@ -21,11 +21,81 @@ export const assertHasUpdates = (updates: object): void => {
   }
 }
 
+/** Trimmed non-empty string, or `undefined` when missing/blank. */
+export const optionalTrimmedString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed || undefined
+}
+
+/** Required trimmed string — throws when missing or blank. */
+export const requireTrimmedString = (value: unknown, label: string): string => {
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  if (!trimmed) {
+    throw new HttpError(400, `${label} is required`)
+  }
+  return trimmed
+}
+
+export const parseOptionalDate = (value: unknown, label: string): Date | undefined => {
+  if (value === undefined || value === null) return undefined
+  const date = value instanceof Date ? value : new Date(String(value))
+  if (Number.isNaN(date.getTime())) {
+    throw new HttpError(400, `Invalid ${label}`)
+  }
+  return date
+}
+
+export const parseOptionalNullableDate = (
+  value: unknown,
+  label: string,
+): Date | null | undefined => {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  return parseOptionalDate(value, label) ?? null
+}
+
+export const toDate = (value: string | Date | undefined): Date | undefined => {
+  if (value === undefined) return undefined
+  return value instanceof Date ? value : new Date(value)
+}
+
+export const toNullableDate = (
+  value: string | Date | null | undefined,
+): Date | null | undefined => {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  return value instanceof Date ? value : new Date(value)
+}
+
+/** Non-empty string array, or `undefined` when the field is omitted. */
+export const parseStringArray = (value: unknown, label = 'Value'): string[] | undefined => {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) {
+    throw new HttpError(400, `${label} must be an array of strings`)
+  }
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+}
+
+/** Plain object record, or `undefined` when the field is omitted. */
+export const parsePlainObject = (
+  value: unknown,
+  label = 'Value',
+): Record<string, unknown> | undefined => {
+  if (value === undefined) return undefined
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new HttpError(400, `${label} must be an object`)
+  }
+  return value as Record<string, unknown>
+}
+
 const REPO_ERROR_STATUS: Record<string, ContentfulStatusCode> = {
   'Workspace not found': 404,
   'Invitation not found': 404,
+  'Account not found': 404,
   'User already a member of the workspace': 409,
   'A pending invitation already exists for this email': 409,
+  'This social account is already connected to the workspace': 409,
   'Invitation is no longer pending': 400,
   'Invitation has expired': 400,
   'User is not a member of the workspace': 400,
@@ -34,6 +104,8 @@ const REPO_ERROR_STATUS: Record<string, ContentfulStatusCode> = {
   'Workspace ID and User ID are required': 400,
   'Workspace ID is required': 400,
   'Workspace, email, invitedBy and role are required': 400,
+  'Workspace, createdBy, provider, providerAccountId and accountName are required': 400,
+  'Valid IANA timezone is required': 400,
 }
 
 export const toHttpError = (error: unknown): HttpError => {

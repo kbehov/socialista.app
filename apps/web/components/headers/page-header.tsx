@@ -28,21 +28,26 @@ type PageHeaderProps = {
 }
 
 export function PageHeader({ title, description, breadcrumbs, backHref, actions, className }: PageHeaderProps) {
+  const breadcrumbItems = breadcrumbs ?? []
+  const hasBreadcrumbs = breadcrumbItems.length > 0
+
   return (
-    <div className={cn('space-y-4', className)}>
-      {breadcrumbs && breadcrumbs.length > 0 && (
+    <div className={cn('space-y-5', className)}>
+      {hasBreadcrumbs ? (
         <Breadcrumb>
-          <BreadcrumbList className="text-xs text-muted-foreground">
-            {breadcrumbs.map((item, index) => {
-              const isLast = index === breadcrumbs.length - 1
+          <BreadcrumbList className="gap-1.5 text-[11px] font-medium text-muted-foreground sm:gap-2">
+            {breadcrumbItems.map((item, index) => {
+              const isLast = index === breadcrumbItems.length - 1
 
               return (
                 <Fragment key={`${item.label}-${index}`}>
                   <BreadcrumbItem className={index === 0 ? 'hidden md:inline-flex' : undefined}>
                     {isLast || !item.href ? (
-                      <BreadcrumbPage className="font-normal text-muted-foreground">{item.label}</BreadcrumbPage>
+                      <BreadcrumbPage className="max-w-48 truncate font-medium text-foreground/70 sm:max-w-72">
+                        {item.label}
+                      </BreadcrumbPage>
                     ) : (
-                      <BreadcrumbLink asChild>
+                      <BreadcrumbLink asChild className="transition-colors hover:text-foreground">
                         <Link href={item.href}>{item.label}</Link>
                       </BreadcrumbLink>
                     )}
@@ -53,27 +58,34 @@ export function PageHeader({ title, description, breadcrumbs, backHref, actions,
             })}
           </BreadcrumbList>
         </Breadcrumb>
-      )}
+      ) : null}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
-          {backHref && (
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          {backHref ? (
             <Link
               href={backHref}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Go back"
+              className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background text-muted-foreground shadow-xs transition-all hover:-translate-y-px hover:border-border hover:bg-muted/60 hover:text-foreground hover:shadow-sm active:translate-y-0 active:scale-95"
             >
-              <ChevronLeftIcon className="size-3.5" />
-              Back
+              <ChevronLeftIcon className="size-4" strokeWidth={1.75} />
+              <span className="sr-only">Back</span>
             </Link>
-          )}
+          ) : null}
 
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-          {description && <p className="max-w-lg text-sm text-muted-foreground">{description}</p>}
+          <div className="min-w-0 space-y-1">
+            <h1 className="truncate text-2xl leading-tight font-semibold tracking-[-0.025em] text-foreground sm:text-[1.75rem]">
+              {title}
+            </h1>
+            {description ? <p className="max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p> : null}
+          </div>
         </div>
 
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions ? (
+          <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
+        ) : null}
       </div>
-      <Separator className="my-4" />
+      <Separator className="bg-border/70" />
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { PenLineIcon } from 'lucide-react'
 import Link from 'next/link'
 import Logo from '../common/logo'
@@ -8,26 +9,24 @@ import { WorkspaceBalanceHeader } from '../workspace-balance-header'
 
 const DashboardHeader = ({ workspaceBalance }: { workspaceBalance: number }) => {
   return (
-    <header className="h-16.25 border-b border-border flex items-center gap-3 px-3 sm:px-4">
+    <header className="dashboard-header flex items-center gap-3 px-3 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <SidebarTrigger className="-ml-0.5 text-muted-foreground hover:bg-muted hover:text-foreground" />
-        <div className="hidden h-3.5 w-px bg-border sm:block" aria-hidden />
+        <SidebarTrigger className="-ml-0.5 rounded-lg border border-transparent text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground hover:shadow-xs" />
+        <div className="hidden h-4 w-px bg-border/80 sm:block" aria-hidden />
         <div className="hidden sm:block">
           <Logo />
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        <Link href="/dashboard/posts" className="header-create-btn">
+      <div className="flex shrink-0 items-center gap-2.5">
+        <Link href={DASHBOARD_ROUTES.STUDIO.IMAGES} className="header-create-btn">
           <PenLineIcon className="size-3.5" strokeWidth={1.75} />
           <span>Create</span>
         </Link>
 
-        <div className="hidden h-3.5 w-px bg-border sm:block" aria-hidden />
-
         <div className="dashboard-header-actions">
           <WorkspaceBalanceHeader balance={workspaceBalance} />
-          <ThemeToggle className="text-muted-foreground hover:bg-muted hover:text-foreground" />
+          <ThemeToggle className="rounded-lg text-muted-foreground hover:bg-muted/80 hover:text-foreground" />
           <UserDropdown />
         </div>
       </div>

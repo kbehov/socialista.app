@@ -1,4 +1,5 @@
 import '@/env.js'
+import accountRoutes from '@/routes/account.routes.js'
 import authRoutes from '@/routes/auth.routes.js'
 import { collectionRoutes } from '@/routes/collection.routes.js'
 import { generatedImageRoutes } from '@/routes/generated-image.routes.js'
@@ -9,6 +10,7 @@ import productRoutes from '@/routes/product.routes.js'
 import { slideshowRoutes } from '@/routes/slideshow.routes.js'
 import userRoutes from '@/routes/user.routes.js'
 import { videoRoutes } from '@/routes/video.routes.js'
+import waitlistRoutes from '@/routes/waitlist.routes.js'
 import workspaceRoutes from '@/routes/workspace.routes.js'
 import { toHttpError } from '@/utils/common.utils.js'
 import { errorResponse } from '@/utils/http-response.js'
@@ -44,6 +46,8 @@ app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)
 app.route('/products', productRoutes)
+app.route('/accounts', accountRoutes)
+app.route('/waitlist', waitlistRoutes)
 serve(
   {
     fetch: app.fetch,

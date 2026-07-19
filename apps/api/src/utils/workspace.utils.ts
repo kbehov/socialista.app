@@ -4,6 +4,7 @@ import { serializeUser } from '@/utils/user.utils.js'
 
 import {
   BillingStatus,
+  assertValidTimezone,
   getUserById,
   getWorkspaceById,
   isValidId,
@@ -41,6 +42,14 @@ export const defaultWorkspaceSettings = () => {
     },
   }
 }
+
+/** Ensure workspace settings carry a valid IANA timezone. */
+export const normalizeWorkspaceSettings = (
+  settings: IWorkspace['settings'],
+): IWorkspace['settings'] => ({
+  ...settings,
+  timezone: assertValidTimezone(settings.timezone),
+})
 
 const BYTES_PER_MB = 1024 * 1024
 
@@ -192,12 +201,15 @@ export const parseCreateWorkspaceInput = (body: Record<string, unknown>) => {
   }
 
   const defaults = defaultWorkspaceSettings()
+  const settings = normalizeWorkspaceSettings(
+    (body.settings as IWorkspace['settings'] | undefined) ?? defaults.settings,
+  )
 
   return {
     name,
     description: body.description as string | undefined,
     avatar: body.avatar as string | undefined,
-    settings: (body.settings as IWorkspace['settings']) ?? defaults.settings,
+    settings,
     limits: defaults.limits,
     usage: defaults.usage,
   }
@@ -241,7 +253,7 @@ export const pickWorkspaceUpdates = (body: Record<string, unknown>): Partial<IWo
     updates.avatar = body.avatar as string | undefined
   }
   if (body.settings) {
-    updates.settings = body.settings as IWorkspace['settings']
+    updates.settings = normalizeWorkspaceSettings(body.settings as IWorkspace['settings'])
   }
 
   return updates

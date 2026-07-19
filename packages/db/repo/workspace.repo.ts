@@ -9,6 +9,7 @@ import {
   type WorkspaceBillingUpdate,
   type WorkspaceUsage,
 } from '../types/workspace.types.js'
+import { assertValidTimezone } from '../utils/timezone.js'
 
 type UsageField = keyof WorkspaceUsage
 
@@ -17,6 +18,12 @@ const requireWorkspaceId = (workspaceId: string, label = 'Workspace ID') => {
     throw new Error(`${label} is required`)
   }
 }
+
+const normalizeSettings = (settings: IWorkspace['settings']): IWorkspace['settings'] => ({
+  ...settings,
+  timezone: assertValidTimezone(settings.timezone),
+})
+
 
 const getWorkspaceOrThrow = async (workspaceId: string) => {
   const workspace = await WorkspaceModel.findById(workspaceId).lean()
@@ -78,11 +85,12 @@ export const createWorkspace = async (workspace: Partial<IWorkspace>, userId: st
   }
 
   const defaults = defaultFreePlanDefaults()
+  const settings = normalizeSettings(workspace.settings ?? defaults.settings)
 
   return await WorkspaceModel.create({
     ...defaults,
     ...workspace,
-    settings: workspace.settings ?? defaults.settings,
+    settings,
     limits: workspace.limits ?? defaults.limits,
     usage: workspace.usage ?? defaults.usage,
     billing: workspace.billing ?? defaults.billing,
@@ -104,7 +112,12 @@ export const updateWorkspace = async (workspaceId: string, data: Partial<IWorksp
 
   await getWorkspaceOrThrow(workspaceId)
 
-  return await WorkspaceModel.findByIdAndUpdate(workspaceId, { $set: data }, { returnDocument: 'after' }).lean()
+  const updates = { ...data }
+  if (updates.settings) {
+    updates.settings = normalizeSettings(updates.settings)
+  }
+
+  return await WorkspaceModel.findByIdAndUpdate(workspaceId, { $set: updates }, { returnDocument: 'after' }).lean()
 }
 
 export const deleteWorkspace = async (workspaceId: string) => {

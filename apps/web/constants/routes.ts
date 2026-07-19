@@ -99,3 +99,17 @@ export const PRODUCT_ROUTES = {
   DELETE: (id: string) => `/products/${id}`,
   GET_WORKSPACE_PRODUCTS: (workspaceId: string) => `/products/workspace/${workspaceId}`,
 } as const
+
+export const ACCOUNT_ROUTES = {
+  CONNECT: '/accounts/connect',
+  CREATE: '/accounts',
+  GET_BY_ID: (id: string) => `/accounts/${id}`,
+  UPDATE: (id: string) => `/accounts/${id}`,
+  DISCONNECT: (id: string) => `/accounts/${id}/disconnect`,
+  DELETE: (id: string) => `/accounts/${id}`,
+  GET_WORKSPACE_ACCOUNTS: (workspaceId: string) => `/accounts/workspace/${workspaceId}`,
+} as const
+
+export const WAITLIST_ROUTES = {
+  JOIN: '/waitlist',
+} as const
