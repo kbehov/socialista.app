@@ -2,18 +2,30 @@
 
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { ACCOUNT_ROUTES } from '@/constants/routes'
-import { api } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import type {
   Account,
   ApiResponse,
   ConnectAccountResult,
   CreateAccountPayload,
   GetAccountsResponse,
+  SocialProvider,
   UpdateAccountPayload,
 } from '@socialista/types'
 import { revalidatePath } from 'next/cache'
 
 const ACCOUNTS_PATH = DASHBOARD_ROUTES.ACCOUNTS
+
+export type BatchConnectStatus = 'created' | 'skipped' | 'failed'
+
+export type BatchConnectResultItem = {
+  provider: SocialProvider
+  providerAccountId: string
+  accountName: string
+  status: BatchConnectStatus
+  accountId?: string
+  message?: string
+}
 
 function revalidateAccountPaths() {
   revalidatePath(ACCOUNTS_PATH)
@@ -35,6 +47,61 @@ export const createAccount = async (
   const response = await api.post<{ account: Account }>(ACCOUNT_ROUTES.CREATE, payload)
   revalidateAccountPaths()
   return response
+}
+
+/**
+ * Create multiple new accounts sequentially.
+ * Callers must omit identities already present in the workspace.
+ * Concurrent duplicates (409) are reported as `skipped` and never overwrite tokens.
+ */
+export const createAccountsBatch = async (
+  payloads: CreateAccountPayload[],
+): Promise<BatchConnectResultItem[]> => {
+  const results: BatchConnectResultItem[] = []
+
+  for (const payload of payloads) {
+    try {
+      const response = await createAccount(payload)
+      results.push({
+        provider: payload.provider,
+        providerAccountId: payload.providerAccountId,
+        accountName: payload.accountName,
+        status: 'created',
+        accountId: response.data?.account._id,
+      })
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        results.push({
+          provider: payload.provider,
+          providerAccountId: payload.providerAccountId,
+          accountName: payload.accountName,
+          status: 'skipped',
+          message: 'Account already connected',
+        })
+        continue
+      }
+
+      results.push({
+        provider: payload.provider,
+        providerAccountId: payload.providerAccountId,
+        accountName: payload.accountName,
+        status: 'failed',
+        message:
+          error instanceof ApiError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : 'Failed to connect account',
+      })
+    }
+  }
+
+  // createAccount already revalidates per item; one more keeps the list fresh after batch.
+  if (payloads.length > 0) {
+    revalidateAccountPaths()
+  }
+
+  return results
 }
 
 export const getAccount = async (id: string): Promise<ApiResponse<{ account: Account }>> => {

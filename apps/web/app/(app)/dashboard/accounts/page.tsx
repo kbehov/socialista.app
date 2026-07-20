@@ -1,3 +1,5 @@
+import { AccountsOAuthHandler } from '@/components/accounts/accounts-oauth-handler'
+import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
@@ -7,6 +9,7 @@ import { getWorkspaceAccounts } from '@/services/account.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { Link2Icon } from 'lucide-react'
+import { Suspense } from 'react'
 
 export default async function AccountsPage() {
   const workspace = await getCurrentWorkspace()
@@ -20,9 +23,14 @@ export default async function AccountsPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <Suspense fallback={null}>
+        <AccountsOAuthHandler />
+      </Suspense>
+
       <PageHeader
         title="Accounts"
         description={`${formatItemCount(accounts.length)} connected in ${workspace.name}`}
+        actions={<ConnectAccountTrigger />}
       />
 
       {!response.success ? (
@@ -35,11 +43,12 @@ export default async function AccountsPage() {
         <EmptyState
           icon={Link2Icon}
           title="Connect your social accounts"
-          description="Link Instagram, TikTok, YouTube, and more so you can schedule and publish from one workspace."
+          description="Link Facebook, Instagram, TikTok, and Threads so you can schedule and publish from one workspace."
           minHeight="lg"
           variant="default"
           className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
           iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
           footer={
             <p className="mt-6 text-[11px] text-muted-foreground">
               Each account can use its own timezone for scheduling.

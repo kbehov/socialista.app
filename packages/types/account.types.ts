@@ -1,6 +1,11 @@
 import type { MetaResponse } from './common.types.js'
 
-export type ConnectionStatus = 'connected' | 'disconnected' | 'pending' | 'error'
+export enum ConnectionStatus {
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+  PENDING = 'pending',
+  ERROR = 'error',
+}
 
 export type SocialProvider =
   | 'instagram'
@@ -76,4 +81,31 @@ export type GetAccountsResponse = {
 export type ConnectAccountResult = {
   account: Account
   created: boolean
+}
+
+export type SocialAccountResponse = {
+  providerAccountId: string
+  platform: SocialProvider
+  workspaceId: string
+  accountName: string
+  username: string
+  accountAvatar: string | null
+  timezone: string
+  connectionStatus: ConnectionStatus
+  scopes: string[]
+  metadata: Record<string, unknown>
+  accessToken: string
+  expiresAt: number
+  lastSyncedAt?: Date
+}
+
+export type FacebookPageResponse = {
+  id: string
+  name: string
+  category?: string
+  access_token: string
+  expires_at: number
+  username?: string
+  profilePicture?: string | null
+  fan_count?: number
 }
