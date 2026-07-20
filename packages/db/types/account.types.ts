@@ -28,6 +28,8 @@ export interface IAccount {
   accountName: string
   username?: string
   accountAvatar?: string
+  biography?: string
+  followersCount?: number
   timezone: string
   connectionStatus: ConnectionStatus
   scopes: string[]

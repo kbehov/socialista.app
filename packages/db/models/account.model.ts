@@ -24,6 +24,8 @@ const accountSchema = new Schema<IAccount>(
     },
     providerAccountId: { type: String, required: true },
     accountName: { type: String, required: true, trim: true },
+    biography: { type: String, trim: true },
+    followersCount: { type: Number, default: 0 },
     username: { type: String, trim: true },
     accountAvatar: { type: String },
     timezone: { type: String, required: true },

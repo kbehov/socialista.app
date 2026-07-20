@@ -23,6 +23,7 @@ export async function GET() {
       sameSite: 'lax',
       maxAge: 60 * 10,
     })
+    return res
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Something went wrong'
     return NextResponse.json({ success: false, message }, { status: 500 })

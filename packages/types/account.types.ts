@@ -106,6 +106,15 @@ export type FacebookPageResponse = {
   access_token: string
   expires_at: number
   username?: string
-  profilePicture?: string | null
+  description?: string
+  about?: string
+  bio?: string
+  scopes?: string[]
+  picture?: {
+    data: {
+      url: string
+    }
+  }
   fan_count?: number
+  lastSyncedAt?: Date
 }

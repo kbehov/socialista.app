@@ -11,8 +11,10 @@ export const metaConfig = {
     'pages_manage_posts',
     'instagram_basic',
     'instagram_content_publish',
-    'business_management',
+    // 'business_management',
+    // 'instagram_business_basic',
     'pages_read_user_content',
+    'instagram_manage_insights',
   ],
 } as const
 
@@ -68,13 +70,14 @@ export const getLongLivedToken = async (accessToken: string): Promise<{ accessTo
     throw new Error('Failed to get long lived token: ' + response.statusText)
   }
   const data = await response.json()
+  console.log('long lived token response data', data)
   return {
     accessToken: data.access_token,
     expiresAt: data.expires_at || Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
   }
 }
 
-export const getPages = async (accessToken: string): Promise<SocialAccountResponse[]> => {
+export const getPages = async (accessToken: string, timezone: string): Promise<SocialAccountResponse[]> => {
   // fields are id, name, access_token, category, picture, fan_count
   const pageFields = ['id', 'name', 'access_token', 'category', 'picture', 'fan_count', 'username', 'expires_at'].join(
     ',',
@@ -89,6 +92,7 @@ export const getPages = async (accessToken: string): Promise<SocialAccountRespon
     throw new Error(`Failed to get pages: ${response.statusText}`)
   }
   const { data } = await response.json()
+  console.log('meta response data', data)
   if (!data || data.length === 0) {
     throw new Error('No pages found')
   }
@@ -97,17 +101,43 @@ export const getPages = async (accessToken: string): Promise<SocialAccountRespon
     platform: 'facebook',
     accountName: page.name,
     username: page.username,
-    accountAvatar: page.profilePicture,
-    timezone: 'UTC',
+    accountAvatar: page.picture?.data?.url || '',
+    biography: page.description || page.about || page.bio || '',
+    followersCount: page.fan_count,
+    timezone: timezone,
     connectionStatus: ConnectionStatus.CONNECTED,
     scopes: pageFields.split(','),
     metadata: {},
     accessToken: page.access_token,
-    expiresAt: page.expires_at || Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days from now
+    expiresAt: page.expires_at ? new Date(page.expires_at * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     lastSyncedAt: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
   }))
-  console.log(pages)
+  for (const page of pages) {
+    const instagramAccount = await getInstagramAccount(accessToken, page.providerAccountId)
+    console.log('instagram account', instagramAccount)
+  }
+
   return pages
+}
+
+export const getInstagramAccount = async (accessToken: string, pageId: string): Promise<SocialAccountResponse> => {
+  const instagramAccountFields = ['id', 'access_token', 'instagram_business_account'].join(',')
+  const url = `https://graph.facebook.com/${metaConfig.graphVersion}/${pageId}?fields=${instagramAccountFields}&access_token=${accessToken}`
+  const response = await fetch(url)
+  if (!response.ok) {
+    console.error('instagram account response error', response.statusText)
+    throw new Error(`Failed to get instagram account: ${response.statusText}`)
+  }
+  const data = await response.json()
+  console.log('instagram account response data', data)
+  const instagramAccountInfoResponse = await fetch(
+    `https://graph.facebook.com/${metaConfig.graphVersion}/${data.instagram_business_account.id}?fields=name,profile_picture_url,username,biography,followers_count&access_token=${accessToken}`,
+  )
+  if (!instagramAccountInfoResponse.ok) {
+    console.error('instagram account info response error', instagramAccountInfoResponse.statusText)
+    throw new Error(`Failed to get instagram account info: ${instagramAccountInfoResponse.statusText}`)
+  }
+  const instagramAccountInfo = await instagramAccountInfoResponse.json()
+
+  return instagramAccountInfo
 }

@@ -1,4 +1,4 @@
-import { exchangeMetaToken, getLongLivedToken } from '@/lib/connector/meta'
+import { exchangeMetaToken, getLongLivedToken, getPages } from '@/lib/connector/meta'
 import { accountsRedirect, toOAuthErrorCode } from '@/lib/social-connect'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
@@ -14,7 +14,14 @@ export async function GET(request: NextRequest) {
     }
     const accessToken = await exchangeMetaToken(code)
     const { accessToken: longLivedAccessToken, expiresAt } = await getLongLivedToken(accessToken)
-    return NextResponse.json({ success: true, accessToken })
+    console.log('longLivedAccessToken', longLivedAccessToken, expiresAt)
+    const pages = await getPages(longLivedAccessToken)
+    console.log('pages', pages)
+    const response = NextResponse.redirect(
+      `http://localhost:3000/dashboard?` + `connected=true&` + `facebook=${pages.length}&` + `instagram=${1}`,
+    )
+    response.cookies.delete('meta_state')
+    return response
   } catch (error) {
     return accountsRedirect({ error: toOAuthErrorCode(error) })
   }
