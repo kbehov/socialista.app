@@ -49,48 +49,47 @@ const STATIC_AD_SEGMENT_STYLES = {
 } as const satisfies Record<string, PromptAnatomySegmentStyles>
 
 /**
- * Insertable direction snippets aligned with conversion-first static-ad planning.
- * Sublines / badges / icons are opt-in — not required on every creative.
+ * Insertable brief snippets — freeform notes can mix direction, context, and copy.
  */
 export const STATIC_AD_ANATOMY_SEGMENTS = [
   {
     id: 'hook',
-    label: 'Conversion hook',
+    label: 'Thumb-stop',
     snippet:
-      'conversion hook: stop the thumb in under a second, make the product obvious, and push tap/shop intent — phone feed tile, not a billboard, ',
-    exampleText: 'thumb-stop that also makes the offer obvious on a phone',
+      'thumb-stop: one instantly legible visual idea before text is read, product obvious at phone size, push tap intent — feed tile not billboard, ',
+    exampleText: 'interrupt the scroll, then make the offer obvious',
     styles: STATIC_AD_SEGMENT_STYLES.hook,
   },
   {
     id: 'scene',
     label: 'Scene',
     snippet:
-      'scene: one dominant set piece with Strong integration (wrap / submerge / burst), tight social crop, product fills ~50–60% of frame, shared contact shadows — visual wow that still sells the product, ',
-    exampleText: 'tight crop, product fused with the set piece, sells at a glance',
+      'scene: one dominant set piece or material metaphor fused with the product, cinematic light, tight social crop, shared contact shadows — campaign wow that still sells, ',
+    exampleText: 'product fused with one strong set piece / sensory world',
     styles: STATIC_AD_SEGMENT_STYLES.scene,
   },
   {
     id: 'type',
-    label: 'Headline & CTA',
+    label: 'Copy',
     snippet:
-      'conversion copy: punchy headline ≤6 words (desire, curiosity, or clear product hook — not vague poetry); add a quieter subline ≤10 words ONLY if it clarifies value; CTA ≤4 words like "Shop now" or "Learn more" when it helps the tap; SCREAM or ELEGANT by niche; phone-legible, ',
-    exampleText: 'conversion headline + CTA (subline only if it helps the tap)',
+      'copy: headline "…" (≤6 words); optional CTA "Shop now"; designed into the frame (not drop-shadow slap-on); invent claim-safe desire only — or leave blank to auto-write, ',
+    exampleText: 'exact headline/CTA phrases, or let the model invent',
     styles: STATIC_AD_SEGMENT_STYLES.type,
   },
   {
     id: 'features',
-    label: 'Badges (optional)',
+    label: 'Context',
     snippet:
-      'optional UI only if it raises conversion: 1–3 on-pack badges using exact label phrases, icons only if paired with those facts — otherwise no badges and no icons; never invent benefits, stars, or awards, ',
-    exampleText: 'badges/icons only when they raise trust — otherwise skip',
+      'context: audience / use occasion / tone (e.g. busy professionals, morning ritual, clinical-premium) — no invented ingredients, results, or awards, ',
+    exampleText: 'who it is for and the vibe — optional',
     styles: STATIC_AD_SEGMENT_STYLES.features,
   },
   {
     id: 'style',
-    label: 'Meta performance',
+    label: 'Craft bar',
     snippet:
-      'conversion-optimized Meta feed/Stories creative: high contrast at thumbnail size, clear product, one message, DTC performance energy — not billboard art, not badge clutter, not empty poetry',
-    exampleText: 'Meta performance creative — clear sell, lean UI',
+      'craft: Meta performance creative with editorial lighting and grade, high thumbnail contrast, lean hierarchy — reject average UGC clutter, stock shock faces, and pedestal luxury clichés',
+    exampleText: 'campaign craft, not stock Meta template',
     styles: STATIC_AD_SEGMENT_STYLES.style,
   },
 ] as const satisfies readonly PromptAnatomySegment[]
@@ -104,8 +103,8 @@ export function StaticAdPromptAnatomy() {
       defaultOpen={false}
       segments={STATIC_AD_ANATOMY_SEGMENTS}
       onInsertSnippet={insertSnippet}
-      tip="Aim for conversion: stop the scroll, clarify the product, invite the tap. Sublines, badges, and icons are optional — add only when they help. Leave empty to auto-invent from the product photo."
-      triggerLabel="How to direct the creative"
+      tip="Freeform notes: direction, context, and/or exact copy. Empty = invent from the product photo."
+      triggerLabel="Tips for brief notes"
     />
   )
 }

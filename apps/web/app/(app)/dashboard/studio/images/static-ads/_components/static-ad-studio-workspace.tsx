@@ -18,8 +18,8 @@ function StaticAdStudioHero() {
       <h1 className="text-balance text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[2rem]">
         Static ads
       </h1>
-      <p className="max-w-lg text-pretty text-[15px] leading-relaxed text-muted-foreground">
-        Add your product, describe the creative, and generate a Meta-ready static ad.
+      <p className="max-w-md text-pretty text-[15px] leading-relaxed text-muted-foreground">
+        Drop in a product photo. Add a brief if you want — or let us invent the creative.
       </p>
     </header>
   )

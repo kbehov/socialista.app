@@ -153,7 +153,7 @@ export function GeneratedImage({
             <p className="line-clamp-3 text-[13px] leading-relaxed text-foreground/90">{prompt}</p>
           ) : isAd ? (
             <p className="text-[13px] leading-relaxed text-muted-foreground">
-              No creative direction — generated from your product image.
+              No brief notes — generated from your product image.
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-1.5">

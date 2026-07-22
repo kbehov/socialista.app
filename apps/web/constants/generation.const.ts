@@ -12,7 +12,7 @@ export const FAILED_STATUSES = new Set([
 
 export const PIPELINE_STEPS = [
   { id: 'prepare', label: 'Reviewing your brief', threshold: 0 },
-  { id: 'enhance', label: 'Sharpening the creative direction', threshold: 10 },
+  { id: 'enhance', label: 'Planning the creative', threshold: 10 },
   { id: 'generate', label: 'Producing your visual', threshold: 40 },
   { id: 'queue', label: 'Queued for creation', threshold: 50 },
   { id: 'render', label: 'Rendering your asset', threshold: 65 },

@@ -111,7 +111,7 @@ export function StaticAdExamples() {
           Example ads
         </h2>
         <p className="text-sm text-muted-foreground">
-          Remix applies creative direction only — use your own product image for the hero.
+          Remix applies brief notes only — use your own product image for the hero.
         </p>
       </div>
 

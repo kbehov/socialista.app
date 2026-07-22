@@ -1,5 +1,5 @@
 import { exchangeMetaToken, getLongLivedToken, getPages } from '@/lib/connector/meta'
-import { accountsRedirect, toOAuthErrorCode } from '@/lib/social-connect'
+import { getTimezone } from '@/utils/get-timezone'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -13,16 +13,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Invalid request parameters' }, { status: 400 })
     }
     const accessToken = await exchangeMetaToken(code)
-    const { accessToken: longLivedAccessToken, expiresAt } = await getLongLivedToken(accessToken)
-    console.log('longLivedAccessToken', longLivedAccessToken, expiresAt)
-    const pages = await getPages(longLivedAccessToken)
-    console.log('pages', pages)
+    const { accessToken: longLivedAccessToken } = await getLongLivedToken(accessToken)
+
+    const timezone = await getTimezone(request)
+    const pages = await getPages(longLivedAccessToken, timezone)
+
     const response = NextResponse.redirect(
-      `http://localhost:3000/dashboard?` + `connected=true&` + `facebook=${pages.length}&` + `instagram=${1}`,
+      `http://localhost:3000/dashboard/accounts?` + `connected=true&` + `facebook=${pages.length}&` + `instagram=${1}`,
     )
     response.cookies.delete('meta_state')
     return response
   } catch (error) {
-    return accountsRedirect({ error: toOAuthErrorCode(error) })
+    return NextResponse.json({ success: false, message: 'Something went wrong' }, { status: 500 })
   }
 }

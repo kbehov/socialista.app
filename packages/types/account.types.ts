@@ -48,6 +48,8 @@ export type CreateAccountPayload = {
   timezone?: string
   username?: string
   accountAvatar?: string
+  biography?: string
+  followersCount?: number
   connectionStatus?: ConnectionStatus
   scopes?: string[]
   metadata?: Record<string, unknown>
@@ -93,6 +95,7 @@ export type SocialAccountResponse = {
   timezone: string
   connectionStatus: ConnectionStatus
   scopes: string[]
+  biography?: string
   metadata: Record<string, unknown>
   accessToken: string
   expiresAt: number
@@ -104,11 +107,12 @@ export type FacebookPageResponse = {
   name: string
   category?: string
   access_token: string
-  expires_at: number
+  expires_at?: number
   username?: string
+  profile_picture_url?: string
   description?: string
   about?: string
-  bio?: string
+  biography?: string
   scopes?: string[]
   picture?: {
     data: {
@@ -116,5 +120,7 @@ export type FacebookPageResponse = {
     }
   }
   fan_count?: number
-  lastSyncedAt?: Date
+  followers_count?: number
+
+  last_synced_at?: Date
 }

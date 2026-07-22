@@ -21,7 +21,7 @@ import {
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
-const STATIC_AD_PROMPT_MODEL = 'openai/gpt-5.5'
+const STATIC_AD_PROMPT_MODEL = 'openai/gpt-5.6-sol'
 
 export const realtimeStaticAdGeneration = schemaTask({
   id: TASK_IDS.staticAdGeneration,
@@ -56,7 +56,7 @@ export const realtimeStaticAdGeneration = schemaTask({
       })
       startedAt = started.startedAt
 
-      setGenerationStatus(10, 'Analyzing product photo')
+      setGenerationStatus(10, 'Art-directing from product photo')
 
       const creativeBrief = buildStaticAdCreativeBrief({
         prompt: payload.prompt,
@@ -79,10 +79,17 @@ export const realtimeStaticAdGeneration = schemaTask({
         ],
       })
 
-      const enhancedPrompt = sanitizeStaticAdModelPrompt(planned.text)
+      const plannedPrompt = sanitizeStaticAdModelPrompt(planned.text)
+      console.log('plannedPrompt', plannedPrompt)
+      const enhancedPrompt = [
+        'Edit Image 1 into a scroll-stopping Meta static ad that does NOT look like a default ChatGPT/Gemini product ad.',
+        'Preserve the  product from Image 1. Follow the plan below exactly.',
+        '',
+        plannedPrompt,
+      ].join('\n')
       await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
 
-      setGenerationStatus(30, 'Generating static ad')
+      setGenerationStatus(30, 'Rendering campaign creative')
 
       const generateImage = resolveImageGenerator(model.modelProvider)
       const imageUrl = await generateImage({
