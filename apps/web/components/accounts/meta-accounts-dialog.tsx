@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import type { MetaCandidate } from '@/lib/social-connect/types'
+import type { MetaCandidate } from '@socialista/types'
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -167,7 +167,8 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
           <DialogHeader className="gap-1.5 text-left">
             <DialogTitle>Select Meta accounts</DialogTitle>
             <DialogDescription>
-              Choose the Facebook Pages and Instagram accounts to add to this workspace.
+              Choose Facebook Pages and/or Instagram accounts. You can connect Instagram alone
+              without selecting its Facebook Page.
             </DialogDescription>
           </DialogHeader>
         </div>

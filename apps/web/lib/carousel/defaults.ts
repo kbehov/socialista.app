@@ -3,6 +3,7 @@ import type {
   BackgroundImageFilter,
   BackgroundImageTransform,
   ImageLayer,
+  OverlayLayer,
   Slide,
   SlideLayer,
   TextLayer,
@@ -119,6 +120,22 @@ export function createImageLayer(
   }
 }
 
+export function createOverlayLayer(partial: Partial<OverlayLayer> & { zIndex: number }): OverlayLayer {
+  return {
+    id: createLayerId(),
+    type: 'overlay',
+    color: '#000000',
+    opacity: 0.4,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    rotation: 0,
+    borderRadius: 0,
+    ...partial,
+  }
+}
+
 export function createSlide(order: number, backgroundImageUrl = '', backgroundColor = DEFAULT_SLIDE_BACKGROUND): Slide {
   return {
     id: createSlideId(),
@@ -220,12 +237,22 @@ export function cloneLayer(layer: SlideLayer): SlideLayer {
   if (layer.type === 'text') {
     return { ...layer, style: { ...layer.style } }
   }
-  return { ...layer, filters: [...layer.filters] }
+  if (layer.type === 'image') {
+    return { ...layer, filters: [...layer.filters] }
+  }
+  return { ...layer }
 }
 
 export function normalizeLayer(layer: SlideLayer): SlideLayer {
   if (layer.type === 'text') {
     return layer
+  }
+  if (layer.type === 'overlay') {
+    return {
+      ...layer,
+      opacity: typeof layer.opacity === 'number' ? layer.opacity : 0.4,
+      borderRadius: typeof layer.borderRadius === 'number' ? layer.borderRadius : 0,
+    }
   }
   return {
     ...layer,

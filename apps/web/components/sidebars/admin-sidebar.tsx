@@ -71,7 +71,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={items} />
+        <NavMain items={items} sectionTitle="Main" />
       </SidebarContent>
 
       <SidebarRail />

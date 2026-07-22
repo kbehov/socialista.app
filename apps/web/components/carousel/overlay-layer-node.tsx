@@ -1,15 +1,7 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
-import type { RefObject } from 'react'
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, Trash2Icon } from 'lucide-react'
-import type { OverlayLayer, SlideId } from '@socialista/types'
-import { useEditorStore } from '@/lib/carousel/store'
-import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
-import { useDragResize } from '@/hooks/carousel/use-drag-resize'
 import { LayerTransformHandles } from '@/components/carousel/layer-transform-handles'
-import { overlayFillColor } from '@/lib/carousel/overlay-style'
-import { cn } from '@/lib/utils'
+import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -17,6 +9,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import { useDragResize } from '@/hooks/carousel/use-drag-resize'
+import { overlayFillColor } from '@/lib/carousel/overlay-style'
+import { useEditorStore } from '@/lib/carousel/store'
+import { cn } from '@/lib/utils'
+import type { OverlayLayer, SlideId } from '@socialista/types'
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, Trash2Icon } from 'lucide-react'
+import type { RefObject } from 'react'
+import { useMemo, useRef } from 'react'
 
 type OverlayLayerNodeProps = {
   layer: OverlayLayer

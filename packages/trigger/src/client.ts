@@ -25,7 +25,6 @@ export {
 export {
   buildStaticAdCreativeBrief,
   buildStaticAdFinalPrompt,
-  isStaticAdUgcRequest,
   sanitizeStaticAdModelPrompt,
   staticAdVisionSystemPrompt,
   type StaticAdPromptInput,

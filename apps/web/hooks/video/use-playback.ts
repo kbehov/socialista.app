@@ -581,16 +581,19 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
   // Cleanup on unmount
   useEffect(() => {
+    const videoSlots = videoSlotsRef.current
+    const imageSlots = imageSlotsRef.current
+    const audioBuffers = audioBuffersRef.current
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
-      for (const slot of videoSlotsRef.current.values()) {
+      for (const slot of videoSlots.values()) {
         slot.video.removeAttribute('src')
         slot.video.load()
       }
-      videoSlotsRef.current.clear()
-      imageSlotsRef.current.clear()
+      videoSlots.clear()
+      imageSlots.clear()
       stopAllAudio()
-      audioBuffersRef.current.clear()
+      audioBuffers.clear()
       if (audioCtxRef.current) {
         void audioCtxRef.current.close()
         audioCtxRef.current = null
@@ -626,9 +629,8 @@ function getActiveClipVisualKey(
   const clip = pickActiveVideoClip(tracks, clips, assets, time)
   if (!clip) return null
   const filtersKey = filtersVisualKey(clip.filters)
-  const transformKey =
-    clip.type !== 'audio' && clip.transform
-      ? `${clip.transform.x}:${clip.transform.y}:${clip.transform.width}:${clip.transform.rotation}`
-      : 'cover'
+  const transformKey = clip.transform
+    ? `${clip.transform.x}:${clip.transform.y}:${clip.transform.width}:${clip.transform.rotation}`
+    : 'cover'
   return `${clip.id}:${clip.assetId}:${clip.type}:${clip.trimIn}:${clip.trimOut}:${clip.startTime}:${clip.duration}:${clip.speed}:${filtersKey}:${transformKey}`
 }

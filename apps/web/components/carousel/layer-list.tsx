@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { sortLayers } from '@/lib/carousel/defaults'
+import { overlayFillColor } from '@/lib/carousel/overlay-style'
 import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
 import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
 import {
@@ -197,7 +198,12 @@ function SortableLayerRow({
   })
 
   const active = layer.id === activeLayerId
-  const label = layer.type === 'text' ? layer.content || 'Empty text' : 'Image layer'
+  const label =
+    layer.type === 'text'
+      ? layer.content || 'Empty text'
+      : layer.type === 'overlay'
+        ? 'Overlay'
+        : 'Image layer'
 
   const handleSelect = () => {
     if (suppressSelectRef.current || isDragging) return
@@ -260,6 +266,11 @@ function SortableLayerRow({
           >
             {layer.type === 'text' ? (
               <TypeIcon className="size-3.5 shrink-0" />
+            ) : layer.type === 'overlay' ? (
+              <div
+                className="size-5 shrink-0 rounded border"
+                style={{ backgroundColor: overlayFillColor(layer.color, layer.opacity) }}
+              />
             ) : layer.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={layer.imageUrl} alt="" className="size-5 shrink-0 rounded object-cover" />

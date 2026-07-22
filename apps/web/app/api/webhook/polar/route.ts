@@ -3,16 +3,9 @@ import { revalidateTag } from 'next/cache'
 
 import { forwardPolarWebhookEvent } from '@/lib/polar/internal-webhook-relay'
 import { POLAR_PRODUCTS_CACHE_TAG } from '@/lib/polar/polar-products'
-import type {
-  PolarOrderWebhookData,
-  PolarSubscriptionWebhookData,
-  PolarWebhookEventType,
-} from '@socialista/types'
+import type { PolarWebhookEventType } from '@socialista/types'
 
-const forward = async (
-  type: PolarWebhookEventType,
-  data: PolarSubscriptionWebhookData | PolarOrderWebhookData,
-) => {
+const forward = async (type: PolarWebhookEventType, data: unknown) => {
   await forwardPolarWebhookEvent(type, data)
   revalidateTag(POLAR_PRODUCTS_CACHE_TAG, 'max')
 }

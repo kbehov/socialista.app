@@ -73,7 +73,7 @@ function normalizePhoto(photo: UnsplashApiPhoto): UnsplashPhotoResult | null {
   return {
     id: photo.id,
     imageUrl,
-    previewUrl,
+    previewUrl: previewUrl ?? '',
     title: photo.description ?? null,
     altText: photo.alt_description ?? photo.description ?? null,
     width: photo.width,
@@ -135,9 +135,7 @@ export async function searchUnsplashPhotos(input: {
     per_page: String(perPage),
   })
 
-  const items = (data.results ?? [])
-    .map(normalizePhoto)
-    .filter((photo): photo is UnsplashPhotoResult => photo != null)
+  const items = (data.results ?? []).map(normalizePhoto).filter((photo): photo is UnsplashPhotoResult => photo != null)
 
   return {
     items,

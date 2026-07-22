@@ -1,17 +1,12 @@
 import type { NextRequest } from 'next/server'
+import { ConnectionStatus, accountIdentityKey } from '@socialista/types'
+import { createAccountsBatch } from '@/services/account.service'
 
-import {
-  accountsRedirect,
-  assertWorkspaceMatches,
-  buildConnectedIdentitySet,
-  consumeOAuthState,
-  exchangeTikTokCode,
-  isAlreadyConnected,
-  loadWorkspaceAccounts,
-  persistNewAccounts,
-  requireConnectSession,
-  toOAuthErrorCode,
-} from '@/lib/social-connect'
+import { accountIdentitySet, loadWorkspaceAccounts } from '@/lib/connector/accounts'
+import { accountsRedirect, ConnectorError, toOAuthErrorCode } from '@/lib/connector/errors'
+import { consumeOAuthState } from '@/lib/connector/oauth'
+import { requireConnectSession } from '@/lib/connector/session'
+import { exchangeTikTokCode } from '@/lib/connector/tiktok'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,17 +28,19 @@ export async function GET(request: NextRequest) {
       userId: session.userId,
       state,
     })
-    assertWorkspaceMatches(session.workspaceId, oauthState.workspaceId)
+    if (session.workspaceId !== oauthState.workspaceId) {
+      throw new ConnectorError('invalid_state', 'Workspace mismatch', 400)
+    }
 
     const profile = await exchangeTikTokCode(code)
     const existing = await loadWorkspaceAccounts(oauthState.workspaceId)
-    const connected = buildConnectedIdentitySet(existing)
+    const connected = accountIdentitySet(existing)
 
-    if (isAlreadyConnected(connected, 'tiktok', profile.openId)) {
+    if (connected.has(accountIdentityKey('tiktok', profile.openId))) {
       return accountsRedirect({ skipped: 'tiktok' })
     }
 
-    const results = await persistNewAccounts([
+    const results = await createAccountsBatch([
       {
         workspaceId: oauthState.workspaceId,
         provider: 'tiktok',
@@ -51,7 +48,7 @@ export async function GET(request: NextRequest) {
         accountName: profile.accountName,
         username: profile.username,
         accountAvatar: profile.accountAvatar,
-        connectionStatus: 'connected',
+        connectionStatus: ConnectionStatus.CONNECTED,
         scopes: profile.scopes,
         metadata: {
           openId: profile.openId,

@@ -14,6 +14,7 @@ import {
   createSlide,
   createTextLayer,
   createImageLayer,
+  createOverlayLayer,
   cloneLayer,
   reindexLayers,
   sortLayers,
@@ -65,6 +66,7 @@ interface EditorState {
 
   addTextLayer: (slideId: SlideId) => void
   addImageLayer: (slideId: SlideId, imageUrl?: string) => void
+  addOverlayLayer: (slideId: SlideId) => void
   updateLayer: (slideId: SlideId, layerId: LayerId, partial: Partial<SlideLayer>) => void
   updateLayerStyle: (slideId: SlideId, layerId: LayerId, style: Partial<TextLayer['style']>) => void
   setLayerImageUrl: (slideId: SlideId, layerId: LayerId, imageUrl: string) => void
@@ -343,6 +345,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
         slides: mutateSlide(state.slides, slideId, slide => {
           const zIndex = slide.layers.length
           const layer = createImageLayer({ zIndex, imageUrl })
+          return { ...slide, layers: [...slide.layers, layer] }
+        }),
+      }))
+      const slide = get().slides.find(s => s.id === slideId)
+      const top = slide ? sortLayers(slide.layers).at(-1) : undefined
+      if (top) set({ activeSlideId: slideId, activeLayerId: top.id })
+    },
+
+    addOverlayLayer: slideId => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => {
+          const zIndex = slide.layers.length
+          const layer = createOverlayLayer({ zIndex })
           return { ...slide, layers: [...slide.layers, layer] }
         }),
       }))

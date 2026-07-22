@@ -47,6 +47,8 @@ export const serializeAccount = (account: IAccount): Account => ({
   accountName: account.accountName,
   username: account.username,
   accountAvatar: account.accountAvatar,
+  biography: account.biography,
+  followersCount: account.followersCount,
   timezone: account.timezone,
   connectionStatus: account.connectionStatus,
   scopes: account.scopes ?? [],
@@ -89,6 +91,11 @@ export const parseCreateAccountInput = (body: Record<string, unknown>): CreateAc
     timezone,
     username: optionalTrimmedString(body.username),
     accountAvatar: optionalTrimmedString(body.accountAvatar),
+    biography: optionalTrimmedString(body.biography),
+    followersCount:
+      typeof body.followersCount === 'number' && Number.isFinite(body.followersCount)
+        ? body.followersCount
+        : undefined,
     connectionStatus: isConnectionStatus(body.connectionStatus) ? body.connectionStatus : undefined,
     scopes: parseStringArray(body.scopes, 'Scopes'),
     metadata: parsePlainObject(body.metadata, 'Metadata'),
@@ -116,6 +123,17 @@ export const parseUpdateAccountInput = (body: Record<string, unknown>): UpdateAc
 
   if (body.accountAvatar !== undefined) {
     updates.accountAvatar = optionalTrimmedString(body.accountAvatar)
+  }
+
+  if (body.biography !== undefined) {
+    updates.biography = optionalTrimmedString(body.biography)
+  }
+
+  if (body.followersCount !== undefined) {
+    if (body.followersCount !== null && (typeof body.followersCount !== 'number' || !Number.isFinite(body.followersCount))) {
+      throw new HttpError(400, 'Followers count must be a number')
+    }
+    updates.followersCount = body.followersCount ?? undefined
   }
 
   if (typeof body.timezone === 'string') {
@@ -184,6 +202,8 @@ export const toCreateAccountInput = (
   timezone: input.timezone,
   username: input.username,
   accountAvatar: input.accountAvatar,
+  biography: input.biography,
+  followersCount: input.followersCount,
   connectionStatus:
     (input.connectionStatus as ConnectionStatus | undefined) ?? ConnectionStatus.CONNECTED,
   scopes: input.scopes,

@@ -5,6 +5,7 @@ import type { RefObject } from 'react'
 import type { SlideId, SlideLayer } from '@socialista/types'
 import { TextLayerNode } from '@/components/carousel/text-layer-node'
 import { ImageLayerNode } from '@/components/carousel/image-layer-node'
+import { OverlayLayerNode } from '@/components/carousel/overlay-layer-node'
 
 type SlideLayerNodeProps = {
   layer: SlideLayer
@@ -28,6 +29,20 @@ export const SlideLayerNode = memo(function SlideLayerNode({
   if (layer.type === 'text') {
     return (
       <TextLayerNode
+        layer={layer}
+        slideId={slideId}
+        scale={scale}
+        canvasRef={canvasRef}
+        selected={selected}
+        interactive={interactive}
+        selectable={selectable}
+      />
+    )
+  }
+
+  if (layer.type === 'overlay') {
+    return (
+      <OverlayLayerNode
         layer={layer}
         slideId={slideId}
         scale={scale}

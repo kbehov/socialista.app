@@ -4,9 +4,9 @@ import { createAccountsBatch } from '@/services/account.service'
 
 import { accountIdentitySet, loadWorkspaceAccounts } from '@/lib/connector/accounts'
 import { accountsRedirect, ConnectorError, toOAuthErrorCode } from '@/lib/connector/errors'
+import { exchangeInstagramCode } from '@/lib/connector/instagram'
 import { consumeOAuthState } from '@/lib/connector/oauth'
 import { requireConnectSession } from '@/lib/connector/session'
-import { exchangeThreadsCode } from '@/lib/connector/threads'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     const oauthState = await consumeOAuthState({
-      provider: 'threads',
+      provider: 'instagram',
       userId: session.userId,
       state,
     })
@@ -32,27 +32,30 @@ export async function GET(request: NextRequest) {
       throw new ConnectorError('invalid_state', 'Workspace mismatch', 400)
     }
 
-    const profile = await exchangeThreadsCode(code)
+    const profile = await exchangeInstagramCode(code)
     const existing = await loadWorkspaceAccounts(oauthState.workspaceId)
     const connected = accountIdentitySet(existing)
 
-    if (connected.has(accountIdentityKey('threads', profile.threadsUserId))) {
-      return accountsRedirect({ skipped: 'threads' })
+    if (connected.has(accountIdentityKey('instagram', profile.igUserId))) {
+      return accountsRedirect({ skipped: 'instagram' })
     }
 
     const results = await createAccountsBatch([
       {
         workspaceId: oauthState.workspaceId,
-        provider: 'threads',
-        providerAccountId: profile.threadsUserId,
+        provider: 'instagram',
+        providerAccountId: profile.igUserId,
         accountName: profile.accountName,
         username: profile.username,
         accountAvatar: profile.accountAvatar,
+        biography: profile.biography,
+        followersCount: profile.followersCount,
         connectionStatus: ConnectionStatus.CONNECTED,
         scopes: profile.scopes,
         metadata: {
-          threadsUserId: profile.threadsUserId,
-          tokenKind: 'user_access_token',
+          igUserId: profile.igUserId,
+          accountType: profile.accountType,
+          tokenKind: 'instagram_user_access_token',
         },
         accessToken: profile.accessToken,
         accessTokenExpiresAt: profile.accessTokenExpiresAt,
@@ -64,10 +67,10 @@ export async function GET(request: NextRequest) {
       return accountsRedirect({ error: 'provider_error' })
     }
     if (outcome.status === 'skipped') {
-      return accountsRedirect({ skipped: 'threads' })
+      return accountsRedirect({ skipped: 'instagram' })
     }
 
-    return accountsRedirect({ connected: 'threads' })
+    return accountsRedirect({ connected: 'instagram' })
   } catch (error) {
     return accountsRedirect({ error: toOAuthErrorCode(error) })
   }

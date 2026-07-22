@@ -21,7 +21,7 @@ export function useForwardWheelScroll(scrollContainerRef: RefObject<HTMLElement 
     if (!container) return
 
     function onWheel(e: WheelEvent) {
-      if (!e.deltaY) return
+      if (!e.deltaY || !container) return
 
       let el = e.target as HTMLElement | null
 

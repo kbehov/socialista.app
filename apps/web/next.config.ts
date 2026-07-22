@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   serverExternalPackages: ['@google-cloud/vision', 'mongoose', '@socialista/db'],
   transpilePackages: ['@socialista/types', '@socialista/trigger'],
+  allowedDevOrigins: ['dev.socialista.app'],
   images: {
     remotePatterns: [
       {

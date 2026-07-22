@@ -14,7 +14,7 @@ import type { SocialProvider } from '@socialista/types'
 import { ChevronRightIcon } from 'lucide-react'
 
 export type ConnectablePlatform = {
-  provider: Extract<SocialProvider, 'facebook' | 'tiktok' | 'threads'>
+  provider: Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads'>
   href: string
   description: string
 }
@@ -23,7 +23,12 @@ const PLATFORMS: ConnectablePlatform[] = [
   {
     provider: 'facebook',
     href: '/api/connect/facebook',
-    description: 'Facebook Pages and linked Instagram accounts',
+    description: 'Facebook Pages and Instagram accounts linked to a Page',
+  },
+  {
+    provider: 'instagram',
+    href: '/api/connect/instagram',
+    description: 'Instagram professional account (no Facebook Page needed)',
   },
   {
     provider: 'tiktok',

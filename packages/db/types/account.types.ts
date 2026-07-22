@@ -56,6 +56,8 @@ export type CreateAccountInput = {
   timezone: string
   username?: string
   accountAvatar?: string
+  biography?: string
+  followersCount?: number
   connectionStatus?: ConnectionStatus
   scopes?: string[]
   metadata?: Record<string, unknown>
@@ -70,6 +72,8 @@ export type UpdateAccountInput = {
   accountName?: string
   username?: string
   accountAvatar?: string
+  biography?: string
+  followersCount?: number
   timezone?: string
   connectionStatus?: ConnectionStatus
   scopes?: string[]

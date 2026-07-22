@@ -37,8 +37,10 @@ export function useWorkspaceFiles({
 
   useEffect(() => {
     if (!hasServerData) return
-    setFiles(initialFiles)
-    setError(initialError)
+    setTimeout(() => {
+      setFiles(initialFiles ?? [])
+      setError(initialError ?? null)
+    }, 0)
   }, [hasServerData, initialFiles, initialError])
 
   const uploadFnRef = useRef<(files: File[]) => Promise<void>>(async () => {})
@@ -79,7 +81,9 @@ export function useWorkspaceFiles({
 
   useEffect(() => {
     if (hasServerData) return
-    void fetchFiles()
+    setTimeout(() => {
+      void fetchFiles()
+    }, 0)
   }, [hasServerData, fetchFiles])
 
   const upload = useCallback(

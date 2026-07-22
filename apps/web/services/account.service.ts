@@ -7,25 +7,14 @@ import type {
   Account,
   ApiResponse,
   ConnectAccountResult,
+  ConnectAccountResultItem,
   CreateAccountPayload,
   GetAccountsResponse,
-  SocialProvider,
   UpdateAccountPayload,
 } from '@socialista/types'
 import { revalidatePath } from 'next/cache'
 
 const ACCOUNTS_PATH = DASHBOARD_ROUTES.ACCOUNTS
-
-export type BatchConnectStatus = 'created' | 'skipped' | 'failed'
-
-export type BatchConnectResultItem = {
-  provider: SocialProvider
-  providerAccountId: string
-  accountName: string
-  status: BatchConnectStatus
-  accountId?: string
-  message?: string
-}
 
 function revalidateAccountPaths() {
   revalidatePath(ACCOUNTS_PATH)
@@ -50,14 +39,14 @@ export const createAccount = async (
 }
 
 /**
- * Create multiple new accounts sequentially.
+ * Create multiple accounts sequentially.
  * Callers must omit identities already present in the workspace.
  * Concurrent duplicates (409) are reported as `skipped` and never overwrite tokens.
  */
 export const createAccountsBatch = async (
   payloads: CreateAccountPayload[],
-): Promise<BatchConnectResultItem[]> => {
-  const results: BatchConnectResultItem[] = []
+): Promise<ConnectAccountResultItem[]> => {
+  const results: ConnectAccountResultItem[] = []
 
   for (const payload of payloads) {
     try {
@@ -96,7 +85,6 @@ export const createAccountsBatch = async (
     }
   }
 
-  // createAccount already revalidates per item; one more keeps the list fresh after batch.
   if (payloads.length > 0) {
     revalidateAccountPaths()
   }

@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
 
-import {
-  assertProviderConfigured,
-  beginOAuthState,
-  buildThreadsAuthorizeUrl,
-  jsonError,
-  requireConnectSession,
-} from '@/lib/social-connect'
+import { assertProviderConfigured } from '@/lib/connector/config'
+import { jsonError } from '@/lib/connector/errors'
+import { beginOAuthState } from '@/lib/connector/oauth'
+import { requireConnectSession } from '@/lib/connector/session'
+import { buildThreadsAuthorizeUrl } from '@/lib/connector/threads'
 
 export async function GET() {
   try {

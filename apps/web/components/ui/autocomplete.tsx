@@ -53,8 +53,13 @@ export function AutocompleteInput({
             : "has-[+[data-slot=autocomplete-trigger],+[data-slot=autocomplete-clear]]:*:data-[slot=autocomplete-input]:pe-7",
           className,
         )}
+        data-size={typeof sizeValue === "number" ? undefined : sizeValue}
         data-slot="autocomplete-input"
-        render={<Input nativeInput size={sizeValue} />}
+        render={
+          <Input
+            {...(typeof sizeValue === "number" ? { size: sizeValue } : {})}
+          />
+        }
         {...props}
       />
       {showTrigger && (

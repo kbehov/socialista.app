@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
 
-import {
-  assertProviderConfigured,
-  beginOAuthState,
-  buildTikTokAuthorizeUrl,
-  jsonError,
-  requireConnectSession,
-} from '@/lib/social-connect'
+import { assertProviderConfigured } from '@/lib/connector/config'
+import { jsonError } from '@/lib/connector/errors'
+import { beginOAuthState } from '@/lib/connector/oauth'
+import { requireConnectSession } from '@/lib/connector/session'
+import { buildTikTokAuthorizeUrl } from '@/lib/connector/tiktok'
 
 export async function GET() {
   try {

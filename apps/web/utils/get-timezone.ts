@@ -9,7 +9,6 @@ export const getTimezone = async (request: NextRequest) => {
   try {
     const res = await fetch(`http://ip-api.com/json/${ip}?fields=timezone,status,message`)
     const data = await res.json()
-    console.log('timezone data', data)
     return data.timezone || 'UTC'
   } catch (error) {
     console.error('Error getting timezone', error)

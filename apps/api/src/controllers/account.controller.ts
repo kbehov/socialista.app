@@ -30,12 +30,20 @@ import {
 } from '@socialista/db'
 import type { Context } from 'hono'
 
+async function authorizeWorkspaceAccountAction(
+  c: Context<AppContext>,
+  workspaceId: string,
+) {
+  const userId = c.get('userId')
+  const workspace = await getWorkspaceOrThrow(workspaceId)
+  assertWorkspaceMember(workspace, userId)
+  return { userId, workspace }
+}
+
 /** Connect or reconnect a social account (upsert by provider + providerAccountId). */
 export const connectAccount = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
   const input = parseCreateAccountInput((await c.req.json()) as Record<string, unknown>)
-  const workspace = await getWorkspaceOrThrow(input.workspaceId)
-  assertWorkspaceMember(workspace, userId)
+  const { userId, workspace } = await authorizeWorkspaceAccountAction(c, input.workspaceId)
 
   const existing = await getAccountByProvider(
     input.workspaceId,
@@ -63,10 +71,8 @@ export const connectAccount = async (c: Context<AppContext>) => {
 
 /** Create a new account without upsert (fails if already connected). */
 export const createAccount = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
   const input = parseCreateAccountInput((await c.req.json()) as Record<string, unknown>)
-  const workspace = await getWorkspaceOrThrow(input.workspaceId)
-  assertWorkspaceMember(workspace, userId)
+  const { userId, workspace } = await authorizeWorkspaceAccountAction(c, input.workspaceId)
   assertAccountsLimit(workspace)
 
   const timezone = resolveAccountTimezone(input.timezone, workspace.settings.timezone)
@@ -77,10 +83,8 @@ export const createAccount = async (c: Context<AppContext>) => {
 }
 
 export const getWorkspaceAccounts = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
-  const workspace = await getWorkspaceOrThrow(workspaceId)
-  assertWorkspaceMember(workspace, userId)
+  await authorizeWorkspaceAccountAction(c, workspaceId)
 
   const params = new URLSearchParams(getQueryString(c.req.url))
   params.set('workspace', workspaceId)

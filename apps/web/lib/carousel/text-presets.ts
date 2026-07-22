@@ -341,7 +341,7 @@ export const TEXT_PRESETS: TextPreset[] = [
       textShadow: [
         { offsetX: 0, offsetY: 0, blur: 6, color: '#06b6d4' },
         { offsetX: 0, offsetY: 0, blur: 18, color: 'rgba(6,182,212,0.55)' },
-        outlineShadow('#000000', 2),
+        ...outlineShadow('#000000', 2),
       ],
       padding: 0,
       borderRadius: 0,

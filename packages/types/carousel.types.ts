@@ -68,7 +68,16 @@ export interface ImageLayer extends LayerGeometry {
   filters: BackgroundImageFilter[]
 }
 
-export type SlideLayer = TextLayer | ImageLayer
+export interface OverlayLayer extends LayerGeometry {
+  id: LayerId
+  type: 'overlay'
+  color: string
+  /** 0–1 */
+  opacity: number
+  borderRadius?: number
+}
+
+export type SlideLayer = TextLayer | ImageLayer | OverlayLayer
 
 /** Percentage rectangle of the source image (react-easy-crop). */
 export interface CropAreaPercentages {
