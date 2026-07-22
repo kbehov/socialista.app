@@ -16,9 +16,10 @@ export const getModelByValue = async (value: string) => {
 
 export const getModels = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  console.log(sort)
-  const models = await ModelModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean()
-  const total = await ModelModel.countDocuments(match)
+  const [models, total] = await Promise.all([
+    ModelModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    ModelModel.countDocuments(match),
+  ])
   return {
     models,
     meta: { total, page: pagination.page, limit: pagination.limit },
@@ -31,4 +32,8 @@ export const updateModel = async (id: string, model: Partial<IModel>) => {
 
 export const deleteModel = async (id: string) => {
   return await ModelModel.findByIdAndDelete(id)
+}
+
+export const incrementModelUsage = async (id: string, amount = 1) => {
+  return await ModelModel.findByIdAndUpdate(id, { $inc: { usageCount: amount } }, { new: true }).lean()
 }

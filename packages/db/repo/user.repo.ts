@@ -21,17 +21,14 @@ export const authenticateUser = async (email: string, password: string) => {
   return await UserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }, { new: true })
 }
 
-// Get user by id
 export const getUserById = async (id: string) => {
   return await UserModel.findById(id)
 }
 
-// Create user
 export const createUser = async (user: Partial<IUser>) => {
   return await UserModel.create(user)
 }
 
-// Update user (runs validators; password changes go through save hook for hashing)
 export const updateUser = async (id: string, updates: Partial<IUser>) => {
   const user = await UserModel.findById(id)
   if (!user) return null
@@ -45,15 +42,16 @@ export const updateUser = async (id: string, updates: Partial<IUser>) => {
   return user
 }
 
-// Delete user
 export const deleteUser = async (id: string) => {
   return await UserModel.findByIdAndDelete(id)
 }
 
 export const getUsers = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const users = await UserModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean()
-  const total = await UserModel.countDocuments(match)
+  const [users, total] = await Promise.all([
+    UserModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    UserModel.countDocuments(match),
+  ])
   return {
     users,
     meta: {

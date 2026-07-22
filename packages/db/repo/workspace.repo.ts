@@ -107,10 +107,8 @@ export const createWorkspace = async (workspace: Partial<IWorkspace>, userId: st
 export const updateWorkspace = async (workspaceId: string, data: Partial<IWorkspace>) => {
   requireWorkspaceId(workspaceId)
   if (!data || Object.keys(data).length === 0) {
-    throw new Error('Workspace ID is required')
+    throw new Error('Update data is required')
   }
-
-  await getWorkspaceOrThrow(workspaceId)
 
   const updates = { ...data }
   if (updates.settings) {
@@ -121,7 +119,6 @@ export const updateWorkspace = async (workspaceId: string, data: Partial<IWorksp
 }
 
 export const deleteWorkspace = async (workspaceId: string) => {
-  await getWorkspaceOrThrow(workspaceId)
   return await WorkspaceModel.findByIdAndDelete(workspaceId).lean()
 }
 

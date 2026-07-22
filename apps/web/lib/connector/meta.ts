@@ -87,6 +87,31 @@ export async function exchangeMetaCode(code: string): Promise<{
   }
 }
 
+/**
+ * Re-exchange a Meta user access token for a new long-lived token.
+ * Page access tokens derived from long-lived user tokens do not expire and should not use this.
+ */
+export async function refreshMetaUserAccessToken(accessToken: string): Promise<{
+  accessToken: string
+  accessTokenExpiresAt: Date
+}> {
+  const { appId, appSecret } = getMetaConfig()
+
+  const longLived = await fetchJson(graphUrl('/oauth/access_token'), tokenSchema, {
+    searchParams: {
+      grant_type: 'fb_exchange_token',
+      client_id: appId,
+      client_secret: appSecret,
+      fb_exchange_token: accessToken,
+    },
+  })
+
+  return {
+    accessToken: longLived.access_token,
+    accessTokenExpiresAt: expiresAtFromSeconds(longLived.expires_in, 60 * 24 * 60 * 60),
+  }
+}
+
 export type MetaDiscoveredAsset = {
   candidate: Omit<MetaCandidate, 'alreadyConnected'>
   accessToken: string

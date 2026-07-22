@@ -1,4 +1,3 @@
-import { Types } from 'mongoose'
 import { GenerationModel } from '../models/generation.model.js'
 import {
   GenerationStatus,
@@ -6,7 +5,8 @@ import {
   type IGeneration,
   type UpdateGenerationInput,
 } from '../types/generation.types.js'
-import { buildFilters, toObjectId } from '../utils/build-filters.js'
+import { toObjectId } from '../utils/isValid.js'
+import { buildFilters } from '../utils/build-filters.js'
 
 export const getGenerationById = async (id: string): Promise<IGeneration | null> => {
   return GenerationModel.findById(id).lean()
@@ -18,7 +18,14 @@ export const getGenerationByTriggerRunId = async (
   return GenerationModel.findOne({ triggerRunId }).lean()
 }
 
-export const createGeneration = async (input: CreateGenerationInput): Promise<IGeneration> => {
+function assertCreateGenerationInput(input: CreateGenerationInput) {
+  const { workspace, createdBy, kind, taskId, triggerRunId, model } = input
+  if (!workspace || !createdBy || !kind || !taskId || !triggerRunId || !model) {
+    throw new Error('workspace, createdBy, kind, taskId, triggerRunId and model are required')
+  }
+}
+
+function mapCreateGenerationFields(input: CreateGenerationInput) {
   const {
     workspace,
     createdBy,
@@ -40,11 +47,7 @@ export const createGeneration = async (input: CreateGenerationInput): Promise<IG
     durationMs,
   } = input
 
-  if (!workspace || !createdBy || !kind || !taskId || !triggerRunId || !model) {
-    throw new Error('workspace, createdBy, kind, taskId, triggerRunId and model are required')
-  }
-
-  const generation = await GenerationModel.create({
+  return {
     workspace: toObjectId(workspace),
     createdBy: toObjectId(createdBy),
     kind,
@@ -63,41 +66,44 @@ export const createGeneration = async (input: CreateGenerationInput): Promise<IG
     startedAt,
     finishedAt,
     durationMs,
-  })
+  }
+}
 
+export const createGeneration = async (input: CreateGenerationInput): Promise<IGeneration> => {
+  assertCreateGenerationInput(input)
+  const generation = await GenerationModel.create(mapCreateGenerationFields(input))
   return generation.toObject()
 }
 
 export const upsertGenerationByTriggerRunId = async (
   input: CreateGenerationInput,
 ): Promise<IGeneration> => {
+  assertCreateGenerationInput(input)
+
+  const fields = mapCreateGenerationFields(input)
   const {
     workspace,
     createdBy,
     kind,
     taskId,
     triggerRunId,
-    model,
-    status = GenerationStatus.RUNNING,
     prompt,
+    model,
     modelName,
     modelProvider,
     inputs,
-    cost = 0,
-    creditsCharged = 0,
-    startedAt = new Date(),
-  } = input
-
-  if (!workspace || !createdBy || !kind || !taskId || !triggerRunId || !model) {
-    throw new Error('workspace, createdBy, kind, taskId, triggerRunId and model are required')
-  }
+    cost,
+    creditsCharged,
+    startedAt,
+    status,
+  } = fields
 
   const generation = await GenerationModel.findOneAndUpdate(
     { triggerRunId },
     {
       $setOnInsert: {
-        workspace: toObjectId(workspace),
-        createdBy: toObjectId(createdBy),
+        workspace,
+        createdBy,
         kind,
         taskId,
         triggerRunId,
@@ -168,19 +174,10 @@ export const updateGenerationByTriggerRunId = async (
 
 export const getGenerations = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-
-  if (typeof match.workspace === 'string' && Types.ObjectId.isValid(match.workspace)) {
-    match.workspace = toObjectId(match.workspace)
-  }
-  if (typeof match.createdBy === 'string' && Types.ObjectId.isValid(match.createdBy)) {
-    match.createdBy = toObjectId(match.createdBy)
-  }
-
   const [generations, total] = await Promise.all([
     GenerationModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean(),
     GenerationModel.countDocuments(match),
   ])
-
   return {
     generations,
     meta: {

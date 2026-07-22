@@ -1,9 +1,8 @@
 import axios from 'axios'
+import { BROWSER_USER_AGENT } from '@/utils/http-client.js'
 
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
-const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB
-const BROWSER_USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+export const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB
 const TIKTOK_REFERER = 'https://www.tiktok.com/'
 
 type MediaKind = 'image' | 'video'

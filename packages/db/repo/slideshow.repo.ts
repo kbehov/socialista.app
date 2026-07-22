@@ -20,12 +20,10 @@ export const deleteSlideshow = async (id: string) => {
 
 export const getSlideshows = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const slideshows = await SlideshowModel.find(match)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .sort(sort)
-    .lean()
-  const total = await SlideshowModel.countDocuments(match)
+  const [slideshows, total] = await Promise.all([
+    SlideshowModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    SlideshowModel.countDocuments(match),
+  ])
   return {
     slideshows,
     meta: {

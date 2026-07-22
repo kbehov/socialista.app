@@ -2,7 +2,7 @@ import {
   deductAiCredits,
   getModelByValue,
   getWorkspaceById,
-  ModelModel,
+  incrementModelUsage,
   type IModel,
   type IWorkspace,
 } from '@socialista/db'
@@ -44,7 +44,7 @@ export function assertSufficientCredits(workspace: IWorkspace, cost: number) {
 export async function finalizeGeneration(workspaceId: string, model: IModel) {
   await deductAiCredits(workspaceId, model.cost)
 
-  void ModelModel.updateOne({ _id: model._id.toString() }, { $inc: { usageCount: 1 } }).catch(() => {
+  void incrementModelUsage(model._id.toString()).catch(() => {
     // usageCount is an analytics counter; a failed increment shouldn't fail a successful generation.
   })
 }

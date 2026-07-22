@@ -2,15 +2,14 @@ import type { AppContext } from '@/middlewares/auth.middleware.js'
 import { getQueryString, parseParamId } from '@/utils/common.utils.js'
 import { getGenerationForMember, serializeGeneration } from '@/utils/generation.utils.js'
 import { successResponse } from '@/utils/http-response.js'
-import { assertWorkspaceMember, getWorkspaceOrThrow } from '@/utils/workspace.utils.js'
+import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import { getGenerations, type IGeneration } from '@socialista/db'
 import type { Context } from 'hono'
 
 export const getWorkspaceGenerations = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
-  const workspace = await getWorkspaceOrThrow(workspaceId)
-  assertWorkspaceMember(workspace, userId)
+  await getWorkspaceAsMember(workspaceId, userId)
 
   const params = new URLSearchParams(getQueryString(c.req.url))
   params.set('workspace', workspaceId)

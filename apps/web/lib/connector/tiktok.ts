@@ -69,3 +69,33 @@ export async function exchangeTikTokCode(code: string) {
     accountAvatar: user.avatar_url,
   }
 }
+
+/** Refresh TikTok access token using the stored refresh token. */
+export async function refreshTikTokAccessToken(refreshToken: string): Promise<{
+  accessToken: string
+  refreshToken?: string
+  accessTokenExpiresAt: Date
+  refreshTokenExpiresAt?: Date
+}> {
+  const { clientKey, clientSecret } = getTikTokConfig()
+
+  const token = await fetchJson('https://open.tiktokapis.com/v2/oauth/token/', tokenSchema, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_key: clientKey,
+      client_secret: clientSecret,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
+  })
+
+  return {
+    accessToken: token.access_token,
+    refreshToken: token.refresh_token,
+    accessTokenExpiresAt: expiresAtFromSeconds(token.expires_in, 24 * 60 * 60),
+    refreshTokenExpiresAt: token.refresh_expires_in
+      ? expiresAtFromSeconds(token.refresh_expires_in, 365 * 24 * 60 * 60)
+      : undefined,
+  }
+}

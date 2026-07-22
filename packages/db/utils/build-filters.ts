@@ -1,5 +1,6 @@
-import { Types } from 'mongoose'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '../config/config.js'
+import { toObjectId } from './isValid.js'
+
 export type Pagination = {
   page: number
   limit: number
@@ -20,11 +21,13 @@ export type FilterQuery = {
   id?: string
   [key: string]: string | undefined
 }
+
 export const getPagination = (page: number, limit: number): Pagination => {
   const safePage = Number.isFinite(page) && page > 0 ? page : DEFAULT_PAGE
   const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : DEFAULT_PAGE_SIZE
   return { page: safePage, limit: safeLimit, skip: (safePage - 1) * safeLimit }
 }
+
 export const normalizeQuery = (query: FilterQuery | string): Record<string, string> => {
   if (typeof query === 'string') {
     const stripped = query.startsWith('?') ? query.slice(1) : query
@@ -34,7 +37,7 @@ export const normalizeQuery = (query: FilterQuery | string): Record<string, stri
   return Object.fromEntries(Object.entries(query).filter((entry): entry is [string, string] => entry[1] != null))
 }
 
-export const toObjectId = (id: string): Types.ObjectId => new Types.ObjectId(id)
+export { toObjectId }
 
 export const parseSort = (sort?: string): Record<string, 1 | -1> => {
   const raw = typeof sort === 'string' && sort.trim().length > 0 ? sort : '-createdAt'
@@ -47,7 +50,20 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
     }),
   )
 }
+
 const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query'])
+
+/** Query keys that map to ObjectId fields in MongoDB documents. */
+const OBJECT_ID_KEYS = new Set(['workspace', 'workspaceId', 'createdBy', 'uploadedBy', 'ownerId'])
+
+const tryToObjectId = (value: string) => {
+  try {
+    return toObjectId(value)
+  } catch {
+    return null
+  }
+}
+
 export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
   const normalized = normalizeQuery(query as FilterQuery)
 
@@ -57,11 +73,12 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
   for (const [key, value] of Object.entries(rest)) {
     if (RESERVED_KEYS.has(key) || value === '') continue
     if (key === 'id') {
-      try {
-        match['_id'] = toObjectId(value)
-      } catch {
-        // Silently skip malformed ObjectIds rather than crashing
-      }
+      const objectId = tryToObjectId(value)
+      if (objectId) match['_id'] = objectId
+    } else if (OBJECT_ID_KEYS.has(key)) {
+      const objectId = tryToObjectId(value)
+      if (objectId) match[key] = objectId
+      // Skip malformed ObjectIds rather than matching as strings against ObjectId fields
     } else {
       match[key] = value
     }

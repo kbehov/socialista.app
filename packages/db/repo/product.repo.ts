@@ -14,9 +14,10 @@ export const getProductById = async (id: string): Promise<Iproduct | null> => {
 
 export const getProducts = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const products = await ProductModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean()
-  const total = await ProductModel.countDocuments(match)
-
+  const [products, total] = await Promise.all([
+    ProductModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean(),
+    ProductModel.countDocuments(match),
+  ])
   return {
     products,
     meta: {

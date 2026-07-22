@@ -1,7 +1,8 @@
 import type { Types } from 'mongoose'
 import { InspirationCategoryModel, InspirationModel, InspirationNicheModel } from '../models/inspiration.model.js'
 import type { IInspirationCategory, IInspirationNiche, IIspiration } from '../types/inspiration.types.js'
-import { buildFilters, toObjectId } from '../utils/build-filters.js'
+import { buildFilters } from '../utils/build-filters.js'
+import { toObjectId } from '../utils/isValid.js'
 
 function applyArrayIdFilter(match: Record<string, unknown>, field: 'categories' | 'niches') {
   const value = match[field]
@@ -36,14 +37,18 @@ export const getInspiration = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   applyArrayIdFilter(match, 'categories')
   applyArrayIdFilter(match, 'niches')
-  const inspirations = await InspirationModel.find(match)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .sort(sort)
-    .populate('categories', 'name icon')
-    .populate('niches', 'name icon')
-    .lean()
-  const total = await InspirationModel.countDocuments(match)
+
+  const [inspirations, total] = await Promise.all([
+    InspirationModel.find(match)
+      .skip(pagination.skip)
+      .limit(pagination.limit)
+      .sort(sort)
+      .populate('categories', 'name icon')
+      .populate('niches', 'name icon')
+      .lean(),
+    InspirationModel.countDocuments(match),
+  ])
+
   return {
     inspirations,
     meta: {
@@ -73,14 +78,22 @@ export const incrementInspirationViews = async (id: string) => {
   return await InspirationModel.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true })
 }
 
+export const incrementInspirationCategoryCounts = async (ids: string[], amount = 1) => {
+  if (ids.length === 0) return
+  await InspirationCategoryModel.updateMany({ _id: { $in: ids } }, { $inc: { count: amount } })
+}
+
+export const incrementInspirationNicheCounts = async (ids: string[], amount = 1) => {
+  if (ids.length === 0) return
+  await InspirationNicheModel.updateMany({ _id: { $in: ids } }, { $inc: { count: amount } })
+}
+
 export const getInspirationCategories = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const categories = await InspirationCategoryModel.find(match)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .sort(sort)
-    .lean()
-  const total = await InspirationCategoryModel.countDocuments(match)
+  const [categories, total] = await Promise.all([
+    InspirationCategoryModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    InspirationCategoryModel.countDocuments(match),
+  ])
   return {
     categories,
     meta: {
@@ -90,6 +103,7 @@ export const getInspirationCategories = async (query: string) => {
     },
   }
 }
+
 export const updateInspirationCategory = async (id: string, body: Partial<IInspirationCategory>) => {
   return await InspirationCategoryModel.findByIdAndUpdate(id, { $set: body }, { new: true })
 }
@@ -104,8 +118,10 @@ export const createInspirationCategory = async (body: Partial<IInspirationCatego
 
 export const getInspirationNiches = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const niches = await InspirationNicheModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean()
-  const total = await InspirationNicheModel.countDocuments(match)
+  const [niches, total] = await Promise.all([
+    InspirationNicheModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    InspirationNicheModel.countDocuments(match),
+  ])
   return {
     niches,
     meta: {

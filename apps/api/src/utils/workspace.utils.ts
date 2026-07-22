@@ -119,10 +119,8 @@ export const assertWorkspaceMember = (workspace: IWorkspace, userId: string): vo
   }
 }
 
-const STORAGE_LIMIT_MB_TO_BYTES = 1024 * 1024
-
 export const assertWorkspaceStorageAvailable = (workspace: IWorkspace, fileSizeBytes: number): void => {
-  const limitBytes = workspace.limits.storage * STORAGE_LIMIT_MB_TO_BYTES
+  const limitBytes = workspace.limits.storage * BYTES_PER_MB
   if (workspace.usage.storage + fileSizeBytes > limitBytes) {
     throw new HttpError(403, 'Workspace storage is full')
   }
@@ -131,18 +129,6 @@ export const assertWorkspaceStorageAvailable = (workspace: IWorkspace, fileSizeB
 export const assertMemberLimit = (workspace: IWorkspace): void => {
   if (workspace.members.length >= workspace.limits.members) {
     throw new HttpError(403, 'Workspace member limit reached')
-  }
-}
-
-export const assertPostsLimit = (workspace: IWorkspace): void => {
-  if (workspace.usage.posts >= workspace.limits.posts) {
-    throw new HttpError(403, 'Scheduled post limit reached')
-  }
-}
-
-export const assertAiCreditsAvailable = (workspace: IWorkspace, amount: number): void => {
-  if (workspace.billing.aiCreditsBalance < amount) {
-    throw new HttpError(402, 'Insufficient AI credits')
   }
 }
 

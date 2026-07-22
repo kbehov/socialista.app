@@ -2,6 +2,7 @@ import '@/env.js'
 import accountRoutes from '@/routes/account.routes.js'
 import authRoutes from '@/routes/auth.routes.js'
 import { collectionRoutes } from '@/routes/collection.routes.js'
+import { cronRoutes } from '@/routes/cron.routes.js'
 import generationRoutes from '@/routes/generation.routes.js'
 import { generatedImageRoutes } from '@/routes/generated-image.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
@@ -50,6 +51,7 @@ app.route('/models', modelRoutes)
 app.route('/products', productRoutes)
 app.route('/accounts', accountRoutes)
 app.route('/waitlist', waitlistRoutes)
+app.route('/cron', cronRoutes)
 serve(
   {
     fetch: app.fetch,

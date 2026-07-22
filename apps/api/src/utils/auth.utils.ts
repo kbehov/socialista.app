@@ -152,7 +152,6 @@ export const authenticateOrRegisterSocialUser = async (input: ParsedSocialLoginI
     return linkOAuthAccount(existingEmailUser, provider, providerAccountId, avatar)
   }
 
-  await assertEmailUnique(email)
   const user = await createUser({
     email,
     name,

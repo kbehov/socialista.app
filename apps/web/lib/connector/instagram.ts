@@ -107,3 +107,21 @@ export async function exchangeInstagramCode(code: string) {
     accountType: profile.account_type,
   }
 }
+
+/** Refresh a long-lived Instagram User access token (Instagram Login). */
+export async function refreshInstagramAccessToken(accessToken: string): Promise<{
+  accessToken: string
+  accessTokenExpiresAt: Date
+}> {
+  const refreshed = await fetchJson('https://graph.instagram.com/refresh_access_token', longLivedSchema, {
+    searchParams: {
+      grant_type: 'ig_refresh_token',
+      access_token: accessToken,
+    },
+  })
+
+  return {
+    accessToken: refreshed.access_token,
+    accessTokenExpiresAt: expiresAtFromSeconds(refreshed.expires_in, 60 * 24 * 60 * 60),
+  }
+}

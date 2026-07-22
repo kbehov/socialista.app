@@ -2,10 +2,9 @@ import { ALLOWED_MIME_TYPES, MAX_IMAGE_SIZE } from '@/config/api.config.js'
 import { uploadBufferToR2 } from '@/lib/aws.js'
 import { parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
-import { assertWorkspaceMember, assertWorkspaceStorageAvailable } from '@/utils/workspace.utils.js'
+import { assertWorkspaceStorageAvailable, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   createWorkspaceImageFile,
-  getWorkspaceById,
   incrementWorkspaceStorageUsage,
 } from '@socialista/db'
 import type { Context } from 'hono'
@@ -47,12 +46,7 @@ export const uploadGeneratedImage = async (c: Context) => {
     throw new HttpError(400, 'User ID is required')
   }
 
-  const workspace = await getWorkspaceById(workspaceId)
-  if (!workspace) {
-    throw new HttpError(404, 'Workspace not found')
-  }
-
-  assertWorkspaceMember(workspace, userId)
+  const workspace = await getWorkspaceAsMember(workspaceId, userId)
 
   const { buffer, mimeType, ext, width, height } = await processGeneratedImage(file)
   assertWorkspaceStorageAvailable(workspace, buffer.length)

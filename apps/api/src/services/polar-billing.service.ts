@@ -1,6 +1,5 @@
-import { HttpError } from '@/utils/http-response.js'
 import { resolvePlanFromProductId } from '@/services/polar-plan-mapping.js'
-import { acquireWebhookEvent, buildWebhookEventKey } from '@/services/polar-webhook-idempotency.js'
+import { HttpError } from '@/utils/http-response.js'
 import {
   BillingStatus,
   getWorkspaceById,
@@ -10,7 +9,9 @@ import {
   Plan,
   provisionPlan,
   resetBillingPeriodUsage,
+  tryMarkEventProcessed,
   updateWorkspaceBilling,
+  type IWorkspace,
 } from '@socialista/db'
 import type {
   PolarOrderWebhookData,
@@ -20,6 +21,9 @@ import type {
   PolarWebhookMetadata,
 } from '@socialista/types'
 import { POLAR_WEBHOOK_EVENT_TYPE_SET } from '@socialista/types'
+
+const acquireWebhookEvent = (eventKey: string) => tryMarkEventProcessed(eventKey)
+const buildWebhookEventKey = (eventType: string, entityId: string) => `${eventType}:${entityId}`
 
 const toDate = (value?: string | null) => {
   if (!value) return undefined
@@ -88,134 +92,110 @@ const syncSubscriptionPeriod = async (workspaceId: string, subscription: PolarSu
   })
 }
 
-export const handleSubscriptionCreated = async (subscription: PolarSubscriptionWebhookData) => {
+async function withSubscriptionWorkspace(
+  label: string,
+  subscription: PolarSubscriptionWebhookData,
+  fn: (workspace: IWorkspace, workspaceId: string) => Promise<void>,
+): Promise<boolean> {
   const workspace = await resolveWorkspaceFromSubscription(subscription)
   if (!workspace) {
-    console.warn('[polar] subscription.created: workspace not found', subscription.id)
+    console.warn(`[polar] ${label}: workspace not found`, subscription.id)
     return false
   }
-
-  const workspaceId = workspace._id.toString()
-  const plan = resolvePlanFromProductId(subscription.productId)
-
-  await syncSubscriptionPeriod(workspaceId, subscription)
-
-  if (mapPolarStatus(subscription.status) === BillingStatus.ACTIVE) {
-    await provisionPlan(workspaceId, plan)
-  }
-
+  await fn(workspace, workspace._id.toString())
   return true
+}
+
+async function withOrderWorkspace(
+  label: string,
+  order: PolarOrderWebhookData,
+  fn: (workspace: IWorkspace, workspaceId: string) => Promise<void>,
+): Promise<boolean> {
+  const workspace = await resolveWorkspaceFromOrder(order)
+  if (!workspace) {
+    console.warn(`[polar] ${label}: workspace not found`, order.id)
+    return false
+  }
+  await fn(workspace, workspace._id.toString())
+  return true
+}
+
+export const handleSubscriptionCreated = async (subscription: PolarSubscriptionWebhookData) => {
+  return withSubscriptionWorkspace('subscription.created', subscription, async (_workspace, workspaceId) => {
+    const plan = resolvePlanFromProductId(subscription.productId)
+    await syncSubscriptionPeriod(workspaceId, subscription)
+    if (mapPolarStatus(subscription.status) === BillingStatus.ACTIVE) {
+      await provisionPlan(workspaceId, plan)
+    }
+  })
 }
 
 export const handleSubscriptionUpdated = async (subscription: PolarSubscriptionWebhookData) => {
-  const workspace = await resolveWorkspaceFromSubscription(subscription)
-  if (!workspace) {
-    console.warn('[polar] subscription.updated: workspace not found', subscription.id)
-    return false
-  }
-
-  await syncSubscriptionPeriod(workspace._id.toString(), subscription)
-  return true
+  return withSubscriptionWorkspace('subscription.updated', subscription, async (_workspace, workspaceId) => {
+    await syncSubscriptionPeriod(workspaceId, subscription)
+  })
 }
 
 export const handleSubscriptionActive = async (subscription: PolarSubscriptionWebhookData) => {
-  const workspace = await resolveWorkspaceFromSubscription(subscription)
-  if (!workspace) {
-    console.warn('[polar] subscription.active: workspace not found', subscription.id)
-    return false
-  }
-
-  const workspaceId = workspace._id.toString()
-  const plan = resolvePlanFromProductId(subscription.productId)
-
-  await syncSubscriptionPeriod(workspaceId, subscription)
-  await provisionPlan(workspaceId, plan)
-  await resetBillingPeriodUsage(workspaceId)
-
-  return true
+  return withSubscriptionWorkspace('subscription.active', subscription, async (_workspace, workspaceId) => {
+    const plan = resolvePlanFromProductId(subscription.productId)
+    await syncSubscriptionPeriod(workspaceId, subscription)
+    await provisionPlan(workspaceId, plan)
+    await resetBillingPeriodUsage(workspaceId)
+  })
 }
 
 export const handleSubscriptionCanceled = async (subscription: PolarSubscriptionWebhookData) => {
-  const workspace = await resolveWorkspaceFromSubscription(subscription)
-  if (!workspace) {
-    console.warn('[polar] subscription.canceled: workspace not found', subscription.id)
-    return false
-  }
-
-  await updateWorkspaceBilling(workspace._id.toString(), {
-    status: BillingStatus.CANCELLED,
-    currentPeriodEnd: toDate(subscription.currentPeriodEnd),
-    nextBillingDate: toDate(subscription.currentPeriodEnd) ?? workspace.billing.nextBillingDate,
+  return withSubscriptionWorkspace('subscription.canceled', subscription, async (workspace, workspaceId) => {
+    await updateWorkspaceBilling(workspaceId, {
+      status: BillingStatus.CANCELLED,
+      currentPeriodEnd: toDate(subscription.currentPeriodEnd),
+      nextBillingDate: toDate(subscription.currentPeriodEnd) ?? workspace.billing.nextBillingDate,
+    })
   })
-
-  return true
 }
 
 export const handleSubscriptionRevoked = async (subscription: PolarSubscriptionWebhookData) => {
-  const workspace = await resolveWorkspaceFromSubscription(subscription)
-  if (!workspace) {
-    console.warn('[polar] subscription.revoked: workspace not found', subscription.id)
-    return false
-  }
-
-  const workspaceId = workspace._id.toString()
-
-  await provisionPlan(workspaceId, Plan.FREE)
-  await updateWorkspaceBilling(workspaceId, {
-    status: BillingStatus.INACTIVE,
-    polarSubscriptionId: null,
-    currentPeriodStart: null,
-    currentPeriodEnd: null,
-    nextBillingDate: new Date(),
-    nextBillingAmount: 0,
+  return withSubscriptionWorkspace('subscription.revoked', subscription, async (_workspace, workspaceId) => {
+    await provisionPlan(workspaceId, Plan.FREE)
+    await updateWorkspaceBilling(workspaceId, {
+      status: BillingStatus.INACTIVE,
+      polarSubscriptionId: null,
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      nextBillingDate: new Date(),
+      nextBillingAmount: 0,
+    })
   })
-
-  return true
 }
 
 export const handleSubscriptionUncanceled = async (subscription: PolarSubscriptionWebhookData) => {
-  const workspace = await resolveWorkspaceFromSubscription(subscription)
-  if (!workspace) {
-    console.warn('[polar] subscription.uncanceled: workspace not found', subscription.id)
-    return false
-  }
-
-  const workspaceId = workspace._id.toString()
-  const plan = resolvePlanFromProductId(subscription.productId)
-
-  await syncSubscriptionPeriod(workspaceId, subscription)
-  await provisionPlan(workspaceId, plan)
-
-  return true
+  return withSubscriptionWorkspace('subscription.uncanceled', subscription, async (_workspace, workspaceId) => {
+    const plan = resolvePlanFromProductId(subscription.productId)
+    await syncSubscriptionPeriod(workspaceId, subscription)
+    await provisionPlan(workspaceId, plan)
+  })
 }
 
 export const handleOrderPaid = async (order: PolarOrderWebhookData) => {
-  const workspace = await resolveWorkspaceFromOrder(order)
-  if (!workspace) {
-    console.warn('[polar] order.paid: workspace not found', order.id)
-    return false
-  }
+  return withOrderWorkspace('order.paid', order, async (_workspace, workspaceId) => {
+    await updateWorkspaceBilling(workspaceId, {
+      polarCustomerId: order.customerId,
+      status: BillingStatus.ACTIVE,
+      nextBillingAmount: order.totalAmount,
+      ...(order.subscriptionId ? { polarSubscriptionId: order.subscriptionId } : {}),
+    })
 
-  const workspaceId = workspace._id.toString()
+    if (order.subscription) {
+      await syncSubscriptionPeriod(workspaceId, order.subscription)
+      await provisionPlan(workspaceId, resolvePlanFromProductId(order.subscription.productId ?? order.productId))
+      return
+    }
 
-  await updateWorkspaceBilling(workspaceId, {
-    polarCustomerId: order.customerId,
-    status: BillingStatus.ACTIVE,
-    nextBillingAmount: order.totalAmount,
-    ...(order.subscriptionId ? { polarSubscriptionId: order.subscriptionId } : {}),
+    if (order.productId) {
+      await provisionPlan(workspaceId, resolvePlanFromProductId(order.productId))
+    }
   })
-
-  if (order.subscription) {
-    await syncSubscriptionPeriod(workspaceId, order.subscription)
-    await provisionPlan(workspaceId, resolvePlanFromProductId(order.subscription.productId ?? order.productId))
-    return true
-  }
-
-  if (order.productId) {
-    await provisionPlan(workspaceId, resolvePlanFromProductId(order.productId))
-  }
-
-  return true
 }
 
 export const handleOrderUpdated = async (order: PolarOrderWebhookData) => {
@@ -227,19 +207,13 @@ export const handleOrderUpdated = async (order: PolarOrderWebhookData) => {
 }
 
 export const handleOrderCreated = async (order: PolarOrderWebhookData) => {
-  const workspace = await resolveWorkspaceFromOrder(order)
-  if (!workspace) {
-    console.warn('[polar] order.created: workspace not found', order.id)
-    return false
-  }
-
-  await updateWorkspaceBilling(workspace._id.toString(), {
-    polarCustomerId: order.customerId,
-    ...(order.subscriptionId ? { polarSubscriptionId: order.subscriptionId } : {}),
-    status: order.paid ? BillingStatus.ACTIVE : BillingStatus.PENDING,
+  return withOrderWorkspace('order.created', order, async (_workspace, workspaceId) => {
+    await updateWorkspaceBilling(workspaceId, {
+      polarCustomerId: order.customerId,
+      ...(order.subscriptionId ? { polarSubscriptionId: order.subscriptionId } : {}),
+      status: order.paid ? BillingStatus.ACTIVE : BillingStatus.PENDING,
+    })
   })
-
-  return true
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

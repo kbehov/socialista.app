@@ -1,9 +1,6 @@
 import { WaitlistModel } from '../models/waitlist.model.js'
 import type { CreateWaitlistEntryInput, IWaitlistEntry } from '../types/waitlist.types.js'
-
-function isDuplicateKeyError(error: unknown): boolean {
-  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 11000)
-}
+import { isDuplicateKeyError } from '../utils/is-duplicate-key-error.js'
 
 export async function findWaitlistByEmail(email: string): Promise<IWaitlistEntry | null> {
   return WaitlistModel.findOne({ email: email.trim().toLowerCase() }).lean()

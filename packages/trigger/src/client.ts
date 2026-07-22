@@ -23,6 +23,11 @@ export {
 } from './schemas/static-ad.schema.js'
 
 export {
+  refreshAccountTokenPayloadSchema,
+  type RefreshAccountTokenPayload,
+} from './schemas/refresh-account-token.schema.js'
+
+export {
   buildStaticAdCreativeBrief,
   buildStaticAdFinalPrompt,
   sanitizeStaticAdModelPrompt,

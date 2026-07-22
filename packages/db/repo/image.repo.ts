@@ -45,8 +45,10 @@ export const getImagesByCollection = async (collectionId: string) => {
 
 export const getImages = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const images = await ImageModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean()
-  const total = await ImageModel.countDocuments(match)
+  const [images, total] = await Promise.all([
+    ImageModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    ImageModel.countDocuments(match),
+  ])
   return {
     images,
     meta: { total, page: pagination.page, limit: pagination.limit },
@@ -79,12 +81,10 @@ export const incrementCollectionImagesCount = async (collectionId: string, count
 
 export const getImageCollections = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const collections = await ImageCollectionModel.find(match)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .sort(sort)
-    .lean()
-  const total = await ImageCollectionModel.countDocuments(match)
+  const [collections, total] = await Promise.all([
+    ImageCollectionModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    ImageCollectionModel.countDocuments(match),
+  ])
   return {
     collections,
     meta: {

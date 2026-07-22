@@ -50,7 +50,7 @@ export function getTikTokConfig() {
   return {
     clientKey: process.env.TIKTOK_CLIENT_KEY ?? '',
     clientSecret: process.env.TIKTOK_CLIENT_SECRET ?? '',
-    scopes: ['user.info.basic', 'video.publish'],
+    scopes: ['user.info.basic', 'user.info.profile', 'video.publish'],
   }
 }
 

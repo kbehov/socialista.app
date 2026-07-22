@@ -1,6 +1,6 @@
 import { uploadBufferToR2 } from '@/lib/aws.js'
 import { assertHasUpdates, getQueryString, parseParamId } from '@/utils/common.utils.js'
-import { downloadImage, downloadVideo } from '@/utils/download-image.js'
+import { downloadImage, downloadVideo, MAX_VIDEO_SIZE_BYTES } from '@/utils/download-image.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   createInspirationCategory as createInspirationCategoryFromDb,
@@ -13,11 +13,11 @@ import {
   getInspirationCategories as getInspirationCategoriesFromDb,
   getInspiration as getInspirationFromDb,
   getInspirationNiches as getInspirationNichesFromDb,
+  incrementInspirationCategoryCounts,
+  incrementInspirationNicheCounts,
   incrementInspirationViews,
-  InspirationCategoryModel,
   InspirationContentType,
-  InspirationNicheModel,
-  mongoose,
+  toObjectId,
   updateInspirationCategory as updateInspirationCategoryFromDb,
   updateInspiration as updateInspirationFromDb,
   updateInspirationNiche as updateInspirationNicheFromDb,
@@ -44,8 +44,6 @@ type CreateInspirationBody = {
   categories?: string[]
   niches?: string[]
 }
-
-const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024 // 50 MB
 
 async function uploadImageFromUrl(url: string) {
   const buffer = await downloadImage(url)
@@ -80,12 +78,15 @@ export const createInspiration = async (c: Context) => {
     throw new HttpError(400, 'At least one image is required')
   }
 
-  const uploadedImages = await Promise.all(imageUrls.map(uploadImageFromUrl))
+  const avatarUrl = body.author?.avatarUrl
+  const [uploadedImages, avatar] = await Promise.all([
+    Promise.all(imageUrls.map(uploadImageFromUrl)),
+    avatarUrl ? uploadImageFromUrl(avatarUrl) : Promise.resolve(null),
+  ])
   const firstImage = uploadedImages[0]!
 
   const author = { ...body.author }
-  if (author.avatarUrl) {
-    const avatar = await uploadImageFromUrl(author.avatarUrl)
+  if (avatar) {
     author.avatarUrl = avatar.url
   }
 
@@ -123,12 +124,12 @@ export const createInspiration = async (c: Context) => {
       width: firstImage.width,
       height: firstImage.height,
     },
-    categories: (body.categories ?? []).map(id => new mongoose.Types.ObjectId(id)),
-    niches: (body.niches ?? []).map(id => new mongoose.Types.ObjectId(id)),
+    categories: (body.categories ?? []).map(id => toObjectId(id)),
+    niches: (body.niches ?? []).map(id => toObjectId(id)),
   })
   await Promise.all([
-    InspirationCategoryModel.updateMany({ _id: { $in: body.categories } }, { $inc: { count: 1 } }),
-    InspirationNicheModel.updateMany({ _id: { $in: body.niches } }, { $inc: { count: 1 } }),
+    incrementInspirationCategoryCounts(body.categories ?? []),
+    incrementInspirationNicheCounts(body.niches ?? []),
   ])
   return successResponse(c, 201, { inspiration })
 }
@@ -155,15 +156,19 @@ export const uploadInspirationVideo = async (c: Context) => {
 export const updateInspiration = async (c: Context) => {
   const id = parseParamId(c.req.param('id'), 'inspiration ID')
   const body = await c.req.json()
-  const inspiration = await getInspirationByIdFromDb(id)
-  if (!inspiration) {
+  const existing = await getInspirationByIdFromDb(id)
+  if (!existing) {
     throw new HttpError(404, 'Inspiration not found')
   }
   assertHasUpdates(body)
-  await updateInspirationFromDb(inspiration._id.toString(), body)
+  const inspiration = await updateInspirationFromDb(existing._id.toString(), body)
+  if (!inspiration) {
+    throw new HttpError(404, 'Inspiration not found')
+  }
 
   return successResponse(c, 200, { inspiration })
 }
+
 export const deleteInspiration = async (c: Context) => {
   const id = parseParamId(c.req.param('id'), 'inspiration ID')
   const inspiration = await getInspirationByIdFromDb(id)
@@ -173,6 +178,7 @@ export const deleteInspiration = async (c: Context) => {
   await deleteInspirationFromDb(inspiration._id.toString())
   return successResponse(c, 200, { message: 'Inspiration deleted successfully' })
 }
+
 export const viewInspiration = async (c: Context) => {
   const id = parseParamId(c.req.param('id'), 'inspiration ID')
   await incrementInspirationViews(id)
@@ -184,6 +190,7 @@ export const getInspirationCategories = async (c: Context) => {
   const { categories, meta } = await getInspirationCategoriesFromDb(query)
   return successResponse(c, 200, { categories, meta })
 }
+
 export const getInspirationNiches = async (c: Context) => {
   const query = getQueryString(c.req.url)
   const { niches, meta } = await getInspirationNichesFromDb(query)
@@ -195,6 +202,7 @@ export const createInspirationCategory = async (c: Context) => {
   const category = await createInspirationCategoryFromDb(body)
   return successResponse(c, 201, { category })
 }
+
 export const createInspirationNiche = async (c: Context) => {
   const body = await c.req.json()
   const niche = await createInspirationNicheFromDb(body)
@@ -214,11 +222,13 @@ export const updateInspirationNiche = async (c: Context) => {
   const niche = await updateInspirationNicheFromDb(id, body)
   return successResponse(c, 200, { niche })
 }
+
 export const deleteInspirationCategory = async (c: Context) => {
   const id = parseParamId(c.req.param('id'), 'inspiration category ID')
   await deleteInspirationCategoryFromDb(id)
   return successResponse(c, 200, { message: 'Inspiration category deleted successfully' })
 }
+
 export const deleteInspirationNiche = async (c: Context) => {
   const id = parseParamId(c.req.param('id'), 'inspiration niche ID')
   await deleteInspirationNicheFromDb(id)

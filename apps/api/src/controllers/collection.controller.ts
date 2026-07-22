@@ -3,7 +3,7 @@ import { deleteObjectFromR2, getObjectSizeFromR2, uploadBufferToR2 } from '@/lib
 import type { AppContext } from '@/middlewares/auth.middleware.js'
 import { getQueryString, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
-import { assertWorkspaceMember, assertWorkspaceStorageAvailable } from '@/utils/workspace.utils.js'
+import { assertWorkspaceStorageAvailable, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   createImageCollection as createCollectionFromDb,
   createImage,
@@ -15,7 +15,6 @@ import {
   getImageCollections,
   getImages,
   getImagesByCollection,
-  getWorkspaceById,
   incrementCollectionImagesCount,
   incrementWorkspaceStorageUsage,
   toObjectId,
@@ -60,9 +59,7 @@ export const getWorkspaceImages = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
 
-  const workspace = await getWorkspaceById(workspaceId)
-  if (!workspace) throw new HttpError(404, 'Workspace not found')
-  assertWorkspaceMember(workspace, userId)
+  await getWorkspaceAsMember(workspaceId, userId)
 
   // Inject workspace into the query so buildFilters picks it up
   const existingQuery = getQueryString(c.req.url)
@@ -143,10 +140,7 @@ async function removeStoredFile(image: Pick<IImage, '_id' | 'key' | 'size'>, wor
 }
 
 async function getWorkspaceContext(workspaceId: string, userId: string) {
-  const workspace = await getWorkspaceById(workspaceId)
-  if (!workspace) throw new HttpError(404, 'Workspace not found')
-  assertWorkspaceMember(workspace, userId)
-  return workspace
+  return getWorkspaceAsMember(workspaceId, userId)
 }
 
 function assertFileInWorkspace(image: Pick<IImage, 'workspace'>, workspaceId: string) {
@@ -166,9 +160,7 @@ export const uploadToWorkspace = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
 
-  const workspace = await getWorkspaceById(workspaceId)
-  if (!workspace) throw new HttpError(404, 'Workspace not found')
-  assertWorkspaceMember(workspace, userId)
+  const workspace = await getWorkspaceAsMember(workspaceId, userId)
 
   const { buffer, mimeType, ext, width, height } = await processFile(c)
   assertWorkspaceStorageAvailable(workspace, buffer.length)
@@ -196,9 +188,7 @@ export const addFileToCollection = async (c: Context<AppContext>) => {
   const collectionId = parseParamId(c.req.param('id'), 'collection ID')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
 
-  const workspace = await getWorkspaceById(workspaceId)
-  if (!workspace) throw new HttpError(404, 'Workspace not found')
-  assertWorkspaceMember(workspace, userId)
+  const workspace = await getWorkspaceAsMember(workspaceId, userId)
 
   const collection = await getImageCollection(collectionId)
   if (!collection) throw new HttpError(404, 'Collection not found')
@@ -255,11 +245,8 @@ export const deleteFolder = async (c: Context<AppContext>) => {
   assertFolderInWorkspace(folder, workspaceId)
 
   const files = await getImagesByCollection(folderId)
-  let freedBytes = 0
-
-  for (const file of files) {
-    freedBytes += await removeStoredFile(file, workspaceId)
-  }
+  const sizes = await Promise.all(files.map(file => removeStoredFile(file, workspaceId)))
+  const freedBytes = sizes.reduce((sum, size) => sum + size, 0)
 
   await deleteImageCollection(folderId)
 

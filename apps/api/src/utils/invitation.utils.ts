@@ -79,8 +79,10 @@ export const assertInvitationRecipient = (invitation: Invitation, email: string)
 }
 
 export const getInvitationForRecipient = async (token: string, userId: string) => {
-  const invitation = await getInvitationByTokenOrThrow(token)
-  const user = await getUserOrThrow(userId)
+  const [invitation, user] = await Promise.all([
+    getInvitationByTokenOrThrow(token),
+    getUserOrThrow(userId),
+  ])
   assertInvitationRecipient(invitation, user.email)
   return invitation
 }

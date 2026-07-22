@@ -2,7 +2,7 @@ import type { AppContext } from '@/middlewares/auth.middleware.js'
 import { getQueryString, parseParamId } from '@/utils/common.utils.js'
 import { extractProductFromUrl } from '@/utils/extract-product.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
-import { assertWorkspaceMember, getWorkspaceOrThrow } from '@/utils/workspace.utils.js'
+import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   createProduct as createProductInDb,
   deleteProduct as deleteProductInDb,
@@ -107,8 +107,7 @@ async function getProductForMember(id: string, userId: string) {
   if (!product) {
     throw new HttpError(404, 'Product not found')
   }
-  const workspace = await getWorkspaceOrThrow(product.workspaceId.toString())
-  assertWorkspaceMember(workspace, userId)
+  await getWorkspaceAsMember(product.workspaceId.toString(), userId)
   return product
 }
 
@@ -130,8 +129,7 @@ export const extractProduct = async (c: Context<AppContext>) => {
 export const createProduct = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const input = parseCreateProductInput((await c.req.json()) as Record<string, unknown>)
-  const workspace = await getWorkspaceOrThrow(input.workspaceId)
-  assertWorkspaceMember(workspace, userId)
+  await getWorkspaceAsMember(input.workspaceId, userId)
 
   const product = await createProductInDb({
     workspaceId: toObjectId(input.workspaceId),
@@ -148,8 +146,7 @@ export const createProduct = async (c: Context<AppContext>) => {
 export const getWorkspaceProducts = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
-  const workspace = await getWorkspaceOrThrow(workspaceId)
-  assertWorkspaceMember(workspace, userId)
+  await getWorkspaceAsMember(workspaceId, userId)
 
   const existingQuery = getQueryString(c.req.url)
   const params = new URLSearchParams(existingQuery)

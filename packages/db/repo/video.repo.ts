@@ -20,12 +20,10 @@ export const deleteVideo = async (id: string) => {
 
 export const getVideos = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const videos = await VideoModel.find(match)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .sort(sort)
-    .lean()
-  const total = await VideoModel.countDocuments(match)
+  const [videos, total] = await Promise.all([
+    VideoModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    VideoModel.countDocuments(match),
+  ])
   return {
     videos,
     meta: {

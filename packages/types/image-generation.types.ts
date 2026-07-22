@@ -30,6 +30,7 @@ export type ImageGenerator = (options: {
 export const TASK_IDS = {
   imageGeneration: 'realtime-image-generation',
   staticAdGeneration: 'realtime-static-ad-generation',
+  refreshAccountToken: 'refresh-account-token',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

@@ -16,6 +16,7 @@
     "build:api": "turbo run build --filter=@socialista/api",
     "dev:web": "turbo run dev --filter=@socialista/web",
     "build:web": "turbo run build --filter=@socialista/web",
+    "start:web": "turbo run start --filter=@socialista/web",
     "build:types": "turbo run build --filter=@socialista/types",
     "check-types:api": "turbo run check-types --filter=@socialista/api",
     "dev:trigger": "turbo run dev:trigger --filter=@socialista/trigger",

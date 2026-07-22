@@ -1,5 +1,6 @@
 import { load } from 'cheerio'
 import { fetch } from 'undici'
+import { BROWSER_USER_AGENT } from '@/utils/http-client.js'
 
 interface ProductData {
   name?: string
@@ -17,8 +18,7 @@ export async function extractProductFromUrl(url: string): Promise<ProductData | 
   const res = await fetch(url, {
     headers: {
       // many stores block requests without a browser-like UA
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+      'User-Agent': BROWSER_USER_AGENT,
     },
     redirect: 'follow',
   })
@@ -28,37 +28,60 @@ export async function extractProductFromUrl(url: string): Promise<ProductData | 
   const html = await res.text()
   const $ = load(html)
 
-  const ldJsonBlocks: any[] = []
+  const ldJsonBlocks: Record<string, unknown>[] = []
   $('script[type="application/ld+json"]').each((_, el) => {
     try {
-      const parsed = JSON.parse($(el).text())
-      ldJsonBlocks.push(parsed)
+      const parsed = JSON.parse($(el).text()) as unknown
+      if (parsed && typeof parsed === 'object') {
+        ldJsonBlocks.push(parsed as Record<string, unknown>)
+      }
     } catch {
       // some sites have malformed/multiple JSON objects concatenated - skip silently
     }
   })
 
   // flatten @graph arrays (common in Yoast/WooCommerce SEO output)
-  const flatBlocks = ldJsonBlocks.flatMap(block => (Array.isArray(block['@graph']) ? block['@graph'] : [block]))
+  const flatBlocks = ldJsonBlocks.flatMap(block => {
+    const graph = block['@graph']
+    return Array.isArray(graph) ? (graph as Record<string, unknown>[]) : [block]
+  })
 
-  const productNode = flatBlocks.find(
-    node => node['@type'] === 'Product' || (Array.isArray(node['@type']) && node['@type'].includes('Product')),
-  )
+  const productNode = flatBlocks.find(node => {
+    const type = node['@type']
+    return type === 'Product' || (Array.isArray(type) && type.includes('Product'))
+  })
 
-  if (!productNode) return fallbackToMetaTags($, url) // see step 3
+  if (!productNode) return fallbackToMetaTags($, url)
 
-  const offer = Array.isArray(productNode.offers) ? productNode.offers[0] : productNode.offers
-  const rawPrice = offer?.price ?? offer?.priceSpecification?.price
+  const offerValue = productNode.offers
+  const offer = (
+    Array.isArray(offerValue) ? offerValue[0] : offerValue
+  ) as Record<string, unknown> | undefined
+  const priceSpec = offer?.priceSpecification as Record<string, unknown> | undefined
+  const rawPrice = offer?.price ?? priceSpec?.price
+  const brand = productNode.brand
+  const image = productNode.image
 
   return {
-    name: productNode.name,
-    description: productNode.description,
-    image: Array.isArray(productNode.image) ? productNode.image : productNode.image ? [productNode.image] : undefined,
+    name: typeof productNode.name === 'string' ? productNode.name : undefined,
+    description: typeof productNode.description === 'string' ? productNode.description : undefined,
+    image: Array.isArray(image)
+      ? image.filter((item): item is string => typeof item === 'string')
+      : typeof image === 'string'
+        ? [image]
+        : undefined,
     price: normalizeExtractedPrice(rawPrice),
-    currency: offer?.priceCurrency ?? offer?.priceSpecification?.priceCurrency,
-    availability: offer?.availability,
-    sku: productNode.sku,
-    brand: typeof productNode.brand === 'string' ? productNode.brand : productNode.brand?.name,
+    currency:
+      (typeof offer?.priceCurrency === 'string' ? offer.priceCurrency : undefined) ??
+      (typeof priceSpec?.priceCurrency === 'string' ? priceSpec.priceCurrency : undefined),
+    availability: typeof offer?.availability === 'string' ? offer.availability : undefined,
+    sku: typeof productNode.sku === 'string' ? productNode.sku : undefined,
+    brand:
+      typeof brand === 'string'
+        ? brand
+        : brand && typeof brand === 'object' && typeof (brand as Record<string, unknown>).name === 'string'
+          ? ((brand as Record<string, unknown>).name as string)
+          : undefined,
     url,
   }
 }

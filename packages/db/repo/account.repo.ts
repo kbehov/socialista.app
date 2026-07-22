@@ -1,4 +1,3 @@
-import { Types } from 'mongoose'
 import { AccountModel } from '../models/account.model.js'
 import {
   ConnectionStatus,
@@ -7,12 +6,10 @@ import {
   type SocialProvider,
   type UpdateAccountInput,
 } from '../types/account.types.js'
-import { buildFilters, toObjectId } from '../utils/build-filters.js'
+import { isDuplicateKeyError } from '../utils/is-duplicate-key-error.js'
+import { buildFilters } from '../utils/build-filters.js'
+import { toObjectId } from '../utils/isValid.js'
 import { assertValidTimezone } from '../utils/timezone.js'
-
-function isDuplicateKeyError(error: unknown): boolean {
-  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 11000)
-}
 
 /** Public account fields — tokens are never selected by default. */
 export const getAccountById = async (id: string): Promise<IAccount | null> => {
@@ -228,6 +225,48 @@ export const disconnectAccount = async (id: string): Promise<IAccount | null> =>
   ).lean()
 }
 
+/**
+ * Connected accounts whose access token expires within `withinDays` (exclusive of now, inclusive of the window end).
+ * Includes OAuth tokens for refresh flows.
+ */
+export const getConnectedAccountsExpiringSoon = async (
+  withinDays = 2,
+): Promise<IAccount[]> => {
+  const now = new Date()
+  const windowEnd = new Date(now.getTime() + withinDays * 24 * 60 * 60 * 1000)
+
+  return AccountModel.find({
+    connectionStatus: ConnectionStatus.CONNECTED,
+    accessToken: { $exists: true, $nin: [null, ''] },
+    accessTokenExpiresAt: { $gt: now, $lte: windowEnd },
+  })
+    .select('+accessToken +refreshToken')
+    .lean()
+}
+
+/** Soft-disconnect after a failed token refresh — clears tokens but keeps lastError. */
+export const disconnectAccountWithError = async (
+  id: string,
+  lastError: string,
+): Promise<IAccount | null> => {
+  return AccountModel.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        connectionStatus: ConnectionStatus.DISCONNECTED,
+        lastError,
+      },
+      $unset: {
+        accessToken: '',
+        refreshToken: '',
+        accessTokenExpiresAt: '',
+        refreshTokenExpiresAt: '',
+      },
+    },
+    { new: true },
+  ).lean()
+}
+
 export const deleteAccount = async (id: string): Promise<boolean> => {
   const deleted = await AccountModel.findByIdAndDelete(id)
   return Boolean(deleted)
@@ -235,16 +274,10 @@ export const deleteAccount = async (id: string): Promise<boolean> => {
 
 export const getAccounts = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-
-  if (typeof match.workspace === 'string' && Types.ObjectId.isValid(match.workspace)) {
-    match.workspace = toObjectId(match.workspace)
-  }
-
   const [accounts, total] = await Promise.all([
     AccountModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean(),
     AccountModel.countDocuments(match),
   ])
-
   return {
     accounts,
     meta: {

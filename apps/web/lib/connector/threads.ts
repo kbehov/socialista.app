@@ -70,3 +70,21 @@ export async function exchangeThreadsCode(code: string) {
     accountAvatar: profile.threads_profile_picture_url,
   }
 }
+
+/** Refresh a long-lived Threads User access token. */
+export async function refreshThreadsAccessToken(accessToken: string): Promise<{
+  accessToken: string
+  accessTokenExpiresAt: Date
+}> {
+  const refreshed = await fetchJson('https://graph.threads.net/refresh_access_token', longLivedSchema, {
+    searchParams: {
+      grant_type: 'th_refresh_token',
+      access_token: accessToken,
+    },
+  })
+
+  return {
+    accessToken: refreshed.access_token,
+    accessTokenExpiresAt: expiresAtFromSeconds(refreshed.expires_in, 60 * 24 * 60 * 60),
+  }
+}

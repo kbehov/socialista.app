@@ -1,8 +1,8 @@
-import { Types } from 'mongoose'
 import { InvitationModel } from '../models/invitation.model.js'
 import { InvitationStatus } from '../types/invitation.types.js'
 import { WorkspaceMemberRole } from '../types/workspace.types.js'
 import { buildFilters } from '../utils/build-filters.js'
+import { toObjectId } from '../utils/isValid.js'
 
 export type CreateInvitationInput = {
   workspace: string
@@ -21,7 +21,7 @@ export const getInvitationByToken = async (token: string) => {
 
 export const getPendingInvitationByWorkspaceAndEmail = async (workspaceId: string, email: string) => {
   return await InvitationModel.findOne({
-    workspace: new Types.ObjectId(workspaceId),
+    workspace: toObjectId(workspaceId),
     email,
     status: InvitationStatus.PENDING,
   }).lean()
@@ -39,9 +39,9 @@ export const createInvitation = async (input: CreateInvitationInput) => {
   }
 
   return await InvitationModel.create({
-    workspace: new Types.ObjectId(workspace),
+    workspace: toObjectId(workspace),
     email,
-    invitedBy: new Types.ObjectId(invitedBy),
+    invitedBy: toObjectId(invitedBy),
     role,
   })
 }
@@ -79,12 +79,10 @@ export const deleteInvitation = async (id: string) => {
 
 export const getInvitations = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const invitations = await InvitationModel.find(match)
-    .skip(pagination.skip)
-    .limit(pagination.limit)
-    .sort(sort)
-    .lean()
-  const total = await InvitationModel.countDocuments(match)
+  const [invitations, total] = await Promise.all([
+    InvitationModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    InvitationModel.countDocuments(match),
+  ])
   return {
     invitations,
     meta: {

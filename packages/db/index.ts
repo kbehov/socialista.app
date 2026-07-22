@@ -16,7 +16,7 @@ export { VideoModel } from './models/video.model.js'
 export { WaitlistModel } from './models/waitlist.model.js'
 export { WorkspaceModel } from './models/workspace.model.js'
 export * from './repo/image.repo.js'
-export * from './repo/inpsiration.repo.js'
+export * from './repo/inspiration.repo.js'
 export * from './repo/invitation.repo.js'
 export * from './repo/model.repo.js'
 export * from './repo/polar-webhook-event.repo.js'
@@ -39,8 +39,10 @@ export { buildFilters, type FilterQuery, type ParsedFilters } from './utils/buil
 export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 export {
   assertValidTimezone,
+  formatInTimezone,
   isValidIanaTimezone,
   resolveAccountTimezone,
+  toAccountZonedTime,
 } from './utils/timezone.js'
 
 export {
