@@ -9,9 +9,9 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   COMMON_TIMEZONE_VALUES,
-  formatTimezoneDetail,
   formatTimezoneLabel,
   formatTimezoneLocalTime,
   formatTimezoneOffset,
@@ -21,7 +21,7 @@ import {
 } from '@/lib/timezone'
 import { cn } from '@/lib/utils'
 import { ChevronsUpDownIcon, GlobeIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 type TimezoneSelectorProps = {
   value: string
@@ -30,7 +30,7 @@ type TimezoneSelectorProps = {
   className?: string
   id?: string
   'aria-label'?: string
-  /** `popover` floats below the trigger; `inline` expands in document flow (better inside dialogs). */
+  /** `popover` floats in a portal; `inline` expands in document flow (better inside dialogs). */
   mode?: 'popover' | 'inline'
   /** Start with the list open — useful with `inline` mode in forms. */
   defaultOpen?: boolean
@@ -85,7 +85,7 @@ function TimezoneList({
   }, [allOptions])
 
   return (
-    <Command className="flex min-h-0 flex-1 flex-col">
+    <Command className="flex min-h-0 flex-1 flex-col rounded-none bg-transparent">
       <CommandInput placeholder="Search city or timezone…" />
       <CommandList className={cn('min-h-0 flex-1 overflow-y-auto', listClassName)}>
         <CommandEmpty>No timezone found.</CommandEmpty>
@@ -129,76 +129,85 @@ export function TimezoneSelector({
   defaultOpen = false,
 }: TimezoneSelectorProps) {
   const [open, setOpen] = useState(defaultOpen)
-  const containerRef = useRef<HTMLDivElement>(null)
   const now = useMemo(() => new Date(), [])
   const isInline = mode === 'inline'
 
   const selectedLabel = value ? formatTimezoneLabel(value, now) : 'Select timezone'
-
-  useEffect(() => {
-    if (!open || isInline) return
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handlePointerDown)
-    return () => document.removeEventListener('mousedown', handlePointerDown)
-  }, [open, isInline])
 
   const handleSelect = (timezone: string) => {
     onChange(timezone)
     if (!isInline) setOpen(false)
   }
 
-  return (
-    <div
-      ref={containerRef}
-      className={cn(isInline && 'flex min-h-0 flex-1 flex-col', className)}
+  const triggerButton = (
+    <Button
+      id={id}
+      type="button"
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className={cn(
+        'h-9 w-full shrink-0 justify-between rounded-lg px-3 font-normal shadow-xs',
+        'hover:bg-background',
+      )}
     >
-      <Button
-        id={id}
-        type="button"
-        variant="outline"
-        role="combobox"
-        aria-expanded={open}
-        aria-label={ariaLabel}
-        disabled={disabled}
-        className={cn(
-          'h-9 w-full shrink-0 justify-between rounded-lg px-3 font-normal shadow-xs',
-          'hover:bg-background',
-        )}
-        onClick={() => setOpen(current => !current)}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
-          <span className="truncate text-sm">{selectedLabel}</span>
-        </span>
-        <ChevronsUpDownIcon className="size-3.5 shrink-0 opacity-50" />
-      </Button>
+      <span className="flex min-w-0 items-center gap-2">
+        <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+        <span className="truncate text-sm">{selectedLabel}</span>
+      </span>
+      <ChevronsUpDownIcon className="size-3.5 shrink-0 opacity-50" />
+    </Button>
+  )
 
-      {open ? (
-        <div
+  if (isInline) {
+    return (
+      <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-label={ariaLabel}
+          disabled={disabled}
           className={cn(
-            'overflow-hidden rounded-xl border border-border/80 bg-popover shadow-xs ring-1 ring-foreground/5',
-            isInline
-              ? 'mt-2 flex min-h-[min(320px,42vh)] flex-1 flex-col'
-              : 'absolute top-[calc(100%+6px)] z-50 w-full shadow-lg',
+            'h-9 w-full shrink-0 justify-between rounded-lg px-3 font-normal shadow-xs',
+            'hover:bg-background',
           )}
+          onClick={() => setOpen(current => !current)}
         >
-          <TimezoneList
-            value={value}
-            onSelect={handleSelect}
-            listClassName={isInline ? 'max-h-none' : 'max-h-64'}
-          />
-        </div>
-      ) : null}
+          <span className="flex min-w-0 items-center gap-2">
+            <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+            <span className="truncate text-sm">{selectedLabel}</span>
+          </span>
+          <ChevronsUpDownIcon className="size-3.5 shrink-0 opacity-50" />
+        </Button>
 
-      {!isInline && value ? (
-        <p className="mt-2 text-xs text-muted-foreground">{formatTimezoneDetail(value, now)}</p>
-      ) : null}
-    </div>
+        {open ? (
+          <div className="mt-2 flex min-h-[min(320px,42vh)] flex-1 flex-col overflow-hidden rounded-xl border border-border/80 bg-popover shadow-xs ring-1 ring-foreground/5">
+            <TimezoneList
+              value={value}
+              onSelect={handleSelect}
+              listClassName="max-h-none"
+            />
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <div className={cn('w-full', className)}>
+        <PopoverTrigger asChild disabled={disabled}>
+          {triggerButton}
+        </PopoverTrigger>
+        <PopoverContent className="flex max-h-72 min-w-[min(100vw-2rem,20rem)] flex-col">
+          <TimezoneList value={value} onSelect={handleSelect} listClassName="max-h-64" />
+        </PopoverContent>
+      </div>
+    </Popover>
   )
 }

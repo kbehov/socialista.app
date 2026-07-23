@@ -4,7 +4,8 @@ import { create } from 'zustand'
 
 import {
   createEmptyVariant,
-  formatTimeInput,
+  getDefaultScheduleFields,
+  withScheduleDefaults,
 } from '@/components/posts/composer/composer-utils'
 import type {
   ComposerData,
@@ -33,9 +34,8 @@ type ComposerState = ComposerData & ComposerActions
 
 const initialSchedule = (): ComposerSchedule => ({
   mode: 'schedule',
-  date: undefined,
-  time: formatTimeInput(new Date(Date.now() + 60 * 60 * 1000)),
   timezone: 'UTC',
+  ...getDefaultScheduleFields(),
 })
 
 const initialData = (): ComposerData => ({
@@ -152,7 +152,7 @@ export const usePostComposerStore = create<ComposerState>()((set, get) => ({
 
   setSchedule: patch =>
     set(state => ({
-      schedule: { ...state.schedule, ...patch },
+      schedule: withScheduleDefaults({ ...state.schedule, ...patch }),
     })),
 
   setPreviewAccountId: accountId => set({ previewAccountId: accountId }),

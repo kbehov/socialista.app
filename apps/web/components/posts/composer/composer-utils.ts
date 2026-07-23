@@ -142,6 +142,26 @@ export function formatTimeInput(date: Date = new Date()): string {
   return `${hours}:${minutes}`
 }
 
+/** Default schedule: today (or tomorrow if +1h crosses midnight) at now + 1 hour. */
+export function getDefaultScheduleFields(now = new Date()): { date: Date; time: string } {
+  const scheduled = new Date(now.getTime() + 60 * 60 * 1000)
+  return {
+    date: new Date(scheduled.getFullYear(), scheduled.getMonth(), scheduled.getDate()),
+    time: formatTimeInput(scheduled),
+  }
+}
+
+export function withScheduleDefaults(schedule: ComposerSchedule): ComposerSchedule {
+  if (schedule.mode !== 'schedule') return schedule
+
+  const defaults = getDefaultScheduleFields()
+  return {
+    ...schedule,
+    date: schedule.date ?? defaults.date,
+    time: schedule.time ?? defaults.time,
+  }
+}
+
 export function validateComposer(
   state: ComposerData,
   accounts: Account[],

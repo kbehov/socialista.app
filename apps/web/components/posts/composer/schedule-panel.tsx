@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TimezoneSelector } from '@/components/ui/timezone-selector'
@@ -10,6 +9,7 @@ import { CalendarClockIcon, SendIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { ComposerSection } from './composer-section'
+import { getDefaultScheduleFields } from './composer-utils'
 import type { ComposerSchedule, ComposerScheduleMode } from './composer-types'
 
 type SchedulePanelProps = {
@@ -40,7 +40,10 @@ const MODE_OPTIONS: Array<{
 
 export function SchedulePanel({ schedule, onChange, className }: SchedulePanelProps) {
   const now = useMemo(() => new Date(), [])
+  const defaultSchedule = useMemo(() => getDefaultScheduleFields(now), [now])
   const mode = schedule.mode === 'draft' ? 'schedule' : schedule.mode
+  const scheduleDate: Date = schedule.date ?? defaultSchedule.date
+  const scheduleTime: string = schedule.time ?? defaultSchedule.time
 
   return (
     <ComposerSection
@@ -62,7 +65,13 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
             <button
               key={option.value}
               type="button"
-              onClick={() => onChange({ mode: option.value })}
+              onClick={() => {
+                if (option.value === 'schedule') {
+                  onChange({ mode: 'schedule', ...getDefaultScheduleFields() })
+                  return
+                }
+                onChange({ mode: option.value })
+              }}
               className={cn(
                 'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -91,16 +100,12 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
                 <Input
                   id="schedule-date"
                   type="date"
-                  value={
-                    schedule.date
-                      ? `${schedule.date.getFullYear()}-${String(schedule.date.getMonth() + 1).padStart(2, '0')}-${String(schedule.date.getDate()).padStart(2, '0')}`
-                      : ''
-                  }
+                  value={`${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={event => {
                     const value = event.target.value
                     if (!value) {
-                      onChange({ date: undefined })
+                      onChange({ date: defaultSchedule.date })
                       return
                     }
                     const [year, month, day] = value.split('-').map(Number)
@@ -119,14 +124,14 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
                 <Input
                   id="schedule-time"
                   type="time"
-                  value={schedule.time ?? '09:00'}
+                  value={scheduleTime}
                   onChange={event => onChange({ time: event.target.value })}
                   className="h-9 rounded-xl border-border/50 bg-background text-sm shadow-none"
                 />
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 space-y-1.5">
+            <div className="min-w-0 space-y-1.5 lg:max-w-xs lg:flex-none">
               <Label className="text-[11px] font-medium text-muted-foreground">Timezone</Label>
               <TimezoneSelector
                 value={schedule.timezone}
@@ -140,26 +145,6 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               {formatTimezoneDetail(schedule.timezone, now)}
             </p>
-          ) : null}
-
-          {!schedule.date ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 rounded-full px-2.5 text-[11px] text-muted-foreground"
-              onClick={() => {
-                const tomorrow = new Date()
-                tomorrow.setDate(tomorrow.getDate() + 1)
-                tomorrow.setHours(9, 0, 0, 0)
-                onChange({
-                  date: tomorrow,
-                  time: '09:00',
-                })
-              }}
-            >
-              Quick pick: tomorrow at 9:00 AM
-            </Button>
           ) : null}
         </div>
       ) : null}
