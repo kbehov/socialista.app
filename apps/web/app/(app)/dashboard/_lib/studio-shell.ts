@@ -3,6 +3,7 @@ export const STUDIO_SHELL_CLASSES = [
   'video-studio',
   'slideshow-studio',
   'image-studio',
+  'post-composer',
 ] as const
 
 /** One `:has()` per class — Tailwind arbitrary variants break on commas. */
