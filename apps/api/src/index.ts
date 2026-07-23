@@ -9,6 +9,7 @@ import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
 import modelRoutes from '@/routes/model.routes.js'
 import productRoutes from '@/routes/product.routes.js'
+import postRoutes from '@/routes/post.routes.js'
 import { slideshowRoutes } from '@/routes/slideshow.routes.js'
 import userRoutes from '@/routes/user.routes.js'
 import { videoRoutes } from '@/routes/video.routes.js'
@@ -49,6 +50,7 @@ app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)
 app.route('/products', productRoutes)
+app.route('/posts', postRoutes)
 app.route('/accounts', accountRoutes)
 app.route('/waitlist', waitlistRoutes)
 app.route('/cron', cronRoutes)

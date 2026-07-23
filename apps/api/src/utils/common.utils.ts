@@ -105,7 +105,9 @@ const REPO_ERROR_STATUS: Record<string, ContentfulStatusCode> = {
   'Workspace ID is required': 400,
   'Workspace, email, invitedBy and role are required': 400,
   'Workspace, createdBy, provider, providerAccountId and accountName are required': 400,
+  'account, workspace, createdBy, provider, type and content are required': 400,
   'Valid IANA timezone is required': 400,
+  'Post not found': 404,
 }
 
 export const toHttpError = (error: unknown): HttpError => {

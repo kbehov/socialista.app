@@ -16,6 +16,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   provider_error: 'Something went wrong connecting the account',
   invalid_request: 'Invalid connection request',
   not_found: 'No accounts were found for this login',
+  scope_unauthorized:
+    'Enable “Sign In with LinkedIn using OpenID Connect” in addition to “Share on LinkedIn” in the LinkedIn Developer Portal (needed for openid/profile/email).',
 }
 
 /**

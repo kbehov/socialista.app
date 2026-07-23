@@ -54,7 +54,14 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
 const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query'])
 
 /** Query keys that map to ObjectId fields in MongoDB documents. */
-const OBJECT_ID_KEYS = new Set(['workspace', 'workspaceId', 'createdBy', 'uploadedBy', 'ownerId'])
+const OBJECT_ID_KEYS = new Set([
+  'account',
+  'workspace',
+  'workspaceId',
+  'createdBy',
+  'uploadedBy',
+  'ownerId',
+])
 
 const tryToObjectId = (value: string) => {
   try {

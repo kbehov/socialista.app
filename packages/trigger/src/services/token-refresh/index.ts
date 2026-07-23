@@ -8,6 +8,7 @@ import {
 
 import {
   refreshInstagramAccessToken,
+  refreshLinkedInAccessToken,
   refreshMetaUserAccessToken,
   refreshThreadsAccessToken,
   refreshTikTokAccessToken,
@@ -39,6 +40,12 @@ async function refreshForProvider(account: IAccount): Promise<RefreshedTokens | 
         throw new Error('TikTok account has no refresh token')
       }
       return refreshTikTokAccessToken(account.refreshToken)
+    }
+    case SocialProvider.LINKEDIN: {
+      if (!account.refreshToken) {
+        throw new Error('LinkedIn account has no refresh token')
+      }
+      return refreshLinkedInAccessToken(account.refreshToken)
     }
     case SocialProvider.FACEBOOK: {
       if (tokenKind(account) === 'page_access_token') {

@@ -91,7 +91,7 @@ export type ConnectAccountResult = {
 
 // --- OAuth connector wire types (web connect routes) ---
 
-export type ConnectProvider = 'facebook' | 'instagram' | 'tiktok' | 'threads'
+export type ConnectProvider = 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin'
 
 export type OAuthErrorCode =
   | 'unauthorized'
@@ -103,6 +103,7 @@ export type OAuthErrorCode =
   | 'provider_error'
   | 'invalid_request'
   | 'not_found'
+  | 'scope_unauthorized'
 
 export type MetaCandidateId = `facebook:${string}` | `instagram:${string}`
 

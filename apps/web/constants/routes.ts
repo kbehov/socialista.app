@@ -110,6 +110,18 @@ export const ACCOUNT_ROUTES = {
   GET_WORKSPACE_ACCOUNTS: (workspaceId: string) => `/accounts/workspace/${workspaceId}`,
 } as const
 
+export const POST_ROUTES = {
+  CREATE: '/posts',
+  GET_BY_ID: (id: string) => `/posts/${id}`,
+  UPDATE: (id: string) => `/posts/${id}`,
+  DELETE: (id: string) => `/posts/${id}`,
+  SCHEDULE: (id: string) => `/posts/${id}/schedule`,
+  CANCEL: (id: string) => `/posts/${id}/cancel`,
+  GET_WORKSPACE_POSTS: (workspaceId: string) => `/posts/workspace/${workspaceId}`,
+  GET_WORKSPACE_POST_STATS: (workspaceId: string) => `/posts/workspace/${workspaceId}/stats`,
+  GET_ACCOUNT_POSTS: (accountId: string) => `/posts/account/${accountId}`,
+} as const
+
 export const GENERATION_ROUTES = {
   GET_BY_ID: (id: string) => `/generations/${id}`,
   GET_WORKSPACE_GENERATIONS: (workspaceId: string) => `/generations/workspace/${workspaceId}`,

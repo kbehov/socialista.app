@@ -62,6 +62,18 @@ export function getThreadsConfig() {
   }
 }
 
+export function getLinkedInConfig() {
+  return {
+    clientId: process.env.LINKEDIN_CLIENT_ID ?? '',
+    clientSecret: process.env.LINKEDIN_CLIENT_SECRET ?? '',
+    redirectUri: getCallbackUrl('linkedin'),
+    // Requires LinkedIn Developer products:
+    // - "Sign In with LinkedIn using OpenID Connect" → openid, profile, email
+    // - "Share on LinkedIn" → w_member_social
+    scopes: ['openid', 'profile', 'email', 'w_member_social'],
+  }
+}
+
 export function assertProviderConfigured(provider: ConnectProvider): void {
   const checks: Record<ConnectProvider, { ok: boolean; label: string }> = {
     facebook: {
@@ -79,6 +91,10 @@ export function assertProviderConfigured(provider: ConnectProvider): void {
     threads: {
       ok: Boolean(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
       label: 'Threads',
+    },
+    linkedin: {
+      ok: Boolean(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET),
+      label: 'LinkedIn',
     },
   }
 

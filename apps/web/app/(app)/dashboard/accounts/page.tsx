@@ -1,8 +1,10 @@
 import { AccountsOAuthHandler } from '@/components/accounts/accounts-oauth-handler'
+import { CONNECTABLE_PLATFORMS } from '@/components/accounts/connect-account-dialog'
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
+import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
 import { AccountsTable } from '@/components/tables/accounts.table'
 import { WorkspaceRequired } from '../_components/workspace-required'
 import { getWorkspaceAccounts } from '@/services/account.service'
@@ -43,16 +45,28 @@ export default async function AccountsPage() {
         <EmptyState
           icon={Link2Icon}
           title="Connect your social accounts"
-          description="Link Facebook, Instagram, TikTok, and Threads so you can schedule and publish from one workspace."
+          description="Link your profiles to schedule and publish content from one workspace."
           minHeight="lg"
           variant="default"
-          className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          className="flex-1 rounded-2xl border-border/50 bg-gradient-to-b from-muted/25 via-muted/10 to-transparent"
+          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/50 [&_svg]:size-5"
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
           footer={
-            <p className="mt-6 text-[11px] text-muted-foreground">
-              Each account can use its own timezone for scheduling.
-            </p>
+            <div className="mt-8 flex flex-col items-center gap-5">
+              <div className="flex items-center gap-2">
+                {CONNECTABLE_PLATFORMS.map(platform => (
+                  <SocialPlatformIcon
+                    key={platform.provider}
+                    provider={platform.provider}
+                    size={14}
+                    className="size-9 rounded-xl opacity-70 transition-opacity hover:opacity-100"
+                  />
+                ))}
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground/80">
+                Each account can use its own timezone for scheduling.
+              </p>
+            </div>
           }
         />
       ) : (

@@ -4,6 +4,8 @@ export { AccountModel } from './models/account.model.js'
 export * from './repo/account.repo.js'
 export { GenerationModel } from './models/generation.model.js'
 export * from './repo/generation.repo.js'
+export { PostModel } from './models/post.model.js'
+export * from './repo/post.repo.js'
 export { ImageCollectionModel, ImageModel } from './models/image.model.js'
 export * from './models/inspiration.model.js'
 export { InvitationModel } from './models/invitation.model.js'
@@ -66,6 +68,25 @@ export {
   type IGeneration,
   type UpdateGenerationInput,
 } from './types/generation.types.js'
+
+export {
+  PostStatus,
+  PostType,
+  type CreatePostInput,
+  type GetPostsByAccountFilters,
+  type IPost,
+  type PostCarouselContent,
+  type PostCarouselItem,
+  type PostContent,
+  type PostDocument,
+  type PostImageContent,
+  type PostMediaImage,
+  type PostMediaVideo,
+  type PostTextContent,
+  type PostVideoContent,
+  type UpdatePostInput,
+  type UpdatePostStatusExtra,
+} from './types/post.types.js'
 
 export { InvitationStatus, type Invitation, type InvitationDocument } from './types/invitation.types.js'
 export type {

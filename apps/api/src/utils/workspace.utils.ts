@@ -138,6 +138,12 @@ export const assertAccountsLimit = (workspace: IWorkspace): void => {
   }
 }
 
+export const assertPostsLimit = (workspace: IWorkspace): void => {
+  if (workspace.limits.posts > 0 && workspace.usage.posts >= workspace.limits.posts) {
+    throw new HttpError(403, 'Workspace post limit reached')
+  }
+}
+
 export const assertWorkspaceAdmin = (workspace: IWorkspace, userId: string): void => {
   const role = getMemberRole(workspace, userId)
   if (role !== WorkspaceMemberRole.OWNER && role !== WorkspaceMemberRole.ADMIN) {

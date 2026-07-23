@@ -78,6 +78,48 @@ export async function refreshTikTokAccessToken(refreshToken: string): Promise<Re
   }
 }
 
+/** LinkedIn access tokens default to 2 months (5,184,000 seconds). */
+const LINKEDIN_ACCESS_TOKEN_LIFETIME_SECONDS = 5_184_000
+
+/** LinkedIn refresh tokens are typically valid for ~1 year. */
+const LINKEDIN_REFRESH_TOKEN_LIFETIME_SECONDS = 365 * 24 * 60 * 60
+
+const linkedInTokenSchema = z.object({
+  access_token: z.string().min(1),
+  expires_in: z.number(),
+  refresh_token: z.string().optional(),
+  refresh_token_expires_in: z.number().optional(),
+})
+
+export async function refreshLinkedInAccessToken(refreshToken: string): Promise<RefreshedTokens> {
+  const clientId = process.env.LINKEDIN_CLIENT_ID ?? ''
+  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET ?? ''
+
+  if (!clientId || !clientSecret) {
+    throw new Error('LinkedIn is not configured')
+  }
+
+  const token = await fetchJson('https://www.linkedin.com/oauth/v2/accessToken', linkedInTokenSchema, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  })
+
+  return {
+    accessToken: token.access_token,
+    refreshToken: token.refresh_token,
+    accessTokenExpiresAt: expiresAtFromSeconds(token.expires_in, LINKEDIN_ACCESS_TOKEN_LIFETIME_SECONDS),
+    refreshTokenExpiresAt: token.refresh_token_expires_in
+      ? expiresAtFromSeconds(token.refresh_token_expires_in, LINKEDIN_REFRESH_TOKEN_LIFETIME_SECONDS)
+      : undefined,
+  }
+}
+
 export async function refreshMetaUserAccessToken(accessToken: string): Promise<RefreshedTokens> {
   const appId = process.env.META_APP_ID ?? ''
   const appSecret = process.env.META_APP_SECRET ?? ''
