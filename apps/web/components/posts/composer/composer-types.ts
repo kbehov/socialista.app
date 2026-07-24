@@ -1,4 +1,4 @@
-import type { Account, PostType, SocialProvider } from '@socialista/types'
+import type { AccountSummary, PostType, SocialProvider } from '@socialista/types'
 
 export type ComposerMediaItem =
   | {
@@ -66,11 +66,12 @@ export type ComposerValidationIssue = {
 
 export type PostComposerProps = {
   workspaceId: string
-  accounts: Account[]
+  accounts: AccountSummary[]
+  accountsTotal?: number
 }
 
 export type PreviewProps = {
-  account: Account
+  account: AccountSummary
   caption: string
   description: string
   media: ComposerMediaItem[]

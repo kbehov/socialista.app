@@ -32,7 +32,7 @@ export function PageHeader({ title, description, breadcrumbs, backHref, actions,
   const hasBreadcrumbs = breadcrumbItems.length > 0
 
   return (
-    <div className={cn('space-y-5', className)}>
+    <div className={cn('space-y-5 mb-3', className)}>
       {hasBreadcrumbs ? (
         <Breadcrumb>
           <BreadcrumbList className="gap-1.5 text-[11px] font-medium text-muted-foreground sm:gap-2">

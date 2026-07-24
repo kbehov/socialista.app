@@ -53,12 +53,49 @@ const postSchema = new Schema<IPost>(
     timezone: { type: String, required: true },
     publishedAt: { type: Date },
     failureReason: { type: String },
+    scheduleRevision: { type: Number, default: 0, required: true },
+    claimToken: { type: String },
+    claimedAt: { type: Date },
+    queuedAt: { type: Date },
+    startedAt: { type: Date },
+    attemptCount: { type: Number, default: 0, required: true },
+    lastAttemptAt: { type: Date },
+    triggerRunId: { type: String },
+    triggerBatchId: { type: String },
+    providerOperationId: { type: String },
+    providerPostId: { type: String },
+    providerPermalink: { type: String },
   },
   { timestamps: true },
 )
 
-// Publish worker — posts due to be sent.
+// Publish worker — due scheduled posts (partial keeps the index small).
+postSchema.index(
+  { scheduledAt: 1 },
+  {
+    name: 'due_scheduled_posts',
+    partialFilterExpression: {
+      status: PostStatus.SCHEDULED,
+      scheduledAt: { $type: 'date' },
+    },
+  },
+)
+
+// Legacy compound index still useful for status-filtered worker scans.
 postSchema.index({ status: 1, scheduledAt: 1 })
+
+// Stale claim recovery — publishing posts that never started.
+postSchema.index(
+  { claimedAt: 1 },
+  {
+    name: 'stale_publishing_claims',
+    partialFilterExpression: {
+      status: PostStatus.PUBLISHING,
+      startedAt: { $exists: false },
+      claimedAt: { $type: 'date' },
+    },
+  },
+)
 
 // Per-account schedule timeline and status-filtered views.
 postSchema.index({ account: 1, status: 1, scheduledAt: 1 })

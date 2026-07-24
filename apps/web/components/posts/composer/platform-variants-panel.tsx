@@ -4,7 +4,7 @@ import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/s
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import type { Account } from '@socialista/types'
+import type { AccountSummary } from '@socialista/types'
 import { useMemo } from 'react'
 
 import { ComposerCollapsibleSection } from './composer-section'
@@ -13,7 +13,7 @@ import { PlatformVariantEditor } from './platform-variant-editor'
 import type { ComposerVariant } from './composer-types'
 
 type PlatformVariantsPanelProps = {
-  accounts: Account[]
+  accounts: AccountSummary[]
   selectedAccountIds: string[]
   commonCaption: string
   variants: Record<string, ComposerVariant>

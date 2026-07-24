@@ -28,6 +28,10 @@
       "types": "./src/schemas/refresh-account-token.schema.ts",
       "import": "./src/schemas/refresh-account-token.schema.ts"
     },
+    "./schemas/publish-post": {
+      "types": "./src/schemas/publish-post.schema.ts",
+      "import": "./src/schemas/publish-post.schema.ts"
+    },
     "./task-types": {
       "types": "./src/task-types.ts",
       "import": "./src/task-types.ts"

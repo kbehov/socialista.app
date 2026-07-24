@@ -5,14 +5,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import type { Account } from '@socialista/types'
+import type { AccountSummary } from '@socialista/types'
 import { RotateCcwIcon } from 'lucide-react'
 
 import { getPlatformLimits } from './platform-limits'
 import type { ComposerVariant } from './composer-types'
 
 type PlatformVariantEditorProps = {
-  account: Account
+  account: AccountSummary
   commonCaption: string
   variant: ComposerVariant
   onChange: (patch: Partial<Omit<ComposerVariant, 'accountId'>>) => void

@@ -10,7 +10,7 @@ import type {
   ComposerData,
   ComposerSubmitResult,
 } from '@/components/posts/composer/composer-types'
-import type { Account, ImageResponse } from '@socialista/types'
+import type { AccountSummary, ImageResponse } from '@socialista/types'
 import { ApiError } from '@/lib/api'
 
 export async function uploadPostMedia(
@@ -40,7 +40,7 @@ export async function uploadPostMedia(
 }
 
 export type PublishOrScheduleInput = {
-  accounts: Account[]
+  accounts: AccountSummary[]
   state: ComposerData
   /** Force draft regardless of schedule mode. */
   asDraft?: boolean
@@ -136,9 +136,8 @@ export async function publishOrSchedulePosts(
         continue
       }
 
-      // "Publish now" — create as draft then schedule ASAP (1 minute ahead)
-      // until a true immediate-publish worker exists.
-      const nearFuture = new Date(Date.now() + 60_000)
+      // "Publish now" — schedule slightly ahead so the minute cron claims it ASAP.
+      const nearFuture = new Date(Date.now() + 15_000)
       const scheduleNow = await schedulePost(post._id, {
         scheduledAt: nearFuture,
         timezone: state.schedule.timezone,

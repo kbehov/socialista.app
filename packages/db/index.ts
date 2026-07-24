@@ -72,9 +72,16 @@ export {
 export {
   PostStatus,
   PostType,
+  type ClaimDuePostsOptions,
+  type ClaimDuePostsResult,
+  type CompletePostPublishInput,
   type CreatePostInput,
+  type FailPostPublishInput,
   type GetPostsByAccountFilters,
   type IPost,
+  type MarkPostQueuedInput,
+  type MarkPostStartedInput,
+  type PersistProviderOperationInput,
   type PostCarouselContent,
   type PostCarouselItem,
   type PostContent,
@@ -84,9 +91,17 @@ export {
   type PostMediaVideo,
   type PostTextContent,
   type PostVideoContent,
+  type SchedulePostAtomicInput,
   type UpdatePostInput,
   type UpdatePostStatusExtra,
 } from './types/post.types.js'
+
+export {
+  DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
+  MAX_PUBLISH_CLAIM_BATCH_SIZE,
+  MAX_PUBLISH_CLAIM_PER_TICK,
+  STALE_PUBLISH_CLAIM_MS,
+} from './config/config.js'
 
 export { InvitationStatus, type Invitation, type InvitationDocument } from './types/invitation.types.js'
 export type {

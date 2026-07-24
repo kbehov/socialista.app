@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '../config/config.js'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../config/config.js'
 import { toObjectId } from './isValid.js'
 
 export type Pagination = {
@@ -23,8 +23,9 @@ export type FilterQuery = {
 }
 
 export const getPagination = (page: number, limit: number): Pagination => {
-  const safePage = Number.isFinite(page) && page > 0 ? page : DEFAULT_PAGE
-  const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : DEFAULT_PAGE_SIZE
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : DEFAULT_PAGE
+  const rawLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : DEFAULT_PAGE_SIZE
+  const safeLimit = Math.min(rawLimit, MAX_PAGE_SIZE)
   return { page: safePage, limit: safeLimit, skip: (safePage - 1) * safeLimit }
 }
 
@@ -51,7 +52,7 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
   )
 }
 
-const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query'])
+const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query', 'from', 'to'])
 
 /** Query keys that map to ObjectId fields in MongoDB documents. */
 const OBJECT_ID_KEYS = new Set([
@@ -82,6 +83,18 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
     if (key === 'id') {
       const objectId = tryToObjectId(value)
       if (objectId) match['_id'] = objectId
+    } else if (value.includes(',')) {
+      const parts = value
+        .split(',')
+        .map(part => part.trim())
+        .filter(Boolean)
+      if (parts.length === 0) continue
+      if (OBJECT_ID_KEYS.has(key)) {
+        const ids = parts.map(tryToObjectId).filter((id): id is NonNullable<ReturnType<typeof tryToObjectId>> => id !== null)
+        if (ids.length > 0) match[key] = { $in: ids }
+      } else {
+        match[key] = { $in: parts }
+      }
     } else if (OBJECT_ID_KEYS.has(key)) {
       const objectId = tryToObjectId(value)
       if (objectId) match[key] = objectId
@@ -89,6 +102,15 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
     } else {
       match[key] = value
     }
+  }
+
+  const from = normalized.from
+  const to = normalized.to
+  if (from || to) {
+    const scheduledAt: Record<string, Date> = {}
+    if (from) scheduledAt.$gte = new Date(from)
+    if (to) scheduledAt.$lte = new Date(to)
+    match.scheduledAt = scheduledAt
   }
   const trimmedSearch = textSearch?.trim()
 

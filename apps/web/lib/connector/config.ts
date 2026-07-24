@@ -22,7 +22,7 @@ export function getMetaConfig() {
   return {
     appId: process.env.META_APP_ID ?? '',
     appSecret: process.env.META_APP_SECRET ?? '',
-    graphVersion: process.env.META_GRAPH_VERSION ?? 'v22.0',
+    graphVersion: process.env.META_GRAPH_VERSION ?? 'v24.0',
     redirectUri: process.env.META_REDIRECT_URI ?? getCallbackUrl('facebook'),
     scopes: [
       'pages_show_list',

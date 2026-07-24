@@ -31,6 +31,7 @@ export const TASK_IDS = {
   imageGeneration: 'realtime-image-generation',
   staticAdGeneration: 'realtime-static-ad-generation',
   refreshAccountToken: 'refresh-account-token',
+  publishPost: 'publish-post',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

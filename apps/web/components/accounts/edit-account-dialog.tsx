@@ -17,13 +17,13 @@ import { Label } from '@/components/ui/label'
 import { TimezoneSelector } from '@/components/ui/timezone-selector'
 import { formatTimezoneCity } from '@/lib/timezone'
 import { updateAccount } from '@/services/account.service'
-import type { Account } from '@socialista/types'
+import type { AccountSummary } from '@socialista/types'
 import { Loader2Icon } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 type EditAccountDialogProps = {
-  account: Account | null
+  account: AccountSummary | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdated?: () => void
@@ -41,7 +41,7 @@ function EditAccountForm({
   onClose,
   onUpdated,
 }: {
-  account: Account
+  account: AccountSummary
   onClose: () => void
   onUpdated?: () => void
 }) {

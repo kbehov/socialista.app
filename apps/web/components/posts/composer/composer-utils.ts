@@ -1,6 +1,6 @@
 import { fromZonedTime } from 'date-fns-tz'
 import type {
-  Account,
+  AccountSummary,
   CreatePostPayload,
   PostCarouselItem,
   PostContent,
@@ -164,7 +164,7 @@ export function withScheduleDefaults(schedule: ComposerSchedule): ComposerSchedu
 
 export function validateComposer(
   state: ComposerData,
-  accounts: Account[],
+  accounts: AccountSummary[],
 ): ComposerValidationIssue[] {
   const issues: ComposerValidationIssue[] = []
   const accountById = new Map(accounts.map(account => [account._id, account]))
@@ -318,7 +318,7 @@ export function getAccountsWithIssues(
 
 export function buildCreatePayload(params: {
   workspaceId: string
-  account: Account
+  account: AccountSummary
   state: ComposerData
   status?: CreatePostPayload['status']
   scheduledAt?: Date
@@ -349,7 +349,7 @@ export function buildCreatePayload(params: {
   }
 }
 
-export function getDefaultTimezone(accounts: Account[], selectedIds: string[]): string {
+export function getDefaultTimezone(accounts: AccountSummary[], selectedIds: string[]): string {
   const firstSelected = accounts.find(account => selectedIds.includes(account._id))
   if (firstSelected?.timezone) return firstSelected.timezone
   if (accounts[0]?.timezone) return accounts[0].timezone

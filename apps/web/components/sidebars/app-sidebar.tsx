@@ -12,6 +12,7 @@ import {
   isDashboardAccountsPath,
   isDashboardFilesPath,
   isDashboardGenerationsPath,
+  isDashboardPostsPath,
   isDashboardProductsPath,
   isStaticAdsPath,
   isStudioImagesPath,
@@ -27,6 +28,7 @@ import {
   LayoutDashboardIcon,
   Link2Icon,
   MegaphoneIcon,
+  SendIcon,
   ShoppingBagIcon,
   VideoIcon,
 } from 'lucide-react'
@@ -72,6 +74,12 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
       url: DASHBOARD_ROUTES.ACCOUNTS,
       icon: <Link2Icon {...iconProps} />,
       isActive: isDashboardAccountsPath(pathname),
+    },
+    {
+      title: 'Posts',
+      url: DASHBOARD_ROUTES.POSTS,
+      icon: <SendIcon {...iconProps} />,
+      isActive: isDashboardPostsPath(pathname),
     },
   ]
 

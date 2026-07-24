@@ -50,6 +50,8 @@ const accountSchema = new Schema<IAccount>(
 accountSchema.index({ workspace: 1, provider: 1, providerAccountId: 1 }, { unique: true })
 accountSchema.index({ workspace: 1, connectionStatus: 1 })
 accountSchema.index({ workspace: 1, provider: 1 })
+accountSchema.index({ workspace: 1, accountName: 1 })
+accountSchema.index({ workspace: 1, createdAt: -1 })
 accountSchema.index({ connectionStatus: 1, accessTokenExpiresAt: 1 })
 
 export const AccountModel = model<IAccount>('Account', accountSchema)

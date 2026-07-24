@@ -3,6 +3,7 @@ import { getQueryString, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { getAccountOrThrow, getAccountForMember } from '@/utils/account.utils.js'
 import {
+  assertProviderSupportsPostType,
   getPostForMember,
   parseCreatePostInput,
   parseSchedulePostInput,
@@ -15,6 +16,7 @@ import {
 import { assertPostsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   PostStatus,
+  cancelPostAtomic,
   countPostsByStatus,
   createPost as createPostInDb,
   decrementPostsUsage,
@@ -22,6 +24,7 @@ import {
   getAllPosts,
   getPostsByAccount,
   incrementPostsUsage,
+  schedulePostAtomic,
   updatePost as updatePostInDb,
   type IPost,
 } from '@socialista/db'
@@ -38,6 +41,10 @@ export const createPost = async (c: Context<AppContext>) => {
   if (account.workspace.toString() !== input.workspaceId) {
     throw new HttpError(400, 'Account does not belong to this workspace')
   }
+  if (account.provider !== input.provider) {
+    throw new HttpError(400, 'Provider does not match the selected account')
+  }
+  assertProviderSupportsPostType(account.provider, input.type)
   assertPostsLimit(workspace)
 
   const timezone = await resolvePostTimezone(input.timezone, input.accountId)
@@ -89,7 +96,18 @@ export const updatePost = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'post ID')
   const input = parseUpdatePostInput((await c.req.json()) as Record<string, unknown>)
-  await getPostForMember(id, userId)
+  const existing = await getPostForMember(id, userId)
+
+  if (existing.status === PostStatus.PUBLISHING) {
+    throw new HttpError(409, 'Post is currently publishing')
+  }
+  if (existing.status === PostStatus.PUBLISHED) {
+    throw new HttpError(400, 'Published posts cannot be modified this way')
+  }
+
+  if (input.type) {
+    assertProviderSupportsPostType(existing.provider, input.type)
+  }
 
   const post = await updatePostInDb(id, toUpdatePostInput(input))
   if (!post) throw new HttpError(404, 'Post not found')
@@ -102,6 +120,10 @@ export const deletePost = async (c: Context<AppContext>) => {
   const id = parseParamId(c.req.param('id'), 'post ID')
   const post = await getPostForMember(id, userId)
 
+  if (post.status === PostStatus.PUBLISHING) {
+    throw new HttpError(409, 'Post is currently publishing')
+  }
+
   const deleted = await deletePostInDb(id)
   if (!deleted) throw new HttpError(404, 'Post not found')
 
@@ -110,7 +132,7 @@ export const deletePost = async (c: Context<AppContext>) => {
     void decrementPostsUsage(post.workspace.toString())
   }
 
-  return successResponse(c, 200, { id })
+  return successResponse(c, 200, { id, workspaceId: post.workspace.toString() })
 }
 
 export const schedulePost = async (c: Context<AppContext>) => {
@@ -120,13 +142,16 @@ export const schedulePost = async (c: Context<AppContext>) => {
 
   const post = await getPostForMember(id, userId)
   assertPostNotPublishing(post)
+  assertProviderSupportsPostType(post.provider, post.type)
 
-  const updated = await updatePostInDb(id, {
-    scheduledAt: input.scheduledAt,
-    timezone: input.timezone ?? post.timezone,
-    status: PostStatus.SCHEDULED,
+  const timezone = input.timezone ?? post.timezone
+  const updated = await schedulePostAtomic(id, {
+    scheduledAt: input.scheduledAt instanceof Date ? input.scheduledAt : new Date(input.scheduledAt),
+    timezone,
   })
-  if (!updated) throw new HttpError(404, 'Post not found')
+  if (!updated) {
+    throw new HttpError(409, 'Post cannot be scheduled in its current state')
+  }
 
   return successResponse(c, 200, { post: serializePost(updated) })
 }
@@ -144,12 +169,10 @@ export const cancelPost = async (c: Context<AppContext>) => {
     return successResponse(c, 200, { post: serializePost(post) })
   }
 
-  const updated = await updatePostInDb(id, {
-    status: PostStatus.CANCELED,
-    scheduledAt: null,
-    failureReason: null,
-  })
-  if (!updated) throw new HttpError(404, 'Post not found')
+  const updated = await cancelPostAtomic(id)
+  if (!updated) {
+    throw new HttpError(409, 'Post cannot be canceled in its current state')
+  }
 
   return successResponse(c, 200, { post: serializePost(updated) })
 }

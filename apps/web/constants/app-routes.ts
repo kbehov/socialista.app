@@ -45,6 +45,10 @@ export function isDashboardGenerationsPath(pathname: string) {
   )
 }
 
+export function isDashboardPostsPath(pathname: string) {
+  return pathname === DASHBOARD_ROUTES.POSTS || pathname.startsWith(`${DASHBOARD_ROUTES.POSTS}/`)
+}
+
 export function isStudioImagesPath(pathname: string) {
   if (pathname === DASHBOARD_ROUTES.STUDIO.IMAGES) return true
   if (!pathname.startsWith(`${DASHBOARD_ROUTES.STUDIO.IMAGES}/`)) return false

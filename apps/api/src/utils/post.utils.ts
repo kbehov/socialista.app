@@ -1,4 +1,5 @@
 import {
+  assertFutureScheduleInstant,
   assertHasUpdates,
   optionalTrimmedString,
   parseOptionalDate,
@@ -10,6 +11,7 @@ import { HttpError } from '@/utils/http-response.js'
 import { getAccountOrThrow } from '@/utils/account.utils.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
+  assertValidTimezone,
   PostStatus,
   PostType,
   SocialProvider,
@@ -27,10 +29,12 @@ import type {
   SchedulePostPayload,
   UpdatePostPayload,
 } from '@socialista/types'
+import { isPublishablePostType } from '@socialista/types'
 
 const POST_TYPES = new Set<string>(Object.values(PostType))
 const POST_STATUSES = new Set<string>(Object.values(PostStatus))
 const SOCIAL_PROVIDERS = new Set<string>(Object.values(SocialProvider))
+const PUBLIC_UPDATE_STATUSES = new Set<ApiPostStatus>(['draft', 'scheduled', 'canceled'])
 
 export const isPostType = (value: unknown): value is ApiPostType =>
   typeof value === 'string' && POST_TYPES.has(value)
@@ -124,9 +128,31 @@ export const serializePost = (post: IPost): Post => ({
   timezone: post.timezone,
   publishedAt: post.publishedAt,
   failureReason: post.failureReason,
+  scheduleRevision: post.scheduleRevision ?? 0,
+  providerPostId: post.providerPostId,
+  providerPermalink: post.providerPermalink,
   createdAt: post.createdAt,
   updatedAt: post.updatedAt,
 })
+
+export const assertProviderSupportsPostType = (
+  provider: SocialProvider,
+  type: ApiPostType,
+): void => {
+  if (!isPublishablePostType(provider, type)) {
+    throw new HttpError(400, `${provider} does not support ${type} posts`)
+  }
+}
+
+function parseOptionalTimezone(value: unknown): string | undefined {
+  const timezone = optionalTrimmedString(value)
+  if (!timezone) return undefined
+  try {
+    return assertValidTimezone(timezone)
+  } catch {
+    throw new HttpError(400, 'Valid IANA timezone is required')
+  }
+}
 
 export const parseCreatePostInput = (body: Record<string, unknown>): CreatePostPayload => {
   const workspaceId = parseParamId(
@@ -144,9 +170,13 @@ export const parseCreatePostInput = (body: Record<string, unknown>): CreatePostP
   if (!isPostType(body.type)) {
     throw new HttpError(400, 'Valid post type is required')
   }
-  if (body.status !== undefined && !isPostStatus(body.status)) {
-    throw new HttpError(400, 'Invalid post status')
+  if (body.status !== undefined) {
+    if (!isPostStatus(body.status) || !PUBLIC_UPDATE_STATUSES.has(body.status)) {
+      throw new HttpError(400, 'Invalid post status')
+    }
   }
+
+  assertProviderSupportsPostType(body.provider, body.type)
 
   const content = parsePostContent(body.content)
 
@@ -156,8 +186,8 @@ export const parseCreatePostInput = (body: Record<string, unknown>): CreatePostP
     provider: body.provider,
     type: body.type,
     content,
-    timezone: optionalTrimmedString(body.timezone),
-    status: isPostStatus(body.status) ? body.status : undefined,
+    timezone: parseOptionalTimezone(body.timezone),
+    status: isPostStatus(body.status) && PUBLIC_UPDATE_STATUSES.has(body.status) ? body.status : undefined,
     caption: optionalTrimmedString(body.caption),
     description: optionalTrimmedString(body.description),
     scheduledAt: parseOptionalDate(body.scheduledAt, 'scheduled at'),
@@ -179,13 +209,14 @@ export const parseUpdatePostInput = (body: Record<string, unknown>): UpdatePostP
   }
 
   if (body.status !== undefined) {
-    if (!isPostStatus(body.status)) throw new HttpError(400, 'Invalid post status')
-    updates.status = body.status
+    if (!isPostStatus(body.status) || !PUBLIC_UPDATE_STATUSES.has(body.status)) {
+      throw new HttpError(400, 'Invalid post status')
+    }
+    updates.status = body.status as 'draft' | 'scheduled' | 'canceled'
   }
 
   if (body.timezone !== undefined) {
-    const timezone = optionalTrimmedString(body.timezone)
-    if (timezone) updates.timezone = timezone
+    updates.timezone = parseOptionalTimezone(body.timezone)
   }
 
   if (body.caption !== undefined) {
@@ -201,12 +232,11 @@ export const parseUpdatePostInput = (body: Record<string, unknown>): UpdatePostP
   }
 
   if (body.publishedAt !== undefined) {
-    updates.publishedAt = parseOptionalNullableDate(body.publishedAt, 'published at')
+    throw new HttpError(400, 'publishedAt cannot be set via the public API')
   }
 
   if (body.failureReason !== undefined) {
-    updates.failureReason =
-      body.failureReason === null ? null : optionalTrimmedString(body.failureReason)
+    throw new HttpError(400, 'failureReason cannot be set via the public API')
   }
 
   assertHasUpdates(updates)
@@ -218,12 +248,10 @@ export const parseSchedulePostInput = (body: Record<string, unknown>): ScheduleP
   if (!scheduledAt) {
     throw new HttpError(400, 'scheduledAt is required')
   }
-  if (scheduledAt.getTime() <= Date.now()) {
-    throw new HttpError(400, 'scheduledAt must be a future date')
-  }
+  assertFutureScheduleInstant(scheduledAt)
   return {
     scheduledAt,
-    timezone: optionalTrimmedString(body.timezone),
+    timezone: parseOptionalTimezone(body.timezone),
   }
 }
 
@@ -255,8 +283,6 @@ export const toUpdatePostInput = (input: UpdatePostPayload): UpdatePostInput => 
   caption: input.caption,
   description: input.description,
   scheduledAt: toNullableDate(input.scheduledAt) ?? undefined,
-  publishedAt: toNullableDate(input.publishedAt) ?? undefined,
-  failureReason: input.failureReason,
 })
 
 /** Load a post and verify the caller is a member of its workspace. */
@@ -274,7 +300,13 @@ export const resolvePostTimezone = async (
   payloadTimezone: string | undefined,
   accountId: string,
 ): Promise<string> => {
-  if (payloadTimezone) return payloadTimezone
+  if (payloadTimezone) {
+    try {
+      return assertValidTimezone(payloadTimezone)
+    } catch {
+      throw new HttpError(400, 'Valid IANA timezone is required')
+    }
+  }
   const account = await getAccountOrThrow(accountId)
   return account.timezone
 }

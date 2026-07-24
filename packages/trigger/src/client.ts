@@ -28,6 +28,11 @@ export {
 } from './schemas/refresh-account-token.schema.js'
 
 export {
+  publishPostPayloadSchema,
+  type PublishPostPayload,
+} from './schemas/publish-post.schema.js'
+
+export {
   buildStaticAdCreativeBrief,
   buildStaticAdFinalPrompt,
   sanitizeStaticAdModelPrompt,

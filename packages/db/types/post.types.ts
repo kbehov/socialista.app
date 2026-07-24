@@ -82,6 +82,21 @@ export interface IPost {
   timezone: string
   publishedAt?: Date
   failureReason?: string
+  /** Bumped on each schedule so stale Trigger runs cannot finalize a newer schedule. */
+  scheduleRevision: number
+  /** Opaque token assigned when a cron tick claims this post for dispatch. */
+  claimToken?: string
+  claimedAt?: Date
+  queuedAt?: Date
+  startedAt?: Date
+  attemptCount: number
+  lastAttemptAt?: Date
+  triggerRunId?: string
+  triggerBatchId?: string
+  /** Intermediate provider container / upload / publish operation id. */
+  providerOperationId?: string
+  providerPostId?: string
+  providerPermalink?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -126,4 +141,61 @@ export type GetPostsByAccountFilters = {
 export type UpdatePostStatusExtra = {
   failureReason?: string | null
   publishedAt?: Date | null
+}
+
+export type ClaimDuePostsOptions = {
+  now?: Date
+  limit?: number
+  claimToken: string
+}
+
+export type MarkPostQueuedInput = {
+  postId: string
+  scheduleRevision: number
+  claimToken: string
+  triggerRunId?: string
+  triggerBatchId?: string
+}
+
+export type MarkPostStartedInput = {
+  postId: string
+  scheduleRevision: number
+  claimToken: string
+  triggerRunId?: string
+}
+
+export type CompletePostPublishInput = {
+  postId: string
+  scheduleRevision: number
+  claimToken: string
+  publishedAt?: Date
+  providerPostId?: string
+  providerPermalink?: string
+  providerOperationId?: string
+}
+
+export type FailPostPublishInput = {
+  postId: string
+  scheduleRevision: number
+  claimToken: string
+  failureReason: string
+  providerOperationId?: string
+}
+
+export type PersistProviderOperationInput = {
+  postId: string
+  scheduleRevision: number
+  claimToken: string
+  providerOperationId: string
+}
+
+export type SchedulePostAtomicInput = {
+  scheduledAt: Date
+  timezone: string
+}
+
+export type ClaimDuePostsResult = {
+  now: Date
+  claimToken: string
+  posts: IPost[]
 }

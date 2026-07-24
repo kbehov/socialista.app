@@ -12,19 +12,31 @@ import type {
   SchedulePostPayload,
   UpdatePostPayload,
 } from '@socialista/types'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 const POSTS_PATH = DASHBOARD_ROUTES.POSTS
+const POSTS_CACHE_REVALIDATE = 300
 
-function revalidatePostPaths() {
+function workspacePostsTag(workspaceId: string) {
+  return `workspace-posts-${workspaceId}`
+}
+
+function workspacePostStatsTag(workspaceId: string) {
+  return `workspace-post-stats-${workspaceId}`
+}
+
+function revalidateWorkspacePosts(workspaceId?: string) {
   revalidatePath(POSTS_PATH)
+  if (!workspaceId) return
+  revalidateTag(workspacePostsTag(workspaceId), 'max')
+  revalidateTag(workspacePostStatsTag(workspaceId), 'max')
 }
 
 export const createPost = async (
   payload: CreatePostPayload,
 ): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.post<{ post: Post }>(POST_ROUTES.CREATE, payload)
-  revalidatePostPaths()
+  revalidateWorkspacePosts(payload.workspaceId)
   return response
 }
 
@@ -40,6 +52,10 @@ export const getWorkspacePosts = async (
     sort?: string
     status?: string
     type?: string
+    provider?: string
+    account?: string
+    from?: string
+    to?: string
   },
 ): Promise<ApiResponse<GetPostsResponse>> => {
   const params = new URLSearchParams()
@@ -48,10 +64,19 @@ export const getWorkspacePosts = async (
   if (query?.sort) params.set('sort', query.sort)
   if (query?.status) params.set('status', query.status)
   if (query?.type) params.set('type', query.type)
+  if (query?.provider) params.set('provider', query.provider)
+  if (query?.account) params.set('account', query.account)
+  if (query?.from) params.set('from', query.from)
+  if (query?.to) params.set('to', query.to)
 
   const search = params.toString()
   const path = `${POST_ROUTES.GET_WORKSPACE_POSTS(workspaceId)}${search ? `?${search}` : ''}`
-  return api.get<GetPostsResponse>(path)
+  return api.get<GetPostsResponse>(path, {
+    next: {
+      revalidate: POSTS_CACHE_REVALIDATE,
+      tags: [workspacePostsTag(workspaceId)],
+    },
+  })
 }
 
 export const getAccountPosts = async (
@@ -77,7 +102,12 @@ export const getAccountPosts = async (
 export const getWorkspacePostStats = async (
   workspaceId: string,
 ): Promise<ApiResponse<{ stats: PostStats }>> => {
-  return api.get<{ stats: PostStats }>(POST_ROUTES.GET_WORKSPACE_POST_STATS(workspaceId))
+  return api.get<{ stats: PostStats }>(POST_ROUTES.GET_WORKSPACE_POST_STATS(workspaceId), {
+    next: {
+      revalidate: POSTS_CACHE_REVALIDATE,
+      tags: [workspacePostStatsTag(workspaceId)],
+    },
+  })
 }
 
 export const updatePost = async (
@@ -85,13 +115,13 @@ export const updatePost = async (
   payload: UpdatePostPayload,
 ): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.patch<{ post: Post }>(POST_ROUTES.UPDATE(id), payload)
-  revalidatePostPaths()
+  revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response
 }
 
-export const deletePost = async (id: string): Promise<ApiResponse<{ id: string }>> => {
-  const response = await api.delete<{ id: string }>(POST_ROUTES.DELETE(id))
-  revalidatePostPaths()
+export const deletePost = async (id: string): Promise<ApiResponse<{ id: string; workspaceId: string }>> => {
+  const response = await api.delete<{ id: string; workspaceId: string }>(POST_ROUTES.DELETE(id))
+  revalidateWorkspacePosts(response.data?.workspaceId)
   return response
 }
 
@@ -100,12 +130,12 @@ export const schedulePost = async (
   payload: SchedulePostPayload,
 ): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.post<{ post: Post }>(POST_ROUTES.SCHEDULE(id), payload)
-  revalidatePostPaths()
+  revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response
 }
 
 export const cancelPost = async (id: string): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.post<{ post: Post }>(POST_ROUTES.CANCEL(id))
-  revalidatePostPaths()
+  revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response
 }

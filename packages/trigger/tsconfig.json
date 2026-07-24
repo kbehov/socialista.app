@@ -6,6 +6,6 @@
     "types": ["node"],
     "tsBuildInfoFile": "node_modules/.cache/tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*.ts", "trigger.config.ts"],
+  "include": ["src/**/*.ts", "trigger.config.ts", "src/task-types.ts"],
   "exclude": ["node_modules", "dist", ".trigger"]
 }

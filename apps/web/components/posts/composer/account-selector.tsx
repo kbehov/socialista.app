@@ -15,14 +15,17 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import type { Account, SocialProvider } from '@socialista/types'
+import type { AccountSummary, SocialProvider } from '@socialista/types'
+import { getWorkspaceAccounts } from '@/services/account.service'
 import { CheckIcon, ChevronsUpDownIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { ComposerSection } from './composer-section'
 
 type AccountSelectorProps = {
-  accounts: Account[]
+  workspaceId: string
+  accounts: AccountSummary[]
+  accountsTotal?: number
   selectedAccountIds: string[]
   onToggle: (accountId: string) => void
   onSelectAccounts: (accountIds: string[]) => void
@@ -36,22 +39,7 @@ function normalizeHandle(username?: string) {
   return username.replace(/^@/, '')
 }
 
-function accountMatchesSearch(account: Account, query: string) {
-  const handle = normalizeHandle(account.username)
-  const haystack = [
-    account.accountName,
-    handle,
-    handle ? `@${handle}` : '',
-    getSocialPlatformLabel(account.provider),
-    account.provider,
-  ]
-    .join(' ')
-    .toLowerCase()
-
-  return haystack.includes(query)
-}
-
-function buildDuplicateNameKeys(accounts: Account[]) {
+function buildDuplicateNameKeys(accounts: AccountSummary[]) {
   const counts = new Map<string, number>()
   for (const account of accounts) {
     const key = account.accountName.trim().toLowerCase()
@@ -61,12 +49,12 @@ function buildDuplicateNameKeys(accounts: Account[]) {
   return counts
 }
 
-function hasDuplicateName(account: Account, duplicateNameKeys: Map<string, number>) {
+function hasDuplicateName(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
   const key = account.accountName.trim().toLowerCase()
   return (duplicateNameKeys.get(key) ?? 0) > 1
 }
 
-function getAccountPrimaryLabel(account: Account, duplicateNameKeys: Map<string, number>) {
+function getAccountPrimaryLabel(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
   const handle = normalizeHandle(account.username)
   if (hasDuplicateName(account, duplicateNameKeys) && handle) {
     return `@${handle}`
@@ -74,7 +62,7 @@ function getAccountPrimaryLabel(account: Account, duplicateNameKeys: Map<string,
   return account.accountName
 }
 
-function getAccountSecondaryLabel(account: Account, duplicateNameKeys: Map<string, number>) {
+function getAccountSecondaryLabel(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
   const handle = normalizeHandle(account.username)
   const platform = getSocialPlatformLabel(account.provider)
 
@@ -85,7 +73,7 @@ function getAccountSecondaryLabel(account: Account, duplicateNameKeys: Map<strin
   return handle ? `@${handle} · ${platform}` : platform
 }
 
-function getChipLabel(account: Account, duplicateNameKeys: Map<string, number>) {
+function getChipLabel(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
   const handle = normalizeHandle(account.username)
   if (hasDuplicateName(account, duplicateNameKeys) && handle) {
     return `@${handle}`
@@ -111,7 +99,9 @@ function SelectionCheckbox({ selected }: { selected: boolean }) {
 }
 
 export function AccountSelector({
+  workspaceId,
   accounts,
+  accountsTotal,
   selectedAccountIds,
   onToggle,
   onSelectAccounts,
@@ -122,48 +112,78 @@ export function AccountSelector({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [providerFilter, setProviderFilter] = useState<SocialProvider | 'all'>('all')
+  const [browseAccounts, setBrowseAccounts] = useState<AccountSummary[]>(accounts)
+  const [isSearching, setIsSearching] = useState(false)
 
   const selectedCount = selectedAccountIds.length
   const selectedSet = useMemo(() => new Set(selectedAccountIds), [selectedAccountIds])
-  const duplicateNameKeys = useMemo(() => buildDuplicateNameKeys(accounts), [accounts])
+
+  const accountCatalog = useMemo(() => {
+    const byId = new Map<string, AccountSummary>()
+    for (const account of accounts) byId.set(account._id, account)
+    for (const account of browseAccounts) byId.set(account._id, account)
+    return byId
+  }, [accounts, browseAccounts])
+
+  const duplicateNameKeys = useMemo(
+    () => buildDuplicateNameKeys([...accountCatalog.values()]),
+    [accountCatalog],
+  )
 
   const providers = useMemo(
-    () => [...new Set(accounts.map(account => account.provider))],
-    [accounts],
+    () => [...new Set(browseAccounts.map(account => account.provider))],
+    [browseAccounts],
   )
 
   const filteredAccounts = useMemo(
     () =>
       providerFilter === 'all'
-        ? accounts
-        : accounts.filter(account => account.provider === providerFilter),
-    [accounts, providerFilter],
+        ? browseAccounts
+        : browseAccounts.filter(account => account.provider === providerFilter),
+    [browseAccounts, providerFilter],
   )
 
-  const searchedAccounts = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return filteredAccounts
-    return filteredAccounts.filter(account => accountMatchesSearch(account, query))
-  }, [filteredAccounts, search])
-
-  const filteredAllSelected =
-    filteredAccounts.length > 0 &&
-    filteredAccounts.every(account => selectedSet.has(account._id))
-
   const selectedAccounts = useMemo(
-    () => accounts.filter(account => selectedSet.has(account._id)),
-    [accounts, selectedSet],
+    () =>
+      selectedAccountIds
+        .map(id => accountCatalog.get(id))
+        .filter((account): account is AccountSummary => account !== undefined),
+    [accountCatalog, selectedAccountIds],
   )
 
   const visibleChips = selectedAccounts.slice(0, 4)
   const hiddenChipCount = Math.max(0, selectedAccounts.length - visibleChips.length)
+  const totalCount = accountsTotal ?? accountCatalog.size
 
   useEffect(() => {
     if (!open) {
       setSearch('')
       setProviderFilter('all')
+      return
     }
-  }, [open])
+
+    const trimmed = search.trim()
+    const timeout = window.setTimeout(() => {
+      setIsSearching(true)
+      void getWorkspaceAccounts(workspaceId, {
+        query: trimmed || undefined,
+        connectionStatus: 'connected',
+        limit: 50,
+      })
+        .then(response => {
+          setBrowseAccounts(response.data?.accounts ?? [])
+        })
+        .finally(() => {
+          setIsSearching(false)
+        })
+    }, 300)
+
+    return () => window.clearTimeout(timeout)
+  }, [open, search, workspaceId])
+
+  const filteredAllSelected =
+    filteredAccounts.length > 0 &&
+    filteredAccounts.every(account => selectedSet.has(account._id))
 
   const handleSelectVisible = () => {
     const merged = new Set(selectedAccountIds)
@@ -178,7 +198,7 @@ export function AccountSelector({
       <ComposerSection
         title="Publish to"
         description={
-          accounts.length > 20
+          totalCount > 20
             ? 'Search and select from your connected accounts.'
             : 'Choose where this post will be published.'
         }
@@ -217,7 +237,7 @@ export function AccountSelector({
         >
           <span className="truncate text-muted-foreground">
             {selectedCount === 0
-              ? `Select from ${accounts.length} account${accounts.length === 1 ? '' : 's'}…`
+              ? `Select from ${totalCount} account${totalCount === 1 ? '' : 's'}…`
               : `${selectedCount} account${selectedCount === 1 ? '' : 's'} selected`}
           </span>
           <ChevronsUpDownIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
@@ -274,7 +294,7 @@ export function AccountSelector({
               Select accounts
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              {selectedCount} of {accounts.length} selected
+              {selectedCount} of {totalCount} selected
             </DialogDescription>
           </DialogHeader>
 
@@ -328,12 +348,14 @@ export function AccountSelector({
 
           <ScrollArea className="max-h-[min(50vh,22rem)]" scrollbarGutter>
             <div className="space-y-0.5 p-2">
-              {searchedAccounts.length === 0 ? (
+              {isSearching ? (
+                <p className="py-8 text-center text-xs text-muted-foreground">Searching…</p>
+              ) : filteredAccounts.length === 0 ? (
                 <p className="py-8 text-center text-xs text-muted-foreground">
                   No accounts match your search.
                 </p>
               ) : (
-                searchedAccounts.map(account => {
+                filteredAccounts.map(account => {
                   const selected = selectedSet.has(account._id)
                   const hasIssue = accountsWithIssues?.has(account._id)
                   const initials = (account.accountName || account.username || '?')

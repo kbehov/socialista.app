@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import type { Account } from '@socialista/types'
+import type { AccountSummary } from '@socialista/types'
 import { FilmIcon } from 'lucide-react'
 
 import type { ComposerMediaItem } from '../composer-types'
@@ -35,7 +35,7 @@ export function PreviewAccountHeader({
   account,
   subtitle,
 }: {
-  account: Account
+  account: AccountSummary
   subtitle?: string
 }) {
   const initials = (account.accountName || account.username || '?').slice(0, 2).toUpperCase()

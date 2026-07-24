@@ -5,23 +5,47 @@ import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
 import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
-import { AccountsTable } from '@/components/tables/accounts.table'
+import { AccountsView } from '@/components/accounts/accounts-view'
 import { WorkspaceRequired } from '../_components/workspace-required'
+import { getAccountsListQuery } from '@/lib/account-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import type { MetaResponse } from '@socialista/types'
 import { Link2Icon } from 'lucide-react'
 import { Suspense } from 'react'
 
-export default async function AccountsPage() {
+type AccountsPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+const defaultMeta: MetaResponse = {
+  total: 0,
+  page: 1,
+  limit: 50,
+  hasNextPage: false,
+  hasPreviousPage: false,
+}
+
+export default async function AccountsPage({ searchParams }: AccountsPageProps) {
   const workspace = await getCurrentWorkspace()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view connected accounts." />
   }
 
-  const response = await getWorkspaceAccounts(workspace.id)
+  const params = await searchParams
+  const query = getAccountsListQuery(params)
+
+  const response = await getWorkspaceAccounts(workspace.id, {
+    page: query.page,
+    limit: query.limit,
+    sort: query.sort,
+    query: query.query,
+  })
+
   const accounts = response.data?.accounts ?? []
+  const meta = response.data?.meta ?? defaultMeta
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -31,7 +55,7 @@ export default async function AccountsPage() {
 
       <PageHeader
         title="Accounts"
-        description={`${formatItemCount(accounts.length)} connected in ${workspace.name}`}
+        description={`${formatItemCount(meta.total)} connected in ${workspace.name}`}
         actions={<ConnectAccountTrigger />}
       />
 
@@ -41,7 +65,7 @@ export default async function AccountsPage() {
           description="Refresh the page to try again."
           className="flex-1 rounded-xl"
         />
-      ) : accounts.length === 0 ? (
+      ) : meta.total === 0 && !query.query ? (
         <EmptyState
           icon={Link2Icon}
           title="Connect your social accounts"
@@ -70,7 +94,13 @@ export default async function AccountsPage() {
           }
         />
       ) : (
-        <AccountsTable accounts={accounts} />
+        <Suspense fallback={null}>
+          <AccountsView
+            accounts={accounts}
+            meta={meta}
+            searchQuery={query.query}
+          />
+        </Suspense>
       )}
     </div>
   )

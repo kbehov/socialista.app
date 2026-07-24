@@ -37,9 +37,35 @@ export const requireTrimmedString = (value: unknown, label: string): string => {
   return trimmed
 }
 
+/**
+ * RFC 3339 / ISO-8601 instant with an explicit timezone (`Z` or ±offset).
+ * Rejects naive local strings so the API host timezone cannot shift the intended UTC instant.
+ */
+const RFC3339_WITH_OFFSET =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})$/i
+
+/** Small skew allowance so network latency does not reject near-future schedules. */
+export const SCHEDULE_FUTURE_TOLERANCE_MS = 5_000
+
 export const parseOptionalDate = (value: unknown, label: string): Date | undefined => {
   if (value === undefined || value === null) return undefined
-  const date = value instanceof Date ? value : new Date(String(value))
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new HttpError(400, `Invalid ${label}`)
+    }
+    return value
+  }
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new HttpError(400, `Invalid ${label}`)
+  }
+  const trimmed = value.trim()
+  if (!RFC3339_WITH_OFFSET.test(trimmed)) {
+    throw new HttpError(
+      400,
+      `${label} must be an RFC 3339 timestamp with Z or an explicit offset`,
+    )
+  }
+  const date = new Date(trimmed)
   if (Number.isNaN(date.getTime())) {
     throw new HttpError(400, `Invalid ${label}`)
   }
@@ -53,6 +79,16 @@ export const parseOptionalNullableDate = (
   if (value === undefined) return undefined
   if (value === null) return null
   return parseOptionalDate(value, label) ?? null
+}
+
+export const assertFutureScheduleInstant = (
+  scheduledAt: Date,
+  now: Date = new Date(),
+  toleranceMs = SCHEDULE_FUTURE_TOLERANCE_MS,
+): void => {
+  if (scheduledAt.getTime() <= now.getTime() - toleranceMs) {
+    throw new HttpError(400, 'scheduledAt must be a future date')
+  }
 }
 
 export const toDate = (value: string | Date | undefined): Date | undefined => {
@@ -107,6 +143,8 @@ const REPO_ERROR_STATUS: Record<string, ContentfulStatusCode> = {
   'Workspace, createdBy, provider, providerAccountId and accountName are required': 400,
   'account, workspace, createdBy, provider, type and content are required': 400,
   'Valid IANA timezone is required': 400,
+  'Cannot create a post in an internal publish status': 400,
+  'Cannot assign an internal publish status via update': 400,
   'Post not found': 404,
 }
 

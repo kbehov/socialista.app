@@ -15,8 +15,12 @@ export default async function CreatePostPage() {
     return <WorkspaceRequired message="Select a workspace to create a post." />
   }
 
-  const response = await getWorkspaceAccounts(workspace.id)
+  const response = await getWorkspaceAccounts(workspace.id, {
+    limit: 50,
+    connectionStatus: 'connected',
+  })
   const accounts = response.data?.accounts ?? []
+  const accountsTotal = response.data?.meta.total ?? accounts.length
 
   if (!response.success) {
     return (
@@ -49,7 +53,7 @@ export default async function CreatePostPage() {
 
   return (
     <div className="post-composer flex min-h-0 flex-1 flex-col px-1 sm:px-0">
-      <PostComposer workspaceId={workspace.id} accounts={accounts} />
+      <PostComposer workspaceId={workspace.id} accounts={accounts} accountsTotal={accountsTotal} />
     </div>
   )
 }

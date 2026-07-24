@@ -17,27 +17,31 @@ export type SocialProvider =
   | 'pinterest'
   | 'threads'
 
-/** Public account shape — OAuth tokens are never exposed over the API. */
-export type Account = {
+/** Lean account shape for paginated workspace lists — omits tokens, scopes, metadata, etc. */
+export type AccountSummary = {
   _id: string
   workspaceId: string
-  createdBy: string
   provider: SocialProvider
   providerAccountId: string
   accountName: string
   username?: string
   accountAvatar?: string
-  biography?: string
-  followersCount?: number
   timezone: string
   connectionStatus: ConnectionStatus
+  lastError?: string
+  createdAt: Date
+}
+
+/** Public account shape — OAuth tokens are never exposed over the API. */
+export type Account = AccountSummary & {
+  createdBy: string
+  biography?: string
+  followersCount?: number
   scopes: string[]
   metadata: Record<string, unknown>
   accessTokenExpiresAt?: Date
   refreshTokenExpiresAt?: Date
-  lastError?: string
   lastSyncedAt?: Date
-  createdAt: Date
   updatedAt: Date
 }
 
@@ -80,7 +84,7 @@ export type UpdateAccountPayload = {
 }
 
 export type GetAccountsResponse = {
-  accounts: Account[]
+  accounts: AccountSummary[]
   meta: MetaResponse
 }
 

@@ -23,6 +23,7 @@ import {
 } from '@socialista/db'
 import type {
   Account,
+  AccountSummary,
   ConnectionStatus as ApiConnectionStatus,
   CreateAccountPayload,
   SocialProvider as ApiSocialProvider,
@@ -59,6 +60,20 @@ export const serializeAccount = (account: IAccount): Account => ({
   lastSyncedAt: account.lastSyncedAt,
   createdAt: account.createdAt,
   updatedAt: account.updatedAt,
+})
+
+export const serializeAccountSummary = (account: IAccount): AccountSummary => ({
+  _id: account._id.toString(),
+  workspaceId: account.workspace.toString(),
+  provider: account.provider,
+  providerAccountId: account.providerAccountId,
+  accountName: account.accountName,
+  username: account.username,
+  accountAvatar: account.accountAvatar,
+  timezone: account.timezone,
+  connectionStatus: account.connectionStatus,
+  lastError: account.lastError,
+  createdAt: account.createdAt,
 })
 
 export const parseCreateAccountInput = (body: Record<string, unknown>): CreateAccountPayload => {

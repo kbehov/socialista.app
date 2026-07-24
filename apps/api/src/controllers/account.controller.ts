@@ -4,6 +4,7 @@ import {
   parseCreateAccountInput,
   parseUpdateAccountInput,
   serializeAccount,
+  serializeAccountSummary,
   toCreateAccountInput,
   toUpdateAccountInput,
 } from '@/utils/account.utils.js'
@@ -93,7 +94,7 @@ export const getWorkspaceAccounts = async (c: Context<AppContext>) => {
 
   const data = await getAccounts(params.toString())
   return successResponse(c, 200, {
-    accounts: data.accounts.map(account => serializeAccount(account as IAccount)),
+    accounts: data.accounts.map(account => serializeAccountSummary(account as IAccount)),
     meta: data.meta,
   })
 }
@@ -144,5 +145,5 @@ export const deleteAccount = async (c: Context<AppContext>) => {
 
   await decrementAccountsUsage(account.workspace.toString())
 
-  return successResponse(c, 200, { id })
+  return successResponse(c, 200, { id, workspaceId: account.workspace.toString() })
 }

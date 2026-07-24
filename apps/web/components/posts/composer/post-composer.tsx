@@ -6,7 +6,7 @@ import {
   usePostComposerActions,
   usePostComposerStore,
 } from '@/store/post-composer.store'
-import { ConnectionStatus, type Account } from '@socialista/types'
+import { ConnectionStatus, type AccountSummary } from '@socialista/types'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -25,10 +25,11 @@ import { SchedulePanel } from './schedule-panel'
 
 type PostComposerProps = {
   workspaceId: string
-  accounts: Account[]
+  accounts: AccountSummary[]
+  accountsTotal?: number
 }
 
-export function PostComposer({ workspaceId, accounts }: PostComposerProps) {
+export function PostComposer({ workspaceId, accounts, accountsTotal }: PostComposerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
@@ -219,7 +220,9 @@ export function PostComposer({ workspaceId, accounts }: PostComposerProps) {
         <ScrollArea className="min-h-0" scrollFade scrollbarGutter>
           <div className="flex flex-col gap-4 pb-24 sm:gap-5 sm:pb-8 lg:pb-6">
             <AccountSelector
+              workspaceId={workspaceId}
               accounts={connectedAccounts}
+              accountsTotal={accountsTotal}
               selectedAccountIds={selectedAccountIds}
               onToggle={toggleAccount}
               onSelectAccounts={setSelectedAccountIds}

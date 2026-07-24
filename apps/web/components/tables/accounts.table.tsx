@@ -22,7 +22,7 @@ import { formatTimezoneCity } from '@/lib/timezone'
 import { cn } from '@/lib/utils'
 import { deleteAccount, disconnectAccount } from '@/services/account.service'
 import { formatRelativeTime } from '@/utils/format'
-import type { Account, ConnectionStatus, SocialProvider } from '@socialista/types'
+import type { AccountSummary, ConnectionStatus, SocialProvider } from '@socialista/types'
 import {
   MoreHorizontalIcon,
   PencilIcon,
@@ -35,13 +35,13 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 type AccountsTableProps = {
-  accounts: Account[]
+  accounts: AccountSummary[]
   className?: string
 }
 
 type ConfirmAction = {
   type: 'disconnect' | 'delete'
-  account: Account
+  account: AccountSummary
 }
 
 const STATUS_META: Record<
@@ -110,7 +110,7 @@ function ConnectionStatusBadge({ status }: { status: ConnectionStatus }) {
   )
 }
 
-function AccountIdentity({ account }: { account: Account }) {
+function AccountIdentity({ account }: { account: AccountSummary }) {
   const handle = account.username ? `@${account.username.replace(/^@/, '')}` : null
   const platformLabel = getSocialPlatformLabel(account.provider)
 
@@ -142,7 +142,7 @@ function AccountIdentity({ account }: { account: Account }) {
   )
 }
 
-function AccountsSummary({ accounts }: { accounts: Account[] }) {
+function AccountsSummary({ accounts }: { accounts: AccountSummary[] }) {
   const connectedCount = accounts.filter(a => a.connectionStatus === 'connected').length
   const platforms = useMemo(() => {
     const seen = new Set<SocialProvider>()
@@ -190,9 +190,9 @@ function AccountCard({
   onAction,
   onEdit,
 }: {
-  account: Account
+  account: AccountSummary
   onAction: (action: ConfirmAction) => void
-  onEdit: (account: Account) => void
+  onEdit: (account: AccountSummary) => void
 }) {
   const platformLabel = getSocialPlatformLabel(account.provider)
   const timezoneCity = formatTimezoneCity(account.timezone)
@@ -276,7 +276,7 @@ function AccountCard({
 export function AccountsTable({ accounts, className }: AccountsTableProps) {
   const router = useRouter()
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
-  const [editAccount, setEditAccount] = useState<Account | null>(null)
+  const [editAccount, setEditAccount] = useState<AccountSummary | null>(null)
   const [isPending, setIsPending] = useState(false)
 
   const handleConfirm = async () => {

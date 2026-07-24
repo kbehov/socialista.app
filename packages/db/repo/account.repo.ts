@@ -1,5 +1,9 @@
 import { AccountModel } from '../models/account.model.js'
 import {
+  DEFAULT_ACCOUNT_PAGE_SIZE,
+  MAX_ACCOUNT_PAGE_SIZE,
+} from '../config/config.js'
+import {
   ConnectionStatus,
   type CreateAccountInput,
   type IAccount,
@@ -7,9 +11,81 @@ import {
   type UpdateAccountInput,
 } from '../types/account.types.js'
 import { isDuplicateKeyError } from '../utils/is-duplicate-key-error.js'
-import { buildFilters } from '../utils/build-filters.js'
+import {
+  buildFilters,
+  normalizeQuery,
+  type Pagination,
+} from '../utils/build-filters.js'
 import { toObjectId } from '../utils/isValid.js'
 import { assertValidTimezone } from '../utils/timezone.js'
+import type { PipelineStage } from 'mongoose'
+
+/** Fields returned by workspace account list queries — keeps payloads small at scale. */
+const ACCOUNT_LIST_PROJECTION = {
+  _id: 1,
+  workspace: 1,
+  provider: 1,
+  providerAccountId: 1,
+  accountName: 1,
+  username: 1,
+  accountAvatar: 1,
+  timezone: 1,
+  connectionStatus: 1,
+  lastError: 1,
+  createdAt: 1,
+} as const
+
+function clampAccountPagination(pagination: Pagination): Pagination {
+  const limit = Math.min(Math.max(pagination.limit, 1), MAX_ACCOUNT_PAGE_SIZE)
+  return {
+    page: pagination.page,
+    limit,
+    skip: (pagination.page - 1) * limit,
+  }
+}
+
+function buildAccountPaginationMeta(
+  total: number,
+  pagination: Pagination,
+  sort: Record<string, 1 | -1>,
+  textSearch?: string,
+) {
+  const totalPages = total === 0 ? 0 : Math.ceil(total / pagination.limit)
+  return {
+    total,
+    page: pagination.page,
+    limit: pagination.limit,
+    hasNextPage: pagination.page < totalPages,
+    hasPreviousPage: pagination.page > 1,
+    sort,
+    textSearch,
+  }
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function applyAccountTextSearch(
+  match: Record<string, unknown>,
+  textSearch?: string,
+): Record<string, unknown> {
+  if (!textSearch) return match
+
+  const regex = new RegExp(escapeRegex(textSearch), 'i')
+  return {
+    ...match,
+    $or: [{ accountName: regex }, { username: regex }, { providerAccountId: regex }],
+  }
+}
+
+function pickAccountListHint(match: Record<string, unknown>): Record<string, 1 | -1> | undefined {
+  if (!match.workspace) return undefined
+  if (match.connectionStatus !== undefined) {
+    return { workspace: 1, connectionStatus: 1 }
+  }
+  return { workspace: 1, accountName: 1 }
+}
 
 /** Public account fields — tokens are never selected by default. */
 export const getAccountById = async (id: string): Promise<IAccount | null> => {
@@ -273,20 +349,42 @@ export const deleteAccount = async (id: string): Promise<boolean> => {
 }
 
 export const getAccounts = async (query: string) => {
-  const { match, pagination, sort } = buildFilters(query)
-  const [accounts, total] = await Promise.all([
-    AccountModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean(),
-    AccountModel.countDocuments(match),
-  ])
-  return {
-    accounts,
-    meta: {
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
-      hasPreviousPage: pagination.page > 1,
-      sort,
+  const normalized = normalizeQuery(query)
+  if (!normalized.limit) {
+    normalized.limit = String(DEFAULT_ACCOUNT_PAGE_SIZE)
+  }
+  if (!normalized.sort) {
+    normalized.sort = 'accountName'
+  }
+
+  const { match, pagination: rawPagination, sort, textSearch } = buildFilters(normalized)
+  const pagination = clampAccountPagination(rawPagination)
+  const filter = applyAccountTextSearch(match, textSearch)
+  const hint = pickAccountListHint(filter)
+
+  const pipeline: PipelineStage[] = [
+    { $match: filter },
+    {
+      $facet: {
+        accounts: [
+          { $sort: sort },
+          { $skip: pagination.skip },
+          { $limit: pagination.limit },
+          { $project: ACCOUNT_LIST_PROJECTION },
+        ],
+        metaCount: [{ $count: 'total' }],
+      },
     },
+  ]
+
+  const aggregate = AccountModel.aggregate(pipeline)
+  if (hint) aggregate.hint(hint)
+
+  const [result] = await aggregate.exec()
+  const total = (result?.metaCount?.[0] as { total: number } | undefined)?.total ?? 0
+
+  return {
+    accounts: (result?.accounts ?? []) as IAccount[],
+    meta: buildAccountPaginationMeta(total, pagination, sort, textSearch),
   }
 }

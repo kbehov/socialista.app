@@ -47,7 +47,7 @@ export type PostContent =
   | PostVideoContent
   | PostCarouselContent
 
-/** Public post shape — never exposes internal ObjectIds. */
+/** Public post shape — never exposes claim tokens or other internal worker fields. */
 export type Post = {
   _id: string
   accountId: string
@@ -63,6 +63,9 @@ export type Post = {
   timezone: string
   publishedAt?: Date
   failureReason?: string
+  scheduleRevision: number
+  providerPostId?: string
+  providerPermalink?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -78,6 +81,7 @@ export type CreatePostPayload = {
   status?: PostStatus
   caption?: string
   description?: string
+  /** RFC 3339 instant with `Z` or an explicit offset. */
   scheduledAt?: string | Date
   publishedAt?: string | Date
   failureReason?: string
@@ -86,17 +90,20 @@ export type CreatePostPayload = {
 export type UpdatePostPayload = {
   type?: PostType
   content?: PostContent
-  status?: PostStatus
+  /** Only draft / scheduled / canceled may be set via the public API. */
+  status?: Extract<PostStatus, 'draft' | 'scheduled' | 'canceled'>
   timezone?: string
   caption?: string | null
   description?: string | null
+  /** RFC 3339 instant with `Z` or an explicit offset. */
   scheduledAt?: string | Date | null
   publishedAt?: string | Date | null
   failureReason?: string | null
 }
 
 export type SchedulePostPayload = {
-  scheduledAt: Date
+  /** RFC 3339 instant with `Z` or an explicit offset. */
+  scheduledAt: Date | string
   timezone?: string
 }
 
@@ -106,3 +113,24 @@ export type GetPostsResponse = {
 }
 
 export type PostStats = Partial<Record<PostStatus, number>>
+
+/** Supported publish combinations for the connected providers. */
+export const PUBLISHABLE_POST_TYPES: Record<
+  Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin'>,
+  readonly PostType[]
+> = {
+  facebook: ['text', 'image', 'video', 'reel', 'carousel'],
+  instagram: ['image', 'video', 'reel', 'carousel'],
+  tiktok: ['video', 'reel', 'carousel', 'image'],
+  threads: ['text', 'image', 'video', 'carousel'],
+  linkedin: ['text', 'image', 'video', 'carousel'],
+} as const
+
+export function isPublishablePostType(
+  provider: SocialProvider,
+  type: PostType,
+): boolean {
+  const supported = PUBLISHABLE_POST_TYPES[provider as keyof typeof PUBLISHABLE_POST_TYPES]
+  if (!supported) return false
+  return (supported as readonly PostType[]).includes(type)
+}

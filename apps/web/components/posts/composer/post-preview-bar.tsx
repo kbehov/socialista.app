@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import type { Account } from '@socialista/types'
+import type { AccountSummary } from '@socialista/types'
 import { EyeIcon, PanelRightCloseIcon, PanelRightOpenIcon } from 'lucide-react'
 
 import { createEmptyVariant, derivePostType, mergeVariantCaption } from './composer-utils'
@@ -13,7 +13,7 @@ import type { ComposerMediaItem, ComposerVariant } from './composer-types'
 import { getPreviewComponent } from './previews/preview-registry'
 
 type PostPreviewBarProps = {
-  accounts: Account[]
+  accounts: AccountSummary[]
   selectedAccountIds: string[]
   previewAccountId: string | null
   commonCaption: string
