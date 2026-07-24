@@ -45,7 +45,7 @@ export type ComposerData = {
 
 export type ComposerSubmitResult = {
   accountId: string
-  status: 'created' | 'scheduled' | 'draft' | 'failed'
+  status: 'created' | 'scheduled' | 'publishing' | 'draft' | 'failed'
   postId?: string
   message?: string
 }

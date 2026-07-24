@@ -1,4 +1,5 @@
 import { successResponse } from '@/utils/http-response.js'
+import { buildPublishPostTriggerItem } from '@/utils/publish-dispatch.utils.js'
 import {
   DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_BATCH_SIZE,
@@ -19,10 +20,6 @@ import type { Context } from 'hono'
 
 function utcDateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10)
-}
-
-function publishIdempotencyKey(postId: string, scheduleRevision: number): string {
-  return `publish-post:${postId}:rev:${scheduleRevision}`
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -53,23 +50,7 @@ async function enqueuePublishBatch(posts: IPost[], claimToken: string): Promise<
   const chunks = chunkArray(posts, MAX_PUBLISH_CLAIM_BATCH_SIZE)
 
   for (const chunk of chunks) {
-    const items = chunk.map(post => {
-      const postId = post._id.toString()
-      const scheduleRevision = post.scheduleRevision ?? 0
-      return {
-        payload: {
-          postId,
-          accountId: post.account.toString(),
-          scheduleRevision,
-          claimToken,
-        },
-        options: {
-          idempotencyKey: publishIdempotencyKey(postId, scheduleRevision),
-          concurrencyKey: post.account.toString(),
-          queue: 'publish-post',
-        },
-      }
-    })
+    const items = chunk.map(post => buildPublishPostTriggerItem(post, claimToken))
 
     try {
       const handle = await tasks.batchTrigger<PublishPostTask>(TASK_IDS.publishPost, items)

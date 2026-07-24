@@ -116,6 +116,7 @@ export const POST_ROUTES = {
   UPDATE: (id: string) => `/posts/${id}`,
   DELETE: (id: string) => `/posts/${id}`,
   SCHEDULE: (id: string) => `/posts/${id}/schedule`,
+  PUBLISH_NOW: (id: string) => `/posts/${id}/publish-now`,
   CANCEL: (id: string) => `/posts/${id}/cancel`,
   GET_WORKSPACE_POSTS: (workspaceId: string) => `/posts/workspace/${workspaceId}`,
   GET_WORKSPACE_POST_STATS: (workspaceId: string) => `/posts/workspace/${workspaceId}/stats`,

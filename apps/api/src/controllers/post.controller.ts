@@ -13,21 +13,29 @@ import {
   toCreatePostInput,
   toUpdatePostInput,
 } from '@/utils/post.utils.js'
+import { buildPublishPostTriggerItem } from '@/utils/publish-dispatch.utils.js'
 import { assertPostsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   PostStatus,
   cancelPostAtomic,
+  claimPostForImmediatePublish,
   countPostsByStatus,
   createPost as createPostInDb,
   decrementPostsUsage,
   deletePost as deletePostInDb,
+  failPostPublish,
   getAllPosts,
   getPostsByAccount,
   incrementPostsUsage,
+  markPostQueued,
   schedulePostAtomic,
   updatePost as updatePostInDb,
   type IPost,
 } from '@socialista/db'
+import { TASK_IDS } from '@socialista/types'
+import type { PublishPostTask } from '@socialista/trigger/task-types'
+import { tasks } from '@trigger.dev/sdk/v3'
+import { randomUUID } from 'node:crypto'
 import type { Context } from 'hono'
 
 export const createPost = async (c: Context<AppContext>) => {
@@ -175,6 +183,58 @@ export const cancelPost = async (c: Context<AppContext>) => {
   }
 
   return successResponse(c, 200, { post: serializePost(updated) })
+}
+
+/**
+ * Immediately claim a post and dispatch the Trigger.dev publish task.
+ * On Trigger enqueue failure the post is marked failed (not returned to scheduled).
+ */
+export const publishPostNow = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'post ID')
+  const post = await getPostForMember(id, userId)
+
+  assertPostNotPublishing(post)
+  assertProviderSupportsPostType(post.provider, post.type)
+
+  const claimToken = randomUUID()
+  const claimed = await claimPostForImmediatePublish(id, claimToken)
+  if (!claimed) {
+    throw new HttpError(409, 'Post cannot be published in its current state')
+  }
+
+  const { payload, options } = buildPublishPostTriggerItem(claimed, claimToken)
+  const scheduleRevision = claimed.scheduleRevision ?? 0
+
+  try {
+    const handle = await tasks.trigger<PublishPostTask>(TASK_IDS.publishPost, payload, options)
+    const queued = await markPostQueued({
+      postId: id,
+      scheduleRevision,
+      claimToken,
+      triggerRunId: handle.id,
+    })
+
+    return successResponse(c, 202, {
+      post: serializePost(queued ?? claimed),
+      runId: handle.id,
+    })
+  } catch (error) {
+    const failureReason =
+      error instanceof Error ? error.message : 'Failed to queue publish job'
+    console.error('publishPostNow trigger failed', {
+      postId: id,
+      scheduleRevision,
+      message: failureReason,
+    })
+    await failPostPublish({
+      postId: id,
+      scheduleRevision,
+      claimToken,
+      failureReason: 'Failed to queue publish job. Try again shortly.',
+    })
+    throw new HttpError(502, 'Failed to queue publish job. Try again shortly.')
+  }
 }
 
 export const getWorkspacePostStats = async (c: Context<AppContext>) => {

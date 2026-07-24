@@ -1,6 +1,6 @@
 'use server'
 
-import { createPost, schedulePost } from '@/services/post.service'
+import { createPost, publishPostNow, schedulePost } from '@/services/post.service'
 import { uploadToWorkspace } from '@/services/files.service'
 import {
   buildCreatePayload,
@@ -56,12 +56,6 @@ export async function publishOrSchedulePosts(
   const scheduledAt =
     !asDraft && state.schedule.mode === 'schedule' ? resolveScheduleDate(state.schedule) : undefined
 
-  const status = asDraft
-    ? 'draft'
-    : state.schedule.mode === 'schedule'
-      ? 'draft'
-      : 'draft'
-
   for (const accountId of state.selectedAccountIds) {
     const account = accountById.get(accountId)
     if (!account) {
@@ -78,7 +72,7 @@ export async function publishOrSchedulePosts(
         workspaceId: state.workspaceId,
         account,
         state,
-        status,
+        status: 'draft',
       })
 
       const createResponse = await createPost(payload)
@@ -136,26 +130,22 @@ export async function publishOrSchedulePosts(
         continue
       }
 
-      // "Publish now" — schedule slightly ahead so the minute cron claims it ASAP.
-      const nearFuture = new Date(Date.now() + 15_000)
-      const scheduleNow = await schedulePost(post._id, {
-        scheduledAt: nearFuture,
-        timezone: state.schedule.timezone,
-      })
+      // Publish now — claim + enqueue Trigger task immediately (one call per account/post).
+      const publishResponse = await publishPostNow(post._id)
 
-      if (!scheduleNow.success) {
+      if (!publishResponse.success || !publishResponse.data?.post) {
         results.push({
           accountId,
           status: 'failed',
           postId: post._id,
-          message: scheduleNow.message ?? 'Failed to queue publish',
+          message: publishResponse.message ?? 'Failed to queue publish',
         })
         continue
       }
 
       results.push({
         accountId,
-        status: 'scheduled',
+        status: 'publishing',
         postId: post._id,
       })
     } catch (error) {

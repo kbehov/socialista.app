@@ -43,16 +43,24 @@ export const publishPost = schemaTask({
   onFailure: async ({ payload, error, ctx }) => {
     try {
       await connectDb()
-      await failPostPublish({
+      const failureReason = sanitizeFailureReason(error)
+      const failed = await failPostPublish({
         postId: payload.postId,
         scheduleRevision: payload.scheduleRevision,
         claimToken: payload.claimToken,
-        failureReason: sanitizeFailureReason(error),
+        failureReason,
       })
+      if (!failed) {
+        logger.warn('Publish post onFailure could not update post status', {
+          postId: payload.postId,
+          scheduleRevision: payload.scheduleRevision,
+          runId: ctx.run.id,
+        })
+      }
       logger.error('Publish post failed permanently', {
         postId: payload.postId,
         runId: ctx.run.id,
-        error: sanitizeFailureReason(error),
+        error: failureReason,
       })
     } finally {
       await disconnectDb()

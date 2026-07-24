@@ -107,6 +107,12 @@ export type SchedulePostPayload = {
   timezone?: string
 }
 
+/** Response from POST /posts/:id/publish-now after the Trigger run is queued. */
+export type PublishPostNowResponse = {
+  post: Post
+  runId: string
+}
+
 export type GetPostsResponse = {
   posts: Post[]
   meta: MetaResponse

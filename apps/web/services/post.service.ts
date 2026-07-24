@@ -9,6 +9,7 @@ import type {
   GetPostsResponse,
   Post,
   PostStats,
+  PublishPostNowResponse,
   SchedulePostPayload,
   UpdatePostPayload,
 } from '@socialista/types'
@@ -130,6 +131,14 @@ export const schedulePost = async (
   payload: SchedulePostPayload,
 ): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.post<{ post: Post }>(POST_ROUTES.SCHEDULE(id), payload)
+  revalidateWorkspacePosts(response.data?.post.workspaceId)
+  return response
+}
+
+export const publishPostNow = async (
+  id: string,
+): Promise<ApiResponse<PublishPostNowResponse>> => {
+  const response = await api.post<PublishPostNowResponse>(POST_ROUTES.PUBLISH_NOW(id))
   revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response
 }

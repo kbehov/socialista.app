@@ -199,7 +199,7 @@ export const updatePost = async (id: string, updates: UpdatePostInput): Promise<
       status: { $nin: [PostStatus.PUBLISHING, PostStatus.PUBLISHED] },
     },
     updateQuery,
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -423,12 +423,12 @@ export const updatePostStatus = async (
   const updateQuery: Record<string, unknown> = { $set }
   if (Object.keys($unset).length > 0) updateQuery.$unset = $unset
 
-  return PostModel.findByIdAndUpdate(id, updateQuery, { new: true }).lean()
+  return PostModel.findByIdAndUpdate(id, updateQuery, { returnDocument: 'after' }).lean()
 }
 
 /**
  * Atomically claim a post for publishing — only succeeds if the current status matches `fromStatus`.
- * Prefer `claimDuePosts` for cron dispatch; keep this for single-post / publish-now paths.
+ * Prefer `claimDuePosts` for cron dispatch; keep this for single-post paths with a known status.
  */
 export const claimPost = async (
   id: string,
@@ -455,7 +455,48 @@ export const claimPost = async (
         providerPermalink: '',
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
+  ).lean()
+}
+
+/**
+ * Claim a post for immediate publish (publish-now).
+ * Accepts draft / scheduled / failed / canceled, bumps scheduleRevision for Trigger idempotency,
+ * and stamps scheduledAt for observability. Enqueue failures mark the post failed (not scheduled).
+ */
+export const claimPostForImmediatePublish = async (
+  id: string,
+  claimToken: string = randomUUID(),
+): Promise<IPost | null> => {
+  const now = await getDatabaseNow()
+  return PostModel.findOneAndUpdate(
+    {
+      _id: toObjectId(id),
+      status: {
+        $in: [PostStatus.DRAFT, PostStatus.SCHEDULED, PostStatus.FAILED, PostStatus.CANCELED],
+      },
+    },
+    {
+      $set: {
+        status: PostStatus.PUBLISHING,
+        scheduledAt: now,
+        claimToken,
+        claimedAt: now,
+      },
+      $inc: { scheduleRevision: 1 },
+      $unset: {
+        failureReason: '',
+        publishedAt: '',
+        queuedAt: '',
+        startedAt: '',
+        triggerRunId: '',
+        triggerBatchId: '',
+        providerOperationId: '',
+        providerPostId: '',
+        providerPermalink: '',
+      },
+    },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -486,7 +527,7 @@ export const releasePostClaim = async (
         triggerBatchId: '',
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -516,7 +557,7 @@ export const schedulePostAtomic = async (
         publishedAt: '',
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -537,7 +578,7 @@ export const cancelPostAtomic = async (id: string): Promise<IPost | null> => {
         ...PUBLISH_METADATA_UNSET,
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -557,7 +598,7 @@ export const markPostQueued = async (input: MarkPostQueuedInput): Promise<IPost 
       startedAt: { $exists: false },
     },
     { $set },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -580,7 +621,7 @@ export const markPostStarted = async (input: MarkPostStartedInput): Promise<IPos
       $set,
       $inc: { attemptCount: 1 },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -595,7 +636,7 @@ export const persistProviderOperation = async (
       claimToken: input.claimToken,
     },
     { $set: { providerOperationId: input.providerOperationId } },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -627,7 +668,7 @@ export const completePostPublish = async (
         startedAt: '',
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
 }
 
@@ -638,23 +679,36 @@ export const failPostPublish = async (input: FailPostPublishInput): Promise<IPos
   }
   if (input.providerOperationId) $set.providerOperationId = input.providerOperationId
 
-  return PostModel.findOneAndUpdate(
+  const unset = {
+    claimToken: '',
+    claimedAt: '',
+    queuedAt: '',
+    startedAt: '',
+  }
+
+  // Strict match: owned publishing claim.
+  const failed = await PostModel.findOneAndUpdate(
     {
       _id: toObjectId(input.postId),
       status: PostStatus.PUBLISHING,
       scheduleRevision: input.scheduleRevision,
       claimToken: input.claimToken,
     },
+    { $set, $unset: unset },
+    { returnDocument: 'after' },
+  ).lean()
+  if (failed) return failed
+
+  // Fallback: claim was released to scheduled (enqueue/release race) or claimToken rotated.
+  // Still finalize this scheduleRevision so a failed Trigger run cannot leave the post "scheduled".
+  return PostModel.findOneAndUpdate(
     {
-      $set,
-      $unset: {
-        claimToken: '',
-        claimedAt: '',
-        queuedAt: '',
-        startedAt: '',
-      },
+      _id: toObjectId(input.postId),
+      scheduleRevision: input.scheduleRevision,
+      status: { $in: [PostStatus.PUBLISHING, PostStatus.SCHEDULED] },
     },
-    { new: true },
+    { $set, $unset: unset },
+    { returnDocument: 'after' },
   ).lean()
 }
 

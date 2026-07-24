@@ -6,6 +6,7 @@ import {
   getPost,
   getWorkspacePostStats,
   getWorkspacePosts,
+  publishPostNow,
   schedulePost,
   updatePost,
 } from '@/controllers/post.controller.js'
@@ -25,6 +26,7 @@ postRoutes.get('/:id', getPost)
 postRoutes.patch('/:id', updatePost)
 postRoutes.delete('/:id', deletePost)
 postRoutes.post('/:id/schedule', schedulePost)
+postRoutes.post('/:id/publish-now', publishPostNow)
 postRoutes.post('/:id/cancel', cancelPost)
 
 export default postRoutes

@@ -179,7 +179,7 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
           ? 'Draft saved'
           : state.schedule.mode === 'schedule'
             ? 'Scheduled'
-            : 'Queued to publish'
+            : 'Publishing'
         toast.success(
           `${label} for ${succeeded.length} account${succeeded.length === 1 ? '' : 's'}`,
         )
