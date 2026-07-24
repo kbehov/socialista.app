@@ -3,16 +3,10 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  FilmIcon,
-  ImageIcon,
-  Trash2Icon,
-} from 'lucide-react'
+import { ArrowLeftIcon, ArrowRightIcon, FilmIcon, ImageIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { ComposerMediaItem } from './composer-types'
+import type { ComposerMediaItem } from '../../../types/composer-types'
 
 type MediaCarouselManagerProps = {
   media: ComposerMediaItem[]
@@ -39,9 +33,7 @@ export function MediaCarouselManager({
         <p className="text-[11px] font-medium text-muted-foreground">
           {media.length} attachment{media.length === 1 ? '' : 's'}
         </p>
-        {media.length > 1 ? (
-          <p className="text-[10px] text-muted-foreground">Use arrows to reorder</p>
-        ) : null}
+        {media.length > 1 ? <p className="text-[10px] text-muted-foreground">Use arrows to reorder</p> : null}
       </div>
 
       <ul className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -56,20 +48,12 @@ export function MediaCarouselManager({
               <div className="group relative aspect-square bg-background">
                 {item.kind === 'image' ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.url}
-                    alt={item.altText || `Media ${index + 1}`}
-                    className="size-full object-cover"
-                  />
+                  <img src={item.url} alt={item.altText || `Media ${index + 1}`} className="size-full object-cover" />
                 ) : (
                   <div className="flex size-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
                     {item.thumbnailUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.thumbnailUrl}
-                        alt=""
-                        className="absolute inset-0 size-full object-cover"
-                      />
+                      <img src={item.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
                     ) : null}
                     <span className="relative z-10 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-xs ring-1 ring-border/50">
                       <FilmIcon className="size-3.5" strokeWidth={1.75} />

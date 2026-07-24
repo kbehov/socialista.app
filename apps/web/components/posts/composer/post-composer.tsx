@@ -275,7 +275,7 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
         </ScrollArea>
 
         <div className="hidden min-h-0 lg:block">
-          <div className="sticky top-[4.25rem]">
+          <div className="sticky top-17">
             <PostPreviewBar
               accounts={connectedAccounts}
               selectedAccountIds={selectedAccountIds}

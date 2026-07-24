@@ -87,7 +87,7 @@ function SelectionCheckbox({ selected }: { selected: boolean }) {
     <span
       aria-hidden
       className={cn(
-        'flex size-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors',
+        'flex size-4 shrink-0 items-center justify-center rounded-lg border transition-colors',
         selected
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-input bg-background dark:border-input/80',
@@ -157,9 +157,10 @@ export function AccountSelector({
 
   useEffect(() => {
     if (!open) {
-      setSearch('')
-      setProviderFilter('all')
-      return
+      setTimeout(() => {
+        setSearch('')
+        setProviderFilter('all')
+      }, 0)
     }
 
     const trimmed = search.trim()
@@ -256,7 +257,7 @@ export function AccountSelector({
                   onClick={() => onToggle(account._id)}
                   title={getAccountSecondaryLabel(account, duplicateNameKeys)}
                   className={cn(
-                    'inline-flex max-w-[11rem] items-center gap-1 rounded-md border bg-background py-0.5 pr-1 pl-1 text-[10px] font-medium transition-colors',
+                    'inline-flex max-w-44 items-center gap-1 rounded-md border bg-background py-0.5 pr-1 pl-1 text-[10px] font-medium transition-colors',
                     'hover:bg-muted/40 dark:hover:bg-muted/30',
                     hasIssue
                       ? 'border-amber-500/35 text-amber-700 dark:border-amber-500/40 dark:text-amber-300'

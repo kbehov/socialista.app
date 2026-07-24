@@ -1,12 +1,7 @@
 'use client'
 
-import type { PreviewProps } from '../composer-types'
-import {
-  PreviewAccountHeader,
-  PreviewCaption,
-  PreviewMedia,
-  PreviewShell,
-} from './preview-shell'
+import type { PreviewProps } from '../../../../types/composer-types'
+import { PreviewAccountHeader, PreviewCaption, PreviewMedia, PreviewShell } from './preview-shell'
 
 export function TwitterPreview({ account, caption, media }: PreviewProps) {
   return (

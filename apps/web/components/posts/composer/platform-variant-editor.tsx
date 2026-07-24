@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
 import { RotateCcwIcon } from 'lucide-react'
 
+import type { ComposerVariant } from '../../../types/composer-types'
 import { getPlatformLimits } from './platform-limits'
-import type { ComposerVariant } from './composer-types'
 
 type PlatformVariantEditorProps = {
   account: AccountSummary

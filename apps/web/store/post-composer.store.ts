@@ -7,12 +7,7 @@ import {
   getDefaultScheduleFields,
   withScheduleDefaults,
 } from '@/components/posts/composer/composer-utils'
-import type {
-  ComposerData,
-  ComposerMediaItem,
-  ComposerSchedule,
-  ComposerVariant,
-} from '@/components/posts/composer/composer-types'
+import type { ComposerData, ComposerMediaItem, ComposerSchedule, ComposerVariant } from '@/types/composer-types'
 
 type ComposerActions = {
   hydrate: (workspaceId: string, timezone: string) => void
@@ -70,9 +65,7 @@ export const usePostComposerStore = create<ComposerState>()((set, get) => ({
         if (!variants[id]) variants[id] = createEmptyVariant(id)
       }
       const previewAccountId =
-        state.previewAccountId && unique.includes(state.previewAccountId)
-          ? state.previewAccountId
-          : (unique[0] ?? null)
+        state.previewAccountId && unique.includes(state.previewAccountId) ? state.previewAccountId : (unique[0] ?? null)
       return {
         selectedAccountIds: unique,
         variants,

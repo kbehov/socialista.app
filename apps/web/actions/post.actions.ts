@@ -1,17 +1,11 @@
 'use server'
 
-import { createPost, publishPostNow, schedulePost } from '@/services/post.service'
-import { uploadToWorkspace } from '@/services/files.service'
-import {
-  buildCreatePayload,
-  resolveScheduleDate,
-} from '@/components/posts/composer/composer-utils'
-import type {
-  ComposerData,
-  ComposerSubmitResult,
-} from '@/components/posts/composer/composer-types'
-import type { AccountSummary, ImageResponse } from '@socialista/types'
+import { buildCreatePayload, resolveScheduleDate } from '@/components/posts/composer/composer-utils'
 import { ApiError } from '@/lib/api'
+import { uploadToWorkspace } from '@/services/files.service'
+import { createPost, publishPostNow, schedulePost } from '@/services/post.service'
+import type { ComposerData, ComposerSubmitResult } from '@/types/composer-types'
+import type { AccountSummary, ImageResponse } from '@socialista/types'
 
 export async function uploadPostMedia(
   workspaceId: string,
@@ -29,12 +23,7 @@ export async function uploadPostMedia(
   } catch (error) {
     return {
       success: false,
-      message:
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : 'Upload failed',
+      message: error instanceof ApiError ? error.message : error instanceof Error ? error.message : 'Upload failed',
     }
   }
 }
@@ -46,15 +35,12 @@ export type PublishOrScheduleInput = {
   asDraft?: boolean
 }
 
-export async function publishOrSchedulePosts(
-  input: PublishOrScheduleInput,
-): Promise<ComposerSubmitResult[]> {
+export async function publishOrSchedulePosts(input: PublishOrScheduleInput): Promise<ComposerSubmitResult[]> {
   const { accounts, state, asDraft } = input
   const accountById = new Map(accounts.map(account => [account._id, account]))
   const results: ComposerSubmitResult[] = []
 
-  const scheduledAt =
-    !asDraft && state.schedule.mode === 'schedule' ? resolveScheduleDate(state.schedule) : undefined
+  const scheduledAt = !asDraft && state.schedule.mode === 'schedule' ? resolveScheduleDate(state.schedule) : undefined
 
   for (const accountId of state.selectedAccountIds) {
     const account = accountById.get(accountId)
@@ -153,11 +139,7 @@ export async function publishOrSchedulePosts(
         accountId,
         status: 'failed',
         message:
-          error instanceof ApiError
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'Failed to create post',
+          error instanceof ApiError ? error.message : error instanceof Error ? error.message : 'Failed to create post',
       })
     }
   }

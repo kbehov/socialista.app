@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
 import { EyeIcon, PanelRightCloseIcon, PanelRightOpenIcon } from 'lucide-react'
 
+import type { ComposerMediaItem, ComposerVariant } from '../../../types/composer-types'
 import { createEmptyVariant, derivePostType, mergeVariantCaption } from './composer-utils'
-import type { ComposerMediaItem, ComposerVariant } from './composer-types'
 import { getPreviewComponent } from './previews/preview-registry'
 
 type PostPreviewBarProps = {
@@ -64,16 +64,14 @@ export function PostPreviewBar({
     return (
       <aside
         className={cn(
-          'flex min-h-[12rem] flex-col items-center justify-center rounded-xl border border-dashed border-border/50',
+          'flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border/50',
           'bg-background px-4 text-center',
           className,
         )}
       >
         <EyeIcon className="mb-2 size-4 text-muted-foreground/60" strokeWidth={1.75} />
         <p className="text-xs font-medium text-foreground">Preview</p>
-        <p className="mt-1 max-w-[10rem] text-[10px] leading-relaxed text-muted-foreground">
-          Select accounts to preview
-        </p>
+        <p className="mt-1 max-w-40 text-[10px] leading-relaxed text-muted-foreground">Select accounts to preview</p>
       </aside>
     )
   }
@@ -128,12 +126,7 @@ export function PostPreviewBar({
                     'data-[state=active]:border-border/50 data-[state=active]:bg-background',
                   )}
                 >
-                  <SocialPlatformIcon
-                    provider={account.provider}
-                    size={10}
-                    framed={false}
-                    className="size-3"
-                  />
+                  <SocialPlatformIcon provider={account.provider} size={10} framed={false} className="size-3" />
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -149,11 +142,7 @@ export function PostPreviewBar({
               const description = variant.description
 
               return (
-                <TabsContent
-                  key={account._id}
-                  value={account._id}
-                  className="mt-0 data-[state=inactive]:hidden"
-                >
+                <TabsContent key={account._id} value={account._id} className="mt-0 data-[state=inactive]:hidden">
                   <div className="origin-top scale-[0.88]">
                     <Preview
                       account={account}

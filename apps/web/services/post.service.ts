@@ -16,7 +16,7 @@ import type {
 import { revalidatePath, revalidateTag } from 'next/cache'
 
 const POSTS_PATH = DASHBOARD_ROUTES.POSTS
-const POSTS_CACHE_REVALIDATE = 300
+const POSTS_CACHE_REVALIDATE = 60
 
 function workspacePostsTag(workspaceId: string) {
   return `workspace-posts-${workspaceId}`
@@ -33,9 +33,7 @@ function revalidateWorkspacePosts(workspaceId?: string) {
   revalidateTag(workspacePostStatsTag(workspaceId), 'max')
 }
 
-export const createPost = async (
-  payload: CreatePostPayload,
-): Promise<ApiResponse<{ post: Post }>> => {
+export const createPost = async (payload: CreatePostPayload): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.post<{ post: Post }>(POST_ROUTES.CREATE, payload)
   revalidateWorkspacePosts(payload.workspaceId)
   return response
@@ -100,9 +98,7 @@ export const getAccountPosts = async (
   return api.get<{ posts: Post[] }>(path)
 }
 
-export const getWorkspacePostStats = async (
-  workspaceId: string,
-): Promise<ApiResponse<{ stats: PostStats }>> => {
+export const getWorkspacePostStats = async (workspaceId: string): Promise<ApiResponse<{ stats: PostStats }>> => {
   return api.get<{ stats: PostStats }>(POST_ROUTES.GET_WORKSPACE_POST_STATS(workspaceId), {
     next: {
       revalidate: POSTS_CACHE_REVALIDATE,
@@ -111,10 +107,7 @@ export const getWorkspacePostStats = async (
   })
 }
 
-export const updatePost = async (
-  id: string,
-  payload: UpdatePostPayload,
-): Promise<ApiResponse<{ post: Post }>> => {
+export const updatePost = async (id: string, payload: UpdatePostPayload): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.patch<{ post: Post }>(POST_ROUTES.UPDATE(id), payload)
   revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response
@@ -126,18 +119,13 @@ export const deletePost = async (id: string): Promise<ApiResponse<{ id: string; 
   return response
 }
 
-export const schedulePost = async (
-  id: string,
-  payload: SchedulePostPayload,
-): Promise<ApiResponse<{ post: Post }>> => {
+export const schedulePost = async (id: string, payload: SchedulePostPayload): Promise<ApiResponse<{ post: Post }>> => {
   const response = await api.post<{ post: Post }>(POST_ROUTES.SCHEDULE(id), payload)
   revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response
 }
 
-export const publishPostNow = async (
-  id: string,
-): Promise<ApiResponse<PublishPostNowResponse>> => {
+export const publishPostNow = async (id: string): Promise<ApiResponse<PublishPostNowResponse>> => {
   const response = await api.post<PublishPostNowResponse>(POST_ROUTES.PUBLISH_NOW(id))
   revalidateWorkspacePosts(response.data?.post.workspaceId)
   return response

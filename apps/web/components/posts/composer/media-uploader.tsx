@@ -1,17 +1,14 @@
 'use client'
 
 import { uploadPostMedia } from '@/actions/post.actions'
-import {
-  WorkspaceMediaPickerDialog,
-  type WorkspaceMediaPick,
-} from '@/components/media/workspace-media-picker-dialog'
+import { WorkspaceMediaPickerDialog, type WorkspaceMediaPick } from '@/components/media/workspace-media-picker-dialog'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { FolderOpenIcon, ImagePlusIcon, Loader2Icon } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { ComposerMediaItem } from './composer-types'
+import type { ComposerMediaItem } from '../../../types/composer-types'
 
 type MediaUploaderProps = {
   workspaceId: string
@@ -60,10 +57,7 @@ async function readVideoDurationFromUrl(url: string): Promise<number | undefined
   })
 }
 
-function workspacePickToComposerItem(
-  item: WorkspaceMediaPick,
-  durationSeconds?: number,
-): ComposerMediaItem {
+function workspacePickToComposerItem(item: WorkspaceMediaPick, durationSeconds?: number): ComposerMediaItem {
   if (item.kind === 'video') {
     return {
       kind: 'video',
@@ -77,13 +71,7 @@ function workspacePickToComposerItem(
   }
 }
 
-export function MediaUploader({
-  workspaceId,
-  disabled,
-  compact = false,
-  onUploaded,
-  className,
-}: MediaUploaderProps) {
+export function MediaUploader({ workspaceId, disabled, compact = false, onUploaded, className }: MediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)

@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils'
 import { CalendarClockIcon, SendIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
+import type { ComposerSchedule, ComposerScheduleMode } from '../../../types/composer-types'
 import { ComposerSection } from './composer-section'
 import { getDefaultScheduleFields } from './composer-utils'
-import type { ComposerSchedule, ComposerScheduleMode } from './composer-types'
 
 type SchedulePanelProps = {
   schedule: ComposerSchedule
@@ -49,9 +49,7 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
     <ComposerSection
       title="When to post"
       description={
-        mode === 'now'
-          ? 'Your post will be queued for immediate publishing.'
-          : 'Pick a date, time, and timezone.'
+        mode === 'now' ? 'Your post will be queued for immediate publishing.' : 'Pick a date, time, and timezone.'
       }
       compact
       className={className}

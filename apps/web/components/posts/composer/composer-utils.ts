@@ -1,4 +1,3 @@
-import { fromZonedTime } from 'date-fns-tz'
 import type {
   AccountSummary,
   CreatePostPayload,
@@ -7,16 +6,17 @@ import type {
   PostType,
   SocialProvider,
 } from '@socialista/types'
+import { fromZonedTime } from 'date-fns-tz'
 
-import { getPlatformLimits, getProvidersRequiringMedia, formatProviderList } from './platform-limits'
+import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import type {
   ComposerData,
   ComposerMediaItem,
   ComposerSchedule,
   ComposerValidationIssue,
   ComposerVariant,
-} from './composer-types'
-import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+} from '../../../types/composer-types'
+import { formatProviderList, getPlatformLimits, getProvidersRequiringMedia } from './platform-limits'
 
 export function createEmptyVariant(accountId: string): ComposerVariant {
   return {
@@ -36,20 +36,14 @@ export function derivePostType(media: ComposerMediaItem[]): PostType {
 }
 
 /** Prefer reel for single short video on IG/TikTok when publishing. */
-export function resolvePostTypeForProvider(
-  media: ComposerMediaItem[],
-  provider: SocialProvider,
-): PostType {
+export function resolvePostTypeForProvider(media: ComposerMediaItem[], provider: SocialProvider): PostType {
   const type = derivePostType(media)
   if (type !== 'video') return type
   if (provider === 'instagram' || provider === 'tiktok') return 'reel'
   return 'video'
 }
 
-export function mergeVariantCaption(
-  commonCaption: string,
-  variant: ComposerVariant | undefined,
-): string {
+export function mergeVariantCaption(commonCaption: string, variant: ComposerVariant | undefined): string {
   const override = variant?.caption?.trim()
   if (override) return override
   return commonCaption
@@ -69,11 +63,7 @@ export function mergeVariantAltText(
   return mediaAlt?.trim() || undefined
 }
 
-export function buildPostContent(
-  media: ComposerMediaItem[],
-  caption: string,
-  altText?: string,
-): PostContent {
+export function buildPostContent(media: ComposerMediaItem[], caption: string, altText?: string): PostContent {
   const type = derivePostType(media)
 
   if (type === 'text') {
@@ -162,10 +152,7 @@ export function withScheduleDefaults(schedule: ComposerSchedule): ComposerSchedu
   }
 }
 
-export function validateComposer(
-  state: ComposerData,
-  accounts: AccountSummary[],
-): ComposerValidationIssue[] {
+export function validateComposer(state: ComposerData, accounts: AccountSummary[]): ComposerValidationIssue[] {
   const issues: ComposerValidationIssue[] = []
   const accountById = new Map(accounts.map(account => [account._id, account]))
 
@@ -275,9 +262,7 @@ export type GroupedValidationIssue = {
   accountIds: string[]
 }
 
-export function groupValidationIssues(
-  issues: ComposerValidationIssue[],
-): GroupedValidationIssue[] {
+export function groupValidationIssues(issues: ComposerValidationIssue[]): GroupedValidationIssue[] {
   const groups = new Map<string, GroupedValidationIssue>()
 
   for (const issue of issues) {
@@ -298,22 +283,15 @@ export function groupValidationIssues(
   return [...groups.values()]
 }
 
-export function getMediaRequirementHint(
-  providers: SocialProvider[],
-  hasMedia: boolean,
-): string | null {
+export function getMediaRequirementHint(providers: SocialProvider[], hasMedia: boolean): string | null {
   if (hasMedia) return null
   const requiringMedia = getProvidersRequiringMedia(providers)
   if (requiringMedia.length === 0) return null
   return `${formatProviderList(requiringMedia)} require${requiringMedia.length === 1 ? 's' : ''} an image or video`
 }
 
-export function getAccountsWithIssues(
-  issues: ComposerValidationIssue[],
-): Set<string> {
-  return new Set(
-    issues.flatMap(issue => (issue.accountId ? [issue.accountId] : [])),
-  )
+export function getAccountsWithIssues(issues: ComposerValidationIssue[]): Set<string> {
+  return new Set(issues.flatMap(issue => (issue.accountId ? [issue.accountId] : [])))
 }
 
 export function buildCreatePayload(params: {

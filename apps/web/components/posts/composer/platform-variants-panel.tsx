@@ -7,20 +7,17 @@ import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
 import { useMemo } from 'react'
 
+import type { ComposerVariant } from '../../../types/composer-types'
 import { ComposerCollapsibleSection } from './composer-section'
 import { createEmptyVariant } from './composer-utils'
 import { PlatformVariantEditor } from './platform-variant-editor'
-import type { ComposerVariant } from './composer-types'
 
 type PlatformVariantsPanelProps = {
   accounts: AccountSummary[]
   selectedAccountIds: string[]
   commonCaption: string
   variants: Record<string, ComposerVariant>
-  onVariantChange: (
-    accountId: string,
-    patch: Partial<Omit<ComposerVariant, 'accountId'>>,
-  ) => void
+  onVariantChange: (accountId: string, patch: Partial<Omit<ComposerVariant, 'accountId'>>) => void
   onClearField: (accountId: string, field: 'caption' | 'description' | 'altText') => void
   className?: string
 }
@@ -74,10 +71,7 @@ export function PlatformVariantsPanel({
       defaultOpen={customizationCount > 0}
       badge={
         customizationCount > 0 ? (
-          <Badge
-            variant="secondary"
-            className="h-5 rounded-full px-2 text-[10px] font-medium tabular-nums"
-          >
+          <Badge variant="secondary" className="h-5 rounded-full px-2 text-[10px] font-medium tabular-nums">
             {customizationCount} edit{customizationCount === 1 ? '' : 's'}
           </Badge>
         ) : null
@@ -98,20 +92,13 @@ export function PlatformVariantsPanel({
                   'data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-xs',
                 )}
               >
-                <SocialPlatformIcon
-                  provider={account.provider}
-                  size={11}
-                  framed={false}
-                  className="size-3.5"
-                />
+                <SocialPlatformIcon provider={account.provider} size={11} framed={false} className="size-3.5" />
                 <span className="max-w-[5.5rem] truncate">
                   {account.username
                     ? `@${account.username.replace(/^@/, '')}`
                     : getSocialPlatformLabel(account.provider)}
                 </span>
-                {hasCustom ? (
-                  <span className="size-1.5 rounded-full bg-foreground/70" />
-                ) : null}
+                {hasCustom ? <span className="size-1.5 rounded-full bg-foreground/70" /> : null}
               </TabsTrigger>
             )
           })}

@@ -44,7 +44,7 @@ export function ComposerHeader({
         className={cn(
           'sticky top-0 z-20 -mx-1 px-1',
           'border-b border-border/40 bg-background/75 backdrop-blur-xl backdrop-saturate-150',
-          'supports-[backdrop-filter]:bg-background/60',
+          'supports-backdrop-filter:bg-background/60',
           className,
         )}
       >
@@ -106,7 +106,7 @@ export function ComposerHeader({
       <div
         className={cn(
           'fixed inset-x-0 bottom-0 z-30 border-t border-border/50 p-3 sm:hidden',
-          'bg-background/85 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/70',
+          'bg-background/85 backdrop-blur-xl backdrop-saturate-150 supports-backdrop-filter:bg-background/70',
         )}
       >
         <div className="mx-auto flex max-w-lg items-center gap-2">

@@ -1,17 +1,21 @@
 'use client'
 
 import { uploadPostMedia } from '@/actions/post.actions'
+import { EmojiPicker } from '@/components/ui/emoji-picker'
 import { Textarea } from '@/components/ui/textarea'
+import { insertTextAtCursor } from '@/lib/insert-text-at-cursor'
 import { cn } from '@/lib/utils'
 import type { SocialProvider } from '@socialista/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { StickyNoteIcon } from 'lucide-react'
+import type { ComposerMediaItem } from '../../../types/composer-types'
 import { CharacterCountRing, ComposerSection } from './composer-section'
 import { MediaCarouselManager } from './media-carousel-manager'
 import { MediaUploader } from './media-uploader'
 import { getStrictestCaptionLimit } from './platform-limits'
-import type { ComposerMediaItem } from './composer-types'
+import { PostCopywriterDialog } from './post-copywriter-dialog'
 
 type ComposerEditorProps = {
   workspaceId: string
@@ -40,16 +44,38 @@ export function ComposerEditor({
 }: ComposerEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [copywriterOpen, setCopywriterOpen] = useState(false)
   const limit = getStrictestCaptionLimit(selectedProviders)
   const length = caption.length
   const overLimit = length > limit
   const hasMedia = media.length > 0
 
+  const handleApplyGeneratedCaption = useCallback(
+    (generated: string, mode: 'replace' | 'append') => {
+      if (mode === 'append' && caption.trim()) {
+        onCaptionChange(`${caption.trim()}\n\n${generated}`)
+      } else {
+        onCaptionChange(generated)
+      }
+    },
+    [caption, onCaptionChange],
+  )
+
+  const insertEmoji = useCallback(
+    (emoji: string) => {
+      const el = textareaRef.current
+      if (!el) {
+        onCaptionChange(caption ? `${caption}${emoji}` : emoji)
+        return
+      }
+      onCaptionChange(insertTextAtCursor(el, emoji, caption))
+    },
+    [caption, onCaptionChange],
+  )
+
   const handleFileDrop = useCallback(
     async (files: FileList | File[]) => {
-      const list = Array.from(files).filter(
-        file => file.type.startsWith('image/') || file.type.startsWith('video/'),
-      )
+      const list = Array.from(files).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/'))
       if (list.length === 0) {
         toast.error('Only images and videos are supported')
         return
@@ -83,6 +109,7 @@ export function ComposerEditor({
   return (
     <ComposerSection
       title="Content"
+      icon={<StickyNoteIcon className="size-4" strokeWidth={1.75} />}
       description="Write once — customize per platform later if needed."
       className={cn(isDragging && 'border-foreground/25 ring-foreground/10', className)}
       contentClassName="space-y-0 p-0 sm:p-0"
@@ -116,6 +143,17 @@ export function ComposerEditor({
             </p>
           </div>
         ) : null}
+
+        <div className="border-b border-border/40 px-4 py-2 sm:px-5 flex items-center justify-end w-full">
+          <PostCopywriterDialog
+            open={copywriterOpen}
+            onOpenChange={setCopywriterOpen}
+            selectedProviders={selectedProviders}
+            caption={caption}
+            onApply={handleApplyGeneratedCaption}
+          />
+        </div>
+
         <Textarea
           ref={textareaRef}
           value={caption}
@@ -123,7 +161,7 @@ export function ComposerEditor({
           placeholder="What's on your mind? Write your caption here…"
           rows={6}
           className={cn(
-            'min-h-[10rem] resize-none rounded-none border-0 bg-transparent px-4 py-4 text-[15px] leading-relaxed shadow-none',
+            'min-h-40 resize-none rounded-none border-0 bg-transparent px-4 py-4 text-[15px] leading-relaxed shadow-none',
             'placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0',
             'sm:px-5 sm:py-5',
             overLimit && 'text-destructive',
@@ -142,11 +180,10 @@ export function ComposerEditor({
         ) : null}
 
         <div className="flex items-center justify-between gap-3 border-t border-border/40 px-4 py-3 sm:px-5">
-          <MediaUploader
-            workspaceId={workspaceId}
-            onUploaded={onAddMedia}
-            compact
-          />
+          <div className="flex items-center gap-1">
+            <MediaUploader workspaceId={workspaceId} onUploaded={onAddMedia} compact />
+            <EmojiPicker onEmojiSelect={insertEmoji} side="top" align="start" />
+          </div>
 
           <div className="flex items-center gap-2">
             <CharacterCountRing current={length} max={limit} />

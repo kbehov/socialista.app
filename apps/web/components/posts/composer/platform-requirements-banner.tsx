@@ -6,7 +6,7 @@ import type { SocialProvider } from '@socialista/types'
 import { AlertCircleIcon, InfoIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
-import type { ComposerValidationIssue } from './composer-types'
+import type { ComposerValidationIssue } from '../../../types/composer-types'
 import { getMediaRequirementHint, groupValidationIssues } from './composer-utils'
 import { getProvidersRequiringMedia } from './platform-limits'
 
@@ -26,10 +26,7 @@ export function PlatformRequirementsBanner({
   className,
 }: PlatformRequirementsBannerProps) {
   const providersRequiringMedia = useMemo(
-    () =>
-      getProvidersRequiringMedia(selectedProviders).filter(provider =>
-        selectedProviders.includes(provider),
-      ),
+    () => getProvidersRequiringMedia(selectedProviders).filter(provider => selectedProviders.includes(provider)),
     [selectedProviders],
   )
 
@@ -52,9 +49,7 @@ export function PlatformRequirementsBanner({
         grouped.unshift({
           code: 'media_required',
           message: `${hint} — text-only posts aren't supported`,
-          accountIds: mediaRequired.flatMap(issue =>
-            issue.accountId ? [issue.accountId] : [],
-          ),
+          accountIds: mediaRequired.flatMap(issue => (issue.accountId ? [issue.accountId] : [])),
         })
       }
     }
@@ -97,24 +92,15 @@ export function PlatformRequirementsBanner({
       {showWarnings ? (
         <div className="rounded-xl border border-amber-500/30 bg-background px-3 py-2.5">
           <div className="mb-2 flex items-center gap-2">
-            <AlertCircleIcon
-              className="size-3.5 text-amber-600 dark:text-amber-500"
-              strokeWidth={1.75}
-            />
+            <AlertCircleIcon className="size-3.5 text-amber-600 dark:text-amber-500" strokeWidth={1.75} />
             <p className="text-xs font-medium text-foreground">Fix before publishing</p>
           </div>
           <ul className="space-y-1.5">
             {groupedIssues.map(issue => (
-              <li
-                key={`${issue.code}-${issue.message}`}
-                className="text-[11px] leading-relaxed text-muted-foreground"
-              >
+              <li key={`${issue.code}-${issue.message}`} className="text-[11px] leading-relaxed text-muted-foreground">
                 {issue.message}
                 {issue.accountIds.length > 1 ? (
-                  <span className="text-muted-foreground/70">
-                    {' '}
-                    · {issue.accountIds.length} accounts
-                  </span>
+                  <span className="text-muted-foreground/70"> · {issue.accountIds.length} accounts</span>
                 ) : null}
               </li>
             ))}

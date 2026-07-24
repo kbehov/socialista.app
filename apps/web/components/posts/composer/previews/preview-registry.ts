@@ -1,9 +1,9 @@
 'use client'
 
-import type { ComponentType } from 'react'
 import type { SocialProvider } from '@socialista/types'
+import type { ComponentType } from 'react'
 
-import type { PreviewProps } from '../composer-types'
+import type { PreviewProps } from '../../../../types/composer-types'
 import { FacebookPreview } from './facebook-preview'
 import { InstagramPreview } from './instagram-preview'
 import { LinkedInPreview } from './linkedin-preview'

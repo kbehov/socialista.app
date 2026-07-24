@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
 import { FilmIcon } from 'lucide-react'
 
-import type { ComposerMediaItem } from '../composer-types'
+import type { ComposerMediaItem } from '../../../../types/composer-types'
 
 export function PreviewShell({
   children,
@@ -31,31 +31,19 @@ export function PreviewShell({
   )
 }
 
-export function PreviewAccountHeader({
-  account,
-  subtitle,
-}: {
-  account: AccountSummary
-  subtitle?: string
-}) {
+export function PreviewAccountHeader({ account, subtitle }: { account: AccountSummary; subtitle?: string }) {
   const initials = (account.accountName || account.username || '?').slice(0, 2).toUpperCase()
-  const handle = account.username
-    ? `@${account.username.replace(/^@/, '')}`
-    : account.accountName
+  const handle = account.username ? `@${account.username.replace(/^@/, '')}` : account.accountName
 
   return (
     <div className="flex items-center gap-2.5 px-3 py-2.5">
       <Avatar className="size-8 ring-1 ring-border/30">
-        {account.accountAvatar ? (
-          <AvatarImage src={account.accountAvatar} alt={account.accountName} />
-        ) : null}
+        {account.accountAvatar ? <AvatarImage src={account.accountAvatar} alt={account.accountName} /> : null}
         <AvatarFallback className="text-[10px] font-medium">{initials}</AvatarFallback>
       </Avatar>
       <div className="min-w-0">
         <p className="truncate text-xs font-semibold tracking-tight">{handle}</p>
-        {subtitle ? (
-          <p className="truncate text-[10px] text-muted-foreground">{subtitle}</p>
-        ) : null}
+        {subtitle ? <p className="truncate text-[10px] text-muted-foreground">{subtitle}</p> : null}
       </div>
     </div>
   )
@@ -86,11 +74,7 @@ export function PreviewMedia({
     return (
       <div className={cn('relative bg-background', aspectClassName)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={first.url}
-          alt={first.altText || 'Post media'}
-          className="size-full object-cover"
-        />
+        <img src={first.url} alt={first.altText || 'Post media'} className="size-full object-cover" />
         {media.length > 1 ? (
           <span className="absolute top-2 right-2 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
             1/{media.length}
@@ -123,11 +107,7 @@ export function PreviewCaption({
   maxLines?: number
 }) {
   if (!caption.trim()) {
-    return (
-      <p className={cn('text-xs italic text-muted-foreground/70', className)}>
-        Your caption will appear here
-      </p>
-    )
+    return <p className={cn('text-xs italic text-muted-foreground/70', className)}>Your caption will appear here</p>
   }
 
   return (
