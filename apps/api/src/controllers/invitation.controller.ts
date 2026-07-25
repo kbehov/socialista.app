@@ -45,10 +45,12 @@ export const getInvitations = async (c: AuthContext) => {
   await getWorkspaceAsAdmin(parseWorkspaceQueryId(query), userId)
 
   const { invitations, meta } = await getInvitationsFromDb(query)
-  return successResponse(c, 200, {
-    invitations: invitations.map(invitation => serializeInvitation(invitation)),
+  return successResponse(
+    c,
+    200,
+    { invitations: invitations.map(invitation => serializeInvitation(invitation)) },
     meta,
-  })
+  )
 }
 
 export const getInvitation = async (c: AuthContext) => {

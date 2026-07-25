@@ -44,7 +44,7 @@ export function PostsTable({ posts, accountsById, className }: PostsTableProps) 
         </TableHeader>
         <TableBody>
           {posts.map(post => (
-            <PostRow key={post._id} post={post} account={accountsById[post.accountId]} />
+            <PostRow key={post._id} post={post} account={post.account ?? accountsById[post.accountId]} />
           ))}
         </TableBody>
       </Table>

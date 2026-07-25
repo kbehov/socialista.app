@@ -1,5 +1,3 @@
-import type { MetaResponse } from './common.types.js'
-
 export type ProductData = {
   name?: string
   description?: string
@@ -45,5 +43,4 @@ export type UpdateProductPayload = {
 
 export type GetProductsResponse = {
   products: Product[]
-  meta: MetaResponse
 }

@@ -8,7 +8,7 @@ import {
   toCreateAccountInput,
   toUpdateAccountInput,
 } from '@/utils/account.utils.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { assertAccountsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
@@ -77,12 +77,13 @@ export const getWorkspaceAccounts = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await authorizeWorkspaceAccountAction(c, workspaceId)
 
-  const params = new URLSearchParams(getQueryString(c.req.url))
-  params.set('workspace', workspaceId)
-
-  const data = await getAccounts(params.toString())
-  const serializedAccounts = data.accounts.map(account => serializeAccountSummary(account as IAccount))
-  return successResponse(c, 200, { accounts: serializedAccounts }, data.meta)
+  const data = await getAccounts(withQueryParam(c.req.url, 'workspace', workspaceId))
+  return successResponse(
+    c,
+    200,
+    { accounts: data.accounts.map(account => serializeAccountSummary(account as IAccount)) },
+    data.meta,
+  )
 }
 
 export const getAccount = async (c: Context<AppContext>) => {

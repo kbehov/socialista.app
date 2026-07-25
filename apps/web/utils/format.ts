@@ -143,3 +143,20 @@ export function formatTimezoneDetail(timezone: string, at: Date = new Date()): s
     ? `${formatTimezoneCity(timezone)} · ${formatTimezoneOffset(timezone, at)} · ${localTime}`
     : formatTimezoneLabel(timezone, at)
 }
+
+export function formatPostDateTime(value: Date | string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+export function formatPostTime(value: Date | string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value))
+}

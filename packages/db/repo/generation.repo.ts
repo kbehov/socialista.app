@@ -6,7 +6,7 @@ import {
   type UpdateGenerationInput,
 } from '../types/generation.types.js'
 import { toObjectId } from '../utils/isValid.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 
 export const getGenerationById = async (id: string): Promise<IGeneration | null> => {
   return GenerationModel.findById(id).lean()
@@ -175,18 +175,11 @@ export const updateGenerationByTriggerRunId = async (
 export const getGenerations = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [generations, total] = await Promise.all([
-    GenerationModel.find(match).sort(sort).limit(pagination.limit).skip(pagination.skip).lean(),
+    GenerationModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     GenerationModel.countDocuments(match),
   ])
   return {
     generations,
-    meta: {
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
-      hasPreviousPage: pagination.page > 1,
-      sort,
-    },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }

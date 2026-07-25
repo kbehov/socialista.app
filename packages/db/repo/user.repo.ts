@@ -1,7 +1,7 @@
 import { compare } from 'bcrypt'
 import { UserModel } from '../models/user.model.js'
 import { IUser } from '../types/user.types.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 
 export const getUserByEmail = async (email: string) => {
   return await UserModel.findOne({ email })
@@ -49,15 +49,11 @@ export const deleteUser = async (id: string) => {
 export const getUsers = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [users, total] = await Promise.all([
-    UserModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    UserModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     UserModel.countDocuments(match),
   ])
   return {
     users,
-    meta: {
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-    },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }

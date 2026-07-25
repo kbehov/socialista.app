@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { getAccountOrThrow, getAccountForMember } from '@/utils/account.utils.js'
 import {
@@ -67,14 +67,13 @@ export const getWorkspacePosts = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const params = new URLSearchParams(getQueryString(c.req.url))
-  params.set('workspace', workspaceId)
-
-  const data = await getAllPosts(params.toString())
-  return successResponse(c, 200, {
-    posts: data.posts.map(post => serializePost(post as IPost)),
-    meta: data.meta,
-  })
+  const data = await getAllPosts(withQueryParam(c.req.url, 'workspace', workspaceId))
+  return successResponse(
+    c,
+    200,
+    { posts: data.posts.map(post => serializePost(post as IPost)) },
+    data.meta,
+  )
 }
 
 export const getAccountPosts = async (c: Context<AppContext>) => {

@@ -1,7 +1,7 @@
 import { ALLOWED_MIME_TYPES, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '@/config/api.config.js'
 import { deleteObjectFromR2, getObjectSizeFromR2, uploadBufferToR2 } from '@/lib/aws.js'
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, getQueryString, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { assertWorkspaceStorageAvailable, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
@@ -36,8 +36,8 @@ export const createCollection = async (c: Context<AppContext>) => {
 }
 
 export const getCollections = async (c: Context<AppContext>) => {
-  const data = await getImageCollections(getQueryString(c.req.url))
-  return successResponse(c, 200, data)
+  const { collections, meta } = await getImageCollections(getQueryString(c.req.url))
+  return successResponse(c, 200, { collections }, meta)
 }
 
 export const getCollectionById = async (c: Context<AppContext>) => {
@@ -61,13 +61,8 @@ export const getWorkspaceImages = async (c: Context<AppContext>) => {
 
   await getWorkspaceAsMember(workspaceId, userId)
 
-  // Inject workspace into the query so buildFilters picks it up
-  const existingQuery = getQueryString(c.req.url)
-  const params = new URLSearchParams(existingQuery)
-  params.set('workspace', workspaceId)
-
-  const data = await getImages(params.toString())
-  return successResponse(c, 200, data)
+  const { images, meta } = await getImages(withQueryParam(c.req.url, 'workspace', workspaceId))
+  return successResponse(c, 200, { images }, meta)
 }
 
 type ProcessedFile = {

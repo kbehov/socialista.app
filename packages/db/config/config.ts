@@ -3,9 +3,8 @@ export const DEFAULT_PAGE_SIZE = 10
 export const DEFAULT_SORT = '-createdAt'
 /** Hard cap for post list/calendar queries — prevents unbounded reads under load. */
 export const MAX_PAGE_SIZE = 250
-/** Default and max page size for workspace account lists. */
+/** Default page size for workspace account lists. */
 export const DEFAULT_ACCOUNT_PAGE_SIZE = 50
-export const MAX_ACCOUNT_PAGE_SIZE = 100
 /** Default batch size for claiming due posts in one cron tick chunk. */
 export const DEFAULT_PUBLISH_CLAIM_BATCH_SIZE = 200
 /** Hard cap per claim batch — aligned with Trigger.dev batchTrigger max (1000). */

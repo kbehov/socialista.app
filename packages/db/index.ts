@@ -37,7 +37,13 @@ export {
 export * from './types/inspiration.types.js'
 export { CostUnit, ModelType, type IModel, type ModelDocument } from './types/models.types.js'
 export type { Iproduct, ProductDocument } from './types/product.types.js'
-export { buildFilters, type FilterQuery, type ParsedFilters } from './utils/build-filters.js'
+export {
+  buildFilters,
+  buildPaginationMeta,
+  type FilterQuery,
+  type Pagination,
+  type ParsedFilters,
+} from './utils/build-filters.js'
 export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 export {
   assertValidTimezone,

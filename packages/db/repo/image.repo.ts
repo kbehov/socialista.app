@@ -1,6 +1,6 @@
 import { ImageCollectionModel, ImageModel } from '../models/image.model.js'
 import type { IImage, IImageCollection } from '../types/image.types.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 import { toObjectId } from '../utils/isValid.js'
 
 export const createImage = async (image: Partial<IImage>) => {
@@ -46,12 +46,12 @@ export const getImagesByCollection = async (collectionId: string) => {
 export const getImages = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [images, total] = await Promise.all([
-    ImageModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    ImageModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     ImageModel.countDocuments(match),
   ])
   return {
     images,
-    meta: { total, page: pagination.page, limit: pagination.limit },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }
 
@@ -82,18 +82,11 @@ export const incrementCollectionImagesCount = async (collectionId: string, count
 export const getImageCollections = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [collections, total] = await Promise.all([
-    ImageCollectionModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    ImageCollectionModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     ImageCollectionModel.countDocuments(match),
   ])
   return {
     collections,
-    meta: {
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      sort,
-      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
-      hasPreviousPage: pagination.page > 1,
-    },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }

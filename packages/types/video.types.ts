@@ -1,5 +1,4 @@
 import type { CanvasDimensions, LayerId, TextAlign, FontWeight, TextShadow } from './carousel.types.js'
-import type { MetaResponse } from './common.types.js'
 
 export type TrackId = string
 export type ClipId = string
@@ -225,7 +224,6 @@ export type DuplicateVideoPayload = {
 
 export type GetVideosResponse = {
   videos: VideoSummaryResponse[]
-  meta: MetaResponse
 }
 
 export type ExportSettings = {

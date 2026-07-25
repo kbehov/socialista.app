@@ -1,4 +1,3 @@
-import type { MetaResponse } from './common.types.js'
 export type CreateCollectionPayload = {
   name: string
   isPublic: boolean
@@ -18,7 +17,6 @@ export type CollectionResponse = {
 
 export type GetCollectionsResponse = {
   collections: CollectionResponse[]
-  meta: MetaResponse
 }
 
 export type ImageResponse = {
@@ -48,11 +46,4 @@ export type DeleteFolderResponse = {
 
 export type GetImagesResponse = {
   images: ImageResponse[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    hasNextPage?: boolean
-    hasPreviousPage?: boolean
-  }
 }

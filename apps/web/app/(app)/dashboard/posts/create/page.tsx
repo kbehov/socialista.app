@@ -20,7 +20,7 @@ export default async function CreatePostPage() {
     connectionStatus: 'connected',
   })
   const accounts = response.data?.accounts ?? []
-  const accountsTotal = response.data?.meta.total ?? accounts.length
+  const accountsTotal = response.meta?.total ?? accounts.length
 
   if (!response.success) {
     return (

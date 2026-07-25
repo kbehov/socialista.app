@@ -1,5 +1,4 @@
 import type { CanvasDimensions, Slide } from './carousel.types.js'
-import type { MetaResponse } from './common.types.js'
 
 export type SlideshowStatus = 'draft' | 'published'
 
@@ -46,5 +45,4 @@ export type DuplicateSlideshowPayload = {
 
 export type GetSlideshowsResponse = {
   slideshows: SlideshowSummaryResponse[]
-  meta: MetaResponse
 }

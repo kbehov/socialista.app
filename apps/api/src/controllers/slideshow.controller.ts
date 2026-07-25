@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   cloneSlides,
@@ -68,14 +68,17 @@ export const getWorkspaceSlideshows = async (c: Context<AppContext>): Promise<Re
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const params = new URLSearchParams(getQueryString(c.req.url))
-  params.set('workspace', workspaceId)
-
-  const data = await getSlideshows(params.toString())
-  return successResponse(c, 200, {
-    slideshows: data.slideshows.map(slideshow => serializeSlideshowSummary(slideshow as ISlideshow)),
-    meta: data.meta,
-  })
+  const data = await getSlideshows(withQueryParam(c.req.url, 'workspace', workspaceId))
+  return successResponse(
+    c,
+    200,
+    {
+      slideshows: data.slideshows.map(slideshow =>
+        serializeSlideshowSummary(slideshow as ISlideshow),
+      ),
+    },
+    data.meta,
+  )
 }
 
 export const getSlideshow = async (c: Context<AppContext>): Promise<Response> => {

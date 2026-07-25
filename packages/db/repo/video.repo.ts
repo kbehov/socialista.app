@@ -1,6 +1,6 @@
 import { VideoModel } from '../models/video.model.js'
 import type { IVideo } from '../types/video.types.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 
 export const createVideo = async (video: Partial<IVideo>) => {
   return await VideoModel.create(video)
@@ -21,18 +21,11 @@ export const deleteVideo = async (id: string) => {
 export const getVideos = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [videos, total] = await Promise.all([
-    VideoModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    VideoModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     VideoModel.countDocuments(match),
   ])
   return {
     videos,
-    meta: {
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      hasNextPage: pagination.page < Math.ceil(total / pagination.limit),
-      hasPreviousPage: pagination.page > 1,
-      sort,
-    },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }

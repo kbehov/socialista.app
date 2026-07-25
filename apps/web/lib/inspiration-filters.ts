@@ -134,18 +134,3 @@ export function clearInspirationFiltersQuery(searchParams: URLSearchParams): str
 
   return params.toString()
 }
-
-export function getInspirationResultsRange(meta: {
-  total: number
-  page: number
-  limit: number
-}): { start: number; end: number } {
-  if (meta.total === 0) {
-    return { start: 0, end: 0 }
-  }
-
-  const start = (meta.page - 1) * meta.limit + 1
-  const end = Math.min(meta.page * meta.limit, meta.total)
-
-  return { start, end }
-}

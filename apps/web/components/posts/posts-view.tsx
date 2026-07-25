@@ -2,8 +2,8 @@
 
 import { EmptyState } from '@/components/common/empty-state'
 import { PostsCalendarView } from '@/components/posts/posts-calendar-view'
-import { PostsPagination } from '@/components/posts/posts-pagination'
 import { PostsToolbar } from '@/components/posts/posts-toolbar'
+import { SmartPagination } from '@/components/common/smart-pagination'
 import { PostsTable } from '@/components/tables/posts.table'
 import { usePostFilters } from '@/hooks/use-post-filters'
 import type { Filter } from '@/components/reui/filters'
@@ -73,7 +73,7 @@ export function PostsView({
       ) : (
         <>
           <PostsTable posts={posts} accountsById={accountsById} />
-          <PostsPagination meta={meta} />
+          <SmartPagination meta={meta} />
         </>
       )}
     </div>

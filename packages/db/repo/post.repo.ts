@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import type { PipelineStage } from 'mongoose'
 import {
   DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_BATCH_SIZE,
@@ -23,12 +22,16 @@ import {
   type UpdatePostInput,
   type UpdatePostStatusExtra,
 } from '../types/post.types.js'
-import { buildFilters, type Pagination } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 import { toObjectId } from '../utils/isValid.js'
 import { assertValidTimezone } from '../utils/timezone.js'
 
 const SORT_BY_SCHEDULED = { scheduledAt: 1 } as const
 const SORT_BY_CREATED_DESC = { createdAt: -1 } as const
+
+/** Lean account fields needed for post list / calendar display. */
+const ACCOUNT_POPULATE_FIELDS =
+  'workspace provider providerAccountId accountName username accountAvatar timezone connectionStatus lastError createdAt'
 
 const PUBLISH_METADATA_UNSET = {
   claimToken: '',
@@ -42,51 +45,6 @@ const PUBLISH_METADATA_UNSET = {
   providerPostId: '',
   providerPermalink: '',
 } as const
-
-function buildPostPaginationMeta(
-  total: number,
-  pagination: Pagination,
-  sort: Record<string, 1 | -1>,
-) {
-  const totalPages = total === 0 ? 0 : Math.ceil(total / pagination.limit)
-  return {
-    total,
-    page: pagination.page,
-    limit: pagination.limit,
-    hasNextPage: pagination.page < totalPages,
-    hasPreviousPage: pagination.page > 1,
-    sort,
-  }
-}
-
-function hasStatusFilter(match: Record<string, unknown>): boolean {
-  const status = match.status
-  if (status === undefined) return false
-  if (typeof status === 'string') return true
-  return typeof status === 'object' && status !== null && '$in' in status
-}
-
-/** Pick a compound index aligned with workspace list/calendar queries. */
-function pickPostListHint(
-  match: Record<string, unknown>,
-  sort: Record<string, 1 | -1>,
-): Record<string, 1 | -1> | undefined {
-  if (!match.workspace) return undefined
-
-  const primarySortField = Object.keys(sort)[0]
-  const usesSchedule =
-    match.scheduledAt !== undefined || primarySortField === 'scheduledAt'
-
-  if (hasStatusFilter(match) && usesSchedule) {
-    return { workspace: 1, status: 1, scheduledAt: 1 }
-  }
-
-  if (usesSchedule) {
-    return { workspace: 1, scheduledAt: 1 }
-  }
-
-  return { workspace: 1, createdAt: -1 }
-}
 
 function clampClaimLimit(limit?: number): number {
   const raw = limit ?? DEFAULT_PUBLISH_CLAIM_BATCH_SIZE
@@ -237,30 +195,24 @@ export const getPostsByAccount = async (
 /**
  * Paginated post list from a query string / filter object.
  * Example: `?workspace=<id>&page=1&limit=20&status=scheduled`
+ * Populates account display fields for list / calendar UI.
  */
 export const getAllPosts = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
-  const hint = pickPostListHint(match, sort)
 
-  const pipeline: PipelineStage[] = [
-    { $match: match },
-    {
-      $facet: {
-        posts: [{ $sort: sort }, { $skip: pagination.skip }, { $limit: pagination.limit }],
-        metaCount: [{ $count: 'total' }],
-      },
-    },
-  ]
-
-  const aggregate = PostModel.aggregate(pipeline)
-  if (hint) aggregate.hint(hint)
-
-  const [result] = await aggregate.exec()
-  const total = (result?.metaCount?.[0] as { total: number } | undefined)?.total ?? 0
+  const [posts, total] = await Promise.all([
+    PostModel.find(match)
+      .populate('account', ACCOUNT_POPULATE_FIELDS)
+      .sort(sort)
+      .skip(pagination.skip)
+      .limit(pagination.limit)
+      .lean(),
+    PostModel.countDocuments(match),
+  ])
 
   return {
-    posts: (result?.posts ?? []) as IPost[],
-    meta: buildPostPaginationMeta(total, pagination, sort),
+    posts: posts as IPost[],
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }
 

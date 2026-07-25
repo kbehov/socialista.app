@@ -15,6 +15,13 @@ export const parseParamId = (id: string | undefined, label = 'ID'): string => {
 
 export const getQueryString = (url: string): string => url.split('?')[1] ?? ''
 
+/** Merge/override a query param on a request URL and return the query string. */
+export const withQueryParam = (url: string, key: string, value: string): string => {
+  const params = new URLSearchParams(getQueryString(url))
+  params.set(key, value)
+  return params.toString()
+}
+
 export const assertHasUpdates = (updates: object): void => {
   if (Object.keys(updates).length === 0) {
     throw new HttpError(400, 'No valid fields to update')

@@ -155,7 +155,7 @@ export function PostsCalendarView({
               <PostListCard
                 key={post._id}
                 post={post}
-                account={accountsById[post.accountId]}
+                account={post.account ?? accountsById[post.accountId]}
               />
             ))
           )}

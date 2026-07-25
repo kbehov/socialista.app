@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   cloneVideoTimeline,
@@ -57,14 +57,13 @@ export const getWorkspaceVideos = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const params = new URLSearchParams(getQueryString(c.req.url))
-  params.set('workspace', workspaceId)
-
-  const data = await getVideos(params.toString())
-  return successResponse(c, 200, {
-    videos: data.videos.map(video => serializeVideoSummary(video as IVideo)),
-    meta: data.meta,
-  })
+  const data = await getVideos(withQueryParam(c.req.url, 'workspace', workspaceId))
+  return successResponse(
+    c,
+    200,
+    { videos: data.videos.map(video => serializeVideoSummary(video as IVideo)) },
+    data.meta,
+  )
 }
 
 export const getVideo = async (c: Context<AppContext>) => {

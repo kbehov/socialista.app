@@ -1,5 +1,3 @@
-import type { MetaResponse } from './common.types.js'
-
 export type InspirationResponse = {
   _id: string
   url: string
@@ -61,17 +59,14 @@ export type InspirationNicheResponse = {
 
 export type InspirationsListResponse = {
   inspirations: InspirationResponse[]
-  meta: MetaResponse
 }
 
 export type InspirationCategoriesListResponse = {
   categories: InspirationCategoryResponse[]
-  meta: MetaResponse
 }
 
 export type InspirationNichesListResponse = {
   niches: InspirationNicheResponse[]
-  meta: MetaResponse
 }
 
 /** @deprecated Use InspirationsListResponse */

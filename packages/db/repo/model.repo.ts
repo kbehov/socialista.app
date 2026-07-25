@@ -1,6 +1,6 @@
 import { ModelModel } from '../models/model.js'
 import { IModel } from '../types/models.types.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 
 export const createModel = async (model: Partial<IModel>) => {
   return await ModelModel.create(model)
@@ -17,12 +17,12 @@ export const getModelByValue = async (value: string) => {
 export const getModels = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [models, total] = await Promise.all([
-    ModelModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    ModelModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     ModelModel.countDocuments(match),
   ])
   return {
     models,
-    meta: { total, page: pagination.page, limit: pagination.limit },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }
 

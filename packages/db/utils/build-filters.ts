@@ -1,3 +1,4 @@
+import type { MetaResponse } from '@socialista/types'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../config/config.js'
 import { toObjectId } from './isValid.js'
 
@@ -29,6 +30,24 @@ export const getPagination = (page: number, limit: number): Pagination => {
   return { page: safePage, limit: safeLimit, skip: (safePage - 1) * safeLimit }
 }
 
+export const buildPaginationMeta = (
+  total: number,
+  pagination: Pagination,
+  sort: Record<string, 1 | -1>,
+  textSearch?: string,
+): MetaResponse => {
+  const totalPages = total === 0 ? 0 : Math.ceil(total / pagination.limit)
+  return {
+    total,
+    page: pagination.page,
+    limit: pagination.limit,
+    hasNextPage: pagination.page < totalPages,
+    hasPreviousPage: pagination.page > 1,
+    sort,
+    ...(textSearch ? { textSearch } : {}),
+  }
+}
+
 export const normalizeQuery = (query: FilterQuery | string): Record<string, string> => {
   if (typeof query === 'string') {
     const stripped = query.startsWith('?') ? query.slice(1) : query
@@ -55,7 +74,17 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
 const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query', 'from', 'to'])
 
 /** Query keys that map to ObjectId fields in MongoDB documents. */
-const OBJECT_ID_KEYS = new Set(['account', 'workspace', 'workspaceId', 'createdBy', 'uploadedBy', 'ownerId'])
+const OBJECT_ID_KEYS = new Set([
+  'account',
+  'workspace',
+  'workspaceId',
+  'createdBy',
+  'uploadedBy',
+  'ownerId',
+  'collectionId',
+  'categories',
+  'niches',
+])
 
 const tryToObjectId = (value: string) => {
   try {

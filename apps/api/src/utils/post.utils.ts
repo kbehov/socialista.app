@@ -8,7 +8,7 @@ import {
   toNullableDate,
 } from '@/utils/common.utils.js'
 import { HttpError } from '@/utils/http-response.js'
-import { getAccountOrThrow } from '@/utils/account.utils.js'
+import { getAccountOrThrow, serializeAccountSummary } from '@/utils/account.utils.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   assertValidTimezone,
@@ -17,6 +17,7 @@ import {
   SocialProvider,
   getPostById,
   type CreatePostInput,
+  type IAccount,
   type IPost,
   type PostContent,
   type UpdatePostInput,
@@ -44,6 +45,22 @@ export const isPostStatus = (value: unknown): value is ApiPostStatus =>
 
 const isSocialProvider = (value: unknown): value is SocialProvider =>
   typeof value === 'string' && SOCIAL_PROVIDERS.has(value)
+
+function refId(value: unknown): string {
+  if (value == null) throw new HttpError(500, 'Missing document reference')
+  if (typeof value === 'string') return value
+  if (typeof value === 'object' && '_id' in value) {
+    return String((value as { _id: unknown })._id)
+  }
+  return String(value)
+}
+
+function asPopulatedAccount(value: unknown): IAccount | null {
+  if (value && typeof value === 'object' && 'accountName' in value && 'provider' in value) {
+    return value as IAccount
+  }
+  return null
+}
 
 function parsePostContent(value: unknown): PostContent {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -113,27 +130,32 @@ function parsePostContent(value: unknown): PostContent {
   throw new HttpError(400, 'Unsupported post content shape')
 }
 
-export const serializePost = (post: IPost): Post => ({
-  _id: post._id.toString(),
-  accountId: post.account.toString(),
-  workspaceId: post.workspace.toString(),
-  createdBy: post.createdBy.toString(),
-  provider: post.provider,
-  type: post.type,
-  status: post.status,
-  content: post.content as PostContent,
-  caption: post.caption,
-  description: post.description,
-  scheduledAt: post.scheduledAt,
-  timezone: post.timezone,
-  publishedAt: post.publishedAt,
-  failureReason: post.failureReason,
-  scheduleRevision: post.scheduleRevision ?? 0,
-  providerPostId: post.providerPostId,
-  providerPermalink: post.providerPermalink,
-  createdAt: post.createdAt,
-  updatedAt: post.updatedAt,
-})
+export const serializePost = (post: IPost): Post => {
+  const populatedAccount = asPopulatedAccount(post.account)
+
+  return {
+    _id: post._id.toString(),
+    accountId: populatedAccount ? populatedAccount._id.toString() : refId(post.account),
+    account: populatedAccount ? serializeAccountSummary(populatedAccount) : undefined,
+    workspaceId: refId(post.workspace),
+    createdBy: refId(post.createdBy),
+    provider: post.provider,
+    type: post.type,
+    status: post.status,
+    content: post.content as PostContent,
+    caption: post.caption,
+    description: post.description,
+    scheduledAt: post.scheduledAt,
+    timezone: post.timezone,
+    publishedAt: post.publishedAt,
+    failureReason: post.failureReason,
+    scheduleRevision: post.scheduleRevision ?? 0,
+    providerPostId: post.providerPostId,
+    providerPermalink: post.providerPermalink,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+  }
+}
 
 export const assertProviderSupportsPostType = (
   provider: SocialProvider,

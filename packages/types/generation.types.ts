@@ -1,5 +1,3 @@
-import type { MetaResponse } from './common.types.js'
-
 export type GenerationKind = 'image' | 'static-ad' | 'video'
 
 export type GenerationStatus = 'running' | 'completed' | 'failed'
@@ -63,5 +61,4 @@ export type Generation = {
 
 export type GetGenerationsResponse = {
   generations: Generation[]
-  meta: MetaResponse
 }

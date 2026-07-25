@@ -1,7 +1,7 @@
 import { InvitationModel } from '../models/invitation.model.js'
 import { InvitationStatus } from '../types/invitation.types.js'
 import { WorkspaceMemberRole } from '../types/workspace.types.js'
-import { buildFilters } from '../utils/build-filters.js'
+import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 import { toObjectId } from '../utils/isValid.js'
 
 export type CreateInvitationInput = {
@@ -80,15 +80,11 @@ export const deleteInvitation = async (id: string) => {
 export const getInvitations = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   const [invitations, total] = await Promise.all([
-    InvitationModel.find(match).skip(pagination.skip).limit(pagination.limit).sort(sort).lean(),
+    InvitationModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     InvitationModel.countDocuments(match),
   ])
   return {
     invitations,
-    meta: {
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-    },
+    meta: buildPaginationMeta(total, pagination, sort),
   }
 }

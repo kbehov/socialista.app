@@ -39,10 +39,12 @@ export const getUsers = async (c: AuthContext) => {
   assertAppAdmin(await getUserOrThrow(c.get('userId')))
 
   const { users, meta } = await getUsersFromDb(getQueryString(c.req.url))
-  return successResponse(c, 200, {
-    users: users.map(user => serializeUser(user as UserDocument)),
+  return successResponse(
+    c,
+    200,
+    { users: users.map(user => serializeUser(user as UserDocument)) },
     meta,
-  })
+  )
 }
 
 export const updateUser = async (c: AuthContext) => {

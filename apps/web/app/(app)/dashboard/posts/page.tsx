@@ -61,7 +61,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   const accounts = accountsResponse.data?.accounts ?? []
   const posts = postsResponse.data?.posts ?? []
-  const meta = postsResponse.data?.meta ?? defaultMeta
+  const meta = postsResponse.meta ?? defaultMeta
 
   const createAction = (
     <Button asChild size="sm" className="h-9 gap-1.5 rounded-xl px-3.5 shadow-xs">

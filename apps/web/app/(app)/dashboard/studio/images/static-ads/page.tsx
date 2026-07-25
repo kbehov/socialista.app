@@ -31,7 +31,7 @@ const StaticAdsPage = async () => {
   }
 
   const products = productsRes.data?.products ?? []
-  const totalProducts = productsRes.data?.meta.total ?? products.length
+  const totalProducts = productsRes.meta?.total ?? products.length
   const model = modelsRes.success ? (modelsRes.data?.models[0] ?? null) : null
 
   return (

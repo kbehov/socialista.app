@@ -1,5 +1,4 @@
-import type { MetaResponse } from './common.types.js'
-import type { SocialProvider } from './account.types.js'
+import type { AccountSummary, SocialProvider } from './account.types.js'
 
 export type PostType = 'text' | 'image' | 'video' | 'reel' | 'carousel'
 
@@ -51,6 +50,8 @@ export type PostContent =
 export type Post = {
   _id: string
   accountId: string
+  /** Present when the API populates account for list/calendar display. */
+  account?: AccountSummary
   workspaceId: string
   createdBy: string
   provider: SocialProvider
@@ -115,7 +116,6 @@ export type PublishPostNowResponse = {
 
 export type GetPostsResponse = {
   posts: Post[]
-  meta: MetaResponse
 }
 
 export type PostStats = Partial<Record<PostStatus, number>>

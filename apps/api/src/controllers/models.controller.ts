@@ -10,9 +10,8 @@ import {
 import type { Context } from 'hono'
 
 export const getModels = async (c: Context) => {
-  const query = getQueryString(c.req.url)
-  const data = await getModelsFromDb(query)
-  return successResponse(c, 200, data)
+  const { models, meta } = await getModelsFromDb(getQueryString(c.req.url))
+  return successResponse(c, 200, { models }, meta)
 }
 
 export const getModel = async (c: Context) => {

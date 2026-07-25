@@ -1,8 +1,9 @@
 'use client'
 
+import { SmartPagination } from '@/components/common/smart-pagination'
 import { GenerationDetailSheet } from '@/components/generations/generation-detail-sheet'
-import { GenerationsPagination } from '@/components/generations/generations-pagination'
 import { GenerationsTable } from '@/components/tables/generations.table'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Generation, MetaResponse } from '@socialista/types'
 import { useState } from 'react'
 
@@ -29,8 +30,14 @@ export function GenerationsView({ generations, meta }: GenerationsViewProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <GenerationsTable generations={generations} onSelect={handleSelect} />
-      <GenerationsPagination meta={meta} />
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs">
+        <ScrollArea className="h-full" scrollFade scrollbarGutter>
+          <GenerationsTable generations={generations} onSelect={handleSelect} />
+        </ScrollArea>
+      </div>
+
+      <SmartPagination meta={meta} className="shrink-0" />
+
       <GenerationDetailSheet
         generation={selected}
         open={sheetOpen}

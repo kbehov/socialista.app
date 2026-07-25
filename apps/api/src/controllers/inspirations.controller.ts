@@ -63,7 +63,7 @@ async function uploadImageFromUrl(url: string) {
 export const getInspirations = async (c: Context) => {
   const query = getQueryString(c.req.url)
   const { inspirations, meta } = await getInspirationFromDb(query)
-  return successResponse(c, 200, { inspirations, meta })
+  return successResponse(c, 200, { inspirations }, meta)
 }
 
 export const createInspiration = async (c: Context) => {
@@ -188,13 +188,13 @@ export const viewInspiration = async (c: Context) => {
 export const getInspirationCategories = async (c: Context) => {
   const query = getQueryString(c.req.url)
   const { categories, meta } = await getInspirationCategoriesFromDb(query)
-  return successResponse(c, 200, { categories, meta })
+  return successResponse(c, 200, { categories }, meta)
 }
 
 export const getInspirationNiches = async (c: Context) => {
   const query = getQueryString(c.req.url)
   const { niches, meta } = await getInspirationNichesFromDb(query)
-  return successResponse(c, 200, { niches, meta })
+  return successResponse(c, 200, { niches }, meta)
 }
 
 export const createInspirationCategory = async (c: Context) => {

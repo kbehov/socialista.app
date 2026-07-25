@@ -18,7 +18,7 @@ export async function loadWorkspaceAccounts(workspaceId: string): Promise<Accoun
     }
 
     all.push(...response.data.accounts)
-    hasNextPage = response.data.meta.hasNextPage ?? false
+    hasNextPage = response.meta?.hasNextPage ?? false
     page += 1
   }
 

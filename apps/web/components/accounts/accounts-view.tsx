@@ -3,7 +3,7 @@
 import { AccountsToolbar } from '@/components/accounts/accounts-toolbar'
 import { AccountsTable } from '@/components/tables/accounts.table'
 import { EmptyState } from '@/components/common/empty-state'
-import { PostsPagination } from '@/components/posts/posts-pagination'
+import { SmartPagination } from '@/components/common/smart-pagination'
 import type { AccountSummary, MetaResponse } from '@socialista/types'
 import { SearchXIcon } from 'lucide-react'
 
@@ -35,7 +35,7 @@ export function AccountsView({ accounts, meta, searchQuery }: AccountsViewProps)
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <AccountsToolbar total={meta.total} initialQuery={searchQuery} />
       <AccountsTable accounts={accounts} />
-      <PostsPagination meta={meta} />
+      <SmartPagination meta={meta} />
     </div>
   )
 }

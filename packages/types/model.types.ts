@@ -1,5 +1,3 @@
-import type { MetaResponse } from './common.types.js'
-
 export enum ModelType {
   VIDEO = 'video',
   AUDIO = 'audio',
@@ -36,7 +34,6 @@ export type Model = {
 
 export type GetModelsResponse = {
   models: Model[]
-  meta: MetaResponse
 }
 
 export type CreateModelInput = {

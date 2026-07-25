@@ -1,5 +1,3 @@
-import type { MetaResponse } from './common.types.js'
-
 export enum ConnectionStatus {
   CONNECTED = 'connected',
   DISCONNECTED = 'disconnected',
@@ -85,7 +83,6 @@ export type UpdateAccountPayload = {
 
 export type GetAccountsResponse = {
   accounts: AccountSummary[]
-  meta: MetaResponse
 }
 
 export type ConnectAccountResult = {

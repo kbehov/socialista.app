@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { getGenerationForMember, serializeGeneration } from '@/utils/generation.utils.js'
 import { successResponse } from '@/utils/http-response.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
@@ -11,16 +11,17 @@ export const getWorkspaceGenerations = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const params = new URLSearchParams(getQueryString(c.req.url))
-  params.set('workspace', workspaceId)
-
-  const data = await getGenerations(params.toString())
-  return successResponse(c, 200, {
-    generations: data.generations.map(generation =>
-      serializeGeneration(generation as IGeneration),
-    ),
-    meta: data.meta,
-  })
+  const data = await getGenerations(withQueryParam(c.req.url, 'workspace', workspaceId))
+  return successResponse(
+    c,
+    200,
+    {
+      generations: data.generations.map(generation =>
+        serializeGeneration(generation as IGeneration),
+      ),
+    },
+    data.meta,
+  )
 }
 
 export const getGeneration = async (c: Context<AppContext>) => {

@@ -29,6 +29,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@socialista/types": "workspace:^",
     "bcrypt": "^6.0.0",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",

@@ -89,7 +89,7 @@ export default async function GenerationsPage({ searchParams }: GenerationsPageP
   const response = await getWorkspaceGenerations(workspace.id, query)
 
   const generations = response.data?.generations ?? []
-  const meta = response.data?.meta ?? defaultMeta
+  const meta = response.meta ?? defaultMeta
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

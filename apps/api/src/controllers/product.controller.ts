@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { getQueryString, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { extractProductFromUrl } from '@/utils/extract-product.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
@@ -148,15 +148,13 @@ export const getWorkspaceProducts = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const existingQuery = getQueryString(c.req.url)
-  const params = new URLSearchParams(existingQuery)
-  params.set('workspaceId', workspaceId)
-
-  const data = await getProducts(params.toString())
-  return successResponse(c, 200, {
-    products: data.products.map(product => serializeProduct(product as Iproduct)),
-    meta: data.meta,
-  })
+  const data = await getProducts(withQueryParam(c.req.url, 'workspaceId', workspaceId))
+  return successResponse(
+    c,
+    200,
+    { products: data.products.map(product => serializeProduct(product as Iproduct)) },
+    data.meta,
+  )
 }
 
 export const getProduct = async (c: Context<AppContext>) => {

@@ -4,7 +4,7 @@ import { parseFiltersFromSearchParams, toSearchParamsRecord } from '@/lib/inspir
 import { getInspirationCategories, getInspirationNiches, getInspirations } from '@/services/inspiration.service'
 import type { MetaResponse } from '@socialista/types'
 import { InspirationsList } from './_components/inspirations-list'
-import { InspirationsPagination } from './_components/inspirations-pagination'
+import { SmartPagination } from '@/components/common/smart-pagination'
 import { InspirationsToolbar } from './_components/inspirations-toolbar'
 
 type InspirationsPageProps = {
@@ -47,7 +47,7 @@ export default async function InspirationsPage({ searchParams }: InspirationsPag
   const categories = categoriesResult.data?.categories ?? []
   const niches = nichesResult.data?.niches ?? []
   const inspirations = inspirationsResult.data?.inspirations ?? []
-  const meta = inspirationsResult.data?.meta ?? defaultMeta
+  const meta = inspirationsResult.meta ?? defaultMeta
 
   return (
     <div className="flex flex-col gap-8">
@@ -60,7 +60,7 @@ export default async function InspirationsPage({ searchParams }: InspirationsPag
       <section className="flex flex-col gap-6">
         <InspirationsToolbar categories={categories} niches={niches} filters={filters} total={meta.total} />
         <InspirationsList inspirations={inspirations} filters={filters} />
-        <InspirationsPagination meta={meta} />
+        <SmartPagination meta={meta} />
       </section>
     </div>
   )
