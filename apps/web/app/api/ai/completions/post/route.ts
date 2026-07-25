@@ -9,9 +9,16 @@ type PostCompletionBody = {
   platforms?: SocialProvider[]
   existingCaption?: string
   captionMax?: number
+  tone?: string
 }
 
-function buildUserPrompt({ prompt, platforms, existingCaption, captionMax }: PostCompletionBody): string {
+function buildUserPrompt({
+  prompt,
+  platforms,
+  existingCaption,
+  captionMax,
+  tone,
+}: PostCompletionBody): string {
   const lines: string[] = []
 
   if (platforms?.length) {
@@ -22,8 +29,14 @@ function buildUserPrompt({ prompt, platforms, existingCaption, captionMax }: Pos
     lines.push(`Hard character limit: ${captionMax} characters. Never exceed this.`)
   }
 
+  if (tone?.trim()) {
+    lines.push(`Desired tone: ${tone.trim()}`)
+  }
+
   if (existingCaption?.trim()) {
-    lines.push(`Existing caption in the composer (improve, rewrite, or build on this if relevant):\n${existingCaption.trim()}`)
+    lines.push(
+      `Existing caption in the composer (improve, rewrite, or build on this if relevant):\n${existingCaption.trim()}`,
+    )
   }
 
   lines.push(`\nUser brief:\n${prompt.trim()}`)

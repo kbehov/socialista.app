@@ -19,7 +19,7 @@ function StorageProgress({
     <Progress
       value={percentUsed}
       className={cn(
-        'bg-sidebar-border/80',
+        'bg-sidebar-border',
         isFull && '**:data-[slot=progress-indicator]:bg-destructive',
         isNearFull && !isFull && '**:data-[slot=progress-indicator]:bg-amber-500',
         !isNearFull && !isFull && '**:data-[slot=progress-indicator]:bg-primary',
@@ -33,7 +33,7 @@ function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFul
   return (
     <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
       <div className="flex items-center gap-2">
-        <HardDriveIcon className="size-3.5 shrink-0 text-sidebar-foreground/50" />
+        <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <StorageProgress
             percentUsed={percentUsed}
@@ -49,13 +49,13 @@ function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFul
               ? 'text-destructive'
               : isNearFull
                 ? 'text-amber-600 dark:text-amber-400'
-                : 'text-sidebar-foreground/50',
+                : 'text-muted-foreground',
           )}
         >
           {Math.round(percentUsed)}%
         </span>
       </div>
-      <p className="mt-1.5 truncate text-[10px] tabular-nums text-sidebar-foreground/45">
+      <p className="mt-1.5 truncate text-[10px] tabular-nums text-muted-foreground">
         {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
       </p>
     </div>
@@ -64,10 +64,10 @@ function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFul
 
 function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
-    <div className="rounded-lg border border-sidebar-border/80 bg-sidebar-accent/30 px-3.5 py-3 group-data-[collapsible=icon]:hidden">
+    <div className="rounded-lg border border-sidebar-border bg-sidebar-accent px-3.5 py-3 group-data-[collapsible=icon]:hidden">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <HardDriveIcon className="size-3.5 shrink-0 text-sidebar-foreground/60" />
+          <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="text-xs font-medium text-sidebar-foreground">Storage</span>
         </div>
         <span
@@ -77,7 +77,7 @@ function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull
               ? 'text-destructive'
               : isNearFull
                 ? 'text-amber-600 dark:text-amber-400'
-                : 'text-sidebar-foreground/60',
+                : 'text-muted-foreground',
           )}
         >
           {Math.round(percentUsed)}%
@@ -86,7 +86,7 @@ function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull
 
       <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} className="h-1.5" />
 
-      <p className="mt-2 truncate text-[11px] leading-none tabular-nums text-sidebar-foreground/55">
+      <p className="mt-2 truncate text-[11px] leading-none tabular-nums text-muted-foreground">
         {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
       </p>
     </div>

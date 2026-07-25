@@ -460,7 +460,7 @@ export function ProductPickerDialog({
           </Tabs>
         </div>
 
-        <DialogFooter className="relative z-10 shrink-0 border-t border-border/60 bg-background/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <DialogFooter className="relative z-10 shrink-0 border-t border-border bg-card px-6 py-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

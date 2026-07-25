@@ -6,6 +6,7 @@ import type { AccountSummary } from '@socialista/types'
 import { FilmIcon } from 'lucide-react'
 
 import type { ComposerMediaItem } from '../../../../types/composer-types'
+import { usePreviewEmbedded } from './preview-embed-context'
 
 export function PreviewShell({
   children,
@@ -16,6 +17,16 @@ export function PreviewShell({
   className?: string
   frameClassName?: string
 }) {
+  const embedded = usePreviewEmbedded()
+
+  if (embedded) {
+    return (
+      <div className={cn('w-full overflow-hidden bg-background', className, frameClassName)}>
+        {children}
+      </div>
+    )
+  }
+
   return (
     <div className={cn('flex w-full justify-center', className)}>
       <div

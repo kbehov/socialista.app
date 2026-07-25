@@ -10,16 +10,16 @@ import {
 } from '@/lib/post-filters'
 import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
-import { CalendarDaysIcon, LayoutListIcon, ListFilterIcon, Loader2Icon } from 'lucide-react'
+import { CalendarDaysIcon, LayoutGridIcon, ListFilterIcon, Loader2Icon } from 'lucide-react'
 import { useMemo } from 'react'
 
 const VIEW_OPTIONS: Array<{
   value: PostViewMode
   label: string
   shortLabel: string
-  Icon: typeof LayoutListIcon
+  Icon: typeof LayoutGridIcon
 }> = [
-  { value: 'list', label: 'List', shortLabel: 'List', Icon: LayoutListIcon },
+  { value: 'list', label: 'Grid', shortLabel: 'Grid', Icon: LayoutGridIcon },
   { value: 'calendar', label: 'Calendar', shortLabel: 'Cal', Icon: CalendarDaysIcon },
 ]
 

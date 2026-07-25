@@ -1,5 +1,7 @@
 import type { AccountSummary, PostType, SocialProvider } from '@socialista/types'
 
+export type ComposerLayout = 'default' | 'sheet'
+
 export type ComposerMediaItem =
   | {
       kind: 'image'

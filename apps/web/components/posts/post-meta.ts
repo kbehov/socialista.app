@@ -45,10 +45,3 @@ export function formatPostDateTime(value: Date | string): string {
     minute: '2-digit',
   }).format(new Date(value))
 }
-
-export function formatPostTime(value: Date | string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(value))
-}

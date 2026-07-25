@@ -1,14 +1,18 @@
 import type {
   AccountSummary,
   CreatePostPayload,
+  Post,
   PostCarouselItem,
   PostContent,
+  PostStatus,
   PostType,
   SocialProvider,
+  UpdatePostPayload,
 } from '@socialista/types'
-import { fromZonedTime } from 'date-fns-tz'
+import { fromZonedTime, toZonedTime } from 'date-fns-tz'
 
 import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { getPostCaption, postToComposerMedia } from '@/lib/post-display'
 import { formatProviderList, getPlatformLimits, getProvidersRequiringMedia } from '../constants/platform-limits'
 import type {
   ComposerData,
@@ -335,5 +339,81 @@ export function getDefaultTimezone(accounts: AccountSummary[], selectedIds: stri
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
   } catch {
     return 'UTC'
+  }
+}
+
+const EDITABLE_POST_STATUSES = new Set<PostStatus>(['draft', 'scheduled'])
+
+export function isPostEditable(status: PostStatus): boolean {
+  return EDITABLE_POST_STATUSES.has(status)
+}
+
+export function postToComposerSchedule(post: Post): ComposerSchedule {
+  const timezone = post.timezone || 'UTC'
+
+  if (post.status === 'scheduled' && post.scheduledAt) {
+    const zoned = toZonedTime(new Date(post.scheduledAt), timezone)
+    return {
+      mode: 'schedule',
+      date: new Date(zoned.getFullYear(), zoned.getMonth(), zoned.getDate()),
+      time: formatTimeInput(zoned),
+      timezone,
+    }
+  }
+
+  return {
+    mode: post.status === 'draft' ? 'draft' : 'schedule',
+    timezone,
+    ...getDefaultScheduleFields(),
+  }
+}
+
+export function postToComposerState(post: Post): ComposerData {
+  const media = postToComposerMedia(post)
+  const caption = getPostCaption(post)
+  const variant = createEmptyVariant(post.accountId)
+
+  if (post.description?.trim()) {
+    variant.description = post.description.trim()
+  }
+
+  const firstImage = media.find(item => item.kind === 'image')
+  if (firstImage?.kind === 'image' && firstImage.altText?.trim()) {
+    variant.altText = firstImage.altText.trim()
+  }
+
+  return {
+    workspaceId: post.workspaceId,
+    selectedAccountIds: [post.accountId],
+    commonCaption: caption,
+    media,
+    variants: { [post.accountId]: variant },
+    schedule: postToComposerSchedule(post),
+    previewAccountId: post.accountId,
+  }
+}
+
+export function buildUpdatePayload(params: {
+  account: AccountSummary
+  state: ComposerData
+}): UpdatePostPayload {
+  const { account, state } = params
+  const variant = state.variants[account._id]
+  const caption = mergeVariantCaption(state.commonCaption, variant)
+  const description = mergeVariantDescription(variant)
+  const firstImage = state.media.find(item => item.kind === 'image')
+  const altText = mergeVariantAltText(
+    firstImage && firstImage.kind === 'image' ? firstImage.altText : undefined,
+    variant,
+  )
+  const type = resolvePostTypeForProvider(state.media, account.provider)
+  const content = buildPostContent(state.media, caption, altText)
+
+  return {
+    type,
+    content,
+    caption: caption.trim() || null,
+    description: description ?? null,
+    timezone: state.schedule.timezone,
   }
 }

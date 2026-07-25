@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label'
 import { TimezoneSelector } from '@/components/ui/timezone-selector'
 import { formatTimezoneDetail } from '@/lib/timezone'
 import { cn } from '@/lib/utils'
+import type { ComposerLayout } from '@/types/composer-types'
 import { CalendarClockIcon, SendIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 
 import type { ComposerSchedule, ComposerScheduleMode } from '../../../types/composer-types'
 import { getDefaultScheduleFields } from '../../../utils/composer.utils'
@@ -16,6 +17,7 @@ type SchedulePanelProps = {
   schedule: ComposerSchedule
   onChange: (patch: Partial<ComposerSchedule>) => void
   className?: string
+  layout?: ComposerLayout
 }
 
 const MODE_OPTIONS: Array<{
@@ -38,7 +40,12 @@ const MODE_OPTIONS: Array<{
   },
 ]
 
-export function SchedulePanel({ schedule, onChange, className }: SchedulePanelProps) {
+const dateTimeInputClassName =
+  'h-9 w-full min-w-0 rounded-xl border-border/50 bg-background text-sm shadow-none [&::-webkit-calendar-picker-indicator]:ml-auto [&::-webkit-datetime-edit]:min-w-0'
+
+export function SchedulePanel({ schedule, onChange, className, layout = 'default' }: SchedulePanelProps) {
+  const fieldId = useId()
+  const isSheet = layout === 'sheet'
   const now = useMemo(() => new Date(), [])
   const defaultSchedule = useMemo(() => getDefaultScheduleFields(now), [now])
   const mode = schedule.mode === 'draft' ? 'schedule' : schedule.mode
@@ -53,9 +60,14 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
       }
       compact
       className={className}
-      contentClassName="space-y-4 pt-0"
+      contentClassName={cn('space-y-4 pt-0', isSheet && 'px-3 pb-3')}
     >
-      <div className="inline-flex rounded-full border border-border/50 bg-background p-0.5">
+      <div
+        className={cn(
+          'rounded-full border border-border/50 bg-background p-0.5',
+          isSheet ? 'flex w-full' : 'inline-flex',
+        )}
+      >
         {MODE_OPTIONS.map(option => {
           const selected = mode === option.value
           const Icon = option.Icon
@@ -71,7 +83,8 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
                 onChange({ mode: option.value })
               }}
               className={cn(
-                'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-150',
+                'flex items-center justify-center gap-1.5 rounded-full py-1.5 text-xs font-medium transition-all duration-150',
+                isSheet ? 'min-w-0 flex-1 px-2' : 'px-3.5',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 'active:scale-[0.98]',
                 selected
@@ -79,24 +92,34 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <Icon className="size-3.5" strokeWidth={1.75} />
-              <span className="hidden sm:inline">{option.label}</span>
-              <span className="sm:hidden">{option.shortLabel}</span>
+              <Icon className="size-3.5 shrink-0" strokeWidth={1.75} />
+              <span className={cn('truncate', isSheet ? 'text-[11px]' : 'hidden sm:inline')}>{option.label}</span>
+              {!isSheet ? <span className="truncate sm:hidden">{option.shortLabel}</span> : null}
             </button>
           )
         })}
       </div>
 
       {mode === 'schedule' ? (
-        <div className="space-y-4 rounded-lg border border-border/40 bg-background p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-            <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-end">
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Label htmlFor="schedule-date" className="text-[11px] font-medium text-muted-foreground">
+        <div className={cn('space-y-3 rounded-lg border border-border/40 bg-background', isSheet ? 'p-3' : 'space-y-4 p-4')}>
+          <div
+            className={cn(
+              'gap-3',
+              isSheet ? 'grid grid-cols-1' : 'flex flex-col gap-4 lg:flex-row lg:items-start',
+            )}
+          >
+            <div
+              className={cn(
+                'min-w-0',
+                isSheet ? 'grid grid-cols-2 gap-3' : 'flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-end',
+              )}
+            >
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor={`${fieldId}-date`} className="text-[11px] font-medium text-muted-foreground">
                   Date
                 </Label>
                 <Input
-                  id="schedule-date"
+                  id={`${fieldId}-date`}
                   type="date"
                   value={`${scheduleDate.getFullYear()}-${String(scheduleDate.getMonth() + 1).padStart(2, '0')}-${String(scheduleDate.getDate()).padStart(2, '0')}`}
                   min={new Date().toISOString().split('T')[0]}
@@ -111,30 +134,31 @@ export function SchedulePanel({ schedule, onChange, className }: SchedulePanelPr
                       onChange({ date: new Date(year, month - 1, day) })
                     }
                   }}
-                  className="h-9 rounded-xl border-border/50 bg-background text-sm shadow-none"
+                  className={dateTimeInputClassName}
                 />
               </div>
 
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Label htmlFor="schedule-time" className="text-[11px] font-medium text-muted-foreground">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor={`${fieldId}-time`} className="text-[11px] font-medium text-muted-foreground">
                   Time
                 </Label>
                 <Input
-                  id="schedule-time"
+                  id={`${fieldId}-time`}
                   type="time"
                   value={scheduleTime}
                   onChange={event => onChange({ time: event.target.value })}
-                  className="h-9 rounded-xl border-border/50 bg-background text-sm shadow-none"
+                  className={dateTimeInputClassName}
                 />
               </div>
             </div>
 
-            <div className="min-w-0 space-y-1.5 lg:max-w-xs lg:flex-none">
+            <div className={cn('min-w-0 space-y-1.5', !isSheet && 'lg:max-w-xs lg:flex-none')}>
               <Label className="text-[11px] font-medium text-muted-foreground">Timezone</Label>
               <TimezoneSelector
                 value={schedule.timezone}
                 onChange={timezone => onChange({ timezone })}
                 mode="popover"
+                popoverWidth={isSheet ? 'trigger' : 'default'}
               />
             </div>
           </div>

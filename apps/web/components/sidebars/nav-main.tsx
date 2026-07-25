@@ -35,13 +35,21 @@ function isSubItemActive(pathname: string, url: string) {
   return pathname === url || pathname.startsWith(`${url}/`)
 }
 
-export function NavMain({ items, sectionTitle }: { items: NavMainItem[]; sectionTitle: string }) {
+export function NavMain({
+  items,
+  sectionTitle,
+  className,
+}: {
+  items: NavMainItem[]
+  sectionTitle: string
+  className?: string
+}) {
   const pathname = usePathname()
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className={className}>
       <SidebarGroupLabel>{sectionTitle}</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="gap-0.5">
         {items.map(item =>
           item.items?.length ? (
             <Collapsible

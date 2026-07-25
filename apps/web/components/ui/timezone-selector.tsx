@@ -32,6 +32,8 @@ type TimezoneSelectorProps = {
   'aria-label'?: string
   /** `popover` floats in a portal; `inline` expands in document flow (better inside dialogs). */
   mode?: 'popover' | 'inline'
+  /** Popover list width — defaults to a comfortable min width; use `trigger` in narrow panels. */
+  popoverWidth?: 'default' | 'trigger'
   /** Start with the list open — useful with `inline` mode in forms. */
   defaultOpen?: boolean
 }
@@ -127,6 +129,7 @@ export function TimezoneSelector({
   'aria-label': ariaLabel = 'Timezone',
   mode = 'popover',
   defaultOpen = false,
+  popoverWidth = 'default',
 }: TimezoneSelectorProps) {
   const [open, setOpen] = useState(defaultOpen)
   const now = useMemo(() => new Date(), [])
@@ -186,7 +189,7 @@ export function TimezoneSelector({
         </Button>
 
         {open ? (
-          <div className="mt-2 flex min-h-[min(320px,42vh)] flex-1 flex-col overflow-hidden rounded-xl border border-border/80 bg-popover shadow-xs ring-1 ring-foreground/5">
+          <div className="mt-2 flex min-h-[min(320px,42vh)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs">
             <TimezoneList
               value={value}
               onSelect={handleSelect}
@@ -204,7 +207,12 @@ export function TimezoneSelector({
         <PopoverTrigger asChild disabled={disabled}>
           {triggerButton}
         </PopoverTrigger>
-        <PopoverContent className="flex max-h-72 min-w-[min(100vw-2rem,20rem)] flex-col">
+        <PopoverContent
+          className={cn(
+            'flex max-h-72 flex-col',
+            popoverWidth === 'trigger' ? 'min-w-0' : 'min-w-[min(100vw-2rem,20rem)]',
+          )}
+        >
           <TimezoneList value={value} onSelect={handleSelect} listClassName="max-h-64" />
         </PopoverContent>
       </div>

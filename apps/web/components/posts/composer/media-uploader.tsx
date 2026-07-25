@@ -14,6 +14,8 @@ type MediaUploaderProps = {
   workspaceId: string
   disabled?: boolean
   compact?: boolean
+  /** Icon-only controls for narrow panels (e.g. edit sheet). */
+  iconOnly?: boolean
   onUploaded: (item: ComposerMediaItem) => void
   className?: string
 }
@@ -71,7 +73,14 @@ function workspacePickToComposerItem(item: WorkspaceMediaPick, durationSeconds?:
   }
 }
 
-export function MediaUploader({ workspaceId, disabled, compact = false, onUploaded, className }: MediaUploaderProps) {
+export function MediaUploader({
+  workspaceId,
+  disabled,
+  compact = false,
+  iconOnly = false,
+  onUploaded,
+  className,
+}: MediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -187,31 +196,39 @@ export function MediaUploader({ workspaceId, disabled, compact = false, onUpload
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size={iconOnly ? 'icon-sm' : 'sm'}
             disabled={disabled || isUploading}
             onClick={() => inputRef.current?.click()}
             className={cn(
-              'h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.98]',
+              iconOnly
+                ? 'size-8 rounded-full text-muted-foreground hover:text-foreground'
+                : 'h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.98]',
               isDragging && 'text-foreground',
             )}
+            aria-label={isUploading ? 'Uploading' : 'Upload media'}
           >
             {isUploading ? (
               <Loader2Icon className="size-3.5 animate-spin" />
             ) : (
               <ImagePlusIcon className="size-3.5" strokeWidth={1.75} />
             )}
-            {isUploading ? 'Uploading…' : 'Upload'}
+            {iconOnly ? null : isUploading ? 'Uploading…' : 'Upload'}
           </Button>
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size={iconOnly ? 'icon-sm' : 'sm'}
             disabled={disabled || isUploading}
             onClick={() => setLibraryOpen(true)}
-            className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.98]"
+            className={cn(
+              iconOnly
+                ? 'size-8 rounded-full text-muted-foreground hover:text-foreground'
+                : 'h-8 gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.98]',
+            )}
+            aria-label="Choose from library"
           >
             <FolderOpenIcon className="size-3.5" strokeWidth={1.75} />
-            Library
+            {iconOnly ? null : 'Library'}
           </Button>
         </div>
         {libraryDialog}
