@@ -17,7 +17,7 @@ import { useCompletion } from '@ai-sdk/react'
 import type { SocialProvider } from '@socialista/types'
 import { BotIcon, CheckIcon, PlusIcon, RefreshCwIcon, SparklesIcon, SquareIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { formatProviderList, getStrictestCaptionLimit } from './platform-limits'
+import { formatProviderList, getStrictestCaptionLimit } from '../../../constants/platform-limits'
 
 type PostCopywriterDialogProps = {
   open: boolean

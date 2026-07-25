@@ -11,14 +11,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ApiError } from '@/lib/api-public'
-import { signUpSchema, type SignUpSchemaType } from '@/lib/zod/auth.schema'
 import { cn } from '@/lib/utils'
+import { signUpSchema, type SignUpSchemaType } from '@/lib/zod/auth.schema'
 import { signUp as signUpService } from '@/services/auth.service'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'
+import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -102,7 +102,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
   const isLoading = isSubmitting || isGoogleLoading
 
   return (
-    <div className={cn('mx-auto w-full max-w-[420px]', className)}>
+    <div className={cn('mx-auto w-full max-w-105', className)}>
       <div className="rounded-2xl border border-border/60 bg-card/80 p-8 shadow-xl shadow-black/5 backdrop-blur-sm">
         <header className="mb-8 space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create your account</h1>
@@ -118,11 +118,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
-            {isGoogleLoading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <GoogleIcon className="size-4" />
-            )}
+            {isGoogleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon className="size-4" />}
             Continue with Google
           </Button>
         </div>

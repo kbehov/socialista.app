@@ -2,12 +2,8 @@
 
 import { create } from 'zustand'
 
-import {
-  createEmptyVariant,
-  getDefaultScheduleFields,
-  withScheduleDefaults,
-} from '@/components/posts/composer/composer-utils'
 import type { ComposerData, ComposerMediaItem, ComposerSchedule, ComposerVariant } from '@/types/composer-types'
+import { createEmptyVariant, getDefaultScheduleFields, withScheduleDefaults } from '@/utils/composer.utils'
 
 type ComposerActions = {
   hydrate: (workspaceId: string, timezone: string) => void

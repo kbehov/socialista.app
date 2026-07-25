@@ -64,7 +64,7 @@ type ConnectAccountDialogProps = {
 export function ConnectAccountDialog({ open, onOpenChange }: ConnectAccountDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[420px]">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-105">
         <div className="px-6 pt-6 pb-5">
           <DialogHeader className="gap-1.5 text-left">
             <DialogTitle className="text-base font-semibold tracking-tight">

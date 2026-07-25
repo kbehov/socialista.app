@@ -9,14 +9,14 @@ import type {
 import { fromZonedTime } from 'date-fns-tz'
 
 import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { formatProviderList, getPlatformLimits, getProvidersRequiringMedia } from '../constants/platform-limits'
 import type {
   ComposerData,
   ComposerMediaItem,
   ComposerSchedule,
   ComposerValidationIssue,
   ComposerVariant,
-} from '../../../types/composer-types'
-import { formatProviderList, getPlatformLimits, getProvidersRequiringMedia } from './platform-limits'
+} from '../types/composer-types'
 
 export function createEmptyVariant(accountId: string): ComposerVariant {
   return {

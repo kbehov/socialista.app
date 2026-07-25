@@ -1,10 +1,10 @@
 'use server'
 
-import { buildCreatePayload, resolveScheduleDate } from '@/components/posts/composer/composer-utils'
 import { ApiError } from '@/lib/api'
 import { uploadToWorkspace } from '@/services/files.service'
 import { createPost, publishPostNow, schedulePost } from '@/services/post.service'
 import type { ComposerData, ComposerSubmitResult } from '@/types/composer-types'
+import { buildCreatePayload, resolveScheduleDate } from '@/utils/composer.utils'
 import type { AccountSummary, ImageResponse } from '@socialista/types'
 
 export async function uploadPostMedia(

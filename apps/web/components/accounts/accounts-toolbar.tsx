@@ -18,7 +18,9 @@ export function AccountsToolbar({ total, initialQuery = '', className }: Account
   const [value, setValue] = useState(initialQuery)
 
   useEffect(() => {
-    setValue(initialQuery)
+    setTimeout(() => {
+      setValue(initialQuery)
+    }, 0)
   }, [initialQuery])
 
   useEffect(() => {

@@ -25,8 +25,8 @@ import type {
   Account,
   AccountSummary,
   ConnectionStatus as ApiConnectionStatus,
-  CreateAccountPayload,
   SocialProvider as ApiSocialProvider,
+  CreateAccountPayload,
   UpdateAccountPayload,
 } from '@socialista/types'
 
@@ -77,10 +77,7 @@ export const serializeAccountSummary = (account: IAccount): AccountSummary => ({
 })
 
 export const parseCreateAccountInput = (body: Record<string, unknown>): CreateAccountPayload => {
-  const workspaceId = parseParamId(
-    typeof body.workspaceId === 'string' ? body.workspaceId : undefined,
-    'workspace ID',
-  )
+  const workspaceId = parseParamId(typeof body.workspaceId === 'string' ? body.workspaceId : undefined, 'workspace ID')
 
   if (!isSocialProvider(body.provider)) {
     throw new HttpError(400, 'Valid social provider is required')
@@ -108,9 +105,7 @@ export const parseCreateAccountInput = (body: Record<string, unknown>): CreateAc
     accountAvatar: optionalTrimmedString(body.accountAvatar),
     biography: optionalTrimmedString(body.biography),
     followersCount:
-      typeof body.followersCount === 'number' && Number.isFinite(body.followersCount)
-        ? body.followersCount
-        : undefined,
+      typeof body.followersCount === 'number' && Number.isFinite(body.followersCount) ? body.followersCount : undefined,
     connectionStatus: isConnectionStatus(body.connectionStatus) ? body.connectionStatus : undefined,
     scopes: parseStringArray(body.scopes, 'Scopes'),
     metadata: parsePlainObject(body.metadata, 'Metadata'),
@@ -145,7 +140,10 @@ export const parseUpdateAccountInput = (body: Record<string, unknown>): UpdateAc
   }
 
   if (body.followersCount !== undefined) {
-    if (body.followersCount !== null && (typeof body.followersCount !== 'number' || !Number.isFinite(body.followersCount))) {
+    if (
+      body.followersCount !== null &&
+      (typeof body.followersCount !== 'number' || !Number.isFinite(body.followersCount))
+    ) {
       throw new HttpError(400, 'Followers count must be a number')
     }
     updates.followersCount = body.followersCount ?? undefined
@@ -179,22 +177,15 @@ export const parseUpdateAccountInput = (body: Record<string, unknown>): UpdateAc
   }
 
   if (body.accessTokenExpiresAt !== undefined) {
-    updates.accessTokenExpiresAt = parseOptionalNullableDate(
-      body.accessTokenExpiresAt,
-      'access token expiry',
-    )
+    updates.accessTokenExpiresAt = parseOptionalNullableDate(body.accessTokenExpiresAt, 'access token expiry')
   }
 
   if (body.refreshTokenExpiresAt !== undefined) {
-    updates.refreshTokenExpiresAt = parseOptionalNullableDate(
-      body.refreshTokenExpiresAt,
-      'refresh token expiry',
-    )
+    updates.refreshTokenExpiresAt = parseOptionalNullableDate(body.refreshTokenExpiresAt, 'refresh token expiry')
   }
 
   if (body.lastError !== undefined) {
-    updates.lastError =
-      body.lastError === null ? null : (optionalTrimmedString(body.lastError) ?? null)
+    updates.lastError = body.lastError === null ? null : (optionalTrimmedString(body.lastError) ?? null)
   }
 
   if (body.lastSyncedAt !== undefined) {
@@ -219,8 +210,7 @@ export const toCreateAccountInput = (
   accountAvatar: input.accountAvatar,
   biography: input.biography,
   followersCount: input.followersCount,
-  connectionStatus:
-    (input.connectionStatus as ConnectionStatus | undefined) ?? ConnectionStatus.CONNECTED,
+  connectionStatus: (input.connectionStatus as ConnectionStatus | undefined) ?? ConnectionStatus.CONNECTED,
   scopes: input.scopes,
   metadata: input.metadata,
   accessToken: input.accessToken,

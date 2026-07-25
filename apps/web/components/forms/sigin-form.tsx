@@ -85,7 +85,7 @@ export function SignInForm({ className }: SignInFormProps) {
   const isLoading = isSubmitting || isGoogleLoading
 
   return (
-    <div className={cn('mx-auto w-full max-w-[420px]', className)}>
+    <div className={cn('mx-auto w-full max-w-105', className)}>
       <div className="rounded-2xl border border-border/60 bg-card/80 p-8 shadow-xl shadow-black/5 backdrop-blur-sm">
         <header className="mb-8 space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>

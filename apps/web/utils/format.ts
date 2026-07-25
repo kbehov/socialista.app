@@ -1,3 +1,5 @@
+import { isValidIanaTimezone } from '@/lib/timezone'
+import { formatInTimeZone, getTimezoneOffset } from 'date-fns-tz'
 const MB = 1024 * 1024
 const GB = MB * 1024
 
@@ -89,4 +91,55 @@ export function formatModelCost(cost: number, costUnit: string): string {
     return credits
   }
   return `${credits} / ${costUnit}`
+}
+
+export function formatDate(value: Date | string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+export function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
+  return `${parts[0]!.charAt(0)}${parts[1]!.charAt(0)}`.toUpperCase()
+}
+
+export function formatTimezoneCity(timezone: string): string {
+  const parts = timezone.split('/')
+  const city = parts[parts.length - 1]
+  return city?.replaceAll('_', ' ') ?? timezone
+}
+
+export function formatTimezoneOffset(timezone: string, at: Date = new Date()): string {
+  if (!isValidIanaTimezone(timezone)) return 'UTC'
+
+  const offsetMs = getTimezoneOffset(timezone, at)
+  const totalMinutes = Math.round(offsetMs / 60_000)
+  const sign = totalMinutes >= 0 ? '+' : '-'
+  const absMinutes = Math.abs(totalMinutes)
+  const hours = Math.floor(absMinutes / 60)
+  const minutes = absMinutes % 60
+
+  if (minutes === 0) return `UTC${sign}${hours}`
+  return `UTC${sign}${hours}:${String(minutes).padStart(2, '0')}`
+}
+
+export function formatTimezoneLocalTime(timezone: string, at: Date = new Date()): string {
+  if (!isValidIanaTimezone(timezone)) return ''
+  return formatInTimeZone(at, timezone, 'h:mm a')
+}
+
+export function formatTimezoneLabel(timezone: string, at: Date = new Date()): string {
+  return `${formatTimezoneCity(timezone)} (${formatTimezoneOffset(timezone, at)})`
+}
+
+export function formatTimezoneDetail(timezone: string, at: Date = new Date()): string {
+  const localTime = formatTimezoneLocalTime(timezone, at)
+  return localTime
+    ? `${formatTimezoneCity(timezone)} · ${formatTimezoneOffset(timezone, at)} · ${localTime}`
+    : formatTimezoneLabel(timezone, at)
 }

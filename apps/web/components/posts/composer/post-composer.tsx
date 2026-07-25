@@ -2,22 +2,19 @@
 
 import { publishOrSchedulePosts } from '@/actions/post.actions'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import {
-  usePostComposerActions,
-  usePostComposerStore,
-} from '@/store/post-composer.store'
+import { usePostComposerActions, usePostComposerStore } from '@/store/post-composer.store'
 import { ConnectionStatus, type AccountSummary } from '@socialista/types'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 
+import { getAccountsWithIssues, getDefaultTimezone, validateComposer } from '../../../utils/composer.utils'
 import { AccountSelector } from './account-selector'
 import { ComposerEditor } from './composer-editor'
 import { ComposerHeader } from './composer-header'
-import { getDefaultTimezone, getAccountsWithIssues, validateComposer } from './composer-utils'
 import { PlatformRequirementsBanner } from './platform-requirements-banner'
 import { PlatformVariantsPanel } from './platform-variants-panel'
 import { PostPreviewBar } from './post-preview-bar'
@@ -80,16 +77,13 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
 
   const selectedProviders = useMemo(
     () =>
-      connectedAccounts
-        .filter(account => selectedAccountIds.includes(account._id))
-        .map(account => account.provider),
+      connectedAccounts.filter(account => selectedAccountIds.includes(account._id)).map(account => account.provider),
     [connectedAccounts, selectedAccountIds],
   )
 
   const hasContent = commonCaption.trim().length > 0 || media.length > 0
   const hasMedia = media.length > 0
-  const canSubmit =
-    storeWorkspaceId === workspaceId && selectedAccountIds.length > 0 && hasContent
+  const canSubmit = storeWorkspaceId === workspaceId && selectedAccountIds.length > 0 && hasContent
 
   const composerState = useMemo(
     () => ({
@@ -101,22 +95,11 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
       schedule,
       previewAccountId,
     }),
-    [
-      workspaceId,
-      selectedAccountIds,
-      commonCaption,
-      media,
-      variants,
-      schedule,
-      previewAccountId,
-    ],
+    [workspaceId, selectedAccountIds, commonCaption, media, variants, schedule, previewAccountId],
   )
 
   const validationIssues = useMemo(
-    () =>
-      selectedAccountIds.length > 0
-        ? validateComposer(composerState, connectedAccounts)
-        : [],
+    () => (selectedAccountIds.length > 0 ? validateComposer(composerState, connectedAccounts) : []),
     [selectedAccountIds.length, composerState, connectedAccounts],
   )
 
@@ -127,18 +110,13 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
     if (isReady) {
       return `Ready for ${selectedAccountIds.length} account${selectedAccountIds.length === 1 ? '' : 's'}`
     }
-    const blockingIssue = validationIssues.find(
-      issue => issue.code !== 'empty' && issue.code !== 'caption_required',
-    )
+    const blockingIssue = validationIssues.find(issue => issue.code !== 'empty' && issue.code !== 'caption_required')
     if (blockingIssue) return blockingIssue.message
     if (!hasContent) return 'Add a caption or media'
     return 'Fix platform requirements to publish'
   }, [selectedAccountIds.length, isReady, validationIssues, hasContent])
 
-  const accountsWithIssues = useMemo(
-    () => getAccountsWithIssues(validationIssues),
-    [validationIssues],
-  )
+  const accountsWithIssues = useMemo(() => getAccountsWithIssues(validationIssues), [validationIssues])
 
   const snapshotState = () => ({
     workspaceId,
@@ -175,14 +153,8 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
       const succeeded = results.filter(result => result.status !== 'failed')
 
       if (succeeded.length > 0) {
-        const label = asDraft
-          ? 'Draft saved'
-          : state.schedule.mode === 'schedule'
-            ? 'Scheduled'
-            : 'Publishing'
-        toast.success(
-          `${label} for ${succeeded.length} account${succeeded.length === 1 ? '' : 's'}`,
-        )
+        const label = asDraft ? 'Draft saved' : state.schedule.mode === 'schedule' ? 'Scheduled' : 'Publishing'
+        toast.success(`${label} for ${succeeded.length} account${succeeded.length === 1 ? '' : 's'}`)
       }
 
       for (const result of failed) {
@@ -212,9 +184,7 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
       <div
         className={cn(
           'grid min-h-0 flex-1 gap-4 pt-1',
-          previewCollapsed
-            ? 'lg:grid-cols-[minmax(0,1fr)_2rem]'
-            : 'lg:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]',
+          previewCollapsed ? 'lg:grid-cols-[minmax(0,1fr)_2rem]' : 'lg:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]',
         )}
       >
         <ScrollArea className="min-h-0" scrollFade scrollbarGutter>

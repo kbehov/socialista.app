@@ -30,18 +30,14 @@ function revalidateWorkspaceAccounts(workspaceId?: string) {
 }
 
 /** Connect or reconnect a social account (upsert by provider + providerAccountId). */
-export const connectAccount = async (
-  payload: CreateAccountPayload,
-): Promise<ApiResponse<ConnectAccountResult>> => {
+export const connectAccount = async (payload: CreateAccountPayload): Promise<ApiResponse<ConnectAccountResult>> => {
   const response = await api.post<ConnectAccountResult>(ACCOUNT_ROUTES.CONNECT, payload)
   revalidateWorkspaceAccounts(payload.workspaceId)
   return response
 }
 
 /** Create a new account (fails if already connected). */
-export const createAccount = async (
-  payload: CreateAccountPayload,
-): Promise<ApiResponse<{ account: Account }>> => {
+export const createAccount = async (payload: CreateAccountPayload): Promise<ApiResponse<{ account: Account }>> => {
   const response = await api.post<{ account: Account }>(ACCOUNT_ROUTES.CREATE, payload)
   revalidateWorkspaceAccounts(payload.workspaceId)
   return response
@@ -52,9 +48,7 @@ export const createAccount = async (
  * Callers must omit identities already present in the workspace.
  * Concurrent duplicates (409) are reported as `skipped` and never overwrite tokens.
  */
-export const createAccountsBatch = async (
-  payloads: CreateAccountPayload[],
-): Promise<ConnectAccountResultItem[]> => {
+export const createAccountsBatch = async (payloads: CreateAccountPayload[]): Promise<ConnectAccountResultItem[]> => {
   const results: ConnectAccountResultItem[] = []
 
   for (const payload of payloads) {
@@ -144,17 +138,13 @@ export const updateAccount = async (
   return response
 }
 
-export const disconnectAccount = async (
-  id: string,
-): Promise<ApiResponse<{ account: Account }>> => {
+export const disconnectAccount = async (id: string): Promise<ApiResponse<{ account: Account }>> => {
   const response = await api.post<{ account: Account }>(ACCOUNT_ROUTES.DISCONNECT(id))
   revalidateWorkspaceAccounts(response.data?.account.workspaceId)
   return response
 }
 
-export const deleteAccount = async (
-  id: string,
-): Promise<ApiResponse<{ id: string; workspaceId: string }>> => {
+export const deleteAccount = async (id: string): Promise<ApiResponse<{ id: string; workspaceId: string }>> => {
   const response = await api.delete<{ id: string; workspaceId: string }>(ACCOUNT_ROUTES.DELETE(id))
   revalidateWorkspaceAccounts(response.data?.workspaceId)
   return response

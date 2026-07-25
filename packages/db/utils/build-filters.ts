@@ -55,14 +55,7 @@ export const parseSort = (sort?: string): Record<string, 1 | -1> => {
 const RESERVED_KEYS = new Set(['page', 'limit', 'sort', 'query', 'from', 'to'])
 
 /** Query keys that map to ObjectId fields in MongoDB documents. */
-const OBJECT_ID_KEYS = new Set([
-  'account',
-  'workspace',
-  'workspaceId',
-  'createdBy',
-  'uploadedBy',
-  'ownerId',
-])
+const OBJECT_ID_KEYS = new Set(['account', 'workspace', 'workspaceId', 'createdBy', 'uploadedBy', 'ownerId'])
 
 const tryToObjectId = (value: string) => {
   try {
@@ -78,6 +71,7 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
   const { page, limit, sort, query: textSearch, ...rest } = normalized
 
   const match: Record<string, unknown> = {}
+
   for (const [key, value] of Object.entries(rest)) {
     if (RESERVED_KEYS.has(key) || value === '') continue
     if (key === 'id') {
@@ -90,7 +84,9 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
         .filter(Boolean)
       if (parts.length === 0) continue
       if (OBJECT_ID_KEYS.has(key)) {
-        const ids = parts.map(tryToObjectId).filter((id): id is NonNullable<ReturnType<typeof tryToObjectId>> => id !== null)
+        const ids = parts
+          .map(tryToObjectId)
+          .filter((id): id is NonNullable<ReturnType<typeof tryToObjectId>> => id !== null)
         if (ids.length > 0) match[key] = { $in: ids }
       } else {
         match[key] = { $in: parts }

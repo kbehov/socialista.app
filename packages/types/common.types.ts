@@ -2,6 +2,7 @@ import type { User } from './user.types.js'
 export interface ApiResponse<T> {
   success: boolean
   data?: T
+  meta?: MetaResponse
   message?: string
 }
 
@@ -35,4 +36,5 @@ export type MetaResponse = {
   hasPreviousPage?: boolean
   sort?: Record<string, 1 | -1>
   textSearch?: string
+  filters?: Record<string, unknown>
 }

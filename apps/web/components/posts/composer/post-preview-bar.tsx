@@ -9,7 +9,7 @@ import type { AccountSummary } from '@socialista/types'
 import { EyeIcon, PanelRightCloseIcon, PanelRightOpenIcon } from 'lucide-react'
 
 import type { ComposerMediaItem, ComposerVariant } from '../../../types/composer-types'
-import { createEmptyVariant, derivePostType, mergeVariantCaption } from './composer-utils'
+import { createEmptyVariant, derivePostType, mergeVariantCaption } from '../../../utils/composer.utils'
 import { getPreviewComponent } from './previews/preview-registry'
 
 type PostPreviewBarProps = {

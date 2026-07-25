@@ -8,8 +8,8 @@ import type { AccountSummary } from '@socialista/types'
 import { useMemo } from 'react'
 
 import type { ComposerVariant } from '../../../types/composer-types'
+import { createEmptyVariant } from '../../../utils/composer.utils'
 import { ComposerCollapsibleSection } from './composer-section'
-import { createEmptyVariant } from './composer-utils'
 import { PlatformVariantEditor } from './platform-variant-editor'
 
 type PlatformVariantsPanelProps = {

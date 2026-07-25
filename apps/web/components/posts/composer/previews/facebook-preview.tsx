@@ -1,6 +1,6 @@
 'use client'
 
-import type { PreviewProps } from '../../../../types/composer-types'
+import type { PreviewProps } from '@/types/composer-types'
 import { PreviewAccountHeader, PreviewCaption, PreviewMedia, PreviewShell } from './preview-shell'
 
 export function FacebookPreview({ account, caption, media }: PreviewProps) {

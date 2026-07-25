@@ -9,8 +9,8 @@ import { CalendarClockIcon, SendIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 import type { ComposerSchedule, ComposerScheduleMode } from '../../../types/composer-types'
+import { getDefaultScheduleFields } from '../../../utils/composer.utils'
 import { ComposerSection } from './composer-section'
-import { getDefaultScheduleFields } from './composer-utils'
 
 type SchedulePanelProps = {
   schedule: ComposerSchedule

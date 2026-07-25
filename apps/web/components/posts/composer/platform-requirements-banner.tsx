@@ -6,9 +6,9 @@ import type { SocialProvider } from '@socialista/types'
 import { AlertCircleIcon, InfoIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
+import { getProvidersRequiringMedia } from '../../../constants/platform-limits'
 import type { ComposerValidationIssue } from '../../../types/composer-types'
-import { getMediaRequirementHint, groupValidationIssues } from './composer-utils'
-import { getProvidersRequiringMedia } from './platform-limits'
+import { getMediaRequirementHint, groupValidationIssues } from '../../../utils/composer.utils'
 
 type PlatformRequirementsBannerProps = {
   selectedProviders: SocialProvider[]

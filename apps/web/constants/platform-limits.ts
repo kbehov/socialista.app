@@ -2,7 +2,7 @@ import type { SocialProvider } from '@socialista/types'
 
 import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 
-import type { PlatformLimitsMap } from '../../../types/composer-types'
+import type { PlatformLimitsMap } from '@/types/composer-types'
 
 export const PLATFORM_LIMITS: PlatformLimitsMap = {
   instagram: {

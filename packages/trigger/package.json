@@ -39,11 +39,11 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@fal-ai/client": "^1.10.1",
     "@socialista/db": "workspace:^",
     "@socialista/types": "workspace:^",
-    "@fal-ai/client": "^1.10.1",
     "@trigger.dev/sdk": "^4.5.3",
-    "ai": "^6.0.208",
+    "ai": "^7.0.36",
     "zod": "^4.4.3"
   },
   "devDependencies": {

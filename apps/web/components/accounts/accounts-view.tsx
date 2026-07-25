@@ -24,7 +24,7 @@ export function AccountsView({ accounts, meta, searchQuery }: AccountsViewProps)
           description="Try a different name, handle, or provider account ID."
           minHeight="lg"
           variant="default"
-          className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
+          className="flex-1 rounded-2xl border-border/60 bg-linear-to-b from-muted/30 to-muted/10"
           iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
         />
       </div>

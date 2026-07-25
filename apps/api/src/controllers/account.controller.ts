@@ -10,10 +10,7 @@ import {
 } from '@/utils/account.utils.js'
 import { getQueryString, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
-import {
-  assertAccountsLimit,
-  getWorkspaceAsMember,
-} from '@/utils/workspace.utils.js'
+import { assertAccountsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   SocialProvider,
   createAccount as createAccountInDb,
@@ -30,10 +27,7 @@ import {
 } from '@socialista/db'
 import type { Context } from 'hono'
 
-async function authorizeWorkspaceAccountAction(
-  c: Context<AppContext>,
-  workspaceId: string,
-) {
+async function authorizeWorkspaceAccountAction(c: Context<AppContext>, workspaceId: string) {
   const userId = c.get('userId')
   const workspace = await getWorkspaceAsMember(workspaceId, userId)
   return { userId, workspace }
@@ -46,11 +40,7 @@ export const connectAccount = async (c: Context<AppContext>) => {
 
   const [workspace, existing] = await Promise.all([
     getWorkspaceAsMember(input.workspaceId, userId),
-    getAccountByProvider(
-      input.workspaceId,
-      input.provider as SocialProvider,
-      input.providerAccountId,
-    ),
+    getAccountByProvider(input.workspaceId, input.provider as SocialProvider, input.providerAccountId),
   ])
 
   if (!existing) {
@@ -58,9 +48,7 @@ export const connectAccount = async (c: Context<AppContext>) => {
   }
 
   const timezone = resolveAccountTimezone(input.timezone, workspace.settings.timezone)
-  const { account, created } = await upsertAccount(
-    toCreateAccountInput({ ...input, timezone }, userId),
-  )
+  const { account, created } = await upsertAccount(toCreateAccountInput({ ...input, timezone }, userId))
 
   if (created) {
     await incrementAccountsUsage(input.workspaceId)
@@ -93,10 +81,8 @@ export const getWorkspaceAccounts = async (c: Context<AppContext>) => {
   params.set('workspace', workspaceId)
 
   const data = await getAccounts(params.toString())
-  return successResponse(c, 200, {
-    accounts: data.accounts.map(account => serializeAccountSummary(account as IAccount)),
-    meta: data.meta,
-  })
+  const serializedAccounts = data.accounts.map(account => serializeAccountSummary(account as IAccount))
+  return successResponse(c, 200, { accounts: serializedAccounts }, data.meta)
 }
 
 export const getAccount = async (c: Context<AppContext>) => {

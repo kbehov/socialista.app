@@ -9,12 +9,13 @@ import type { SocialProvider } from '@socialista/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { CharacterCountRing } from '@/components/common/charachter-count-ring'
+import type { ComposerMediaItem } from '@/types/composer-types'
 import { StickyNoteIcon } from 'lucide-react'
-import type { ComposerMediaItem } from '../../../types/composer-types'
-import { CharacterCountRing, ComposerSection } from './composer-section'
+import { getStrictestCaptionLimit } from '../../../constants/platform-limits'
+import { ComposerSection } from './composer-section'
 import { MediaCarouselManager } from './media-carousel-manager'
 import { MediaUploader } from './media-uploader'
-import { getStrictestCaptionLimit } from './platform-limits'
 import { PostCopywriterDialog } from './post-copywriter-dialog'
 
 type ComposerEditorProps = {

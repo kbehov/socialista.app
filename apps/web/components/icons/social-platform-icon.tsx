@@ -13,16 +13,21 @@ import type { ComponentType } from 'react'
 
 const PLATFORM_META: Record<
   SocialProvider,
-  { label: string; Icon: ComponentType<SocialIconProps> }
+  { label: string; Icon: ComponentType<SocialIconProps>; className?: string; color?: string }
 > = {
-  instagram: { label: 'Instagram', Icon: InstagramIcon },
-  facebook: { label: 'Facebook', Icon: FacebookIcon },
-  twitter: { label: 'X', Icon: XIcon },
-  linkedin: { label: 'LinkedIn', Icon: LinkedInIcon },
-  tiktok: { label: 'TikTok', Icon: TikTokIcon },
-  youtube: { label: 'YouTube', Icon: YouTubeIcon },
-  pinterest: { label: 'Pinterest', Icon: PinterestIcon },
-  threads: { label: 'Threads', Icon: ThreadsIcon },
+  instagram: {
+    label: 'Instagram',
+    Icon: InstagramIcon,
+    className: 'bg-linear-to-r from-pink-500 to-purple-500',
+    color: '#ffff',
+  },
+  facebook: { label: 'Facebook', Icon: FacebookIcon, className: 'bg-blue-500', color: '#fff' },
+  twitter: { label: 'X', Icon: XIcon, className: 'bg-black', color: '#fff' },
+  linkedin: { label: 'LinkedIn', Icon: LinkedInIcon, className: 'bg-blue-500', color: '#fff' },
+  tiktok: { label: 'TikTok', Icon: TikTokIcon, className: 'bg-black', color: '#fff' },
+  youtube: { label: 'YouTube', Icon: YouTubeIcon, className: 'bg-red-500', color: '#fff' },
+  pinterest: { label: 'Pinterest', Icon: PinterestIcon, className: 'bg-red-500', color: '#fff' },
+  threads: { label: 'Threads', Icon: ThreadsIcon, className: 'bg-black', color: '#fff' },
 }
 
 export function getSocialPlatformLabel(provider: string): string {
@@ -63,10 +68,10 @@ export function SocialPlatformIcon({
     )
   }
 
-  const { Icon, label } = meta
+  const { Icon, label, color } = meta
 
   if (!framed) {
-    return <Icon size={size} aria-label={label} className={className} {...props} />
+    return <Icon size={size} color={color ?? '#fff'} aria-label={label} className={cn(className)} {...props} />
   }
 
   return (
@@ -74,10 +79,11 @@ export function SocialPlatformIcon({
       className={cn(
         'flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-foreground ring-1 ring-border/60',
         className,
+        meta.className,
       )}
       aria-label={label}
     >
-      <Icon size={size} {...props} />
+      <Icon size={size} color={color ?? '#fff'} {...props} />
     </span>
   )
 }
