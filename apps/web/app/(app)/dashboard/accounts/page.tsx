@@ -4,7 +4,7 @@ import { ConnectAccountTrigger } from '@/components/accounts/connect-account-tri
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
-import { getAccountsListQuery } from '@/lib/account-filters'
+import { getAccountsListQuery, hasActiveAccountFilters, parseAccountFiltersFromSearchParams } from '@/lib/account-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
@@ -34,14 +34,17 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
   const params = await searchParams
   const query = getAccountsListQuery(params)
+  const filters = parseAccountFiltersFromSearchParams(params)
+  const hasFilters = hasActiveAccountFilters(filters)
 
   const { data, success, message, meta } = await getWorkspaceAccounts(workspace.id, {
     page: query.page,
     limit: query.limit,
     sort: query.sort,
     query: query.query,
+    provider: query.provider,
+    connectionStatus: query.connectionStatus,
   })
-  console.log(meta)
 
   const accounts = data?.accounts ?? []
   const metaData = meta ?? defaultMeta
@@ -64,7 +67,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           description="Refresh the page to try again."
           className="flex-1 rounded-xl"
         />
-      ) : metaData.total === 0 && !query.query ? (
+      ) : metaData.total === 0 && !query.query && !hasFilters ? (
         <EmptyState
           icon={Link2Icon}
           title="Connect your social accounts"
@@ -94,7 +97,13 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         />
       ) : (
         <Suspense fallback={null}>
-          <AccountsView accounts={accounts} meta={metaData} searchQuery={query.query} />
+          <AccountsView
+            accounts={accounts}
+            meta={metaData}
+            searchQuery={query.query}
+            filters={filters}
+            hasFilters={hasFilters}
+          />
         </Suspense>
       )}
     </div>

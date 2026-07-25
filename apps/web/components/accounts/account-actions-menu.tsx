@@ -1,3 +1,7 @@
+import {
+  getConnectHref,
+  isConnectableProvider,
+} from '@/components/accounts/connect-account-dialog'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { ConfirmAction } from '@/types/account.types'
 import type { AccountSummary } from '@socialista/types'
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon, UnplugIcon } from 'lucide-react'
+import { MoreHorizontalIcon, PencilIcon, PlugIcon, Trash2Icon, UnplugIcon } from 'lucide-react'
 
 type AccountActionsMenuProps = {
   account: AccountSummary
@@ -19,6 +23,8 @@ type AccountActionsMenuProps = {
 
 export function AccountActionsMenu({ account, onAction, onEdit, triggerClassName }: AccountActionsMenuProps) {
   const canDisconnect = account.connectionStatus === 'connected'
+  const connectableProvider = isConnectableProvider(account.provider) ? account.provider : null
+  const canReconnect = account.connectionStatus === 'disconnected' && connectableProvider !== null
 
   return (
     <DropdownMenu>
@@ -38,6 +44,14 @@ export function AccountActionsMenu({ account, onAction, onEdit, triggerClassName
           <PencilIcon />
           Edit
         </DropdownMenuItem>
+        {canReconnect && connectableProvider ? (
+          <DropdownMenuItem asChild>
+            <a href={getConnectHref(connectableProvider)}>
+              <PlugIcon />
+              Reconnect
+            </a>
+          </DropdownMenuItem>
+        ) : null}
         {canDisconnect ? (
           <DropdownMenuItem onClick={() => onAction({ type: 'disconnect', account })}>
             <UnplugIcon />

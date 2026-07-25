@@ -4,6 +4,7 @@ import { AccountsToolbar } from '@/components/accounts/accounts-toolbar'
 import { AccountsTable } from '@/components/tables/accounts.table'
 import { EmptyState } from '@/components/common/empty-state'
 import { SmartPagination } from '@/components/common/smart-pagination'
+import type { Filter } from '@/components/reui/filters'
 import type { AccountSummary, MetaResponse } from '@socialista/types'
 import { SearchXIcon } from 'lucide-react'
 
@@ -11,17 +12,27 @@ type AccountsViewProps = {
   accounts: AccountSummary[]
   meta: MetaResponse
   searchQuery?: string
+  filters: Filter<string>[]
+  hasFilters: boolean
 }
 
-export function AccountsView({ accounts, meta, searchQuery }: AccountsViewProps) {
+export function AccountsView({ accounts, meta, searchQuery, filters, hasFilters }: AccountsViewProps) {
   if (accounts.length === 0) {
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-4">
-        <AccountsToolbar total={meta.total} initialQuery={searchQuery} />
+        <AccountsToolbar
+          total={meta.total}
+          initialQuery={searchQuery}
+          filters={filters}
+        />
         <EmptyState
           icon={SearchXIcon}
-          title="No accounts match your search"
-          description="Try a different name, handle, or provider account ID."
+          title={hasFilters || searchQuery ? 'No accounts match your filters' : 'No accounts found'}
+          description={
+            hasFilters || searchQuery
+              ? 'Try removing a filter or searching with a different name, handle, or provider account ID.'
+              : 'Connect a social account to get started.'
+          }
           minHeight="lg"
           variant="default"
           className="flex-1 rounded-2xl border-border/60 bg-linear-to-b from-muted/30 to-muted/10"
@@ -33,7 +44,11 @@ export function AccountsView({ accounts, meta, searchQuery }: AccountsViewProps)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <AccountsToolbar total={meta.total} initialQuery={searchQuery} />
+      <AccountsToolbar
+        total={meta.total}
+        initialQuery={searchQuery}
+        filters={filters}
+      />
       <AccountsTable accounts={accounts} />
       <SmartPagination meta={meta} />
     </div>

@@ -18,30 +18,40 @@ export type ConnectablePlatform = {
   description: string
 }
 
+export function getConnectHref(provider: ConnectablePlatform['provider']): string {
+  return `/api/connect/${provider}`
+}
+
+export function isConnectableProvider(
+  provider: SocialProvider,
+): provider is ConnectablePlatform['provider'] {
+  return CONNECTABLE_PLATFORMS.some(platform => platform.provider === provider)
+}
+
 export const CONNECTABLE_PLATFORMS: ConnectablePlatform[] = [
   {
     provider: 'facebook',
-    href: '/api/connect/facebook',
+    href: getConnectHref('facebook'),
     description: 'Pages and Instagram linked to a Page',
   },
   {
     provider: 'instagram',
-    href: '/api/connect/instagram',
+    href: getConnectHref('instagram'),
     description: 'Professional account without a Facebook Page',
   },
   {
     provider: 'tiktok',
-    href: '/api/connect/tiktok',
+    href: getConnectHref('tiktok'),
     description: 'Videos and photos to TikTok',
   },
   {
     provider: 'threads',
-    href: '/api/connect/threads',
+    href: getConnectHref('threads'),
     description: 'Publish to your Threads profile',
   },
   {
     provider: 'linkedin',
-    href: '/api/connect/linkedin',
+    href: getConnectHref('linkedin'),
     description: 'Post to your LinkedIn profile',
   },
 ]
