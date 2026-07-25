@@ -157,3 +157,56 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
 - [Configuration Options](https://turborepo.dev/docs/reference/configuration)
 - [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+
+## Analytics
+
+Workspace analytics (Pro / Enterprise) pulls Instagram performance metrics on a schedule, stores time-series snapshots, and serves dashboard-ready aggregates via the API.
+
+### Data flow
+
+```
+POST /cron/analytics/sweep (every 12h, internal secret)
+  → analytics-sweep (enqueue only)
+      pages premium workspaces → pages eligible Instagram accounts
+      → batchTrigger fetch-account-analytics (idempotencyKey per account+bucket)
+          → fetch Graph profile + insights
+          → normalize → upsert AccountAnalyticsSnapshot
+  → GET /workspaces/:workspaceId/analytics/... (on-read aggregation)
+```
+
+### Snapshot cadence (gauges vs flows)
+
+Instagram returns **gauges** (followers, following, media count) as point-in-time values and **flows** (views, reach, likes, …) as totals over a requested window.
+
+- Snapshots are upserted on a 12h UTC bucket (`bucketAt` at 00:00 or 12:00).
+- **00:00 run** (`isDailyAnchor: true`): gauges + 24h flow window `[bucketAt-24h, bucketAt)`.
+- **12:00 run** (`isDailyAnchor: false`): gauges only — finer follower charts without double-counting flows.
+- Read APIs **sum flows only on daily-anchor docs**; gauges use first/last in range.
+
+### Premium gating
+
+`hasAnalyticsAccess(workspace)` requires `billing.plan` in (`pro`, `enterprise`) and `billing.status === active`. The API middleware returns **403** for free workspaces. The fetch task re-checks entitlement at run time so lapsed subscriptions stop collecting.
+
+### Platforms (this pass)
+
+| Platform | Status | Notes |
+| --- | --- | --- |
+| Instagram (Page-linked) | Supported | `instagram_manage_insights` already requested |
+| Instagram Login | Supported after reconnect | Added `instagram_business_manage_insights` |
+| Facebook / TikTok / Threads / LinkedIn | Not yet | No fetcher in `ANALYTICS_FETCHERS` |
+
+`impressions` is never requested (deprecated by Meta; use `views`). Missing metrics are recorded on the snapshot and surfaced in `dataQuality.missingMetrics`.
+
+### API
+
+- `GET /workspaces/:workspaceId/analytics/accounts/:accountId?range=daily|weekly|monthly`
+- `GET /workspaces/:workspaceId/analytics/summary?range=daily|weekly|monthly`
+- `POST /cron/analytics/sweep` — internal cron (header `x-internal-api-secret`); triggers the enqueue-only sweep every 12h
+
+Responses include current values, previous period, delta, `%` change, and a `series[]` ready for charts — no client-side aggregation required.
+
+### Migration notes
+
+- New collection `accountanalyticssnapshots` — no backfill.
+- Existing `Account` documents get `analytics` defaults lazily (`status: ok` when absent).
+- Indexes: `(account, bucketAt)` unique, `(workspace, bucketAt)`, plus sweep helpers on billing plan/status and account provider/status.

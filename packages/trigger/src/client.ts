@@ -33,6 +33,16 @@ export {
 } from './schemas/publish-post.schema.js'
 
 export {
+  fetchAccountAnalyticsPayloadSchema,
+  type FetchAccountAnalyticsPayload,
+} from './schemas/fetch-account-analytics.schema.js'
+
+export {
+  analyticsSweepPayloadSchema,
+  type AnalyticsSweepPayload,
+} from './schemas/analytics-sweep.schema.js'
+
+export {
   buildStaticAdCreativeBrief,
   buildStaticAdFinalPrompt,
   sanitizeStaticAdModelPrompt,

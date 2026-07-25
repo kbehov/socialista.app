@@ -18,6 +18,21 @@ export enum SocialProvider {
   THREADS = 'threads',
 }
 
+/** Analytics sync state — separate from connectionStatus so insights auth issues never block publishing. */
+export enum AccountAnalyticsStatus {
+  OK = 'ok',
+  NEEDS_REAUTH = 'needs_reauth',
+  UNSUPPORTED = 'unsupported',
+  ERROR = 'error',
+}
+
+export type AccountAnalyticsState = {
+  status: AccountAnalyticsStatus
+  lastFetchedAt?: Date
+  lastError?: string
+  consecutiveFailures: number
+}
+
 /** A social platform account connected to a workspace for publishing. */
 export interface IAccount {
   _id: Types.ObjectId
@@ -35,6 +50,7 @@ export interface IAccount {
   scopes: string[]
   /** Provider-specific extras (page id, business id, etc.). */
   metadata: Record<string, unknown>
+  analytics: AccountAnalyticsState
   refreshToken?: string
   accessToken?: string
   refreshTokenExpiresAt?: Date
@@ -84,4 +100,11 @@ export type UpdateAccountInput = {
   refreshTokenExpiresAt?: Date | null
   lastError?: string | null
   lastSyncedAt?: Date | null
+}
+
+export type SetAccountAnalyticsStateInput = {
+  status?: AccountAnalyticsStatus
+  lastFetchedAt?: Date | null
+  lastError?: string | null
+  consecutiveFailures?: number
 }

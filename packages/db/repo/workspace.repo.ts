@@ -344,3 +344,39 @@ export const getWorkspacePolarCustomerId = async (workspaceId: string) => {
   }
   return workspace.billing.polarCustomerId ?? null
 }
+
+export type ListPremiumWorkspaceIdsOptions = {
+  cursor?: string
+  limit?: number
+}
+
+/**
+ * Cursor-paged workspace ids with Pro/Enterprise + active billing.
+ * Used by the analytics sweep — never loads full workspace documents.
+ */
+export const listPremiumWorkspaceIds = async (
+  options: ListPremiumWorkspaceIdsOptions = {},
+): Promise<{ workspaceIds: string[]; nextCursor: string | null }> => {
+  const limit = Math.min(Math.max(options.limit ?? 500, 1), 1000)
+
+  const filter: Record<string, unknown> = {
+    'billing.plan': { $in: [Plan.PRO, Plan.ENTERPRISE] },
+    'billing.status': BillingStatus.ACTIVE,
+  }
+
+  if (options.cursor) {
+    filter._id = { $gt: new Types.ObjectId(options.cursor) }
+  }
+
+  const workspaces = await WorkspaceModel.find(filter)
+    .select({ _id: 1 })
+    .sort({ _id: 1 })
+    .limit(limit)
+    .lean()
+
+  const workspaceIds = workspaces.map(w => w._id.toString())
+  const nextCursor =
+    workspaces.length === limit ? workspaces[workspaces.length - 1]!._id.toString() : null
+
+  return { workspaceIds, nextCursor }
+}

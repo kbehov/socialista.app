@@ -1,7 +1,25 @@
 import { model, Schema } from 'mongoose'
 import { enumValues } from '../lib/schema.js'
 import type { IAccount } from '../types/account.types.js'
-import { ConnectionStatus, SocialProvider } from '../types/account.types.js'
+import {
+  AccountAnalyticsStatus,
+  ConnectionStatus,
+  SocialProvider,
+} from '../types/account.types.js'
+
+const accountAnalyticsSchema = new Schema(
+  {
+    status: {
+      type: String,
+      enum: enumValues(AccountAnalyticsStatus),
+      default: AccountAnalyticsStatus.OK,
+    },
+    lastFetchedAt: { type: Date },
+    lastError: { type: String },
+    consecutiveFailures: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false },
+)
 
 const accountSchema = new Schema<IAccount>(
   {
@@ -37,6 +55,13 @@ const accountSchema = new Schema<IAccount>(
     },
     scopes: { type: [String], default: [] },
     metadata: { type: Schema.Types.Mixed, default: {} },
+    analytics: {
+      type: accountAnalyticsSchema,
+      default: () => ({
+        status: AccountAnalyticsStatus.OK,
+        consecutiveFailures: 0,
+      }),
+    },
     refreshToken: { type: String, select: false },
     accessToken: { type: String, select: false },
     refreshTokenExpiresAt: { type: Date },
@@ -53,5 +78,6 @@ accountSchema.index({ workspace: 1, provider: 1 })
 accountSchema.index({ workspace: 1, accountName: 1 })
 accountSchema.index({ workspace: 1, createdAt: -1 })
 accountSchema.index({ connectionStatus: 1, accessTokenExpiresAt: 1 })
+accountSchema.index({ provider: 1, connectionStatus: 1, _id: 1 })
 
 export const AccountModel = model<IAccount>('Account', accountSchema)

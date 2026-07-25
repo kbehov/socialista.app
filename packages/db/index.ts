@@ -1,7 +1,9 @@
 export { connectDb, disconnectDb, getMongoUri, mongoose } from './connect.js'
 
 export { AccountModel } from './models/account.model.js'
+export { AccountAnalyticsSnapshotModel } from './models/account-analytics-snapshot.model.js'
 export * from './repo/account.repo.js'
+export * from './repo/account-analytics.repo.js'
 export { GenerationModel } from './models/generation.model.js'
 export * from './repo/generation.repo.js'
 export { PostModel } from './models/post.model.js'
@@ -44,6 +46,7 @@ export {
   type Pagination,
   type ParsedFilters,
 } from './utils/build-filters.js'
+export { hasAnalyticsAccess } from './utils/entitlements.js'
 export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 export {
   assertValidTimezone,
@@ -54,13 +57,27 @@ export {
 } from './utils/timezone.js'
 
 export {
+  AccountAnalyticsStatus,
   ConnectionStatus,
   SocialProvider,
+  type AccountAnalyticsState,
   type AccountDocument,
   type CreateAccountInput,
   type IAccount,
+  type SetAccountAnalyticsStateInput,
   type UpdateAccountInput,
 } from './types/account.types.js'
+
+export {
+  type AccountAnalyticsSeriesPoint,
+  type AccountAnalyticsSnapshotDocument,
+  type AnalyticsGranularity,
+  type AnalyticsSnapshotMetrics,
+  type EngagementRateBasis,
+  type IAccountAnalyticsSnapshot,
+  type UpsertAnalyticsSnapshotInput,
+  type WorkspaceAccountBreakdownRow,
+} from './types/account-analytics.types.js'
 
 export {
   GenerationKind,

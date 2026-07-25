@@ -8,6 +8,7 @@
     "lint": "eslint . --max-warnings 0",
     "build": "tsc -p tsconfig.check.json",
     "check-types": "tsc -p tsconfig.check.json",
+    "test": "vitest run",
     "dev:trigger": "trigger dev",
     "deploy:trigger": "trigger deploy"
   },
@@ -32,6 +33,14 @@
       "types": "./src/schemas/publish-post.schema.ts",
       "import": "./src/schemas/publish-post.schema.ts"
     },
+    "./schemas/fetch-account-analytics": {
+      "types": "./src/schemas/fetch-account-analytics.schema.ts",
+      "import": "./src/schemas/fetch-account-analytics.schema.ts"
+    },
+    "./schemas/analytics-sweep": {
+      "types": "./src/schemas/analytics-sweep.schema.ts",
+      "import": "./src/schemas/analytics-sweep.schema.ts"
+    },
     "./task-types": {
       "types": "./src/task-types.ts",
       "import": "./src/task-types.ts"
@@ -53,6 +62,7 @@
     "@types/node": "^25.9.3",
     "eslint": "^9.39.1",
     "trigger.dev": "^4.5.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   }
 }

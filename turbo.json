@@ -82,6 +82,9 @@
       "cache": false,
       "persistent": true
     },
+    "test": {
+      "dependsOn": ["^build"]
+    },
     "dev:trigger": {
       "cache": false,
       "persistent": true

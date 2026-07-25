@@ -1,9 +1,11 @@
 import { AccountModel } from '../models/account.model.js'
 import { DEFAULT_ACCOUNT_PAGE_SIZE } from '../config/config.js'
 import {
+  AccountAnalyticsStatus,
   ConnectionStatus,
   type CreateAccountInput,
   type IAccount,
+  type SetAccountAnalyticsStateInput,
   type SocialProvider,
   type UpdateAccountInput,
 } from '../types/account.types.js'
@@ -168,7 +170,15 @@ export const upsertAccount = async (
     throw new Error('Account not found')
   }
 
-  return { account, created: false }
+  // Reconnect clears analytics auth failures so the next sweep can retry.
+  await setAccountAnalyticsState(account._id.toString(), {
+    status: AccountAnalyticsStatus.OK,
+    lastError: null,
+    consecutiveFailures: 0,
+  })
+
+  const refreshed = await getAccountById(account._id.toString())
+  return { account: refreshed ?? account, created: false }
 }
 
 export const updateAccount = async (
@@ -335,4 +345,92 @@ export const getAccounts = async (query: string) => {
     accounts: accounts as IAccount[],
     meta: buildPaginationMeta(total, pagination, sort, textSearch),
   }
+}
+
+export type ListAnalyticsEligibleAccountsOptions = {
+  workspaceIds: string[]
+  /** Providers that have an analytics fetcher (e.g. Instagram only today). */
+  providers: SocialProvider[]
+  cursor?: string
+  limit?: number
+}
+
+/**
+ * Cursor-paged connected accounts eligible for analytics refresh.
+ * Skips needs_reauth / unsupported; pages by `_id` ascending.
+ */
+export const listAnalyticsEligibleAccounts = async (
+  options: ListAnalyticsEligibleAccountsOptions,
+): Promise<{ accounts: IAccount[]; nextCursor: string | null }> => {
+  const limit = Math.min(Math.max(options.limit ?? 500, 1), 1000)
+  if (options.workspaceIds.length === 0 || options.providers.length === 0) {
+    return { accounts: [], nextCursor: null }
+  }
+
+  const filter: Record<string, unknown> = {
+    workspace: { $in: options.workspaceIds.map(id => toObjectId(id)) },
+    provider: { $in: options.providers },
+    connectionStatus: ConnectionStatus.CONNECTED,
+    $or: [
+      { 'analytics.status': { $exists: false } },
+      {
+        'analytics.status': {
+          $nin: [AccountAnalyticsStatus.NEEDS_REAUTH, AccountAnalyticsStatus.UNSUPPORTED],
+        },
+      },
+    ],
+  }
+
+  if (options.cursor) {
+    filter._id = { $gt: toObjectId(options.cursor) }
+  }
+
+  const accounts = await AccountModel.find(filter)
+    .sort({ _id: 1 })
+    .limit(limit)
+    .lean()
+
+  const nextCursor =
+    accounts.length === limit ? accounts[accounts.length - 1]!._id.toString() : null
+
+  return { accounts: accounts as IAccount[], nextCursor }
+}
+
+export const setAccountAnalyticsState = async (
+  accountId: string,
+  patch: SetAccountAnalyticsStateInput,
+): Promise<IAccount | null> => {
+  const $set: Record<string, unknown> = {}
+  const $unset: Record<string, ''> = {}
+
+  if (patch.status !== undefined) {
+    $set['analytics.status'] = patch.status
+  }
+  if (patch.consecutiveFailures !== undefined) {
+    $set['analytics.consecutiveFailures'] = patch.consecutiveFailures
+  }
+  if (patch.lastFetchedAt !== undefined) {
+    if (patch.lastFetchedAt === null) {
+      $unset['analytics.lastFetchedAt'] = ''
+    } else {
+      $set['analytics.lastFetchedAt'] = patch.lastFetchedAt
+    }
+  }
+  if (patch.lastError !== undefined) {
+    if (patch.lastError === null) {
+      $unset['analytics.lastError'] = ''
+    } else {
+      $set['analytics.lastError'] = patch.lastError
+    }
+  }
+
+  const updateQuery: Record<string, unknown> = {}
+  if (Object.keys($set).length > 0) updateQuery.$set = $set
+  if (Object.keys($unset).length > 0) updateQuery.$unset = $unset
+
+  if (Object.keys(updateQuery).length === 0) {
+    return getAccountById(accountId)
+  }
+
+  return AccountModel.findByIdAndUpdate(accountId, updateQuery, { new: true }).lean()
 }

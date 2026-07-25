@@ -1,4 +1,8 @@
-import { publishDuePosts, refreshExpiringAccountTokens } from '@/controllers/cron.controller.js'
+import {
+  publishDuePosts,
+  refreshExpiringAccountTokens,
+  sweepAccountAnalytics,
+} from '@/controllers/cron.controller.js'
 import { internalApiMiddleware } from '@/middlewares/internal-api.middleware.js'
 import { Hono } from 'hono'
 
@@ -7,5 +11,6 @@ const cronRoutes = new Hono()
 cronRoutes.use('/*', internalApiMiddleware)
 cronRoutes.post('/accounts/refresh-expiring', refreshExpiringAccountTokens)
 cronRoutes.post('/posts/publish-due', publishDuePosts)
+cronRoutes.post('/analytics/sweep', sweepAccountAnalytics)
 
 export { cronRoutes }

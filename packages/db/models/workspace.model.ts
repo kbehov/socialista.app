@@ -94,5 +94,6 @@ const workspaceSchema = new Schema<IWorkspace>(
 workspaceSchema.index({ 'members.userId': 1 })
 workspaceSchema.index({ 'billing.polarCustomerId': 1 }, { sparse: true })
 workspaceSchema.index({ 'billing.polarSubscriptionId': 1 }, { sparse: true })
+workspaceSchema.index({ 'billing.plan': 1, 'billing.status': 1, _id: 1 })
 
 export const WorkspaceModel = model<IWorkspace>('Workspace', workspaceSchema)

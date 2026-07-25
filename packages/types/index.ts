@@ -1,4 +1,5 @@
 export * from './account.types.js'
+export * from './analytics.types.js'
 export * from './billing.types.js'
 export * from './carousel.types.js'
 export * from './collection.types.js'

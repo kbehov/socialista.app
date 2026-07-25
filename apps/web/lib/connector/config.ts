@@ -42,7 +42,7 @@ export function getInstagramConfig() {
     appId: process.env.INSTAGRAM_APP_ID ?? '',
     appSecret: process.env.INSTAGRAM_APP_SECRET ?? '',
     redirectUri: process.env.INSTAGRAM_REDIRECT_URI ?? getCallbackUrl('instagram'),
-    scopes: ['instagram_business_basic', 'instagram_business_content_publish'],
+    scopes: ['instagram_business_basic', 'instagram_business_content_publish', 'instagram_business_manage_insights'],
   }
 }
 

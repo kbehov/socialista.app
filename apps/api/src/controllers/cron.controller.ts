@@ -13,13 +13,24 @@ import {
   type IPost,
 } from '@socialista/db'
 import { TASK_IDS } from '@socialista/types'
-import type { PublishPostTask, RefreshAccountTokenTask } from '@socialista/trigger/task-types'
+import type {
+  AnalyticsSweepTask,
+  PublishPostTask,
+  RefreshAccountTokenTask,
+} from '@socialista/trigger/task-types'
 import { tasks } from '@trigger.dev/sdk/v3'
 import { randomUUID } from 'node:crypto'
 import type { Context } from 'hono'
 
 function utcDateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10)
+}
+
+function floorTo12hBucket(date: Date): Date {
+  const d = new Date(date)
+  d.setUTCMinutes(0, 0, 0)
+  d.setUTCHours(d.getUTCHours() < 12 ? 0 : 12)
+  return d
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -167,5 +178,27 @@ export const publishDuePosts = async (c: Context) => {
     staleReclaimed,
     batchIds,
     releasedCount: released.length,
+  })
+}
+
+/**
+ * Kick off the analytics sweep task (enqueue-only fan-out of per-account fetches).
+ * Call every 12h via external cron with `x-internal-api-secret`.
+ */
+export const sweepAccountAnalytics = async (c: Context) => {
+  const now = new Date()
+  const bucketAt = floorTo12hBucket(now)
+  const bucketIso = bucketAt.toISOString()
+
+  const handle = await tasks.trigger<AnalyticsSweepTask>(
+    TASK_IDS.analyticsSweep,
+    { timestamp: now.toISOString() },
+    { idempotencyKey: `analytics-sweep:${bucketIso}` },
+  )
+
+  return successResponse(c, 200, {
+    bucketAt: bucketIso,
+    includeFlows: bucketAt.getUTCHours() === 0,
+    runId: handle.id,
   })
 }
