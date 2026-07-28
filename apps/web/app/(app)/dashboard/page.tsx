@@ -7,11 +7,7 @@ import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { PageHeader } from '@/components/headers/page-header'
 import { getFirstName, getGreeting } from '@/lib/greeting'
 import { getAnalyticsOverview } from '@/services/analytics.service'
-import {
-  parseAnalyticsProvider,
-  parseAnalyticsRange,
-  parseAnalyticsRankBy,
-} from '@/utils/parsers'
+import { parseAnalyticsProvider, parseAnalyticsRange, parseAnalyticsRankBy } from '@/utils/parsers'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 
 type DashboardPageProps = {
@@ -37,7 +33,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   if (!success || !data) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div>
         <PageHeader
           title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
           description={workspace.name}
@@ -62,10 +58,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
         description={`${workspace.name} · analytics at a glance`}
         actions={
-          <AnalyticsRangeToggle
-            range={range}
-            params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined}
-          />
+          <AnalyticsRangeToggle range={range} params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined} />
         }
       />
 

@@ -137,7 +137,10 @@ export const ANALYTICS_ROUTES = {
   GET_PERFORMANCE: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/performance`,
   GET_ACCOUNT: (workspaceId: string, accountId: string) =>
     `/workspaces/${workspaceId}/analytics/accounts/${accountId}`,
+  EXPORT_ACCOUNT: (workspaceId: string, accountId: string) =>
+    `/workspaces/${workspaceId}/analytics/accounts/${accountId}/export`,
   GET_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary`,
+  EXPORT_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary/export`,
 } as const
 
 export const WAITLIST_ROUTES = {

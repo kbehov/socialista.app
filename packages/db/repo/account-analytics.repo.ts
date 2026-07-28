@@ -18,6 +18,7 @@ import {
   lastNonNullReduce,
   matchAccountBucketRange,
   matchWorkspaceBucketRange,
+  partitionPerformanceLeaders,
   periodGaugeAccumulators,
   postsDeltaFromCounts,
   previousPeriodFlowAccumulators,
@@ -27,7 +28,7 @@ import {
   workspaceAccountPerformanceLeadersPipeline,
   workspaceAnalyticsSeriesPipeline,
   workspaceProviderSeriesPipeline,
-} from './analytics.pipelines.js'
+} from '../pipelines/analytics.pipelines.js'
 
 const DEFAULT_PERFORMANCE_LIMIT = 10
 const MAX_PERFORMANCE_LIMIT = 50
@@ -63,6 +64,28 @@ function firstMetric(values: Array<number | null | undefined>): number | null {
     if (typeof value === 'number' && Number.isFinite(value)) return value
   }
   return null
+}
+
+/**
+ * Convert lifetime postsCount gauges on a sorted series into posts published
+ * since the previous point. One snapshot per day otherwise always yields 0
+ * for last−first inside the same bucket.
+ */
+function withPostsPublishedDeltas(
+  points: AccountAnalyticsSeriesPoint[],
+): AccountAnalyticsSeriesPoint[] {
+  let previousGauge: number | null = null
+  return points.map(point => {
+    const gauge = point.postsCount
+    let published: number | null = null
+    if (typeof gauge === 'number' && Number.isFinite(gauge)) {
+      if (typeof previousGauge === 'number') {
+        published = Math.max(0, gauge - previousGauge)
+      }
+      previousGauge = gauge
+    }
+    return { ...point, postsCount: published }
+  })
 }
 
 const GAUGE_METRIC_KEYS = ['followerCount', 'followingCount', 'postsCount'] as const
@@ -136,7 +159,8 @@ type SeriesQuery = {
 
 /**
  * Aggregate snapshots for one account into chart-ready points.
- * Gauges (followers/following/posts) use the latest value in the bucket.
+ * Gauges (followers/following) use the latest value in the bucket.
+ * postsCount is posts published since the previous bucket (lifetime gauge delta).
  * Flows (views/reach/engagement/…) sum only daily-anchor docs to avoid double-counting.
  */
 export const getAccountAnalyticsSeries = async (
@@ -181,20 +205,22 @@ export const getAccountAnalyticsSeries = async (
     { $sort: { _id: 1 } },
   ])
 
-  return rows.map(row => ({
-    date: row._id,
-    followerCount: lastMetric(row.followerCounts),
-    followingCount: lastMetric(row.followingCounts),
-    postsCount: lastMetric(row.postsCounts),
-    views: sumMetric(row.views),
-    reach: sumMetric(row.reach),
-    likes: sumMetric(row.likes),
-    comments: sumMetric(row.comments),
-    shares: sumMetric(row.shares),
-    saves: sumMetric(row.saves),
-    engagement: sumMetric(row.engagements),
-    engagementRate: lastMetric(row.engagementRates),
-  }))
+  return withPostsPublishedDeltas(
+    rows.map(row => ({
+      date: row._id,
+      followerCount: lastMetric(row.followerCounts),
+      followingCount: lastMetric(row.followingCounts),
+      postsCount: lastMetric(row.postsCounts),
+      views: sumMetric(row.views),
+      reach: sumMetric(row.reach),
+      likes: sumMetric(row.likes),
+      comments: sumMetric(row.comments),
+      shares: sumMetric(row.shares),
+      saves: sumMetric(row.saves),
+      engagement: sumMetric(row.engagements),
+      engagementRate: lastMetric(row.engagementRates),
+    })),
+  )
 }
 
 type WorkspaceSeriesQuery = {
@@ -232,20 +258,22 @@ export const getWorkspaceAnalyticsSeries = async (
     }),
   )
 
-  return rows.map(row => ({
-    date: row._id,
-    followerCount: sumMetric(row.followerCounts),
-    followingCount: sumMetric(row.followingCounts),
-    postsCount: sumMetric(row.postsCounts),
-    views: row.hasViews ? row.views : null,
-    reach: row.hasReach ? row.reach : null,
-    likes: row.likes,
-    comments: row.comments,
-    shares: row.shares,
-    saves: row.saves,
-    engagement: row.hasEngagement ? row.engagement : null,
-    engagementRate: null,
-  }))
+  return withPostsPublishedDeltas(
+    rows.map(row => ({
+      date: row._id,
+      followerCount: sumMetric(row.followerCounts),
+      followingCount: sumMetric(row.followingCounts),
+      postsCount: sumMetric(row.postsCounts),
+      views: row.hasViews ? row.views : null,
+      reach: row.hasReach ? row.reach : null,
+      likes: row.likes,
+      comments: row.comments,
+      shares: row.shares,
+      saves: row.saves,
+      engagement: row.hasEngagement ? row.engagement : null,
+      engagementRate: null,
+    })),
+  )
 }
 
 type BreakdownQuery = {
@@ -395,7 +423,7 @@ export const getWorkspaceProviderSeries = async (
 
   return Array.from(byProvider.entries()).map(([provider, points]) => ({
     provider,
-    points,
+    points: withPostsPublishedDeltas(points),
   }))
 }
 
@@ -570,15 +598,19 @@ function mapPerformanceRow(row: WorkspaceAccountPerformanceRow): WorkspaceAccoun
     followerGrowthPercent: row.followerGrowthPercent,
     views: row.views,
     reach: row.reach,
+    previousReach: row.previousReach,
+    reachGrowth: row.reachGrowth,
     engagement: row.engagement,
+    previousEngagement: row.previousEngagement,
+    engagementGrowth: row.engagementGrowth,
     score: row.score,
   }
 }
 
 /**
- * Top winning and losing accounts for a workspace in a single aggregation.
- * Default rank: absolute follower growth (current − previous). Also supports
- * percent growth and period engagement. Uses $facet so winners + losers share one scan.
+ * Winning and losing accounts for a workspace in a single aggregation.
+ * Ranks by period-over-period delta (followers / engagement / reach).
+ * Winners require score > 0; losers require score < 0 — no overlap.
  */
 export const getWorkspaceAccountPerformanceLeaders = async (
   query: PerformanceLeadersQuery,
@@ -601,9 +633,15 @@ export const getWorkspaceAccountPerformanceLeaders = async (
     }),
   )
 
+  const partitioned = partitionPerformanceLeaders(
+    (result?.winners ?? []).map(mapPerformanceRow),
+    (result?.losers ?? []).map(mapPerformanceRow),
+    limit,
+  )
+
   return {
-    winners: (result?.winners ?? []).map(mapPerformanceRow),
-    losers: (result?.losers ?? []).map(mapPerformanceRow),
+    winners: partitioned.winners,
+    losers: partitioned.losers,
     rankBy,
     limit,
   }

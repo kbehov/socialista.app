@@ -24,7 +24,6 @@ export async function AccountPerformancePanel({
     rankBy,
     limit: 5,
   })
-  console.log('data', data)
 
   if (error || !data) {
     return (

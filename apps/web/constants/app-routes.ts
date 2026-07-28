@@ -6,6 +6,7 @@ export const DASHBOARD_ROUTES = {
   folder: (id: string) => `/dashboard/files/${id}`,
   PRODUCTS: '/dashboard/products',
   ACCOUNTS: '/dashboard/accounts',
+  accountAnalytics: (accountId: string) => `/dashboard/accounts/analytics/${accountId}`,
   ANALYTICS: '/dashboard/analytics',
   POSTS: '/dashboard/posts',
   GENERATIONS: '/dashboard/generations',

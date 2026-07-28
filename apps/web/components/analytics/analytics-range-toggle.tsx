@@ -13,11 +13,13 @@ const RANGE_OPTIONS = [
 
 export type AnalyticsRangeToggleProps = {
   range: AnalyticsRange
+  /** Path the range links navigate to. Defaults to workspace dashboard root. */
+  basePath?: string
   params?: Record<string, string | undefined>
   className?: string
 }
 
-function buildHref(range: AnalyticsRange, params?: Record<string, string | undefined>) {
+function buildHref(range: AnalyticsRange, basePath: string, params?: Record<string, string | undefined>) {
   const search = new URLSearchParams()
   search.set('range', range)
   if (params) {
@@ -25,10 +27,15 @@ function buildHref(range: AnalyticsRange, params?: Record<string, string | undef
       if (value) search.set(key, value)
     }
   }
-  return `${DASHBOARD_ROUTES.ROOT}?${search.toString()}`
+  return `${basePath}?${search.toString()}`
 }
 
-function AnalyticsRangeToggle({ range, params, className }: AnalyticsRangeToggleProps) {
+function AnalyticsRangeToggle({
+  range,
+  basePath = DASHBOARD_ROUTES.ROOT,
+  params,
+  className,
+}: AnalyticsRangeToggleProps) {
   return (
     <DashboardSegment className={cn(className)} label="Analytics time range">
       {RANGE_OPTIONS.map(option => {
@@ -36,7 +43,7 @@ function AnalyticsRangeToggle({ range, params, className }: AnalyticsRangeToggle
         return (
           <Link
             key={option.value}
-            href={buildHref(option.value, params)}
+            href={buildHref(option.value, basePath, params)}
             role="tab"
             aria-selected={active}
             className={dashboardSegmentLinkClass(active)}

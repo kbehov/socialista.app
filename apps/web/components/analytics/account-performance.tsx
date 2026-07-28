@@ -1,8 +1,10 @@
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
+import Link from 'next/link'
 
 import { dashboardSurface } from '@/components/dashboard/surface'
 import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import {
   formatCount,
@@ -56,30 +58,24 @@ function rankByLabel(rankBy: AnalyticsAccountPerformanceRankBy): string {
     case 'followerGrowthPercent':
       return 'follower growth %'
     case 'engagement':
-      return 'engagement'
+      return 'engagement change'
     case 'reach':
-      return 'reach'
+      return 'reach change'
     case 'followerGrowth':
     default:
       return 'follower growth'
   }
 }
 
+/** Always show the ranking delta — winners are gains, losers are declines. */
 function primaryScore(
   row: AnalyticsAccountPerformanceRow,
   rankBy: AnalyticsAccountPerformanceRankBy,
 ): string {
-  switch (rankBy) {
-    case 'followerGrowthPercent':
-      return formatPercent(row.followerGrowthPercent)
-    case 'engagement':
-      return formatCount(row.engagement)
-    case 'reach':
-      return formatCount(row.reach)
-    case 'followerGrowth':
-    default:
-      return formatSignedCount(row.followerGrowth)
+  if (rankBy === 'followerGrowthPercent') {
+    return formatPercent(row.score)
   }
+  return formatSignedCount(row.score)
 }
 
 function secondaryMeta(
@@ -88,22 +84,23 @@ function secondaryMeta(
 ): string {
   const parts: string[] = []
 
-  if (rankBy === 'followerGrowth' && row.followerGrowthPercent !== null) {
-    parts.push(formatPercent(row.followerGrowthPercent))
-  } else if (rankBy === 'followerGrowthPercent' && row.followerGrowth !== null) {
-    parts.push(formatSignedCount(row.followerGrowth))
-  } else if (rankBy === 'engagement' || rankBy === 'reach') {
-    if (row.followerGrowth !== null) {
-      parts.push(`${formatSignedCount(row.followerGrowth)} followers`)
-    }
-  }
-
-  if (rankBy !== 'reach' && row.reach !== null) {
-    parts.push(`${formatCount(row.reach)} reach`)
-  } else if (rankBy === 'reach' && row.engagement !== null) {
-    parts.push(`${formatCount(row.engagement)} eng.`)
-  } else if (row.followers !== null) {
-    parts.push(`${formatCount(row.followers)} followers`)
+  switch (rankBy) {
+    case 'followerGrowth':
+      if (row.followerGrowthPercent !== null) parts.push(formatPercent(row.followerGrowthPercent))
+      if (row.followers !== null) parts.push(`${formatCount(row.followers)} now`)
+      break
+    case 'followerGrowthPercent':
+      if (row.followerGrowth !== null) parts.push(formatSignedCount(row.followerGrowth))
+      if (row.followers !== null) parts.push(`${formatCount(row.followers)} now`)
+      break
+    case 'engagement':
+      if (row.engagement !== null) parts.push(`${formatCount(row.engagement)} this period`)
+      if (row.previousEngagement !== null) parts.push(`${formatCount(row.previousEngagement)} prior`)
+      break
+    case 'reach':
+      if (row.reach !== null) parts.push(`${formatCount(row.reach)} this period`)
+      if (row.previousReach !== null) parts.push(`${formatCount(row.previousReach)} prior`)
+      break
   }
 
   return parts.join(' · ')
@@ -122,13 +119,17 @@ function AccountPerformance({
   className,
   limit = 5,
 }: AccountPerformanceProps) {
-  const winners = (
+  const scopedWinners =
     provider === 'all' ? data.winners : data.winners.filter(row => row.account.provider === provider)
-  ).slice(0, limit)
-
-  const losers = (
+  const scopedLosers =
     provider === 'all' ? data.losers : data.losers.filter(row => row.account.provider === provider)
-  ).slice(0, limit)
+
+  // Defense in depth: winners = score > 0, losers = score < 0, never both.
+  const winners = scopedWinners.filter(row => row.score > 0).slice(0, limit)
+  const winnerIds = new Set(winners.map(row => row.account.id))
+  const losers = scopedLosers
+    .filter(row => row.score < 0 && !winnerIds.has(row.account.id))
+    .slice(0, limit)
 
   return (
     <AnalyticsSection
@@ -173,7 +174,9 @@ function PerformanceColumn({
 
       {rows.length === 0 ? (
         <div className={cn('flex min-h-28 items-center justify-center', dashboardSurface.insetDashed)}>
-          <p className="text-xs text-muted-foreground">No accounts to rank yet.</p>
+          <p className="text-xs text-muted-foreground">
+            {tone === 'up' ? 'No gains this period.' : 'No declines this period.'}
+          </p>
         </div>
       ) : (
         <ol className="flex flex-col gap-1.5">
@@ -207,34 +210,42 @@ function PerformanceRow({
   const meta = secondaryMeta(row, rankBy)
 
   return (
-    <li className={cn('flex items-center gap-2.5 px-3 py-2.5', dashboardSurface.inset)}>
-      <span className="w-4 shrink-0 text-center text-[10px] font-medium tabular-nums text-muted-foreground/70">
-        {String(rank).padStart(2, '0')}
-      </span>
-
-      <div className="relative shrink-0">
-        <Avatar size="sm" className="rounded-md after:rounded-md">
-          {row.account.avatar ? <AvatarImage src={row.account.avatar} alt={row.account.accountName} /> : null}
-          <AvatarFallback className="rounded-md text-[9px] font-medium">
-            {getInitials(row.account.accountName)}
-          </AvatarFallback>
-        </Avatar>
-        <span className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center overflow-hidden rounded ring-2 ring-background">
-          <SocialPlatformIcon provider={row.account.provider} size={10} className="size-3.5 rounded" />
+    <li>
+      <Link
+        href={DASHBOARD_ROUTES.accountAnalytics(row.account.id)}
+        className={cn(
+          'flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-muted/40',
+          dashboardSurface.inset,
+        )}
+      >
+        <span className="w-4 shrink-0 text-center text-[10px] font-medium tabular-nums text-muted-foreground/70">
+          {String(rank).padStart(2, '0')}
         </span>
-      </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-foreground">{row.account.accountName}</p>
-        <p className="truncate text-[11px] text-muted-foreground">
-          {handle ?? meta}
-          {handle && meta ? ` · ${meta}` : null}
+        <div className="relative shrink-0">
+          <Avatar size="sm" className="rounded-md after:rounded-md">
+            {row.account.avatar ? <AvatarImage src={row.account.avatar} alt={row.account.accountName} /> : null}
+            <AvatarFallback className="rounded-md text-[9px] font-medium">
+              {getInitials(row.account.accountName)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center overflow-hidden rounded ring-2 ring-background">
+            <SocialPlatformIcon provider={row.account.provider} size={10} className="size-3.5 rounded" />
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium text-foreground">{row.account.accountName}</p>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {handle ?? meta}
+            {handle && meta ? ` · ${meta}` : null}
+          </p>
+        </div>
+
+        <p className={cn('shrink-0 text-sm font-semibold tabular-nums tracking-tight', scoreClassName)}>
+          {primaryScore(row, rankBy)}
         </p>
-      </div>
-
-      <p className={cn('shrink-0 text-sm font-semibold tabular-nums tracking-tight', scoreClassName)}>
-        {primaryScore(row, rankBy)}
-      </p>
+      </Link>
     </li>
   )
 }

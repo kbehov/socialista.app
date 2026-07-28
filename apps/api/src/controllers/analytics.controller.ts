@@ -1,7 +1,5 @@
 import type { AnalyticsContext } from '@/middlewares/analytics-access.middleware.js'
 import { detectAnomalies } from '@/utils/analytics-anomaly.js'
-import { parseParamId } from '@/utils/common.utils.js'
-import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   changePercent,
   emptyAnalyticsMetrics,
@@ -12,7 +10,11 @@ import {
   resolveAnalyticsPeriods,
   sumMetrics,
   toSeriesPoints,
+  type AnalyticsPeriodWindow,
 } from '@/utils/analytics.utils.js'
+import { parseParamId } from '@/utils/common.utils.js'
+import { csvResponse } from '@/utils/csv.utils.js'
+import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   AccountAnalyticsStatus,
   countPostsByStatus,
@@ -30,6 +32,7 @@ import {
   hasAnalyticsAccess,
   PostStatus,
   type IAccount,
+  type WorkspaceAccountBreakdownRow,
   type WorkspaceAccountPerformanceRow,
   type WorkspaceProviderBreakdownRow,
 } from '@socialista/db'
@@ -49,6 +52,61 @@ import type {
   WorkspaceAnalyticsSummaryResponse,
 } from '@socialista/types'
 import type { Context } from 'hono'
+
+const METRIC_KEYS = [
+  'followers',
+  'following',
+  'posts',
+  'views',
+  'reach',
+  'likes',
+  'comments',
+  'shares',
+  'saves',
+  'engagement',
+  'engagementRate',
+] as const satisfies ReadonlyArray<keyof AnalyticsMetrics>
+
+const WORKSPACE_SUMMARY_CSV_COLUMNS = [
+  'accountId',
+  'accountName',
+  'username',
+  'provider',
+  'followers',
+  'views',
+  'engagement',
+  'engagementRate',
+  'followersChangePercent',
+  'analyticsStatus',
+  'range',
+  'periodStart',
+  'periodEnd',
+] as const
+
+const ACCOUNT_SUMMARY_CSV_COLUMNS = [
+  'accountId',
+  'accountName',
+  'username',
+  'provider',
+  'range',
+  'periodStart',
+  'periodEnd',
+  ...METRIC_KEYS,
+  ...METRIC_KEYS.map(key => `previous${capitalizeMetric(key)}`),
+  ...METRIC_KEYS.map(key => `${key}ChangePercent`),
+] as const
+
+function capitalizeMetric(key: keyof AnalyticsMetrics): string {
+  return key.charAt(0).toUpperCase() + key.slice(1)
+}
+
+function csvDateStamp(date = new Date()): string {
+  return date.toISOString().slice(0, 10)
+}
+
+function csvCell(value: string | number | null | undefined): string | number {
+  return value ?? ''
+}
 
 function toAccountInfo(account: IAccount): AnalyticsAccountInfo {
   return {
@@ -126,26 +184,68 @@ function metricsFromProviderRow(
   }
 }
 
-export const getAccountAnalytics = async (c: Context<AnalyticsContext>) => {
-  const workspaceId = c.get('workspaceId')
-  const accountId = parseParamId(c.req.param('accountId'), 'account ID')
-  const range = parseAnalyticsRange(c.req.query('range'))
-  const periods = resolveAnalyticsPeriods(range)
+/** Map breakdown + connected accounts into summary account rows (shared by JSON + CSV). */
+function buildWorkspaceAccountBreakdownRows(
+  breakdownRows: WorkspaceAccountBreakdownRow[],
+  accounts: IAccount[],
+): AnalyticsAccountBreakdownRow[] {
+  const accountsById = new Map(accounts.map(account => [account._id.toString(), account]))
 
-  const account = await getAccountById(accountId)
-  if (!account || account.workspace.toString() !== workspaceId) {
-    throw new HttpError(404, 'Account not found')
+  const rows: AnalyticsAccountBreakdownRow[] = breakdownRows.map(row => {
+    const account = accountsById.get(row.accountId)
+    const engagementRate =
+      row.engagement !== null && row.reach !== null && row.reach > 0
+        ? row.engagement / row.reach
+        : row.engagement !== null && row.followerCount !== null && row.followerCount > 0
+          ? row.engagement / row.followerCount
+          : null
+
+    const info: AnalyticsAccountInfo = account
+      ? toAccountInfo(account)
+      : {
+          id: row.accountId,
+          provider: 'instagram',
+          accountName: 'Unknown',
+        }
+
+    return {
+      account: info,
+      followers: row.followerCount,
+      views: row.views,
+      engagement: row.engagement,
+      engagementRate,
+      followersChangePercent: changePercent(row.followerCount, row.previousFollowerCount),
+      dataQuality: account
+        ? toDataQuality(account, [])
+        : { status: AccountAnalyticsStatus.OK, missingMetrics: [] },
+    }
+  })
+
+  // Include connected accounts that have no snapshots yet so the UI can show empty rows.
+  for (const account of accounts) {
+    const id = account._id.toString()
+    if (rows.some(row => row.account.id === id)) continue
+    rows.push({
+      account: toAccountInfo(account),
+      followers: account.followersCount ?? null,
+      views: null,
+      engagement: null,
+      engagementRate: null,
+      followersChangePercent: null,
+      dataQuality: toDataQuality(account, []),
+    })
   }
 
-  const [seriesPoints, missingMetrics] = await Promise.all([
-    getAccountAnalyticsSeries({
-      accountId,
-      start: periods.seriesStart,
-      end: periods.currentEnd,
-      granularity: periods.granularity,
-    }),
-    getLatestMissingMetrics(accountId),
-  ])
+  return rows
+}
+
+async function loadAccountPeriodMetrics(accountId: string, periods: AnalyticsPeriodWindow) {
+  const seriesPoints = await getAccountAnalyticsSeries({
+    accountId,
+    start: periods.seriesStart,
+    end: periods.currentEnd,
+    granularity: periods.granularity,
+  })
 
   // Also load previous period points that may fall before seriesStart for daily edge cases.
   const previousPoints =
@@ -158,8 +258,28 @@ export const getAccountAnalytics = async (c: Context<AnalyticsContext>) => {
         })
       : seriesPoints
 
-  const current = metricsFromSeries(previousPoints, periods.currentStart, periods.currentEnd)
-  const previous = metricsFromSeries(previousPoints, periods.previousStart, periods.previousEnd)
+  return {
+    seriesPoints,
+    current: metricsFromSeries(previousPoints, periods.currentStart, periods.currentEnd),
+    previous: metricsFromSeries(previousPoints, periods.previousStart, periods.previousEnd),
+  }
+}
+
+export const getAccountAnalytics = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const accountId = parseParamId(c.req.param('accountId'), 'account ID')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+
+  const account = await getAccountById(accountId)
+  if (!account || account.workspace.toString() !== workspaceId) {
+    throw new HttpError(404, 'Account not found')
+  }
+
+  const [{ seriesPoints, current, previous }, missingMetrics] = await Promise.all([
+    loadAccountPeriodMetrics(accountId, periods),
+    getLatestMissingMetrics(accountId),
+  ])
 
   const chartSeries = toSeriesPoints(
     seriesPoints.filter(p => p.date >= periods.seriesStart && p.date < periods.currentEnd),
@@ -202,54 +322,10 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
     getAccounts(`workspace=${workspaceId}&limit=100`),
   ])
 
-  const accountsById = new Map(
-    accountsResult.accounts.map(account => [account._id.toString(), account as IAccount]),
+  const accounts = buildWorkspaceAccountBreakdownRows(
+    breakdownRows,
+    accountsResult.accounts as IAccount[],
   )
-
-  const accounts: AnalyticsAccountBreakdownRow[] = breakdownRows.map(row => {
-    const account = accountsById.get(row.accountId)
-    const engagementRate =
-      row.engagement !== null && row.reach !== null && row.reach > 0
-        ? row.engagement / row.reach
-        : row.engagement !== null && row.followerCount !== null && row.followerCount > 0
-          ? row.engagement / row.followerCount
-          : null
-
-    const info: AnalyticsAccountInfo = account
-      ? toAccountInfo(account)
-      : {
-          id: row.accountId,
-          provider: 'instagram',
-          accountName: 'Unknown',
-        }
-
-    return {
-      account: info,
-      followers: row.followerCount,
-      views: row.views,
-      engagement: row.engagement,
-      engagementRate,
-      followersChangePercent: changePercent(row.followerCount, row.previousFollowerCount),
-      dataQuality: account
-        ? toDataQuality(account, [])
-        : { status: AccountAnalyticsStatus.OK, missingMetrics: [] },
-    }
-  })
-
-  // Include connected accounts that have no snapshots yet so the UI can show empty rows.
-  for (const account of accountsResult.accounts as IAccount[]) {
-    const id = account._id.toString()
-    if (accounts.some(row => row.account.id === id)) continue
-    accounts.push({
-      account: toAccountInfo(account),
-      followers: account.followersCount ?? null,
-      views: null,
-      engagement: null,
-      engagementRate: null,
-      followersChangePercent: null,
-      dataQuality: toDataQuality(account, []),
-    })
-  }
 
   const totals = sumMetrics(
     accounts.map(row => ({
@@ -324,6 +400,101 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
   }
 
   return successResponse(c, 200, response)
+}
+
+/** Export workspace account breakdown as CSV (same range as summary; skips series query). */
+export const exportWorkspaceAnalyticsSummaryCsv = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+
+  const [breakdownRows, accountsResult] = await Promise.all([
+    getWorkspaceAccountBreakdown({
+      workspaceId,
+      currentStart: periods.currentStart,
+      currentEnd: periods.currentEnd,
+      previousStart: periods.previousStart,
+      previousEnd: periods.previousEnd,
+    }),
+    getAccounts(`workspace=${workspaceId}&limit=100`),
+  ])
+
+  const accounts = buildWorkspaceAccountBreakdownRows(
+    breakdownRows,
+    accountsResult.accounts as IAccount[],
+  )
+
+  const periodStart = periods.currentStart.toISOString()
+  const periodEnd = periods.currentEnd.toISOString()
+
+  const rows = accounts.map(row => ({
+    accountId: row.account.id,
+    accountName: row.account.accountName,
+    username: csvCell(row.account.username),
+    provider: row.account.provider,
+    followers: csvCell(row.followers),
+    views: csvCell(row.views),
+    engagement: csvCell(row.engagement),
+    engagementRate: csvCell(row.engagementRate),
+    followersChangePercent: csvCell(row.followersChangePercent),
+    analyticsStatus: row.dataQuality.status,
+    range,
+    periodStart,
+    periodEnd,
+  }))
+
+  return csvResponse(
+    c,
+    `analytics-summary-${range}-${csvDateStamp()}.csv`,
+    [...WORKSPACE_SUMMARY_CSV_COLUMNS],
+    rows,
+  )
+}
+
+/** Export a single account period summary as CSV (same range as account analytics). */
+export const exportAccountAnalyticsCsv = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const accountId = parseParamId(c.req.param('accountId'), 'account ID')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+
+  const account = await getAccountById(accountId)
+  if (!account || account.workspace.toString() !== workspaceId) {
+    throw new HttpError(404, 'Account not found')
+  }
+
+  const { current, previous } = await loadAccountPeriodMetrics(accountId, periods)
+  const change = metricsChangePercent(current, previous)
+  const info = toAccountInfo(account)
+
+  const row: Record<string, string | number> = {
+    accountId: info.id,
+    accountName: info.accountName,
+    username: csvCell(info.username),
+    provider: info.provider,
+    range,
+    periodStart: periods.currentStart.toISOString(),
+    periodEnd: periods.currentEnd.toISOString(),
+  }
+
+  for (const key of METRIC_KEYS) {
+    row[key] = csvCell(current[key])
+    row[`previous${capitalizeMetric(key)}`] = csvCell(previous[key])
+    row[`${key}ChangePercent`] = csvCell(change[key])
+  }
+
+  const safeName = (info.username || info.accountName || accountId)
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+
+  return csvResponse(
+    c,
+    `analytics-${safeName || accountId}-${range}-${csvDateStamp()}.csv`,
+    [...ACCOUNT_SUMMARY_CSV_COLUMNS],
+    [row],
+  )
 }
 
 /** Fast overview: free stats for everyone; premium totals when the workspace is Pro+. */
@@ -577,7 +748,11 @@ function toPerformanceRow(
     followerGrowthPercent: row.followerGrowthPercent,
     views: row.views,
     reach: row.reach,
+    previousReach: row.previousReach,
+    reachGrowth: row.reachGrowth,
     engagement: row.engagement,
+    previousEngagement: row.previousEngagement,
+    engagementGrowth: row.engagementGrowth,
     score: row.score,
   }
 }

@@ -7,6 +7,7 @@ import type {
   SocialProvider,
 } from '@socialista/types'
 
+import { AnalyticsExportCsvButton } from './analytics-export-csv-button'
 import { AnalyticsSection } from './analytics-section'
 import { AnalyticsSkeleton, MetricCardsSkeleton } from './analytics-skeleton'
 import { OverviewMetrics } from './overview-metrics'
@@ -43,8 +44,21 @@ function AnalyticsDashboard({
 
   return (
     <div className="flex w-full flex-col gap-4 pb-8">
-      {platforms.length > 0 ? (
-        <PlatformFilter platforms={platforms} active={provider} range={range} rankBy={rankBy} />
+      {platforms.length > 0 || isPremium ? (
+        <div className="flex flex-row items-center gap-3">
+          {platforms.length > 0 ? (
+            <PlatformFilter
+              platforms={platforms}
+              active={provider}
+              range={range}
+              rankBy={rankBy}
+              className="min-w-0 flex-1"
+            />
+          ) : (
+            <div className="min-w-0 flex-1" />
+          )}
+          {isPremium ? <AnalyticsExportCsvButton workspaceId={workspaceId} range={range} /> : null}
+        </div>
       ) : null}
 
       <OverviewMetrics overview={overview} />

@@ -21,7 +21,7 @@ export type AnalyticsPeriodWindow = {
 }
 
 export function parseAnalyticsRange(value: string | undefined): AnalyticsRange {
-  const range = (value ?? 'weekly').toLowerCase()
+  const range = (value ?? 'daily').toLowerCase()
   if (range === 'daily' || range === 'weekly' || range === 'monthly') {
     return range
   }
@@ -141,21 +141,6 @@ function lastInRange(
   return value
 }
 
-function firstInRange(
-  points: AccountAnalyticsSeriesPoint[],
-  start: Date,
-  end: Date,
-  field: keyof AccountAnalyticsSeriesPoint,
-): number | null {
-  for (const point of points) {
-    if (point.date >= start && point.date < end) {
-      const v = point[field]
-      if (typeof v === 'number' && Number.isFinite(v)) return v
-    }
-  }
-  return null
-}
-
 function sumInRange(
   points: AccountAnalyticsSeriesPoint[],
   start: Date,
@@ -183,7 +168,7 @@ function engagementRate(engagement: number | null, reach: number | null, followe
   return null
 }
 
-/** Build dashboard metrics for a period from series points (gauges = last, flows = sum, posts = delta). */
+/** Build dashboard metrics for a period from series points (gauges = last, flows/posts = sum). */
 export function metricsFromSeries(
   points: AccountAnalyticsSeriesPoint[],
   start: Date,
@@ -191,12 +176,8 @@ export function metricsFromSeries(
 ): AnalyticsMetrics {
   const followers = lastInRange(points, start, end, 'followerCount')
   const following = lastInRange(points, start, end, 'followingCount')
-  const firstPosts = firstInRange(points, start, end, 'postsCount')
-  const lastPosts = lastInRange(points, start, end, 'postsCount')
-  const posts =
-    typeof firstPosts === 'number' && typeof lastPosts === 'number'
-      ? Math.max(0, lastPosts - firstPosts)
-      : lastPosts
+  // Series postsCount is already posts published per bucket — sum for the period.
+  const posts = sumInRange(points, start, end, 'postsCount')
 
   const views = sumInRange(points, start, end, 'views')
   const reach = sumInRange(points, start, end, 'reach')

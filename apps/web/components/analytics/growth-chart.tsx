@@ -38,11 +38,21 @@ const METRIC_CHART_CONFIG: Record<ChartMetric, ChartConfig> = {
 
 const CHART_MARGIN = { top: 8, right: 12, left: 0, bottom: 0 } as const
 
+/** Lean series payload used by per-account analytics (no byProvider). */
+export type GrowthChartSeriesData = {
+  range: AnalyticsRange
+  series: AnalyticsSeriesPoint[]
+}
+
 export type GrowthChartProps = {
-  data: AnalyticsGrowthResponse
+  data: AnalyticsGrowthResponse | GrowthChartSeriesData
   /** When set, chart the provider series instead of workspace totals. */
   provider?: SocialProvider | 'all'
   className?: string
+}
+
+function isGrowthResponse(data: GrowthChartProps['data']): data is AnalyticsGrowthResponse {
+  return 'byProvider' in data
 }
 
 function parseLocalDate(date: string) {
@@ -96,8 +106,11 @@ function toChartData(series: AnalyticsSeriesPoint[], metric: ChartMetric, range:
   }))
 }
 
-function resolveSeries(data: AnalyticsGrowthResponse, provider?: SocialProvider | 'all') {
-  if (!provider || provider === 'all') return data.series
+function resolveSeries(
+  data: AnalyticsGrowthResponse | GrowthChartSeriesData,
+  provider?: SocialProvider | 'all',
+) {
+  if (!isGrowthResponse(data) || !provider || provider === 'all') return data.series
   return data.byProvider.find(group => group.provider === provider)?.series ?? []
 }
 

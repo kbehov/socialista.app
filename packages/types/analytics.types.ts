@@ -204,8 +204,12 @@ export type AnalyticsAccountPerformanceRow = {
   followerGrowthPercent: number | null
   views: number | null
   reach: number | null
+  previousReach: number | null
+  reachGrowth: number | null
   engagement: number | null
-  /** Value used for sorting — depends on `rankBy`. */
+  previousEngagement: number | null
+  engagementGrowth: number | null
+  /** Period-over-period delta used for ranking (positive = win, negative = loss). */
   score: number
 }
 

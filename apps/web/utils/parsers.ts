@@ -34,7 +34,7 @@ const PERFORMANCE_RANK_VALUES = new Set<AnalyticsAccountPerformanceRankBy>(
 export function parseAnalyticsRange(value: string | string[] | undefined): AnalyticsRange {
   const raw = Array.isArray(value) ? value[0] : value
   if (raw && RANGE_VALUES.has(raw as AnalyticsRange)) return raw as AnalyticsRange
-  return 'weekly'
+  return 'daily'
 }
 
 export function parseAnalyticsProvider(value: string | string[] | undefined): SocialProvider | 'all' {

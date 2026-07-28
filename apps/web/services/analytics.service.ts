@@ -1,7 +1,7 @@
 'use server'
 
 import { ANALYTICS_ROUTES } from '@/constants/routes'
-import { api } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import type {
   AccountAnalyticsResponse,
   AnalyticsAccountPerformanceRankBy,
@@ -53,7 +53,7 @@ export const getAnalyticsOverview = async (
   const path = withRange(ANALYTICS_ROUTES.GET_OVERVIEW(workspaceId), query?.range)
   return api.get<AnalyticsOverviewResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId)],
     },
   })
@@ -67,7 +67,7 @@ export const getAnalyticsGrowth = async (
   const path = withRange(ANALYTICS_ROUTES.GET_GROWTH(workspaceId), query?.range)
   return api.get<AnalyticsGrowthResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId)],
     },
   })
@@ -81,7 +81,7 @@ export const getAnalyticsPlatforms = async (
   const path = withRange(ANALYTICS_ROUTES.GET_PLATFORMS(workspaceId), query?.range)
   return api.get<AnalyticsPlatformsResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId)],
     },
   })
@@ -95,7 +95,7 @@ export const getAnalyticsAnomalies = async (
   const path = withRange(ANALYTICS_ROUTES.GET_ANOMALIES(workspaceId), query?.range)
   return api.get<AnalyticsAnomaliesResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId)],
     },
   })
@@ -113,7 +113,7 @@ export const getAnalyticsAccountPerformance = async (
   })
   return api.get<AnalyticsAccountPerformanceResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId)],
     },
   })
@@ -128,7 +128,7 @@ export const getAccountAnalytics = async (
   const path = withRange(ANALYTICS_ROUTES.GET_ACCOUNT(workspaceId, accountId), query?.range)
   return api.get<AccountAnalyticsResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId), `account-analytics-${accountId}`],
     },
   })
@@ -142,10 +142,58 @@ export const getWorkspaceAnalyticsSummary = async (
   const path = withRange(ANALYTICS_ROUTES.GET_SUMMARY(workspaceId), query?.range)
   return api.get<WorkspaceAnalyticsSummaryResponse>(path, {
     next: {
-      revalidate: 3600,
+      revalidate: 300, // 5 minutes
       tags: [overviewTag(workspaceId)],
     },
   })
+}
+
+export type AnalyticsCsvExport = {
+  csv: string
+  filename: string
+}
+
+function filenameFromDisposition(header: string | null, fallback: string): string {
+  if (!header) return fallback
+  const quoted = /filename="([^"]+)"/i.exec(header)
+  if (quoted?.[1]) return quoted[1]
+  const plain = /filename=([^;]+)/i.exec(header)
+  return plain?.[1]?.trim() || fallback
+}
+
+/** Download workspace summary account breakdown as CSV (Pro). */
+export const exportWorkspaceAnalyticsSummaryCsv = async (
+  workspaceId: string,
+  query?: GetAnalyticsQuery,
+): Promise<ApiResponse<AnalyticsCsvExport>> => {
+  const range = query?.range ?? 'daily'
+  const path = withRange(ANALYTICS_ROUTES.EXPORT_SUMMARY(workspaceId), query?.range)
+  const { text, contentDisposition } = await api.getText(path)
+  return {
+    success: true,
+    data: {
+      csv: text,
+      filename: filenameFromDisposition(contentDisposition, `analytics-summary-${range}.csv`),
+    },
+  }
+}
+
+/** Download a single account period summary as CSV (Pro). */
+export const exportAccountAnalyticsCsv = async (
+  workspaceId: string,
+  accountId: string,
+  query?: GetAnalyticsQuery,
+): Promise<ApiResponse<AnalyticsCsvExport>> => {
+  const range = query?.range ?? 'daily'
+  const path = withRange(ANALYTICS_ROUTES.EXPORT_ACCOUNT(workspaceId, accountId), query?.range)
+  const { text, contentDisposition } = await api.getText(path)
+  return {
+    success: true,
+    data: {
+      csv: text,
+      filename: filenameFromDisposition(contentDisposition, `analytics-${accountId}-${range}.csv`),
+    },
+  }
 }
 
 // React Server Component cache
@@ -244,3 +292,32 @@ export const loadUsage = cache(async ({ workspaceId }: { workspaceId: string }) 
     return { data: null, error: error instanceof Error ? error.message : 'Failed to load usage data' }
   }
 })
+
+export const loadAccountAnalytics = cache(
+  async ({
+    workspaceId,
+    accountId,
+    range,
+  }: {
+    workspaceId: string
+    accountId: string
+    range: AnalyticsRange
+  }) => {
+    try {
+      const { success, data, message } = await getAccountAnalytics(workspaceId, accountId, { range })
+      if (!success) {
+        throw new Error(message)
+      }
+      return { data, error: null, notFound: false }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return { data: null, error: null, notFound: true }
+      }
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Failed to load account analytics',
+        notFound: false,
+      }
+    }
+  },
+)

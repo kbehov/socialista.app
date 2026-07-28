@@ -10,9 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import type { ConfirmAction } from '@/types/account.types'
 import type { AccountSummary } from '@socialista/types'
-import { MoreHorizontalIcon, PencilIcon, PlugIcon, Trash2Icon, UnplugIcon } from 'lucide-react'
+import { BarChart3Icon, MoreHorizontalIcon, PencilIcon, PlugIcon, Trash2Icon, UnplugIcon } from 'lucide-react'
+import Link from 'next/link'
 
 type AccountActionsMenuProps = {
   account: AccountSummary
@@ -40,6 +42,12 @@ export function AccountActionsMenu({ account, onAction, onEdit, triggerClassName
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem asChild>
+          <Link href={DASHBOARD_ROUTES.accountAnalytics(account._id)}>
+            <BarChart3Icon />
+            Analytics
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onEdit(account)}>
           <PencilIcon />
           Edit

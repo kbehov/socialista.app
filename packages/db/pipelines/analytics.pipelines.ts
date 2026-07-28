@@ -139,6 +139,8 @@ export function hasDailyAnchorMetricInRange(metricPath: string, range: PeriodRan
 /**
  * Stage-1 accumulators shared by workspace + provider series:
  * latest gauges per account/date bucket, summed daily-anchor flows.
+ * postsCount stays a lifetime gauge here; callers convert to per-bucket
+ * published counts via adjacent deltas after the series is built.
  */
 export function accountDateBucketAccumulators() {
   return {
@@ -378,18 +380,31 @@ function scoreExpression(rankBy: AccountPerformanceRankBy) {
     case 'followerGrowthPercent':
       return '$followerGrowthPercent'
     case 'engagement':
-      return '$engagement'
+      return '$engagementGrowth'
     case 'reach':
-      return '$reach'
+      return '$reachGrowth'
     case 'followerGrowth':
     default:
       return '$followerGrowth'
   }
 }
 
+function periodDelta(currentField: string, previousField: string) {
+  return {
+    $cond: [
+      {
+        $and: [{ $ne: [currentField, null] }, { $ne: [previousField, null] }],
+      },
+      { $subtract: [currentField, previousField] },
+      null,
+    ],
+  }
+}
+
 /**
- * Top / bottom accounts for a workspace in one pass ($facet).
- * Uses index `{ workspace: 1, bucketAt: -1 }`; only keeps lean gauge arrays.
+ * Winning / losing accounts in one pass ($facet).
+ * Score is always a period-over-period delta so lists never mirror each other:
+ * winners = score > 0, losers = score < 0, flat (0) excluded from both.
  */
 export function workspaceAccountPerformanceLeadersPipeline(input: {
   workspaceId: string
@@ -415,10 +430,14 @@ export function workspaceAccountPerformanceLeadersPipeline(input: {
         previousFollowers: pushNonNullMetricInRange('$metrics.followerCount', previous),
         views: sumDailyAnchorMetricInRange('$metrics.views', current),
         reach: sumDailyAnchorMetricInRange('$metrics.reach', current),
+        previousReach: sumDailyAnchorMetricInRange('$metrics.reach', previous),
         engagement: sumDailyAnchorMetricInRange('$metrics.engagement', current),
+        previousEngagement: sumDailyAnchorMetricInRange('$metrics.engagement', previous),
         hasViews: hasDailyAnchorMetricInRange('$metrics.views', current),
         hasReach: hasDailyAnchorMetricInRange('$metrics.reach', current),
+        hasPreviousReach: hasDailyAnchorMetricInRange('$metrics.reach', previous),
         hasEngagement: hasDailyAnchorMetricInRange('$metrics.engagement', current),
+        hasPreviousEngagement: hasDailyAnchorMetricInRange('$metrics.engagement', previous),
       },
     },
     {
@@ -437,25 +456,20 @@ export function workspaceAccountPerformanceLeadersPipeline(input: {
         reach: {
           $cond: [{ $eq: ['$hasReach', 1] }, '$reach', null],
         },
+        previousReach: {
+          $cond: [{ $eq: ['$hasPreviousReach', 1] }, '$previousReach', null],
+        },
         engagement: {
           $cond: [{ $eq: ['$hasEngagement', 1] }, '$engagement', null],
+        },
+        previousEngagement: {
+          $cond: [{ $eq: ['$hasPreviousEngagement', 1] }, '$previousEngagement', null],
         },
       },
     },
     {
       $addFields: {
-        followerGrowth: {
-          $cond: [
-            {
-              $and: [
-                { $ne: ['$followerCount', null] },
-                { $ne: ['$previousFollowerCount', null] },
-              ],
-            },
-            { $subtract: ['$followerCount', '$previousFollowerCount'] },
-            null,
-          ],
-        },
+        followerGrowth: periodDelta('$followerCount', '$previousFollowerCount'),
         followerGrowthPercent: {
           $cond: [
             {
@@ -479,6 +493,8 @@ export function workspaceAccountPerformanceLeadersPipeline(input: {
             null,
           ],
         },
+        engagementGrowth: periodDelta('$engagement', '$previousEngagement'),
+        reachGrowth: periodDelta('$reach', '$previousReach'),
       },
     },
     {
@@ -494,9 +510,53 @@ export function workspaceAccountPerformanceLeadersPipeline(input: {
     },
     {
       $facet: {
-        winners: [{ $sort: { score: -1, accountId: 1 } }, { $limit: input.limit }],
-        losers: [{ $sort: { score: 1, accountId: 1 } }, { $limit: input.limit }],
+        // Strictly positive deltas only — never share an account with losers.
+        winners: [
+          { $match: { $expr: { $gt: ['$score', 0] } } },
+          { $sort: { score: -1, accountId: 1 } },
+          { $limit: input.limit },
+        ],
+        // Strictly negative deltas only — zeros stay out of both lists.
+        losers: [
+          { $match: { $expr: { $lt: ['$score', 0] } } },
+          { $sort: { score: 1, accountId: 1 } },
+          { $limit: input.limit },
+        ],
       },
     },
   ]
+}
+
+/** Winner = strictly positive period delta. */
+export function isWinningPerformanceScore(score: number): boolean {
+  return Number.isFinite(score) && score > 0
+}
+
+/** Loser = strictly negative period delta (zeros are neither). */
+export function isLosingPerformanceScore(score: number): boolean {
+  return Number.isFinite(score) && score < 0
+}
+
+/**
+ * Harden aggregation output: keep winners (score > 0) and losers (score < 0)
+ * with no shared accountIds.
+ */
+export function partitionPerformanceLeaders<T extends { accountId: string; score: number }>(
+  winners: T[],
+  losers: T[],
+  limit: number,
+): { winners: T[]; losers: T[] } {
+  const winning = winners
+    .filter(row => isWinningPerformanceScore(row.score))
+    .sort((a, b) => b.score - a.score || a.accountId.localeCompare(b.accountId))
+    .slice(0, limit)
+
+  const winningIds = new Set(winning.map(row => row.accountId))
+
+  const losing = losers
+    .filter(row => isLosingPerformanceScore(row.score) && !winningIds.has(row.accountId))
+    .sort((a, b) => a.score - b.score || a.accountId.localeCompare(b.accountId))
+    .slice(0, limit)
+
+  return { winners: winning, losers: losing }
 }

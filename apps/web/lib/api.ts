@@ -48,8 +48,41 @@ async function request<T>(
   return parseJson<T>(response)
 }
 
+async function requestText(
+  path: string,
+  { headers, ...rest }: Omit<RequestOptions, 'body'> = {},
+): Promise<{ text: string; contentDisposition: string | null }> {
+  const { userId, accessToken } = await getAuthHeaders()
+  const resolvedHeaders = new Headers(headers)
+  resolvedHeaders.set('x-user-id', userId)
+  resolvedHeaders.set('Authorization', `Bearer ${accessToken}`)
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...rest,
+    method: 'GET',
+    headers: resolvedHeaders,
+  })
+
+  if (!response.ok) {
+    const contentType = response.headers.get('Content-Type') ?? ''
+    if (contentType.includes('application/json')) {
+      const body = await response.json().catch(() => null)
+      throw new ApiError(response.status, body?.message ?? response.statusText)
+    }
+    throw new ApiError(response.status, response.statusText)
+  }
+
+  return {
+    text: await response.text(),
+    contentDisposition: response.headers.get('Content-Disposition'),
+  }
+}
+
 export const api = {
   get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
+
+  /** Authenticated GET that returns raw text (e.g. CSV downloads). */
+  getText: (path: string, options?: Omit<RequestOptions, 'body'>) => requestText(path, options),
 
   post: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('POST', path, { ...options, body }),
 

@@ -1,4 +1,6 @@
 import {
+  exportAccountAnalyticsCsv,
+  exportWorkspaceAnalyticsSummaryCsv,
   getAccountAnalytics,
   getAnalyticsAccountPerformance,
   getAnalyticsAnomalies,
@@ -35,7 +37,11 @@ analyticsRoutes.get('/performance', getAnalyticsAccountPerformance)
 analyticsRoutes.use('/summary', requireAnalyticsAccess)
 analyticsRoutes.get('/summary', getWorkspaceAnalyticsSummary)
 
+analyticsRoutes.use('/summary/export', requireAnalyticsAccess)
+analyticsRoutes.get('/summary/export', exportWorkspaceAnalyticsSummaryCsv)
+
 analyticsRoutes.use('/accounts/*', requireAnalyticsAccess)
 analyticsRoutes.get('/accounts/:accountId', getAccountAnalytics)
+analyticsRoutes.get('/accounts/:accountId/export', exportAccountAnalyticsCsv)
 
 export default analyticsRoutes

@@ -133,8 +133,14 @@ export type WorkspaceAccountPerformanceRow = {
   followerGrowthPercent: number | null
   views: number | null
   reach: number | null
+  previousReach: number | null
+  /** Reach change vs previous period. */
+  reachGrowth: number | null
   engagement: number | null
-  /** Value used for sorting — depends on `rankBy`. */
+  previousEngagement: number | null
+  /** Engagement change vs previous period. */
+  engagementGrowth: number | null
+  /** Ranking delta for the selected metric (always period-over-period). */
   score: number
 }
 
