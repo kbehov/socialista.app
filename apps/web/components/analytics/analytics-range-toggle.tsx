@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { dashboardSegmentLinkClass, DashboardSegment } from '@/components/dashboard'
+import { DashboardSegment, dashboardSegmentLinkClass } from '@/components/dashboard/dashboard-segment'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import type { AnalyticsRange } from '@socialista/types'
@@ -39,7 +39,7 @@ function AnalyticsRangeToggle({ range, params, className }: AnalyticsRangeToggle
             href={buildHref(option.value, params)}
             role="tab"
             aria-selected={active}
-            className={dashboardSegmentLinkClass(active, 'px-2.5 py-1')}
+            className={dashboardSegmentLinkClass(active)}
           >
             {option.label}
           </Link>

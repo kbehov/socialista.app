@@ -114,3 +114,33 @@ export type WorkspaceProviderBreakdownRow = {
   previousEngagement: number | null
   previousPostsCount: number | null
 }
+
+/** Metric used to rank workspace accounts as winners / losers. */
+export type AccountPerformanceRankBy =
+  | 'followerGrowth'
+  | 'followerGrowthPercent'
+  | 'engagement'
+  | 'reach'
+
+export type WorkspaceAccountPerformanceRow = {
+  accountId: string
+  provider: SocialProvider
+  followerCount: number | null
+  previousFollowerCount: number | null
+  /** Absolute follower change (current − previous). */
+  followerGrowth: number | null
+  /** Percent follower change; null when previous is 0 or missing. */
+  followerGrowthPercent: number | null
+  views: number | null
+  reach: number | null
+  engagement: number | null
+  /** Value used for sorting — depends on `rankBy`. */
+  score: number
+}
+
+export type WorkspaceAccountPerformanceLeaders = {
+  winners: WorkspaceAccountPerformanceRow[]
+  losers: WorkspaceAccountPerformanceRow[]
+  rankBy: AccountPerformanceRankBy
+  limit: number
+}

@@ -1,7 +1,7 @@
-import { WorkspaceRequired } from '../../_components/workspace-required'
 import { VideoList } from '@/components/video/video-list'
 import { getWorkspaceVideos } from '@/services/video.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
 
 export default async function VideosPage() {
   const workspace = await getCurrentWorkspace()
@@ -15,11 +15,6 @@ export default async function VideosPage() {
   const error = response.success ? null : (response.message ?? 'Failed to load videos')
 
   return (
-    <VideoList
-      workspaceId={workspace.id}
-      workspaceName={workspace.name}
-      initialVideos={videos}
-      initialError={error}
-    />
+    <VideoList workspaceId={workspace.id} workspaceName={workspace.name} initialVideos={videos} initialError={error} />
   )
 }

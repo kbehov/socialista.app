@@ -1,12 +1,26 @@
 import Link from 'next/link'
 
-const Logo = () => {
+import { cn } from '@/lib/utils'
+
+type LogoProps = {
+  className?: string
+  href?: string
+}
+
+function Logo({ className, href = '/' }: LogoProps) {
   return (
-    <Link href="/" className="flex items-center gap-2 group">
-      <span className="bg-foreground size-6 rounded-md flex items-center justify-center text-background text-lg leading-none transition-transform duration-200 group-hover:scale-105">
+    <Link
+      href={href}
+      className={cn(
+        'group inline-flex items-center gap-2 text-foreground outline-none',
+        'focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        className,
+      )}
+    >
+      <span className="flex size-6 items-center justify-center rounded-md bg-foreground text-sm leading-none text-background transition-transform duration-150 ease-out group-hover:scale-105">
         ✹
       </span>
-      <span className="text-lg font-medium tracking-tight leading-none">Socialista</span>
+      <span className="text-[15px] font-semibold tracking-tight">Socialista</span>
     </Link>
   )
 }

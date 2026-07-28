@@ -188,3 +188,35 @@ export type AnalyticsAnomaliesResponse = {
   }
   anomalies: AnalyticsAnomaly[]
 }
+
+/** Metric used to rank workspace accounts as winners / losers. */
+export type AnalyticsAccountPerformanceRankBy =
+  | 'followerGrowth'
+  | 'followerGrowthPercent'
+  | 'engagement'
+  | 'reach'
+
+export type AnalyticsAccountPerformanceRow = {
+  account: AnalyticsAccountInfo
+  followers: number | null
+  previousFollowers: number | null
+  followerGrowth: number | null
+  followerGrowthPercent: number | null
+  views: number | null
+  reach: number | null
+  engagement: number | null
+  /** Value used for sorting — depends on `rankBy`. */
+  score: number
+}
+
+export type AnalyticsAccountPerformanceResponse = {
+  range: AnalyticsRange
+  period: {
+    current: AnalyticsPeriodBounds
+    previous: AnalyticsPeriodBounds
+  }
+  rankBy: AnalyticsAccountPerformanceRankBy
+  limit: number
+  winners: AnalyticsAccountPerformanceRow[]
+  losers: AnalyticsAccountPerformanceRow[]
+}

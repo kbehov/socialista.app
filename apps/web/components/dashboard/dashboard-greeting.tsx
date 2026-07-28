@@ -36,7 +36,7 @@ function DashboardGreeting({ greeting, name, period, className }: DashboardGreet
     <span className={cn('inline-flex min-w-0 items-center gap-2.5', className)}>
       <GreetingIcon period={period} />
       <span className="truncate">
-        {greeting}, <span className="text-foreground/90">{name}</span>
+        {greeting}, {name}
       </span>
     </span>
   )

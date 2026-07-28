@@ -25,28 +25,29 @@ function DashboardSection({
   headerClassName,
   size = 'sm',
 }: DashboardSectionProps) {
-  const padding = size === 'sm' ? 'px-4' : 'px-6'
-  const headerPad = size === 'sm' ? 'pb-3 pt-4' : 'pb-4 pt-6'
-  const contentPad = size === 'sm' ? 'pb-4' : 'pb-6'
+  const isSm = size === 'sm'
+  const padding = isSm ? 'px-4' : 'px-5'
+  const headerPad = isSm ? 'pb-3 pt-3.5' : 'pb-4 pt-5'
+  const contentPad = isSm ? 'pb-4' : 'pb-5'
 
   return (
     <section data-slot="dashboard-section" className={cn(dashboardSurface.section, className)}>
       <header
         className={cn(
-          'grid auto-rows-min items-start gap-1',
+          'flex items-start justify-between gap-3',
           dashboardSurface.sectionHeader,
           padding,
           headerPad,
-          description && 'grid-rows-[auto_auto]',
-          action && 'grid-cols-[1fr_auto]',
           headerClassName,
         )}
       >
-        <h2 className={dashboardSurface.sectionTitle}>{title}</h2>
-        {description ? <p className={dashboardSurface.sectionDescription}>{description}</p> : null}
-        {action ? <div className="col-start-2 row-span-2 row-start-1 justify-self-end">{action}</div> : null}
+        <div className="min-w-0 space-y-0.5">
+          <h2 className={dashboardSurface.sectionTitle}>{title}</h2>
+          {description ? <p className={dashboardSurface.sectionDescription}>{description}</p> : null}
+        </div>
+        {action ? <div className="shrink-0 self-center">{action}</div> : null}
       </header>
-      <div className={cn(padding, contentPad, 'min-h-0 pt-0', contentClassName)}>{children}</div>
+      <div className={cn(padding, contentPad, 'min-h-0 pt-3', contentClassName)}>{children}</div>
     </section>
   )
 }

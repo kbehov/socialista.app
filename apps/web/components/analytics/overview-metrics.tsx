@@ -11,7 +11,7 @@ import {
 
 import type { AnalyticsOverviewResponse } from '@socialista/types'
 
-import { formatCount, formatRate, formatSignedCount, trendFromPercent } from './lib/format'
+import { formatCount, formatRate, formatSignedCount, trendFromPercent } from '@/utils/format'
 import { StatMetric, StatMetrics } from './stat-metric'
 
 export type OverviewMetricsProps = {
@@ -26,7 +26,7 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
     return (
       <StatMetrics columns={6} size="sm" className={className}>
         <StatMetric
-          label="Total Engagement"
+          label="Engagement"
           value={formatCount(premium.totals.engagement)}
           icon={<FlameIcon />}
           iconClassName="text-orange-500"
@@ -39,13 +39,13 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
           trend={trendFromPercent(premium.changePercent.views)}
         />
         <StatMetric
-          label="Follower Growth"
+          label="Followers"
           value={formatSignedCount(premium.delta.followers)}
           icon={<UsersIcon />}
           trend={trendFromPercent(premium.changePercent.followers)}
         />
         <StatMetric
-          label="Engagement Rate"
+          label="Eng. rate"
           value={formatRate(premium.totals.engagementRate)}
           icon={<ThumbsUpIcon />}
           trend={trendFromPercent(premium.changePercent.engagementRate)}
@@ -57,7 +57,7 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
           trend={trendFromPercent(premium.changePercent.reach)}
         />
         <StatMetric
-          label="Published Posts"
+          label="Published"
           value={formatCount(free.publishedPosts)}
           icon={<SendIcon />}
           description={`${formatCount(free.scheduledPosts)} scheduled`}
@@ -69,7 +69,7 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
   return (
     <StatMetrics columns={4} size="sm" className={className}>
       <StatMetric
-        label="Connected Accounts"
+        label="Accounts"
         value={formatCount(free.connectedAccounts)}
         icon={<Link2Icon />}
         description={
@@ -78,10 +78,10 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
             : `${free.accountsByProvider.length} platforms`
         }
       />
-      <StatMetric label="Total Followers" value={formatCount(free.totalFollowers)} icon={<UsersIcon />} />
-      <StatMetric label="Scheduled Posts" value={formatCount(free.scheduledPosts)} icon={<CalendarClockIcon />} />
+      <StatMetric label="Followers" value={formatCount(free.totalFollowers)} icon={<UsersIcon />} />
+      <StatMetric label="Scheduled" value={formatCount(free.scheduledPosts)} icon={<CalendarClockIcon />} />
       <StatMetric
-        label="Published Posts"
+        label="Published"
         value={formatCount(free.publishedPosts)}
         icon={<SendIcon />}
         description={`${formatCount(free.draftPosts)} drafts`}

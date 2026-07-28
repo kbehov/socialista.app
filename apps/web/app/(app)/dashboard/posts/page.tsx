@@ -1,16 +1,12 @@
-import { dashboardSurface } from '@/components/dashboard'
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
+import { dashboardSurface } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import { PostsView } from '@/components/posts/posts-view'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import {
-  getPostsListQuery,
-  hasActivePostFilters,
-  parsePostFiltersFromSearchParams,
-} from '@/lib/post-filters'
+import { getPostsListQuery, hasActivePostFilters, parsePostFiltersFromSearchParams } from '@/lib/post-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getWorkspacePosts } from '@/services/post.service'
 import { formatItemCount } from '@/utils/format'
@@ -20,7 +16,7 @@ import { CalendarClockIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
-import { WorkspaceRequired } from '../_components/workspace-required'
+import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
 type PostsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>

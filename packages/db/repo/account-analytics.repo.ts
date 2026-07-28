@@ -1,20 +1,42 @@
 import { AccountAnalyticsSnapshotModel } from '../models/account-analytics-snapshot.model.js'
 import type {
   AccountAnalyticsSeriesPoint,
+  AccountPerformanceRankBy,
   AnalyticsGranularity,
   UpsertAnalyticsSnapshotInput,
   WorkspaceAccountBreakdownRow,
+  WorkspaceAccountPerformanceLeaders,
+  WorkspaceAccountPerformanceRow,
   WorkspaceProviderBreakdownRow,
   WorkspaceProviderSeriesGroup,
 } from '../types/account-analytics.types.js'
 import type { SocialProvider } from '../types/account.types.js'
 import { toObjectId } from '../utils/isValid.js'
+import {
+  ANALYTICS_UNIT_MAP,
+  currentPeriodFlowAccumulators,
+  lastNonNullReduce,
+  matchAccountBucketRange,
+  matchWorkspaceBucketRange,
+  periodGaugeAccumulators,
+  postsDeltaFromCounts,
+  previousPeriodFlowAccumulators,
+  pushDailyAnchorMetric,
+  pushMetricInRange,
+  sortByBucketAtAsc,
+  workspaceAccountPerformanceLeadersPipeline,
+  workspaceAnalyticsSeriesPipeline,
+  workspaceProviderSeriesPipeline,
+} from './analytics.pipelines.js'
 
-const UNIT_MAP: Record<AnalyticsGranularity, 'day' | 'week' | 'month'> = {
-  day: 'day',
-  week: 'week',
-  month: 'month',
-}
+const DEFAULT_PERFORMANCE_LIMIT = 10
+const MAX_PERFORMANCE_LIMIT = 50
+const PERFORMANCE_RANK_BY = new Set<AccountPerformanceRankBy>([
+  'followerGrowth',
+  'followerGrowthPercent',
+  'engagement',
+  'reach',
+])
 
 function sumMetric(values: Array<number | null | undefined>): number | null {
   let total = 0
@@ -120,7 +142,7 @@ type SeriesQuery = {
 export const getAccountAnalyticsSeries = async (
   query: SeriesQuery,
 ): Promise<AccountAnalyticsSeriesPoint[]> => {
-  const unit = UNIT_MAP[query.granularity]
+  const unit = ANALYTICS_UNIT_MAP[query.granularity]
 
   const rows = await AccountAnalyticsSnapshotModel.aggregate<{
     _id: Date
@@ -136,13 +158,8 @@ export const getAccountAnalyticsSeries = async (
     engagements: Array<number | null>
     engagementRates: Array<number | null>
   }>([
-    {
-      $match: {
-        account: toObjectId(query.accountId),
-        bucketAt: { $gte: query.start, $lt: query.end },
-      },
-    },
-    { $sort: { bucketAt: 1 } },
+    matchAccountBucketRange(query.accountId, query.start, query.end),
+    sortByBucketAtAsc,
     {
       $group: {
         _id: {
@@ -151,46 +168,14 @@ export const getAccountAnalyticsSeries = async (
         followerCounts: { $push: '$metrics.followerCount' },
         followingCounts: { $push: '$metrics.followingCount' },
         postsCounts: { $push: '$metrics.postsCount' },
-        views: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.views', null],
-          },
-        },
-        reach: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.reach', null],
-          },
-        },
-        likes: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.likes', null],
-          },
-        },
-        comments: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.comments', null],
-          },
-        },
-        shares: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.shares', null],
-          },
-        },
-        saves: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.saves', null],
-          },
-        },
-        engagements: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.engagement', null],
-          },
-        },
-        engagementRates: {
-          $push: {
-            $cond: [{ $eq: ['$isDailyAnchor', true] }, '$metrics.engagementRate', null],
-          },
-        },
+        views: pushDailyAnchorMetric('$metrics.views'),
+        reach: pushDailyAnchorMetric('$metrics.reach'),
+        likes: pushDailyAnchorMetric('$metrics.likes'),
+        comments: pushDailyAnchorMetric('$metrics.comments'),
+        shares: pushDailyAnchorMetric('$metrics.shares'),
+        saves: pushDailyAnchorMetric('$metrics.saves'),
+        engagements: pushDailyAnchorMetric('$metrics.engagement'),
+        engagementRates: pushDailyAnchorMetric('$metrics.engagementRate'),
       },
     },
     { $sort: { _id: 1 } },
@@ -223,8 +208,6 @@ type WorkspaceSeriesQuery = {
 export const getWorkspaceAnalyticsSeries = async (
   query: WorkspaceSeriesQuery,
 ): Promise<AccountAnalyticsSeriesPoint[]> => {
-  const unit = UNIT_MAP[query.granularity]
-
   const rows = await AccountAnalyticsSnapshotModel.aggregate<{
     _id: Date
     followerCounts: Array<number | null>
@@ -240,139 +223,14 @@ export const getWorkspaceAnalyticsSeries = async (
     hasViews: number
     hasReach: number
     hasEngagement: number
-  }>([
-    {
-      $match: {
-        workspace: toObjectId(query.workspaceId),
-        bucketAt: { $gte: query.start, $lt: query.end },
-      },
-    },
-    { $sort: { bucketAt: 1 } },
-    {
-      $group: {
-        _id: {
-          date: { $dateTrunc: { date: '$bucketAt', unit } },
-          account: '$account',
-        },
-        followerCount: { $last: '$metrics.followerCount' },
-        followingCount: { $last: '$metrics.followingCount' },
-        postsCount: { $last: '$metrics.postsCount' },
-        views: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.views', null] }] },
-              '$metrics.views',
-              0,
-            ],
-          },
-        },
-        reach: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.reach', null] }] },
-              '$metrics.reach',
-              0,
-            ],
-          },
-        },
-        likes: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.likes', null] }] },
-              '$metrics.likes',
-              0,
-            ],
-          },
-        },
-        comments: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.comments', null] }] },
-              '$metrics.comments',
-              0,
-            ],
-          },
-        },
-        shares: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.shares', null] }] },
-              '$metrics.shares',
-              0,
-            ],
-          },
-        },
-        saves: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.saves', null] }] },
-              '$metrics.saves',
-              0,
-            ],
-          },
-        },
-        engagement: {
-          $sum: {
-            $cond: [
-              {
-                $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.engagement', null] }],
-              },
-              '$metrics.engagement',
-              0,
-            ],
-          },
-        },
-        hasViews: {
-          $max: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.views', null] }] },
-              1,
-              0,
-            ],
-          },
-        },
-        hasReach: {
-          $max: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.reach', null] }] },
-              1,
-              0,
-            ],
-          },
-        },
-        hasEngagement: {
-          $max: {
-            $cond: [
-              {
-                $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.engagement', null] }],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-      },
-    },
-    {
-      $group: {
-        _id: '$_id.date',
-        followerCounts: { $push: '$followerCount' },
-        followingCounts: { $push: '$followingCount' },
-        postsCounts: { $push: '$postsCount' },
-        views: { $sum: { $cond: [{ $eq: ['$hasViews', 1] }, '$views', 0] } },
-        reach: { $sum: { $cond: [{ $eq: ['$hasReach', 1] }, '$reach', 0] } },
-        likes: { $sum: '$likes' },
-        comments: { $sum: '$comments' },
-        shares: { $sum: '$shares' },
-        saves: { $sum: '$saves' },
-        engagement: { $sum: { $cond: [{ $eq: ['$hasEngagement', 1] }, '$engagement', 0] } },
-        hasViews: { $max: '$hasViews' },
-        hasReach: { $max: '$hasReach' },
-        hasEngagement: { $max: '$hasEngagement' },
-      },
-    },
-    { $sort: { _id: 1 } },
-  ])
+  }>(
+    workspaceAnalyticsSeriesPipeline({
+      workspaceId: query.workspaceId,
+      start: query.start,
+      end: query.end,
+      unit: ANALYTICS_UNIT_MAP[query.granularity],
+    }),
+  )
 
   return rows.map(row => ({
     date: row._id,
@@ -402,6 +260,9 @@ type BreakdownQuery = {
 export const getWorkspaceAccountBreakdown = async (
   query: BreakdownQuery,
 ): Promise<WorkspaceAccountBreakdownRow[]> => {
+  const current = { start: query.currentStart, end: query.currentEnd }
+  const previous = { start: query.previousStart, end: query.previousEnd }
+
   const rows = await AccountAnalyticsSnapshotModel.aggregate<{
     _id: unknown
     currentFollowerCounts: Array<number | null>
@@ -418,235 +279,14 @@ export const getWorkspaceAccountBreakdown = async (
     hasViews: number
     hasReach: number
     hasEngagement: number
-    hasCurrentFollowers: number
-    hasPreviousFollowers: number
   }>([
-    {
-      $match: {
-        workspace: toObjectId(query.workspaceId),
-        bucketAt: { $gte: query.previousStart, $lt: query.currentEnd },
-      },
-    },
-    { $sort: { bucketAt: 1 } },
+    matchWorkspaceBucketRange(query.workspaceId, query.previousStart, query.currentEnd),
+    sortByBucketAtAsc,
     {
       $group: {
         _id: '$account',
-        currentFollowerCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                ],
-              },
-              '$metrics.followerCount',
-              null,
-            ],
-          },
-        },
-        currentFollowingCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                ],
-              },
-              '$metrics.followingCount',
-              null,
-            ],
-          },
-        },
-        currentPostsCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                ],
-              },
-              '$metrics.postsCount',
-              null,
-            ],
-          },
-        },
-        previousFollowerCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                ],
-              },
-              '$metrics.followerCount',
-              null,
-            ],
-          },
-        },
-        currentViews: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.views', null] },
-                ],
-              },
-              '$metrics.views',
-              0,
-            ],
-          },
-        },
-        currentReach: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.reach', null] },
-                ],
-              },
-              '$metrics.reach',
-              0,
-            ],
-          },
-        },
-        currentLikes: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.likes', null] },
-                ],
-              },
-              '$metrics.likes',
-              0,
-            ],
-          },
-        },
-        currentComments: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.comments', null] },
-                ],
-              },
-              '$metrics.comments',
-              0,
-            ],
-          },
-        },
-        currentShares: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.shares', null] },
-                ],
-              },
-              '$metrics.shares',
-              0,
-            ],
-          },
-        },
-        currentSaves: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.saves', null] },
-                ],
-              },
-              '$metrics.saves',
-              0,
-            ],
-          },
-        },
-        currentEngagement: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.engagement', null] },
-                ],
-              },
-              '$metrics.engagement',
-              0,
-            ],
-          },
-        },
-        hasViews: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.views', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasReach: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.reach', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasEngagement: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.engagement', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
+        ...periodGaugeAccumulators(current, previous),
+        ...currentPeriodFlowAccumulators(current),
       },
     },
   ])
@@ -675,8 +315,7 @@ export const getWorkspaceAccountBreakdown = async (
       saves: row.currentSaves || null,
       engagement: row.hasEngagement ? row.currentEngagement : null,
       previousFollowerCount:
-        previousFollowerCount ??
-        (typeof firstFollower === 'number' ? firstFollower : null),
+        previousFollowerCount ?? (typeof firstFollower === 'number' ? firstFollower : null),
     }
   })
 }
@@ -704,8 +343,6 @@ type ProviderSeriesQuery = {
 export const getWorkspaceProviderSeries = async (
   query: ProviderSeriesQuery,
 ): Promise<WorkspaceProviderSeriesGroup[]> => {
-  const unit = UNIT_MAP[query.granularity]
-
   const rows = await AccountAnalyticsSnapshotModel.aggregate<{
     _id: { date: Date; provider: SocialProvider }
     followerCounts: Array<number | null>
@@ -721,140 +358,14 @@ export const getWorkspaceProviderSeries = async (
     hasViews: number
     hasReach: number
     hasEngagement: number
-  }>([
-    {
-      $match: {
-        workspace: toObjectId(query.workspaceId),
-        bucketAt: { $gte: query.start, $lt: query.end },
-      },
-    },
-    { $sort: { bucketAt: 1 } },
-    {
-      $group: {
-        _id: {
-          date: { $dateTrunc: { date: '$bucketAt', unit } },
-          account: '$account',
-          provider: '$provider',
-        },
-        followerCount: { $last: '$metrics.followerCount' },
-        followingCount: { $last: '$metrics.followingCount' },
-        postsCount: { $last: '$metrics.postsCount' },
-        views: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.views', null] }] },
-              '$metrics.views',
-              0,
-            ],
-          },
-        },
-        reach: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.reach', null] }] },
-              '$metrics.reach',
-              0,
-            ],
-          },
-        },
-        likes: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.likes', null] }] },
-              '$metrics.likes',
-              0,
-            ],
-          },
-        },
-        comments: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.comments', null] }] },
-              '$metrics.comments',
-              0,
-            ],
-          },
-        },
-        shares: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.shares', null] }] },
-              '$metrics.shares',
-              0,
-            ],
-          },
-        },
-        saves: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.saves', null] }] },
-              '$metrics.saves',
-              0,
-            ],
-          },
-        },
-        engagement: {
-          $sum: {
-            $cond: [
-              {
-                $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.engagement', null] }],
-              },
-              '$metrics.engagement',
-              0,
-            ],
-          },
-        },
-        hasViews: {
-          $max: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.views', null] }] },
-              1,
-              0,
-            ],
-          },
-        },
-        hasReach: {
-          $max: {
-            $cond: [
-              { $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.reach', null] }] },
-              1,
-              0,
-            ],
-          },
-        },
-        hasEngagement: {
-          $max: {
-            $cond: [
-              {
-                $and: [{ $eq: ['$isDailyAnchor', true] }, { $ne: ['$metrics.engagement', null] }],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-      },
-    },
-    {
-      $group: {
-        _id: { date: '$_id.date', provider: '$_id.provider' },
-        followerCounts: { $push: '$followerCount' },
-        followingCounts: { $push: '$followingCount' },
-        postsCounts: { $push: '$postsCount' },
-        views: { $sum: { $cond: [{ $eq: ['$hasViews', 1] }, '$views', 0] } },
-        reach: { $sum: { $cond: [{ $eq: ['$hasReach', 1] }, '$reach', 0] } },
-        likes: { $sum: '$likes' },
-        comments: { $sum: '$comments' },
-        shares: { $sum: '$shares' },
-        saves: { $sum: '$saves' },
-        engagement: { $sum: { $cond: [{ $eq: ['$hasEngagement', 1] }, '$engagement', 0] } },
-        hasViews: { $max: '$hasViews' },
-        hasReach: { $max: '$hasReach' },
-        hasEngagement: { $max: '$hasEngagement' },
-      },
-    },
-    { $sort: { '_id.provider': 1, '_id.date': 1 } },
-  ])
+  }>(
+    workspaceProviderSeriesPipeline({
+      workspaceId: query.workspaceId,
+      start: query.start,
+      end: query.end,
+      unit: ANALYTICS_UNIT_MAP[query.granularity],
+    }),
+  )
 
   const byProvider = new Map<SocialProvider, AccountAnalyticsSeriesPoint[]>()
 
@@ -900,6 +411,9 @@ type ProviderBreakdownQuery = {
 export const getWorkspaceProviderBreakdown = async (
   query: ProviderBreakdownQuery,
 ): Promise<WorkspaceProviderBreakdownRow[]> => {
+  const current = { start: query.currentStart, end: query.currentEnd }
+  const previous = { start: query.previousStart, end: query.previousEnd }
+
   const rows = await AccountAnalyticsSnapshotModel.aggregate<{
     _id: SocialProvider
     accountCount: number
@@ -925,444 +439,29 @@ export const getWorkspaceProviderBreakdown = async (
     hasPreviousReach: number
     hasPreviousEngagement: number
   }>([
-    {
-      $match: {
-        workspace: toObjectId(query.workspaceId),
-        bucketAt: { $gte: query.previousStart, $lt: query.currentEnd },
-      },
-    },
-    { $sort: { bucketAt: 1 } },
+    matchWorkspaceBucketRange(query.workspaceId, query.previousStart, query.currentEnd),
+    sortByBucketAtAsc,
     {
       $group: {
         _id: {
           provider: '$provider',
           account: '$account',
         },
-        currentFollowerCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                ],
-              },
-              '$metrics.followerCount',
-              null,
-            ],
-          },
-        },
-        currentFollowingCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                ],
-              },
-              '$metrics.followingCount',
-              null,
-            ],
-          },
-        },
-        currentPostsCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                ],
-              },
-              '$metrics.postsCount',
-              null,
-            ],
-          },
-        },
-        previousFollowerCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                ],
-              },
-              '$metrics.followerCount',
-              null,
-            ],
-          },
-        },
-        previousPostsCounts: {
-          $push: {
-            $cond: [
-              {
-                $and: [
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                ],
-              },
-              '$metrics.postsCount',
-              null,
-            ],
-          },
-        },
-        currentViews: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.views', null] },
-                ],
-              },
-              '$metrics.views',
-              0,
-            ],
-          },
-        },
-        currentReach: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.reach', null] },
-                ],
-              },
-              '$metrics.reach',
-              0,
-            ],
-          },
-        },
-        currentLikes: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.likes', null] },
-                ],
-              },
-              '$metrics.likes',
-              0,
-            ],
-          },
-        },
-        currentComments: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.comments', null] },
-                ],
-              },
-              '$metrics.comments',
-              0,
-            ],
-          },
-        },
-        currentShares: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.shares', null] },
-                ],
-              },
-              '$metrics.shares',
-              0,
-            ],
-          },
-        },
-        currentSaves: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.saves', null] },
-                ],
-              },
-              '$metrics.saves',
-              0,
-            ],
-          },
-        },
-        currentEngagement: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.engagement', null] },
-                ],
-              },
-              '$metrics.engagement',
-              0,
-            ],
-          },
-        },
-        previousViews: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                  { $ne: ['$metrics.views', null] },
-                ],
-              },
-              '$metrics.views',
-              0,
-            ],
-          },
-        },
-        previousReach: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                  { $ne: ['$metrics.reach', null] },
-                ],
-              },
-              '$metrics.reach',
-              0,
-            ],
-          },
-        },
-        previousEngagement: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                  { $ne: ['$metrics.engagement', null] },
-                ],
-              },
-              '$metrics.engagement',
-              0,
-            ],
-          },
-        },
-        hasViews: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.views', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasReach: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.reach', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasEngagement: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.currentStart] },
-                  { $lt: ['$bucketAt', query.currentEnd] },
-                  { $ne: ['$metrics.engagement', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasPreviousViews: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                  { $ne: ['$metrics.views', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasPreviousReach: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                  { $ne: ['$metrics.reach', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
-        hasPreviousEngagement: {
-          $max: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$isDailyAnchor', true] },
-                  { $gte: ['$bucketAt', query.previousStart] },
-                  { $lt: ['$bucketAt', query.previousEnd] },
-                  { $ne: ['$metrics.engagement', null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
+        ...periodGaugeAccumulators(current, previous),
+        previousPostsCounts: pushMetricInRange('$metrics.postsCount', previous),
+        ...currentPeriodFlowAccumulators(current),
+        ...previousPeriodFlowAccumulators(previous),
       },
     },
     {
       $project: {
         provider: '$_id.provider',
         account: '$_id.account',
-        currentFollowerCount: {
-          $reduce: {
-            input: '$currentFollowerCounts',
-            initialValue: null,
-            in: {
-              $cond: [
-                { $and: [{ $ne: ['$$this', null] }, { $ne: ['$$this', undefined] }] },
-                '$$this',
-                '$$value',
-              ],
-            },
-          },
-        },
-        currentFollowingCount: {
-          $reduce: {
-            input: '$currentFollowingCounts',
-            initialValue: null,
-            in: {
-              $cond: [
-                { $and: [{ $ne: ['$$this', null] }, { $ne: ['$$this', undefined] }] },
-                '$$this',
-                '$$value',
-              ],
-            },
-          },
-        },
-        previousFollowerCount: {
-          $reduce: {
-            input: '$previousFollowerCounts',
-            initialValue: null,
-            in: {
-              $cond: [
-                { $and: [{ $ne: ['$$this', null] }, { $ne: ['$$this', undefined] }] },
-                '$$this',
-                '$$value',
-              ],
-            },
-          },
-        },
-        currentPostsDelta: {
-          $let: {
-            vars: {
-              filtered: {
-                $filter: {
-                  input: '$currentPostsCounts',
-                  as: 'v',
-                  cond: { $ne: ['$$v', null] },
-                },
-              },
-            },
-            in: {
-              $cond: [
-                { $gt: [{ $size: '$$filtered' }, 0] },
-                {
-                  $max: [
-                    0,
-                    {
-                      $subtract: [{ $arrayElemAt: ['$$filtered', -1] }, { $arrayElemAt: ['$$filtered', 0] }],
-                    },
-                  ],
-                },
-                null,
-              ],
-            },
-          },
-        },
-        previousPostsDelta: {
-          $let: {
-            vars: {
-              filtered: {
-                $filter: {
-                  input: '$previousPostsCounts',
-                  as: 'v',
-                  cond: { $ne: ['$$v', null] },
-                },
-              },
-            },
-            in: {
-              $cond: [
-                { $gt: [{ $size: '$$filtered' }, 0] },
-                {
-                  $max: [
-                    0,
-                    {
-                      $subtract: [{ $arrayElemAt: ['$$filtered', -1] }, { $arrayElemAt: ['$$filtered', 0] }],
-                    },
-                  ],
-                },
-                null,
-              ],
-            },
-          },
-        },
+        currentFollowerCount: lastNonNullReduce('$currentFollowerCounts'),
+        currentFollowingCount: lastNonNullReduce('$currentFollowingCounts'),
+        previousFollowerCount: lastNonNullReduce('$previousFollowerCounts'),
+        currentPostsDelta: postsDeltaFromCounts('$currentPostsCounts'),
+        previousPostsDelta: postsDeltaFromCounts('$previousPostsCounts'),
         currentViews: 1,
         currentReach: 1,
         currentLikes: 1,
@@ -1437,4 +536,75 @@ export const getWorkspaceProviderBreakdown = async (
     previousEngagement: row.hasPreviousEngagement ? row.previousEngagement : null,
     previousPostsCount: sumMetric(row.previousPostsDeltas),
   }))
+}
+
+type PerformanceLeadersQuery = {
+  workspaceId: string
+  currentStart: Date
+  currentEnd: Date
+  previousStart: Date
+  previousEnd: Date
+  /** Defaults to followerGrowth (absolute delta). */
+  rankBy?: AccountPerformanceRankBy
+  /** Defaults to 10; capped at 50. */
+  limit?: number
+}
+
+function clampPerformanceLimit(limit: number | undefined): number {
+  if (typeof limit !== 'number' || !Number.isFinite(limit)) return DEFAULT_PERFORMANCE_LIMIT
+  return Math.min(MAX_PERFORMANCE_LIMIT, Math.max(1, Math.trunc(limit)))
+}
+
+function resolvePerformanceRankBy(rankBy: AccountPerformanceRankBy | undefined): AccountPerformanceRankBy {
+  if (rankBy && PERFORMANCE_RANK_BY.has(rankBy)) return rankBy
+  return 'followerGrowth'
+}
+
+function mapPerformanceRow(row: WorkspaceAccountPerformanceRow): WorkspaceAccountPerformanceRow {
+  return {
+    accountId: row.accountId,
+    provider: row.provider,
+    followerCount: row.followerCount,
+    previousFollowerCount: row.previousFollowerCount,
+    followerGrowth: row.followerGrowth,
+    followerGrowthPercent: row.followerGrowthPercent,
+    views: row.views,
+    reach: row.reach,
+    engagement: row.engagement,
+    score: row.score,
+  }
+}
+
+/**
+ * Top winning and losing accounts for a workspace in a single aggregation.
+ * Default rank: absolute follower growth (current − previous). Also supports
+ * percent growth and period engagement. Uses $facet so winners + losers share one scan.
+ */
+export const getWorkspaceAccountPerformanceLeaders = async (
+  query: PerformanceLeadersQuery,
+): Promise<WorkspaceAccountPerformanceLeaders> => {
+  const rankBy = resolvePerformanceRankBy(query.rankBy)
+  const limit = clampPerformanceLimit(query.limit)
+
+  const [result] = await AccountAnalyticsSnapshotModel.aggregate<{
+    winners: WorkspaceAccountPerformanceRow[]
+    losers: WorkspaceAccountPerformanceRow[]
+  }>(
+    workspaceAccountPerformanceLeadersPipeline({
+      workspaceId: query.workspaceId,
+      currentStart: query.currentStart,
+      currentEnd: query.currentEnd,
+      previousStart: query.previousStart,
+      previousEnd: query.previousEnd,
+      rankBy,
+      limit,
+    }),
+  )
+
+  return {
+    winners: (result?.winners ?? []).map(mapPerformanceRow),
+    losers: (result?.losers ?? []).map(mapPerformanceRow),
+    rankBy,
+    limit,
+  }
 }

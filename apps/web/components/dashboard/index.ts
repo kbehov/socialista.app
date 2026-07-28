@@ -9,3 +9,4 @@ export {
   type DashboardSegmentProps,
 } from './dashboard-segment'
 export { DashboardTableShell, type DashboardTableShellProps } from './dashboard-table-shell'
+export { WorkspaceRequired } from './workspace-required'

@@ -35,7 +35,7 @@ export function UserDropdown() {
   const billingHref = plan !== 'free' && workspaceId ? getBillingPortalUrl(workspaceId) : DASHBOARD_ROUTES.UPGRADE
 
   if (status === 'loading') {
-    return <Skeleton className="size-8 shrink-0 rounded-full" />
+    return <Skeleton className="size-7 shrink-0 rounded-md" />
   }
 
   return (
@@ -44,12 +44,15 @@ export function UserDropdown() {
         <Button
           variant="ghost"
           size="icon-sm"
-          className={cn('rounded-full p-0 transition-colors', 'hover:bg-muted/80 aria-expanded:bg-muted')}
+          className={cn(
+            'size-7 rounded-md p-0 transition-colors',
+            'hover:bg-muted/60 aria-expanded:bg-muted/60',
+          )}
           aria-label="Open account menu"
         >
-          <Avatar className="size-7 ring-1 ring-border/60">
+          <Avatar className="size-6 rounded-md ring-1 ring-border/60">
             <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback className="text-[11px] font-medium">{getInitials(user?.name)}</AvatarFallback>
+            <AvatarFallback className="rounded-md text-[10px] font-medium">{getInitials(user?.name)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

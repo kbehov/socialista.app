@@ -1,16 +1,12 @@
 'use client'
 
+import { GENERATION_KIND_LABELS, getGenerationTitle } from '@/components/generations/generation-meta'
 import { GenerationStatusBadge } from '@/components/generations/generation-status-badge'
-import {
-  formatAbsoluteDate,
-  GENERATION_KIND_LABELS,
-  getGenerationTitle,
-} from '@/components/generations/generation-meta'
 import { Badge } from '@/components/ui/badge'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { formatCost, formatDuration, formatRelativeTime } from '@/utils/format'
+import { formatAbsoluteDate, formatCost, formatDuration, formatRelativeTime } from '@/utils/format'
 import type { Generation } from '@socialista/types'
 import { ImageIcon, VideoIcon } from 'lucide-react'
 
@@ -26,11 +22,7 @@ function ResultThumb({ generation }: { generation: Generation }) {
   if (url && type === 'image') {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- remote generation URLs vary by provider
-      <img
-        src={url}
-        alt=""
-        className="size-full object-cover"
-      />
+      <img src={url} alt="" className="size-full object-cover" />
     )
   }
 
@@ -73,9 +65,7 @@ export function GenerationItem({ generation, onSelect }: GenerationItemProps) {
             <ResultThumb generation={generation} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-1 text-sm font-medium tracking-tight text-foreground">
-              {title}
-            </p>
+            <p className="line-clamp-1 text-sm font-medium tracking-tight text-foreground">{title}</p>
             <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground md:hidden">
               {kindLabel} · {modelLabel}
             </p>
@@ -104,9 +94,7 @@ export function GenerationItem({ generation, onSelect }: GenerationItemProps) {
       </TableCell>
 
       <TableCell className="hidden px-4 py-3.5 xl:table-cell">
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {formatDuration(generation.durationMs)}
-        </span>
+        <span className="text-xs tabular-nums text-muted-foreground">{formatDuration(generation.durationMs)}</span>
       </TableCell>
 
       <TableCell className="hidden px-4 py-3.5 lg:table-cell">

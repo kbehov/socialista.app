@@ -1,22 +1,12 @@
 'use client'
 
+import { GENERATION_KIND_LABELS, getGenerationTitle } from '@/components/generations/generation-meta'
 import { GenerationStatusBadge } from '@/components/generations/generation-status-badge'
-import {
-  formatAbsoluteDate,
-  GENERATION_KIND_LABELS,
-  getGenerationTitle,
-} from '@/components/generations/generation-meta'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { formatCost, formatDuration, formatRelativeTime } from '@/utils/format'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { formatAbsoluteDate, formatCost, formatDuration, formatRelativeTime } from '@/utils/format'
 import type { Generation } from '@socialista/types'
 import { ExternalLinkIcon, ImageIcon, VideoIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -30,9 +20,7 @@ type GenerationDetailSheetProps = {
 function DetailRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid gap-1.5 sm:grid-cols-[120px_1fr] sm:gap-3">
-      <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}
-      </dt>
+      <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</dt>
       <dd className="min-w-0 text-sm text-foreground">{children}</dd>
     </div>
   )
@@ -41,9 +29,7 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
 function PromptBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
+      <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
       <p className="rounded-lg border border-border/70 bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground">
         {value}
       </p>
@@ -80,14 +66,8 @@ function ResultPreview({ generation }: { generation: Generation }) {
   )
 }
 
-export function GenerationDetailSheet({
-  generation,
-  open,
-  onOpenChange,
-}: GenerationDetailSheetProps) {
-  const title = generation
-    ? getGenerationTitle(generation.prompt, generation.kind)
-    : 'Generation'
+export function GenerationDetailSheet({ generation, open, onOpenChange }: GenerationDetailSheetProps) {
+  const title = generation ? getGenerationTitle(generation.prompt, generation.kind) : 'Generation'
   const kindLabel = generation ? GENERATION_KIND_LABELS[generation.kind] : ''
   const modelLabel = generation?.modelName ?? generation?.model ?? '—'
 
@@ -128,26 +108,17 @@ export function GenerationDetailSheet({
 
               <dl className="space-y-4">
                 <DetailRow label="Model">{modelLabel}</DetailRow>
-                <DetailRow label="Cost">
-                  {formatCost(generation.creditsCharged || generation.cost)}
-                </DetailRow>
-                <DetailRow label="Runtime">
-                  {formatDuration(generation.durationMs)}
-                </DetailRow>
+                <DetailRow label="Cost">{formatCost(generation.creditsCharged || generation.cost)}</DetailRow>
+                <DetailRow label="Runtime">{formatDuration(generation.durationMs)}</DetailRow>
                 <DetailRow label="Started">
                   <span className="tabular-nums">
                     {formatAbsoluteDate(generation.startedAt)}
-                    <span className="text-muted-foreground">
-                      {' '}
-                      ({formatRelativeTime(generation.startedAt)})
-                    </span>
+                    <span className="text-muted-foreground"> ({formatRelativeTime(generation.startedAt)})</span>
                   </span>
                 </DetailRow>
                 {generation.finishedAt ? (
                   <DetailRow label="Finished">
-                    <span className="tabular-nums">
-                      {formatAbsoluteDate(generation.finishedAt)}
-                    </span>
+                    <span className="tabular-nums">{formatAbsoluteDate(generation.finishedAt)}</span>
                   </DetailRow>
                 ) : null}
                 {generation.inputs?.aspectRatio ? (
@@ -157,18 +128,12 @@ export function GenerationDetailSheet({
 
               {generation.errorMessage ? (
                 <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                  <p className="text-[11px] font-semibold tracking-wide text-destructive uppercase">
-                    Error
-                  </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-destructive">
-                    {generation.errorMessage}
-                  </p>
+                  <p className="text-[11px] font-semibold tracking-wide text-destructive uppercase">Error</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-destructive">{generation.errorMessage}</p>
                 </div>
               ) : null}
 
-              {generation.prompt ? (
-                <PromptBlock label="Prompt" value={generation.prompt} />
-              ) : null}
+              {generation.prompt ? <PromptBlock label="Prompt" value={generation.prompt} /> : null}
 
               {generation.enhancedPrompt ? (
                 <PromptBlock label="Enhanced prompt" value={generation.enhancedPrompt} />

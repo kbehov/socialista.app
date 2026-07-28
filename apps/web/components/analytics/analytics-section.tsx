@@ -1,1 +1,4 @@
-export { DashboardSection as AnalyticsSection, type DashboardSectionProps as AnalyticsSectionProps } from '@/components/dashboard'
+export {
+  DashboardSection as AnalyticsSection,
+  type DashboardSectionProps as AnalyticsSectionProps,
+} from '@/components/dashboard/dashboard-section'

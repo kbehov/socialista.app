@@ -1,7 +1,7 @@
-import { WorkspaceRequired } from '../../_components/workspace-required'
 import { SlideshowList } from '@/components/carousel/slideshow-list'
 import { getWorkspaceSlideshows } from '@/services/slideshow.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
 
 export default async function SlideshowsPage() {
   const workspace = await getCurrentWorkspace()

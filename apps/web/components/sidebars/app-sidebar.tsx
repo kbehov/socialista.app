@@ -19,7 +19,7 @@ import {
   isStudioSegmentPath,
 } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
-import { WorkspaceResponse } from '@socialista/types'
+import type { WorkspaceResponse } from '@socialista/types'
 import {
   ChartColumnIcon,
   FolderArchiveIcon,
@@ -30,7 +30,6 @@ import {
   MegaphoneIcon,
   SendIcon,
   ShoppingBagIcon,
-  UsersIcon,
   VideoIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -114,12 +113,6 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       isActive: isStudioRoute(pathname, 'slideshows'),
     },
     {
-      title: 'UGC',
-      url: DASHBOARD_ROUTES.STUDIO.IMAGES,
-      icon: navIcon(UsersIcon),
-      isActive: isStudioRoute(pathname, 'images'),
-    },
-    {
       title: 'Static ads',
       url: DASHBOARD_ROUTES.STUDIO.STATIC_ADS,
       icon: navIcon(MegaphoneIcon),
@@ -160,21 +153,17 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
 
   return (
     <Sidebar collapsible="icon" className={cn(className)} {...props}>
-      <SidebarHeader className="h-14 shrink-0 border-b border-sidebar-border px-2 py-2">
+      <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-border/80 px-2 py-0">
         <TeamSwitcher workspaces={workspaces} />
       </SidebarHeader>
 
-      <SidebarContent className="sidebar-scrollbar gap-0 overflow-x-hidden px-0 py-2">
-        {/* <SidebarCreateAction /> */}
-
-        {/* <SidebarSeparator className="mx-3 my-1.5 group-data-[collapsible=icon]:hidden" /> */}
-
-        <NavMain items={platformItems} sectionTitle="Overview" className="py-1" />
-        <NavMain items={studioItems} sectionTitle="Studio" className="py-1" />
-        <NavMain items={workspaceItems} sectionTitle="Workspace" className="py-1" />
+      <SidebarContent className="sidebar-scrollbar gap-1 overflow-x-hidden px-0 py-2">
+        <NavMain items={platformItems} sectionTitle="Overview" />
+        <NavMain items={studioItems} sectionTitle="Studio" />
+        <NavMain items={workspaceItems} sectionTitle="Workspace" />
       </SidebarContent>
 
-      <SidebarFooter className="shrink-0 gap-1.5 border-t border-sidebar-border bg-sidebar p-2">
+      <SidebarFooter className="shrink-0 gap-2 border-t border-sidebar-border/80 p-2">
         <SidebarUpgradeCard />
         <SidebarStorageFooter />
         <NavUser user={user} />

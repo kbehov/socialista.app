@@ -9,14 +9,9 @@ import {
   startOfWeek,
   subDays,
 } from 'date-fns'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 export type ActivityDay = {
@@ -50,6 +45,8 @@ export type ActivityHeatmapProps = {
   hideTotal?: boolean
   /** Override the summary line. Receives total count in range. */
   totalLabel?: ReactNode | ((total: number) => ReactNode)
+  /** Optional secondary line in the legend row (e.g. time saved). */
+  metaLabel?: ReactNode
   /** Override cell tooltip content. */
   renderTooltip?: (day: {
     date: string
@@ -62,25 +59,31 @@ export type ActivityHeatmapProps = {
 
 const SIZE_STYLES: Record<
   ActivityHeatmapSize,
-  { cell: string; gap: string; label: string; dayGutter: string }
+  { gap: string; gapPx: number; label: string; dayGutter: string; radius: string; minCell: number }
 > = {
   sm: {
-    cell: 'size-2 rounded-[2px]',
-    gap: 'gap-[2px]',
-    label: 'text-[9px] leading-none',
+    gap: 'gap-[3px]',
+    gapPx: 3,
+    label: 'text-[10px] leading-none',
     dayGutter: 'w-5',
+    radius: 'rounded-[2px]',
+    minCell: 10,
   },
   default: {
-    cell: 'size-2.5 rounded-[3px]',
-    gap: 'gap-[3px]',
+    gap: 'gap-1',
+    gapPx: 4,
     label: 'text-[10px] leading-none',
     dayGutter: 'w-5.5',
+    radius: 'rounded-[3px]',
+    minCell: 11,
   },
   lg: {
-    cell: 'size-3 rounded-[3px]',
     gap: 'gap-1',
+    gapPx: 4,
     label: 'text-[11px] leading-none',
     dayGutter: 'w-6',
+    radius: 'rounded-[3px]',
+    minCell: 12,
   },
 }
 
@@ -122,10 +125,7 @@ function resolveEndDate(endDate?: Date | string): Date {
   return startOfDay(endDate)
 }
 
-function getLevel(
-  count: number,
-  thresholds: [number, number, number, number],
-): ActivityLevel {
+function getLevel(count: number, thresholds: [number, number, number, number]): ActivityLevel {
   if (count >= thresholds[3]) return 4
   if (count >= thresholds[2]) return 3
   if (count >= thresholds[1]) return 2
@@ -145,13 +145,7 @@ function defaultTotalLabel(total: number): string {
   return `${total.toLocaleString('en-US')} contributions in the last year`
 }
 
-function defaultTooltip({
-  date,
-  count,
-}: {
-  date: string
-  count: number
-}): string {
+function defaultTooltip({ date, count }: { date: string; count: number }): string {
   const label = format(parseISO(date), 'MMM d, yyyy')
   if (count === 0) return `No contributions on ${label}`
   if (count === 1) return `1 contribution on ${label}`
@@ -179,6 +173,7 @@ function ActivityHeatmap({
   showWeekdayLabels = true,
   hideTotal = false,
   totalLabel,
+  metaLabel,
   renderTooltip,
   lessLabel = 'Less',
   moreLabel = 'More',
@@ -198,7 +193,7 @@ function ActivityHeatmap({
   for (let i = 0; i < allDays.length; i += 7) {
     const weekDays = allDays.slice(i, i + 7)
     weeks.push(
-      weekDays.map((day) => {
+      weekDays.map(day => {
         const key = toDateKey(day)
         const inRange = day >= start && day <= end
         const count = inRange ? (countMap.get(key) ?? 0) : 0
@@ -220,7 +215,7 @@ function ActivityHeatmap({
   }
 
   const monthLabels = weeks.map((week, weekIndex) => {
-    const firstInRange = week.find((cell) => cell.inRange) ?? week[0]
+    const firstInRange = week.find(cell => cell.inRange) ?? week[0]
     if (!firstInRange) return null
 
     const month = format(parseISO(firstInRange.date), 'MMM')
@@ -232,142 +227,138 @@ function ActivityHeatmap({
     return month === prevMonth ? null : month
   })
 
-  const weekdayOrder =
-    weekStartsOn === 1
-      ? [1, 2, 3, 4, 5, 6, 0]
-      : [0, 1, 2, 3, 4, 5, 6]
-
+  const weekdayOrder = weekStartsOn === 1 ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6]
   const visibleWeekdays = new Set([1, 3, 5])
 
   const resolvedTotal =
-    typeof totalLabel === 'function'
-      ? totalLabel(total)
-      : (totalLabel ?? defaultTotalLabel(total))
+    typeof totalLabel === 'function' ? totalLabel(total) : (totalLabel ?? defaultTotalLabel(total))
+
+  const weekCount = Math.max(weeks.length, 1)
+  const gridStyle: CSSProperties = {
+    gridTemplateColumns: `repeat(${weekCount}, minmax(${sizeStyles.minCell}px, 1fr))`,
+    gap: sizeStyles.gapPx,
+  }
+
+  const cellClassName = cn('aspect-square w-full', sizeStyles.radius)
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <div
-        data-slot="activity-heatmap"
-        className={cn('flex w-full flex-col gap-2', className)}
-      >
-        {!hideTotal ? (
-          <p className="text-xs text-muted-foreground">{resolvedTotal}</p>
-        ) : null}
+    <TooltipProvider delayDuration={120}>
+      <div data-slot="activity-heatmap" className={cn('flex w-full flex-col gap-2.5', className)}>
+        {!hideTotal ? <p className="text-xs text-muted-foreground">{resolvedTotal}</p> : null}
 
-        <div className="w-full overflow-x-auto">
-          <div className="inline-flex min-w-max flex-col gap-1.5">
-            {showMonthLabels ? (
-              <div className={cn('flex', sizeStyles.gap)}>
-                {showWeekdayLabels ? (
-                  <div className={cn('shrink-0', sizeStyles.dayGutter)} />
-                ) : null}
-                {monthLabels.map((label, index) => (
-                  <div
-                    key={`month-${index}`}
-                    className={cn(
-                      'text-muted-foreground',
-                      sizeStyles.cell,
-                      sizeStyles.label,
-                      'flex w-auto! items-end overflow-visible whitespace-nowrap',
-                      !label && 'opacity-0',
-                    )}
-                  >
-                    {label ?? '·'}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            <div className={cn('flex', sizeStyles.gap)}>
-              {showWeekdayLabels ? (
-                <div
+        <div className="flex w-full min-w-0">
+          {showWeekdayLabels ? (
+            <div
+              className={cn(
+                'flex shrink-0 flex-col justify-end',
+                sizeStyles.dayGutter,
+                sizeStyles.gap,
+                showMonthLabels && 'pt-4',
+              )}
+            >
+              {weekdayOrder.map(weekday => (
+                <span
+                  key={weekday}
                   className={cn(
-                    'flex shrink-0 flex-col',
-                    sizeStyles.dayGutter,
-                    sizeStyles.gap,
+                    cellClassName,
+                    sizeStyles.label,
+                    'flex items-center justify-end pr-1.5 text-muted-foreground',
+                    !visibleWeekdays.has(weekday) && 'opacity-0',
                   )}
                 >
-                  {weekdayOrder.map((weekday) => (
-                    <span
-                      key={weekday}
+                  {WEEKDAY_LABELS[weekday]}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-full min-w-full flex-col gap-1.5">
+              {showMonthLabels ? (
+                <div className="grid w-full" style={gridStyle}>
+                  {monthLabels.map((label, index) => (
+                    <div
+                      key={`month-${index}`}
                       className={cn(
-                        sizeStyles.cell,
                         sizeStyles.label,
-                        'flex w-full items-center justify-end pr-1 text-muted-foreground',
-                        !visibleWeekdays.has(weekday) && 'opacity-0',
+                        'relative h-3 overflow-visible text-muted-foreground',
                       )}
                     >
-                      {WEEKDAY_LABELS[weekday]}
-                    </span>
+                      {label ? (
+                        <span className="absolute top-0 left-0 whitespace-nowrap">{label}</span>
+                      ) : null}
+                    </div>
                   ))}
                 </div>
               ) : null}
 
-              {weeks.map((week, weekIndex) => (
-                <div
-                  key={`week-${weekIndex}`}
-                  className={cn('flex flex-col', sizeStyles.gap)}
-                >
-                  {week.map((cell) => {
-                    if (!cell.inRange) {
+              <div className="grid w-full" style={gridStyle}>
+                {weeks.map((week, weekIndex) => (
+                  <div key={`week-${weekIndex}`} className={cn('flex min-w-0 flex-col', sizeStyles.gap)}>
+                    {week.map(cell => {
+                      if (!cell.inRange) {
+                        return <div key={cell.date} aria-hidden className={cn(cellClassName, 'bg-transparent')} />
+                      }
+
+                      const tooltip =
+                        renderTooltip?.({
+                          date: cell.date,
+                          count: cell.count,
+                          level: cell.level,
+                        }) ?? defaultTooltip(cell)
+
                       return (
-                        <div
-                          key={cell.date}
-                          aria-hidden
-                          className={cn(sizeStyles.cell, 'bg-transparent')}
-                        />
+                        <Tooltip key={cell.date}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={typeof tooltip === 'string' ? tooltip : defaultTooltip(cell)}
+                              className={cn(
+                                cellClassName,
+                                colors[cell.level],
+                                'outline-none transition-transform duration-100 ease-out',
+                                'hover:z-10 hover:scale-110',
+                                'focus-visible:z-10 focus-visible:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                              )}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6}>
+                            {tooltip}
+                          </TooltipContent>
+                        </Tooltip>
                       )
-                    }
-
-                    const tooltip =
-                      renderTooltip?.({
-                        date: cell.date,
-                        count: cell.count,
-                        level: cell.level,
-                      }) ?? defaultTooltip(cell)
-
-                    return (
-                      <Tooltip key={cell.date}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label={
-                              typeof tooltip === 'string'
-                                ? tooltip
-                                : defaultTooltip(cell)
-                            }
-                            className={cn(
-                              sizeStyles.cell,
-                              colors[cell.level],
-                              'outline-none transition-[transform,box-shadow] duration-100 ease-out',
-                              'hover:scale-110 hover:ring-1 hover:ring-foreground/20',
-                              'focus-visible:scale-110 focus-visible:ring-2 focus-visible:ring-ring',
-                            )}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent side="top" sideOffset={6}>
-                          {tooltip}
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  })}
-                </div>
-              ))}
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {showLegend ? (
-          <div className="flex items-center justify-end gap-1.5 text-muted-foreground">
-            <span className={sizeStyles.label}>{lessLabel}</span>
-            {[0, 1, 2, 3, 4].map((level) => (
-              <div
-                key={level}
-                className={cn(sizeStyles.cell, colors[level as ActivityLevel])}
-                aria-hidden
-              />
-            ))}
-            <span className={sizeStyles.label}>{moreLabel}</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+              {hideTotal ? <span className="truncate">{resolvedTotal}</span> : null}
+              {metaLabel ? (
+                <>
+                  {hideTotal ? <span className="text-border" aria-hidden>
+                    ·
+                  </span> : null}
+                  <span className="truncate">{metaLabel}</span>
+                </>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+              <span className={sizeStyles.label}>{lessLabel}</span>
+              {[0, 1, 2, 3, 4].map(level => (
+                <div
+                  key={level}
+                  className={cn('size-2.5', sizeStyles.radius, colors[level as ActivityLevel])}
+                  aria-hidden
+                />
+              ))}
+              <span className={sizeStyles.label}>{moreLabel}</span>
+            </div>
           </div>
         ) : null}
       </div>

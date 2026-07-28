@@ -1,11 +1,14 @@
 'use client'
 
-import { CalendarDaysIcon, FlameIcon, SendIcon } from 'lucide-react'
+import { CalendarDaysIcon, FlameIcon, SendIcon, TimerIcon } from 'lucide-react'
 
 import type { PublishedPostActivityResponse } from '@socialista/types'
 
+import { formatCount } from '@/utils/format'
 import { GithubStats } from './github-stats'
-import { formatCount } from './lib/format'
+
+/** Assumed minutes saved per published post vs. manual publishing. */
+const MINUTES_PER_POST = 3
 
 export type PublishedActivityProps = {
   data: PublishedPostActivityResponse
@@ -28,15 +31,52 @@ function bestDayCount(activity: PublishedPostActivityResponse['activity']): numb
   return best
 }
 
+function formatTimeSaved(posts: number): { value: string; label: string; description: string } | null {
+  const minutes = posts * MINUTES_PER_POST
+  if (minutes <= 0) return null
+
+  if (minutes < 60) {
+    return {
+      value: `~${minutes}m`,
+      label: 'Time saved',
+      description: 'vs. posting by hand',
+    }
+  }
+
+  const hours = minutes / 60
+  const rounded = hours >= 10 ? Math.round(hours) : Math.round(hours * 10) / 10
+  const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+
+  return {
+    value: `~${display}h`,
+    label: 'Time saved',
+    description: 'vs. posting by hand',
+  }
+}
+
+function TimeSavedBadge({ value }: { value: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <TimerIcon className="size-3.5 text-emerald-500/80" strokeWidth={1.75} aria-hidden />
+      <span>
+        <span className="font-medium tabular-nums tracking-tight text-foreground">{value}</span>
+        <span className="ml-1">saved</span>
+      </span>
+    </span>
+  )
+}
+
 function PublishedActivity({ data, className }: PublishedActivityProps) {
   const activeDays = countActiveDays(data.activity)
   const peak = bestDayCount(data.activity)
+  const timeSaved = formatTimeSaved(data.total)
 
   return (
     <GithubStats
       className={className}
       compact
       title="Publishing Activity"
+      action={timeSaved ? <TimeSavedBadge value={timeSaved.value} /> : null}
       metrics={[
         {
           label: 'Published',
@@ -66,8 +106,7 @@ function PublishedActivity({ data, className }: PublishedActivityProps) {
         showMonthLabels: true,
         showWeekdayLabels: false,
         showLegend: true,
-        totalLabel: total =>
-          `${total.toLocaleString('en-US')} post${total === 1 ? '' : 's'} in the last year`,
+        totalLabel: total => `${total.toLocaleString('en-US')} post${total === 1 ? '' : 's'} in the last year`,
         lessLabel: 'Less',
         moreLabel: 'More',
         renderTooltip: ({ date, count }) => {
@@ -80,4 +119,4 @@ function PublishedActivity({ data, className }: PublishedActivityProps) {
   )
 }
 
-export { PublishedActivity }
+export { PublishedActivity, formatTimeSaved }

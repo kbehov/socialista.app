@@ -1,18 +1,15 @@
 import { EmptyState } from '@/components/common/empty-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { ErrorState } from '@/components/common/error-state'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { GenerationsView } from '@/components/generations/generations-view'
 import { PageHeader } from '@/components/headers/page-header'
-import { WorkspaceRequired } from '../_components/workspace-required'
-import {
-  getWorkspaceGenerations,
-  type GetWorkspaceGenerationsQuery,
-} from '@/services/generation.service'
+import { getWorkspaceGenerations, type GetWorkspaceGenerationsQuery } from '@/services/generation.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import type { GenerationKind, GenerationStatus, MetaResponse } from '@socialista/types'
 import { SparklesIcon } from 'lucide-react'
 import { Suspense } from 'react'
+import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
 type GenerationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -31,9 +28,7 @@ const defaultMeta: MetaResponse = {
   hasPreviousPage: false,
 }
 
-function toSearchParamsRecord(
-  searchParams: Record<string, string | string[] | undefined>,
-): URLSearchParams {
+function toSearchParamsRecord(searchParams: Record<string, string | string[] | undefined>): URLSearchParams {
   const params = new URLSearchParams()
 
   for (const [key, value] of Object.entries(searchParams)) {
@@ -94,10 +89,7 @@ export default async function GenerationsPage({ searchParams }: GenerationsPageP
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <PageHeader
-        title="Generations"
-        description={`${formatItemCount(meta.total)} in ${workspace.name}`}
-      />
+      <PageHeader title="Generations" description={`${formatItemCount(meta.total)} in ${workspace.name}`} />
 
       {!response.success ? (
         <ErrorState

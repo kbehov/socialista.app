@@ -4,16 +4,13 @@ import { getCachedUserWorkspaces, getCurrentWorkspace } from '@/utils/workspace.
 import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
-export const getDashboardLayoutData = cache(async () => {
+export const getDashboardData = cache(async () => {
   const session = await auth()
   if (!session) {
     redirect('/auth/signin')
   }
 
-  const [workspaces, currentWorkspace] = await Promise.all([
-    getCachedUserWorkspaces(),
-    getCurrentWorkspace(),
-  ])
+  const [workspaces, currentWorkspace] = await Promise.all([getCachedUserWorkspaces(), getCurrentWorkspace()])
 
   const workspaceBalance = currentWorkspace ? await getWorkspaceBalance(currentWorkspace._id) : null
 

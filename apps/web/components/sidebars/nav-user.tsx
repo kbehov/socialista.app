@@ -15,7 +15,7 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getBillingPortalUrl } from '@/utils/billing-urls'
 import { getInitials } from '@/utils/user'
-import { ChevronsUpDownIcon, CreditCardIcon, LogOutIcon } from 'lucide-react'
+import { ChevronsUpDownIcon, CreditCardIcon, LogOutIcon, SparklesIcon } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 
@@ -33,7 +33,7 @@ export function NavUser({
   const plan = currentWorkspace?.billing.plan ?? 'free'
   const workspaceId = currentWorkspace?.id
   const billingHref = plan !== 'free' && workspaceId ? getBillingPortalUrl(workspaceId) : DASHBOARD_ROUTES.UPGRADE
-  const showUpgradeInMenu = plan !== 'free'
+  const showUpgradeInMenu = plan === 'free'
   const initials = getInitials(user.name)
 
   return (
@@ -45,32 +45,32 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
+              <Avatar className="size-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg text-xs font-medium">{initials}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium tracking-tight">{user.name}</span>
+                <span className="truncate text-[11px] text-muted-foreground">{user.email}</span>
               </div>
-              <ChevronsUpDownIcon className="ml-auto size-4" />
+              <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" strokeWidth={1.75} />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-56"
             side={isMobile ? 'bottom' : 'right'}
             align="end"
-            sideOffset={4}
+            sideOffset={6}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+              <div className="flex items-center gap-2.5 px-2 py-2 text-left text-sm">
+                <Avatar className="size-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="rounded-lg text-xs font-medium">{initials}</AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid min-w-0 flex-1 text-left leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate text-[11px] text-muted-foreground">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -79,7 +79,7 @@ export function NavUser({
               {showUpgradeInMenu ? (
                 <DropdownMenuItem asChild>
                   <Link href={DASHBOARD_ROUTES.UPGRADE}>
-                    <CreditCardIcon />
+                    <SparklesIcon />
                     Upgrade plan
                   </Link>
                 </DropdownMenuItem>

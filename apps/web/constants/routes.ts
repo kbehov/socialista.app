@@ -134,6 +134,7 @@ export const ANALYTICS_ROUTES = {
   GET_GROWTH: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/growth`,
   GET_PLATFORMS: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/platforms`,
   GET_ANOMALIES: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/anomalies`,
+  GET_PERFORMANCE: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/performance`,
   GET_ACCOUNT: (workspaceId: string, accountId: string) =>
     `/workspaces/${workspaceId}/analytics/accounts/${accountId}`,
   GET_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary`,

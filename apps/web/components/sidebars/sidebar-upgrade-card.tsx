@@ -11,27 +11,20 @@ import Link from 'next/link'
 
 function UpgradeSummary() {
   return (
-    <div className="rounded-lg border border-sidebar-border bg-sidebar-accent px-3.5 py-3 group-data-[collapsible=icon]:hidden">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <SparklesIcon className="size-3.5 shrink-0 text-amber-500" />
-            <p className="text-xs font-medium text-sidebar-foreground">Upgrade to Pro</p>
-          </div>
-          <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
-            $25/mo · 5 members · 400 posts · $8 AI credits
+    <div className="rounded-lg border border-sidebar-border/80 bg-sidebar-accent/60 px-3 py-2.5 group-data-[collapsible=icon]:hidden">
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-background text-amber-500 shadow-xs">
+          <SparklesIcon className="size-3.5" strokeWidth={1.75} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium tracking-tight text-sidebar-foreground">Upgrade to Pro</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            Growth charts, more seats, and AI credits.
           </p>
         </div>
-        <span className="shrink-0 rounded-md border border-border bg-card px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-foreground uppercase">
-          Pro
-        </span>
       </div>
 
-      <Button
-        asChild
-        size="sm"
-        className="mt-3 h-8 w-full rounded-[min(var(--radius-md),10px)] text-xs font-medium"
-      >
+      <Button asChild size="sm" className="mt-2.5 h-7 w-full text-xs font-medium">
         <Link href={DASHBOARD_ROUTES.UPGRADE}>
           View plans
           <ArrowUpRightIcon className="size-3.5 opacity-70" />
@@ -47,10 +40,10 @@ function UpgradeCollapsed() {
       <SidebarMenuItem>
         <Tooltip>
           <TooltipTrigger asChild>
-            <SidebarMenuButton asChild size="sm" className={cn('relative text-amber-500 hover:text-amber-500')}>
+            <SidebarMenuButton asChild size="sm" className={cn('text-amber-500 hover:text-amber-500')}>
               <Link href={DASHBOARD_ROUTES.UPGRADE}>
-                <SparklesIcon />
-                <span className="absolute right-1 bottom-1 size-1.5 rounded-full bg-primary" />
+                <SparklesIcon strokeWidth={1.75} />
+                <span className="sr-only">Upgrade to Pro</span>
               </Link>
             </SidebarMenuButton>
           </TooltipTrigger>
@@ -72,9 +65,9 @@ export function SidebarUpgradeCard() {
   }
 
   return (
-    <div className="px-1 pb-1">
+    <>
       <UpgradeSummary />
       <UpgradeCollapsed />
-    </div>
+    </>
   )
 }

@@ -1,13 +1,13 @@
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
-import { dashboardSurface } from '@/components/dashboard'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
+import { dashboardSurface } from '@/components/dashboard'
 import { PostComposer } from '@/components/posts/composer/post-composer'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { Link2Icon } from 'lucide-react'
 
-import { WorkspaceRequired } from '../../_components/workspace-required'
+import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
 
 export default async function CreatePostPage() {
   const workspace = await getCurrentWorkspace()

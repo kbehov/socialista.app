@@ -11,6 +11,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 import { ChevronRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -47,8 +48,8 @@ export function NavMain({
   const pathname = usePathname()
 
   return (
-    <SidebarGroup className={className}>
-      <SidebarGroupLabel>{sectionTitle}</SidebarGroupLabel>
+    <SidebarGroup className={cn('px-2 py-1', className)}>
+      <SidebarGroupLabel className="mb-0.5 h-7 px-2.5">{sectionTitle}</SidebarGroupLabel>
       <SidebarMenu className="gap-0.5">
         {items.map(item =>
           item.items?.length ? (
@@ -63,7 +64,7 @@ export function NavMain({
                   <SidebarMenuButton tooltip={item.title} isActive={isItemActive(pathname, item)}>
                     {item.icon}
                     <span>{item.title}</span>
-                    <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    <ChevronRightIcon className="ml-auto size-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

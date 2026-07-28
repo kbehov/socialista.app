@@ -6,24 +6,19 @@ import { StatMetric, StatMetrics, type StatMetricProps } from '@/components/anal
 import { cn } from '@/lib/utils'
 
 export type GithubStatsProps = {
-  /** Optional title shown above the heatmap */
   title?: ReactNode
   description?: ReactNode
-  /** Summary metrics rendered above the heatmap */
   metrics?: StatMetricProps[]
   heatmap: ActivityHeatmapProps
   className?: string
   metricsClassName?: string
   action?: ReactNode
-  /** Tighter layout — hides section description, reduces spacing */
+  /** Tighter layout — hides section description; metrics sit flush under the header */
   compact?: boolean
 }
 
 /**
- * GitHub-style activity surface: optional metric strip + contribution heatmap.
- *
- * Prefer composing `ActivityHeatmap` / `StatMetrics` directly when you need
- * a different layout; use this when you want the classic stacked pattern.
+ * Activity surface: optional metric strip + contribution heatmap.
  */
 function GithubStats({
   title = 'Publishing activity',
@@ -35,8 +30,9 @@ function GithubStats({
   action,
   compact = false,
 }: GithubStatsProps) {
+  const hasMetrics = Boolean(metrics && metrics.length > 0)
   const metricCount = metrics?.length ?? 0
-  const columns = metricCount <= 3 ? 3 : metricCount <= 4 ? 4 : 6
+  const columns = (metricCount <= 3 ? 3 : metricCount <= 4 ? 4 : 6) as 2 | 3 | 4 | 6
 
   return (
     <AnalyticsSection
@@ -44,21 +40,23 @@ function GithubStats({
       description={compact ? undefined : description}
       action={action}
       className={cn(className)}
-      contentClassName={cn('flex flex-col', compact ? 'gap-2' : 'gap-3')}
+      contentClassName={cn('flex flex-col', compact && hasMetrics ? 'gap-3 p-0' : 'gap-3')}
     >
-      {metrics && metrics.length > 0 ? (
+      {hasMetrics ? (
         <StatMetrics
-          className={cn('w-full', metricsClassName)}
+          className={cn(compact && 'rounded-none border-0 border-b border-border/40', 'w-full', metricsClassName)}
           size="sm"
-          columns={columns as 2 | 3 | 4 | 6}
+          columns={columns}
         >
-          {metrics.map((metric, index) => (
+          {metrics!.map((metric, index) => (
             <StatMetric key={index} {...metric} />
           ))}
         </StatMetrics>
       ) : null}
 
-      <ActivityHeatmap {...heatmap} />
+      <div className={cn('min-w-0', compact && hasMetrics ? 'px-4 pb-4' : undefined)}>
+        <ActivityHeatmap {...heatmap} />
+      </div>
     </AnalyticsSection>
   )
 }

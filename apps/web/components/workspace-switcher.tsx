@@ -70,7 +70,7 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
               tooltip={currentWorkspace.name}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
-              <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border/60 bg-sidebar-primary text-sidebar-primary-foreground">
                 {currentWorkspace.logo ? (
                   <Image
                     src={currentWorkspace.logo}
@@ -83,11 +83,16 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
                   <span className="text-sm font-medium">{currentWorkspace.name.charAt(0).toUpperCase()}</span>
                 )}
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium">{currentWorkspace.name}</span>
-                <span className="truncate text-xs capitalize">{currentWorkspace.billing.plan}</span>
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-medium tracking-tight">{currentWorkspace.name}</span>
+                <span className="truncate text-[11px] capitalize text-muted-foreground">
+                  {currentWorkspace.billing.plan} plan
+                </span>
               </div>
-              <ChevronsUpDownIcon className="ml-auto group-data-[collapsible=icon]:hidden" />
+              <ChevronsUpDownIcon
+                className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                strokeWidth={1.75}
+              />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="start" side={isMobile ? 'bottom' : 'right'} sideOffset={4}>

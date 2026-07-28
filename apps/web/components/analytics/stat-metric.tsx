@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 
-import { dashboardSurface } from '@/components/dashboard'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { cn } from '@/lib/utils'
 
-import type { TrendDirection } from './lib/format'
+import type { TrendDirection } from '@/utils/format'
 
 export type StatMetricProps = {
   value: ReactNode
@@ -44,7 +44,13 @@ function StatMetrics({ children, className, size = 'default', columns = 4 }: Sta
     <div
       data-slot="stat-metrics"
       data-size={size}
-      className={cn(dashboardSurface.dividerGrid, 'w-full grid-cols-1', COLUMN_STYLES[columns], className)}
+      className={cn(
+        'group/metrics',
+        dashboardSurface.dividerGrid,
+        'w-full grid-cols-1',
+        COLUMN_STYLES[columns],
+        className,
+      )}
     >
       {children}
     </div>
@@ -58,24 +64,24 @@ function StatMetric({ value, label, description, icon, iconClassName, trend, cla
     <div
       data-slot="stat-metric"
       className={cn(
-        'flex min-w-0 flex-col gap-1 px-3.5 py-3.5',
+        'flex min-w-0 flex-col gap-1.5 px-4 py-3.5',
         dashboardSurface.dividerCell,
-        'group-data-[size=sm]/stat-metrics:px-3 group-data-[size=sm]/stat-metrics:py-2.5',
+        'group-data-[size=sm]/metrics:gap-1 group-data-[size=sm]/metrics:px-3.5 group-data-[size=sm]/metrics:py-3',
         className,
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className={dashboardSurface.metricLabel}>{label}</p>
+        <p className={cn(dashboardSurface.metricLabel, 'truncate')}>{label}</p>
         {icon ? (
-          <span className={cn('shrink-0 [&_svg]:size-3', iconClassName ?? 'text-muted-foreground/50')}>{icon}</span>
+          <span className={cn('shrink-0 text-muted-foreground/50 [&_svg]:size-3.5', iconClassName)}>{icon}</span>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <p
           className={cn(
             dashboardSurface.metricValue,
-            'whitespace-nowrap group-data-[size=sm]/stat-metrics:text-lg',
+            'leading-none whitespace-nowrap group-data-[size=sm]/metrics:text-lg',
           )}
         >
           {value}
@@ -83,7 +89,7 @@ function StatMetric({ value, label, description, icon, iconClassName, trend, cla
         {trend ? (
           <span
             className={cn(
-              'inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium tabular-nums',
+              'inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums',
               TREND_STYLES[direction],
             )}
           >

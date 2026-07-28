@@ -1,5 +1,6 @@
 import {
   getAccountAnalytics,
+  getAnalyticsAccountPerformance,
   getAnalyticsAnomalies,
   getAnalyticsGrowth,
   getAnalyticsOverview,
@@ -27,6 +28,9 @@ analyticsRoutes.get('/platforms', getAnalyticsPlatforms)
 
 analyticsRoutes.use('/anomalies', requireAnalyticsAccess)
 analyticsRoutes.get('/anomalies', getAnalyticsAnomalies)
+
+analyticsRoutes.use('/performance', requireAnalyticsAccess)
+analyticsRoutes.get('/performance', getAnalyticsAccountPerformance)
 
 analyticsRoutes.use('/summary', requireAnalyticsAccess)
 analyticsRoutes.get('/summary', getWorkspaceAnalyticsSummary)

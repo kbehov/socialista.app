@@ -21,6 +21,7 @@ import {
   getAccounts,
   getLatestMissingMetrics,
   getWorkspaceAccountBreakdown,
+  getWorkspaceAccountPerformanceLeaders,
   getWorkspaceAccountStats,
   getWorkspaceAnalyticsSeries,
   getWorkspaceGenerationSpend,
@@ -29,12 +30,16 @@ import {
   hasAnalyticsAccess,
   PostStatus,
   type IAccount,
+  type WorkspaceAccountPerformanceRow,
   type WorkspaceProviderBreakdownRow,
 } from '@socialista/db'
 import type {
   AccountAnalyticsResponse,
   AnalyticsAccountBreakdownRow,
   AnalyticsAccountInfo,
+  AnalyticsAccountPerformanceRankBy,
+  AnalyticsAccountPerformanceResponse,
+  AnalyticsAccountPerformanceRow,
   AnalyticsAnomaliesResponse,
   AnalyticsDataQuality,
   AnalyticsGrowthResponse,
@@ -519,6 +524,96 @@ export const getAnalyticsAnomalies = async (c: Context<AnalyticsContext>) => {
     range,
     period: periodPayload(periods),
     anomalies,
+  }
+
+  return successResponse(c, 200, response)
+}
+
+const PERFORMANCE_RANK_BY = new Set<AnalyticsAccountPerformanceRankBy>([
+  'followerGrowth',
+  'followerGrowthPercent',
+  'engagement',
+  'reach',
+])
+
+function parsePerformanceRankBy(value: string | undefined): AnalyticsAccountPerformanceRankBy {
+  if (!value) return 'followerGrowth'
+  if (PERFORMANCE_RANK_BY.has(value as AnalyticsAccountPerformanceRankBy)) {
+    return value as AnalyticsAccountPerformanceRankBy
+  }
+  throw new HttpError(
+    400,
+    'rankBy must be followerGrowth, followerGrowthPercent, engagement, or reach',
+  )
+}
+
+function parsePerformanceLimit(value: string | undefined): number | undefined {
+  if (value === undefined || value === '') return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    throw new HttpError(400, 'limit must be a positive number')
+  }
+  return parsed
+}
+
+function toPerformanceRow(
+  row: WorkspaceAccountPerformanceRow,
+  accountsById: Map<string, IAccount>,
+): AnalyticsAccountPerformanceRow {
+  const account = accountsById.get(row.accountId)
+  const info: AnalyticsAccountInfo = account
+    ? toAccountInfo(account)
+    : {
+        id: row.accountId,
+        provider: row.provider,
+        accountName: 'Unknown',
+      }
+
+  return {
+    account: info,
+    followers: row.followerCount,
+    previousFollowers: row.previousFollowerCount,
+    followerGrowth: row.followerGrowth,
+    followerGrowthPercent: row.followerGrowthPercent,
+    views: row.views,
+    reach: row.reach,
+    engagement: row.engagement,
+    score: row.score,
+  }
+}
+
+/** Top winning and losing accounts for the current vs previous period. */
+export const getAnalyticsAccountPerformance = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+  const rankBy = parsePerformanceRankBy(c.req.query('rankBy'))
+  const limit = parsePerformanceLimit(c.req.query('limit'))
+
+  const [leaders, accountsResult] = await Promise.all([
+    getWorkspaceAccountPerformanceLeaders({
+      workspaceId,
+      currentStart: periods.currentStart,
+      currentEnd: periods.currentEnd,
+      previousStart: periods.previousStart,
+      previousEnd: periods.previousEnd,
+      rankBy,
+      limit,
+    }),
+    getAccounts(`workspace=${workspaceId}&limit=100`),
+  ])
+
+  const accountsById = new Map(
+    accountsResult.accounts.map(account => [account._id.toString(), account as IAccount]),
+  )
+
+  const response: AnalyticsAccountPerformanceResponse = {
+    range,
+    period: periodPayload(periods),
+    rankBy: leaders.rankBy,
+    limit: leaders.limit,
+    winners: leaders.winners.map(row => toPerformanceRow(row, accountsById)),
+    losers: leaders.losers.map(row => toPerformanceRow(row, accountsById)),
   }
 
   return successResponse(c, 200, response)

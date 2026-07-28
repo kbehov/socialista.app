@@ -1,7 +1,7 @@
 'use client'
 
-import { DashboardTableShell } from '@/components/dashboard'
 import { SmartPagination } from '@/components/common/smart-pagination'
+import { DashboardTableShell } from '@/components/dashboard/dashboard-table-shell'
 import { GenerationDetailSheet } from '@/components/generations/generation-detail-sheet'
 import { useReportPageScroll } from '@/components/headers/page-scroll-compact'
 import { GenerationsTable } from '@/components/tables/generations.table'
@@ -46,11 +46,7 @@ export function GenerationsView({ generations, meta }: GenerationsViewProps) {
 
       <SmartPagination meta={meta} className="shrink-0" />
 
-      <GenerationDetailSheet
-        generation={selected}
-        open={sheetOpen}
-        onOpenChange={handleOpenChange}
-      />
+      <GenerationDetailSheet generation={selected} open={sheetOpen} onOpenChange={handleOpenChange} />
     </div>
   )
 }

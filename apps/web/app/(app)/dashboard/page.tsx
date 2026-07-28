@@ -1,15 +1,18 @@
 import { auth } from '@/auth'
 import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard'
 import { AnalyticsRangeToggle } from '@/components/analytics/analytics-range-toggle'
-import { parseAnalyticsProvider, parseAnalyticsRange } from '@/components/analytics/lib/parse-params'
 import { ErrorState } from '@/components/common/error-state'
 import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
+import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { PageHeader } from '@/components/headers/page-header'
 import { getFirstName, getGreeting } from '@/lib/greeting'
 import { getAnalyticsOverview } from '@/services/analytics.service'
+import {
+  parseAnalyticsProvider,
+  parseAnalyticsRange,
+  parseAnalyticsRankBy,
+} from '@/utils/parsers'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
-
-import { WorkspaceRequired } from './_components/workspace-required'
 
 type DashboardPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -28,6 +31,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const params = await searchParams
   const range = parseAnalyticsRange(params.range)
   const provider = parseAnalyticsProvider(params.provider)
+  const rankBy = parseAnalyticsRankBy(params.rankBy)
 
   const { data, success, message } = await getAnalyticsOverview(workspace.id, { range })
 
@@ -48,17 +52,30 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     )
   }
 
-  const isPremium = data.tier === 'premium'
+  const rangeParams: Record<string, string | undefined> = {}
+  if (provider !== 'all') rangeParams.provider = provider
+  if (rankBy !== 'followerGrowth') rangeParams.rankBy = rankBy
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
-        description={`${workspace.name} analytics at a glance`}
-        actions={<AnalyticsRangeToggle range={range} params={provider === 'all' ? undefined : { provider }} />}
+        description={`${workspace.name} · analytics at a glance`}
+        actions={
+          <AnalyticsRangeToggle
+            range={range}
+            params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined}
+          />
+        }
       />
 
-      <AnalyticsDashboard workspaceId={workspace.id} overview={data} range={range} provider={provider} />
+      <AnalyticsDashboard
+        workspaceId={workspace.id}
+        overview={data}
+        range={range}
+        rankBy={rankBy}
+        provider={provider}
+      />
     </div>
   )
 }

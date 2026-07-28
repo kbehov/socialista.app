@@ -1,18 +1,22 @@
 import { AccountsOAuthHandler } from '@/components/accounts/accounts-oauth-handler'
 import { AccountsView } from '@/components/accounts/accounts-view'
-import { dashboardSurface } from '@/components/dashboard'
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
+import { dashboardSurface } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
-import { getAccountsListQuery, hasActiveAccountFilters, parseAccountFiltersFromSearchParams } from '@/lib/account-filters'
+import {
+  getAccountsListQuery,
+  hasActiveAccountFilters,
+  parseAccountFiltersFromSearchParams,
+} from '@/lib/account-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import type { MetaResponse } from '@socialista/types'
 import { Link2Icon } from 'lucide-react'
 import { Suspense } from 'react'
-import { WorkspaceRequired } from '../_components/workspace-required'
+import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
 type AccountsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -78,23 +82,6 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           className="flex-1"
           iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
-          // footer={
-          //   <div className="mt-8 flex flex-col items-center gap-5">
-          //     <div className="flex items-center gap-2">
-          //       {CONNECTABLE_PLATFORMS.map(platform => (
-          //         <SocialPlatformIcon
-          //           key={platform.provider}
-          //           provider={platform.provider}
-          //           size={14}
-          //           className="size-9 rounded-xl opacity-70 transition-opacity hover:opacity-100"
-          //         />
-          //       ))}
-          //     </div>
-          //     <p className="text-[11px] leading-relaxed text-muted-foreground/80">
-          //       Each account can use its own timezone for scheduling.
-          //     </p>
-          //   </div>
-          // }
         />
       ) : (
         <Suspense fallback={null}>

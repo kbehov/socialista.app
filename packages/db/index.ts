@@ -80,12 +80,15 @@ export {
 export {
   type AccountAnalyticsSeriesPoint,
   type AccountAnalyticsSnapshotDocument,
+  type AccountPerformanceRankBy,
   type AnalyticsGranularity,
   type AnalyticsSnapshotMetrics,
   type EngagementRateBasis,
   type IAccountAnalyticsSnapshot,
   type UpsertAnalyticsSnapshotInput,
   type WorkspaceAccountBreakdownRow,
+  type WorkspaceAccountPerformanceLeaders,
+  type WorkspaceAccountPerformanceRow,
   type WorkspaceProviderBreakdownRow,
   type WorkspaceProviderSeriesGroup,
 } from './types/account-analytics.types.js'

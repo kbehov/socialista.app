@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 
-import { dashboardSurface, DashboardSegment, DashboardSegmentButton } from '@/components/dashboard'
+import { DashboardSegment, DashboardSegmentButton } from '@/components/dashboard/dashboard-segment'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import type { AnalyticsGrowthResponse, AnalyticsRange, AnalyticsSeriesPoint, SocialProvider } from '@socialista/types'
 
+import { formatCount } from '@/utils/format'
 import { AnalyticsSection } from './analytics-section'
-import { formatCount } from './lib/format'
 
 type ChartMetric = 'engagement' | 'followers' | 'reach' | 'views'
 
@@ -133,19 +134,13 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
           {METRIC_TABS.map(tab => {
             const active = tab.id === metric
             return (
-              <DashboardSegmentButton
-                key={tab.id}
-                active={active}
-                onClick={() => setMetric(tab.id)}
-                className="px-2 py-0.5"
-              >
+              <DashboardSegmentButton key={tab.id} active={active} onClick={() => setMetric(tab.id)}>
                 {tab.label}
               </DashboardSegmentButton>
             )
           })}
         </DashboardSegment>
       }
-      contentClassName="pt-0"
     >
       {!hasData ? (
         <div className={cn('flex min-h-[220px] flex-1 items-center justify-center', dashboardSurface.insetDashed)}>

@@ -12,7 +12,7 @@ function DashboardSegment({ className, label, children, ...props }: DashboardSeg
   return (
     <div
       data-slot="dashboard-segment"
-      className={cn(dashboardSurface.segment, 'text-[11px]', className)}
+      className={cn(dashboardSurface.segment, className)}
       role="tablist"
       aria-label={label}
       {...props}
@@ -34,7 +34,7 @@ function DashboardSegmentButton({ active, className, type = 'button', ...props }
       aria-selected={active}
       className={cn(
         dashboardSurface.segmentItem,
-        'px-2.5 py-1',
+        'h-7 px-2.5',
         active ? dashboardSurface.segmentItemActive : dashboardSurface.segmentItemInactive,
         className,
       )}

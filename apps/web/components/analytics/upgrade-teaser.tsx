@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { BarChart3Icon, SparklesIcon, TrendingUpIcon } from 'lucide-react'
+import Link from 'next/link'
 
-import { dashboardSurface } from '@/components/dashboard'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
@@ -42,20 +42,15 @@ function UpgradeTeaser({ className }: UpgradeTeaserProps) {
         </Button>
       }
     >
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2.5 sm:grid-cols-3">
         {PREMIUM_FEATURES.map(feature => (
-          <div
-            key={feature.title}
-            className={cn('flex flex-col gap-2 p-3', dashboardSurface.inset)}
-          >
-            <span className="flex size-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
-              <feature.icon className="size-3.5" />
+          <div key={feature.title} className={cn('flex flex-col gap-2.5 p-3.5', dashboardSurface.inset)}>
+            <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <feature.icon className="size-3.5" strokeWidth={1.75} />
             </span>
-            <div>
+            <div className="min-w-0 space-y-0.5">
               <p className="text-xs font-medium text-foreground">{feature.title}</p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/80">
-                {feature.description}
-              </p>
+              <p className={dashboardSurface.metricMeta}>{feature.description}</p>
             </div>
           </div>
         ))}

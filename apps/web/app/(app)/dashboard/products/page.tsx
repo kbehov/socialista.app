@@ -1,15 +1,15 @@
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
+import { dashboardSurface } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import { AddProductTrigger } from '@/components/products/add-product-trigger'
-import { dashboardSurface } from '@/components/dashboard'
 import { ProductsTable } from '@/components/tables/products.table'
 import { Button } from '@/components/ui/button'
-import { WorkspaceRequired } from '../_components/workspace-required'
 import { getWorkspaceProducts } from '@/services/product.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { PackageIcon, ShoppingBagIcon } from 'lucide-react'
+import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
 export default async function ProductsPage() {
   const workspace = await getCurrentWorkspace()
@@ -46,11 +46,7 @@ export default async function ProductsPage() {
           iconClassName={dashboardSurface.emptyIcon}
           action={
             <>
-              <AddProductTrigger
-                workspaceId={workspace.id}
-                label="Import from URL"
-                showPlusIcon={false}
-              />
+              <AddProductTrigger workspaceId={workspace.id} label="Import from URL" showPlusIcon={false} />
               <Button size="sm" variant="outline" className="h-9 rounded-full px-4" disabled>
                 <PackageIcon className="size-3.5" />
                 Manual entry

@@ -3,7 +3,7 @@ import { getModels } from '@/services/models.service'
 import { getWorkspaceProducts } from '@/services/product.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { STATIC_AD_MODEL } from '@socialista/types'
-import { WorkspaceRequired } from '../../../_components/workspace-required'
+import { WorkspaceRequired } from '../../../../../../components/dashboard/workspace-required'
 import { StaticAdStudioWorkspace } from './_components/static-ad-studio-workspace'
 
 const StaticAdsPage = async () => {

@@ -127,7 +127,7 @@ export const getWorkspacePublishedActivity = async (
   const path = `${POST_ROUTES.GET_WORKSPACE_PUBLISHED_ACTIVITY(workspaceId)}${search ? `?${search}` : ''}`
   return api.get<PublishedPostActivityResponse>(path, {
     next: {
-      revalidate: POSTS_CACHE_REVALIDATE,
+      revalidate: 3600,
       tags: [workspacePostStatsTag(workspaceId)],
     },
   })

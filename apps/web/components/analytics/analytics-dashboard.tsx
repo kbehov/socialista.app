@@ -1,22 +1,40 @@
 import { Suspense } from 'react'
 
-import type { AnalyticsOverviewResponse, AnalyticsRange, SocialProvider } from '@socialista/types'
+import type {
+  AnalyticsAccountPerformanceRankBy,
+  AnalyticsOverviewResponse,
+  AnalyticsRange,
+  SocialProvider,
+} from '@socialista/types'
 
-import { AnalyticsSkeleton } from './analytics-skeleton'
+import { AnalyticsSection } from './analytics-section'
+import { AnalyticsSkeleton, MetricCardsSkeleton } from './analytics-skeleton'
 import { OverviewMetrics } from './overview-metrics'
+import { AccountPerformancePanel } from './panels/account-performance-panel'
+import { AnomaliesPanel } from './panels/anomalies-panel'
+import { GrowthPanel } from './panels/growth-panel'
+import { PlatformSummaryPanel } from './panels/platform-summary-panel'
+import { PlatformsPanel } from './panels/platforms-panel'
+import { PublishedActivityPanel } from './panels/published-activity-panel'
+import { UsageStatsPanel } from './panels/usage-stats-panel'
 import { PlatformFilter } from './platform-filter'
-import { AnomaliesPanel, GrowthPanel, PlatformSummaryPanel, PlatformsPanel } from './premium-panels'
-import { PublishedActivityPanel } from './published-activity-panel'
 import { UpgradeTeaser } from './upgrade-teaser'
 
 export type AnalyticsDashboardProps = {
   workspaceId: string
   overview: AnalyticsOverviewResponse
   range: AnalyticsRange
+  rankBy?: AnalyticsAccountPerformanceRankBy
   provider?: SocialProvider | 'all'
 }
 
-function AnalyticsDashboard({ workspaceId, overview, range, provider = 'all' }: AnalyticsDashboardProps) {
+function AnalyticsDashboard({
+  workspaceId,
+  overview,
+  range,
+  rankBy = 'followerGrowth',
+  provider = 'all',
+}: AnalyticsDashboardProps) {
   const isPremium = overview.tier === 'premium'
   const platforms = overview.free.accountsByProvider.map(row => ({
     provider: row.provider,
@@ -24,19 +42,31 @@ function AnalyticsDashboard({ workspaceId, overview, range, provider = 'all' }: 
   }))
 
   return (
-    <div className="flex w-full flex-col gap-4 pb-6">
-      {platforms.length > 0 ? <PlatformFilter platforms={platforms} active={provider} range={range} /> : null}
+    <div className="flex w-full flex-col gap-4 pb-8">
+      {platforms.length > 0 ? (
+        <PlatformFilter platforms={platforms} active={provider} range={range} rankBy={rankBy} />
+      ) : null}
 
       <OverviewMetrics overview={overview} />
 
+      <Suspense
+        fallback={
+          <AnalyticsSection title="Usage" description="Plan limits for this workspace." contentClassName="p-0">
+            <MetricCardsSkeleton count={4} />
+          </AnalyticsSection>
+        }
+      >
+        <UsageStatsPanel workspaceId={workspaceId} />
+      </Suspense>
+
       {isPremium ? (
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(260px,1fr)]">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
           <Suspense
             fallback={
               <AnalyticsSkeleton
                 title="Growth"
                 description="Trends for the selected range."
-                heightClassName="h-[200px]"
+                heightClassName="h-[220px]"
               />
             }
           >
@@ -44,11 +74,33 @@ function AnalyticsDashboard({ workspaceId, overview, range, provider = 'all' }: 
           </Suspense>
 
           <Suspense
-            fallback={<AnalyticsSkeleton title="Platforms" description="Audience by network." heightClassName="h-36" />}
+            fallback={
+              <AnalyticsSkeleton title="Platforms" description="Audience by network." heightClassName="h-40" />
+            }
           >
             <PlatformSummaryPanel workspaceId={workspaceId} range={range} overview={overview} provider={provider} />
           </Suspense>
         </div>
+      ) : null}
+
+      {isPremium ? (
+        <Suspense
+          key={rankBy}
+          fallback={
+            <AnalyticsSkeleton
+              title="Top movers"
+              description="Biggest wins and losses this period."
+              heightClassName="h-40"
+            />
+          }
+        >
+          <AccountPerformancePanel
+            workspaceId={workspaceId}
+            range={range}
+            rankBy={rankBy}
+            provider={provider}
+          />
+        </Suspense>
       ) : null}
 
       <Suspense fallback={<AnalyticsSkeleton title="Publishing Activity" heightClassName="h-28" />}>
@@ -71,7 +123,11 @@ function AnalyticsDashboard({ workspaceId, overview, range, provider = 'all' }: 
 
           <Suspense
             fallback={
-              <AnalyticsSkeleton title="Anomalies" description="Spike and drop detection." heightClassName="h-32" />
+              <AnalyticsSkeleton
+                title="Anomalies"
+                description="Spike and drop detection vs. baseline."
+                heightClassName="h-32"
+              />
             }
           >
             <AnomaliesPanel workspaceId={workspaceId} range={range} provider={provider} />
