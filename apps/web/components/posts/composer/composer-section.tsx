@@ -1,5 +1,4 @@
-'use client'
-
+import { dashboardSurface } from '@/components/dashboard'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { ChevronDownIcon } from 'lucide-react'
@@ -19,9 +18,9 @@ type ComposerSectionProps = {
 }
 
 const variantStyles = {
-  default: 'rounded-xl border border-border/50 bg-background',
-  subtle: 'rounded-xl border border-border/40 bg-background',
-  dashed: 'rounded-xl border border-dashed border-border/50 bg-background',
+  default: cn('rounded-xl border border-border/60', dashboardSurface.bg),
+  subtle: cn('rounded-xl border border-border/60', dashboardSurface.bg),
+  dashed: cn('rounded-xl border border-dashed border-border/60', dashboardSurface.bg),
 } as const
 
 export function ComposerSection({

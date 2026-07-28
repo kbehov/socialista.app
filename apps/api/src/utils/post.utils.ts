@@ -46,8 +46,8 @@ export const isPostStatus = (value: unknown): value is ApiPostStatus =>
 const isSocialProvider = (value: unknown): value is SocialProvider =>
   typeof value === 'string' && SOCIAL_PROVIDERS.has(value)
 
-function refId(value: unknown): string {
-  if (value == null) throw new HttpError(500, 'Missing document reference')
+function refId(value: unknown, field = 'reference'): string {
+  if (value == null) throw new HttpError(500, `Missing document reference: ${field}`)
   if (typeof value === 'string') return value
   if (typeof value === 'object' && '_id' in value) {
     return String((value as { _id: unknown })._id)
@@ -135,10 +135,10 @@ export const serializePost = (post: IPost): Post => {
 
   return {
     _id: post._id.toString(),
-    accountId: populatedAccount ? populatedAccount._id.toString() : refId(post.account),
+    accountId: populatedAccount ? populatedAccount._id.toString() : refId(post.account, 'account'),
     account: populatedAccount ? serializeAccountSummary(populatedAccount) : undefined,
-    workspaceId: refId(post.workspace),
-    createdBy: refId(post.createdBy),
+    workspaceId: refId(post.workspace, 'workspace'),
+    createdBy: refId(post.createdBy, 'createdBy'),
     provider: post.provider,
     type: post.type,
     status: post.status,

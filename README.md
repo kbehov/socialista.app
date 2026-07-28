@@ -160,27 +160,32 @@ Learn more about the power of Turborepo:
 
 ## Analytics
 
-Workspace analytics (Pro / Enterprise) pulls Instagram performance metrics on a schedule, stores time-series snapshots, and serves dashboard-ready aggregates via the API.
+Workspace analytics (Pro / Enterprise) pulls Instagram and Facebook Page performance
+metrics on a schedule, stores time-series snapshots, and serves dashboard-ready
+aggregates via the API.
 
 ### Data flow
 
 ```
-POST /cron/analytics/sweep (every 12h, internal secret)
-  → analytics-sweep (enqueue only)
-      pages premium workspaces → pages eligible Instagram accounts
-      → batchTrigger fetch-account-analytics (idempotencyKey per account+bucket)
+POST /cron/analytics/sweep (every 5 min, internal secret)
+  → analytics-sweep for current slot only (hash(accountId) % 144)
+      pages premium workspaces → pages accounts in this slot
+      → batchTrigger fetch-account-analytics in mini-batches of 100
           → fetch Graph profile + insights
           → normalize → upsert AccountAnalyticsSnapshot
   → GET /workspaces/:workspaceId/analytics/... (on-read aggregation)
 ```
 
+Accounts are spread across a rolling 12h window (144 × 5-minute slots). Each account is fetched once per 12h, but 100k accounts trickle continuously instead of spiking twice a day.
+
 ### Snapshot cadence (gauges vs flows)
 
 Instagram returns **gauges** (followers, following, media count) as point-in-time values and **flows** (views, reach, likes, …) as totals over a requested window.
 
-- Snapshots are upserted on a 12h UTC bucket (`bucketAt` at 00:00 or 12:00).
-- **00:00 run** (`isDailyAnchor: true`): gauges + 24h flow window `[bucketAt-24h, bucketAt)`.
-- **12:00 run** (`isDailyAnchor: false`): gauges only — finer follower charts without double-counting flows.
+- Snapshots are upserted **once per account per UTC calendar day** (`bucketAt` at 00:00).
+  Re-running the sweep updates that same document (no same-day duplicates).
+- Slots in the **00:00–12:00** window set `isDailyAnchor: true` (gauges + 24h flow window).
+- Slots in the **12:00–00:00** window merge gauges into the same day’s doc without wiping flows.
 - Read APIs **sum flows only on daily-anchor docs**; gauges use first/last in range.
 
 ### Premium gating
@@ -191,17 +196,24 @@ Instagram returns **gauges** (followers, following, media count) as point-in-tim
 
 | Platform | Status | Notes |
 | --- | --- | --- |
-| Instagram (Page-linked) | Supported | `instagram_manage_insights` already requested |
-| Instagram Login | Supported after reconnect | Added `instagram_business_manage_insights` |
-| Facebook / TikTok / Threads / LinkedIn | Not yet | No fetcher in `ANALYTICS_FETCHERS` |
+| Instagram (Page-linked) | Supported | `instagram_manage_insights` |
+| Instagram Login | Supported after reconnect | `instagram_business_manage_insights` |
+| Facebook Page | Supported after reconnect | Requires `read_insights` (+ Page access token) |
+| TikTok / Threads / LinkedIn | Not yet | No fetcher in `ANALYTICS_FETCHERS` |
 
-`impressions` is never requested (deprecated by Meta; use `views`). Missing metrics are recorded on the snapshot and surfaced in `dataQuality.missingMetrics`.
+Page Insights map into the shared snapshot shape: `page_media_view` → views,
+`page_total_media_view_unique` → reach, like reactions → likes, post engagements → engagement,
+and `page_positive_feedback_by_type` → comments / shares when Meta returns them.
+Saves are not available at Page level and are recorded as missing.
+Legacy `page_impressions*` metrics were deprecated by Meta (Nov 2025) and are no longer requested.
+
+`impressions` is never requested for Instagram (deprecated by Meta; use `views`). Missing metrics are recorded on the snapshot and surfaced in `dataQuality.missingMetrics`.
 
 ### API
 
 - `GET /workspaces/:workspaceId/analytics/accounts/:accountId?range=daily|weekly|monthly`
 - `GET /workspaces/:workspaceId/analytics/summary?range=daily|weekly|monthly`
-- `POST /cron/analytics/sweep` — internal cron (header `x-internal-api-secret`); triggers the enqueue-only sweep every 12h
+- `POST /cron/analytics/sweep` — internal cron (header `x-internal-api-secret`); call **every 5 minutes**; each tick processes one hash slot (~1/144 of accounts)
 
 Responses include current values, previous period, delta, `%` change, and a `series[]` ready for charts — no client-side aggregation required.
 
@@ -209,4 +221,6 @@ Responses include current values, previous period, delta, `%` change, and a `ser
 
 - New collection `accountanalyticssnapshots` — no backfill.
 - Existing `Account` documents get `analytics` defaults lazily (`status: ok` when absent).
-- Indexes: `(account, bucketAt)` unique, `(workspace, bucketAt)`, plus sweep helpers on billing plan/status and account provider/status.
+- `analytics.refreshSlot` is set on create and backfilled by the sweep for older accounts.
+- Indexes: `(account, bucketAt)` unique, `(workspace, bucketAt)`, `(provider, connectionStatus, analytics.refreshSlot, _id)`, plus billing plan/status sweep helpers.
+- **Reconnect Facebook Pages** after deploying `read_insights` so existing Page tokens pick up the new permission.

@@ -6,6 +6,7 @@ export const DASHBOARD_ROUTES = {
   folder: (id: string) => `/dashboard/files/${id}`,
   PRODUCTS: '/dashboard/products',
   ACCOUNTS: '/dashboard/accounts',
+  ANALYTICS: '/dashboard/analytics',
   POSTS: '/dashboard/posts',
   GENERATIONS: '/dashboard/generations',
   STUDIO: {
@@ -35,6 +36,17 @@ export function isDashboardProductsPath(pathname: string) {
 export function isDashboardAccountsPath(pathname: string) {
   return (
     pathname === DASHBOARD_ROUTES.ACCOUNTS || pathname.startsWith(`${DASHBOARD_ROUTES.ACCOUNTS}/`)
+  )
+}
+
+export function isDashboardRootPath(pathname: string) {
+  return pathname === DASHBOARD_ROUTES.ROOT
+}
+
+export function isDashboardAnalyticsPath(pathname: string) {
+  return (
+    pathname === DASHBOARD_ROUTES.ANALYTICS ||
+    pathname.startsWith(`${DASHBOARD_ROUTES.ANALYTICS}/`)
   )
 }
 

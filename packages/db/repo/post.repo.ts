@@ -5,7 +5,9 @@ import {
   MAX_PAGE_SIZE,
   STALE_PUBLISH_CLAIM_MS,
 } from '../config/config.js'
+import { AccountModel } from '../models/account.model.js'
 import { PostModel } from '../models/post.model.js'
+import type { SocialProvider } from '../types/account.types.js'
 import {
   PostStatus,
   type ClaimDuePostsOptions,
@@ -30,7 +32,7 @@ const SORT_BY_SCHEDULED = { scheduledAt: 1 } as const
 const SORT_BY_CREATED_DESC = { createdAt: -1 } as const
 
 /** Lean account fields needed for post list / calendar display. */
-const ACCOUNT_POPULATE_FIELDS =
+const ACCOUNT_LIST_SELECT =
   'workspace provider providerAccountId accountName username accountAvatar timezone connectionStatus lastError createdAt'
 
 const PUBLISH_METADATA_UNSET = {
@@ -195,23 +197,42 @@ export const getPostsByAccount = async (
 /**
  * Paginated post list from a query string / filter object.
  * Example: `?workspace=<id>&page=1&limit=20&status=scheduled`
- * Populates account display fields for list / calendar UI.
+ * Hydrates account display fields for list / calendar UI without mongoose populate,
+ * so deleted accounts keep their ObjectId on the post (populate would null it out).
  */
 export const getAllPosts = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
 
   const [posts, total] = await Promise.all([
-    PostModel.find(match)
-      .populate('account', ACCOUNT_POPULATE_FIELDS)
-      .sort(sort)
-      .skip(pagination.skip)
-      .limit(pagination.limit)
-      .lean(),
+    PostModel.find(match).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
     PostModel.countDocuments(match),
   ])
 
+  const accountIds = [
+    ...new Set(
+      posts
+        .map(post => (post.account != null ? String(post.account) : null))
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ]
+
+  const accounts =
+    accountIds.length > 0
+      ? await AccountModel.find({ _id: { $in: accountIds.map(toObjectId) } })
+          .select(ACCOUNT_LIST_SELECT)
+          .lean()
+      : []
+
+  const accountsById = new Map(accounts.map(account => [String(account._id), account]))
+
+  const hydrated = posts.map(post => {
+    if (post.account == null) return post
+    const account = accountsById.get(String(post.account))
+    return account ? { ...post, account } : post
+  })
+
   return {
-    posts: posts as IPost[],
+    posts: hydrated as IPost[],
     meta: buildPaginationMeta(total, pagination, sort),
   }
 }
@@ -693,4 +714,45 @@ export const countPostsByStatus = async (
   const result = {} as Record<PostStatus, number>
   for (const c of counts) result[c._id] = c.count
   return result
+}
+
+export type PublishedPostsByDayQuery = {
+  workspaceId: string
+  /** Inclusive range start (UTC day). */
+  start: Date
+  /** Exclusive range end (UTC day). */
+  end: Date
+  provider?: SocialProvider
+}
+
+export type PublishedPostsByDayRow = {
+  date: string
+  count: number
+}
+
+/** Daily published-post counts for workspace activity heatmaps. */
+export const getPublishedPostsByDay = async (
+  query: PublishedPostsByDayQuery,
+): Promise<PublishedPostsByDayRow[]> => {
+  const match: Record<string, unknown> = {
+    workspace: toObjectId(query.workspaceId),
+    status: PostStatus.PUBLISHED,
+    publishedAt: { $gte: query.start, $lt: query.end },
+  }
+  if (query.provider) match.provider = query.provider
+
+  const rows = await PostModel.aggregate<{ _id: string; count: number }>([
+    { $match: match },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: '%Y-%m-%d', date: '$publishedAt' },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ])
+
+  return rows.map(row => ({ date: row._id, count: row.count }))
 }

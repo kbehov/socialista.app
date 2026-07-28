@@ -2,17 +2,9 @@
 
 import { NavMain } from '@/components/sidebars/nav-main'
 import { NavUser } from '@/components/sidebars/nav-user'
-import { SidebarCreateAction } from '@/components/sidebars/sidebar-create-action'
 import { SidebarStorageFooter } from '@/components/sidebars/sidebar-storage-footer'
 import { SidebarUpgradeCard } from '@/components/sidebars/sidebar-upgrade-card'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-  SidebarSeparator,
-} from '@/components/ui/sidebar'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import {
   DASHBOARD_ROUTES,
@@ -21,6 +13,7 @@ import {
   isDashboardGenerationsPath,
   isDashboardPostsPath,
   isDashboardProductsPath,
+  isDashboardRootPath,
   isStaticAdsPath,
   isStudioImagesPath,
   isStudioSegmentPath,
@@ -28,15 +21,16 @@ import {
 import { cn } from '@/lib/utils'
 import { WorkspaceResponse } from '@socialista/types'
 import {
+  ChartColumnIcon,
   FolderArchiveIcon,
   HistoryIcon,
   ImagesIcon,
   LayersIcon,
-  LayoutDashboardIcon,
   Link2Icon,
   MegaphoneIcon,
   SendIcon,
   ShoppingBagIcon,
+  UsersIcon,
   VideoIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -79,10 +73,10 @@ function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'vid
 function buildPlatformItems(pathname: string): SidebarNavItem[] {
   return [
     {
-      title: 'Dashboard',
+      title: 'Analytics',
       url: DASHBOARD_ROUTES.ROOT,
-      icon: navIcon(LayoutDashboardIcon),
-      isActive: pathname === DASHBOARD_ROUTES.ROOT,
+      icon: navIcon(ChartColumnIcon),
+      isActive: isDashboardRootPath(pathname),
     },
     {
       title: 'Accounts',
@@ -108,10 +102,10 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       isActive: isStudioRoute(pathname, 'images'),
     },
     {
-      title: 'Static ads',
-      url: DASHBOARD_ROUTES.STUDIO.STATIC_ADS,
-      icon: navIcon(MegaphoneIcon),
-      isActive: isStaticAdsPath(pathname),
+      title: 'Videos',
+      url: DASHBOARD_ROUTES.STUDIO.VIDEOS,
+      icon: navIcon(VideoIcon),
+      isActive: isStudioRoute(pathname, 'videos'),
     },
     {
       title: 'Slideshows',
@@ -120,16 +114,16 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       isActive: isStudioRoute(pathname, 'slideshows'),
     },
     {
-      title: 'Videos',
-      url: DASHBOARD_ROUTES.STUDIO.VIDEOS,
-      icon: navIcon(VideoIcon),
-      isActive: isStudioRoute(pathname, 'videos'),
+      title: 'UGC',
+      url: DASHBOARD_ROUTES.STUDIO.IMAGES,
+      icon: navIcon(UsersIcon),
+      isActive: isStudioRoute(pathname, 'images'),
     },
     {
-      title: 'Generations',
-      url: DASHBOARD_ROUTES.GENERATIONS,
-      icon: navIcon(HistoryIcon),
-      isActive: isDashboardGenerationsPath(pathname),
+      title: 'Static ads',
+      url: DASHBOARD_ROUTES.STUDIO.STATIC_ADS,
+      icon: navIcon(MegaphoneIcon),
+      isActive: isStaticAdsPath(pathname),
     },
   ]
 }
@@ -148,6 +142,12 @@ function buildWorkspaceItems(pathname: string): SidebarNavItem[] {
       icon: navIcon(ShoppingBagIcon),
       isActive: isDashboardProductsPath(pathname),
     },
+    {
+      title: 'Generations',
+      url: DASHBOARD_ROUTES.GENERATIONS,
+      icon: navIcon(HistoryIcon),
+      isActive: isDashboardGenerationsPath(pathname),
+    },
   ]
 }
 
@@ -165,9 +165,9 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
       </SidebarHeader>
 
       <SidebarContent className="sidebar-scrollbar gap-0 overflow-x-hidden px-0 py-2">
-        <SidebarCreateAction />
+        {/* <SidebarCreateAction /> */}
 
-        <SidebarSeparator className="mx-3 my-1.5 group-data-[collapsible=icon]:hidden" />
+        {/* <SidebarSeparator className="mx-3 my-1.5 group-data-[collapsible=icon]:hidden" /> */}
 
         <NavMain items={platformItems} sectionTitle="Overview" className="py-1" />
         <NavMain items={studioItems} sectionTitle="Studio" className="py-1" />

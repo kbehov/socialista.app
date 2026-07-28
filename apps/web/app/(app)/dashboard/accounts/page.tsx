@@ -1,5 +1,6 @@
 import { AccountsOAuthHandler } from '@/components/accounts/accounts-oauth-handler'
 import { AccountsView } from '@/components/accounts/accounts-view'
+import { dashboardSurface } from '@/components/dashboard'
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
@@ -73,9 +74,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           title="Connect your social accounts"
           description="Link your profiles to schedule and publish content from one workspace."
           minHeight="lg"
-          variant="default"
-          className="flex-1 rounded-2xl border-border/50 bg-linear-to-b from-muted/25 via-muted/10 to-transparent"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/50 [&_svg]:size-5"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
           // footer={
           //   <div className="mt-8 flex flex-col items-center gap-5">

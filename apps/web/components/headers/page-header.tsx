@@ -22,7 +22,7 @@ export type PageHeaderBreadcrumb = {
 }
 
 type PageHeaderProps = {
-  title: string
+  title: ReactNode
   description?: string
   breadcrumbs?: PageHeaderBreadcrumb[]
   backHref?: string
@@ -48,8 +48,8 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'shrink-0 transition-[margin,padding,gap] duration-200 ease-out',
-        compact ? 'mb-2 space-y-2' : 'mb-3 space-y-5',
+        'sticky top-0 z-20 -mx-4 shrink-0 bg-background px-4 pt-6 lg:-mx-6 lg:px-6',
+        compact ? 'mb-2 space-y-2 pb-2' : 'mb-3 space-y-5 pb-1',
         className,
       )}
     >
@@ -87,7 +87,7 @@ export function PageHeader({
 
       <div
         className={cn(
-          'flex flex-col transition-[gap] duration-200 ease-out sm:flex-row sm:items-center sm:justify-between',
+          'flex flex-col sm:flex-row sm:items-center sm:justify-between',
           compact ? 'gap-2' : 'gap-4',
         )}
       >
@@ -97,7 +97,7 @@ export function PageHeader({
               href={backHref}
               aria-label="Go back"
               className={cn(
-                'inline-flex shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background text-muted-foreground shadow-xs transition-all hover:-translate-y-px hover:border-border hover:bg-muted/60 hover:text-foreground hover:shadow-sm active:translate-y-0 active:scale-95',
+                'inline-flex shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background text-muted-foreground shadow-xs transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground',
                 compact ? 'mt-0 size-8' : 'mt-0.5 size-9',
               )}
             >
@@ -118,10 +118,10 @@ export function PageHeader({
             {description ? (
               <p
                 className={cn(
-                  'max-w-2xl text-sm leading-5 text-muted-foreground transition-all duration-200 ease-out',
+                  'max-w-2xl text-sm leading-5 text-muted-foreground',
                   compact
-                    ? 'pointer-events-none mt-0 max-h-0 overflow-hidden opacity-0'
-                    : 'mt-1 opacity-100',
+                    ? 'pointer-events-none mt-0 hidden'
+                    : 'mt-1',
                 )}
               >
                 {description}
@@ -141,7 +141,7 @@ export function PageHeader({
           </div>
         ) : null}
       </div>
-      <Separator className={cn('bg-border/70 transition-opacity duration-200', compact && 'opacity-60')} />
+      <Separator className={cn('bg-border/70', compact && 'opacity-60')} />
     </div>
   )
 }

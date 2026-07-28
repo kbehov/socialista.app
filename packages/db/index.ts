@@ -47,6 +47,15 @@ export {
   type ParsedFilters,
 } from './utils/build-filters.js'
 export { hasAnalyticsAccess } from './utils/entitlements.js'
+export {
+  ANALYTICS_REFRESH_WINDOW_MS,
+  ANALYTICS_SLOT_COUNT,
+  ANALYTICS_SLOT_INTERVAL_MS,
+  currentAnalyticsSlotIndex,
+  floorToAnalyticsBucket,
+  floorToUtcDay,
+  hashAccountRefreshSlot,
+} from './utils/analytics-slot.js'
 export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 export {
   assertValidTimezone,
@@ -77,6 +86,8 @@ export {
   type IAccountAnalyticsSnapshot,
   type UpsertAnalyticsSnapshotInput,
   type WorkspaceAccountBreakdownRow,
+  type WorkspaceProviderBreakdownRow,
+  type WorkspaceProviderSeriesGroup,
 } from './types/account-analytics.types.js'
 
 export {

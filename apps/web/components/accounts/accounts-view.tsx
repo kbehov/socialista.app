@@ -1,5 +1,6 @@
 'use client'
 
+import { dashboardSurface } from '@/components/dashboard'
 import { AccountsToolbar } from '@/components/accounts/accounts-toolbar'
 import { AccountsTable } from '@/components/tables/accounts.table'
 import { EmptyState } from '@/components/common/empty-state'
@@ -34,9 +35,9 @@ export function AccountsView({ accounts, meta, searchQuery, filters, hasFilters 
               : 'Connect a social account to get started.'
           }
           minHeight="lg"
-          variant="default"
-          className="flex-1 rounded-2xl border-border/60 bg-linear-to-b from-muted/30 to-muted/10"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
         />
       </div>
     )

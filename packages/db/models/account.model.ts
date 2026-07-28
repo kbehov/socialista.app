@@ -17,6 +17,7 @@ const accountAnalyticsSchema = new Schema(
     lastFetchedAt: { type: Date },
     lastError: { type: String },
     consecutiveFailures: { type: Number, default: 0, min: 0 },
+    refreshSlot: { type: Number, min: 0 },
   },
   { _id: false },
 )
@@ -79,5 +80,6 @@ accountSchema.index({ workspace: 1, accountName: 1 })
 accountSchema.index({ workspace: 1, createdAt: -1 })
 accountSchema.index({ connectionStatus: 1, accessTokenExpiresAt: 1 })
 accountSchema.index({ provider: 1, connectionStatus: 1, _id: 1 })
+accountSchema.index({ provider: 1, connectionStatus: 1, 'analytics.refreshSlot': 1, _id: 1 })
 
 export const AccountModel = model<IAccount>('Account', accountSchema)

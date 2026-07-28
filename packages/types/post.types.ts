@@ -120,6 +120,21 @@ export type GetPostsResponse = {
 
 export type PostStats = Partial<Record<PostStatus, number>>
 
+/** One day of published-post activity for heatmap charts. */
+export type PublishedPostActivityDay = {
+  /** ISO date `YYYY-MM-DD` (UTC). */
+  date: string
+  count: number
+}
+
+export type PublishedPostActivityResponse = {
+  days: number
+  start: string
+  end: string
+  total: number
+  activity: PublishedPostActivityDay[]
+}
+
 /** Supported publish combinations for the connected providers. */
 export const PUBLISHABLE_POST_TYPES: Record<
   Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin'>,

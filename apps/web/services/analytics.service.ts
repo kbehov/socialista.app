@@ -4,6 +4,10 @@ import { ANALYTICS_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
 import type {
   AccountAnalyticsResponse,
+  AnalyticsAnomaliesResponse,
+  AnalyticsGrowthResponse,
+  AnalyticsOverviewResponse,
+  AnalyticsPlatformsResponse,
   AnalyticsRange,
   ApiResponse,
   WorkspaceAnalyticsSummaryResponse,
@@ -19,6 +23,64 @@ function withRange(path: string, range?: AnalyticsRange): string {
   return `${path}?${params.toString()}`
 }
 
+const overviewTag = (workspaceId: string) => `workspace-analytics-${workspaceId}`
+
+/** Tiered overview: free stats always; premium totals when the workspace is Pro+. */
+export const getAnalyticsOverview = async (
+  workspaceId: string,
+  query?: GetAnalyticsQuery,
+): Promise<ApiResponse<AnalyticsOverviewResponse>> => {
+  const path = withRange(ANALYTICS_ROUTES.GET_OVERVIEW(workspaceId), query?.range)
+  return api.get<AnalyticsOverviewResponse>(path, {
+    next: {
+      revalidate: 300,
+      tags: [overviewTag(workspaceId)],
+    },
+  })
+}
+
+/** Workspace growth series + per-provider breakdown (Pro). */
+export const getAnalyticsGrowth = async (
+  workspaceId: string,
+  query?: GetAnalyticsQuery,
+): Promise<ApiResponse<AnalyticsGrowthResponse>> => {
+  const path = withRange(ANALYTICS_ROUTES.GET_GROWTH(workspaceId), query?.range)
+  return api.get<AnalyticsGrowthResponse>(path, {
+    next: {
+      revalidate: 300,
+      tags: [overviewTag(workspaceId)],
+    },
+  })
+}
+
+/** Side-by-side platform performance (Pro). */
+export const getAnalyticsPlatforms = async (
+  workspaceId: string,
+  query?: GetAnalyticsQuery,
+): Promise<ApiResponse<AnalyticsPlatformsResponse>> => {
+  const path = withRange(ANALYTICS_ROUTES.GET_PLATFORMS(workspaceId), query?.range)
+  return api.get<AnalyticsPlatformsResponse>(path, {
+    next: {
+      revalidate: 300,
+      tags: [overviewTag(workspaceId)],
+    },
+  })
+}
+
+/** MVP anomaly flags for key metrics (Pro). */
+export const getAnalyticsAnomalies = async (
+  workspaceId: string,
+  query?: GetAnalyticsQuery,
+): Promise<ApiResponse<AnalyticsAnomaliesResponse>> => {
+  const path = withRange(ANALYTICS_ROUTES.GET_ANOMALIES(workspaceId), query?.range)
+  return api.get<AnalyticsAnomaliesResponse>(path, {
+    next: {
+      revalidate: 300,
+      tags: [overviewTag(workspaceId)],
+    },
+  })
+}
+
 /** Per-account analytics with deltas, % change, and chart-ready series. */
 export const getAccountAnalytics = async (
   workspaceId: string,
@@ -29,7 +91,7 @@ export const getAccountAnalytics = async (
   return api.get<AccountAnalyticsResponse>(path, {
     next: {
       revalidate: 300,
-      tags: [`workspace-analytics-${workspaceId}`, `account-analytics-${accountId}`],
+      tags: [overviewTag(workspaceId), `account-analytics-${accountId}`],
     },
   })
 }
@@ -43,7 +105,7 @@ export const getWorkspaceAnalyticsSummary = async (
   return api.get<WorkspaceAnalyticsSummaryResponse>(path, {
     next: {
       revalidate: 300,
-      tags: [`workspace-analytics-${workspaceId}`],
+      tags: [overviewTag(workspaceId)],
     },
   })
 }

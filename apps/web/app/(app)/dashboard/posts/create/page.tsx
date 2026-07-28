@@ -1,4 +1,5 @@
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
+import { dashboardSurface } from '@/components/dashboard'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PostComposer } from '@/components/posts/composer/post-composer'
@@ -42,9 +43,9 @@ export default async function CreatePostPage() {
           title="Connect an account first"
           description="Link at least one social profile before creating a post."
           minHeight="lg"
-          variant="default"
-          className="flex-1 rounded-2xl border-border/50 bg-gradient-to-b from-muted/25 via-muted/10 to-transparent"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/50 [&_svg]:size-5"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
         />
       </div>

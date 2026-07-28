@@ -9,8 +9,10 @@ import type {
   GetPostsResponse,
   Post,
   PostStats,
+  PublishedPostActivityResponse,
   PublishPostNowResponse,
   SchedulePostPayload,
+  SocialProvider,
   UpdatePostPayload,
 } from '@socialista/types'
 import { revalidatePath, revalidateTag } from 'next/cache'
@@ -100,6 +102,30 @@ export const getAccountPosts = async (
 
 export const getWorkspacePostStats = async (workspaceId: string): Promise<ApiResponse<{ stats: PostStats }>> => {
   return api.get<{ stats: PostStats }>(POST_ROUTES.GET_WORKSPACE_POST_STATS(workspaceId), {
+    next: {
+      revalidate: POSTS_CACHE_REVALIDATE,
+      tags: [workspacePostStatsTag(workspaceId)],
+    },
+  })
+}
+
+export type GetPublishedActivityQuery = {
+  days?: number
+  provider?: SocialProvider
+}
+
+/** Daily published-post counts for the analytics publishing heatmap. */
+export const getWorkspacePublishedActivity = async (
+  workspaceId: string,
+  query?: GetPublishedActivityQuery,
+): Promise<ApiResponse<PublishedPostActivityResponse>> => {
+  const params = new URLSearchParams()
+  if (query?.days) params.set('days', String(query.days))
+  if (query?.provider) params.set('provider', query.provider)
+
+  const search = params.toString()
+  const path = `${POST_ROUTES.GET_WORKSPACE_PUBLISHED_ACTIVITY(workspaceId)}${search ? `?${search}` : ''}`
+  return api.get<PublishedPostActivityResponse>(path, {
     next: {
       revalidate: POSTS_CACHE_REVALIDATE,
       tags: [workspacePostStatsTag(workspaceId)],

@@ -9,6 +9,7 @@ import {
   type SocialProvider,
   type UpdateAccountInput,
 } from '../types/account.types.js'
+import { hashAccountRefreshSlot } from '../utils/analytics-slot.js'
 import { isDuplicateKeyError } from '../utils/is-duplicate-key-error.js'
 import {
   buildFilters,
@@ -76,6 +77,101 @@ export const countAccountsByWorkspace = async (workspaceId: string): Promise<num
   return AccountModel.countDocuments({ workspace: toObjectId(workspaceId) })
 }
 
+export type WorkspaceAccountProviderStat = {
+  provider: SocialProvider
+  accounts: number
+  followers: number | null
+}
+
+export type WorkspaceAccountStats = {
+  total: number
+  totalFollowers: number | null
+  needsReauth: number
+  byProvider: WorkspaceAccountProviderStat[]
+}
+
+/** Lightweight connected-account rollup for the free-tier analytics overview. */
+export const getWorkspaceAccountStats = async (
+  workspaceId: string,
+): Promise<WorkspaceAccountStats> => {
+  const rows = await AccountModel.aggregate<{
+    _id: SocialProvider
+    accounts: number
+    followers: number
+    hasFollowers: number
+    needsReauth: number
+  }>([
+    { $match: { workspace: toObjectId(workspaceId) } },
+    {
+      $group: {
+        _id: '$provider',
+        accounts: { $sum: 1 },
+        followers: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ['$followersCount', null] },
+                  { $ne: ['$followersCount', undefined] },
+                ],
+              },
+              '$followersCount',
+              0,
+            ],
+          },
+        },
+        hasFollowers: {
+          $max: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ['$followersCount', null] },
+                  { $ne: ['$followersCount', undefined] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        needsReauth: {
+          $sum: {
+            $cond: [{ $eq: ['$analytics.status', AccountAnalyticsStatus.NEEDS_REAUTH] }, 1, 0],
+          },
+        },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ])
+
+  let total = 0
+  let totalFollowers = 0
+  let sawFollowers = false
+  let needsReauth = 0
+  const byProvider: WorkspaceAccountProviderStat[] = []
+
+  for (const row of rows) {
+    total += row.accounts
+    needsReauth += row.needsReauth
+    if (row.hasFollowers) {
+      totalFollowers += row.followers
+      sawFollowers = true
+    }
+    byProvider.push({
+      provider: row._id,
+      accounts: row.accounts,
+      followers: row.hasFollowers ? row.followers : null,
+    })
+  }
+
+  return {
+    total,
+    totalFollowers: sawFollowers ? totalFollowers : null,
+    needsReauth,
+    byProvider,
+  }
+}
+
 export const createAccount = async (input: CreateAccountInput): Promise<IAccount> => {
   const {
     workspace,
@@ -125,6 +221,15 @@ export const createAccount = async (input: CreateAccountInput): Promise<IAccount
       lastSyncedAt: lastSyncedAt ?? new Date(),
       lastError: undefined,
     })
+
+    const accountId = account._id.toString()
+    const refreshSlot = hashAccountRefreshSlot(accountId)
+    account.analytics = {
+      ...(account.analytics ?? { status: AccountAnalyticsStatus.OK, consecutiveFailures: 0 }),
+      refreshSlot,
+    }
+    await account.save()
+
     return account.toObject()
   } catch (error) {
     if (isDuplicateKeyError(error)) {
@@ -175,6 +280,7 @@ export const upsertAccount = async (
     status: AccountAnalyticsStatus.OK,
     lastError: null,
     consecutiveFailures: 0,
+    refreshSlot: account.analytics?.refreshSlot ?? hashAccountRefreshSlot(account._id.toString()),
   })
 
   const refreshed = await getAccountById(account._id.toString())
@@ -351,6 +457,14 @@ export type ListAnalyticsEligibleAccountsOptions = {
   workspaceIds: string[]
   /** Providers that have an analytics fetcher (e.g. Instagram only today). */
   providers: SocialProvider[]
+  /**
+   * Only return accounts assigned to this refresh slot (hash(accountId) % SLOT_COUNT).
+   * Also includes accounts missing `analytics.refreshSlot` so they can be backfilled.
+   * Omit (or pass with `forceAll`) to list every eligible account.
+   */
+  refreshSlot?: number
+  /** When true, ignore refreshSlot filtering entirely. */
+  forceAll?: boolean
   cursor?: string
   limit?: number
 }
@@ -367,10 +481,7 @@ export const listAnalyticsEligibleAccounts = async (
     return { accounts: [], nextCursor: null }
   }
 
-  const filter: Record<string, unknown> = {
-    workspace: { $in: options.workspaceIds.map(id => toObjectId(id)) },
-    provider: { $in: options.providers },
-    connectionStatus: ConnectionStatus.CONNECTED,
+  const statusClause = {
     $or: [
       { 'analytics.status': { $exists: false } },
       {
@@ -379,6 +490,25 @@ export const listAnalyticsEligibleAccounts = async (
         },
       },
     ],
+  }
+
+  const andClauses: Record<string, unknown>[] = [statusClause]
+
+  if (!options.forceAll && typeof options.refreshSlot === 'number') {
+    andClauses.push({
+      $or: [
+        { 'analytics.refreshSlot': options.refreshSlot },
+        { 'analytics.refreshSlot': { $exists: false } },
+        { 'analytics.refreshSlot': null },
+      ],
+    })
+  }
+
+  const filter: Record<string, unknown> = {
+    workspace: { $in: options.workspaceIds.map(id => toObjectId(id)) },
+    provider: { $in: options.providers },
+    connectionStatus: ConnectionStatus.CONNECTED,
+    $and: andClauses,
   }
 
   if (options.cursor) {
@@ -408,6 +538,9 @@ export const setAccountAnalyticsState = async (
   }
   if (patch.consecutiveFailures !== undefined) {
     $set['analytics.consecutiveFailures'] = patch.consecutiveFailures
+  }
+  if (patch.refreshSlot !== undefined) {
+    $set['analytics.refreshSlot'] = patch.refreshSlot
   }
   if (patch.lastFetchedAt !== undefined) {
     if (patch.lastFetchedAt === null) {

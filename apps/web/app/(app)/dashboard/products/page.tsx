@@ -2,6 +2,7 @@ import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
 import { AddProductTrigger } from '@/components/products/add-product-trigger'
+import { dashboardSurface } from '@/components/dashboard'
 import { ProductsTable } from '@/components/tables/products.table'
 import { Button } from '@/components/ui/button'
 import { WorkspaceRequired } from '../_components/workspace-required'
@@ -40,9 +41,9 @@ export default async function ProductsPage() {
           title="Build your product catalog"
           description="Import products from any store URL to use them in slideshows, videos, and campaigns."
           minHeight="lg"
-          variant="default"
-          className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
           action={
             <>
               <AddProductTrigger

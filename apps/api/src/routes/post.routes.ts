@@ -6,6 +6,7 @@ import {
   getPost,
   getWorkspacePostStats,
   getWorkspacePosts,
+  getWorkspacePublishedActivity,
   publishPostNow,
   schedulePost,
   updatePost,
@@ -21,6 +22,7 @@ postRoutes.use('/*', authMiddleware)
 postRoutes.post('/', createPost)
 postRoutes.get('/workspace/:workspaceId', getWorkspacePosts)
 postRoutes.get('/workspace/:workspaceId/stats', getWorkspacePostStats)
+postRoutes.get('/workspace/:workspaceId/activity', getWorkspacePublishedActivity)
 postRoutes.get('/account/:accountId', getAccountPosts)
 postRoutes.get('/:id', getPost)
 postRoutes.patch('/:id', updatePost)

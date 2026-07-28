@@ -1,5 +1,6 @@
 'use client'
 
+import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -100,10 +101,10 @@ export function ProductsTable({ products, className }: ProductsTableProps) {
 
   return (
   <>
-    <div className={cn('overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs', className)}>
+    <DashboardTableShell className={className}>
       <Table>
         <TableHeader>
-          <TableRow className="border-border/60 bg-muted/30 hover:bg-muted/30">
+          <TableRow className={cn(dashboardSurface.tableHead, 'hover:bg-muted/30')}>
             <TableHead className="h-11 px-4 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
               Product
             </TableHead>
@@ -200,7 +201,7 @@ export function ProductsTable({ products, className }: ProductsTableProps) {
           })}
         </TableBody>
       </Table>
-    </div>
+    </DashboardTableShell>
 
     <DeleteConfirmDialog
       open={deleteTarget !== null}

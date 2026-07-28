@@ -1,8 +1,8 @@
+import { dashboardSurface } from '@/components/dashboard'
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
-import { PageScrollCompactProvider } from '@/components/headers/page-scroll-compact'
 import { PostsView } from '@/components/posts/posts-view'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
@@ -74,64 +74,62 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   )
 
   return (
-    <PageScrollCompactProvider>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <PageHeader
-          title="Posts"
-          description={`${formatItemCount(meta.total)} in ${workspace.name}`}
-          actions={accounts.length > 0 ? createAction : undefined}
-        />
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <PageHeader
+        title="Posts"
+        description={`${formatItemCount(meta.total)} in ${workspace.name}`}
+        actions={accounts.length > 0 ? createAction : undefined}
+      />
 
-        {!accountsResponse.success ? (
-          <ErrorState
-            title={accountsResponse.message ?? 'Failed to load accounts'}
-            description="Refresh the page to try again."
-            className="flex-1 rounded-xl"
-          />
-        ) : !postsResponse.success ? (
-          <ErrorState
-            title={postsResponse.message ?? 'Failed to load posts'}
-            description="Refresh the page to try again."
-            className="flex-1 rounded-xl"
-          />
-        ) : accounts.length === 0 ? (
-          <EmptyState
-            icon={CalendarClockIcon}
-            title="Connect accounts to start posting"
-            description="Link your social profiles, then create and schedule posts from one place."
-            minHeight="lg"
-            variant="default"
-            className="flex-1 rounded-2xl border-border/50 bg-gradient-to-b from-muted/25 via-muted/10 to-transparent"
-            iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/50 [&_svg]:size-5"
-            action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
-          />
-        ) : meta.total === 0 && !hasFilters ? (
-          <EmptyState
-            icon={CalendarClockIcon}
-            title="No posts yet"
-            description="Plan your content calendar, schedule across platforms, and keep every account on track."
-            minHeight="lg"
-            variant="default"
-            className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
-            iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
-            action={createAction}
-          />
-        ) : (
-          <Suspense fallback={null}>
-            <div className="flex min-h-0 flex-1 flex-col">
-              <PostsView
-                posts={posts}
-                meta={meta}
-                accounts={accounts}
-                filters={filters}
-                view={query.view}
-                month={query.month}
-                hasFilters={hasFilters}
-              />
-            </div>
-          </Suspense>
-        )}
-      </div>
-    </PageScrollCompactProvider>
+      {!accountsResponse.success ? (
+        <ErrorState
+          title={accountsResponse.message ?? 'Failed to load accounts'}
+          description="Refresh the page to try again."
+          className="flex-1 rounded-xl"
+        />
+      ) : !postsResponse.success ? (
+        <ErrorState
+          title={postsResponse.message ?? 'Failed to load posts'}
+          description="Refresh the page to try again."
+          className="flex-1 rounded-xl"
+        />
+      ) : accounts.length === 0 ? (
+        <EmptyState
+          icon={CalendarClockIcon}
+          title="Connect accounts to start posting"
+          description="Link your social profiles, then create and schedule posts from one place."
+          minHeight="lg"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
+          action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
+        />
+      ) : meta.total === 0 && !hasFilters ? (
+        <EmptyState
+          icon={CalendarClockIcon}
+          title="No posts yet"
+          description="Plan your content calendar, schedule across platforms, and keep every account on track."
+          minHeight="lg"
+          variant="hero"
+          className="flex-1"
+          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          action={createAction}
+        />
+      ) : (
+        <Suspense fallback={null}>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <PostsView
+              posts={posts}
+              meta={meta}
+              accounts={accounts}
+              filters={filters}
+              view={query.view}
+              month={query.month}
+              hasFilters={hasFilters}
+            />
+          </div>
+        </Suspense>
+      )}
+    </div>
   )
 }

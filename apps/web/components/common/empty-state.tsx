@@ -2,6 +2,8 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { dashboardSurface } from '@/components/dashboard'
+
 const minHeightClasses = {
   none: '',
   sm: 'min-h-40',
@@ -10,9 +12,10 @@ const minHeightClasses = {
 } as const
 
 const variantClasses = {
-  default: 'rounded-xl border border-dashed border-border/70 bg-muted/20',
-  dashed: 'rounded-lg border-2 border-dashed border-border',
+  default: cn('rounded-xl border border-dashed', dashboardSurface.insetDashed),
+  dashed: 'rounded-lg border-2 border-dashed border-border/60',
   ghost: 'rounded-lg',
+  hero: dashboardSurface.emptyHero,
 } as const
 
 export type EmptyStateProps = {
@@ -77,7 +80,7 @@ export function EmptyState({
         <p className={cn('text-sm font-medium text-foreground', Icon && 'mt-4')}>{title}</p>
 
         {description && (
-          <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">{description}</p>
         )}
 
         {action && <div className="mt-5 flex flex-wrap items-center justify-center gap-2">{action}</div>}

@@ -1,7 +1,9 @@
 'use client'
 
+import { DashboardTableShell } from '@/components/dashboard'
 import { SmartPagination } from '@/components/common/smart-pagination'
 import { GenerationDetailSheet } from '@/components/generations/generation-detail-sheet'
+import { useReportPageScroll } from '@/components/headers/page-scroll-compact'
 import { GenerationsTable } from '@/components/tables/generations.table'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Generation, MetaResponse } from '@socialista/types'
@@ -13,6 +15,7 @@ type GenerationsViewProps = {
 }
 
 export function GenerationsView({ generations, meta }: GenerationsViewProps) {
+  const reportPageScroll = useReportPageScroll()
   const [selected, setSelected] = useState<Generation | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
@@ -29,12 +32,17 @@ export function GenerationsView({ generations, meta }: GenerationsViewProps) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs">
-        <ScrollArea className="h-full" scrollFade scrollbarGutter>
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <DashboardTableShell className="min-h-0 min-w-0 flex-1">
+        <ScrollArea
+          className="h-full"
+          scrollFade
+          scrollbarGutter
+          onViewportScroll={event => reportPageScroll(event.currentTarget.scrollTop)}
+        >
           <GenerationsTable generations={generations} onSelect={handleSelect} />
         </ScrollArea>
-      </div>
+      </DashboardTableShell>
 
       <SmartPagination meta={meta} className="shrink-0" />
 

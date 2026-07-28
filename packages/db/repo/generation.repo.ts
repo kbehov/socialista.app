@@ -183,3 +183,50 @@ export const getGenerations = async (query: string) => {
     meta: buildPaginationMeta(total, pagination, sort),
   }
 }
+
+export type WorkspaceGenerationSpend = {
+  creditsUsed: number
+  cost: number
+  generationCount: number
+}
+
+/** Completed-generation credit spend for a workspace, optionally windowed by createdAt. */
+export const getWorkspaceGenerationSpend = async (query: {
+  workspaceId: string
+  start?: Date
+  end?: Date
+}): Promise<WorkspaceGenerationSpend> => {
+  const match: Record<string, unknown> = {
+    workspace: toObjectId(query.workspaceId),
+    status: GenerationStatus.COMPLETED,
+  }
+
+  if (query.start || query.end) {
+    const createdAt: Record<string, Date> = {}
+    if (query.start) createdAt.$gte = query.start
+    if (query.end) createdAt.$lt = query.end
+    match.createdAt = createdAt
+  }
+
+  const [row] = await GenerationModel.aggregate<{
+    creditsUsed: number
+    cost: number
+    generationCount: number
+  }>([
+    { $match: match },
+    {
+      $group: {
+        _id: null,
+        creditsUsed: { $sum: '$creditsCharged' },
+        cost: { $sum: '$cost' },
+        generationCount: { $sum: 1 },
+      },
+    },
+  ])
+
+  return {
+    creditsUsed: row?.creditsUsed ?? 0,
+    cost: row?.cost ?? 0,
+    generationCount: row?.generationCount ?? 0,
+  }
+}

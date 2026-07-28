@@ -1,6 +1,7 @@
 'use client'
 
 import { publishExistingPost } from '@/actions/post.actions'
+import { dashboardSurface } from '@/components/dashboard'
 import { EmptyState } from '@/components/common/empty-state'
 import { SmartPagination } from '@/components/common/smart-pagination'
 import { PostEditSheet } from '@/components/posts/post-edit-sheet'
@@ -86,9 +87,9 @@ export function PostsView({ posts, meta, accounts, filters, view, month, hasFilt
               : 'Create your first post to schedule content across your connected accounts.'
           }
           minHeight="lg"
-          variant="default"
-          className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
         />
       </div>
     )

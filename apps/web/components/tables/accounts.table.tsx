@@ -1,5 +1,6 @@
 'use client'
 
+import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
 import { AccountRow } from '@/components/accounts/account-row'
 import { AccountTableRow } from '@/components/accounts/account-table-row'
 import { AccountsSummary } from '@/components/accounts/accounts-summary'
@@ -57,10 +58,10 @@ export function AccountsTable({ accounts, className }: AccountsTableProps) {
           ))}
         </div>
 
-        <div className="hidden overflow-hidden rounded-xl border border-border/70 bg-background shadow-xs sm:block">
+        <DashboardTableShell className="hidden sm:block">
           <Table>
             <TableHeader>
-              <TableRow className="border-border/50 bg-background hover:bg-background">
+              <TableRow className={cn(dashboardSurface.tableHead, 'hover:bg-muted/20')}>
                 <TableHead className="h-10 px-4 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
                   Account
                 </TableHead>
@@ -90,7 +91,7 @@ export function AccountsTable({ accounts, className }: AccountsTableProps) {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </DashboardTableShell>
       </div>
 
       <EditAccountDialog

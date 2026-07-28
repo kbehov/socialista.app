@@ -74,11 +74,20 @@ function computeEngagementRate(
   return {}
 }
 
+export type NormalizeInstagramOptions = {
+  /** When false, gauges-only run — do not treat absent flows as missing. Default true. */
+  expectFlows?: boolean
+}
+
 /**
  * Pure mapper: Instagram Graph profile + insights payloads → shared snapshot metrics.
  * No I/O, no clock — unit-tested in isolation.
  */
-export function normalizeInstagramAnalytics(raw: InstagramAnalyticsRaw): NormalizeInstagramResult {
+export function normalizeInstagramAnalytics(
+  raw: InstagramAnalyticsRaw,
+  options?: NormalizeInstagramOptions,
+): NormalizeInstagramResult {
+  const expectFlows = options?.expectFlows !== false
   const missingMetrics: string[] = []
   const metrics: AnalyticsSnapshotMetrics = {}
 
@@ -99,9 +108,11 @@ export function normalizeInstagramAnalytics(raw: InstagramAnalyticsRaw): Normali
 
   const insightsList = Array.isArray(raw.insights?.data) ? raw.insights!.data! : null
   if (!insightsList) {
-    for (const name of FLOW_METRIC_NAMES) {
-      if (name === 'total_interactions') missingMetrics.push('engagement')
-      else missingMetrics.push(name)
+    if (expectFlows) {
+      for (const name of FLOW_METRIC_NAMES) {
+        if (name === 'total_interactions') missingMetrics.push('engagement')
+        else missingMetrics.push(name)
+      }
     }
     return { metrics, missingMetrics }
   }
@@ -118,7 +129,8 @@ export function normalizeInstagramAnalytics(raw: InstagramAnalyticsRaw): Normali
   const likes = insightTotal(byName.get('likes'))
   const comments = insightTotal(byName.get('comments'))
   const shares = insightTotal(byName.get('shares'))
-  const saves = insightTotal(byName.get('saves'))
+  // Meta uses `saves` on newer APIs; older responses used `saved`.
+  const saves = insightTotal(byName.get('saves') ?? byName.get('saved'))
   const engagement = insightTotal(byName.get('total_interactions'))
 
   if (views !== undefined) metrics.views = views

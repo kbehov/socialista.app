@@ -1,6 +1,3 @@
-import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { PenLineIcon } from 'lucide-react'
-import Link from 'next/link'
 import Logo from '../common/logo'
 import { UserDropdown } from '../common/user-dropdown'
 import { ThemeToggle } from '../theme-toggle'
@@ -19,12 +16,7 @@ const DashboardHeader = ({ workspaceBalance }: { workspaceBalance: number }) => 
       </div>
 
       <div className="flex shrink-0 items-center gap-2.5">
-        <Link href={DASHBOARD_ROUTES.STUDIO.IMAGES} className="header-create-btn">
-          <PenLineIcon className="size-3.5" strokeWidth={1.75} />
-          <span>Create</span>
-        </Link>
-
-        <div className="dashboard-header-actions">
+        <div className="flex items-center gap-2.5">
           <WorkspaceBalanceHeader balance={workspaceBalance} />
           <ThemeToggle className="rounded-lg text-muted-foreground hover:bg-muted/80 hover:text-foreground" />
           <UserDropdown />

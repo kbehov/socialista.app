@@ -397,8 +397,10 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  *,
+  ::before,
+  ::after {
+    @apply border-border;
   }
 
   *:focus-visible {
@@ -786,6 +788,15 @@
 
   .ring-hairline-strong {
     box-shadow: 0 0 0 1px var(--border-strong);
+  }
+
+  /* Prefer over ring-* when combined with overflow-hidden — box-shadow rings clip at rounded corners */
+  .border-hairline {
+    border: 1px solid var(--border);
+  }
+
+  .border-hairline-strong {
+    border: 1px solid var(--border-strong);
   }
 
   .transition-premium {

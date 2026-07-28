@@ -1,4 +1,5 @@
 import type { AnalyticsContext } from '@/middlewares/analytics-access.middleware.js'
+import { detectAnomalies } from '@/utils/analytics-anomaly.js'
 import { parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
@@ -14,19 +15,32 @@ import {
 } from '@/utils/analytics.utils.js'
 import {
   AccountAnalyticsStatus,
+  countPostsByStatus,
   getAccountAnalyticsSeries,
   getAccountById,
   getAccounts,
   getLatestMissingMetrics,
   getWorkspaceAccountBreakdown,
+  getWorkspaceAccountStats,
   getWorkspaceAnalyticsSeries,
+  getWorkspaceGenerationSpend,
+  getWorkspaceProviderBreakdown,
+  getWorkspaceProviderSeries,
+  hasAnalyticsAccess,
+  PostStatus,
   type IAccount,
+  type WorkspaceProviderBreakdownRow,
 } from '@socialista/db'
 import type {
   AccountAnalyticsResponse,
   AnalyticsAccountBreakdownRow,
   AnalyticsAccountInfo,
+  AnalyticsAnomaliesResponse,
   AnalyticsDataQuality,
+  AnalyticsGrowthResponse,
+  AnalyticsMetrics,
+  AnalyticsOverviewResponse,
+  AnalyticsPlatformsResponse,
   WorkspaceAnalyticsSummaryResponse,
 } from '@socialista/types'
 import type { Context } from 'hono'
@@ -47,6 +61,63 @@ function toDataQuality(account: IAccount, missingMetrics: string[]): AnalyticsDa
     status,
     lastFetchedAt: account.analytics?.lastFetchedAt?.toISOString(),
     missingMetrics,
+  }
+}
+
+function periodPayload(periods: ReturnType<typeof resolveAnalyticsPeriods>) {
+  return {
+    current: {
+      start: periods.currentStart.toISOString(),
+      end: periods.currentEnd.toISOString(),
+    },
+    previous: {
+      start: periods.previousStart.toISOString(),
+      end: periods.previousEnd.toISOString(),
+    },
+  }
+}
+
+function metricsFromProviderRow(
+  row: WorkspaceProviderBreakdownRow,
+  side: 'current' | 'previous',
+): AnalyticsMetrics {
+  if (side === 'previous') {
+    return {
+      ...emptyAnalyticsMetrics(),
+      followers: row.previousFollowerCount,
+      posts: row.previousPostsCount,
+      views: row.previousViews,
+      reach: row.previousReach,
+      engagement: row.previousEngagement,
+      engagementRate:
+        row.previousEngagement !== null && row.previousReach !== null && row.previousReach > 0
+          ? row.previousEngagement / row.previousReach
+          : row.previousEngagement !== null &&
+              row.previousFollowerCount !== null &&
+              row.previousFollowerCount > 0
+            ? row.previousEngagement / row.previousFollowerCount
+            : null,
+    }
+  }
+
+  return {
+    ...emptyAnalyticsMetrics(),
+    followers: row.followerCount,
+    following: row.followingCount,
+    posts: row.postsCount,
+    views: row.views,
+    reach: row.reach,
+    likes: row.likes,
+    comments: row.comments,
+    shares: row.shares,
+    saves: row.saves,
+    engagement: row.engagement,
+    engagementRate:
+      row.engagement !== null && row.reach !== null && row.reach > 0
+        ? row.engagement / row.reach
+        : row.engagement !== null && row.followerCount !== null && row.followerCount > 0
+          ? row.engagement / row.followerCount
+          : null,
   }
 }
 
@@ -92,16 +163,7 @@ export const getAccountAnalytics = async (c: Context<AnalyticsContext>) => {
   const response: AccountAnalyticsResponse = {
     account: toAccountInfo(account),
     range,
-    period: {
-      current: {
-        start: periods.currentStart.toISOString(),
-        end: periods.currentEnd.toISOString(),
-      },
-      previous: {
-        start: periods.previousStart.toISOString(),
-        end: periods.previousEnd.toISOString(),
-      },
-    },
+    period: periodPayload(periods),
     current,
     previous,
     delta: metricsDelta(current, previous),
@@ -240,16 +302,7 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
 
   const response: WorkspaceAnalyticsSummaryResponse = {
     range,
-    period: {
-      current: {
-        start: periods.currentStart.toISOString(),
-        end: periods.currentEnd.toISOString(),
-      },
-      previous: {
-        start: periods.previousStart.toISOString(),
-        end: periods.previousEnd.toISOString(),
-      },
-    },
+    period: periodPayload(periods),
     totals: currentTotals,
     previousTotals,
     delta: metricsDelta(currentTotals, previousTotals),
@@ -263,6 +316,209 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
       accountsCovered: accounts.length,
       accountsNeedingReauth,
     },
+  }
+
+  return successResponse(c, 200, response)
+}
+
+/** Fast overview: free stats for everyone; premium totals when the workspace is Pro+. */
+export const getAnalyticsOverview = async (c: Context<AnalyticsContext>) => {
+  const workspace = c.get('workspace')
+  const workspaceId = c.get('workspaceId')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+  const isPremium = hasAnalyticsAccess(workspace)
+
+  const [accountStats, postCounts, spend, seriesPoints] = await Promise.all([
+    getWorkspaceAccountStats(workspaceId),
+    countPostsByStatus(workspaceId),
+    getWorkspaceGenerationSpend({ workspaceId }),
+    isPremium
+      ? getWorkspaceAnalyticsSeries({
+          workspaceId,
+          start: periods.previousStart,
+          end: periods.currentEnd,
+          granularity: periods.granularity,
+        })
+      : Promise.resolve(null),
+  ])
+
+  const free = {
+    connectedAccounts: accountStats.total,
+    accountsNeedingReauth: accountStats.needsReauth,
+    totalFollowers: accountStats.totalFollowers,
+    accountsByProvider: accountStats.byProvider,
+    scheduledPosts: postCounts[PostStatus.SCHEDULED] ?? 0,
+    publishedPosts: postCounts[PostStatus.PUBLISHED] ?? 0,
+    draftPosts: postCounts[PostStatus.DRAFT] ?? 0,
+    spend: {
+      creditsUsed: spend.creditsUsed,
+      creditsRemaining: workspace.billing.aiCreditsBalance,
+      generationCount: spend.generationCount,
+    },
+  }
+
+  let premium: AnalyticsOverviewResponse['premium'] = null
+  if (seriesPoints) {
+    const totals = metricsFromSeries(seriesPoints, periods.currentStart, periods.currentEnd)
+    const previousTotals = metricsFromSeries(
+      seriesPoints,
+      periods.previousStart,
+      periods.previousEnd,
+    )
+    premium = {
+      totals,
+      previousTotals,
+      delta: metricsDelta(totals, previousTotals),
+      changePercent: metricsChangePercent(totals, previousTotals),
+    }
+  }
+
+  const response: AnalyticsOverviewResponse = {
+    tier: isPremium ? 'premium' : 'free',
+    range,
+    period: periodPayload(periods),
+    free,
+    premium,
+  }
+
+  return successResponse(c, 200, response)
+}
+
+/** Workspace growth series + per-provider breakdown for charts. */
+export const getAnalyticsGrowth = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+
+  const [seriesPoints, providerSeries] = await Promise.all([
+    getWorkspaceAnalyticsSeries({
+      workspaceId,
+      start: periods.seriesStart,
+      end: periods.currentEnd,
+      granularity: periods.granularity,
+    }),
+    getWorkspaceProviderSeries({
+      workspaceId,
+      start: periods.seriesStart,
+      end: periods.currentEnd,
+      granularity: periods.granularity,
+    }),
+  ])
+
+  const response: AnalyticsGrowthResponse = {
+    range,
+    period: periodPayload(periods),
+    series: toSeriesPoints(
+      seriesPoints.filter(p => p.date >= periods.seriesStart && p.date < periods.currentEnd),
+    ),
+    byProvider: providerSeries.map(group => ({
+      provider: group.provider,
+      series: toSeriesPoints(
+        group.points.filter(p => p.date >= periods.seriesStart && p.date < periods.currentEnd),
+      ),
+    })),
+  }
+
+  return successResponse(c, 200, response)
+}
+
+/** Side-by-side platform performance for the current vs previous period. */
+export const getAnalyticsPlatforms = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+
+  const [breakdownRows, accountStats] = await Promise.all([
+    getWorkspaceProviderBreakdown({
+      workspaceId,
+      currentStart: periods.currentStart,
+      currentEnd: periods.currentEnd,
+      previousStart: periods.previousStart,
+      previousEnd: periods.previousEnd,
+    }),
+    getWorkspaceAccountStats(workspaceId),
+  ])
+
+  const accountCountByProvider = new Map(
+    accountStats.byProvider.map(row => [row.provider, row.accounts]),
+  )
+
+  const platforms = breakdownRows.map(row => {
+    const current = metricsFromProviderRow(row, 'current')
+    const previous = metricsFromProviderRow(row, 'previous')
+    return {
+      provider: row.provider,
+      accounts: accountCountByProvider.get(row.provider) ?? row.accountCount,
+      current,
+      previous,
+      changePercent: metricsChangePercent(current, previous),
+    }
+  })
+
+  // Include providers that have connected accounts but no snapshots yet.
+  for (const row of accountStats.byProvider) {
+    if (platforms.some(p => p.provider === row.provider)) continue
+    const empty = emptyAnalyticsMetrics()
+    platforms.push({
+      provider: row.provider,
+      accounts: row.accounts,
+      current: { ...empty, followers: row.followers },
+      previous: empty,
+      changePercent: metricsChangePercent({ ...empty, followers: row.followers }, empty),
+    })
+  }
+
+  const response: AnalyticsPlatformsResponse = {
+    range,
+    period: periodPayload(periods),
+    platforms,
+  }
+
+  return successResponse(c, 200, response)
+}
+
+/** MVP anomaly flags for workspace + per-provider series. */
+export const getAnalyticsAnomalies = async (c: Context<AnalyticsContext>) => {
+  const workspaceId = c.get('workspaceId')
+  const range = parseAnalyticsRange(c.req.query('range'))
+  const periods = resolveAnalyticsPeriods(range)
+
+  const [seriesPoints, providerSeries] = await Promise.all([
+    getWorkspaceAnalyticsSeries({
+      workspaceId,
+      start: periods.seriesStart,
+      end: periods.currentEnd,
+      granularity: 'day',
+    }),
+    getWorkspaceProviderSeries({
+      workspaceId,
+      start: periods.seriesStart,
+      end: periods.currentEnd,
+      granularity: 'day',
+    }),
+  ])
+
+  const chartSeries = toSeriesPoints(
+    seriesPoints.filter(p => p.date >= periods.seriesStart && p.date < periods.currentEnd),
+  )
+
+  const anomalies = [
+    ...detectAnomalies(chartSeries),
+    ...providerSeries.flatMap(group =>
+      detectAnomalies(
+        toSeriesPoints(
+          group.points.filter(p => p.date >= periods.seriesStart && p.date < periods.currentEnd),
+        ),
+        { provider: group.provider },
+      ),
+    ),
+  ]
+
+  const response: AnalyticsAnomaliesResponse = {
+    range,
+    period: periodPayload(periods),
+    anomalies,
   }
 
   return successResponse(c, 200, response)

@@ -1,10 +1,14 @@
 import { successResponse } from '@/utils/http-response.js'
 import { buildPublishPostTriggerItem } from '@/utils/publish-dispatch.utils.js'
 import {
+  ANALYTICS_SLOT_COUNT,
   DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_PER_TICK,
   claimDuePosts,
+  currentAnalyticsSlotIndex,
+  floorToAnalyticsBucket,
+  floorToUtcDay,
   getConnectedAccountsExpiringSoon,
   getDatabaseNow,
   markPostQueued,
@@ -24,13 +28,6 @@ import type { Context } from 'hono'
 
 function utcDateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10)
-}
-
-function floorTo12hBucket(date: Date): Date {
-  const d = new Date(date)
-  d.setUTCMinutes(0, 0, 0)
-  d.setUTCHours(d.getUTCHours() < 12 ? 0 : 12)
-  return d
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -182,23 +179,41 @@ export const publishDuePosts = async (c: Context) => {
 }
 
 /**
- * Kick off the analytics sweep task (enqueue-only fan-out of per-account fetches).
- * Call every 12h via external cron with `x-internal-api-secret`.
+ * Kick off one slot of the rolling analytics sweep.
+ * Call **every 5 minutes** via external cron with `x-internal-api-secret`.
+ * Each tick enqueues ~1/144 of accounts (hash(accountId) % 144) for the current 12h window.
+ *
+ * Testing: `POST /cron/analytics/sweep?forceAll=1` enqueues every eligible account
+ * (ignores slot hashing) and forces the 00:00 UTC daily-anchor bucket with flows.
+ * Do not use forceAll on the production schedule.
  */
 export const sweepAccountAnalytics = async (c: Context) => {
   const now = new Date()
-  const bucketAt = floorTo12hBucket(now)
+  const forceAll =
+    c.req.query('forceAll') === '1' ||
+    c.req.query('forceAll') === 'true'
+  const halfBucket = floorToAnalyticsBucket(now)
+  const bucketAt = floorToUtcDay(now)
   const bucketIso = bucketAt.toISOString()
+  const slotIndex = currentAnalyticsSlotIndex(now)
+  const includeFlows = forceAll || halfBucket.getUTCHours() === 0
 
   const handle = await tasks.trigger<AnalyticsSweepTask>(
     TASK_IDS.analyticsSweep,
-    { timestamp: now.toISOString() },
-    { idempotencyKey: `analytics-sweep:${bucketIso}` },
+    { timestamp: now.toISOString(), slotIndex, forceAll },
+    {
+      idempotencyKey: forceAll
+        ? `analytics-sweep-force:${bucketIso}:${now.toISOString()}`
+        : `analytics-sweep:${bucketIso}:slot:${slotIndex}`,
+    },
   )
 
   return successResponse(c, 200, {
     bucketAt: bucketIso,
-    includeFlows: bucketAt.getUTCHours() === 0,
+    slotIndex,
+    slotCount: ANALYTICS_SLOT_COUNT,
+    forceAll,
+    includeFlows,
     runId: handle.id,
   })
 }

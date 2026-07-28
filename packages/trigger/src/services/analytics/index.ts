@@ -2,7 +2,12 @@ import type { AnalyticsSnapshotMetrics, IAccount } from '@socialista/db'
 import { SocialProvider } from '@socialista/db'
 
 import { AnalyticsUnsupportedError } from './errors.js'
+import { fetchFacebookAnalytics } from './facebook.js'
 import { fetchInstagramAnalytics, type AnalyticsFetchWindow } from './instagram.js'
+import {
+  normalizeFacebookAnalytics,
+  type FacebookAnalyticsRaw,
+} from './normalize/facebook.js'
 import {
   normalizeInstagramAnalytics,
   type InstagramAnalyticsRaw,
@@ -10,7 +15,7 @@ import {
 } from './normalize/instagram.js'
 
 export type AnalyticsFetchResult = {
-  raw: InstagramAnalyticsRaw | Record<string, unknown>
+  raw: InstagramAnalyticsRaw | FacebookAnalyticsRaw | Record<string, unknown>
   normalized: NormalizeInstagramResult
 }
 
@@ -21,13 +26,20 @@ export type AnalyticsFetcher = (
 
 const instagramFetcher: AnalyticsFetcher = async (account, options) => {
   const raw = await fetchInstagramAnalytics(account, options)
-  const normalized = normalizeInstagramAnalytics(raw)
+  const normalized = normalizeInstagramAnalytics(raw, { expectFlows: options.includeFlows })
+  return { raw, normalized }
+}
+
+const facebookFetcher: AnalyticsFetcher = async (account, options) => {
+  const raw = await fetchFacebookAnalytics(account, options)
+  const normalized = normalizeFacebookAnalytics(raw, { expectFlows: options.includeFlows })
   return { raw, normalized }
 }
 
 /** Providers with a working analytics fetcher. Extend as more platforms are added. */
 export const ANALYTICS_FETCHERS: Partial<Record<SocialProvider, AnalyticsFetcher>> = {
   [SocialProvider.INSTAGRAM]: instagramFetcher,
+  [SocialProvider.FACEBOOK]: facebookFetcher,
 }
 
 export const ANALYTICS_SUPPORTED_PROVIDERS: SocialProvider[] = Object.keys(
@@ -52,4 +64,5 @@ export {
   AnalyticsAuthError,
   AnalyticsUnsupportedError,
 } from './errors.js'
+export { normalizeFacebookAnalytics } from './normalize/facebook.js'
 export { normalizeInstagramAnalytics } from './normalize/instagram.js'

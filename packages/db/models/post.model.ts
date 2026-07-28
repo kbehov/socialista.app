@@ -114,4 +114,16 @@ postSchema.index(
   { partialFilterExpression: { publishedAt: { $type: 'date' } } },
 )
 
+// Workspace publishing heatmap — published posts by day.
+postSchema.index(
+  { workspace: 1, publishedAt: 1 },
+  {
+    name: 'workspace_published_activity',
+    partialFilterExpression: {
+      status: PostStatus.PUBLISHED,
+      publishedAt: { $type: 'date' },
+    },
+  },
+)
+
 export const PostModel = model<IPost>('Post', postSchema)

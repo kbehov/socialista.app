@@ -89,3 +89,28 @@ export type WorkspaceAccountBreakdownRow = {
   engagement: number | null
   previousFollowerCount: number | null
 }
+
+export type WorkspaceProviderSeriesGroup = {
+  provider: SocialProvider
+  points: AccountAnalyticsSeriesPoint[]
+}
+
+export type WorkspaceProviderBreakdownRow = {
+  provider: SocialProvider
+  accountCount: number
+  followerCount: number | null
+  followingCount: number | null
+  postsCount: number | null
+  views: number | null
+  reach: number | null
+  likes: number | null
+  comments: number | null
+  shares: number | null
+  saves: number | null
+  engagement: number | null
+  previousFollowerCount: number | null
+  previousViews: number | null
+  previousReach: number | null
+  previousEngagement: number | null
+  previousPostsCount: number | null
+}

@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/common/empty-state'
+import { dashboardSurface } from '@/components/dashboard'
 import { ErrorState } from '@/components/common/error-state'
 import { GenerationsView } from '@/components/generations/generations-view'
 import { PageHeader } from '@/components/headers/page-header'
@@ -92,7 +93,7 @@ export default async function GenerationsPage({ searchParams }: GenerationsPageP
   const meta = response.meta ?? defaultMeta
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <PageHeader
         title="Generations"
         description={`${formatItemCount(meta.total)} in ${workspace.name}`}
@@ -110,9 +111,9 @@ export default async function GenerationsPage({ searchParams }: GenerationsPageP
           title="No generations yet"
           description="Create images or static ads in the studio. Finished runs will show up here with cost, runtime, and results."
           minHeight="lg"
-          variant="default"
-          className="flex-1 rounded-2xl border-border/60 bg-gradient-to-b from-muted/30 to-muted/10"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
         />
       ) : (
         <Suspense fallback={null}>

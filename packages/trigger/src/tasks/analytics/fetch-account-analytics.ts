@@ -2,6 +2,7 @@ import {
   AccountAnalyticsStatus,
   connectDb,
   disconnectDb,
+  floorToUtcDay,
   getAccountByIdWithTokens,
   getWorkspaceById,
   hasAnalyticsAccess,
@@ -19,22 +20,15 @@ import {
   fetchAccountAnalytics,
 } from '../../services/analytics/index.js'
 
-const instagramAnalyticsQueue: Queue = queue({
-  name: 'analytics-instagram',
+const analyticsQueue: Queue = queue({
+  name: 'analytics-meta',
   concurrencyLimit: 20,
 })
-
-function floorTo12hBucket(date: Date): Date {
-  const d = new Date(date)
-  d.setUTCMinutes(0, 0, 0)
-  d.setUTCHours(d.getUTCHours() < 12 ? 0 : 12)
-  return d
-}
 
 export const fetchAccountAnalyticsTask = schemaTask({
   id: TASK_IDS.fetchAccountAnalytics,
   schema: fetchAccountAnalyticsPayloadSchema,
-  queue: instagramAnalyticsQueue,
+  queue: analyticsQueue,
   maxDuration: 120,
   retry: {
     maxAttempts: 3,
@@ -62,7 +56,8 @@ export const fetchAccountAnalyticsTask = schemaTask({
         return { status: 'skipped' as const, reason: 'No analytics access' }
       }
 
-      const bucketAt = floorTo12hBucket(new Date(payload.bucketAt))
+      // One document per account per UTC calendar day.
+      const bucketAt = floorToUtcDay(new Date(payload.bucketAt))
       const capturedAt = new Date()
       const includeFlows = payload.includeFlows
       const windowEnd = bucketAt

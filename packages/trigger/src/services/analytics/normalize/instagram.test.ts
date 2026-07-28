@@ -97,6 +97,31 @@ describe('normalizeInstagramAnalytics', () => {
     )
   })
 
+  it('does not mark flows missing on gauges-only runs', () => {
+    const result = normalizeInstagramAnalytics(
+      {
+        profile: { followers_count: 50, follows_count: 10, media_count: 3 },
+        insights: null,
+      },
+      { expectFlows: false },
+    )
+
+    expect(result.metrics.followerCount).toBe(50)
+    expect(result.missingMetrics).toEqual([])
+  })
+
+  it('accepts legacy saved metric name', () => {
+    const result = normalizeInstagramAnalytics({
+      profile: { followers_count: 100 },
+      insights: {
+        data: [{ name: 'saved', total_value: { value: 9 } }],
+      },
+    })
+
+    expect(result.metrics.saves).toBe(9)
+    expect(result.missingMetrics).not.toContain('saves')
+  })
+
   it('reads the last values[] entry when total_value is absent', () => {
     const result = normalizeInstagramAnalytics({
       profile: { followers_count: 200 },

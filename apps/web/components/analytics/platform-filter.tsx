@@ -1,0 +1,78 @@
+import { PlusIcon } from 'lucide-react'
+import Link from 'next/link'
+import type { ReactNode } from 'react'
+
+import { dashboardSegmentLinkClass, DashboardSegment } from '@/components/dashboard'
+import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { cn } from '@/lib/utils'
+import type { AnalyticsRange, SocialProvider } from '@socialista/types'
+
+export type PlatformFilterOption = {
+  provider: SocialProvider
+  accounts: number
+}
+
+export type PlatformFilterProps = {
+  platforms: PlatformFilterOption[]
+  active?: SocialProvider | 'all'
+  range: AnalyticsRange
+  className?: string
+}
+
+function buildHref(range: AnalyticsRange, provider?: SocialProvider | 'all') {
+  const search = new URLSearchParams({ range })
+  if (provider && provider !== 'all') search.set('provider', provider)
+  return `${DASHBOARD_ROUTES.ROOT}?${search.toString()}`
+}
+
+function PlatformFilter({ platforms, active = 'all', range, className }: PlatformFilterProps) {
+  const current = active ?? 'all'
+
+  return (
+    <div
+      data-slot="platform-filter"
+      className={cn(
+        'flex items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+      role="tablist"
+      aria-label="Filter by platform"
+    >
+      <DashboardSegment label="Filter by platform">
+        <FilterPill href={buildHref(range, 'all')} active={current === 'all'}>
+          All platforms
+        </FilterPill>
+
+        {platforms.map(platform => (
+          <FilterPill
+            key={platform.provider}
+            href={buildHref(range, platform.provider)}
+            active={current === platform.provider}
+          >
+            <SocialPlatformIcon provider={platform.provider} size={12} className="size-4 rounded [&_svg]:size-2.5" />
+            <span className="hidden sm:inline">{getSocialPlatformLabel(platform.provider)}</span>
+          </FilterPill>
+        ))}
+      </DashboardSegment>
+
+      <Link
+        href={DASHBOARD_ROUTES.ACCOUNTS}
+        className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        aria-label="Connect another platform"
+      >
+        <PlusIcon className="size-3" />
+      </Link>
+    </div>
+  )
+}
+
+function FilterPill({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+  return (
+    <Link href={href} role="tab" aria-selected={active} className={dashboardSegmentLinkClass(active)}>
+      {children}
+    </Link>
+  )
+}
+
+export { PlatformFilter }

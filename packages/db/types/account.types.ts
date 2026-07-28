@@ -31,6 +31,11 @@ export type AccountAnalyticsState = {
   lastFetchedAt?: Date
   lastError?: string
   consecutiveFailures: number
+  /**
+   * Slot in `[0, ANALYTICS_SLOT_COUNT)` derived from account id hash.
+   * Sweep ticks only process accounts whose slot matches the current 5-minute window.
+   */
+  refreshSlot?: number
 }
 
 /** A social platform account connected to a workspace for publishing. */
@@ -107,4 +112,5 @@ export type SetAccountAnalyticsStateInput = {
   lastFetchedAt?: Date | null
   lastError?: string | null
   consecutiveFailures?: number
+  refreshSlot?: number
 }

@@ -90,3 +90,101 @@ export type WorkspaceAnalyticsSummaryResponse = {
     accountsNeedingReauth: number
   }
 }
+
+export type AnalyticsTier = 'free' | 'premium'
+
+export type AnalyticsSpend = {
+  creditsUsed: number
+  creditsRemaining: number
+  generationCount: number
+}
+
+export type AnalyticsProviderAccountStat = {
+  provider: SocialProvider
+  accounts: number
+  followers: number | null
+}
+
+export type AnalyticsFreeStats = {
+  connectedAccounts: number
+  accountsNeedingReauth: number
+  totalFollowers: number | null
+  accountsByProvider: AnalyticsProviderAccountStat[]
+  scheduledPosts: number
+  publishedPosts: number
+  draftPosts: number
+  spend: AnalyticsSpend
+}
+
+export type AnalyticsPremiumTotals = {
+  totals: AnalyticsMetrics
+  previousTotals: AnalyticsMetrics
+  delta: AnalyticsMetrics
+  changePercent: Record<keyof AnalyticsMetrics, number | null>
+}
+
+export type AnalyticsOverviewResponse = {
+  tier: AnalyticsTier
+  range: AnalyticsRange
+  period: {
+    current: AnalyticsPeriodBounds
+    previous: AnalyticsPeriodBounds
+  }
+  free: AnalyticsFreeStats
+  premium: AnalyticsPremiumTotals | null
+}
+
+export type AnalyticsProviderSeries = {
+  provider: SocialProvider
+  series: AnalyticsSeriesPoint[]
+}
+
+export type AnalyticsGrowthResponse = {
+  range: AnalyticsRange
+  period: {
+    current: AnalyticsPeriodBounds
+    previous: AnalyticsPeriodBounds
+  }
+  series: AnalyticsSeriesPoint[]
+  byProvider: AnalyticsProviderSeries[]
+}
+
+export type AnalyticsPlatformRow = {
+  provider: SocialProvider
+  accounts: number
+  current: AnalyticsMetrics
+  previous: AnalyticsMetrics
+  changePercent: Record<keyof AnalyticsMetrics, number | null>
+}
+
+export type AnalyticsPlatformsResponse = {
+  range: AnalyticsRange
+  period: {
+    current: AnalyticsPeriodBounds
+    previous: AnalyticsPeriodBounds
+  }
+  platforms: AnalyticsPlatformRow[]
+}
+
+export type AnalyticsAnomalyMetric = 'followers' | 'reach' | 'views' | 'engagement'
+
+export type AnalyticsAnomaly = {
+  metric: AnalyticsAnomalyMetric
+  /** null = workspace-wide */
+  provider: SocialProvider | null
+  date: string
+  value: number
+  baseline: number
+  changePercent: number
+  direction: 'spike' | 'drop'
+  severity: 'warning' | 'critical'
+}
+
+export type AnalyticsAnomaliesResponse = {
+  range: AnalyticsRange
+  period: {
+    current: AnalyticsPeriodBounds
+    previous: AnalyticsPeriodBounds
+  }
+  anomalies: AnalyticsAnomaly[]
+}

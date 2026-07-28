@@ -1,6 +1,64 @@
-import { redirect } from 'next/navigation'
-import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { auth } from '@/auth'
+import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard'
+import { AnalyticsRangeToggle } from '@/components/analytics/analytics-range-toggle'
+import { parseAnalyticsProvider, parseAnalyticsRange } from '@/components/analytics/lib/parse-params'
+import { ErrorState } from '@/components/common/error-state'
+import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
+import { PageHeader } from '@/components/headers/page-header'
+import { getFirstName, getGreeting } from '@/lib/greeting'
+import { getAnalyticsOverview } from '@/services/analytics.service'
+import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 
-export default function DashboardPage() {
-  redirect(DASHBOARD_ROUTES.HOME)
+import { WorkspaceRequired } from './_components/workspace-required'
+
+type DashboardPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const [workspace, session] = await Promise.all([getCurrentWorkspace(), auth()])
+  const userName = session?.user?.name ?? 'User'
+  const { text: greeting, period } = getGreeting()
+  const firstName = getFirstName(userName)
+
+  if (!workspace) {
+    return <WorkspaceRequired message="Select a workspace to view analytics." />
+  }
+
+  const params = await searchParams
+  const range = parseAnalyticsRange(params.range)
+  const provider = parseAnalyticsProvider(params.provider)
+
+  const { data, success, message } = await getAnalyticsOverview(workspace.id, { range })
+
+  if (!success || !data) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PageHeader
+          title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
+          description={workspace.name}
+        />
+        <div className="flex flex-1 items-center justify-center">
+          <ErrorState
+            title="Couldn't load analytics"
+            description={message ?? 'Something went wrong while loading analytics.'}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const isPremium = data.tier === 'premium'
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PageHeader
+        title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
+        description={`${workspace.name} analytics at a glance`}
+        actions={<AnalyticsRangeToggle range={range} params={provider === 'all' ? undefined : { provider }} />}
+      />
+
+      <AnalyticsDashboard workspaceId={workspace.id} overview={data} range={range} provider={provider} />
+    </div>
+  )
 }

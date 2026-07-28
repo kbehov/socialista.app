@@ -120,6 +120,7 @@ export const POST_ROUTES = {
   CANCEL: (id: string) => `/posts/${id}/cancel`,
   GET_WORKSPACE_POSTS: (workspaceId: string) => `/posts/workspace/${workspaceId}`,
   GET_WORKSPACE_POST_STATS: (workspaceId: string) => `/posts/workspace/${workspaceId}/stats`,
+  GET_WORKSPACE_PUBLISHED_ACTIVITY: (workspaceId: string) => `/posts/workspace/${workspaceId}/activity`,
   GET_ACCOUNT_POSTS: (accountId: string) => `/posts/account/${accountId}`,
 } as const
 
@@ -129,6 +130,10 @@ export const GENERATION_ROUTES = {
 } as const
 
 export const ANALYTICS_ROUTES = {
+  GET_OVERVIEW: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/overview`,
+  GET_GROWTH: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/growth`,
+  GET_PLATFORMS: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/platforms`,
+  GET_ANOMALIES: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/anomalies`,
   GET_ACCOUNT: (workspaceId: string, accountId: string) =>
     `/workspaces/${workspaceId}/analytics/accounts/${accountId}`,
   GET_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary`,

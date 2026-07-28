@@ -17,6 +17,7 @@ import { buildPublishPostTriggerItem } from '@/utils/publish-dispatch.utils.js'
 import { assertPostsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   PostStatus,
+  SocialProvider,
   cancelPostAtomic,
   claimPostForImmediatePublish,
   countPostsByStatus,
@@ -26,13 +27,14 @@ import {
   failPostPublish,
   getAllPosts,
   getPostsByAccount,
+  getPublishedPostsByDay,
   incrementPostsUsage,
   markPostQueued,
   schedulePostAtomic,
   updatePost as updatePostInDb,
   type IPost,
 } from '@socialista/db'
-import { TASK_IDS } from '@socialista/types'
+import { TASK_IDS, type PublishedPostActivityResponse } from '@socialista/types'
 import type { PublishPostTask } from '@socialista/trigger/task-types'
 import { tasks } from '@trigger.dev/sdk/v3'
 import { randomUUID } from 'node:crypto'
@@ -243,6 +245,71 @@ export const getWorkspacePostStats = async (c: Context<AppContext>) => {
 
   const stats = await countPostsByStatus(workspaceId)
   return successResponse(c, 200, { stats })
+}
+
+const ACTIVITY_PROVIDERS = new Set<string>(Object.values(SocialProvider))
+const DEFAULT_ACTIVITY_DAYS = 365
+const MAX_ACTIVITY_DAYS = 366
+
+function parseActivityDays(raw: string | undefined): number {
+  if (!raw) return DEFAULT_ACTIVITY_DAYS
+  const parsed = Number.parseInt(raw, 10)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    throw new HttpError(400, 'days must be a positive integer')
+  }
+  return Math.min(parsed, MAX_ACTIVITY_DAYS)
+}
+
+function parseActivityProvider(raw: string | undefined): SocialProvider | undefined {
+  if (!raw) return undefined
+  if (!ACTIVITY_PROVIDERS.has(raw)) {
+    throw new HttpError(400, 'Invalid provider')
+  }
+  return raw as SocialProvider
+}
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+}
+
+function toIsoDay(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
+/** Daily published-post counts for the publishing activity heatmap. */
+export const getWorkspacePublishedActivity = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
+  await getWorkspaceAsMember(workspaceId, userId)
+
+  const days = parseActivityDays(c.req.query('days'))
+  const provider = parseActivityProvider(c.req.query('provider'))
+
+  const end = startOfUtcDay(new Date())
+  end.setUTCDate(end.getUTCDate() + 1) // exclusive end = tomorrow 00:00 UTC
+  const start = new Date(end)
+  start.setUTCDate(start.getUTCDate() - days)
+
+  const activity = await getPublishedPostsByDay({
+    workspaceId,
+    start,
+    end,
+    provider,
+  })
+
+  const total = activity.reduce((sum, day) => sum + day.count, 0)
+  const inclusiveEnd = new Date(end)
+  inclusiveEnd.setUTCDate(inclusiveEnd.getUTCDate() - 1)
+
+  const response: PublishedPostActivityResponse = {
+    days,
+    start: toIsoDay(start),
+    end: toIsoDay(inclusiveEnd),
+    total,
+    activity,
+  }
+
+  return successResponse(c, 200, response)
 }
 
 function assertPostNotPublishing(post: IPost) {
