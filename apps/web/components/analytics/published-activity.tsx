@@ -56,8 +56,8 @@ function formatTimeSaved(posts: number): { value: string; label: string; descrip
 
 function TimeSavedBadge({ value }: { value: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-      <TimerIcon className="size-3.5 text-emerald-500/80" strokeWidth={1.75} aria-hidden />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/30 px-2.5 py-1 text-[11px] text-muted-foreground">
+      <TimerIcon className="size-3 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} aria-hidden />
       <span>
         <span className="font-medium tabular-nums tracking-tight text-foreground">{value}</span>
         <span className="ml-1">saved</span>
@@ -75,7 +75,7 @@ function PublishedActivity({ data, className }: PublishedActivityProps) {
     <GithubStats
       className={className}
       compact
-      title="Publishing Activity"
+      title="Publishing activity"
       action={timeSaved ? <TimeSavedBadge value={timeSaved.value} /> : null}
       metrics={[
         {

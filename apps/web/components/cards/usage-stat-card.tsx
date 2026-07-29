@@ -60,12 +60,19 @@ function UsageStatCard({
   return (
     <div
       data-slot="usage-stat-card"
-      className={cn('flex min-w-0 flex-col gap-2.5 px-4 py-3.5', dashboardSurface.dividerCell, className)}
+      className={cn('flex min-w-0 flex-col gap-2.5 px-4 py-4', dashboardSurface.dividerCell, className)}
     >
       <div className="flex items-center justify-between gap-2">
         <p className={cn(dashboardSurface.metricLabel, 'truncate')}>{title}</p>
         {icon ? (
-          <span className={cn('shrink-0 text-muted-foreground/45 [&_svg]:size-3.5', iconClassName)}>{icon}</span>
+          <span
+            className={cn(
+              'flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 [&_svg]:size-3.5',
+              iconClassName,
+            )}
+          >
+            {icon}
+          </span>
         ) : null}
       </div>
 

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { exportAccountAnalyticsCsv, exportWorkspaceAnalyticsSummaryCsv } from '@/services/analytics.service'
 import type { AnalyticsRange } from '@socialista/types'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 
 export type AnalyticsExportCsvButtonProps = {
   workspaceId: string
@@ -48,14 +49,28 @@ function AnalyticsExportCsvButton({ workspaceId, range, accountId }: AnalyticsEx
   }
 
   return (
-    <Button type="button" variant="ghost" size="sm" className="shrink-0" disabled={isPending} onClick={handleExport}>
-      {isPending ? (
-        <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
-      ) : (
-        <DownloadIcon className="size-3.5" strokeWidth={1.75} data-icon="inline-start" />
-      )}
-      {isPending ? 'Exporting…' : 'Export'}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98]"
+          disabled={isPending}
+          onClick={handleExport}
+        >
+          {isPending ? (
+            <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
+          ) : (
+            <DownloadIcon className="size-3.5" strokeWidth={1.75} />
+          )}
+          {isPending ? 'Exporting…' : 'Export CSV'}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Export CSV</p>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

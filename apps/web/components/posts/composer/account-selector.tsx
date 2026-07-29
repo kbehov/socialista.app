@@ -1,23 +1,20 @@
 'use client'
 
-import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
+import { AccountSelectorDialog } from '@/components/posts/composer/account-selector-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import type { AccountSummary, SocialProvider } from '@socialista/types'
 import { getWorkspaceAccounts } from '@/services/account.service'
-import { CheckIcon, ChevronsUpDownIcon, SearchIcon, XIcon } from 'lucide-react'
+import {
+  buildDuplicateNameKeys,
+  getAccountChipLabel,
+  getAccountInitials,
+  getAccountSecondaryLabel,
+} from '@/utils/account-display.utils'
+import type { AccountSummary, SocialProvider } from '@socialista/types'
+import { ChevronsUpDownIcon, UsersIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { ComposerSection } from './composer-section'
@@ -32,70 +29,6 @@ type AccountSelectorProps = {
   onClearAll: () => void
   accountsWithIssues?: Set<string>
   className?: string
-}
-
-function normalizeHandle(username?: string) {
-  if (!username) return ''
-  return username.replace(/^@/, '')
-}
-
-function buildDuplicateNameKeys(accounts: AccountSummary[]) {
-  const counts = new Map<string, number>()
-  for (const account of accounts) {
-    const key = account.accountName.trim().toLowerCase()
-    if (!key) continue
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-  return counts
-}
-
-function hasDuplicateName(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
-  const key = account.accountName.trim().toLowerCase()
-  return (duplicateNameKeys.get(key) ?? 0) > 1
-}
-
-function getAccountPrimaryLabel(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
-  const handle = normalizeHandle(account.username)
-  if (hasDuplicateName(account, duplicateNameKeys) && handle) {
-    return `@${handle}`
-  }
-  return account.accountName
-}
-
-function getAccountSecondaryLabel(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
-  const handle = normalizeHandle(account.username)
-  const platform = getSocialPlatformLabel(account.provider)
-
-  if (hasDuplicateName(account, duplicateNameKeys)) {
-    return handle ? `${account.accountName} · ${platform}` : platform
-  }
-
-  return handle ? `@${handle} · ${platform}` : platform
-}
-
-function getChipLabel(account: AccountSummary, duplicateNameKeys: Map<string, number>) {
-  const handle = normalizeHandle(account.username)
-  if (hasDuplicateName(account, duplicateNameKeys) && handle) {
-    return `@${handle}`
-  }
-  if (handle) return `@${handle}`
-  return account.accountName
-}
-
-function SelectionCheckbox({ selected }: { selected: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        'flex size-4 shrink-0 items-center justify-center rounded-lg border transition-colors',
-        selected
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-input bg-background dark:border-input/80',
-      )}
-    >
-      {selected ? <CheckIcon className="size-2.5" strokeWidth={3} /> : null}
-    </span>
-  )
 }
 
 export function AccountSelector({
@@ -151,40 +84,50 @@ export function AccountSelector({
     [accountCatalog, selectedAccountIds],
   )
 
-  const visibleChips = selectedAccounts.slice(0, 4)
+  const visibleChips = selectedAccounts.slice(0, 5)
   const hiddenChipCount = Math.max(0, selectedAccounts.length - visibleChips.length)
   const totalCount = accountsTotal ?? accountCatalog.size
 
   useEffect(() => {
-    if (!open) {
-      setTimeout(() => {
-        setSearch('')
-        setProviderFilter('all')
-      }, 0)
-    }
-
+    let cancelled = false
     const trimmed = search.trim()
-    const timeout = window.setTimeout(() => {
-      setIsSearching(true)
-      void getWorkspaceAccounts(workspaceId, {
-        query: trimmed || undefined,
-        connectionStatus: 'connected',
-        limit: 50,
-      })
-        .then(response => {
-          setBrowseAccounts(response.data?.accounts ?? [])
-        })
-        .finally(() => {
-          setIsSearching(false)
-        })
-    }, 300)
 
-    return () => window.clearTimeout(timeout)
-  }, [open, search, workspaceId])
+    const timeout = window.setTimeout(
+      () => {
+        setIsSearching(true)
+        void getWorkspaceAccounts(workspaceId, {
+          query: trimmed || undefined,
+          connectionStatus: 'connected',
+          limit: 50,
+        })
+          .then(response => {
+            if (!cancelled) {
+              setBrowseAccounts(response.data?.accounts ?? [])
+            }
+          })
+          .finally(() => {
+            if (!cancelled) setIsSearching(false)
+          })
+      },
+      trimmed ? 300 : 0,
+    )
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeout)
+    }
+  }, [search, workspaceId])
 
   const filteredAllSelected =
-    filteredAccounts.length > 0 &&
-    filteredAccounts.every(account => selectedSet.has(account._id))
+    filteredAccounts.length > 0 && filteredAccounts.every(account => selectedSet.has(account._id))
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next) {
+      setSearch('')
+      setProviderFilter('all')
+    }
+  }
 
   const handleSelectVisible = () => {
     const merged = new Set(selectedAccountIds)
@@ -201,16 +144,16 @@ export function AccountSelector({
         description={
           totalCount > 20
             ? 'Search and select from your connected accounts.'
-            : 'Choose where this post will be published.'
+            : 'Choose where this post will go live.'
         }
         compact
         className={className}
-        contentClassName="space-y-2 pt-0"
+        contentClassName="space-y-2.5 pt-0"
         badge={
           selectedCount > 0 ? (
             <Badge
               variant="outline"
-              className="h-5 rounded-full border-border/60 bg-background px-2 text-[10px] font-medium tabular-nums"
+              className="h-5 rounded-full border-border/60 bg-muted/30 px-2 text-[10px] font-medium tabular-nums"
             >
               {selectedCount}
             </Badge>
@@ -233,45 +176,77 @@ export function AccountSelector({
         <Button
           type="button"
           variant="outline"
-          className="h-9 w-full justify-between rounded-lg border-border/50 bg-background px-3 text-xs font-normal shadow-none hover:bg-muted/30 dark:hover:bg-muted/20"
+          className={cn(
+            'h-10 w-full justify-between rounded-xl border-border/50 bg-background px-3 text-xs font-normal shadow-none',
+            'hover:bg-muted/30 dark:hover:bg-muted/20',
+            'active:scale-[0.995]',
+            selectedCount === 0 && 'text-muted-foreground',
+          )}
           onClick={() => setOpen(true)}
         >
-          <span className="truncate text-muted-foreground">
-            {selectedCount === 0
-              ? `Select from ${totalCount} account${totalCount === 1 ? '' : 's'}…`
-              : `${selectedCount} account${selectedCount === 1 ? '' : 's'} selected`}
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span
+              className={cn(
+                'flex size-6 shrink-0 items-center justify-center rounded-lg border border-border/50',
+                selectedCount > 0 ? 'bg-foreground text-background' : 'bg-muted/40 text-muted-foreground',
+              )}
+            >
+              <UsersIcon className="size-3" strokeWidth={1.75} />
+            </span>
+            <span className="truncate">
+              {selectedCount === 0
+                ? `Select from ${totalCount} account${totalCount === 1 ? '' : 's'}…`
+                : `${selectedCount} account${selectedCount === 1 ? '' : 's'} selected`}
+            </span>
           </span>
           <ChevronsUpDownIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
         </Button>
 
         {selectedCount > 0 ? (
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             {visibleChips.map(account => {
               const hasIssue = accountsWithIssues?.has(account._id)
-              const chipLabel = getChipLabel(account, duplicateNameKeys)
 
               return (
                 <button
                   key={account._id}
                   type="button"
                   onClick={() => onToggle(account._id)}
-                  title={getAccountSecondaryLabel(account, duplicateNameKeys)}
+                  title={`${getAccountSecondaryLabel(account, duplicateNameKeys)} — click to remove`}
                   className={cn(
-                    'inline-flex max-w-44 items-center gap-1 rounded-md border bg-background py-0.5 pr-1 pl-1 text-[10px] font-medium transition-colors',
+                    'group inline-flex max-w-48 items-center gap-1.5 rounded-full border bg-background py-1 pr-1.5 pl-1',
+                    'text-[11px] font-medium transition-colors active:scale-[0.97]',
                     'hover:bg-muted/40 dark:hover:bg-muted/30',
                     hasIssue
-                      ? 'border-amber-500/35 text-amber-700 dark:border-amber-500/40 dark:text-amber-300'
+                      ? 'border-amber-500/40 text-foreground dark:border-amber-500/45'
                       : 'border-border/60 text-foreground',
                   )}
                 >
-                  <SocialPlatformIcon
-                    provider={account.provider}
-                    size={9}
-                    framed={false}
-                    className="size-3 shrink-0"
-                  />
-                  <span className="truncate">{chipLabel}</span>
-                  <XIcon className="size-2.5 shrink-0 text-muted-foreground" strokeWidth={2} />
+                  <span className="relative shrink-0">
+                    <Avatar className="size-5 rounded-full ring-1 ring-border/40">
+                      {account.accountAvatar ? (
+                        <AvatarImage src={account.accountAvatar} alt={account.accountName} />
+                      ) : null}
+                      <AvatarFallback className="rounded-full text-[8px] font-medium">
+                        {getAccountInitials(account)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="absolute -right-0.5 -bottom-0.5 flex size-3 items-center justify-center rounded-full bg-background">
+                      <SocialPlatformIcon
+                        provider={account.provider}
+                        size={8}
+                        framed={false}
+                        className="size-2.5"
+                      />
+                    </span>
+                  </span>
+                  <span className="truncate">{getAccountChipLabel(account, duplicateNameKeys)}</span>
+                  {hasIssue ? (
+                    <span className="size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                  ) : null}
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors group-hover:bg-muted/60 group-hover:text-foreground">
+                    <XIcon className="size-2.5" strokeWidth={2.25} />
+                  </span>
                 </button>
               )
             })}
@@ -279,7 +254,7 @@ export function AccountSelector({
               <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="rounded-md border border-border/60 bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground dark:hover:bg-muted/30"
+                className="rounded-full border border-border/60 bg-background px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground dark:hover:bg-muted/30"
               >
                 +{hiddenChipCount} more
               </button>
@@ -288,164 +263,26 @@ export function AccountSelector({
         ) : null}
       </ComposerSection>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="gap-0 overflow-hidden bg-background p-0 sm:max-w-md">
-          <DialogHeader className="border-b border-border/50 px-4 py-3">
-            <DialogTitle className="text-sm font-semibold tracking-tight">
-              Select accounts
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {selectedCount} of {totalCount} selected
-            </DialogDescription>
-          </DialogHeader>
-
-          {providers.length > 1 ? (
-            <div className="flex gap-1 overflow-x-auto border-b border-border/50 px-3 py-2 scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setProviderFilter('all')}
-                className={cn(
-                  'shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors',
-                  providerFilter === 'all'
-                    ? 'border-border bg-muted/60 text-foreground dark:bg-muted/40'
-                    : 'border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground dark:hover:bg-muted/20',
-                )}
-              >
-                All
-              </button>
-              {providers.map(provider => (
-                <button
-                  key={provider}
-                  type="button"
-                  onClick={() => setProviderFilter(provider)}
-                  className={cn(
-                    'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors',
-                    providerFilter === provider
-                      ? 'border-border bg-muted/60 text-foreground dark:bg-muted/40'
-                      : 'border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground dark:hover:bg-muted/20',
-                  )}
-                >
-                  <SocialPlatformIcon provider={provider} size={9} framed={false} className="size-3" />
-                  {getSocialPlatformLabel(provider)}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="border-b border-border/50 px-3 py-2">
-            <div className="relative">
-              <SearchIcon
-                className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-                strokeWidth={1.75}
-              />
-              <Input
-                value={search}
-                onChange={event => setSearch(event.target.value)}
-                placeholder="Search by name, handle, or platform…"
-                className="h-8 border-border/50 bg-background pl-8 text-xs shadow-none dark:bg-background"
-              />
-            </div>
-          </div>
-
-          <ScrollArea className="max-h-[min(50vh,22rem)]" scrollbarGutter>
-            <div className="space-y-0.5 p-2">
-              {isSearching ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">Searching…</p>
-              ) : filteredAccounts.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">
-                  No accounts match your search.
-                </p>
-              ) : (
-                filteredAccounts.map(account => {
-                  const selected = selectedSet.has(account._id)
-                  const hasIssue = accountsWithIssues?.has(account._id)
-                  const initials = (account.accountName || account.username || '?')
-                    .slice(0, 2)
-                    .toUpperCase()
-
-                  return (
-                    <button
-                      key={account._id}
-                      type="button"
-                      onClick={() => onToggle(account._id)}
-                      className={cn(
-                        'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors',
-                        'hover:bg-muted/60 dark:hover:bg-muted/30',
-                        selected && 'bg-primary/5 dark:bg-primary/10',
-                      )}
-                    >
-                      <SelectionCheckbox selected={selected} />
-
-                      <Avatar className="size-7 rounded-md ring-1 ring-border/40">
-                        {account.accountAvatar ? (
-                          <AvatarImage src={account.accountAvatar} alt={account.accountName} />
-                        ) : null}
-                        <AvatarFallback className="rounded-md text-[9px] font-medium">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-1.5">
-                          <span className="truncate text-xs font-medium text-foreground">
-                            {getAccountPrimaryLabel(account, duplicateNameKeys)}
-                          </span>
-                          {hasIssue ? (
-                            <span className="size-1.5 shrink-0 rounded-full bg-amber-500" />
-                          ) : null}
-                        </span>
-                        <span className="block truncate text-[10px] text-muted-foreground">
-                          {getAccountSecondaryLabel(account, duplicateNameKeys)}
-                        </span>
-                      </span>
-
-                      <SocialPlatformIcon
-                        provider={account.provider}
-                        size={10}
-                        framed={false}
-                        className="size-3.5 shrink-0 opacity-70"
-                      />
-                    </button>
-                  )
-                })
-              )}
-            </div>
-          </ScrollArea>
-
-          <DialogFooter className="flex-row justify-between border-t border-border/50 bg-background px-4 py-3">
-            <div className="flex gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 rounded-md px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                onClick={handleSelectVisible}
-                disabled={filteredAllSelected}
-              >
-                {providerFilter === 'all' ? 'Select all' : 'Select visible'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 rounded-md px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                onClick={onClearAll}
-                disabled={selectedCount === 0}
-              >
-                Clear
-              </Button>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              className="h-7 rounded-md px-3 text-xs"
-              onClick={() => setOpen(false)}
-            >
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AccountSelectorDialog
+        open={open}
+        onOpenChange={handleOpenChange}
+        search={search}
+        onSearchChange={setSearch}
+        providerFilter={providerFilter}
+        onProviderFilterChange={setProviderFilter}
+        providers={providers}
+        filteredAccounts={filteredAccounts}
+        selectedSet={selectedSet}
+        selectedCount={selectedCount}
+        totalCount={totalCount}
+        isSearching={isSearching}
+        accountsWithIssues={accountsWithIssues}
+        duplicateNameKeys={duplicateNameKeys}
+        filteredAllSelected={filteredAllSelected}
+        onToggle={onToggle}
+        onSelectVisible={handleSelectVisible}
+        onClearAll={onClearAll}
+      />
     </>
   )
 }

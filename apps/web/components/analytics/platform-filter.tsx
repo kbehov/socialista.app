@@ -57,7 +57,7 @@ function PlatformFilter({
     >
       <DashboardSegment label="Filter by platform">
         <FilterPill href={buildHref(range, 'all', rankBy)} active={current === 'all'}>
-          All platforms
+          All
         </FilterPill>
 
         {platforms.map(platform => (
@@ -74,7 +74,12 @@ function PlatformFilter({
 
       <Link
         href={DASHBOARD_ROUTES.ACCOUNTS}
-        className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        className={cn(
+          'inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border/60',
+          'bg-background text-muted-foreground shadow-xs',
+          'transition-colors hover:bg-muted/40 hover:text-foreground',
+          'active:scale-[0.97]',
+        )}
         aria-label="Connect another platform"
       >
         <PlusIcon className="size-3.5" strokeWidth={1.75} />

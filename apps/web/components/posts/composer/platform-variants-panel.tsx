@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
 import { useMemo } from 'react'
 
-import type { ComposerVariant } from '../../../types/composer-types'
-import { createEmptyVariant } from '../../../utils/composer.utils'
+import type { ComposerVariant } from '@/types/composer-types'
+import { formatHandle } from '@/utils/account-display.utils'
+import { getVariantOrEmpty } from '@/utils/composer.utils'
 import { ComposerCollapsibleSection } from './composer-section'
 import { PlatformVariantEditor } from './platform-variant-editor'
 
@@ -44,7 +45,7 @@ export function PlatformVariantsPanel({
   const customizationCount = useMemo(
     () =>
       selectedAccounts.reduce((total, account) => {
-        const variant = variants[account._id] ?? createEmptyVariant(account._id)
+        const variant = getVariantOrEmpty(variants, account._id)
         return total + countCustomizations(variant)
       }, 0),
     [selectedAccounts, variants],
@@ -61,8 +62,8 @@ export function PlatformVariantsPanel({
       title="Platform customization"
       description={
         selectedAccounts.length > 1
-          ? 'Override the shared caption for specific channels. Leave blank to use the common text.'
-          : 'Add a platform-specific description, alt text, or caption override.'
+          ? 'Optional overrides per channel. Leave blank to keep the shared caption.'
+          : 'Optional description, alt text, or caption override for this channel.'
       }
       className={className}
       contentClassName="space-y-3 pt-0"
@@ -71,7 +72,10 @@ export function PlatformVariantsPanel({
       defaultOpen={customizationCount > 0}
       badge={
         customizationCount > 0 ? (
-          <Badge variant="secondary" className="h-5 rounded-full px-2 text-[10px] font-medium tabular-nums">
+          <Badge
+            variant="secondary"
+            className="h-5 rounded-full px-2 text-[10px] font-medium tabular-nums"
+          >
             {customizationCount} edit{customizationCount === 1 ? '' : 's'}
           </Badge>
         ) : null
@@ -80,8 +84,9 @@ export function PlatformVariantsPanel({
       <Tabs defaultValue={defaultTab} key={selectedAccountIds.join(',')}>
         <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
           {selectedAccounts.map(account => {
-            const variant = variants[account._id] ?? createEmptyVariant(account._id)
+            const variant = getVariantOrEmpty(variants, account._id)
             const hasCustom = countCustomizations(variant) > 0
+            const handle = formatHandle(account.username)
 
             return (
               <TabsTrigger
@@ -93,10 +98,8 @@ export function PlatformVariantsPanel({
                 )}
               >
                 <SocialPlatformIcon provider={account.provider} size={11} framed={false} className="size-3.5" />
-                <span className="max-w-[5.5rem] truncate">
-                  {account.username
-                    ? `@${account.username.replace(/^@/, '')}`
-                    : getSocialPlatformLabel(account.provider)}
+                <span className="max-w-22 truncate">
+                  {handle || getSocialPlatformLabel(account.provider)}
                 </span>
                 {hasCustom ? <span className="size-1.5 rounded-full bg-foreground/70" /> : null}
               </TabsTrigger>
@@ -110,7 +113,7 @@ export function PlatformVariantsPanel({
               <PlatformVariantEditor
                 account={account}
                 commonCaption={commonCaption}
-                variant={variants[account._id] ?? createEmptyVariant(account._id)}
+                variant={getVariantOrEmpty(variants, account._id)}
                 onChange={patch => onVariantChange(account._id, patch)}
                 onClearField={field => onClearField(account._id, field)}
               />

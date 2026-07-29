@@ -1,22 +1,21 @@
 'use client'
 
-import { uploadPostMedia } from '@/actions/post.actions'
 import { EmojiPicker, EmojiPickerIconButton } from '@/components/ui/emoji-picker'
 import { Textarea } from '@/components/ui/textarea'
+import { CaptionLengthIndicator } from '@/components/posts/composer/caption-length-indicator'
 import { insertTextAtCursor } from '@/lib/insert-text-at-cursor'
 import { cn } from '@/lib/utils'
-import type { SocialProvider } from '@socialista/types'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
-
-import { CharacterCountRing } from '@/components/common/charachter-count-ring'
 import type { ComposerLayout, ComposerMediaItem } from '@/types/composer-types'
-import { StickyNoteIcon } from 'lucide-react'
-import { getStrictestCaptionLimit } from '../../../constants/platform-limits'
+import { uploadComposerMediaFiles } from '@/utils/composer-media.utils'
+import { getStrictestCaptionLimit } from '@/constants/platform-limits'
+import type { SocialProvider } from '@socialista/types'
+import { ImagePlusIcon, StickyNoteIcon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
+
 import { ComposerSection } from './composer-section'
 import { MediaCarouselManager } from './media-carousel-manager'
 import { MediaUploader } from './media-uploader'
-import { PostCopywriterDialog } from './post-copywriter-dialog'
+import { PostCopywriterDialog } from './post-copywriter'
 
 type ComposerEditorProps = {
   workspaceId: string
@@ -79,26 +78,7 @@ export function ComposerEditor({
 
   const handleFileDrop = useCallback(
     async (files: FileList | File[]) => {
-      const list = Array.from(files).filter(file => file.type.startsWith('image/') || file.type.startsWith('video/'))
-      if (list.length === 0) {
-        toast.error('Only images and videos are supported')
-        return
-      }
-
-      for (const file of list) {
-        const formData = new FormData()
-        formData.append('file', file)
-        const result = await uploadPostMedia(workspaceId, formData)
-        if (!result.success || !result.file) {
-          toast.error(result.message ?? `Failed to upload ${file.name}`)
-          continue
-        }
-        if (file.type.startsWith('video/')) {
-          onAddMedia({ kind: 'video', url: result.file.url })
-        } else {
-          onAddMedia({ kind: 'image', url: result.file.url })
-        }
-      }
+      await uploadComposerMediaFiles(workspaceId, files, onAddMedia)
     },
     [onAddMedia, workspaceId],
   )
@@ -107,32 +87,29 @@ export function ComposerEditor({
     const el = textareaRef.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.max(160, el.scrollHeight)}px`
-  }, [caption])
+    el.style.height = `${Math.max(isSheet ? 120 : 168, el.scrollHeight)}px`
+  }, [caption, isSheet])
+
+  const setDragging = (event: DragEvent, value: boolean) => {
+    event.preventDefault()
+    setIsDragging(value)
+  }
 
   return (
     <ComposerSection
       title="Content"
-      icon={<StickyNoteIcon className="size-4" strokeWidth={1.75} />}
-      description="Write once — customize per platform later if needed."
-      className={cn(isDragging && 'border-foreground/25 ring-foreground/10', className)}
+      icon={<StickyNoteIcon className="size-3.5" strokeWidth={1.75} />}
+      description="Write once — customize per platform below if needed."
+      variant="focus"
+      className={cn(isDragging && 'border-foreground/20 ring-1 ring-foreground/10', className)}
       contentClassName="space-y-0 p-0 sm:p-0"
       compact={isSheet}
     >
       <div
         className="relative border-t border-border/40"
-        onDragEnter={event => {
-          event.preventDefault()
-          setIsDragging(true)
-        }}
-        onDragOver={event => {
-          event.preventDefault()
-          setIsDragging(true)
-        }}
-        onDragLeave={event => {
-          event.preventDefault()
-          setIsDragging(false)
-        }}
+        onDragEnter={event => setDragging(event, true)}
+        onDragOver={event => setDragging(event, true)}
+        onDragLeave={event => setDragging(event, false)}
         onDrop={event => {
           event.preventDefault()
           setIsDragging(false)
@@ -142,44 +119,33 @@ export function ComposerEditor({
         }}
       >
         {isDragging ? (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-background/80 backdrop-blur-[2px]">
-            <p className="rounded-full border border-border/50 bg-background px-3 py-1.5 text-xs font-medium text-foreground">
-              Drop to attach media
-            </p>
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-b-xl bg-background/85 backdrop-blur-[3px]">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-background px-5 py-4 shadow-xs">
+              <span className="flex size-9 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
+                <ImagePlusIcon className="size-4" strokeWidth={1.75} />
+              </span>
+              <p className="text-xs font-medium text-foreground">Drop to attach</p>
+              <p className="text-[10px] text-muted-foreground">Images or videos</p>
+            </div>
           </div>
         ) : null}
-
-        <div
-          className={cn(
-            'flex w-full items-center justify-end border-b border-border/40 py-2',
-            isSheet ? 'px-3' : 'px-4 sm:px-5',
-          )}
-        >
-          <PostCopywriterDialog
-            open={copywriterOpen}
-            onOpenChange={setCopywriterOpen}
-            selectedProviders={selectedProviders}
-            caption={caption}
-            onApply={handleApplyGeneratedCaption}
-          />
-        </div>
 
         <Textarea
           ref={textareaRef}
           value={caption}
           onChange={event => onCaptionChange(event.target.value)}
-          placeholder="What's on your mind? Write your caption here…"
+          placeholder="What's on your mind?"
           rows={6}
           className={cn(
-            'min-h-40 resize-none rounded-none border-0 bg-transparent py-4 text-[15px] leading-relaxed shadow-none',
-            'placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0',
-            isSheet ? 'min-h-28 px-3 text-sm' : 'px-4 sm:px-5 sm:py-5',
+            'min-h-40 resize-none rounded-none border-0 bg-transparent py-4 text-[15px] leading-[1.65] shadow-none',
+            'placeholder:text-muted-foreground/55 focus-visible:ring-0 focus-visible:ring-offset-0',
+            isSheet ? 'min-h-28 px-3.5 text-sm' : 'px-4 sm:px-5 sm:py-5',
             overLimit && 'text-destructive',
           )}
         />
 
         {hasMedia ? (
-          <div className={cn('border-t border-border/40 py-3', isSheet ? 'px-3' : 'px-4 sm:px-5')}>
+          <div className={cn('border-t border-border/40 py-3', isSheet ? 'px-3.5' : 'px-4 sm:px-5')}>
             <MediaCarouselManager
               media={media}
               onRemove={onRemoveMedia}
@@ -193,63 +159,47 @@ export function ComposerEditor({
         <div
           className={cn(
             'border-t border-border/40',
-            isSheet ? 'space-y-2 px-3 py-2.5' : 'flex items-center justify-between gap-3 px-4 py-3 sm:px-5',
+            isSheet
+              ? 'space-y-2 px-3.5 py-2.5'
+              : 'flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5',
           )}
         >
-          {isSheet ? (
-            <>
-              <div className="flex items-center gap-0.5">
-                <MediaUploader
-                  workspaceId={workspaceId}
-                  onUploaded={onAddMedia}
-                  compact
-                  iconOnly
-                />
-                <EmojiPickerIconButton onEmojiSelect={insertEmoji} side="top" align="start" />
-              </div>
-
-              <div className="flex items-center justify-end gap-1.5">
-                <CharacterCountRing current={length} max={limit} />
-                <span
-                  className={cn(
-                    'text-[11px] tabular-nums tracking-tight',
-                    overLimit
-                      ? 'font-medium text-destructive'
-                      : length > limit * 0.9
-                        ? 'text-amber-600 dark:text-amber-500'
-                        : 'text-muted-foreground',
-                  )}
-                >
-                  {length.toLocaleString()}
-                  <span className="text-muted-foreground/60"> / {limit.toLocaleString()}</span>
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex min-w-0 flex-1 items-center gap-1">
-                <MediaUploader workspaceId={workspaceId} onUploaded={onAddMedia} compact />
+          <div
+            className={cn(
+              'flex items-center gap-0.5',
+              !isSheet && 'min-w-0 flex-1',
+            )}
+          >
+            <MediaUploader
+              workspaceId={workspaceId}
+              onUploaded={onAddMedia}
+              compact
+              iconOnly={isSheet}
+            />
+            {isSheet ? (
+              <EmojiPickerIconButton onEmojiSelect={insertEmoji} side="top" align="start" />
+            ) : (
+              <>
                 <EmojiPicker onEmojiSelect={insertEmoji} side="top" align="start" />
-              </div>
+                <div className="mx-1 h-4 w-px shrink-0 bg-border/50" aria-hidden />
+              </>
+            )}
+            <PostCopywriterDialog
+              open={copywriterOpen}
+              onOpenChange={setCopywriterOpen}
+              selectedProviders={selectedProviders}
+              caption={caption}
+              media={media}
+              onApply={handleApplyGeneratedCaption}
+              compact
+            />
+          </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                <CharacterCountRing current={length} max={limit} />
-                <span
-                  className={cn(
-                    'text-[11px] tabular-nums tracking-tight',
-                    overLimit
-                      ? 'font-medium text-destructive'
-                      : length > limit * 0.9
-                        ? 'text-amber-600 dark:text-amber-500'
-                        : 'text-muted-foreground',
-                  )}
-                >
-                  {length.toLocaleString()}
-                  <span className="text-muted-foreground/60"> / {limit.toLocaleString()}</span>
-                </span>
-              </div>
-            </>
-          )}
+          <CaptionLengthIndicator
+            current={length}
+            max={limit}
+            className={cn(isSheet ? 'justify-end' : 'shrink-0')}
+          />
         </div>
       </div>
     </ComposerSection>

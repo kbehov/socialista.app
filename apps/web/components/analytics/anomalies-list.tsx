@@ -1,11 +1,11 @@
-import { TriangleAlertIcon } from 'lucide-react'
+import { CheckCircle2Icon, TriangleAlertIcon } from 'lucide-react'
 
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import { cn } from '@/lib/utils'
 import type { AnalyticsAnomaly } from '@socialista/types'
 
 import { formatCount, formatPercent } from '@/utils/format'
+import { AnalyticsEmpty } from './analytics-empty'
 import { AnalyticsSection } from './analytics-section'
 
 export type AnomaliesListProps = {
@@ -27,11 +27,11 @@ function AnomaliesList({ anomalies, className, limit = 8, error }: AnomaliesList
       {error ? <p className="mb-3 text-xs text-destructive">{error}</p> : null}
 
       {visible.length === 0 ? (
-        <div className={cn('flex min-h-28 items-center justify-center', dashboardSurface.insetDashed)}>
-          <p className="text-xs text-muted-foreground">
-            {error ? 'Anomalies unavailable.' : 'No anomalies in this range.'}
-          </p>
-        </div>
+        <AnalyticsEmpty
+          icon={<CheckCircle2Icon className="size-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />}
+          title={error ? 'Anomalies unavailable' : 'All clear'}
+          description={error ? 'Could not load anomaly detection for this range.' : 'No unusual spikes or drops in this range.'}
+        />
       ) : (
         <ul className="flex flex-col gap-1.5">
           {visible.map((anomaly, index) => (
@@ -50,13 +50,20 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
   const isCritical = anomaly.severity === 'critical'
 
   return (
-    <li className={cn('flex items-center gap-3 px-3 py-2.5', dashboardSurface.inset)}>
+    <li
+      className={cn(
+        'flex items-center gap-3 rounded-xl border px-3 py-2.5',
+        isCritical
+          ? 'border-red-500/20 bg-red-500/5 dark:bg-red-500/10'
+          : 'border-border/50 bg-background',
+      )}
+    >
       <span
         className={cn(
-          'flex size-7 shrink-0 items-center justify-center rounded-md',
+          'flex size-7 shrink-0 items-center justify-center rounded-lg',
           isCritical
-            ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+            ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
         )}
       >
         <TriangleAlertIcon className="size-3.5" strokeWidth={1.75} />
@@ -64,7 +71,7 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <p className="text-xs font-medium text-foreground">
+          <p className="text-xs font-medium tracking-tight text-foreground">
             {anomaly.direction === 'spike' ? 'Spike' : 'Drop'} in {anomaly.metric}
           </p>
           {anomaly.provider ? (
@@ -84,8 +91,10 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
 
       <span
         className={cn(
-          'shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize',
-          isCritical ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-muted text-muted-foreground',
+          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize tracking-tight',
+          isCritical
+            ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+            : 'bg-muted/80 text-muted-foreground',
         )}
       >
         {anomaly.severity}

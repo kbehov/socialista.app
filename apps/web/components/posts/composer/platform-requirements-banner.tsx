@@ -65,19 +65,21 @@ export function PlatformRequirementsBanner({
   return (
     <div className={cn('space-y-2', className)}>
       {showInfoHint ? (
-        <div className="flex gap-2.5 rounded-xl border border-border/50 bg-background px-3 py-2.5">
-          <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
-          <div className="min-w-0 space-y-1">
-            <p className="text-xs font-medium text-foreground">Platform requirements</p>
+        <div className="flex gap-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-2.5 dark:bg-muted/10">
+          <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground ring-1 ring-border/50">
+            <InfoIcon className="size-3" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0 space-y-1.5">
+            <p className="text-xs font-medium tracking-tight text-foreground">Media required</p>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {mediaHint}. Add media before publishing to these channels.
+              {mediaHint}. Add an image or video before publishing to these channels.
             </p>
             {providersRequiringMedia.length > 0 ? (
               <div className="flex flex-wrap gap-1 pt-0.5">
                 {providersRequiringMedia.map(provider => (
                   <span
                     key={provider}
-                    className="inline-flex items-center gap-1 rounded-md border border-border/50 bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                    className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background px-2 py-0.5 text-[10px] text-muted-foreground"
                   >
                     <SocialPlatformIcon provider={provider} size={9} framed={false} className="size-3" />
                     {getSocialPlatformLabel(provider)}
@@ -90,12 +92,14 @@ export function PlatformRequirementsBanner({
       ) : null}
 
       {showWarnings ? (
-        <div className="rounded-xl border border-amber-500/30 bg-background px-3 py-2.5">
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-3.5 py-2.5 dark:bg-amber-500/10">
           <div className="mb-2 flex items-center gap-2">
-            <AlertCircleIcon className="size-3.5 text-amber-600 dark:text-amber-500" strokeWidth={1.75} />
-            <p className="text-xs font-medium text-foreground">Fix before publishing</p>
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400">
+              <AlertCircleIcon className="size-3" strokeWidth={1.75} />
+            </span>
+            <p className="text-xs font-medium tracking-tight text-foreground">Fix before publishing</p>
           </div>
-          <ul className="space-y-1.5">
+          <ul className="space-y-1.5 pl-7">
             {groupedIssues.map(issue => (
               <li key={`${issue.code}-${issue.message}`} className="text-[11px] leading-relaxed text-muted-foreground">
                 {issue.message}

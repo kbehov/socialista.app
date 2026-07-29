@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import type { ComposerMediaItem } from '../../../types/composer-types'
+import type { ComposerMediaItem } from '@/types/composer-types'
 
 type MediaCarouselManagerProps = {
   media: ComposerMediaItem[]
@@ -315,34 +315,7 @@ function StripMediaItem({
             mediaCount > 1 && 'cursor-grab touch-none active:cursor-grabbing',
           )}
         >
-          {item.kind === 'image' ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.url} alt={item.altText || `Media ${index + 1}`} className="size-full object-cover" />
-          ) : (
-            <div className="flex size-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
-              {item.thumbnailUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-              ) : null}
-              <span className="relative z-10 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-xs ring-1 ring-border/50">
-                <FilmIcon className="size-3.5" strokeWidth={1.75} />
-              </span>
-              {item.durationSeconds ? (
-                <span className="relative z-10 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-medium tabular-nums shadow-xs">
-                  {formatDuration(item.durationSeconds)}
-                </span>
-              ) : null}
-            </div>
-          )}
-
-          <span className="pointer-events-none absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-full bg-background/90 px-1 py-0.5 text-[9px] font-medium shadow-xs ring-1 ring-border/40">
-            {item.kind === 'image' ? (
-              <ImageIcon className="size-2.5" strokeWidth={1.75} />
-            ) : (
-              <FilmIcon className="size-2.5" strokeWidth={1.75} />
-            )}
-            {index + 1}
-          </span>
+          <MediaThumbnail item={item} index={index} />
         </div>
 
         <Button

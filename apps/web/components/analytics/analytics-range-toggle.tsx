@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils'
 import type { AnalyticsRange } from '@socialista/types'
 
 const RANGE_OPTIONS = [
-  { value: 'daily' as const, label: '24h' },
-  { value: 'weekly' as const, label: '7d' },
-  { value: 'monthly' as const, label: '30d' },
+  { value: 'daily' as const, label: '24h', longLabel: 'Last 24 hours' },
+  { value: 'weekly' as const, label: '7d', longLabel: 'Last 7 days' },
+  { value: 'monthly' as const, label: '30d', longLabel: 'Last 30 days' },
 ]
 
 export type AnalyticsRangeToggleProps = {
@@ -46,6 +46,8 @@ function AnalyticsRangeToggle({
             href={buildHref(option.value, basePath, params)}
             role="tab"
             aria-selected={active}
+            aria-label={option.longLabel}
+            title={option.longLabel}
             className={dashboardSegmentLinkClass(active)}
           >
             {option.label}

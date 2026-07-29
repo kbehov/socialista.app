@@ -117,10 +117,25 @@ export function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+export type PostDateRelativeBadge = 'today' | 'tomorrow' | 'yesterday'
+
 export type PostDateGroupHeading = {
   label: string
   subtitle: string | null
-  relativeBadge: 'today' | 'tomorrow' | 'yesterday' | null
+  relativeBadge: PostDateRelativeBadge | null
+}
+
+export const POST_DATE_RELATIVE_BADGE_LABEL: Record<PostDateRelativeBadge, string> = {
+  today: 'Today',
+  tomorrow: 'Tomorrow',
+  yesterday: 'Yesterday',
+}
+
+export function resolvePostAccount(
+  post: Post,
+  accountsById: Record<string, AccountSummary>,
+): AccountSummary {
+  return post.account ?? accountsById[post.accountId] ?? createFallbackAccount(post)
 }
 
 export function formatPostDateGroupHeading(date: Date, now = new Date()): PostDateGroupHeading {

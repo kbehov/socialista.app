@@ -9,13 +9,13 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getPostsListQuery, hasActivePostFilters, parsePostFiltersFromSearchParams } from '@/lib/post-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getWorkspacePosts } from '@/services/post.service'
-import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import type { MetaResponse } from '@socialista/types'
-import { CalendarClockIcon, PlusIcon } from 'lucide-react'
+import { Link2Icon, PenLineIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
+import { cn } from '@/lib/utils'
 import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
 type PostsPageProps = {
@@ -28,6 +28,11 @@ const defaultMeta: MetaResponse = {
   limit: 20,
   hasNextPage: false,
   hasPreviousPage: false,
+}
+
+function formatPostsDescription(total: number, workspaceName: string) {
+  const count = total === 1 ? '1 post' : `${total.toLocaleString()} posts`
+  return `${count} in ${workspaceName}`
 }
 
 export default async function PostsPage({ searchParams }: PostsPageProps) {
@@ -61,7 +66,15 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const meta = postsResponse.meta ?? defaultMeta
 
   const createAction = (
-    <Button asChild size="sm" className="h-9 gap-1.5 rounded-xl px-3.5 shadow-xs">
+    <Button
+      asChild
+      size="sm"
+      className={cn(
+        'h-9 rounded-full px-4 shadow-xs transition-all',
+        'hover:-translate-y-px hover:shadow-sm',
+        'active:translate-y-0 active:scale-[0.98]',
+      )}
+    >
       <Link href={`${DASHBOARD_ROUTES.POSTS}/create`}>
         <PlusIcon className="size-4" strokeWidth={1.75} />
         Create post
@@ -73,7 +86,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <PageHeader
         title="Posts"
-        description={`${formatItemCount(meta.total)} in ${workspace.name}`}
+        description={formatPostsDescription(meta.total, workspace.name)}
         actions={accounts.length > 0 ? createAction : undefined}
       />
 
@@ -91,9 +104,9 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         />
       ) : accounts.length === 0 ? (
         <EmptyState
-          icon={CalendarClockIcon}
-          title="Connect accounts to start posting"
-          description="Link your social profiles, then create and schedule posts from one place."
+          icon={Link2Icon}
+          title="Connect an account to publish"
+          description="Link Instagram, TikTok, LinkedIn, and more — then schedule everything from one place."
           minHeight="lg"
           variant="hero"
           className="flex-1"
@@ -102,13 +115,13 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         />
       ) : meta.total === 0 && !hasFilters ? (
         <EmptyState
-          icon={CalendarClockIcon}
-          title="No posts yet"
-          description="Plan your content calendar, schedule across platforms, and keep every account on track."
+          icon={PenLineIcon}
+          title="Your calendar is clear"
+          description="Write your first caption, pick accounts, and schedule — or publish right away."
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName="size-12 rounded-2xl border-0 bg-background shadow-xs ring-1 ring-border/60 [&_svg]:size-5"
+          iconClassName={dashboardSurface.emptyIcon}
           action={createAction}
         />
       ) : (

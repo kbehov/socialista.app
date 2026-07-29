@@ -1,17 +1,14 @@
 'use client'
 
-import { publishOrSchedulePosts } from '@/actions/post.actions'
-import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { usePostComposerActions, usePostComposerStore } from '@/store/post-composer.store'
 import { ConnectionStatus, type AccountSummary } from '@socialista/types'
-import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState, useTransition } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useMemo, useState } from 'react'
 
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { usePostComposerSubmit } from '@/hooks/use-post-composer-submit'
 import { cn } from '@/lib/utils'
+import { getAccountsWithIssues, getDefaultTimezone } from '@/utils/composer.utils'
 
-import { getAccountsWithIssues, getDefaultTimezone, validateComposer } from '../../../utils/composer.utils'
 import { AccountSelector } from './account-selector'
 import { ComposerEditor } from './composer-editor'
 import { ComposerHeader } from './composer-header'
@@ -27,8 +24,6 @@ type PostComposerProps = {
 }
 
 export function PostComposer({ workspaceId, accounts, accountsTotal }: PostComposerProps) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
 
   const connectedAccounts = useMemo(
@@ -77,49 +72,24 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
 
   const selectedProviders = useMemo(
     () =>
-      connectedAccounts.filter(account => selectedAccountIds.includes(account._id)).map(account => account.provider),
+      connectedAccounts
+        .filter(account => selectedAccountIds.includes(account._id))
+        .map(account => account.provider),
     [connectedAccounts, selectedAccountIds],
   )
 
-  const hasContent = commonCaption.trim().length > 0 || media.length > 0
-  const hasMedia = media.length > 0
-  const canSubmit = storeWorkspaceId === workspaceId && selectedAccountIds.length > 0 && hasContent
-
-  const composerState = useMemo(
-    () => ({
-      workspaceId,
-      selectedAccountIds,
-      commonCaption,
-      media,
-      variants,
-      schedule,
-      previewAccountId,
-    }),
-    [workspaceId, selectedAccountIds, commonCaption, media, variants, schedule, previewAccountId],
-  )
-
-  const validationIssues = useMemo(
-    () => (selectedAccountIds.length > 0 ? validateComposer(composerState, connectedAccounts) : []),
-    [selectedAccountIds.length, composerState, connectedAccounts],
-  )
-
-  const isReady = canSubmit && validationIssues.length === 0
-
-  const statusMessage = useMemo(() => {
-    if (selectedAccountIds.length === 0) return 'Select accounts to begin'
-    if (isReady) {
-      return `Ready for ${selectedAccountIds.length} account${selectedAccountIds.length === 1 ? '' : 's'}`
-    }
-    const blockingIssue = validationIssues.find(issue => issue.code !== 'empty' && issue.code !== 'caption_required')
-    if (blockingIssue) return blockingIssue.message
-    if (!hasContent) return 'Add a caption or media'
-    return 'Fix platform requirements to publish'
-  }, [selectedAccountIds.length, isReady, validationIssues, hasContent])
-
-  const accountsWithIssues = useMemo(() => getAccountsWithIssues(validationIssues), [validationIssues])
-
-  const snapshotState = () => ({
+  const {
+    validationIssues,
+    hasContent,
+    hasMedia,
+    canSubmit,
+    isReady,
+    statusMessage,
+    isPending,
+    handleSubmit,
+  } = usePostComposerSubmit({
     workspaceId,
+    connectedAccounts,
     selectedAccountIds,
     commonCaption,
     media,
@@ -128,53 +98,24 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
     previewAccountId,
   })
 
-  const handleSubmit = (asDraft: boolean) => {
-    const state = snapshotState()
-    const issues = validateComposer(state, connectedAccounts)
+  const accountsWithIssues = useMemo(() => getAccountsWithIssues(validationIssues), [validationIssues])
 
-    if (issues.length > 0 && !asDraft) {
-      toast.error(issues[0]?.message ?? 'Fix validation errors')
-      return
-    }
-
-    if (asDraft && selectedAccountIds.length === 0) {
-      toast.error('Select at least one account')
-      return
-    }
-
-    startTransition(async () => {
-      const results = await publishOrSchedulePosts({
-        accounts: connectedAccounts,
-        state,
-        asDraft,
-      })
-
-      const failed = results.filter(result => result.status === 'failed')
-      const succeeded = results.filter(result => result.status !== 'failed')
-
-      if (succeeded.length > 0) {
-        const label = asDraft ? 'Draft saved' : state.schedule.mode === 'schedule' ? 'Scheduled' : 'Publishing'
-        toast.success(`${label} for ${succeeded.length} account${succeeded.length === 1 ? '' : 's'}`)
-      }
-
-      for (const result of failed) {
-        const account = connectedAccounts.find(item => item._id === result.accountId)
-        toast.error(`${account?.accountName ?? 'Account'}: ${result.message ?? 'Failed'}`)
-      }
-
-      if (failed.length === 0 && succeeded.length > 0) {
-        router.push(DASHBOARD_ROUTES.POSTS)
-        router.refresh()
-      }
-    })
+  const previewBarProps = {
+    accounts: connectedAccounts,
+    selectedAccountIds,
+    previewAccountId,
+    commonCaption,
+    media,
+    variants,
+    onPreviewAccountChange: setPreviewAccountId,
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ComposerHeader
-        canSubmit={canSubmit}
+        canSubmit={canSubmit && storeWorkspaceId === workspaceId}
         isSubmitting={isPending}
-        isReady={isReady}
+        isReady={isReady && storeWorkspaceId === workspaceId}
         statusMessage={statusMessage}
         scheduleMode={schedule.mode}
         onSaveDraft={() => handleSubmit(true)}
@@ -183,12 +124,15 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
 
       <div
         className={cn(
-          'grid min-h-0 flex-1 gap-4 pt-1',
-          previewCollapsed ? 'lg:grid-cols-[minmax(0,1fr)_2rem]' : 'lg:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]',
+          'grid min-h-0 flex-1 gap-5 pt-2',
+          'transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none',
+          previewCollapsed
+            ? 'lg:grid-cols-[minmax(0,1fr)_2.25rem]'
+            : 'lg:grid-cols-[minmax(0,1fr)_minmax(240px,280px)]',
         )}
       >
         <ScrollArea className="min-h-0" scrollFade scrollbarGutter>
-          <div className="flex flex-col gap-4 pb-24 sm:gap-5 sm:pb-8 lg:pb-6">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-3.5 pb-28 sm:gap-4 sm:pb-10 lg:mx-0 lg:max-w-none lg:pb-8">
             <AccountSelector
               workspaceId={workspaceId}
               accounts={connectedAccounts}
@@ -219,44 +163,32 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
               onUpdateMediaAltText={updateMediaAltText}
             />
 
-            <SchedulePanel schedule={schedule} onChange={setSchedule} />
+            <div className="flex flex-col gap-3.5 sm:gap-4">
+              <SchedulePanel schedule={schedule} onChange={setSchedule} />
 
-            <PlatformVariantsPanel
-              accounts={connectedAccounts}
-              selectedAccountIds={selectedAccountIds}
-              commonCaption={commonCaption}
-              variants={variants}
-              onVariantChange={setVariant}
-              onClearField={clearVariantField}
-            />
-
-            <div className="lg:hidden">
-              <PostPreviewBar
+              <PlatformVariantsPanel
                 accounts={connectedAccounts}
                 selectedAccountIds={selectedAccountIds}
-                previewAccountId={previewAccountId}
                 commonCaption={commonCaption}
-                media={media}
                 variants={variants}
-                onPreviewAccountChange={setPreviewAccountId}
+                onVariantChange={setVariant}
+                onClearField={clearVariantField}
               />
+            </div>
+
+            <div className="lg:hidden">
+              <PostPreviewBar {...previewBarProps} />
             </div>
           </div>
         </ScrollArea>
 
         <div className="hidden min-h-0 lg:block">
-          <div className="sticky top-17">
+          <div className="sticky top-16">
             <PostPreviewBar
-              accounts={connectedAccounts}
-              selectedAccountIds={selectedAccountIds}
-              previewAccountId={previewAccountId}
-              commonCaption={commonCaption}
-              media={media}
-              variants={variants}
-              onPreviewAccountChange={setPreviewAccountId}
+              {...previewBarProps}
               collapsed={previewCollapsed}
               onCollapsedChange={setPreviewCollapsed}
-              className="max-h-[calc(100vh-7rem)]"
+              className="max-h-[calc(100vh-6.5rem)]"
             />
           </div>
         </div>

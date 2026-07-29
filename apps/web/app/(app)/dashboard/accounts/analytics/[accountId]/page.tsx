@@ -80,22 +80,23 @@ export default async function AccountAnalyticsPage({ params, searchParams }: Acc
     }
 
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col ">
         <PageHeader
           title={accountInfo.accountName}
           description={accountDescription(accountInfo)}
           backHref={DASHBOARD_ROUTES.ACCOUNTS}
-          breadcrumbs={[
-            { label: 'Accounts', href: DASHBOARD_ROUTES.ACCOUNTS },
-            { label: accountInfo.accountName },
-          ]}
+          breadcrumbs={[{ label: 'Accounts', href: DASHBOARD_ROUTES.ACCOUNTS }, { label: accountInfo.accountName }]}
         />
         <UpgradeTeaser />
       </div>
     )
   }
 
-  const { data, error, notFound: missing } = await loadAccountAnalytics({
+  const {
+    data,
+    error,
+    notFound: missing,
+  } = await loadAccountAnalytics({
     workspaceId: workspace.id,
     accountId,
     range,
@@ -112,10 +113,7 @@ export default async function AccountAnalyticsPage({ params, searchParams }: Acc
           title="Account analytics"
           description="Couldn't load this account"
           backHref={DASHBOARD_ROUTES.ACCOUNTS}
-          breadcrumbs={[
-            { label: 'Accounts', href: DASHBOARD_ROUTES.ACCOUNTS },
-            { label: 'Analytics' },
-          ]}
+          breadcrumbs={[{ label: 'Accounts', href: DASHBOARD_ROUTES.ACCOUNTS }, { label: 'Analytics' }]}
           actions={<AnalyticsRangeToggle range={range} basePath={basePath} />}
         />
         <div className="flex flex-1 items-center justify-center">
@@ -129,15 +127,12 @@ export default async function AccountAnalyticsPage({ params, searchParams }: Acc
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div>
       <PageHeader
         title={data.account.accountName}
         description={accountDescription(data.account)}
         backHref={DASHBOARD_ROUTES.ACCOUNTS}
-        breadcrumbs={[
-          { label: 'Accounts', href: DASHBOARD_ROUTES.ACCOUNTS },
-          { label: data.account.accountName },
-        ]}
+        breadcrumbs={[{ label: 'Accounts', href: DASHBOARD_ROUTES.ACCOUNTS }, { label: data.account.accountName }]}
         actions={<AnalyticsRangeToggle range={range} basePath={basePath} />}
       />
 

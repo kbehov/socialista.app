@@ -60,11 +60,13 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
       }
       compact
       className={className}
-      contentClassName={cn('space-y-4 pt-0', isSheet && 'px-3 pb-3')}
+      contentClassName={cn('space-y-3.5 pt-0', isSheet && 'px-3 pb-3')}
     >
       <div
+        role="tablist"
+        aria-label="Publish timing"
         className={cn(
-          'rounded-full border border-border/50 bg-background p-0.5',
+          'rounded-full border border-border/50 bg-muted/35 p-0.5 dark:bg-muted/25',
           isSheet ? 'flex w-full' : 'inline-flex',
         )}
       >
@@ -75,6 +77,8 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
             <button
               key={option.value}
               type="button"
+              role="tab"
+              aria-selected={selected}
               onClick={() => {
                 if (option.value === 'schedule') {
                   onChange({ mode: 'schedule', ...getDefaultScheduleFields() })
@@ -83,12 +87,13 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
                 onChange({ mode: option.value })
               }}
               className={cn(
-                'flex items-center justify-center gap-1.5 rounded-full py-1.5 text-xs font-medium transition-all duration-150',
+                'flex items-center justify-center gap-1.5 rounded-full py-1.5 text-xs font-medium',
+                'transition-all duration-150 ease-out motion-reduce:transition-none',
                 isSheet ? 'min-w-0 flex-1 px-2' : 'px-3.5',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 'active:scale-[0.98]',
                 selected
-                  ? 'bg-background text-foreground shadow-xs ring-1 ring-border/40'
+                  ? 'bg-background text-foreground shadow-xs ring-1 ring-border/50'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
@@ -101,7 +106,12 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
       </div>
 
       {mode === 'schedule' ? (
-        <div className={cn('space-y-3 rounded-lg border border-border/40 bg-background', isSheet ? 'p-3' : 'space-y-4 p-4')}>
+        <div
+          className={cn(
+            'space-y-3 rounded-xl border border-border/40 bg-muted/15 dark:bg-muted/10',
+            isSheet ? 'p-3' : 'space-y-4 p-4',
+          )}
+        >
           <div
             className={cn(
               'gap-3',

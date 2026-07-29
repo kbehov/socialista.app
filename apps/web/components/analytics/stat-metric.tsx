@@ -27,9 +27,9 @@ export type StatMetricsProps = {
 }
 
 const TREND_STYLES: Record<TrendDirection, string> = {
-  up: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  down: 'bg-red-500/10 text-red-600 dark:text-red-400',
-  neutral: 'bg-muted text-muted-foreground',
+  up: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  down: 'bg-red-500/10 text-red-700 dark:text-red-400',
+  neutral: 'bg-muted/80 text-muted-foreground',
 }
 
 const COLUMN_STYLES = {
@@ -47,7 +47,7 @@ function StatMetrics({ children, className, size = 'default', columns = 4 }: Sta
       className={cn(
         'group/metrics',
         dashboardSurface.dividerGrid,
-        'w-full grid-cols-1',
+        'w-full grid-cols-1 shadow-xs',
         COLUMN_STYLES[columns],
         className,
       )}
@@ -64,16 +64,23 @@ function StatMetric({ value, label, description, icon, iconClassName, trend, cla
     <div
       data-slot="stat-metric"
       className={cn(
-        'flex min-w-0 flex-col gap-1.5 px-4 py-3.5',
+        'flex min-w-0 flex-col gap-2 px-4 py-4',
         dashboardSurface.dividerCell,
-        'group-data-[size=sm]/metrics:gap-1 group-data-[size=sm]/metrics:px-3.5 group-data-[size=sm]/metrics:py-3',
+        'group-data-[size=sm]/metrics:gap-1.5 group-data-[size=sm]/metrics:px-3.5 group-data-[size=sm]/metrics:py-3.5',
         className,
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <p className={cn(dashboardSurface.metricLabel, 'truncate')}>{label}</p>
         {icon ? (
-          <span className={cn('shrink-0 text-muted-foreground/50 [&_svg]:size-3.5', iconClassName)}>{icon}</span>
+          <span
+            className={cn(
+              'flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/55 [&_svg]:size-3.5',
+              iconClassName,
+            )}
+          >
+            {icon}
+          </span>
         ) : null}
       </div>
 
@@ -89,7 +96,7 @@ function StatMetric({ value, label, description, icon, iconClassName, trend, cla
         {trend ? (
           <span
             className={cn(
-              'inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums',
+              'inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums tracking-tight',
               TREND_STYLES[direction],
             )}
           >

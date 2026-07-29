@@ -71,7 +71,7 @@ export async function UsageStatsPanel({ workspaceId }: { workspaceId: string }) 
 
   if (error || !data) {
     return (
-      <AnalyticsSection title="Usage" description="Plan limits for this workspace.">
+      <AnalyticsSection title="Usage" description="How this workspace uses plan limits.">
         <ErrorState
           title="Couldn't load usage"
           description={error ?? 'Something went wrong while loading usage data.'}
@@ -85,7 +85,7 @@ export async function UsageStatsPanel({ workspaceId }: { workspaceId: string }) 
   const { usage } = data
 
   return (
-    <AnalyticsSection title="Usage" description="Plan limits for this workspace." contentClassName="p-0">
+    <AnalyticsSection title="Usage" description="How this workspace uses plan limits." contentClassName="p-0">
       <UsageStatsGrid>
         {USAGE_STATS.map(stat => {
           const quota = usage[stat.key]

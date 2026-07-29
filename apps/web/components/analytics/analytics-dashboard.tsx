@@ -7,6 +7,7 @@ import type {
   SocialProvider,
 } from '@socialista/types'
 
+import RefreshButton from '../common/refresh-button'
 import { AnalyticsExportCsvButton } from './analytics-export-csv-button'
 import { AnalyticsSection } from './analytics-section'
 import { AnalyticsSkeleton, MetricCardsSkeleton } from './analytics-skeleton'
@@ -20,7 +21,6 @@ import { PublishedActivityPanel } from './panels/published-activity-panel'
 import { UsageStatsPanel } from './panels/usage-stats-panel'
 import { PlatformFilter } from './platform-filter'
 import { UpgradeTeaser } from './upgrade-teaser'
-
 export type AnalyticsDashboardProps = {
   workspaceId: string
   overview: AnalyticsOverviewResponse
@@ -41,11 +41,13 @@ function AnalyticsDashboard({
     provider: row.provider,
     accounts: row.accounts,
   }))
+  const showToolbar = platforms.length > 0 || isPremium
 
   return (
-    <div className="flex w-full flex-col gap-4 pb-8">
-      {platforms.length > 0 || isPremium ? (
-        <div className="flex flex-row items-center gap-3">
+    <div className="flex w-full flex-col gap-5 pb-10">
+      {/* Controls — filter + export */}
+      {showToolbar ? (
+        <div className="flex flex-wrap items-center gap-2.5">
           {platforms.length > 0 ? (
             <PlatformFilter
               platforms={platforms}
@@ -57,15 +59,18 @@ function AnalyticsDashboard({
           ) : (
             <div className="min-w-0 flex-1" />
           )}
+          <RefreshButton />
           {isPremium ? <AnalyticsExportCsvButton workspaceId={workspaceId} range={range} /> : null}
         </div>
       ) : null}
 
+      {/* Hero metrics */}
       <OverviewMetrics overview={overview} />
 
+      {/* Workspace capacity */}
       <Suspense
         fallback={
-          <AnalyticsSection title="Usage" description="Plan limits for this workspace." contentClassName="p-0">
+          <AnalyticsSection title="Usage" description="How this workspace uses plan limits." contentClassName="p-0">
             <MetricCardsSkeleton count={4} />
           </AnalyticsSection>
         }
@@ -73,13 +78,14 @@ function AnalyticsDashboard({
         <UsageStatsPanel workspaceId={workspaceId} />
       </Suspense>
 
+      {/* Premium insight grid */}
       {isPremium ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
           <Suspense
             fallback={
               <AnalyticsSkeleton
                 title="Growth"
-                description="Trends for the selected range."
+                description="Audience and engagement over time."
                 heightClassName="h-[220px]"
               />
             }
@@ -88,9 +94,7 @@ function AnalyticsDashboard({
           </Suspense>
 
           <Suspense
-            fallback={
-              <AnalyticsSkeleton title="Platforms" description="Audience by network." heightClassName="h-40" />
-            }
+            fallback={<AnalyticsSkeleton title="Platforms" description="Audience by network." heightClassName="h-40" />}
           >
             <PlatformSummaryPanel workspaceId={workspaceId} range={range} overview={overview} provider={provider} />
           </Suspense>
@@ -108,25 +112,20 @@ function AnalyticsDashboard({
             />
           }
         >
-          <AccountPerformancePanel
-            workspaceId={workspaceId}
-            range={range}
-            rankBy={rankBy}
-            provider={provider}
-          />
+          <AccountPerformancePanel workspaceId={workspaceId} range={range} rankBy={rankBy} provider={provider} />
         </Suspense>
       ) : null}
 
-      <Suspense fallback={<AnalyticsSkeleton title="Publishing Activity" heightClassName="h-28" />}>
+      <Suspense fallback={<AnalyticsSkeleton title="Publishing activity" heightClassName="h-28" />}>
         <PublishedActivityPanel workspaceId={workspaceId} provider={provider} />
       </Suspense>
 
       {isPremium ? (
-        <>
+        <div className="flex flex-col gap-5">
           <Suspense
             fallback={
               <AnalyticsSkeleton
-                title="Platform Breakdown"
+                title="Platform breakdown"
                 description="Performance by provider."
                 heightClassName="h-40"
               />
@@ -146,7 +145,7 @@ function AnalyticsDashboard({
           >
             <AnomaliesPanel workspaceId={workspaceId} range={range} provider={provider} />
           </Suspense>
-        </>
+        </div>
       ) : (
         <UpgradeTeaser />
       )}

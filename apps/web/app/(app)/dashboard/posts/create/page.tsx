@@ -53,7 +53,7 @@ export default async function CreatePostPage() {
   }
 
   return (
-    <div className="post-composer flex min-h-0 flex-1 flex-col px-1 sm:px-0">
+    <div className="px-1 sm:px-0">
       <PostComposer workspaceId={workspace.id} accounts={accounts} accountsTotal={accountsTotal} />
     </div>
   )

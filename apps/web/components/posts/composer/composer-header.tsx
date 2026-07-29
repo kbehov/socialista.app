@@ -9,6 +9,7 @@ import {
   CheckCircle2Icon,
   CircleDashedIcon,
   FileTextIcon,
+  Loader2Icon,
   SendIcon,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -43,8 +44,8 @@ export function ComposerHeader({
       <header
         className={cn(
           'sticky top-0 z-20 -mx-1 px-1',
-          'border-b border-border/40 bg-background/75 backdrop-blur-xl backdrop-saturate-150',
-          'supports-backdrop-filter:bg-background/60',
+          'bg-background/75 backdrop-blur-xl backdrop-saturate-150',
+          'supports-backdrop-filter:bg-background/55',
           className,
         )}
       >
@@ -55,21 +56,28 @@ export function ComposerHeader({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground active:scale-[0.97]"
+              className="size-8 shrink-0 rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-[0.97]"
             >
               <Link href={DASHBOARD_ROUTES.POSTS} aria-label="Back to posts">
                 <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
               </Link>
             </Button>
             <div className="min-w-0">
-              <h1 className="text-[15px] font-semibold tracking-tight text-foreground">
+              <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
                 Create post
               </h1>
-              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <p
+                className={cn(
+                  'mt-0.5 inline-flex max-w-full items-center gap-1.5 rounded-full text-[11px] leading-none',
+                  isReady
+                    ? 'bg-emerald-500/10 px-2 py-1 font-medium text-emerald-700 dark:text-emerald-400'
+                    : 'text-muted-foreground',
+                )}
+              >
                 {isReady ? (
-                  <CheckCircle2Icon className="size-3 text-emerald-500" strokeWidth={2} />
+                  <CheckCircle2Icon className="size-3 shrink-0" strokeWidth={2} />
                 ) : (
-                  <CircleDashedIcon className="size-3" strokeWidth={1.75} />
+                  <CircleDashedIcon className="size-3 shrink-0 opacity-70" strokeWidth={1.75} />
                 )}
                 <span className="truncate">{statusMessage}</span>
               </p>
@@ -81,7 +89,7 @@ export function ComposerHeader({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none active:scale-[0.98]"
+              className="h-8 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98]"
               disabled={!canSubmit || isSubmitting}
               onClick={onSaveDraft}
             >
@@ -95,18 +103,28 @@ export function ComposerHeader({
               disabled={!isReady || isSubmitting}
               onClick={onPublish}
             >
-              <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
+              {isSubmitting ? (
+                <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
+              ) : (
+                <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
+              )}
               {isSubmitting ? 'Working…' : primaryLabel}
             </Button>
           </div>
         </div>
+        {/* Scroll-edge fade — soft material boundary instead of a hard rule */}
+        <div
+          aria-hidden
+          className="pointer-events-none h-px bg-linear-to-r from-transparent via-border/60 to-transparent"
+        />
       </header>
 
       {/* Mobile sticky action bar */}
       <div
         className={cn(
-          'fixed inset-x-0 bottom-0 z-30 border-t border-border/50 p-3 sm:hidden',
-          'bg-background/85 backdrop-blur-xl backdrop-saturate-150 supports-backdrop-filter:bg-background/70',
+          'fixed inset-x-0 bottom-0 z-30 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden',
+          'border-t border-border/40 bg-background/85 backdrop-blur-xl backdrop-saturate-150',
+          'supports-backdrop-filter:bg-background/70',
         )}
       >
         <div className="mx-auto flex max-w-lg items-center gap-2">
@@ -128,7 +146,11 @@ export function ComposerHeader({
             disabled={!isReady || isSubmitting}
             onClick={onPublish}
           >
-            <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
+            {isSubmitting ? (
+              <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
+            ) : (
+              <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
+            )}
             {isSubmitting ? 'Working…' : primaryLabel}
           </Button>
         </div>

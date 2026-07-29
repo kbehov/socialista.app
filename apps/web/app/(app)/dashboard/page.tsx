@@ -56,7 +56,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
-        description={`${workspace.name} · analytics at a glance`}
+        description={`${workspace.name} · overview`}
         actions={
           <AnalyticsRangeToggle range={range} params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined} />
         }

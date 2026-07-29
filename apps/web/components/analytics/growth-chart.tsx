@@ -4,12 +4,12 @@ import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 
 import { DashboardSegment, DashboardSegmentButton } from '@/components/dashboard/dashboard-segment'
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import type { AnalyticsGrowthResponse, AnalyticsRange, AnalyticsSeriesPoint, SocialProvider } from '@socialista/types'
 
 import { formatCount } from '@/utils/format'
+import { AnalyticsEmpty } from './analytics-empty'
 import { AnalyticsSection } from './analytics-section'
 
 type ChartMetric = 'engagement' | 'followers' | 'reach' | 'views'
@@ -141,7 +141,7 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
     <AnalyticsSection
       className={cn('h-full', className)}
       title="Growth"
-      description="Trends for the selected range."
+      description="Audience and engagement over time."
       action={
         <DashboardSegment label="Chart metric">
           {METRIC_TABS.map(tab => {
@@ -156,9 +156,11 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
       }
     >
       {!hasData ? (
-        <div className={cn('flex min-h-[220px] flex-1 items-center justify-center', dashboardSurface.insetDashed)}>
-          <p className="text-xs text-muted-foreground">No growth data for this range.</p>
-        </div>
+        <AnalyticsEmpty
+          title="No growth data"
+          description="Publish and sync accounts to see trends for this range."
+          minHeightClassName="min-h-[220px]"
+        />
       ) : useLine ? (
         <ChartContainer
           config={chartConfig}

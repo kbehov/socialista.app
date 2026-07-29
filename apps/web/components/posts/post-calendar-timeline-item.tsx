@@ -2,7 +2,6 @@
 
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import { POST_STATUS_META } from '@/components/posts/post-meta'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { getPostDisplayDate, getPostPreviewText, getPostThumbnail } from '@/lib/post-display'
 import { cn } from '@/lib/utils'
 import { formatPostTime } from '@/utils/format'
@@ -72,38 +71,37 @@ export function PostCalendarTimelineItem({
           ) : null}
         </div>
 
-        <div className="min-w-0 flex-1 rounded-xl border border-border/50 bg-background p-2.5 transition-colors hover:border-border/80 hover:bg-muted/15">
+        <div className="min-w-0 flex-1 rounded-xl border border-border/45 bg-background p-2.5 transition-[border-color,background-color,box-shadow] duration-150 hover:border-border/70 hover:bg-muted/20 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <div className="flex gap-2.5">
-            <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50">
+            <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/40">
               <PostThumb post={post} />
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-sm leading-snug font-medium text-foreground">{title}</p>
+              <p className="line-clamp-2 text-[13px] leading-snug font-medium tracking-[-0.01em] text-foreground">
+                {title}
+              </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground">
                 <SocialPlatformIcon provider={post.provider} size={10} framed={false} className="size-3" />
-                <span className="truncate">{accountLabel}</span>
-                <span aria-hidden>·</span>
+                <span className="truncate font-medium tracking-tight">{accountLabel}</span>
+                <span aria-hidden className="text-border">
+                  ·
+                </span>
                 <span>{getSocialPlatformLabel(post.provider)}</span>
               </div>
             </div>
           </div>
 
-          <div className="mt-2 flex items-center gap-1.5 border-t border-border/40 pt-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                    statusMeta.className,
-                  )}
-                >
-                  <span className={cn('size-1.5 rounded-full', statusMeta.dotClassName)} aria-hidden />
-                  {statusMeta.label}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top">{statusMeta.label}</TooltipContent>
-            </Tooltip>
+          <div className="mt-2 flex items-center gap-1.5 border-t border-border/35 pt-2">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium tracking-tight',
+                statusMeta.className,
+              )}
+            >
+              <span className={cn('size-1.5 rounded-full', statusMeta.dotClassName)} aria-hidden />
+              {statusMeta.label}
+            </span>
           </div>
         </div>
       </div>

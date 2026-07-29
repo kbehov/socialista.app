@@ -36,6 +36,40 @@ export const POST_STATUS_META: Record<
   },
 }
 
+export type PostStatusSummaryItem = {
+  status: PostStatus
+  label: string
+  className: string
+}
+
+/** Ordered status chips for count summaries (grid date headings, etc.). */
+export const POST_STATUS_SUMMARY: PostStatusSummaryItem[] = [
+  { status: 'scheduled', label: 'scheduled', className: 'text-sky-600 dark:text-sky-400' },
+  { status: 'publishing', label: 'publishing', className: 'text-amber-600 dark:text-amber-400' },
+  { status: 'published', label: 'published', className: 'text-emerald-600 dark:text-emerald-400' },
+  { status: 'draft', label: 'drafts', className: 'text-muted-foreground' },
+  { status: 'failed', label: 'failed', className: 'text-destructive' },
+  { status: 'canceled', label: 'canceled', className: 'text-muted-foreground' },
+]
+
+/** Compact month strip on the calendar (high-signal statuses only). */
+export const CALENDAR_MONTH_STATUS_SUMMARY: PostStatusSummaryItem[] = [
+  { status: 'scheduled', label: 'scheduled', className: 'text-sky-600 dark:text-sky-400' },
+  { status: 'published', label: 'published', className: 'text-emerald-600 dark:text-emerald-400' },
+  { status: 'draft', label: 'drafts', className: 'text-amber-600 dark:text-amber-400' },
+]
+
+export function getActiveStatusSummary(
+  counts: Partial<Record<PostStatus, number>>,
+  summary: PostStatusSummaryItem[] = POST_STATUS_SUMMARY,
+) {
+  return summary.flatMap(item => {
+    const value = counts[item.status] ?? 0
+    if (value <= 0) return []
+    return [{ ...item, value }]
+  })
+}
+
 export function formatPostDateTime(value: Date | string): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',

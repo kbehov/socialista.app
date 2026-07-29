@@ -116,6 +116,12 @@ export function monthKeyToDate(monthKey: string): Date {
   return new Date(Number(yearStr), Number(monthStr) - 1, 1)
 }
 
+export function dateToMonthKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
 export function toSearchParamsRecord(
   searchParams: Record<string, string | string[] | undefined>,
 ): URLSearchParams {

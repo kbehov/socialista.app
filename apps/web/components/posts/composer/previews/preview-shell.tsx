@@ -2,10 +2,11 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import type { ComposerMediaItem } from '@/types/composer-types'
+import { formatHandle, getAccountInitials } from '@/utils/account-display.utils'
 import type { AccountSummary } from '@socialista/types'
 import { FilmIcon } from 'lucide-react'
 
-import type { ComposerMediaItem } from '../../../../types/composer-types'
 import { usePreviewEmbedded } from './preview-embed-context'
 
 export function PreviewShell({
@@ -43,8 +44,8 @@ export function PreviewShell({
 }
 
 export function PreviewAccountHeader({ account, subtitle }: { account: AccountSummary; subtitle?: string }) {
-  const initials = (account.accountName || account.username || '?').slice(0, 2).toUpperCase()
-  const handle = account.username ? `@${account.username.replace(/^@/, '')}` : account.accountName
+  const initials = getAccountInitials(account)
+  const handle = formatHandle(account.username) || account.accountName
 
   return (
     <div className="flex items-center gap-2.5 px-3 py-2.5">

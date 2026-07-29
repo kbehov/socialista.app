@@ -1,7 +1,6 @@
 import { BarChart3Icon, SparklesIcon, TrendingUpIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
@@ -33,24 +32,31 @@ export type UpgradeTeaserProps = {
 function UpgradeTeaser({ className }: UpgradeTeaserProps) {
   return (
     <AnalyticsSection
-      className={className}
+      className={cn(className)}
       title="Unlock full analytics"
       description="Growth charts, platform comparisons, and anomaly alerts on Pro."
       action={
-        <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs">
+        <Button
+          asChild
+          size="sm"
+          className="h-8 rounded-full px-3.5 text-xs font-medium shadow-xs active:scale-[0.98]"
+        >
           <Link href={DASHBOARD_ROUTES.UPGRADE}>Upgrade</Link>
         </Button>
       }
     >
       <div className="grid gap-2.5 sm:grid-cols-3">
         {PREMIUM_FEATURES.map(feature => (
-          <div key={feature.title} className={cn('flex flex-col gap-2.5 p-3.5', dashboardSurface.inset)}>
-            <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div
+            key={feature.title}
+            className="flex flex-col gap-2.5 rounded-xl border border-border/50 bg-muted/10 p-3.5 dark:bg-muted/5"
+          >
+            <span className="flex size-8 items-center justify-center rounded-xl border border-border/50 bg-background text-muted-foreground shadow-xs">
               <feature.icon className="size-3.5" strokeWidth={1.75} />
             </span>
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-xs font-medium text-foreground">{feature.title}</p>
-              <p className={dashboardSurface.metricMeta}>{feature.description}</p>
+            <div className="min-w-0 space-y-1">
+              <p className="text-xs font-semibold tracking-tight text-foreground">{feature.title}</p>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">{feature.description}</p>
             </div>
           </div>
         ))}

@@ -1,16 +1,21 @@
 'use client'
 
-import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import type { ComposerMediaItem, ComposerVariant } from '@/types/composer-types'
+import { getAccountPreviewMeta } from '@/utils/account-display.utils'
+import {
+  derivePostType,
+  getVariantOrEmpty,
+  mergeVariantCaption,
+} from '@/utils/composer.utils'
 import type { AccountSummary } from '@socialista/types'
 import { EyeIcon, PanelRightCloseIcon, PanelRightOpenIcon } from 'lucide-react'
 
-import type { ComposerMediaItem, ComposerVariant } from '../../../types/composer-types'
-import { createEmptyVariant, derivePostType, mergeVariantCaption } from '../../../utils/composer.utils'
-import { getPreviewComponent } from './previews/preview-registry'
+import { PlatformPreview } from './previews/preview-registry'
 
 type PostPreviewBarProps = {
   accounts: AccountSummary[]
@@ -45,17 +50,20 @@ export function PostPreviewBar({
 
   if (collapsed) {
     return (
-      <aside className={cn('flex flex-col items-center', className)}>
+      <aside className={cn('flex flex-col items-center gap-2', className)}>
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="size-8 rounded-lg border-border/50 bg-background shadow-none"
+          className="size-9 rounded-xl border-border/50 bg-background shadow-xs active:scale-[0.97]"
           onClick={() => onCollapsedChange?.(false)}
           aria-label="Show preview"
         >
           <PanelRightOpenIcon className="size-3.5" strokeWidth={1.75} />
         </Button>
+        <span className="rotate-180 text-[10px] font-medium tracking-wide text-muted-foreground [writing-mode:vertical-rl]">
+          Preview
+        </span>
       </aside>
     )
   }
@@ -64,14 +72,18 @@ export function PostPreviewBar({
     return (
       <aside
         className={cn(
-          'flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border/50',
-          'bg-background px-4 text-center',
+          'flex min-h-56 flex-col items-center justify-center rounded-xl border border-dashed border-border/50',
+          'bg-muted/10 px-5 text-center',
           className,
         )}
       >
-        <EyeIcon className="mb-2 size-4 text-muted-foreground/60" strokeWidth={1.75} />
-        <p className="text-xs font-medium text-foreground">Preview</p>
-        <p className="mt-1 max-w-40 text-[10px] leading-relaxed text-muted-foreground">Select accounts to preview</p>
+        <span className="mb-3 flex size-10 items-center justify-center rounded-2xl border border-border/50 bg-background shadow-xs">
+          <EyeIcon className="size-4 text-muted-foreground" strokeWidth={1.75} />
+        </span>
+        <p className="text-xs font-semibold tracking-tight text-foreground">Live preview</p>
+        <p className="mt-1.5 max-w-44 text-[11px] leading-relaxed text-muted-foreground">
+          Select accounts to see how your post will look on each platform.
+        </p>
       </aside>
     )
   }
@@ -82,16 +94,16 @@ export function PostPreviewBar({
   return (
     <aside
       className={cn(
-        'flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/50 bg-background',
+        'flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/50 bg-background shadow-xs',
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold tracking-tight text-foreground">Preview</p>
           {activeAccount ? (
             <p className="truncate text-[10px] text-muted-foreground">
-              {getSocialPlatformLabel(activeAccount.provider)}
+              {getAccountPreviewMeta(activeAccount)}
             </p>
           ) : null}
         </div>
@@ -100,11 +112,11 @@ export function PostPreviewBar({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-6 shrink-0 rounded-md"
+            className="size-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground active:scale-[0.97]"
             onClick={() => onCollapsedChange(true)}
             aria-label="Hide preview"
           >
-            <PanelRightCloseIcon className="size-3" strokeWidth={1.75} />
+            <PanelRightCloseIcon className="size-3.5" strokeWidth={1.75} />
           </Button>
         ) : null}
       </div>
@@ -122,8 +134,8 @@ export function PostPreviewBar({
                   key={account._id}
                   value={account._id}
                   className={cn(
-                    'h-6 gap-1 rounded-md border border-transparent px-1.5 text-[10px] font-medium',
-                    'data-[state=active]:border-border/50 data-[state=active]:bg-background',
+                    'h-7 gap-1 rounded-lg border border-transparent px-2 text-[10px] font-medium',
+                    'data-[state=active]:border-border/50 data-[state=active]:bg-muted/40 data-[state=active]:shadow-none',
                   )}
                 >
                   <SocialPlatformIcon provider={account.provider} size={10} framed={false} className="size-3" />
@@ -133,21 +145,20 @@ export function PostPreviewBar({
           </div>
         ) : null}
 
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="p-2">
+        <ScrollArea className="min-h-0 flex-1" scrollFade>
+          <div className="p-2.5">
             {selectedAccounts.map(account => {
-              const Preview = getPreviewComponent(account.provider)
-              const variant = variants[account._id] ?? createEmptyVariant(account._id)
+              const variant = getVariantOrEmpty(variants, account._id)
               const caption = mergeVariantCaption(commonCaption, variant)
-              const description = variant.description
 
               return (
                 <TabsContent key={account._id} value={account._id} className="mt-0 data-[state=inactive]:hidden">
-                  <div className="origin-top scale-[0.88]">
-                    <Preview
+                  <div className="origin-top scale-[0.92]">
+                    <PlatformPreview
+                      provider={account.provider}
                       account={account}
                       caption={caption}
-                      description={description}
+                      description={variant.description}
                       media={media}
                       postType={postType}
                     />

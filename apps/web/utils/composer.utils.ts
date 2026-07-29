@@ -31,6 +31,13 @@ export function createEmptyVariant(accountId: string): ComposerVariant {
   }
 }
 
+export function getVariantOrEmpty(
+  variants: Record<string, ComposerVariant>,
+  accountId: string,
+): ComposerVariant {
+  return variants[accountId] ?? createEmptyVariant(accountId)
+}
+
 export function derivePostType(media: ComposerMediaItem[]): PostType {
   if (media.length === 0) return 'text'
   if (media.length > 1) return 'carousel'

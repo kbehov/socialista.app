@@ -1,5 +1,5 @@
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { cn } from '@/lib/utils'
 import type {
   AnalyticsMetrics,
@@ -10,6 +10,7 @@ import type {
 } from '@socialista/types'
 
 import { formatCount, formatPercent } from '@/utils/format'
+import { AnalyticsEmpty } from './analytics-empty'
 import { AnalyticsSection } from './analytics-section'
 
 export type PlatformsBreakdownProps = {
@@ -77,22 +78,24 @@ function resolvePlatforms(
 
 function changeTone(value: number | null) {
   if (value === null || !Number.isFinite(value) || value === 0) return 'text-muted-foreground'
-  return value > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+  return value > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
 }
 
 function PlatformsBreakdown({ data, overview, provider = 'all', error, className }: PlatformsBreakdownProps) {
   const platforms = resolvePlatforms(data, overview, provider)
 
   return (
-    <AnalyticsSection className={cn(className)} title="Platform Breakdown" description="Performance by provider.">
+    <AnalyticsSection
+      className={cn(className)}
+      title="Platform breakdown"
+      description="Performance by provider for the selected range."
+    >
       {error ? <p className="mb-3 text-xs text-destructive">{error}</p> : null}
 
       {platforms.length === 0 ? (
-        <div className={cn('flex min-h-28 items-center justify-center', dashboardSurface.insetDashed)}>
-          <p className="text-xs text-muted-foreground">No platform data yet.</p>
-        </div>
+        <AnalyticsEmpty title="No platform data yet" description="Metrics appear after accounts sync." />
       ) : (
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {platforms.map(row => (
             <PlatformCard key={row.provider} row={row} />
           ))}
@@ -111,11 +114,13 @@ function PlatformCard({ row }: { row: AnalyticsPlatformRow }) {
   ] as const
 
   return (
-    <div className={cn('flex flex-col gap-3 p-3.5', dashboardSurface.inset)}>
+    <div className="flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/10 p-3.5 dark:bg-muted/5">
       <div className="flex items-center gap-2.5">
-        <SocialPlatformIcon provider={row.provider} size={14} className="size-4 shrink-0" />
+        <SocialPlatformIcon provider={row.provider} size={14} className="size-7 shrink-0 shadow-xs" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-foreground">{getSocialPlatformLabel(row.provider)}</p>
+          <p className="truncate text-xs font-semibold tracking-tight text-foreground">
+            {getSocialPlatformLabel(row.provider)}
+          </p>
           <p className={dashboardSurface.metricMeta}>
             {row.accounts} account{row.accounts === 1 ? '' : 's'}
           </p>
@@ -124,9 +129,9 @@ function PlatformCard({ row }: { row: AnalyticsPlatformRow }) {
 
       <div className="grid grid-cols-2 gap-2">
         {metrics.map(metric => (
-          <div key={metric.label} className={cn('px-2.5 py-2', dashboardSurface.insetMuted)}>
+          <div key={metric.label} className="rounded-lg bg-background px-2.5 py-2 ring-1 ring-border/40">
             <p className={dashboardSurface.metricLabel}>{metric.label}</p>
-            <p className="mt-1 text-sm font-semibold tabular-nums tracking-tight text-foreground">
+            <p className="mt-1 text-sm font-semibold tabular-nums tracking-[-0.02em] text-foreground">
               {formatCount(metric.value)}
             </p>
             <p className={cn('mt-0.5 text-[11px] font-medium tabular-nums', changeTone(metric.change))}>
