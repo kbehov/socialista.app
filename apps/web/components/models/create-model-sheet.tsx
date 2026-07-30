@@ -1,6 +1,7 @@
 'use client'
 
 import { FieldError, FieldLabel } from '@/components/forms/auth-form-shared'
+import { ContextSupportPicker } from '@/components/models/context-support-picker'
 import { ModelTypePicker } from '@/components/models/model-type-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { COST_UNIT_OPTIONS, createModelSchema, type CreateModelFormValues } from '@/lib/zod/model.schema'
 import { createModel, updateModel } from '@/services/models.service'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CostUnit, ModelType, type Model } from '@socialista/types'
+import { ContextSupport, CostUnit, ModelType, type Model } from '@socialista/types'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -28,6 +29,7 @@ const emptyFormValues: CreateModelFormValues = {
   cost: '',
   costUnit: CostUnit.TOKENS,
   modelType: ModelType.TEXT,
+  contextSupports: [ContextSupport.TEXT],
   modelProvider: '',
 }
 
@@ -37,6 +39,7 @@ function toFormValues(model: Model): CreateModelFormValues {
     cost: String(model.cost),
     costUnit: model.costUnit,
     modelType: model.modelType,
+    contextSupports: model.contextSupports?.length ? model.contextSupports : [ContextSupport.TEXT],
     modelProvider: model.modelProvider,
     chef: model.chef,
     value: model.value,
@@ -82,6 +85,7 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
       cost: Number(values.cost),
       costUnit: values.costUnit,
       modelType: values.modelType,
+      contextSupports: values.contextSupports,
       modelProvider: values.modelProvider,
     }
 
@@ -175,6 +179,26 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
                 )}
               />
               <FieldError message={errors.modelType?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel>Context supports</FieldLabel>
+              <Controller
+                name="contextSupports"
+                control={control}
+                render={({ field }) => (
+                  <ContextSupportPicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting}
+                    aria-invalid={Boolean(errors.contextSupports)}
+                  />
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Input modalities this model accepts (e.g. text-only or text + image).
+              </p>
+              <FieldError message={errors.contextSupports?.message} />
             </div>
 
             <div className="space-y-2">

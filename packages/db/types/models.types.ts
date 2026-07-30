@@ -20,6 +20,14 @@ export enum CostUnit {
   PER_SECOND = 'second',
 }
 
+export enum ContextSupport {
+  TEXT = 'text',
+  IMAGE = 'image',
+  AUDIO = 'audio',
+  VIDEO = 'video',
+  FILE = 'file',
+}
+
 export interface IModel {
   _id: Types.ObjectId
   chef: string
@@ -28,6 +36,7 @@ export interface IModel {
   cost: number // cost per unit of costUnit
   costUnit: CostUnit
   modelType: ModelType
+  contextSupports: ContextSupport[]
   usageCount: number
   modelProvider: string
   createdAt: Date

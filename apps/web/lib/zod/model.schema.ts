@@ -1,7 +1,8 @@
-import { CostUnit, ModelType } from '@socialista/types'
+import { ContextSupport, CostUnit, ModelType } from '@socialista/types'
 import { z } from 'zod'
 
 export { MODEL_TYPE_OPTIONS } from '@/lib/model-type'
+export { CONTEXT_SUPPORT_OPTIONS } from '@/lib/model-context-support'
 
 export const COST_UNIT_OPTIONS = [
   { value: CostUnit.TOKENS, label: 'Tokens' },
@@ -20,6 +21,9 @@ export const createModelSchema = z.object({
     .refine(value => !Number.isNaN(Number(value)) && Number(value) > 0, 'Cost must be greater than 0'),
   costUnit: z.nativeEnum(CostUnit, { message: 'Cost unit is required' }),
   modelType: z.nativeEnum(ModelType, { message: 'Model type is required' }),
+  contextSupports: z
+    .array(z.nativeEnum(ContextSupport))
+    .min(1, 'Select at least one context support'),
   modelProvider: z.string().trim().min(1, 'Provider is required').max(100, 'Provider must be 100 characters or less'),
 })
 

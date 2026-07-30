@@ -37,7 +37,13 @@ export {
   type ImageDocument,
 } from './types/image.types.js'
 export * from './types/inspiration.types.js'
-export { CostUnit, ModelType, type IModel, type ModelDocument } from './types/models.types.js'
+export {
+  ContextSupport,
+  CostUnit,
+  ModelType,
+  type IModel,
+  type ModelDocument,
+} from './types/models.types.js'
 export type { Iproduct, ProductDocument } from './types/product.types.js'
 export {
   buildFilters,

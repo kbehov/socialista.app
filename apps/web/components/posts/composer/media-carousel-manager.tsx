@@ -37,20 +37,36 @@ function MediaThumbnail({ item, index }: { item: ComposerMediaItem; index: numbe
         // eslint-disable-next-line @next/next/no-img-element
         <img src={item.url} alt={item.altText || `Media ${index + 1}`} className="size-full object-cover" />
       ) : (
-        <div className="flex size-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
+        <>
           {item.thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-          ) : null}
-          <span className="relative z-10 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-xs ring-1 ring-border/50">
-            <FilmIcon className="size-3.5" strokeWidth={1.75} />
-          </span>
-          {item.durationSeconds ? (
-            <span className="relative z-10 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-medium tabular-nums shadow-xs">
-              {formatDuration(item.durationSeconds)}
+            <img
+              src={item.thumbnailUrl}
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+            />
+          ) : (
+            // #t=0.001 forces browsers to decode/show the first frame as a poster.
+            <video
+              src={`${item.url}#t=0.001`}
+              muted
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 size-full object-cover"
+              aria-hidden
+            />
+          )}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+            <span className="relative z-10 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-xs ring-1 ring-border/50">
+              <FilmIcon className="size-3.5" strokeWidth={1.75} />
             </span>
-          ) : null}
-        </div>
+            {item.durationSeconds ? (
+              <span className="relative z-10 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-medium tabular-nums shadow-xs">
+                {formatDuration(item.durationSeconds)}
+              </span>
+            ) : null}
+          </div>
+        </>
       )}
 
       <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded-full bg-background/90 px-1 py-0.5 text-[9px] font-medium shadow-xs ring-1 ring-border/40">

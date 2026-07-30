@@ -19,6 +19,14 @@ export enum CostUnit {
   PER_SECOND = 'second',
 }
 
+export enum ContextSupport {
+  TEXT = 'text',
+  IMAGE = 'image',
+  AUDIO = 'audio',
+  VIDEO = 'video',
+  FILE = 'file',
+}
+
 export type Model = {
   _id: string
   chef: string
@@ -27,6 +35,7 @@ export type Model = {
   cost: number
   costUnit: CostUnit
   modelType: ModelType
+  contextSupports?: ContextSupport[]
   modelProvider: string
   createdAt: Date
   updatedAt: Date
@@ -37,10 +46,13 @@ export type GetModelsResponse = {
 }
 
 export type CreateModelInput = {
+  chef: string
+  value: string
   name: string
   cost: number
   costUnit: CostUnit
   modelType: ModelType
+  contextSupports: ContextSupport[]
   modelProvider: string
 }
 

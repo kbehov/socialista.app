@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils'
 import type { ComposerMediaItem } from '@/types/composer-types'
 import { formatHandle, getAccountInitials } from '@/utils/account-display.utils'
 import type { AccountSummary } from '@socialista/types'
-import { FilmIcon } from 'lucide-react'
+import { PauseIcon, PlayIcon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { usePreviewEmbedded } from './preview-embed-context'
 
@@ -87,24 +88,113 @@ export function PreviewMedia({
       <div className={cn('relative bg-background', aspectClassName)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={first.url} alt={first.altText || 'Post media'} className="size-full object-cover" />
-        {media.length > 1 ? (
-          <span className="absolute top-2 right-2 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
-            1/{media.length}
-          </span>
-        ) : null}
+        {media.length > 1 ? <MediaCountBadge count={media.length} /> : null}
       </div>
     )
   }
 
+  return <PreviewVideoPlayer item={first} mediaCount={media.length} aspectClassName={aspectClassName} />
+}
+
+function MediaCountBadge({ count }: { count: number }) {
   return (
-    <div className={cn('relative flex items-center justify-center bg-background', aspectClassName)}>
-      {first.thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={first.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
+    <span className="absolute top-2 right-2 z-20 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+      1/{count}
+    </span>
+  )
+}
+
+function formatPreviewDuration(seconds: number) {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${String(secs).padStart(2, '0')}`
+}
+
+function PreviewVideoPlayer({
+  item,
+  mediaCount,
+  aspectClassName,
+}: {
+  item: Extract<ComposerMediaItem, { kind: 'video' }>
+  mediaCount: number
+  aspectClassName: string
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  // Reset play state when the attached video URL changes (media swap / reorder).
+  useEffect(() => {
+    setIsPlaying(false)
+    const video = videoRef.current
+    if (!video) return
+    video.pause()
+    video.currentTime = 0
+  }, [item.url])
+
+  const togglePlayback = useCallback(() => {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) {
+      void video.play().catch(() => {
+        // Autoplay/play can fail (e.g. browser policy) — keep UI in paused state.
+        setIsPlaying(false)
+      })
+    } else {
+      video.pause()
+    }
+  }, [])
+
+  return (
+    <div className={cn('group/preview-video relative bg-black', aspectClassName)}>
+      <video
+        ref={videoRef}
+        src={item.url}
+        poster={item.thumbnailUrl}
+        muted
+        playsInline
+        loop
+        preload="metadata"
+        className="size-full object-cover"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+        onClick={togglePlayback}
+      />
+
+      <button
+        type="button"
+        onClick={togglePlayback}
+        aria-label={isPlaying ? 'Pause video' : 'Play video'}
+        className={cn(
+          'absolute inset-0 z-10 flex items-center justify-center transition-opacity',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset',
+          isPlaying
+            ? 'bg-transparent opacity-0 hover:bg-black/15 hover:opacity-100'
+            : 'bg-black/20 opacity-100',
+        )}
+      >
+        <span
+          className={cn(
+            'flex size-10 items-center justify-center rounded-full shadow-xs ring-1',
+            'bg-background/90 text-foreground ring-border/50 backdrop-blur-sm',
+            'transition-transform active:scale-95',
+          )}
+        >
+          {isPlaying ? (
+            <PauseIcon className="size-4" strokeWidth={1.75} />
+          ) : (
+            <PlayIcon className="ml-0.5 size-4 fill-current" strokeWidth={1.75} />
+          )}
+        </span>
+      </button>
+
+      {item.durationSeconds ? (
+        <span className="pointer-events-none absolute bottom-2 left-2 z-20 rounded-full bg-black/65 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white backdrop-blur-sm">
+          {formatPreviewDuration(item.durationSeconds)}
+        </span>
       ) : null}
-      <span className="relative z-10 flex size-10 items-center justify-center rounded-full bg-background/90 shadow-xs ring-1 ring-border/50">
-        <FilmIcon className="size-4 text-muted-foreground" strokeWidth={1.75} />
-      </span>
+
+      {mediaCount > 1 ? <MediaCountBadge count={mediaCount} /> : null}
     </div>
   )
 }

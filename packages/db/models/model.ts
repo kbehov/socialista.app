@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose'
 import { enumValues } from '../lib/schema.js'
-import { CostUnit, IModel, ModelType } from '../types/models.types.js'
+import { ContextSupport, CostUnit, IModel, ModelType } from '../types/models.types.js'
 
 const modelSchema = new Schema<IModel>(
   {
@@ -11,9 +11,17 @@ const modelSchema = new Schema<IModel>(
     usageCount: { type: Number, default: 0 },
     costUnit: { type: String, required: true, enum: enumValues(CostUnit) },
     modelType: { type: String, required: true, enum: enumValues(ModelType) },
+    contextSupports: {
+      type: [{ type: String, enum: enumValues(ContextSupport) }],
+      required: true,
+      default: [ContextSupport.TEXT],
+    },
     modelProvider: { type: String, required: true },
   },
   { timestamps: true },
 )
+
+modelSchema.index({ contextSupports: 1 })
+modelSchema.index({ modelType: 1, contextSupports: 1 })
 
 export const ModelModel = model<IModel>('Model', modelSchema)

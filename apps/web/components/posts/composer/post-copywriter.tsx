@@ -60,10 +60,10 @@ export function PostCopywriterDialog({
   const platformLabel = formatProviderList(selectedProviders)
   const trimmedCaption = caption.trim()
   const hasExistingCaption = trimmedCaption.length > 0
+  const imageContextCount = media.filter(item => item.kind === 'image').length
 
   const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
     api: '/api/ai/completions/post',
-    streamProtocol: 'text',
     onError: err => {
       setError(err.message ?? 'Something went wrong. Please try again.')
     },
@@ -116,11 +116,15 @@ export function PostCopywriterDialog({
     const trimmed = prompt.trim()
     if (!trimmed || isLoading) return
     const previousCaption = completion.trim() || undefined
-    const mediaPayload = media.slice(0, 4).map(item =>
-      item.kind === 'image'
-        ? { kind: 'image' as const, url: item.url, altText: item.altText }
-        : { kind: 'video' as const, url: item.url, thumbnailUrl: item.thumbnailUrl },
-    )
+    // Vision context is images only — video frames are not sent to the model.
+    const mediaPayload = media
+      .filter(item => item.kind === 'image')
+      .slice(0, 4)
+      .map(item => ({
+        kind: 'image' as const,
+        url: item.url,
+        altText: item.altText,
+      }))
     setError(null)
     setCopied(false)
     setCompletion('')
@@ -348,11 +352,11 @@ export function PostCopywriterDialog({
                 />
               </div>
 
-              {media.length > 0 ? (
+              {imageContextCount > 0 ? (
                 <p className="flex items-center gap-1.5 pt-0.5 text-[11px] tracking-tight text-muted-foreground/70">
                   <ImagesIcon className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-                  AI will write with your {media.length} attached{' '}
-                  {media.length === 1 ? 'visual' : 'visuals'} as context
+                  AI will write with your {imageContextCount} attached{' '}
+                  {imageContextCount === 1 ? 'image' : 'images'} as context
                 </p>
               ) : null}
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { ContextSupportLabels } from '@/components/models/context-support-label'
 import { ModelTypeLabel } from '@/components/models/model-type-label'
 import { COST_UNIT_OPTIONS } from '@/lib/zod/model.schema'
 import type { Model } from '@socialista/types'
@@ -31,6 +32,7 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
           <TableHead>Name</TableHead>
           <TableHead>Provider</TableHead>
           <TableHead>Type</TableHead>
+          <TableHead>Context</TableHead>
           <TableHead>Cost</TableHead>
           <TableHead>Cost unit</TableHead>
           <TableHead>Created</TableHead>
@@ -45,6 +47,9 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
             <TableCell>{model.modelProvider}</TableCell>
             <TableCell>
               <ModelTypeLabel type={model.modelType} />
+            </TableCell>
+            <TableCell>
+              <ContextSupportLabels supports={model.contextSupports} />
             </TableCell>
             <TableCell className="tabular-nums">{model.cost}</TableCell>
             <TableCell>{costUnitLabels[model.costUnit] ?? model.costUnit}</TableCell>

@@ -1,27 +1,34 @@
 export const TONE_OPTIONS = [
   { value: '', label: 'Auto' },
-  { value: 'bold and scroll-stopping', label: 'Bold' },
-  { value: 'playful and witty', label: 'Playful' },
-  { value: 'professional and polished', label: 'Professional' },
-  { value: 'casual and conversational', label: 'Casual' },
+  { value: 'bold, opinionated, scroll-stopping — sharp claims, zero soft hedging', label: 'Bold' },
+  { value: 'playful and witty — dry humor, clever specifics, light punchlines', label: 'Playful' },
+  {
+    value: 'credible and human — operator voice, insight-led, never corporate or stiff',
+    label: 'Professional',
+  },
+  { value: 'casual and conversational — like texting a smart friend, lowercase energy ok', label: 'Casual' },
 ] as const
 
 export const BRIEF_SUGGESTIONS = [
   {
     label: 'Product launch',
-    prompt: 'Product launch — energetic, make people want to tap',
+    prompt:
+      'Launch post for something people have been waiting on — lead with the specific reason to care, not "we launched". Make them want to tap.',
   },
   {
     label: 'Behind the scenes',
-    prompt: 'Behind-the-scenes moment, authentic and relatable',
+    prompt:
+      'Behind-the-scenes moment — name the messy real detail most brands hide. Authentic, specific, not polished "BTS" cliché.',
   },
   {
     label: 'Spark comments',
-    prompt: 'Ask a question to spark comments',
+    prompt:
+      'Write a caption that makes people leave a real comment — a sharp take or an easy, specific question. No "thoughts?" bait.',
   },
   {
     label: 'Coming soon',
-    prompt: 'Tease something coming soon — curiosity hook',
+    prompt:
+      'Tease something coming — curiosity gap hook, withhold just enough. Specific tension, zero vague "something big is coming".',
   },
 ] as const
 
