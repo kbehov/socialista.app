@@ -179,6 +179,8 @@ export const getAccountAnalyticsSeries = async (
     comments: Array<number | null>
     shares: Array<number | null>
     saves: Array<number | null>
+    profileViews: Array<number | null>
+    linkClicks: Array<number | null>
     engagements: Array<number | null>
     engagementRates: Array<number | null>
   }>([
@@ -198,6 +200,8 @@ export const getAccountAnalyticsSeries = async (
         comments: pushDailyAnchorMetric('$metrics.comments'),
         shares: pushDailyAnchorMetric('$metrics.shares'),
         saves: pushDailyAnchorMetric('$metrics.saves'),
+        profileViews: pushDailyAnchorMetric('$metrics.profileViews'),
+        linkClicks: pushDailyAnchorMetric('$metrics.linkClicks'),
         engagements: pushDailyAnchorMetric('$metrics.engagement'),
         engagementRates: pushDailyAnchorMetric('$metrics.engagementRate'),
       },
@@ -217,6 +221,8 @@ export const getAccountAnalyticsSeries = async (
       comments: sumMetric(row.comments),
       shares: sumMetric(row.shares),
       saves: sumMetric(row.saves),
+      profileViews: sumMetric(row.profileViews),
+      linkClicks: sumMetric(row.linkClicks),
       engagement: sumMetric(row.engagements),
       engagementRate: lastMetric(row.engagementRates),
     })),
@@ -245,9 +251,13 @@ export const getWorkspaceAnalyticsSeries = async (
     comments: number
     shares: number
     saves: number
+    profileViews: number
+    linkClicks: number
     engagement: number
     hasViews: number
     hasReach: number
+    hasProfileViews: number
+    hasLinkClicks: number
     hasEngagement: number
   }>(
     workspaceAnalyticsSeriesPipeline({
@@ -270,6 +280,8 @@ export const getWorkspaceAnalyticsSeries = async (
       comments: row.comments,
       shares: row.shares,
       saves: row.saves,
+      profileViews: row.hasProfileViews ? row.profileViews : null,
+      linkClicks: row.hasLinkClicks ? row.linkClicks : null,
       engagement: row.hasEngagement ? row.engagement : null,
       engagementRate: null,
     })),
@@ -382,9 +394,13 @@ export const getWorkspaceProviderSeries = async (
     comments: number
     shares: number
     saves: number
+    profileViews: number
+    linkClicks: number
     engagement: number
     hasViews: number
     hasReach: number
+    hasProfileViews: number
+    hasLinkClicks: number
     hasEngagement: number
   }>(
     workspaceProviderSeriesPipeline({
@@ -409,6 +425,8 @@ export const getWorkspaceProviderSeries = async (
       comments: row.comments,
       shares: row.shares,
       saves: row.saves,
+      profileViews: row.hasProfileViews ? row.profileViews : null,
+      linkClicks: row.hasLinkClicks ? row.linkClicks : null,
       engagement: row.hasEngagement ? row.engagement : null,
       engagementRate: null,
     }

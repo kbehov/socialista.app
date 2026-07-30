@@ -15,7 +15,10 @@ type ComposerActions = {
   reorderMedia: (fromIndex: number, toIndex: number) => void
   updateMediaAltText: (index: number, altText: string) => void
   setVariant: (accountId: string, patch: Partial<Omit<ComposerVariant, 'accountId'>>) => void
-  clearVariantField: (accountId: string, field: 'caption' | 'description' | 'altText') => void
+  clearVariantField: (
+    accountId: string,
+    field: 'caption' | 'description' | 'altText' | 'location' | 'firstComment',
+  ) => void
   setSchedule: (patch: Partial<ComposerSchedule>) => void
   setPreviewAccountId: (accountId: string | null) => void
   reset: () => void
@@ -131,10 +134,14 @@ export const usePostComposerStore = create<ComposerState>()((set, get) => ({
   clearVariantField: (accountId, field) =>
     set(state => {
       const existing = state.variants[accountId] ?? createEmptyVariant(accountId)
+      const cleared =
+        field === 'location'
+          ? { ...existing, location: null }
+          : { ...existing, [field]: '' }
       return {
         variants: {
           ...state.variants,
-          [accountId]: { ...existing, [field]: '' },
+          [accountId]: cleared,
         },
       }
     }),

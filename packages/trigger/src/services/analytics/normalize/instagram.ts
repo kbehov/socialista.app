@@ -38,6 +38,8 @@ const FLOW_METRIC_NAMES = [
   'shares',
   'saves',
   'total_interactions',
+  'profile_views',
+  'website_clicks',
 ] as const
 
 function readNumber(value: unknown): number | undefined {
@@ -111,6 +113,8 @@ export function normalizeInstagramAnalytics(
     if (expectFlows) {
       for (const name of FLOW_METRIC_NAMES) {
         if (name === 'total_interactions') missingMetrics.push('engagement')
+        else if (name === 'profile_views') missingMetrics.push('profileViews')
+        else if (name === 'website_clicks') missingMetrics.push('linkClicks')
         else missingMetrics.push(name)
       }
     }
@@ -131,6 +135,8 @@ export function normalizeInstagramAnalytics(
   const shares = insightTotal(byName.get('shares'))
   // Meta uses `saves` on newer APIs; older responses used `saved`.
   const saves = insightTotal(byName.get('saves') ?? byName.get('saved'))
+  const profileViews = insightTotal(byName.get('profile_views'))
+  const linkClicks = insightTotal(byName.get('website_clicks'))
   const engagement = insightTotal(byName.get('total_interactions'))
 
   if (views !== undefined) metrics.views = views
@@ -145,6 +151,10 @@ export function normalizeInstagramAnalytics(
   else missingMetrics.push('shares')
   if (saves !== undefined) metrics.saves = saves
   else missingMetrics.push('saves')
+  if (profileViews !== undefined) metrics.profileViews = profileViews
+  else missingMetrics.push('profileViews')
+  if (linkClicks !== undefined) metrics.linkClicks = linkClicks
+  else missingMetrics.push('linkClicks')
   if (engagement !== undefined) metrics.engagement = engagement
   else missingMetrics.push('engagement')
 

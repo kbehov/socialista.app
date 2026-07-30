@@ -3,10 +3,13 @@
 import type { PreviewProps } from '../../../../types/composer-types'
 import { PreviewAccountHeader, PreviewCaption, PreviewMedia, PreviewShell } from './preview-shell'
 
-export function InstagramPreview({ account, caption, media }: PreviewProps) {
+export function InstagramPreview({ account, caption, media, locationName }: PreviewProps) {
   return (
     <PreviewShell>
-      <PreviewAccountHeader account={account} subtitle="Instagram" />
+      <PreviewAccountHeader
+        account={account}
+        subtitle={locationName ? locationName : 'Instagram'}
+      />
       <PreviewMedia media={media} aspectClassName="aspect-[4/5]" />
       <div className="space-y-2 px-3 py-3">
         <div className="flex gap-3 text-muted-foreground">

@@ -124,6 +124,7 @@ export {
   type PostContent,
   type PostDocument,
   type PostImageContent,
+  type PostLocation,
   type PostMediaImage,
   type PostMediaVideo,
   type PostTextContent,

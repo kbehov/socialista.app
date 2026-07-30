@@ -210,8 +210,22 @@ export const PostPreviewCard = memo(function PostPreviewCard({
           description={description}
           media={media}
           postType={post.type}
+          locationName={post.location?.name}
         />
       </PreviewEmbedProvider>
+
+      {post.failureReason || post.firstCommentError ? (
+        <div className="space-y-1 border-t border-border/40 bg-destructive/5 px-3 py-2">
+          {post.failureReason ? (
+            <p className="text-[11px] leading-snug text-destructive">{post.failureReason}</p>
+          ) : null}
+          {post.firstCommentError ? (
+            <p className="text-[11px] leading-snug text-amber-700 dark:text-amber-400">
+              First comment failed: {post.firstCommentError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {showPostNow && onPostNow ? (
         <PostNowBar isPublishing={isPublishing} onPostNow={() => onPostNow(post)} />

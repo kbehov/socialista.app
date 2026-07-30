@@ -46,6 +46,36 @@ export type PostContent =
   | PostVideoContent
   | PostCarouselContent
 
+/** Provider place / page tagged on the published post. */
+export type PostLocation = {
+  id: string
+  name: string
+}
+
+/** Normalized location search hit from Meta Pages Search / Threads location_search. */
+export type LocationSearchResult = {
+  id: string
+  name: string
+  city?: string
+  country?: string
+}
+
+/** Providers that support location tagging at publish time. */
+export const LOCATION_PROVIDERS = ['instagram', 'facebook', 'threads'] as const
+export type LocationProvider = (typeof LOCATION_PROVIDERS)[number]
+
+/** Providers that support posting a first comment / self-reply after publish. */
+export const FIRST_COMMENT_PROVIDERS = ['instagram', 'facebook', 'threads'] as const
+export type FirstCommentProvider = (typeof FIRST_COMMENT_PROVIDERS)[number]
+
+export function supportsLocation(provider: SocialProvider): provider is LocationProvider {
+  return (LOCATION_PROVIDERS as readonly string[]).includes(provider)
+}
+
+export function supportsFirstComment(provider: SocialProvider): provider is FirstCommentProvider {
+  return (FIRST_COMMENT_PROVIDERS as readonly string[]).includes(provider)
+}
+
 /** Public post shape — never exposes claim tokens or other internal worker fields. */
 export type Post = {
   _id: string
@@ -60,6 +90,10 @@ export type Post = {
   content: PostContent
   caption?: string
   description?: string
+  location?: PostLocation
+  firstComment?: string
+  /** Set when publish succeeded but the first-comment step failed (lenient). */
+  firstCommentError?: string
   scheduledAt?: Date
   timezone: string
   publishedAt?: Date
@@ -82,6 +116,8 @@ export type CreatePostPayload = {
   status?: PostStatus
   caption?: string
   description?: string
+  location?: PostLocation
+  firstComment?: string
   /** RFC 3339 instant with `Z` or an explicit offset. */
   scheduledAt?: string | Date
   publishedAt?: string | Date
@@ -96,6 +132,8 @@ export type UpdatePostPayload = {
   timezone?: string
   caption?: string | null
   description?: string | null
+  location?: PostLocation | null
+  firstComment?: string | null
   /** RFC 3339 instant with `Z` or an explicit offset. */
   scheduledAt?: string | Date | null
   publishedAt?: string | Date | null

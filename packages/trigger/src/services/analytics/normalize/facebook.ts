@@ -36,6 +36,8 @@ const EXPECTED_FLOW_KEYS = [
   'comments',
   'shares',
   'saves',
+  'profileViews',
+  'linkClicks',
   'engagement',
 ] as const
 
@@ -126,7 +128,8 @@ export type NormalizeFacebookOptions = {
  * - likes ← page_actions_post_reactions_like_total
  * - engagement ← page_post_engagements
  * - comments / shares ← page_positive_feedback_by_type (when present)
- * - saves — not available at Page level
+ * - profileViews ← page_views_total (when available)
+ * - saves / linkClicks — not available at Page level
  */
 export function normalizeFacebookAnalytics(
   raw: FacebookAnalyticsRaw,
@@ -170,6 +173,7 @@ export function normalizeFacebookAnalytics(
     insightSum(byName.get('page_impressions_unique'))
   const likes = insightSum(byName.get('page_actions_post_reactions_like_total'))
   const engagement = insightSum(byName.get('page_post_engagements'))
+  const profileViews = insightSum(byName.get('page_views_total'))
 
   const feedback = byName.get('page_positive_feedback_by_type')
   const comments = insightObjectKeySum(feedback, ['comment', 'comments'])
@@ -187,6 +191,10 @@ export function normalizeFacebookAnalytics(
   else missingMetrics.push('shares')
   // Instagram-style saves are not available for Facebook Pages.
   missingMetrics.push('saves')
+  if (profileViews !== undefined) metrics.profileViews = profileViews
+  else missingMetrics.push('profileViews')
+  // Website / link clicks are not exposed at Page level.
+  missingMetrics.push('linkClicks')
   if (engagement !== undefined) metrics.engagement = engagement
   else missingMetrics.push('engagement')
 

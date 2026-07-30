@@ -25,17 +25,23 @@ import {
 import type {
   CreatePostPayload,
   Post,
+  PostLocation,
   PostStatus as ApiPostStatus,
   PostType as ApiPostType,
   SchedulePostPayload,
   UpdatePostPayload,
 } from '@socialista/types'
-import { isPublishablePostType } from '@socialista/types'
+import { isPublishablePostType, supportsFirstComment, supportsLocation } from '@socialista/types'
 
 const POST_TYPES = new Set<string>(Object.values(PostType))
 const POST_STATUSES = new Set<string>(Object.values(PostStatus))
 const SOCIAL_PROVIDERS = new Set<string>(Object.values(SocialProvider))
 const PUBLIC_UPDATE_STATUSES = new Set<ApiPostStatus>(['draft', 'scheduled', 'canceled'])
+
+/** Instagram comment character limit — strictest of IG / FB / Threads. */
+const FIRST_COMMENT_MAX_LENGTH = 2200
+const LOCATION_ID_MAX_LENGTH = 64
+const LOCATION_NAME_MAX_LENGTH = 200
 
 export const isPostType = (value: unknown): value is ApiPostType =>
   typeof value === 'string' && POST_TYPES.has(value)
@@ -60,6 +66,32 @@ function asPopulatedAccount(value: unknown): IAccount | null {
     return value as IAccount
   }
   return null
+}
+
+function parsePostLocation(value: unknown): PostLocation | undefined {
+  if (value === undefined || value === null) return undefined
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new HttpError(400, 'location must be an object with id and name')
+  }
+  const raw = value as Record<string, unknown>
+  const id = optionalTrimmedString(raw.id)
+  const name = optionalTrimmedString(raw.name)
+  if (!id || !name) {
+    throw new HttpError(400, 'location requires non-empty id and name')
+  }
+  if (id.length > LOCATION_ID_MAX_LENGTH || name.length > LOCATION_NAME_MAX_LENGTH) {
+    throw new HttpError(400, 'location id or name is too long')
+  }
+  return { id, name }
+}
+
+function parseFirstComment(value: unknown): string | undefined {
+  const text = optionalTrimmedString(value)
+  if (!text) return undefined
+  if (text.length > FIRST_COMMENT_MAX_LENGTH) {
+    throw new HttpError(400, `firstComment cannot exceed ${FIRST_COMMENT_MAX_LENGTH} characters`)
+  }
+  return text
 }
 
 function parsePostContent(value: unknown): PostContent {
@@ -145,6 +177,9 @@ export const serializePost = (post: IPost): Post => {
     content: post.content as PostContent,
     caption: post.caption,
     description: post.description,
+    location: post.location,
+    firstComment: post.firstComment,
+    firstCommentError: post.firstCommentError,
     scheduledAt: post.scheduledAt,
     timezone: post.timezone,
     publishedAt: post.publishedAt,
@@ -163,6 +198,18 @@ export const assertProviderSupportsPostType = (
 ): void => {
   if (!isPublishablePostType(provider, type)) {
     throw new HttpError(400, `${provider} does not support ${type} posts`)
+  }
+}
+
+export const assertProviderSupportsPostOptions = (
+  provider: SocialProvider,
+  options: { location?: PostLocation | null; firstComment?: string | null },
+): void => {
+  if (options.location && !supportsLocation(provider)) {
+    throw new HttpError(400, `${provider} does not support location tagging`)
+  }
+  if (options.firstComment && !supportsFirstComment(provider)) {
+    throw new HttpError(400, `${provider} does not support first comments`)
   }
 }
 
@@ -201,6 +248,9 @@ export const parseCreatePostInput = (body: Record<string, unknown>): CreatePostP
   assertProviderSupportsPostType(body.provider, body.type)
 
   const content = parsePostContent(body.content)
+  const location = parsePostLocation(body.location)
+  const firstComment = parseFirstComment(body.firstComment)
+  assertProviderSupportsPostOptions(body.provider, { location, firstComment })
 
   return {
     workspaceId,
@@ -212,6 +262,8 @@ export const parseCreatePostInput = (body: Record<string, unknown>): CreatePostP
     status: isPostStatus(body.status) && PUBLIC_UPDATE_STATUSES.has(body.status) ? body.status : undefined,
     caption: optionalTrimmedString(body.caption),
     description: optionalTrimmedString(body.description),
+    location,
+    firstComment,
     scheduledAt: parseOptionalDate(body.scheduledAt, 'scheduled at'),
     publishedAt: parseOptionalDate(body.publishedAt, 'published at'),
     failureReason: optionalTrimmedString(body.failureReason),
@@ -247,6 +299,15 @@ export const parseUpdatePostInput = (body: Record<string, unknown>): UpdatePostP
 
   if (body.description !== undefined) {
     updates.description = body.description === null ? null : optionalTrimmedString(body.description)
+  }
+
+  if (body.location !== undefined) {
+    updates.location = body.location === null ? null : parsePostLocation(body.location) ?? null
+  }
+
+  if (body.firstComment !== undefined) {
+    updates.firstComment =
+      body.firstComment === null ? null : parseFirstComment(body.firstComment) ?? null
   }
 
   if (body.scheduledAt !== undefined) {
@@ -292,6 +353,8 @@ export const toCreatePostInput = (
   status: input.status as PostStatus | undefined,
   caption: input.caption,
   description: input.description,
+  location: input.location,
+  firstComment: input.firstComment,
   scheduledAt: toNullableDate(input.scheduledAt) ?? undefined,
   publishedAt: toNullableDate(input.publishedAt) ?? undefined,
   failureReason: input.failureReason,
@@ -304,6 +367,8 @@ export const toUpdatePostInput = (input: UpdatePostPayload): UpdatePostInput => 
   timezone: input.timezone,
   caption: input.caption,
   description: input.description,
+  location: input.location,
+  firstComment: input.firstComment,
   scheduledAt: toNullableDate(input.scheduledAt) ?? undefined,
 })
 

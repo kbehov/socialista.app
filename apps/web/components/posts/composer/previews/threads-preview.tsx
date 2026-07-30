@@ -3,10 +3,13 @@
 import type { PreviewProps } from '../../../../types/composer-types'
 import { PreviewAccountHeader, PreviewCaption, PreviewMedia, PreviewShell } from './preview-shell'
 
-export function ThreadsPreview({ account, caption, media }: PreviewProps) {
+export function ThreadsPreview({ account, caption, media, locationName }: PreviewProps) {
   return (
     <PreviewShell>
-      <PreviewAccountHeader account={account} subtitle="Threads" />
+      <PreviewAccountHeader
+        account={account}
+        subtitle={locationName ? locationName : 'Threads'}
+      />
       <div className="space-y-2 px-3 pb-3">
         <PreviewCaption caption={caption} maxLines={8} />
         {media.length > 0 ? (

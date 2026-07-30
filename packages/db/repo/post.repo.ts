@@ -103,6 +103,8 @@ export const createPost = async (input: CreatePostInput): Promise<IPost> => {
     timezone: assertValidTimezone(input.timezone),
     caption: input.caption,
     description: input.description,
+    location: input.location,
+    firstComment: input.firstComment,
     scheduledAt: input.scheduledAt,
     publishedAt: input.publishedAt,
     failureReason: input.failureReason,
@@ -114,7 +116,15 @@ export const createPost = async (input: CreatePostInput): Promise<IPost> => {
 }
 
 const ASSIGNABLE_FIELDS = ['type', 'content', 'timezone'] as const
-const NULLABLE_FIELDS = ['caption', 'description', 'scheduledAt', 'publishedAt', 'failureReason'] as const
+const NULLABLE_FIELDS = [
+  'caption',
+  'description',
+  'location',
+  'firstComment',
+  'scheduledAt',
+  'publishedAt',
+  'failureReason',
+] as const
 
 function buildUpdateQuery(updates: UpdatePostInput): Record<string, unknown> {
   const $set: Record<string, unknown> = {}
@@ -298,6 +308,7 @@ export const claimDuePosts = async (
         providerOperationId: '',
         providerPostId: '',
         providerPermalink: '',
+        firstCommentError: '',
       },
     },
   )
@@ -426,6 +437,7 @@ export const claimPost = async (
         providerOperationId: '',
         providerPostId: '',
         providerPermalink: '',
+        firstCommentError: '',
       },
     },
     { returnDocument: 'after' },
@@ -467,6 +479,7 @@ export const claimPostForImmediatePublish = async (
         providerOperationId: '',
         providerPostId: '',
         providerPermalink: '',
+        firstCommentError: '',
       },
     },
     { returnDocument: 'after' },
@@ -528,6 +541,7 @@ export const schedulePostAtomic = async (
         ...PUBLISH_METADATA_UNSET,
         failureReason: '',
         publishedAt: '',
+        firstCommentError: '',
       },
     },
     { returnDocument: 'after' },
@@ -624,6 +638,20 @@ export const completePostPublish = async (
   if (input.providerPermalink) $set.providerPermalink = input.providerPermalink
   if (input.providerOperationId) $set.providerOperationId = input.providerOperationId
 
+  const $unset: Record<string, ''> = {
+    failureReason: '',
+    claimToken: '',
+    claimedAt: '',
+    queuedAt: '',
+    startedAt: '',
+  }
+
+  if (input.firstCommentError) {
+    $set.firstCommentError = input.firstCommentError
+  } else {
+    $unset.firstCommentError = ''
+  }
+
   return PostModel.findOneAndUpdate(
     {
       _id: toObjectId(input.postId),
@@ -633,13 +661,7 @@ export const completePostPublish = async (
     },
     {
       $set,
-      $unset: {
-        failureReason: '',
-        claimToken: '',
-        claimedAt: '',
-        queuedAt: '',
-        startedAt: '',
-      },
+      $unset,
     },
     { returnDocument: 'after' },
   ).lean()

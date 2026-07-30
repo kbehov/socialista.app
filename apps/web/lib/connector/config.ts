@@ -28,10 +28,12 @@ export function getMetaConfig() {
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
+      'pages_manage_engagement',
       'pages_read_user_content',
       'read_insights',
       'instagram_basic',
       'instagram_content_publish',
+      'instagram_manage_comments',
       'instagram_manage_insights',
     ],
   }
@@ -43,7 +45,12 @@ export function getInstagramConfig() {
     appId: process.env.INSTAGRAM_APP_ID ?? '',
     appSecret: process.env.INSTAGRAM_APP_SECRET ?? '',
     redirectUri: process.env.INSTAGRAM_REDIRECT_URI ?? getCallbackUrl('instagram'),
-    scopes: ['instagram_business_basic', 'instagram_business_content_publish', 'instagram_business_manage_insights'],
+    scopes: [
+      'instagram_business_basic',
+      'instagram_business_content_publish',
+      'instagram_business_manage_comments',
+      'instagram_business_manage_insights',
+    ],
   }
 }
 
@@ -59,7 +66,12 @@ export function getThreadsConfig() {
   return {
     appId: process.env.THREADS_APP_ID ?? '',
     appSecret: process.env.THREADS_APP_SECRET ?? '',
-    scopes: ['threads_basic', 'threads_content_publish'],
+    scopes: [
+      'threads_basic',
+      'threads_content_publish',
+      'threads_manage_replies',
+      'threads_location_tagging',
+    ],
   }
 }
 

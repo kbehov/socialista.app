@@ -8,6 +8,7 @@ import {
   getCaption,
   getCarouselItems,
   getMediaUrl,
+  getPostLocation,
   getTextBody,
   graphVersion,
   PermanentPublishError,
@@ -38,10 +39,12 @@ async function publishText(ctx: PublishContext): Promise<PublishResult> {
   const message = getTextBody(ctx.post)
   if (!message) throw new PermanentPublishError('Facebook text posts require a body or caption')
 
+  const location = getPostLocation(ctx.post)
   const result = await fetchJson(graphUrl(`/${pageId(ctx.account)}/feed`), idSchema, {
     method: 'POST',
     searchParams: {
       message,
+      ...(location ? { place: location.id } : {}),
       access_token: ctx.accessToken,
     },
   })
@@ -53,11 +56,13 @@ async function publishText(ctx: PublishContext): Promise<PublishResult> {
 }
 
 async function publishPhoto(ctx: PublishContext): Promise<PublishResult> {
+  const location = getPostLocation(ctx.post)
   const result = await fetchJson(graphUrl(`/${pageId(ctx.account)}/photos`), photoSchema, {
     method: 'POST',
     searchParams: {
       url: getMediaUrl(ctx.post),
       caption: getCaption(ctx.post),
+      ...(location ? { place: location.id } : {}),
       access_token: ctx.accessToken,
     },
   })
@@ -71,6 +76,7 @@ async function publishPhoto(ctx: PublishContext): Promise<PublishResult> {
 }
 
 async function publishVideo(ctx: PublishContext, asReel: boolean): Promise<PublishResult> {
+  const location = getPostLocation(ctx.post)
   const params: Record<string, string> = {
     file_url: getMediaUrl(ctx.post),
     description: getCaption(ctx.post),
@@ -78,6 +84,9 @@ async function publishVideo(ctx: PublishContext, asReel: boolean): Promise<Publi
   }
   if (asReel) {
     params.published = 'true'
+  }
+  if (location) {
+    params.place = location.id
   }
 
   try {
@@ -117,11 +126,13 @@ async function publishCarousel(ctx: PublishContext): Promise<PublishResult> {
     attachedMedia.push({ media_fbid: uploaded.id })
   }
 
+  const location = getPostLocation(ctx.post)
   const result = await fetchJson(graphUrl(`/${pageId(ctx.account)}/feed`), idSchema, {
     method: 'POST',
     searchParams: {
       message: getCaption(ctx.post),
       attached_media: JSON.stringify(attachedMedia),
+      ...(location ? { place: location.id } : {}),
       access_token: ctx.accessToken,
     },
   })

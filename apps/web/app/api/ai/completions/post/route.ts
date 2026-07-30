@@ -1,5 +1,7 @@
 import { buildPlatformCopyNotes, POST_COPYWRITING_SYSTEM } from '@/agents/prompts/copywriting'
 import { auth } from '@/auth'
+import { deductWorkspaceAiCredits } from '@/services/workspace.service'
+import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import type { SocialProvider } from '@socialista/types'
 import { streamText, type ImagePart, type ModelMessage } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
@@ -152,7 +154,8 @@ function buildUserPrompt({
 
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session) {
+  const workspace = await getCurrentWorkspace()
+  if (!session || !workspace) {
     return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
   }
 
@@ -196,13 +199,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    await deductWorkspaceAiCredits(workspace._id, 0.01)
+
     return result.toTextStreamResponse()
   } catch (error) {
     console.error('[ai/completions/post] failed to start generation', error)
-    return NextResponse.json(
-      { success: false, message: 'Failed to generate caption' },
-      { status: 500 },
-    )
+    return NextResponse.json({ success: false, message: 'Failed to generate caption' }, { status: 500 })
   }
 }
 

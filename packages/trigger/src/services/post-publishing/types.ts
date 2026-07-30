@@ -41,6 +41,17 @@ export function getCaption(post: IPost): string {
   return (post.caption ?? post.description ?? '').trim()
 }
 
+export function getPostLocation(post: IPost): { id: string; name: string } | undefined {
+  const location = post.location
+  if (!location?.id?.trim()) return undefined
+  return { id: location.id.trim(), name: location.name?.trim() || location.id.trim() }
+}
+
+export function getFirstCommentText(post: IPost): string | undefined {
+  const text = post.firstComment?.trim()
+  return text || undefined
+}
+
 export function getTextBody(post: IPost): string {
   const content = post.content as { body?: string }
   if (typeof content.body === 'string' && content.body.trim()) return content.body.trim()

@@ -91,6 +91,8 @@ function emptyMetrics(): AnalyticsMetrics {
     comments: null,
     shares: null,
     saves: null,
+    profileViews: null,
+    linkClicks: null,
     engagement: null,
     engagementRate: null,
   }
@@ -185,6 +187,8 @@ export function metricsFromSeries(
   const comments = sumInRange(points, start, end, 'comments')
   const shares = sumInRange(points, start, end, 'shares')
   const saves = sumInRange(points, start, end, 'saves')
+  const profileViews = sumInRange(points, start, end, 'profileViews')
+  const linkClicks = sumInRange(points, start, end, 'linkClicks')
   const engagement = sumInRange(points, start, end, 'engagement')
 
   return {
@@ -197,6 +201,8 @@ export function metricsFromSeries(
     comments,
     shares,
     saves,
+    profileViews,
+    linkClicks,
     engagement,
     engagementRate: engagementRate(engagement, reach, followers),
   }

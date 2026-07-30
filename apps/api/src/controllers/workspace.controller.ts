@@ -1,5 +1,5 @@
 import { assertHasUpdates, parseParamId, type AuthContext } from '@/utils/common.utils.js'
-import { successResponse } from '@/utils/http-response.js'
+import { HttpError, successResponse } from '@/utils/http-response.js'
 import { getUserOrThrow } from '@/utils/user.utils.js'
 import {
   assertMemberLimit,
@@ -19,6 +19,7 @@ import {
 import {
   addWorkspaceMember as addWorkspaceMemberRecord,
   createWorkspace as createWorkspaceRecord,
+  deductAiCredits,
   deleteWorkspace as deleteWorkspaceRecord,
   getUserWorkspaces as getUserWorkspacesFromDb,
   removeWorkspaceMember as removeWorkspaceMemberRecord,
@@ -135,4 +136,16 @@ export const getWorkspaceBalance = async (c: AuthContext) => {
   const workspace = await getWorkspaceAsMember(parseParamId(c.req.param('id'), 'workspace ID'), c.get('userId'))
 
   return successResponse(c, 200, buildWorkspaceBalance(workspace))
+}
+
+export const deductWorkspaceAiCredits = async (c: AuthContext) => {
+  const userId = c.get('userId')
+  const workspaceId = parseParamId(c.req.param('id'), 'workspace ID')
+  const workspace = await getWorkspaceAsAdmin(workspaceId, userId)
+  const { amount } = await c.req.json()
+  if (!amount) {
+    throw new HttpError(400, 'Amount is required')
+  }
+  await deductAiCredits(workspace._id, amount)
+  return successResponse(c, 200, { workspace: serializeWorkspace(workspace) })
 }

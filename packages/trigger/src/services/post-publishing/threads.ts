@@ -7,6 +7,7 @@ import {
   getCaption,
   getCarouselItems,
   getMediaUrl,
+  getPostLocation,
   getTextBody,
   PermanentPublishError,
   type PublishContext,
@@ -99,31 +100,39 @@ export async function publishThreadsPost(ctx: PublishContext): Promise<PublishRe
     PostType.CAROUSEL,
   ])
 
+  const location = getPostLocation(ctx.post)
+
   if (ctx.post.type === PostType.TEXT) {
     const text = getTextBody(ctx.post)
     if (!text) throw new PermanentPublishError('Threads text posts require a body or caption')
-    const creationId = await createContainer(ctx, {
+    const params: Record<string, string> = {
       media_type: 'TEXT',
       text,
-    })
+    }
+    if (location) params.location_id = location.id
+    const creationId = await createContainer(ctx, params)
     return publishContainer(ctx, creationId)
   }
 
   if (ctx.post.type === PostType.IMAGE) {
-    const creationId = await createContainer(ctx, {
+    const params: Record<string, string> = {
       media_type: 'IMAGE',
       image_url: getMediaUrl(ctx.post),
       text: getCaption(ctx.post),
-    })
+    }
+    if (location) params.location_id = location.id
+    const creationId = await createContainer(ctx, params)
     return publishContainer(ctx, creationId)
   }
 
   if (ctx.post.type === PostType.VIDEO) {
-    const creationId = await createContainer(ctx, {
+    const params: Record<string, string> = {
       media_type: 'VIDEO',
       video_url: getMediaUrl(ctx.post),
       text: getCaption(ctx.post),
-    })
+    }
+    if (location) params.location_id = location.id
+    const creationId = await createContainer(ctx, params)
     return publishContainer(ctx, creationId)
   }
 
@@ -142,11 +151,13 @@ export async function publishThreadsPost(ctx: PublishContext): Promise<PublishRe
     childIds.push(childId)
   }
 
-  const carouselId = await createContainer(ctx, {
+  const carouselParams: Record<string, string> = {
     media_type: 'CAROUSEL',
     children: childIds.join(','),
     text: getCaption(ctx.post),
-  })
+  }
+  if (location) carouselParams.location_id = location.id
+  const carouselId = await createContainer(ctx, carouselParams)
 
   return publishContainer(ctx, carouselId)
 }

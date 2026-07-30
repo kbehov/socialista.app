@@ -15,6 +15,8 @@ export type AnalyticsMetrics = {
   comments: number | null
   shares: number | null
   saves: number | null
+  profileViews: number | null
+  linkClicks: number | null
   engagement: number | null
   engagementRate: number | null
 }

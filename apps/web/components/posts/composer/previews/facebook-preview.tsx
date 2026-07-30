@@ -3,10 +3,13 @@
 import type { PreviewProps } from '@/types/composer-types'
 import { PreviewAccountHeader, PreviewCaption, PreviewMedia, PreviewShell } from './preview-shell'
 
-export function FacebookPreview({ account, caption, media }: PreviewProps) {
+export function FacebookPreview({ account, caption, media, locationName }: PreviewProps) {
   return (
     <PreviewShell>
-      <PreviewAccountHeader account={account} subtitle="Just now · Facebook" />
+      <PreviewAccountHeader
+        account={account}
+        subtitle={locationName ? `Just now · ${locationName}` : 'Just now · Facebook'}
+      />
       <div className="px-3 pb-2">
         <PreviewCaption caption={caption} maxLines={6} />
       </div>

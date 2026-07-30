@@ -5,6 +5,7 @@ import {
   disconnectAccount,
   getAccount,
   getWorkspaceAccounts,
+  searchAccountLocations,
   updateAccount,
 } from '@/controllers/account.controller.js'
 import type { AppContext } from '@/middlewares/auth.middleware.js'
@@ -18,6 +19,7 @@ accountRoutes.use('/*', authMiddleware)
 accountRoutes.post('/connect', connectAccount)
 accountRoutes.post('/', createAccount)
 accountRoutes.get('/workspace/:workspaceId', getWorkspaceAccounts)
+accountRoutes.get('/:id/locations/search', searchAccountLocations)
 accountRoutes.get('/:id', getAccount)
 accountRoutes.patch('/:id', updateAccount)
 accountRoutes.post('/:id/disconnect', disconnectAccount)

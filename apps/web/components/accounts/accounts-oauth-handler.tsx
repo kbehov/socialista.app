@@ -53,7 +53,9 @@ export function AccountsOAuthHandler() {
       toast.success(`${getSocialPlatformLabel(connected)} account connected`)
       router.refresh()
     } else if (skipped) {
-      toast.message(`${getSocialPlatformLabel(skipped)} is already connected`)
+      // Legacy query param; reconnect now upserts instead of skipping.
+      toast.success(`${getSocialPlatformLabel(skipped)} account updated`)
+      router.refresh()
     } else if (error) {
       toast.error(ERROR_MESSAGES[error] ?? 'Failed to connect account')
     }

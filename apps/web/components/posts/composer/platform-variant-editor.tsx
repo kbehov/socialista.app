@@ -10,13 +10,14 @@ import { RotateCcwIcon } from 'lucide-react'
 
 import { getPlatformLimits } from '../../../constants/platform-limits'
 import type { ComposerVariant } from '../../../types/composer-types'
+import { LocationPicker } from './location-picker'
 
 type PlatformVariantEditorProps = {
   account: AccountSummary
   commonCaption: string
   variant: ComposerVariant
   onChange: (patch: Partial<Omit<ComposerVariant, 'accountId'>>) => void
-  onClearField: (field: 'caption' | 'description' | 'altText') => void
+  onClearField: (field: 'caption' | 'description' | 'altText' | 'location' | 'firstComment') => void
   className?: string
 }
 
@@ -33,6 +34,8 @@ export function PlatformVariantEditor({
   const captionValue = usingCommonCaption ? commonCaption : variant.caption
   const captionLength = captionValue.length
   const overLimit = captionLength > limits.captionMax
+  const firstCommentLength = variant.firstComment.length
+  const firstCommentOverLimit = firstCommentLength > limits.firstCommentMax
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -131,6 +134,56 @@ export function PlatformVariantEditor({
           onChange={event => onChange({ altText: event.target.value })}
         />
       </div>
+
+      {limits.supportsLocation ? (
+        <LocationPicker
+          accountId={account._id}
+          value={variant.location}
+          onChange={location => onChange({ location })}
+        />
+      ) : null}
+
+      {limits.supportsFirstComment ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor={`first-comment-${account._id}`} className="text-xs font-medium">
+              First comment
+            </Label>
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'text-[11px] tabular-nums',
+                  firstCommentOverLimit ? 'font-medium text-destructive' : 'text-muted-foreground',
+                )}
+              >
+                {firstCommentLength}/{limits.firstCommentMax}
+              </span>
+              {variant.firstComment.trim() ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 gap-1 px-1.5 text-[11px] text-muted-foreground"
+                  onClick={() => onClearField('firstComment')}
+                >
+                  <RotateCcwIcon className="size-3" strokeWidth={1.75} />
+                  Clear
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          <Textarea
+            id={`first-comment-${account._id}`}
+            value={variant.firstComment}
+            placeholder="Posted as the first comment after publish…"
+            className={cn(
+              'min-h-16 resize-y rounded-xl border-border/60 text-sm shadow-xs',
+              firstCommentOverLimit && 'border-destructive/50 focus-visible:ring-destructive/30',
+            )}
+            onChange={event => onChange({ firstComment: event.target.value })}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

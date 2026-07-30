@@ -13,7 +13,7 @@ import {
   type PublishResult,
 } from './types.js'
 
-const LINKEDIN_VERSION = process.env.LINKEDIN_API_VERSION ?? '202506'
+const LINKEDIN_VERSION = process.env.LINKEDIN_API_VERSION ?? '202607'
 
 const registerUploadSchema = z.object({
   value: z.object({

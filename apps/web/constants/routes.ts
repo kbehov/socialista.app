@@ -29,6 +29,7 @@ export const WORKSPACE_ROUTES = {
   ADD_MEMBER: (workspaceId: string) => `/workspaces/${workspaceId}/members`,
   REMOVE_MEMBER: (workspaceId: string, memberId: string) => `/workspaces/${workspaceId}/members/${memberId}`,
   UPDATE_MEMBER: (workspaceId: string, memberId: string) => `/workspaces/${workspaceId}/members/${memberId}`,
+  DEDUCT_AI_CREDITS: (workspaceId: string) => `/workspaces/${workspaceId}/ai-credits/deduct`,
 } as const
 
 export const BILLING_ROUTES = {
@@ -108,6 +109,7 @@ export const ACCOUNT_ROUTES = {
   DISCONNECT: (id: string) => `/accounts/${id}/disconnect`,
   DELETE: (id: string) => `/accounts/${id}`,
   GET_WORKSPACE_ACCOUNTS: (workspaceId: string) => `/accounts/workspace/${workspaceId}`,
+  SEARCH_LOCATIONS: (id: string) => `/accounts/${id}/locations/search`,
 } as const
 
 export const POST_ROUTES = {
@@ -135,8 +137,7 @@ export const ANALYTICS_ROUTES = {
   GET_PLATFORMS: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/platforms`,
   GET_ANOMALIES: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/anomalies`,
   GET_PERFORMANCE: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/performance`,
-  GET_ACCOUNT: (workspaceId: string, accountId: string) =>
-    `/workspaces/${workspaceId}/analytics/accounts/${accountId}`,
+  GET_ACCOUNT: (workspaceId: string, accountId: string) => `/workspaces/${workspaceId}/analytics/accounts/${accountId}`,
   EXPORT_ACCOUNT: (workspaceId: string, accountId: string) =>
     `/workspaces/${workspaceId}/analytics/accounts/${accountId}/export`,
   GET_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary`,

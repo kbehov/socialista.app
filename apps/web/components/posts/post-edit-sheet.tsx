@@ -147,12 +147,19 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
     })
   }
 
-  const clearVariantField = (accountId: string, field: 'caption' | 'description' | 'altText') => {
+  const clearVariantField = (
+    accountId: string,
+    field: 'caption' | 'description' | 'altText' | 'location' | 'firstComment',
+  ) => {
     setVariants(current => {
       const existing = current[accountId] ?? createEmptyVariant(accountId)
+      const cleared =
+        field === 'location'
+          ? { ...existing, location: null }
+          : { ...existing, [field]: '' }
       return {
         ...current,
-        [accountId]: { ...existing, [field]: '' },
+        [accountId]: cleared,
       }
     })
   }

@@ -132,7 +132,7 @@ export type ConnectAccountResultItem = {
   provider: SocialProvider
   providerAccountId: string
   accountName: string
-  status: 'created' | 'skipped' | 'failed'
+  status: 'created' | 'updated' | 'skipped' | 'failed'
   accountId?: string
   message?: string
 }

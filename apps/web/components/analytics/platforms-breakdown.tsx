@@ -34,6 +34,8 @@ function emptyMetrics(followers: number | null = null): AnalyticsMetrics {
     comments: null,
     shares: null,
     saves: null,
+    profileViews: null,
+    linkClicks: null,
     engagement: null,
     engagementRate: null,
   }
@@ -50,6 +52,8 @@ function emptyChangePercent(): AnalyticsPlatformRow['changePercent'] {
     comments: null,
     shares: null,
     saves: null,
+    profileViews: null,
+    linkClicks: null,
     engagement: null,
     engagementRate: null,
   }

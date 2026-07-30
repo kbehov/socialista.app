@@ -28,6 +28,8 @@ export function createEmptyVariant(accountId: string): ComposerVariant {
     caption: '',
     description: '',
     altText: '',
+    location: null,
+    firstComment: '',
   }
 }
 
@@ -323,6 +325,7 @@ export function buildCreatePayload(params: {
   )
   const type = resolvePostTypeForProvider(state.media, account.provider)
   const content = buildPostContent(state.media, caption, altText)
+  const limits = getPlatformLimits(account.provider)
 
   return {
     workspaceId,
@@ -334,6 +337,11 @@ export function buildCreatePayload(params: {
     status,
     caption: caption.trim() || undefined,
     description,
+    location: limits.supportsLocation && variant?.location ? variant.location : undefined,
+    firstComment:
+      limits.supportsFirstComment && variant?.firstComment.trim()
+        ? variant.firstComment.trim()
+        : undefined,
     scheduledAt,
   }
 }
@@ -384,6 +392,14 @@ export function postToComposerState(post: Post): ComposerData {
     variant.description = post.description.trim()
   }
 
+  if (post.location?.id && post.location.name) {
+    variant.location = { id: post.location.id, name: post.location.name }
+  }
+
+  if (post.firstComment?.trim()) {
+    variant.firstComment = post.firstComment.trim()
+  }
+
   const firstImage = media.find(item => item.kind === 'image')
   if (firstImage?.kind === 'image' && firstImage.altText?.trim()) {
     variant.altText = firstImage.altText.trim()
@@ -415,12 +431,17 @@ export function buildUpdatePayload(params: {
   )
   const type = resolvePostTypeForProvider(state.media, account.provider)
   const content = buildPostContent(state.media, caption, altText)
+  const limits = getPlatformLimits(account.provider)
 
   return {
     type,
     content,
     caption: caption.trim() || null,
     description: description ?? null,
+    location: limits.supportsLocation ? (variant?.location ?? null) : null,
+    firstComment: limits.supportsFirstComment
+      ? variant?.firstComment.trim() || null
+      : null,
     timezone: state.schedule.timezone,
   }
 }

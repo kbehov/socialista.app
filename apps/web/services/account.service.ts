@@ -10,6 +10,7 @@ import type {
   ConnectAccountResultItem,
   CreateAccountPayload,
   GetAccountsResponse,
+  LocationSearchResult,
   UpdateAccountPayload,
 } from '@socialista/types'
 import { revalidatePath, revalidateTag } from 'next/cache'
@@ -44,35 +45,25 @@ export const createAccount = async (payload: CreateAccountPayload): Promise<ApiR
 }
 
 /**
- * Create multiple accounts sequentially.
- * Callers must omit identities already present in the workspace.
- * Concurrent duplicates (409) are reported as `skipped` and never overwrite tokens.
+ * Connect or reconnect multiple accounts sequentially (upsert by provider + providerAccountId).
+ * Existing accounts get updated tokens, scopes, and profile metadata.
  */
-export const createAccountsBatch = async (payloads: CreateAccountPayload[]): Promise<ConnectAccountResultItem[]> => {
+export const connectAccountsBatch = async (
+  payloads: CreateAccountPayload[],
+): Promise<ConnectAccountResultItem[]> => {
   const results: ConnectAccountResultItem[] = []
 
   for (const payload of payloads) {
     try {
-      const response = await createAccount(payload)
+      const response = await connectAccount(payload)
       results.push({
         provider: payload.provider,
         providerAccountId: payload.providerAccountId,
         accountName: payload.accountName,
-        status: 'created',
+        status: response.data?.created ? 'created' : 'updated',
         accountId: response.data?.account._id,
       })
     } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
-        results.push({
-          provider: payload.provider,
-          providerAccountId: payload.providerAccountId,
-          accountName: payload.accountName,
-          status: 'skipped',
-          message: 'Account already connected',
-        })
-        continue
-      }
-
       results.push({
         provider: payload.provider,
         providerAccountId: payload.providerAccountId,
@@ -86,10 +77,6 @@ export const createAccountsBatch = async (payloads: CreateAccountPayload[]): Pro
               : 'Failed to connect account',
       })
     }
-  }
-
-  if (payloads.length > 0) {
-    revalidateWorkspaceAccounts(payloads[0]?.workspaceId)
   }
 
   return results
@@ -148,4 +135,16 @@ export const deleteAccount = async (id: string): Promise<ApiResponse<{ id: strin
   const response = await api.delete<{ id: string; workspaceId: string }>(ACCOUNT_ROUTES.DELETE(id))
   revalidateWorkspaceAccounts(response.data?.workspaceId)
   return response
+}
+
+/** Search places/locations for composer location tagging. */
+export const searchAccountLocations = async (
+  accountId: string,
+  query: string,
+): Promise<ApiResponse<{ locations: LocationSearchResult[] }>> => {
+  const params = new URLSearchParams()
+  params.set('q', query)
+  return api.get<{ locations: LocationSearchResult[] }>(
+    `${ACCOUNT_ROUTES.SEARCH_LOCATIONS(accountId)}?${params.toString()}`,
+  )
 }

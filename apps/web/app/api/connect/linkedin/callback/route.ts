@@ -1,8 +1,7 @@
 import type { NextRequest } from 'next/server'
-import { ConnectionStatus, accountIdentityKey } from '@socialista/types'
-import { createAccountsBatch } from '@/services/account.service'
+import { ConnectionStatus } from '@socialista/types'
+import { connectAccountsBatch } from '@/services/account.service'
 
-import { accountIdentitySet, loadWorkspaceAccounts } from '@/lib/connector/accounts'
 import { accountsRedirect, ConnectorError, toOAuthErrorCode } from '@/lib/connector/errors'
 import { consumeOAuthState } from '@/lib/connector/oauth'
 import { requireConnectSession } from '@/lib/connector/session'
@@ -37,14 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     const profile = await exchangeLinkedInCode(code)
-    const existing = await loadWorkspaceAccounts(oauthState.workspaceId)
-    const connected = accountIdentitySet(existing)
-
-    if (connected.has(accountIdentityKey('linkedin', profile.linkedInId))) {
-      return accountsRedirect({ skipped: 'linkedin' })
-    }
-
-    const results = await createAccountsBatch([
+    const results = await connectAccountsBatch([
       {
         workspaceId: oauthState.workspaceId,
         provider: 'linkedin',
@@ -68,9 +60,6 @@ export async function GET(request: NextRequest) {
     const outcome = results[0]
     if (!outcome || outcome.status === 'failed') {
       return accountsRedirect({ error: 'provider_error' })
-    }
-    if (outcome.status === 'skipped') {
-      return accountsRedirect({ skipped: 'linkedin' })
     }
 
     return accountsRedirect({ connected: 'linkedin' })

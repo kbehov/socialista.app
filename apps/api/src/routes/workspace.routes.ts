@@ -1,6 +1,7 @@
 import {
   addWorkspaceMember,
   createWorkspace,
+  deductWorkspaceAiCredits,
   deleteWorkspace,
   getUserWorkspaces,
   getWorkspace,
@@ -12,9 +13,9 @@ import {
   updateWorkspace,
   updateWorkspaceMember,
 } from '@/controllers/workspace.controller.js'
+import { authMiddleware, type AppContext } from '@/middlewares/auth.middleware.js'
 import analyticsRoutes from '@/routes/analytics.routes.js'
 import workspaceBillingRoutes from '@/routes/workspace-billing.routes.js'
-import { authMiddleware, type AppContext } from '@/middlewares/auth.middleware.js'
 import { Hono } from 'hono'
 
 const workspaceRoutes = new Hono<AppContext>()
@@ -37,5 +38,5 @@ workspaceRoutes.delete('/:id/members/:userId', removeWorkspaceMember)
 workspaceRoutes.get('/:id', getWorkspace)
 workspaceRoutes.patch('/:id', updateWorkspace)
 workspaceRoutes.delete('/:id', deleteWorkspace)
-
+workspaceRoutes.post('/:id/ai-credits/deduct', deductWorkspaceAiCredits)
 export default workspaceRoutes

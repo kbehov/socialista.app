@@ -10,6 +10,7 @@ import {
 } from '@/utils/account.utils.js'
 import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
+import { searchAccountLocations as searchLocationsForAccount } from '@/utils/location-search.utils.js'
 import { assertAccountsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   SocialProvider,
@@ -17,6 +18,7 @@ import {
   decrementAccountsUsage,
   deleteAccount as deleteAccountInDb,
   disconnectAccount as disconnectAccountInDb,
+  getAccountByIdWithTokens,
   getAccountByProvider,
   getAccounts,
   incrementAccountsUsage,
@@ -133,4 +135,24 @@ export const deleteAccount = async (c: Context<AppContext>) => {
   await decrementAccountsUsage(account.workspace.toString())
 
   return successResponse(c, 200, { id, workspaceId: account.workspace.toString() })
+}
+
+/** Search provider place/location APIs for composer location tagging. */
+export const searchAccountLocations = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'account ID')
+  await getAccountForMember(id, userId)
+
+  const query = c.req.query('q')?.trim() ?? ''
+  if (query.length < 2) {
+    return successResponse(c, 200, { locations: [] })
+  }
+
+  const account = await getAccountByIdWithTokens(id)
+  if (!account) {
+    throw new HttpError(404, 'Account not found')
+  }
+
+  const locations = await searchLocationsForAccount(account, query)
+  return successResponse(c, 200, { locations })
 }

@@ -4,10 +4,12 @@ import {
   FlameIcon,
   HeartIcon,
   MessageCircleIcon,
+  MousePointerClickIcon,
   SendIcon,
   Share2Icon,
   TargetIcon,
   ThumbsUpIcon,
+  UserRoundSearchIcon,
   UsersIcon,
 } from 'lucide-react'
 
@@ -28,6 +30,7 @@ function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsPro
     current.comments !== null ||
     current.shares !== null ||
     current.saves !== null
+  const showClickMetrics = current.profileViews !== null || current.linkClicks !== null
 
   return (
     <div className={className}>
@@ -97,6 +100,23 @@ function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsPro
             value={formatCount(current.saves)}
             icon={<BookmarkIcon />}
             trend={trendFromPercent(changePercent.saves)}
+          />
+        </StatMetrics>
+      ) : null}
+
+      {showClickMetrics ? (
+        <StatMetrics columns={2} size="sm" className="mt-4">
+          <StatMetric
+            label="Profile visits"
+            value={formatCount(current.profileViews)}
+            icon={<UserRoundSearchIcon />}
+            trend={trendFromPercent(changePercent.profileViews)}
+          />
+          <StatMetric
+            label="Link clicks"
+            value={formatCount(current.linkClicks)}
+            icon={<MousePointerClickIcon />}
+            trend={trendFromPercent(changePercent.linkClicks)}
           />
         </StatMetrics>
       ) : null}

@@ -63,6 +63,8 @@ const METRIC_KEYS = [
   'comments',
   'shares',
   'saves',
+  'profileViews',
+  'linkClicks',
   'engagement',
   'engagementRate',
 ] as const satisfies ReadonlyArray<keyof AnalyticsMetrics>
@@ -338,6 +340,8 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
       comments: null,
       shares: null,
       saves: null,
+      profileViews: null,
+      linkClicks: null,
       engagement: row.engagement,
       engagementRate: row.engagementRate,
     })),

@@ -146,3 +146,14 @@ export const removeWorkspaceMember = async (
   revalidateWorkspaces(workspaceId)
   return response
 }
+
+export const deductWorkspaceAiCredits = async (
+  workspaceId: string,
+  amount: number,
+): Promise<ApiResponse<{ workspace: WorkspaceResponse }>> => {
+  const response = await api.post<{ workspace: WorkspaceResponse }>(WORKSPACE_ROUTES.DEDUCT_AI_CREDITS(workspaceId), {
+    amount,
+  })
+  revalidateWorkspaces(workspaceId)
+  return response
+}

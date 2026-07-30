@@ -14,6 +14,8 @@ const metricsSchema = new Schema(
     comments: { type: Number },
     shares: { type: Number },
     saves: { type: Number },
+    profileViews: { type: Number },
+    linkClicks: { type: Number },
     engagement: { type: Number },
     engagementRate: { type: Number },
     engagementRateBasis: { type: String, enum: ['reach', 'followers'] },

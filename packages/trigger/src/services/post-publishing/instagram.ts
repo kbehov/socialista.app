@@ -7,6 +7,7 @@ import {
   getCaption,
   getCarouselItems,
   getMediaUrl,
+  getPostLocation,
   graphVersion,
   PermanentPublishError,
   type PublishContext,
@@ -111,21 +112,27 @@ export async function publishInstagramPost(ctx: PublishContext): Promise<Publish
   ])
 
   const caption = getCaption(ctx.post)
+  // location_id is not supported on carousel children; apply only to single image/video/reel.
+  const location = getPostLocation(ctx.post)
 
   if (ctx.post.type === PostType.IMAGE) {
-    const creationId = await createContainer(ctx, {
+    const params: Record<string, string> = {
       image_url: getMediaUrl(ctx.post),
       caption,
-    })
+    }
+    if (location) params.location_id = location.id
+    const creationId = await createContainer(ctx, params)
     return publishContainer(ctx, creationId)
   }
 
   if (ctx.post.type === PostType.VIDEO || ctx.post.type === PostType.REEL) {
-    const creationId = await createContainer(ctx, {
+    const params: Record<string, string> = {
       video_url: getMediaUrl(ctx.post),
       caption,
       media_type: ctx.post.type === PostType.REEL ? 'REELS' : 'VIDEO',
-    })
+    }
+    if (location) params.location_id = location.id
+    const creationId = await createContainer(ctx, params)
     return publishContainer(ctx, creationId)
   }
 

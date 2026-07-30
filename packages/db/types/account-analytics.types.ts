@@ -20,6 +20,8 @@ export type AnalyticsSnapshotMetrics = {
   comments?: number
   shares?: number
   saves?: number
+  profileViews?: number
+  linkClicks?: number
   engagement?: number
   engagementRate?: number
   engagementRateBasis?: EngagementRateBasis
@@ -71,6 +73,8 @@ export type AccountAnalyticsSeriesPoint = {
   comments: number | null
   shares: number | null
   saves: number | null
+  profileViews: number | null
+  linkClicks: number | null
   engagement: number | null
   engagementRate: number | null
 }

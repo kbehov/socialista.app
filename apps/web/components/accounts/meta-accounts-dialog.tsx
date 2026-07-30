@@ -31,6 +31,7 @@ type AccountsResponse = {
 type FinalizeResponse = {
   summary: {
     created: number
+    updated: number
     skipped: number
     failed: number
   }
@@ -76,8 +77,10 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
 
         const list = (payload as AccountsResponse).accounts ?? []
         setAccounts(list)
+        // Prefer new accounts; if everything is already connected, pre-select all for reconnect.
+        const fresh = list.filter(account => !account.alreadyConnected)
         setSelected(
-          new Set(list.filter(account => !account.alreadyConnected).map(account => account.id)),
+          new Set((fresh.length > 0 ? fresh : list).map(account => account.id)),
         )
       } catch (error) {
         setAccounts([])
@@ -109,13 +112,11 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
     onOpenChange(next)
   }
 
-  const selectableAccounts = accounts.filter(account => !account.alreadyConnected)
-  const selectableCount = selectableAccounts.length
+  const selectableCount = accounts.length
   const allSelected =
-    selectableCount > 0 && selectableAccounts.every(account => selected.has(account.id))
+    selectableCount > 0 && accounts.every(account => selected.has(account.id))
 
-  const toggle = (id: string, disabled: boolean) => {
-    if (disabled) return
+  const toggle = (id: string) => {
     setSelected(current => {
       const next = new Set(current)
       if (next.has(id)) next.delete(id)
@@ -129,7 +130,7 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
       setSelected(new Set())
       return
     }
-    setSelected(new Set(selectableAccounts.map(account => account.id)))
+    setSelected(new Set(accounts.map(account => account.id)))
   }
 
   const handleConnect = () => {
@@ -159,14 +160,17 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
         }
 
         const summary = (payload as FinalizeResponse).summary
-        if (summary.created > 0) {
-          toast.success(
-            summary.created === 1
-              ? 'Account connected'
-              : `${summary.created} accounts connected`,
-          )
-        } else if (summary.skipped > 0 && summary.failed === 0) {
-          toast.message('Selected accounts were already connected')
+        if (summary.created > 0 || summary.updated > 0) {
+          const parts: string[] = []
+          if (summary.created > 0) {
+            parts.push(
+              summary.created === 1 ? '1 connected' : `${summary.created} connected`,
+            )
+          }
+          if (summary.updated > 0) {
+            parts.push(summary.updated === 1 ? '1 updated' : `${summary.updated} updated`)
+          }
+          toast.success(parts.join(', '))
         }
 
         if (summary.failed > 0) {
@@ -194,8 +198,8 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
               Select Meta accounts
             </DialogTitle>
             <DialogDescription className="text-[13px] leading-relaxed">
-              Choose Facebook Pages and/or Instagram accounts. You can connect Instagram alone
-              without selecting its Facebook Page.
+              Choose Facebook Pages and/or Instagram accounts. Already connected accounts can be
+              selected again to refresh tokens and permissions.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -239,21 +243,18 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
           ) : (
             <ul className="grid gap-1.5">
               {accounts.map(account => {
-                const disabled = account.alreadyConnected
-                const checked = disabled || selected.has(account.id)
+                const checked = selected.has(account.id)
 
                 return (
                   <li key={account.id}>
                     <button
                       type="button"
-                      disabled={disabled || isSaving}
-                      onClick={() => toggle(account.id, disabled)}
+                      disabled={isSaving}
+                      onClick={() => toggle(account.id)}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-150',
-                        disabled
-                          ? 'cursor-default border-border/40 bg-muted/20 opacity-60'
-                          : 'border-border/60 bg-background hover:-translate-y-px hover:border-border hover:shadow-sm active:scale-[0.99]',
-                        checked && !disabled && 'border-foreground/15 bg-muted/30 shadow-xs',
+                        'border-border/60 bg-background hover:-translate-y-px hover:border-border hover:shadow-sm active:scale-[0.99]',
+                        checked && 'border-foreground/15 bg-muted/30 shadow-xs',
                       )}
                     >
                       <span
@@ -290,7 +291,7 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
                         <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                           {getSocialPlatformLabel(account.provider)}
                           {account.username ? ` · @${account.username}` : ''}
-                          {disabled ? ' · Already connected' : ''}
+                          {account.alreadyConnected ? ' · Update permissions' : ''}
                         </span>
                       </span>
                     </button>
@@ -303,9 +304,7 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
 
         <DialogFooter className="border-t border-border/50 bg-muted/10 px-6 py-4 sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            {selectableCount === 0
-              ? 'All available accounts are already connected'
-              : `${selected.size} selected`}
+            {selected.size === 0 ? 'Select accounts to continue' : `${selected.size} selected`}
           </p>
           <div className="flex gap-2">
             <Button
@@ -324,7 +323,9 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
               disabled={isLoading || isSaving || selected.size === 0}
             >
               {isSaving ? <Loader2Icon className="size-4 animate-spin" /> : null}
-              Connect
+              {accounts.some(a => a.alreadyConnected && selected.has(a.id))
+                ? 'Connect / Update'
+                : 'Connect'}
             </Button>
           </div>
         </DialogFooter>

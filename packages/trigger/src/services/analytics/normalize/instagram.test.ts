@@ -20,6 +20,8 @@ describe('normalizeInstagramAnalytics', () => {
           { name: 'shares', total_value: { value: 180 } },
           { name: 'saves', total_value: { value: 420 } },
           { name: 'total_interactions', total_value: { value: 3120 } },
+          { name: 'profile_views', total_value: { value: 890 } },
+          { name: 'website_clicks', total_value: { value: 64 } },
         ],
       },
     })
@@ -33,6 +35,8 @@ describe('normalizeInstagramAnalytics', () => {
     expect(result.metrics.comments).toBe(420)
     expect(result.metrics.shares).toBe(180)
     expect(result.metrics.saves).toBe(420)
+    expect(result.metrics.profileViews).toBe(890)
+    expect(result.metrics.linkClicks).toBe(64)
     expect(result.metrics.engagement).toBe(3120)
     expect(result.metrics.engagementRate).toBeCloseTo(3120 / 41200)
     expect(result.metrics.engagementRateBasis).toBe('reach')
@@ -93,7 +97,17 @@ describe('normalizeInstagramAnalytics', () => {
 
     expect(result.metrics.followerCount).toBe(50)
     expect(result.missingMetrics).toEqual(
-      expect.arrayContaining(['views', 'reach', 'likes', 'comments', 'shares', 'saves', 'engagement']),
+      expect.arrayContaining([
+        'views',
+        'reach',
+        'likes',
+        'comments',
+        'shares',
+        'saves',
+        'profileViews',
+        'linkClicks',
+        'engagement',
+      ]),
     )
   })
 

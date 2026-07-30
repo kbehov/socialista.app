@@ -22,6 +22,8 @@ export type ComposerVariant = {
   caption: string
   description: string
   altText: string
+  location: { id: string; name: string } | null
+  firstComment: string
 }
 
 export type ComposerScheduleMode = 'now' | 'schedule' | 'draft'
@@ -78,6 +80,7 @@ export type PreviewProps = {
   description: string
   media: ComposerMediaItem[]
   postType: PostType
+  locationName?: string
 }
 
 export type PlatformLimits = {
@@ -87,6 +90,9 @@ export type PlatformLimits = {
   aspectRatios: string[]
   videoMaxSeconds?: number
   supportsTextOnly: boolean
+  supportsLocation: boolean
+  supportsFirstComment: boolean
+  firstCommentMax: number
 }
 
 export type PlatformLimitsMap = Record<SocialProvider, PlatformLimits>

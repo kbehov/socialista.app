@@ -161,6 +161,7 @@ export function PostPreviewBar({
                       description={variant.description}
                       media={media}
                       postType={postType}
+                      locationName={variant.location?.name}
                     />
                   </div>
                 </TabsContent>

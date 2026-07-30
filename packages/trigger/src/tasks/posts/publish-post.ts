@@ -18,7 +18,9 @@ import {
   AmbiguousPublishError,
   isRetryablePublishError,
   PermanentPublishError,
+  postFirstComment,
   publishPostToProvider,
+  requireAccessToken,
   sanitizeFailureReason,
 } from '../../services/post-publishing/index.js'
 
@@ -118,6 +120,21 @@ export const publishPost = schemaTask({
           },
         })
 
+        const firstCommentError = await postFirstComment({
+          post,
+          account,
+          accessToken: requireAccessToken(account),
+          result,
+        })
+
+        if (firstCommentError) {
+          logger.warn('First comment failed after successful publish', {
+            postId: payload.postId,
+            providerPostId: result.providerPostId,
+            error: firstCommentError,
+          })
+        }
+
         const completed = await completePostPublish({
           postId: payload.postId,
           scheduleRevision: payload.scheduleRevision,
@@ -125,6 +142,7 @@ export const publishPost = schemaTask({
           providerPostId: result.providerPostId,
           providerPermalink: result.providerPermalink,
           providerOperationId: result.providerOperationId,
+          firstCommentError,
         })
 
         if (!completed) {
@@ -142,6 +160,7 @@ export const publishPost = schemaTask({
           status: 'published' as const,
           providerPostId: result.providerPostId,
           providerPermalink: result.providerPermalink,
+          firstCommentError,
         }
       } catch (error) {
         if (error instanceof AmbiguousPublishError) {

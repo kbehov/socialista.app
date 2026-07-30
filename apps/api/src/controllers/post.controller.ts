@@ -4,6 +4,7 @@ import { HttpError, successResponse } from '@/utils/http-response.js'
 import { getAccountOrThrow, getAccountForMember } from '@/utils/account.utils.js'
 import {
   assertProviderSupportsPostType,
+  assertProviderSupportsPostOptions,
   getPostForMember,
   parseCreatePostInput,
   parseSchedulePostInput,
@@ -117,6 +118,11 @@ export const updatePost = async (c: Context<AppContext>) => {
   if (input.type) {
     assertProviderSupportsPostType(existing.provider, input.type)
   }
+
+  assertProviderSupportsPostOptions(existing.provider, {
+    location: input.location,
+    firstComment: input.firstComment,
+  })
 
   const post = await updatePostInDb(id, toUpdatePostInput(input))
   if (!post) throw new HttpError(404, 'Post not found')

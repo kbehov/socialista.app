@@ -19,7 +19,10 @@ type PlatformVariantsPanelProps = {
   commonCaption: string
   variants: Record<string, ComposerVariant>
   onVariantChange: (accountId: string, patch: Partial<Omit<ComposerVariant, 'accountId'>>) => void
-  onClearField: (accountId: string, field: 'caption' | 'description' | 'altText') => void
+  onClearField: (
+    accountId: string,
+    field: 'caption' | 'description' | 'altText' | 'location' | 'firstComment',
+  ) => void
   className?: string
 }
 
@@ -28,6 +31,8 @@ function countCustomizations(variant: ComposerVariant): number {
   if (variant.caption.trim()) count++
   if (variant.description.trim()) count++
   if (variant.altText.trim()) count++
+  if (variant.location) count++
+  if (variant.firstComment.trim()) count++
   return count
 }
 

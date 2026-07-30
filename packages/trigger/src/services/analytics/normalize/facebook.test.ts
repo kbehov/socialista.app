@@ -36,6 +36,10 @@ describe('normalizeFacebookAnalytics', () => {
               },
             ],
           },
+          {
+            name: 'page_views_total',
+            values: [{ value: 55, end_time: '2026-07-25T07:00:00+0000' }],
+          },
         ],
       },
     })
@@ -46,10 +50,11 @@ describe('normalizeFacebookAnalytics', () => {
     expect(result.metrics.likes).toBe(40)
     expect(result.metrics.comments).toBe(5)
     expect(result.metrics.shares).toBe(3)
+    expect(result.metrics.profileViews).toBe(55)
     expect(result.metrics.engagement).toBe(80)
     expect(result.metrics.engagementRate).toBeCloseTo(80 / 150)
     expect(result.metrics.engagementRateBasis).toBe('reach')
-    expect(result.missingMetrics).toEqual(['saves'])
+    expect(result.missingMetrics).toEqual(['saves', 'linkClicks'])
   })
 
   it('falls back to legacy impression metric names', () => {
@@ -100,6 +105,8 @@ describe('normalizeFacebookAnalytics', () => {
         'comments',
         'shares',
         'saves',
+        'profileViews',
+        'linkClicks',
         'engagement',
       ]),
     )

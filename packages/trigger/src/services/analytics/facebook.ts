@@ -27,6 +27,7 @@ const FLOW_METRICS = [
   'page_actions_post_reactions_like_total',
   'page_post_engagements',
   'page_positive_feedback_by_type',
+  'page_views_total',
 ] as const
 
 const pageSchema = z.object({

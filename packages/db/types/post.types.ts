@@ -67,6 +67,12 @@ export type PostContent =
   | PostVideoContent
   | PostCarouselContent
 
+/** Provider place / page tagged on the published post. */
+export type PostLocation = {
+  id: string
+  name: string
+}
+
 export interface IPost {
   _id: Types.ObjectId
   account: Types.ObjectId
@@ -78,6 +84,10 @@ export interface IPost {
   content: PostContent
   caption?: string
   description?: string
+  location?: PostLocation
+  firstComment?: string
+  /** Set when publish succeeded but the first-comment step failed (lenient). */
+  firstCommentError?: string
   scheduledAt?: Date
   timezone: string
   publishedAt?: Date
@@ -114,6 +124,8 @@ export type CreatePostInput = {
   status?: PostStatus
   caption?: string
   description?: string
+  location?: PostLocation
+  firstComment?: string
   scheduledAt?: Date
   publishedAt?: Date
   failureReason?: string
@@ -125,6 +137,8 @@ export type UpdatePostInput = {
   status?: PostStatus
   caption?: string | null
   description?: string | null
+  location?: PostLocation | null
+  firstComment?: string | null
   scheduledAt?: Date | null
   timezone?: string
   publishedAt?: Date | null
@@ -172,6 +186,8 @@ export type CompletePostPublishInput = {
   providerPostId?: string
   providerPermalink?: string
   providerOperationId?: string
+  /** Recorded when the first-comment step fails after a successful publish. */
+  firstCommentError?: string
 }
 
 export type FailPostPublishInput = {

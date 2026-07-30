@@ -153,9 +153,13 @@ export function accountDateBucketAccumulators() {
     comments: sumDailyAnchorMetric('$metrics.comments'),
     shares: sumDailyAnchorMetric('$metrics.shares'),
     saves: sumDailyAnchorMetric('$metrics.saves'),
+    profileViews: sumDailyAnchorMetric('$metrics.profileViews'),
+    linkClicks: sumDailyAnchorMetric('$metrics.linkClicks'),
     engagement: sumDailyAnchorMetric('$metrics.engagement'),
     hasViews: hasDailyAnchorMetric('$metrics.views'),
     hasReach: hasDailyAnchorMetric('$metrics.reach'),
+    hasProfileViews: hasDailyAnchorMetric('$metrics.profileViews'),
+    hasLinkClicks: hasDailyAnchorMetric('$metrics.linkClicks'),
     hasEngagement: hasDailyAnchorMetric('$metrics.engagement'),
   }
 }
@@ -172,9 +176,13 @@ export function seriesRollupAccumulators() {
     comments: { $sum: '$comments' },
     shares: { $sum: '$shares' },
     saves: { $sum: '$saves' },
+    profileViews: { $sum: { $cond: [{ $eq: ['$hasProfileViews', 1] }, '$profileViews', 0] } },
+    linkClicks: { $sum: { $cond: [{ $eq: ['$hasLinkClicks', 1] }, '$linkClicks', 0] } },
     engagement: { $sum: { $cond: [{ $eq: ['$hasEngagement', 1] }, '$engagement', 0] } },
     hasViews: { $max: '$hasViews' },
     hasReach: { $max: '$hasReach' },
+    hasProfileViews: { $max: '$hasProfileViews' },
+    hasLinkClicks: { $max: '$hasLinkClicks' },
     hasEngagement: { $max: '$hasEngagement' },
   }
 }

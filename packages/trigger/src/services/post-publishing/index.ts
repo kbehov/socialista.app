@@ -17,11 +17,13 @@ import {
 export {
   AmbiguousPublishError,
   PermanentPublishError,
+  requireAccessToken,
   type PublishContext,
   type PublishResult,
 } from './types.js'
 export { PublishHttpError } from './fetch.js'
 export { assertPostPublishable } from './capabilities.js'
+export { postFirstComment } from './first-comment.js'
 
 function assertAccountReady(account: IAccount): void {
   if (account.connectionStatus !== ConnectionStatus.CONNECTED) {

@@ -33,6 +33,14 @@ const postContentSchema = new Schema(
   { _id: false },
 )
 
+const postLocationSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+  },
+  { _id: false },
+)
+
 const postSchema = new Schema<IPost>(
   {
     account: { type: Schema.Types.ObjectId, ref: 'Account', required: true },
@@ -49,6 +57,9 @@ const postSchema = new Schema<IPost>(
     content: { type: postContentSchema, required: true },
     caption: { type: String, trim: true },
     description: { type: String, trim: true },
+    location: { type: postLocationSchema },
+    firstComment: { type: String, trim: true },
+    firstCommentError: { type: String },
     scheduledAt: { type: Date },
     timezone: { type: String, required: true },
     publishedAt: { type: Date },

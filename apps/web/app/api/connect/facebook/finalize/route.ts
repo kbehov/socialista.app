@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import type { ConnectAccountResultItem, CreateAccountPayload } from '@socialista/types'
-import { ConnectionStatus, parseMetaCandidateId, accountIdentityKey } from '@socialista/types'
-import { createAccountsBatch } from '@/services/account.service'
+import { ConnectionStatus, parseMetaCandidateId } from '@socialista/types'
+import { connectAccountsBatch } from '@/services/account.service'
 
-import { accountIdentitySet, loadWorkspaceAccounts } from '@/lib/connector/accounts'
 import { ConnectorError, jsonError } from '@/lib/connector/errors'
 import { discoverMetaAssets } from '@/lib/connector/meta'
 import { clearMetaHandoff, readMetaHandoff } from '@/lib/connector/oauth'
@@ -36,16 +35,11 @@ export async function POST(request: Request) {
       workspaceId: session.workspaceId,
     })
 
-    const [assets, existing] = await Promise.all([
-      discoverMetaAssets(handoff.accessToken),
-      loadWorkspaceAccounts(session.workspaceId),
-    ])
-
+    const assets = await discoverMetaAssets(handoff.accessToken)
     const assetById = new Map(assets.map(asset => [asset.candidate.id, asset]))
-    const connected = accountIdentitySet(existing)
 
     const results: ConnectAccountResultItem[] = []
-    const toCreate: CreateAccountPayload[] = []
+    const toConnect: CreateAccountPayload[] = []
 
     for (const id of requestedIds) {
       const asset = assetById.get(id as `${'facebook' | 'instagram'}:${string}`)
@@ -63,18 +57,7 @@ export async function POST(request: Request) {
       }
 
       const { candidate } = asset
-      if (connected.has(accountIdentityKey(candidate.provider, candidate.providerAccountId))) {
-        results.push({
-          provider: candidate.provider,
-          providerAccountId: candidate.providerAccountId,
-          accountName: candidate.accountName,
-          status: 'skipped',
-          message: 'Account already connected to this workspace',
-        })
-        continue
-      }
-
-      toCreate.push({
+      toConnect.push({
         workspaceId: session.workspaceId,
         provider: candidate.provider,
         providerAccountId: candidate.providerAccountId,
@@ -90,14 +73,17 @@ export async function POST(request: Request) {
           ...candidate.metadata,
           tokenKind: 'page_access_token',
         },
+        // Page token for publishing; long-lived Meta user token for Pages Search / location tagging.
         accessToken: asset.accessToken,
         accessTokenExpiresAt: asset.accessTokenExpiresAt,
+        refreshToken: handoff.accessToken,
+        refreshTokenExpiresAt: new Date(handoff.expiresAt),
       })
     }
 
-    results.push(...(await createAccountsBatch(toCreate)))
+    results.push(...(await connectAccountsBatch(toConnect)))
 
-    const summary = { created: 0, skipped: 0, failed: 0 }
+    const summary = { created: 0, updated: 0, skipped: 0, failed: 0 }
     for (const item of results) summary[item.status] += 1
 
     if (summary.failed === 0) {

@@ -4,6 +4,8 @@ import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 
 import type { PlatformLimitsMap } from '@/types/composer-types'
 
+const FIRST_COMMENT_MAX = 2200
+
 export const PLATFORM_LIMITS: PlatformLimitsMap = {
   instagram: {
     captionMax: 2200,
@@ -12,6 +14,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['1:1', '4:5', '9:16'],
     videoMaxSeconds: 90,
     supportsTextOnly: false,
+    supportsLocation: true,
+    supportsFirstComment: true,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   facebook: {
     captionMax: 63206,
@@ -20,6 +25,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['1:1', '16:9', '4:5'],
     videoMaxSeconds: 240 * 60,
     supportsTextOnly: true,
+    supportsLocation: true,
+    supportsFirstComment: true,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   twitter: {
     captionMax: 280,
@@ -28,6 +36,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['16:9', '1:1'],
     videoMaxSeconds: 140,
     supportsTextOnly: true,
+    supportsLocation: false,
+    supportsFirstComment: false,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   linkedin: {
     captionMax: 3000,
@@ -36,6 +47,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['1:1', '16:9'],
     videoMaxSeconds: 10 * 60,
     supportsTextOnly: true,
+    supportsLocation: false,
+    supportsFirstComment: false,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   tiktok: {
     captionMax: 2200,
@@ -44,6 +58,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['9:16'],
     videoMaxSeconds: 10 * 60,
     supportsTextOnly: false,
+    supportsLocation: false,
+    supportsFirstComment: false,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   youtube: {
     captionMax: 5000,
@@ -52,6 +69,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['16:9', '9:16'],
     videoMaxSeconds: 60,
     supportsTextOnly: true,
+    supportsLocation: false,
+    supportsFirstComment: false,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   pinterest: {
     captionMax: 500,
@@ -60,6 +80,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['2:3', '1:1'],
     videoMaxSeconds: 15 * 60,
     supportsTextOnly: false,
+    supportsLocation: false,
+    supportsFirstComment: false,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
   threads: {
     captionMax: 500,
@@ -68,6 +91,9 @@ export const PLATFORM_LIMITS: PlatformLimitsMap = {
     aspectRatios: ['1:1', '4:5', '9:16'],
     videoMaxSeconds: 5 * 60,
     supportsTextOnly: true,
+    supportsLocation: true,
+    supportsFirstComment: true,
+    firstCommentMax: FIRST_COMMENT_MAX,
   },
 }
 

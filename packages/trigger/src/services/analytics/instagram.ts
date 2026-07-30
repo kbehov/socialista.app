@@ -18,6 +18,8 @@ const FLOW_METRICS = [
   'shares',
   'saves',
   'total_interactions',
+  'profile_views',
+  'website_clicks',
 ] as const
 
 const profileSchema = z.object({
