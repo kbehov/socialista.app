@@ -41,7 +41,7 @@ import {
 import {
   STATIC_AD_FORMAT_PRESETS,
   type StaticAdFormatPresetId,
-} from '../_lib/format-presets'
+} from '@/lib/studio/static-ads/format-presets'
 import { useStaticAdStudio } from './static-ad-studio-provider'
 
 const PRESET_ICONS: Record<StaticAdFormatPresetId, LucideIcon> = {

@@ -16,26 +16,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { uploadToWorkspace } from '@/services/files.service'
+import type { SelectedProductImage } from '@/types/static-ads.types'
 import type { Product } from '@socialista/types'
-import {
-  CheckIcon,
-  ImageIcon,
-  Loader2Icon,
-  PackageIcon,
-  SearchIcon,
-  UploadIcon,
-  XIcon,
-} from 'lucide-react'
+import { CheckIcon, ImageIcon, Loader2Icon, PackageIcon, SearchIcon, UploadIcon, XIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-export type SelectedProductImage = {
-  url: string
-  label?: string
-  productId?: string
-}
+export type { SelectedProductImage }
 
 type ProductPickerDialogProps = {
   open: boolean
@@ -68,14 +57,10 @@ function ProductPickerCard({
   const images = product.images ?? []
   const hasImages = images.length > 0
   const [localPreviewIndex, setLocalPreviewIndex] = useState(0)
-  const draftImageIndex =
-    draft?.productId === product._id && draft.url ? images.indexOf(draft.url) : -1
+  const draftImageIndex = draft?.productId === product._id && draft.url ? images.indexOf(draft.url) : -1
   const previewIndex = draftImageIndex >= 0 ? draftImageIndex : localPreviewIndex
   const previewUrl = images[previewIndex]
-  const isSelected =
-    Boolean(previewUrl) &&
-    draft?.url === previewUrl &&
-    draft?.productId === product._id
+  const isSelected = Boolean(previewUrl) && draft?.url === previewUrl && draft?.productId === product._id
   const priceLabel = formatPrice(product.price)
 
   const handleSelect = () => {
@@ -146,8 +131,7 @@ function ProductPickerCard({
         >
           {images.map((imageUrl, index) => {
             const isPreview = index === previewIndex
-            const isImageSelected =
-              draft?.url === imageUrl && draft?.productId === product._id
+            const isImageSelected = draft?.url === imageUrl && draft?.productId === product._id
 
             return (
               <button
@@ -166,15 +150,7 @@ function ProductPickerCard({
                   isImageSelected && !isPreview && 'ring-1 ring-foreground/40',
                 )}
               >
-                <Image
-                  alt=""
-                  aria-hidden
-                  className="object-cover"
-                  fill
-                  sizes="36px"
-                  src={imageUrl}
-                  unoptimized
-                />
+                <Image alt="" aria-hidden className="object-cover" fill sizes="36px" src={imageUrl} unoptimized />
               </button>
             )
           })}
@@ -287,12 +263,8 @@ export function ProductPickerDialog({
       <DialogContent className="flex max-h-[min(88vh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
         <div className="shrink-0 space-y-1 border-b border-border/60 px-6 py-5 pr-12">
           <DialogHeader className="gap-1.5 text-left">
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Choose product image
-            </DialogTitle>
-            <DialogDescription>
-              Pick a catalog product or upload a photo for your ad hero.
-            </DialogDescription>
+            <DialogTitle className="text-base font-semibold tracking-tight">Choose product image</DialogTitle>
+            <DialogDescription>Pick a catalog product or upload a photo for your ad hero.</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -310,9 +282,7 @@ export function ProductPickerDialog({
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {draft.label ?? 'Selected image'}
-                </p>
+                <p className="truncate text-sm font-medium text-foreground">{draft.label ?? 'Selected image'}</p>
                 <p className="text-[11px] text-muted-foreground">Selected for this ad</p>
               </div>
               <button
@@ -388,11 +358,7 @@ export function ProductPickerDialog({
                     variant="ghost"
                   />
                 ) : (
-                  <div
-                    className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-                    role="list"
-                    aria-label="Product catalog"
-                  >
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="list" aria-label="Product catalog">
                     {filteredProducts.map(product => (
                       <div key={product._id} className="min-w-0" role="listitem">
                         <ProductPickerCard

@@ -11,7 +11,7 @@ import {
   getSortedDateKeys,
   groupPostsByDateKey,
   resolvePostAccount,
-} from '@/lib/post-display'
+} from '@/lib/posts/post-display'
 import { cn } from '@/lib/utils'
 import type { AccountSummary, Post } from '@socialista/types'
 

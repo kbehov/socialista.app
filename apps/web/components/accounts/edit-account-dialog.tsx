@@ -1,22 +1,13 @@
 'use client'
 
-import {
-  getSocialPlatformLabel,
-  SocialPlatformIcon,
-} from '@/components/icons/social-platform-icon'
+import { getSocialPlatformLabel, SocialPlatformIcon } from '@/components/icons/social-platform-icon'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { TimezoneSelector } from '@/components/ui/timezone-selector'
-import { formatTimezoneCity } from '@/lib/timezone'
 import { updateAccount } from '@/services/account.service'
+import { formatTimezoneCity } from '@/utils/timezone'
 import type { AccountSummary } from '@socialista/types'
 import { Loader2Icon } from 'lucide-react'
 import { useState, useTransition } from 'react'
@@ -86,9 +77,7 @@ function EditAccountForm({
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium leading-tight tracking-tight">
-              {account.accountName}
-            </p>
+            <p className="truncate text-[13px] font-medium leading-tight tracking-tight">{account.accountName}</p>
             <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
               {getSocialPlatformLabel(account.provider)}
               {account.username ? ` · @${account.username.replace(/^@/, '')}` : ''}
@@ -113,14 +102,7 @@ function EditAccountForm({
       </div>
 
       <DialogFooter className="shrink-0 border-t border-border/50 bg-muted/10 px-5 py-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-lg"
-          onClick={onClose}
-          disabled={isPending}
-        >
+        <Button type="button" variant="outline" size="sm" className="rounded-lg" onClick={onClose} disabled={isPending}>
           Cancel
         </Button>
         <Button
@@ -138,12 +120,7 @@ function EditAccountForm({
   )
 }
 
-export function EditAccountDialog({
-  account,
-  open,
-  onOpenChange,
-  onUpdated,
-}: EditAccountDialogProps) {
+export function EditAccountDialog({ account, open, onOpenChange, onUpdated }: EditAccountDialogProps) {
   const handleOpenChange = (next: boolean) => {
     if (!next) onOpenChange(false)
   }

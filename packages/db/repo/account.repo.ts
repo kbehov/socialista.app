@@ -233,7 +233,9 @@ export const createAccount = async (input: CreateAccountInput): Promise<IAccount
     return account.toObject()
   } catch (error) {
     if (isDuplicateKeyError(error)) {
-      throw new Error('This social account is already connected to the workspace')
+      throw new Error('This social account is already connected to the workspace', {
+        cause: error,
+      })
     }
     throw error
   }

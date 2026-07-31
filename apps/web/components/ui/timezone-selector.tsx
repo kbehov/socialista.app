@@ -1,15 +1,9 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 import {
   COMMON_TIMEZONE_VALUES,
   formatTimezoneLabel,
@@ -18,8 +12,7 @@ import {
   getTimezoneOptions,
   groupTimezonesByRegion,
   type TimezoneOption,
-} from '@/lib/timezone'
-import { cn } from '@/lib/utils'
+} from '@/utils/timezone'
 import { ChevronsUpDownIcon, GlobeIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -76,9 +69,9 @@ function TimezoneList({
   const allOptions = useMemo(() => getTimezoneOptions(), [])
   const commonOptions = useMemo(
     () =>
-      COMMON_TIMEZONE_VALUES.map(
-        timezone => allOptions.find(option => option.value === timezone) ?? null,
-      ).filter((option): option is TimezoneOption => option !== null),
+      COMMON_TIMEZONE_VALUES.map(timezone => allOptions.find(option => option.value === timezone) ?? null).filter(
+        (option): option is TimezoneOption => option !== null,
+      ),
     [allOptions],
   )
   const groupedOptions = useMemo(() => {
@@ -151,10 +144,7 @@ export function TimezoneSelector({
       aria-expanded={open}
       aria-label={ariaLabel}
       disabled={disabled}
-      className={cn(
-        'h-9 w-full shrink-0 justify-between rounded-lg px-3 font-normal shadow-xs',
-        'hover:bg-background',
-      )}
+      className={cn('h-9 w-full shrink-0 justify-between rounded-lg px-3 font-normal shadow-xs', 'hover:bg-background')}
     >
       <span className="flex min-w-0 items-center gap-2">
         <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
@@ -190,11 +180,7 @@ export function TimezoneSelector({
 
         {open ? (
           <div className="mt-2 flex min-h-[min(320px,42vh)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-            <TimezoneList
-              value={value}
-              onSelect={handleSelect}
-              listClassName="max-h-none"
-            />
+            <TimezoneList value={value} onSelect={handleSelect} listClassName="max-h-none" />
           </div>
         ) : null}
       </div>

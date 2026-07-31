@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react'
 import type { DayButton } from 'react-day-picker'
 
 import { CalendarDayButton } from '@/components/ui/calendar'
-import { toDateKey } from '@/lib/post-display'
+import { toDateKey } from '@/lib/posts/post-display'
 import { cn } from '@/lib/utils'
 import { formatDayBadgeCount, getDayPostTone } from '@/utils/post-calendar.utils'
 import type { Post } from '@socialista/types'

@@ -3,9 +3,9 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TimezoneSelector } from '@/components/ui/timezone-selector'
-import { formatTimezoneDetail } from '@/lib/timezone'
 import { cn } from '@/lib/utils'
 import type { ComposerLayout } from '@/types/composer-types'
+import { formatTimezoneDetail } from '@/utils/timezone'
 import { CalendarClockIcon, SendIcon } from 'lucide-react'
 import { useId, useMemo } from 'react'
 
@@ -112,12 +112,7 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
             isSheet ? 'p-3' : 'space-y-4 p-4',
           )}
         >
-          <div
-            className={cn(
-              'gap-3',
-              isSheet ? 'grid grid-cols-1' : 'flex flex-col gap-4 lg:flex-row lg:items-start',
-            )}
-          >
+          <div className={cn('gap-3', isSheet ? 'grid grid-cols-1' : 'flex flex-col gap-4 lg:flex-row lg:items-start')}>
             <div
               className={cn(
                 'min-w-0',

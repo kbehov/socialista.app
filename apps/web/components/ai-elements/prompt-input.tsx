@@ -916,12 +916,32 @@ export const PromptInput = ({
         type="file"
       />
       <form
-        className={cn("w-full", className)}
+        className={cn(
+          "w-full rounded-2xl border border-border/60 bg-background shadow-xs",
+          "transition-[border-color,box-shadow] duration-200",
+          "has-[[data-slot=input-group-control]:focus-visible]:border-ring/35",
+          "has-[[data-slot=input-group-control]:focus-visible]:ring-2",
+          "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/10",
+          className
+        )}
         onSubmit={handleSubmit}
         ref={formRef}
         {...props}
       >
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
+        {/*
+          InputGroup owns clipping; form owns border + soft focus ring.
+          Keeping overflow off the form prevents the focus ring from being cropped.
+        */}
+        <InputGroup
+          className={cn(
+            "h-auto overflow-hidden rounded-[inherit] border-0 bg-transparent p-0 shadow-none",
+            "ring-0 dark:bg-transparent",
+            "has-[[data-slot=input-group-control]:focus-visible]:border-transparent",
+            "has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          )}
+        >
+          {children}
+        </InputGroup>
       </form>
     </>
   );

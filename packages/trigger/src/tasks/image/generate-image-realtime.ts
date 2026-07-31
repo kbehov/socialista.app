@@ -1,11 +1,11 @@
 import { connectDb, disconnectDb } from '@socialista/db'
+import type { ImageGenerationOutput } from '@socialista/types'
+import { TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
-import { TASK_IDS } from '@socialista/types'
 import { generateImagePromptSystemPrompt } from '../../ai/image-prompts.js'
 import { resolveImageGenerator } from '../../providers/resolve-provider.js'
 import { imageGenerationPayloadSchema } from '../../schemas/image-generation.schema.js'
-import type { ImageGenerationOutput } from '@socialista/types'
 import {
   completeGenerationRecord,
   failGenerationRecord,
@@ -15,11 +15,7 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
-import {
-  assertSufficientCredits,
-  finalizeGeneration,
-  loadModelAndWorkspace,
-} from '../shared/workspace.js'
+import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 export const realtimeImageGeneration = schemaTask({
   id: TASK_IDS.imageGeneration,
@@ -53,7 +49,7 @@ export const realtimeImageGeneration = schemaTask({
       setGenerationStatus(10, 'Preparing your prompt')
 
       const enhanced = await generateText({
-        model: 'openai/gpt-5.5',
+        model: 'openai/gpt-5.6-luna',
         system: generateImagePromptSystemPrompt,
         prompt: payload.prompt,
       })

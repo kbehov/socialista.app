@@ -1,4 +1,4 @@
-import { isValidIanaTimezone } from '@/lib/timezone'
+import { isValidIanaTimezone } from '@/utils/timezone'
 import { formatInTimeZone, getTimezoneOffset } from 'date-fns-tz'
 const MB = 1024 * 1024
 const GB = MB * 1024

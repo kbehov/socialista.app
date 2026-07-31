@@ -12,7 +12,7 @@ import {
   loadRecentEmojis,
   saveRecentEmoji,
   searchEmojis,
-} from '@/lib/emoji-data'
+} from '@/constants/emoji-data'
 import { cn } from '@/lib/utils'
 import { commitHaptic } from '@/utils/haptics'
 import {

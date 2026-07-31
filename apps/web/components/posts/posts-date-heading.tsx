@@ -6,7 +6,7 @@ import {
   POST_DATE_RELATIVE_BADGE_LABEL,
   formatPostDateGroupHeading,
   getPostStatusCounts,
-} from '@/lib/post-display'
+} from '@/lib/posts/post-display'
 import { cn } from '@/lib/utils'
 import { pluralizePosts } from '@/utils/post.utils'
 import type { Post } from '@socialista/types'
@@ -71,9 +71,7 @@ export function PostsDateHeading({ date, posts, headingId }: PostsDateHeadingPro
               className={cn(
                 'text-[11px] leading-snug text-muted-foreground',
                 'transition-[margin,opacity,max-height] duration-200 ease-out motion-reduce:transition-none',
-                compact
-                  ? 'pointer-events-none mt-0 max-h-0 overflow-hidden opacity-0'
-                  : 'mt-0.5 max-h-8 opacity-100',
+                compact ? 'pointer-events-none mt-0 max-h-0 overflow-hidden opacity-0' : 'mt-0.5 max-h-8 opacity-100',
               )}
             >
               {heading.subtitle}
@@ -96,9 +94,7 @@ export function PostsDateHeading({ date, posts, headingId }: PostsDateHeadingPro
             className={cn(
               'max-w-[min(100%,16rem)] leading-snug text-muted-foreground/80',
               'transition-[opacity,max-height] duration-200 ease-out motion-reduce:transition-none',
-              compact
-                ? 'pointer-events-none max-h-0 overflow-hidden opacity-0'
-                : 'max-h-8 opacity-100',
+              compact ? 'pointer-events-none max-h-0 overflow-hidden opacity-0' : 'max-h-8 opacity-100',
             )}
           />
         </div>

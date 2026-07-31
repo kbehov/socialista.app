@@ -1,18 +1,10 @@
 'use client'
 
 import { DEFAULT_AD_LANGUAGE } from '@/components/ui/language-selector'
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import type { StaticAdExample } from '../_lib/examples'
-import type { StaticAdFormatPreset } from '../_lib/format-presets'
-import { type SelectedProductImage, type StaticAdAspectRatio } from '../_lib/types'
+import type { StaticAdExample } from '@/lib/studio/static-ads/examples'
+import type { StaticAdFormatPreset } from '@/lib/studio/static-ads/format-presets'
+import { type SelectedProductImage, type StaticAdAspectRatio } from '@/types/static-ads.types'
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 
 export type { SelectedProductImage }
 
@@ -72,9 +64,7 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const scrollComposerIntoView = useCallback((block: ScrollLogicalPosition = 'nearest') => {
-    const reduceMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduceMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     composerRef.current?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',
       block,

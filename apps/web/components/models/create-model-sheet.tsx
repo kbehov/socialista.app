@@ -182,7 +182,7 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
             </div>
 
             <div className="space-y-2">
-              <FieldLabel>Context supports</FieldLabel>
+              <FieldLabel htmlFor="model-context-supports">Context supports</FieldLabel>
               <Controller
                 name="contextSupports"
                 control={control}

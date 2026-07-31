@@ -1,6 +1,6 @@
 'use client'
 
-import { buildAccountSearchQuery } from '@/lib/account-filters'
+import { buildAccountSearchQuery } from '@/lib/accounts/account-filters'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 

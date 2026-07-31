@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
 import { CalendarDaysIcon } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { EmptyState } from '@/components/common/empty-state'
 import { PostCalendarDayButton } from '@/components/posts/post-calendar-day-button'
@@ -10,8 +10,8 @@ import { CALENDAR_MONTH_STATUS_SUMMARY } from '@/components/posts/post-meta'
 import { PostStatusCountsText } from '@/components/posts/post-status-counts-text'
 import { Calendar } from '@/components/ui/calendar'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { groupPostsByDateKey, isSameCalendarDay, resolvePostAccount } from '@/lib/post-display'
-import { dateToMonthKey, monthKeyToDate } from '@/lib/post-filters'
+import { groupPostsByDateKey, isSameCalendarDay, resolvePostAccount } from '@/lib/posts/post-display'
+import { dateToMonthKey, monthKeyToDate } from '@/lib/posts/post-filters'
 import { cn } from '@/lib/utils'
 import {
   getMonthPostStatusCounts,
@@ -44,9 +44,7 @@ const calendarClassNames = {
 } as const
 
 function useSelectedCalendarDay(monthDate: Date, postsByDate: Map<string, Post[]>) {
-  const [selectedDay, setSelectedDay] = useState(() =>
-    resolveSelectedCalendarDay(monthDate, postsByDate),
-  )
+  const [selectedDay, setSelectedDay] = useState(() => resolveSelectedCalendarDay(monthDate, postsByDate))
 
   useEffect(() => {
     setSelectedDay(current => resolveSelectedCalendarDay(monthDate, postsByDate, current))
@@ -78,10 +76,7 @@ function CalendarMonthPanel({
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">{monthLabel}</p>
           {monthStats.total > 0 ? (
-            <PostStatusCountsText
-              counts={monthStats.counts}
-              summary={CALENDAR_MONTH_STATUS_SUMMARY}
-            />
+            <PostStatusCountsText counts={monthStats.counts} summary={CALENDAR_MONTH_STATUS_SUMMARY} />
           ) : (
             <p className="text-[11px] text-muted-foreground">No posts this month</p>
           )}
@@ -101,9 +96,7 @@ function CalendarMonthPanel({
             className="w-full max-w-none bg-transparent px-1 pt-1 pb-2 [--cell-size:2.25rem] sm:[--cell-size:2.5rem]"
             classNames={calendarClassNames}
             components={{
-              DayButton: dayProps => (
-                <PostCalendarDayButton {...dayProps} postsByDate={postsByDate} />
-              ),
+              DayButton: dayProps => <PostCalendarDayButton {...dayProps} postsByDate={postsByDate} />,
             }}
           />
         </div>
@@ -181,22 +174,13 @@ function CalendarDayDetailPanel({
   )
 }
 
-export function PostsCalendarView({
-  posts,
-  accountsById,
-  monthKey,
-  onMonthChange,
-  className,
-}: PostsCalendarViewProps) {
+export function PostsCalendarView({ posts, accountsById, monthKey, onMonthChange, className }: PostsCalendarViewProps) {
   const monthDate = monthKeyToDate(monthKey)
   const postsByDate = useMemo(() => groupPostsByDateKey(posts), [posts])
   const monthStats = useMemo(() => getMonthPostStatusCounts(posts, monthDate), [posts, monthDate])
   const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const [selectedDay, setSelectedDay] = useSelectedCalendarDay(monthDate, postsByDate)
-  const selectedPosts = useMemo(
-    () => getPostsForCalendarDay(posts, selectedDay),
-    [posts, selectedDay],
-  )
+  const selectedPosts = useMemo(() => getPostsForCalendarDay(posts, selectedDay), [posts, selectedDay])
 
   return (
     <div

@@ -7,7 +7,7 @@ import { useCopyPrompt } from '@/hooks/use-copy-prompt'
 import { CopyIcon, SparklesIcon, WandSparklesIcon } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
-import { STATIC_AD_EXAMPLES, type StaticAdExample } from '../_lib/examples'
+import { STATIC_AD_EXAMPLES, type StaticAdExample } from '@/lib/studio/static-ads/examples'
 import { useStaticAdStudio } from './static-ad-studio-provider'
 
 function ExampleCard({

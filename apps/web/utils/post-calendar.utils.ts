@@ -1,8 +1,4 @@
-import {
-  getPostDisplayDate,
-  isSameCalendarDay,
-  toDateKey,
-} from '@/lib/post-display'
+import { getPostDisplayDate, isSameCalendarDay, toDateKey } from '@/lib/posts/post-display'
 import type { Post, PostStatus } from '@socialista/types'
 
 export type DayPostTone = {
@@ -57,11 +53,7 @@ export function isSameCalendarMonth(a: Date, b: Date): boolean {
 }
 
 /** Prefer current selection, else today, else first day with posts, else the 1st. */
-export function resolveSelectedCalendarDay(
-  monthDate: Date,
-  postsByDate: Map<string, Post[]>,
-  preferred?: Date,
-): Date {
+export function resolveSelectedCalendarDay(monthDate: Date, postsByDate: Map<string, Post[]>, preferred?: Date): Date {
   if (preferred && isSameCalendarMonth(preferred, monthDate)) {
     return preferred
   }

@@ -1,8 +1,8 @@
 'use client'
 
+import { Loader2Icon, PencilIcon, SendIcon, Trash2Icon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { memo } from 'react'
-import { Loader2Icon, PencilIcon, SendIcon, Trash2Icon } from 'lucide-react'
 
 import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
 import { PreviewEmbedProvider } from '@/components/posts/composer/previews/preview-embed-context'
@@ -11,20 +11,12 @@ import { formatPostDateTime } from '@/components/posts/post-meta'
 import { PostStatusPill } from '@/components/posts/post-status-pill'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  getPostCaption,
-  getPostDisplayDate,
-  postToComposerMedia,
-} from '@/lib/post-display'
+import { getPostCaption, getPostDisplayDate, postToComposerMedia } from '@/lib/posts/post-display'
 import { cn } from '@/lib/utils'
-import { getClickableElementProps, stopPropagationClick } from '@/utils/dom-events'
 import { isPostEditable } from '@/utils/composer.utils'
+import { getClickableElementProps, stopPropagationClick } from '@/utils/dom-events'
 import { formatRelativeTime } from '@/utils/format'
-import {
-  canDeletePost,
-  canPostNow,
-  getAccountDisplayName,
-} from '@/utils/post.utils'
+import { canDeletePost, canPostNow, getAccountDisplayName } from '@/utils/post.utils'
 import type { AccountSummary, Post } from '@socialista/types'
 
 export type PostPreviewCardProps = {
@@ -74,13 +66,7 @@ function CardActionButton({
   )
 }
 
-function PostNowBar({
-  isPublishing,
-  onPostNow,
-}: {
-  isPublishing: boolean
-  onPostNow: () => void
-}) {
+function PostNowBar({ isPublishing, onPostNow }: { isPublishing: boolean; onPostNow: () => void }) {
   return (
     <div className="border-t border-border/40 bg-muted/15 px-2.5 py-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
       <Button
@@ -123,19 +109,12 @@ function PostCardFooter({
     <footer className="flex items-center justify-between gap-2.5 border-t border-border/40 bg-muted/15 px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
         <SocialPlatformIcon provider={post.provider} size={11} className="size-5 shrink-0" />
-        <p className="truncate text-[11px] font-medium tracking-tight text-muted-foreground">
-          {accountLabel}
-        </p>
+        <p className="truncate text-[11px] font-medium tracking-tight text-muted-foreground">{accountLabel}</p>
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
         {editable && onEdit ? (
-          <CardActionButton
-            label="Edit post"
-            tooltip="Edit"
-            className="hover:text-foreground"
-            onClick={onEdit}
-          >
+          <CardActionButton label="Edit post" tooltip="Edit" className="hover:text-foreground" onClick={onEdit}>
             <PencilIcon className="size-3.5" strokeWidth={1.75} />
           </CardActionButton>
         ) : null}
@@ -227,9 +206,7 @@ export const PostPreviewCard = memo(function PostPreviewCard({
         </div>
       ) : null}
 
-      {showPostNow && onPostNow ? (
-        <PostNowBar isPublishing={isPublishing} onPostNow={() => onPostNow(post)} />
-      ) : null}
+      {showPostNow && onPostNow ? <PostNowBar isPublishing={isPublishing} onPostNow={() => onPostNow(post)} /> : null}
 
       <PostCardFooter
         post={post}

@@ -1,10 +1,10 @@
 import { ErrorState } from '@/components/common/error-state'
+import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
+import { StaticAdStudioWorkspace } from '@/components/studio/static-ads/static-ad-studio-workspace'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceProducts } from '@/services/product.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { STATIC_AD_MODEL } from '@socialista/types'
-import { WorkspaceRequired } from '../../../../../../components/dashboard/workspace-required'
-import { StaticAdStudioWorkspace } from './_components/static-ad-studio-workspace'
 
 const StaticAdsPage = async () => {
   const workspace = await getCurrentWorkspace()

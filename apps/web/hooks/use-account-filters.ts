@@ -1,10 +1,7 @@
 'use client'
 
 import type { Filter } from '@/components/reui/filters'
-import {
-  buildAccountFiltersQueryString,
-  clearAccountFiltersQuery,
-} from '@/lib/account-filters'
+import { buildAccountFiltersQueryString, clearAccountFiltersQuery } from '@/lib/accounts/account-filters'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 

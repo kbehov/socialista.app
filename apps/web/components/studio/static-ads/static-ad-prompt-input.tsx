@@ -1,5 +1,6 @@
 'use client'
 
+import { startStaticAdGeneration } from '@/actions/static-ad-generation.actions'
 import {
   PromptInput,
   PromptInputBody,
@@ -21,6 +22,7 @@ import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import type { StaticAdAspectRatio } from '@/types/static-ads.types'
 import { formatModelCost } from '@/utils/format'
 import { commitHaptic } from '@/utils/haptics'
 import type { Model, Product } from '@socialista/types'
@@ -30,8 +32,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { startStaticAdGeneration } from '../_actions/generation'
-import type { StaticAdAspectRatio } from '../_lib/types'
 import { ProductPickerDialog } from './product-picker-dialog'
 import { StaticAdFormatPresets } from './static-ad-format-presets'
 import { StaticAdPromptAnatomy } from './static-ad-prompt-anatomy'

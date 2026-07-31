@@ -1,13 +1,16 @@
 'use client'
 
+import { startImageGeneration } from '@/actions/image-generation.actions'
 import {
   ModelSelector,
   ModelSelectorContent,
   ModelSelectorEmpty,
   ModelSelectorGroup,
+  ModelSelectorHeader,
   ModelSelectorInput,
   ModelSelectorItem,
   ModelSelectorList,
+  ModelSelectorLogoBadge,
   ModelSelectorName,
   ModelSelectorShortcut,
   ModelSelectorTrigger,
@@ -26,12 +29,13 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
+import { useImageStudio } from '@/components/studio/images/image-studio-provider'
 import { Badge } from '@/components/ui/badge'
 import { Kbd } from '@/components/ui/kbd'
 import { Separator } from '@/components/ui/separator'
-import { useImageStudio } from '@/context/image-studio-provider'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
+import { getVibePlaceholder, VIBE_LABELS, type AspectRatioId } from '@/lib/studio/images/examples'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatModelCost } from '@/utils/format'
@@ -41,8 +45,6 @@ import { ChevronDownIcon, SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { getVibePlaceholder, type AspectRatioId } from '@/lib/studio/images/examples'
-import { startImageGeneration } from '../../_actions/generation'
 import { ImagePromptAnatomy } from './prompt-anatomy'
 
 const ASPECT_RATIOS = [
@@ -56,21 +58,18 @@ type ModelHighlight = 'cheapest' | 'newest' | 'mostUsed'
 
 const MODEL_HIGHLIGHT_CONFIG = {
   cheapest: {
-    emoji: '💸',
     label: 'Cheapest',
-    className: 'border-success/25 bg-success/10 text-success',
+    className: 'border-success/20 bg-success/10 text-success',
   },
   newest: {
-    emoji: '✨',
-    label: 'Newest',
-    className: 'border-info/25 bg-info/10 text-info',
+    label: 'New',
+    className: 'border-info/20 bg-info/10 text-info',
   },
   mostUsed: {
-    emoji: '🔥',
-    label: 'Most used',
-    className: 'border-warning/25 bg-warning/10 text-warning-foreground',
+    label: 'Popular',
+    className: 'border-warning/20 bg-warning/10 text-warning-foreground',
   },
-} as const satisfies Record<ModelHighlight, { emoji: string; label: string; className: string }>
+} as const satisfies Record<ModelHighlight, { label: string; className: string }>
 
 function getModelUsageCount(model: Model): number {
   if ('usageCount' in model && typeof model.usageCount === 'number') {
@@ -83,13 +82,10 @@ function buildModelHighlights(models: Model[]): Map<string, ModelHighlight[]> {
   const highlights = new Map<string, ModelHighlight[]>()
   if (models.length === 0) return highlights
 
-  const newestId = [...models].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  )[0]?._id
+  const newestId = [...models].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?._id
   const cheapestId = [...models].sort((a, b) => a.cost - b.cost)[0]?._id
   const mostUsedModel = [...models].sort((a, b) => getModelUsageCount(b) - getModelUsageCount(a))[0]
-  const mostUsedId =
-    mostUsedModel && getModelUsageCount(mostUsedModel) > 0 ? mostUsedModel._id : undefined
+  const mostUsedId = mostUsedModel && getModelUsageCount(mostUsedModel) > 0 ? mostUsedModel._id : undefined
 
   for (const model of models) {
     const modelHighlights: ModelHighlight[] = []
@@ -109,13 +105,10 @@ function ModelHighlightBadge({ highlight }: { highlight: ModelHighlight }) {
     <Badge
       className={cn(
         config.className,
-        'h-[18px] gap-0.5 rounded-md border px-1.5 py-0 text-[10px] font-medium leading-none',
+        'h-[18px] rounded-md border px-1.5 py-0 text-[10px] font-medium leading-none tracking-[-0.01em]',
       )}
     >
-      <span aria-hidden className="text-[11px] leading-none">
-        {config.emoji}
-      </span>
-      <span>{config.label}</span>
+      {config.label}
     </Badge>
   )
 }
@@ -123,7 +116,7 @@ function ModelHighlightBadge({ highlight }: { highlight: ModelHighlight }) {
 function ImagePromptComposer({ models }: { models: Model[] }) {
   const router = useRouter()
   const { textInput } = usePromptInputController()
-  const { selectedVibe, composerRef, registerPromptHandlers, setActiveExampleId } = useImageStudio()
+  const { selectedVibe, activeExampleId, composerRef, registerPromptHandlers, setActiveExampleId } = useImageStudio()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const [isPending, startTransition] = useTransition()
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
@@ -244,21 +237,27 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           aria-expanded={modelSelectorOpen}
           aria-haspopup="dialog"
           className={cn(
-            'h-7 max-w-[min(100%,14rem)] gap-1.5 rounded-lg border px-2 shadow-xs',
-            'border-border/50 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
-            'hover:border-border hover:bg-background',
-            modelSelectorOpen && 'border-border bg-background shadow-sm',
+            'h-7 max-w-[min(100%,14rem)] gap-1.5 rounded-xl border px-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
+            'border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
+            'hover:border-border/65 hover:bg-background',
+            modelSelectorOpen && 'border-border/65 bg-background shadow-sm',
           )}
           disabled={isPending}
           type="button"
         >
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted/60 ring-1 ring-border/35">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-lg bg-muted/55 ring-1 ring-border/35">
             <ModelProviderIcon className="size-3" provider={selectedModel.modelProvider} />
           </span>
           {selectedModelHighlights[0] ? (
-            <span aria-hidden className="shrink-0 text-[11px] leading-none">
-              {MODEL_HIGHLIGHT_CONFIG[selectedModelHighlights[0]].emoji}
-            </span>
+            <span
+              aria-hidden
+              className={cn(
+                'size-1.5 shrink-0 rounded-full',
+                selectedModelHighlights[0] === 'cheapest' && 'bg-success',
+                selectedModelHighlights[0] === 'newest' && 'bg-info',
+                selectedModelHighlights[0] === 'mostUsed' && 'bg-warning',
+              )}
+            />
           ) : null}
           <ModelSelectorName className="text-xs font-medium leading-none">{selectedModel.name}</ModelSelectorName>
           <ChevronDownIcon
@@ -270,30 +269,28 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         </PromptInputButton>
       </ModelSelectorTrigger>
 
-      <ModelSelectorContent
-        className="gap-0 overflow-hidden p-0 sm:max-w-104"
-        showCloseButton={false}
-        title="Choose model"
-      >
-        <div className="border-b border-border/50 px-3.5 py-3">
-          <p className="text-sm font-medium tracking-[-0.01em] text-foreground">Choose your model</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            <span className="mr-2 inline-flex items-center gap-1">
-              <span aria-hidden>💸</span>
-              Cheapest
-            </span>
-            <span className="mr-2 inline-flex items-center gap-1">
-              <span aria-hidden>✨</span>
-              Newest
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden>🔥</span>
-              Most used
-            </span>
-          </p>
-        </div>
+      <ModelSelectorContent className="sm:max-w-104" title="Choose model">
+        <ModelSelectorHeader
+          heading="Choose model"
+          description={
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden className="size-1.5 rounded-full bg-success" />
+                Cheapest
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden className="size-1.5 rounded-full bg-info" />
+                New
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                Popular
+              </span>
+            </p>
+          }
+        />
         <ModelSelectorInput placeholder="Search models…" />
-        <ModelSelectorList className="max-h-80 px-1 pb-1">
+        <ModelSelectorList>
           <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
           {chefs.map(chef => (
             <ModelSelectorGroup heading={chef} key={chef}>
@@ -306,19 +303,17 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                   return (
                     <ModelSelectorItem
                       key={model._id}
-                      className={cn(
-                        'gap-3 rounded-lg px-2.5 py-2.5',
-                        isSelected && 'bg-muted/40',
-                      )}
                       data-checked={isSelected ? true : undefined}
                       onSelect={() => handleModelSelect(model._id)}
                       value={`${model.name} ${model.modelProvider}`}
                     >
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/55 ring-1 ring-border/40">
+                      <ModelSelectorLogoBadge>
                         <ModelProviderIcon className="size-3.5" provider={model.modelProvider} />
-                      </span>
+                      </ModelSelectorLogoBadge>
                       <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
-                        <span className="truncate text-sm font-medium leading-tight">{model.name}</span>
+                        <ModelSelectorName className="text-[13px] font-medium leading-tight">
+                          {model.name}
+                        </ModelSelectorName>
                         {highlights.length > 0 ? (
                           <span className="flex flex-wrap gap-1">
                             {highlights.map(highlight => (
@@ -327,9 +322,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                           </span>
                         ) : null}
                       </span>
-                      <ModelSelectorShortcut className="rounded-md bg-muted/45 px-1.5 py-0.5 text-[11px] tracking-normal tabular-nums">
-                        {formatModelCost(model.cost, model.costUnit)}
-                      </ModelSelectorShortcut>
+                      <ModelSelectorShortcut>{formatModelCost(model.cost, model.costUnit)}</ModelSelectorShortcut>
                     </ModelSelectorItem>
                   )
                 })}
@@ -341,15 +334,24 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   ) : null
 
   return (
-    <div ref={composerRef} className="w-full scroll-mt-6">
+    <div
+      ref={composerRef}
+      className={cn(
+        'w-full scroll-mt-10 transition-[transform,opacity] duration-300',
+        activeExampleId && 'animate-in fade-in-0 duration-300',
+      )}
+    >
       <PromptInput
         className={cn(
-          'overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm',
-          'transition-[border-color,box-shadow] duration-200',
-          'has-[[data-slot=input-group-control]:focus-visible]:border-ring/50',
-          'has-[[data-slot=input-group-control]:focus-visible]:shadow-md',
-          'has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/15',
-          '[box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.05)]',
+          'rounded-[1.375rem] border-border/50 bg-background transition-[border-color,box-shadow,ring-color] duration-200',
+          'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.03),0_10px_32px_-16px_rgba(0,0,0,0.1)]',
+          'has-[[data-slot=input-group-control]:focus-visible]:border-ring/25',
+          'has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.04),0_12px_36px_-16px_rgba(0,0,0,0.12)]',
+          'has-[[data-slot=input-group-control]:focus-visible]:ring-2',
+          'has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6',
+          'dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.18),0_10px_32px_-16px_rgba(0,0,0,0.42)]',
+          'dark:has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.22),0_14px_40px_-16px_rgba(0,0,0,0.48)]',
+          activeExampleId && 'border-foreground/15 ring-2 ring-foreground/8',
         )}
         onSubmit={handleSubmit}
       >
@@ -357,8 +359,8 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           <PromptInputTextarea
             ref={textareaRef}
             className={cn(
-              'min-h-32 px-4 pt-4 pb-8 text-[15px] leading-[1.6] tracking-[-0.01em]',
-              'placeholder:text-muted-foreground/55 placeholder:transition-opacity placeholder:duration-300',
+              'min-h-[9rem] px-4 pt-4 pb-10 text-[15px] leading-[1.65] tracking-[-0.012em]',
+              'placeholder:text-muted-foreground/45 placeholder:transition-opacity placeholder:duration-300',
               'focus:outline-none focus:ring-0',
             )}
             disabled={isPending}
@@ -374,17 +376,17 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           {hasPrompt ? (
             <span
               aria-hidden
-              className="pointer-events-none absolute right-3.5 bottom-2.5 text-[10px] tabular-nums text-muted-foreground/45"
+              className="pointer-events-none absolute right-4 bottom-3 text-[10px] tabular-nums tracking-[-0.01em] text-muted-foreground/35"
             >
-              {textInput.value.length}
+              {textInput.value.length.toLocaleString()}
             </span>
           ) : null}
         </PromptInputBody>
 
-        <PromptInputFooter className="border-t border-border/45 px-3 py-2 sm:px-3.5 sm:py-2.5">
-          <PromptInputTools className="min-w-0 flex-wrap gap-1.5">
+        <PromptInputFooter className="border-t border-border/35 bg-muted/12 px-3 py-2.5 sm:px-3.5">
+          <PromptInputTools className="min-w-0 flex-wrap gap-2">
             <div
-              className="flex items-center gap-0.5 rounded-lg border border-border/35 bg-background/70 p-0.5 shadow-xs"
+              className="flex items-center gap-0.5 rounded-xl bg-muted/30 p-0.5 ring-1 ring-border/30"
               role="group"
               aria-label="Aspect ratio"
             >
@@ -396,11 +398,11 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                     key={option.id}
                     aria-pressed={isSelected}
                     className={cn(
-                      'h-7 gap-1.5 rounded-md px-2 text-xs transition-[background-color,box-shadow,color] duration-150',
+                      'h-7 gap-1.5 rounded-lg px-2 text-xs tracking-[-0.015em] transition-[background-color,box-shadow,color,transform] duration-150',
                       'active:scale-[0.97]',
                       isSelected
-                        ? 'bg-background text-foreground shadow-xs ring-1 ring-border/50 hover:bg-background'
-                        : 'text-muted-foreground hover:text-foreground',
+                        ? 'bg-background text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-border/50 hover:bg-background'
+                        : 'text-muted-foreground hover:text-foreground/90',
                     )}
                     disabled={isPending}
                     onClick={() => setAspectRatio(option.id)}
@@ -414,22 +416,23 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               })}
             </div>
 
-            <Separator className="hidden h-5 sm:block" orientation="vertical" />
+            <Separator className="hidden h-5 bg-border/50 sm:block" orientation="vertical" />
 
             {modelSelector}
           </PromptInputTools>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2.5">
             {selectedModel ? (
-              <span className="hidden text-[11px] tabular-nums text-muted-foreground/80 md:inline">
+              <span className="hidden text-[11px] tabular-nums tracking-[-0.015em] text-muted-foreground/65 md:inline">
                 {formatModelCost(selectedModel.cost, selectedModel.costUnit)}
               </span>
             ) : null}
             <PromptInputSubmit
               className={cn(
-                'h-8 gap-1.5 rounded-lg px-3.5 text-[13px] font-medium shadow-sm',
+                'h-8 gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold tracking-[-0.015em]',
+                'shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_-4px_rgba(0,0,0,0.12)]',
                 'transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.98]',
-                !canSubmit && 'opacity-55',
+                !canSubmit && 'opacity-45 shadow-none',
               )}
               disabled={!canSubmit}
               size="sm"
@@ -445,18 +448,23 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         </PromptInputFooter>
       </PromptInput>
 
-      <div className="mt-2.5 space-y-2.5">
-        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground/75">
-          <span>Press</span>
-          <Kbd className="h-4 min-w-4 px-1 text-[10px]">/</Kbd>
-          <span>to focus</span>
-          <span aria-hidden className="text-muted-foreground/35">
-            ·
-          </span>
-          <span>Press</span>
-          <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘↵</Kbd>
-          <span>to generate</span>
-        </p>
+      <div className="mt-3.5 space-y-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-full bg-muted/20 px-2.5 py-1 text-[11px] tracking-[-0.01em] text-muted-foreground/70 ring-1 ring-border/30">
+            <Kbd className="h-4 min-w-4 border-border/50 bg-background/80 px-1 text-[10px]">/</Kbd>
+            <span>focus</span>
+            <span aria-hidden className="text-muted-foreground/25">
+              ·
+            </span>
+            <Kbd className="h-4 min-w-4 border-border/50 bg-background/80 px-1 text-[10px]">⌘↵</Kbd>
+            <span>generate</span>
+          </p>
+          {selectedVibe !== 'all' ? (
+            <span className="text-[11px] tracking-[-0.01em] text-muted-foreground/55">
+              {VIBE_LABELS[selectedVibe]} examples
+            </span>
+          ) : null}
+        </div>
         <ImagePromptAnatomy />
       </div>
     </div>
@@ -466,9 +474,12 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
   if (models.length === 0) {
     return (
-      <div className="rounded-2xl border border-border/60 bg-muted/20 px-6 py-10 text-center">
-        <p className="text-[15px] font-medium text-foreground">No image models yet</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-muted/10 px-6 py-14 text-center">
+        <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted/40 ring-1 ring-border/35">
+          <SparklesIcon className="size-4 text-muted-foreground/80" />
+        </div>
+        <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">No image models yet</p>
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
           Add a text-to-image model in the manager to start creating social visuals.
         </p>
       </div>

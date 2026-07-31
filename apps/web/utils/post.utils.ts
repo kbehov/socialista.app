@@ -1,5 +1,5 @@
 import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
-import { getPostPreviewText } from '@/lib/post-display'
+import { getPostPreviewText } from '@/lib/posts/post-display'
 import { isPostEditable } from '@/utils/composer.utils'
 import type { Post, PostStatus } from '@socialista/types'
 
@@ -12,10 +12,7 @@ export function canDeletePost(status: PostStatus): boolean {
   return status !== 'publishing'
 }
 
-export function getAccountDisplayName(account: {
-  accountName?: string | null
-  username?: string | null
-}): string {
+export function getAccountDisplayName(account: { accountName?: string | null; username?: string | null }): string {
   return account.accountName || account.username || 'Account'
 }
 

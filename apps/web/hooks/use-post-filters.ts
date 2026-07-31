@@ -1,11 +1,7 @@
 'use client'
 
 import type { Filter } from '@/components/reui/filters'
-import {
-  buildPostQueryString,
-  clearPostFiltersQuery,
-  type PostViewMode,
-} from '@/lib/post-filters'
+import { buildPostQueryString, clearPostFiltersQuery, type PostViewMode } from '@/lib/posts/post-filters'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 

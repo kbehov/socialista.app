@@ -1,6 +1,6 @@
 import { buildPlatformCopyNotes } from '@/agents/prompts/copywriting'
 import type { SocialProvider } from '@socialista/types'
-import type { ImagePart, ModelMessage } from 'ai'
+import type { FilePart, ModelMessage } from 'ai'
 
 export const POST_COPYWRITER_LIMITS = {
   brief: 2000,
@@ -96,9 +96,7 @@ export function clampCaptionMax(value?: number): number | undefined {
   )
 }
 
-export function sanitizePostCompletionBody(
-  body: PostCompletionBody,
-): SanitizedPostCompletionInput | { error: string } {
+export function sanitizePostCompletionBody(body: PostCompletionBody): SanitizedPostCompletionInput | { error: string } {
   const prompt = body.prompt?.trim().slice(0, POST_COPYWRITER_LIMITS.brief)
   if (!prompt) return { error: 'Prompt is required' }
 
@@ -108,10 +106,8 @@ export function sanitizePostCompletionBody(
     captionMax: clampCaptionMax(body.captionMax),
     media: sanitizeCopywriterMedia(body.media),
     tone: body.tone?.trim().slice(0, POST_COPYWRITER_LIMITS.tone) || undefined,
-    existingCaption:
-      body.existingCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
-    previousCaption:
-      body.previousCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
+    existingCaption: body.existingCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
+    previousCaption: body.previousCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
   }
 }
 
@@ -141,9 +137,7 @@ export function buildPostCopywriterUserPrompt({
   }
 
   if (tone) {
-    sections.push(
-      `Tone direction: ${tone}. Commit to it fully — do not drift into generic brand-safe voice.`,
-    )
+    sections.push(`Tone direction: ${tone}. Commit to it fully — do not drift into generic brand-safe voice.`)
   } else {
     sections.push(
       'Tone: auto — pick the sharpest voice that fits the brief and platforms. Prefer human and specific over polished and safe.',
@@ -184,20 +178,12 @@ export function buildPostCopywriterUserPrompt({
   return sections.join('\n\n')
 }
 
-export function buildPostCopywriterMessages(
-  userPrompt: string,
-  media: SanitizedMedia[],
-): ModelMessage[] {
+export function buildPostCopywriterMessages(userPrompt: string, media: SanitizedMedia[]): ModelMessage[] {
   if (media.length === 0) {
     return [{ role: 'user', content: userPrompt }]
   }
 
   // Images first so the model grounds in the visual before writing the caption.
-  const imageParts: ImagePart[] = media.map(item => ({ type: 'image', image: item.imageUrl }))
-  return [
-    {
-      role: 'user',
-      content: [...imageParts, { type: 'text', text: userPrompt }],
-    },
-  ]
+  const imageParts: FilePart[] = media.map(item => ({ type: 'file', data: item.imageUrl, mediaType: 'image' }))
+  return [{ role: 'user', content: [...imageParts, { type: 'text', text: userPrompt }] }]
 }

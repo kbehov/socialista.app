@@ -29,7 +29,9 @@
     "@socialista/eslint-config": "workspace:^",
     "@socialista/typescript-config": "workspace:^",
     "@types/node": "^20.11.17",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "eslint": "^10.8.0",
     "tsx": "^4.7.1",
-    "typescript": "^5.8.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }

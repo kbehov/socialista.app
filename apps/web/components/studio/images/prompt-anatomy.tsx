@@ -1,13 +1,13 @@
 'use client'
 
-import { useImageStudio } from '@/context/image-studio-provider'
+import { useImageStudio } from '@/components/studio/images/image-studio-provider'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, LightbulbIcon } from 'lucide-react'
 import { useState } from 'react'
 
 export type PromptAnatomySegmentStyles = {
@@ -47,13 +47,13 @@ export function PromptAnatomy({
   const [open, setOpen] = useState(defaultOpen)
 
   const content = (
-    <div className="space-y-2" onMouseLeave={() => setActiveSegment(null)}>
-      <p className="text-xs leading-snug text-muted-foreground/75">
-        <span className="mr-1.5 font-medium text-foreground">Tip:</span>
-        {tip}
+    <div className="space-y-3" onMouseLeave={() => setActiveSegment(null)}>
+      <p className="flex items-start gap-2 text-[12px] leading-[1.55] tracking-[-0.01em] text-muted-foreground/85">
+        <LightbulbIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/50" aria-hidden />
+        <span>{tip}</span>
       </p>
 
-      <div className="text-xs font-normal leading-relaxed">
+      <div className="rounded-xl bg-muted/12 px-3.5 py-3 text-[12px] font-normal leading-[1.65] tracking-[-0.01em] ring-1 ring-border/30">
         {segments.map((segment, index) => {
           const isActive = activeSegment === segment.id
           const styles = segment.styles
@@ -67,21 +67,22 @@ export function PromptAnatomy({
                 onBlur={() => setActiveSegment(null)}
                 onClick={() => onInsertSnippet(segment.snippet)}
                 className={cn(
-                  'rounded px-0.5 py-px font-medium underline-offset-[3px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50',
+                  'rounded-md px-1 py-px font-medium underline-offset-[3px] transition-colors duration-150',
+                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
                   isActive
                     ? cn(styles.text, styles.surface, 'underline', styles.decoration)
-                    : 'text-foreground/75 hover:bg-muted/40 hover:text-foreground hover:underline hover:decoration-foreground/25',
+                    : 'text-foreground/65 hover:bg-muted/45 hover:text-foreground hover:underline hover:decoration-foreground/20',
                 )}
               >
                 {segment.exampleText}
               </button>
-              {index < segments.length - 1 ? <span className="text-muted-foreground/40">, </span> : null}
+              {index < segments.length - 1 ? <span className="text-muted-foreground/30">, </span> : null}
             </span>
           )
         })}
       </div>
 
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {segments.map(segment => {
           const isActive = activeSegment === segment.id
           const styles = segment.styles
@@ -95,10 +96,11 @@ export function PromptAnatomy({
               onBlur={() => setActiveSegment(null)}
               onClick={() => onInsertSnippet(segment.snippet)}
               className={cn(
-                'rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50',
+                'rounded-lg border px-2.5 py-1 text-[11px] font-medium tracking-[-0.015em] transition-[background-color,border-color,color,transform,box-shadow] duration-150',
+                'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
                 isActive
-                  ? styles.chip
-                  : cn('border-border/50 bg-background text-muted-foreground', styles.chipIdle),
+                  ? cn(styles.chip, 'shadow-sm')
+                  : cn('border-border/40 bg-background/70 text-muted-foreground', styles.chipIdle),
               )}
             >
               + {segment.label}
@@ -115,13 +117,26 @@ export function PromptAnatomy({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-muted/10 px-3 py-2 text-left text-[13px] font-medium text-foreground transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-        <span>{triggerLabel}</span>
+      <CollapsibleTrigger
+        className={cn(
+          'group flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left',
+          'bg-muted/15 ring-1 ring-border/35 transition-[background-color,box-shadow,ring-color] duration-150',
+          'hover:bg-muted/22 hover:ring-border/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
+          open && 'bg-muted/20 ring-border/45 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]',
+        )}
+      >
+        <span className="text-[13px] font-medium tracking-[-0.015em] text-foreground">
+          {triggerLabel}
+        </span>
         <ChevronDownIcon
-          className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
+          className={cn(
+            'size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200',
+            open && 'rotate-180',
+          )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="pt-2.5">{content}</CollapsibleContent>
+      <CollapsibleContent className="pt-3.5 data-[state=closed]:animate-none">{content}</CollapsibleContent>
     </Collapsible>
   )
 }
@@ -196,5 +211,13 @@ export const IMAGE_PROMPT_ANATOMY_SEGMENTS = [
 export function ImagePromptAnatomy() {
   const { insertSnippet } = useImageStudio()
 
-  return <PromptAnatomy segments={IMAGE_PROMPT_ANATOMY_SEGMENTS} onInsertSnippet={insertSnippet} />
+  return (
+    <PromptAnatomy
+      segments={IMAGE_PROMPT_ANATOMY_SEGMENTS}
+      onInsertSnippet={insertSnippet}
+      collapsible
+      triggerLabel="Build a stronger prompt"
+      tip="Tap a colored phrase or chip to insert it into your prompt."
+    />
+  )
 }

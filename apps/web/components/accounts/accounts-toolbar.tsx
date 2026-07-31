@@ -5,10 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAccountFilters } from '@/hooks/use-account-filters'
 import { useAccountSearch } from '@/hooks/use-account-search'
-import {
-  buildAccountFilterFields,
-  hasActiveAccountFilters,
-} from '@/lib/account-filters'
+import { buildAccountFilterFields, hasActiveAccountFilters } from '@/lib/accounts/account-filters'
 import { cn } from '@/lib/utils'
 import { ListFilterIcon, Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -20,12 +17,7 @@ type AccountsToolbarProps = {
   className?: string
 }
 
-export function AccountsToolbar({
-  total,
-  initialQuery = '',
-  filters,
-  className,
-}: AccountsToolbarProps) {
+export function AccountsToolbar({ total, initialQuery = '', filters, className }: AccountsToolbarProps) {
   const { isPending: isSearchPending, setSearchQuery, clearSearch } = useAccountSearch()
   const { isPending: isFiltersPending, applyFilters, clearFilters } = useAccountFilters()
   const [value, setValue] = useState(initialQuery)

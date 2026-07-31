@@ -4,7 +4,7 @@ import {
   PromptAnatomy,
   type PromptAnatomySegment,
   type PromptAnatomySegmentStyles,
-} from '../../_components/studio/prompt-anatomy'
+} from '@/components/studio/images/prompt-anatomy'
 import { useStaticAdStudio } from './static-ad-studio-provider'
 
 const STATIC_AD_SEGMENT_STYLES = {

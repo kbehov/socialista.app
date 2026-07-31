@@ -47,9 +47,22 @@ export const nextJsConfig = [
     plugins: {
       "react-hooks": pluginReactHooks,
     },
-    settings: { react: { version: "detect" } },
+    settings: { react: { version: "19" } },
     rules: {
       ...pluginReactHooks.configs.recommended.rules,
+      // Classic hooks only as errors; React Compiler rules stay warn until remediated.
+      "react-hooks/static-components": "warn",
+      "react-hooks/use-memo": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/globals": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/error-boundaries": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/set-state-in-render": "warn",
+      "react-hooks/config": "warn",
+      "react-hooks/gating": "warn",
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
     },

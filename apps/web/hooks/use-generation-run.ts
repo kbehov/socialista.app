@@ -2,7 +2,6 @@
 
 import { useRealtimeRun, useRun } from '@trigger.dev/react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { RealtimeImageGenerationTask } from '@socialista/trigger/task-types'
 
 const TERMINAL_STATUSES = new Set([
   'COMPLETED',
@@ -16,7 +15,7 @@ const TERMINAL_STATUSES = new Set([
   'INTERRUPTED',
 ])
 
-type GenerationRunSnapshot = {
+export type GenerationRunSnapshot = {
   status?: string
   metadata?: Record<string, unknown>
   output?: unknown
@@ -67,12 +66,12 @@ export function useGenerationRun({ runId, accessToken }: UseGenerationRunOptions
     run: realtimeRun,
     error: realtimeError,
     stop,
-  } = useRealtimeRun<RealtimeImageGenerationTask>(runId, {
+  } = useRealtimeRun(runId, {
     ...hookOptions,
     enabled: enabled && realtimeEnabled,
   })
 
-  const { run: polledRun, error: polledError } = useRun<RealtimeImageGenerationTask>(runId, {
+  const { run: polledRun, error: polledError } = useRun(runId, {
     ...hookOptions,
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
@@ -80,7 +79,7 @@ export function useGenerationRun({ runId, accessToken }: UseGenerationRunOptions
   })
 
   const run = useMemo(
-    () => mergeRuns(realtimeRun, polledRun as GenerationRunSnapshot | undefined),
+    () => mergeRuns(realtimeRun as GenerationRunSnapshot | undefined, polledRun as GenerationRunSnapshot | undefined),
     [realtimeRun, polledRun],
   )
   const error = realtimeError ?? polledError
@@ -97,7 +96,10 @@ export function useGenerationRun({ runId, accessToken }: UseGenerationRunOptions
     const resync = () => {
       if (document.visibilityState !== 'visible') return
 
-      const current = mergeRuns(realtimeRun, polledRun as GenerationRunSnapshot | undefined)
+      const current = mergeRuns(
+        realtimeRun as GenerationRunSnapshot | undefined,
+        polledRun as GenerationRunSnapshot | undefined,
+      )
       if (!isTerminalRun(current)) {
         reconnectRealtime()
       }

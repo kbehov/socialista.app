@@ -1,7 +1,7 @@
 import { MoonIcon, SunIcon, SunsetIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import type { GreetingPeriod } from '@/lib/greeting'
+import type { GreetingPeriod } from '@/utils/greeting'
 
 export type DashboardGreetingProps = {
   greeting: string

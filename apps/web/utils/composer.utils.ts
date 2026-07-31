@@ -12,7 +12,7 @@ import type {
 import { fromZonedTime, toZonedTime } from 'date-fns-tz'
 
 import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
-import { getPostCaption, postToComposerMedia } from '@/lib/post-display'
+import { getPostCaption, postToComposerMedia } from '@/lib/posts/post-display'
 import { formatProviderList, getPlatformLimits, getProvidersRequiringMedia } from '../constants/platform-limits'
 import type {
   ComposerData,
@@ -33,10 +33,7 @@ export function createEmptyVariant(accountId: string): ComposerVariant {
   }
 }
 
-export function getVariantOrEmpty(
-  variants: Record<string, ComposerVariant>,
-  accountId: string,
-): ComposerVariant {
+export function getVariantOrEmpty(variants: Record<string, ComposerVariant>, accountId: string): ComposerVariant {
   return variants[accountId] ?? createEmptyVariant(accountId)
 }
 
@@ -338,10 +335,7 @@ export function buildCreatePayload(params: {
     caption: caption.trim() || undefined,
     description,
     location: limits.supportsLocation && variant?.location ? variant.location : undefined,
-    firstComment:
-      limits.supportsFirstComment && variant?.firstComment.trim()
-        ? variant.firstComment.trim()
-        : undefined,
+    firstComment: limits.supportsFirstComment && variant?.firstComment.trim() ? variant.firstComment.trim() : undefined,
     scheduledAt,
   }
 }
@@ -416,10 +410,7 @@ export function postToComposerState(post: Post): ComposerData {
   }
 }
 
-export function buildUpdatePayload(params: {
-  account: AccountSummary
-  state: ComposerData
-}): UpdatePostPayload {
+export function buildUpdatePayload(params: { account: AccountSummary; state: ComposerData }): UpdatePostPayload {
   const { account, state } = params
   const variant = state.variants[account._id]
   const caption = mergeVariantCaption(state.commonCaption, variant)
@@ -439,9 +430,7 @@ export function buildUpdatePayload(params: {
     caption: caption.trim() || null,
     description: description ?? null,
     location: limits.supportsLocation ? (variant?.location ?? null) : null,
-    firstComment: limits.supportsFirstComment
-      ? variant?.firstComment.trim() || null
-      : null,
+    firstComment: limits.supportsFirstComment ? variant?.firstComment.trim() || null : null,
     timezone: state.schedule.timezone,
   }
 }

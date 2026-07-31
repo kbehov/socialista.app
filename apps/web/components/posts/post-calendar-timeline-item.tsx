@@ -2,7 +2,7 @@
 
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import { POST_STATUS_META } from '@/components/posts/post-meta'
-import { getPostDisplayDate, getPostPreviewText, getPostThumbnail } from '@/lib/post-display'
+import { getPostDisplayDate, getPostPreviewText, getPostThumbnail } from '@/lib/posts/post-display'
 import { cn } from '@/lib/utils'
 import { formatPostTime } from '@/utils/format'
 import type { AccountSummary, Post } from '@socialista/types'
@@ -38,12 +38,7 @@ function PostThumb({ post }: { post: Post }) {
   )
 }
 
-export function PostCalendarTimelineItem({
-  post,
-  account,
-  isLast = false,
-  className,
-}: PostCalendarTimelineItemProps) {
+export function PostCalendarTimelineItem({ post, account, isLast = false, className }: PostCalendarTimelineItemProps) {
   const displayDate = getPostDisplayDate(post)
   const title = getPostPreviewText(post)
   const accountLabel = account?.accountName || account?.username || 'Account'
@@ -52,10 +47,7 @@ export function PostCalendarTimelineItem({
   return (
     <article className={cn('relative flex gap-3', className)}>
       <div className="flex w-14 shrink-0 flex-col items-end pt-0.5">
-        <time
-          dateTime={displayDate.toISOString()}
-          className="text-[11px] font-medium tabular-nums text-foreground"
-        >
+        <time dateTime={displayDate.toISOString()} className="text-[11px] font-medium tabular-nums text-foreground">
           {formatPostTime(displayDate)}
         </time>
       </div>
@@ -66,9 +58,7 @@ export function PostCalendarTimelineItem({
             className={cn('mt-1.5 size-2 shrink-0 rounded-full ring-2 ring-background', statusMeta.dotClassName)}
             aria-hidden
           />
-          {!isLast ? (
-            <span aria-hidden className="absolute top-4 bottom-0 w-px bg-border/70" />
-          ) : null}
+          {!isLast ? <span aria-hidden className="absolute top-4 bottom-0 w-px bg-border/70" /> : null}
         </div>
 
         <div className="min-w-0 flex-1 rounded-xl border border-border/45 bg-background p-2.5 transition-[border-color,background-color,box-shadow] duration-150 hover:border-border/70 hover:bg-muted/20 hover:shadow-[0_1px_3px_rgba(0,0,0,0.04)]">

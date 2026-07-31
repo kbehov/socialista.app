@@ -11,27 +11,11 @@ import { POST_STATUS_META } from '@/components/posts/post-meta'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { createFallbackAccount } from '@/lib/post-display'
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { createFallbackAccount } from '@/lib/posts/post-display'
 import { cn } from '@/lib/utils'
-import type {
-  ComposerData,
-  ComposerMediaItem,
-  ComposerSchedule,
-  ComposerVariant,
-} from '@/types/composer-types'
-import {
-  createEmptyVariant,
-  postToComposerState,
-  validateComposer,
-} from '@/utils/composer.utils'
+import type { ComposerData, ComposerMediaItem, ComposerSchedule, ComposerVariant } from '@/types/composer-types'
+import { createEmptyVariant, postToComposerState, validateComposer } from '@/utils/composer.utils'
 import type { AccountSummary, Post } from '@socialista/types'
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, FileTextIcon, SendIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -90,15 +74,9 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
     setPreviewAccountId(state.previewAccountId)
   }, [post, open])
 
-  const selectedAccountIds = useMemo(
-    () => (resolvedAccount ? [resolvedAccount._id] : []),
-    [resolvedAccount],
-  )
+  const selectedAccountIds = useMemo(() => (resolvedAccount ? [resolvedAccount._id] : []), [resolvedAccount])
 
-  const selectedProviders = useMemo(
-    () => (resolvedAccount ? [resolvedAccount.provider] : []),
-    [resolvedAccount],
-  )
+  const selectedProviders = useMemo(() => (resolvedAccount ? [resolvedAccount.provider] : []), [resolvedAccount])
 
   const composerState = useMemo<ComposerData | null>(() => {
     if (!post || !resolvedAccount) return null
@@ -153,10 +131,7 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
   ) => {
     setVariants(current => {
       const existing = current[accountId] ?? createEmptyVariant(accountId)
-      const cleared =
-        field === 'location'
-          ? { ...existing, location: null }
-          : { ...existing, [field]: '' }
+      const cleared = field === 'location' ? { ...existing, location: null } : { ...existing, [field]: '' }
       return {
         ...current,
         [accountId]: cleared,
@@ -318,9 +293,7 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
                 size="sm"
                 className="h-9 w-full rounded-full px-4 text-xs font-medium shadow-xs sm:w-auto"
                 disabled={!isReady || isPending}
-                onClick={() =>
-                  handleSubmit(scheduleMode === 'schedule' ? 'schedule' : 'publish')
-                }
+                onClick={() => handleSubmit(scheduleMode === 'schedule' ? 'schedule' : 'publish')}
               >
                 <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
                 {isPending ? 'Saving…' : primaryLabel}

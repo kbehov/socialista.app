@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
 import { SearchXIcon } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
@@ -16,7 +16,7 @@ import type { Filter } from '@/components/reui/filters'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePostFilters } from '@/hooks/use-post-filters'
 import { usePostViewActions } from '@/hooks/use-post-view-actions'
-import type { PostViewMode } from '@/lib/post-filters'
+import type { PostViewMode } from '@/lib/posts/post-filters'
 import { getPostDeleteDescription, indexById } from '@/utils/post.utils'
 import type { AccountSummary, MetaResponse, Post } from '@socialista/types'
 

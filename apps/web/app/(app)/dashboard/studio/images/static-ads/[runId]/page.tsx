@@ -1,4 +1,4 @@
-import { StaticAdGenerationProgress } from '../_components/static-ad-generation-progress'
+import { StaticAdGenerationProgress } from '@/components/studio/static-ads/static-ad-generation-progress'
 
 type StaticAdRunPageProps = {
   params: Promise<{ runId: string }>

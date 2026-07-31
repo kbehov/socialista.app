@@ -62,10 +62,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "eslint": "^10.8.0",
+    "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
   "optionalDependencies": {
     "@ffmpeg/core": "0.12.10"

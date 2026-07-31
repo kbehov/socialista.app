@@ -9,7 +9,7 @@ import {
   getAccountsListQuery,
   hasActiveAccountFilters,
   parseAccountFiltersFromSearchParams,
-} from '@/lib/account-filters'
+} from '@/lib/accounts/account-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'

@@ -1,4 +1,4 @@
-import type { StaticAdAspectRatio } from './types'
+import type { StaticAdAspectRatio } from '../../../types/static-ads.types'
 
 export type StaticAdExample = {
   id: string
