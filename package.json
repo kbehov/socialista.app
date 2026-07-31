@@ -28,10 +28,9 @@
     "clean:lock": "rm -rf pnpm-lock.yaml"
   },
   "devDependencies": {
-    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "^6.0.3",
     "prettier": "^3.7.4",
-    "turbo": "^2.10.5",
-    "typescript": "npm:@typescript/typescript6@^6.0.2"
+    "turbo": "^2.10.5"
   },
   "packageManager": "pnpm@11.13.1",
   "engines": {

@@ -1,0 +1,9 @@
+export function parseHttpsUrl(value?: string): URL | null {
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' ? url : null
+  } catch {
+    return null
+  }
+}
