@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePostComposerSubmit } from '@/hooks/use-post-composer-submit'
 import { cn } from '@/lib/utils'
+import type { ComposerMediaItem } from '@/types/composer-types'
 import { getAccountsWithIssues, getDefaultTimezone } from '@/utils/composer.utils'
 
 import { AccountSelector } from './account-selector'
@@ -21,9 +22,15 @@ type PostComposerProps = {
   workspaceId: string
   accounts: AccountSummary[]
   accountsTotal?: number
+  initialMedia?: ComposerMediaItem[]
 }
 
-export function PostComposer({ workspaceId, accounts, accountsTotal }: PostComposerProps) {
+export function PostComposer({
+  workspaceId,
+  accounts,
+  accountsTotal,
+  initialMedia = [],
+}: PostComposerProps) {
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
 
   const connectedAccounts = useMemo(
@@ -56,7 +63,7 @@ export function PostComposer({ workspaceId, accounts, accountsTotal }: PostCompo
   } = usePostComposerActions()
 
   useEffect(() => {
-    hydrate(workspaceId, getDefaultTimezone(connectedAccounts, []))
+    hydrate(workspaceId, getDefaultTimezone(connectedAccounts, []), initialMedia)
     return () => reset()
     // Reset/hydrate only when the workspace changes — not when the account list identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps

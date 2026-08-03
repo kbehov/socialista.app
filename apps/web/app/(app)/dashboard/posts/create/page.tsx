@@ -4,30 +4,42 @@ import { ErrorState } from '@/components/common/error-state'
 import { dashboardSurface } from '@/components/dashboard'
 import { PostComposer } from '@/components/posts/composer/post-composer'
 import { getWorkspaceAccounts } from '@/services/account.service'
+import { getGeneration } from '@/services/generation.service'
+import type { ComposerMediaItem } from '@/types/composer-types'
+import { generationToComposerMedia } from '@/utils/composer-media.utils'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { Link2Icon } from 'lucide-react'
 
 import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
 
-export default async function CreatePostPage() {
+type CreatePostPageProps = {
+  searchParams: Promise<{ generationId?: string }>
+}
+
+export default async function CreatePostPage({ searchParams }: CreatePostPageProps) {
   const workspace = await getCurrentWorkspace()
+  const { generationId } = await searchParams
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to create a post." />
   }
 
-  const response = await getWorkspaceAccounts(workspace.id, {
-    limit: 50,
-    connectionStatus: 'connected',
-  })
-  const accounts = response.data?.accounts ?? []
-  const accountsTotal = response.meta?.total ?? accounts.length
+  const [accountsResponse, initialMedia] = await Promise.all([
+    getWorkspaceAccounts(workspace.id, {
+      limit: 50,
+      connectionStatus: 'connected',
+    }),
+    loadInitialMedia(generationId),
+  ])
 
-  if (!response.success) {
+  const accounts = accountsResponse.data?.accounts ?? []
+  const accountsTotal = accountsResponse.meta?.total ?? accounts.length
+
+  if (!accountsResponse.success) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <ErrorState
-          title={response.message ?? 'Failed to load accounts'}
+          title={accountsResponse.message ?? 'Failed to load accounts'}
           description="Refresh the page to try again."
           className="flex-1 rounded-xl"
         />
@@ -54,7 +66,22 @@ export default async function CreatePostPage() {
 
   return (
     <div className="px-1 sm:px-0">
-      <PostComposer workspaceId={workspace.id} accounts={accounts} accountsTotal={accountsTotal} />
+      <PostComposer
+        workspaceId={workspace.id}
+        accounts={accounts}
+        accountsTotal={accountsTotal}
+        initialMedia={initialMedia}
+      />
     </div>
   )
+}
+
+async function loadInitialMedia(generationId?: string): Promise<ComposerMediaItem[]> {
+  if (!generationId) return []
+
+  const response = await getGeneration(generationId)
+  const generation = response.data?.generation
+  if (!response.success || !generation) return []
+
+  return generationToComposerMedia(generation)
 }

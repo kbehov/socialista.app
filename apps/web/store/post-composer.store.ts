@@ -6,7 +6,7 @@ import type { ComposerData, ComposerMediaItem, ComposerSchedule, ComposerVariant
 import { createEmptyVariant, getDefaultScheduleFields, withScheduleDefaults } from '@/utils/composer.utils'
 
 type ComposerActions = {
-  hydrate: (workspaceId: string, timezone: string) => void
+  hydrate: (workspaceId: string, timezone: string, media?: ComposerMediaItem[]) => void
   setSelectedAccountIds: (ids: string[]) => void
   toggleAccount: (accountId: string) => void
   setCommonCaption: (caption: string) => void
@@ -45,10 +45,11 @@ const initialData = (): ComposerData => ({
 export const usePostComposerStore = create<ComposerState>()((set, get) => ({
   ...initialData(),
 
-  hydrate: (workspaceId, timezone) => {
+  hydrate: (workspaceId, timezone, media = []) => {
     set({
       ...initialData(),
       workspaceId,
+      media,
       schedule: {
         ...initialSchedule(),
         timezone,

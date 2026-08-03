@@ -14,6 +14,7 @@ export type ImageGenerationError = {
 export type ImageGenerationOutput = {
   imageUrl: string
   cost: number
+  generationId: string
 }
 
 export type ImageGenerator = (options: {

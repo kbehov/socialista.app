@@ -1,6 +1,7 @@
 import { uploadPostMedia } from '@/actions/post.actions'
 import type { WorkspaceMediaPick } from '@/components/media/workspace-media-picker-dialog'
 import type { ComposerMediaItem } from '@/types/composer-types'
+import type { Generation } from '@socialista/types'
 import { toast } from 'sonner'
 
 export function isComposerVideoFile(file: File): boolean {
@@ -61,6 +62,31 @@ export function workspacePickToComposerItem(
     kind: 'image',
     url: item.url,
   }
+}
+
+/** Map a completed generation result into composer media items. */
+export function generationToComposerMedia(generation: Generation): ComposerMediaItem[] {
+  const result = generation.result
+  if (generation.status !== 'completed' || !result?.url) return []
+
+  if (result.type === 'video') {
+    return [
+      {
+        kind: 'video',
+        url: result.url,
+        thumbnailUrl: result.thumbnailUrl,
+        durationSeconds: result.durationSec,
+      },
+    ]
+  }
+
+  return [
+    {
+      kind: 'image',
+      url: result.url,
+      thumbnailUrl: result.thumbnailUrl,
+    },
+  ]
 }
 
 /** Upload device files into the composer media list (includes video duration). */

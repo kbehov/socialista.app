@@ -30,6 +30,7 @@ export const realtimeStaticAdGeneration = schemaTask({
   retry: { maxAttempts: 1 },
   run: async (payload, { ctx }): Promise<ImageGenerationOutput> => {
     let startedAt: Date | undefined
+    let generationId: string | undefined
 
     try {
       await connectDb()
@@ -55,6 +56,7 @@ export const realtimeStaticAdGeneration = schemaTask({
         },
       })
       startedAt = started.startedAt
+      generationId = started.generationId
 
       setGenerationStatus(10, 'Art-directing from product photo')
 
@@ -114,7 +116,11 @@ export const realtimeStaticAdGeneration = schemaTask({
 
       setGenerationStatus(100, 'Complete')
 
-      return { imageUrl, cost: model.cost }
+      if (!generationId) {
+        throw new Error('Missing generationId after successful static ad generation')
+      }
+
+      return { imageUrl, cost: model.cost, generationId }
     } catch (error) {
       setGenerationFailure(error, 'Static ad generation failed')
       if (startedAt) {

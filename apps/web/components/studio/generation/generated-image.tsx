@@ -9,7 +9,7 @@ import { dataImageUrlToBlobUrl, isDataImageUrl, resolveGeneratedImagePreviewUrl 
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { AlertCircleIcon, CheckIcon, DownloadIcon, FolderInputIcon, PlusIcon } from 'lucide-react'
+import { AlertCircleIcon, CheckIcon, DownloadIcon, FolderInputIcon, PlusIcon, SendIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { RefObject } from 'react'
@@ -189,6 +189,17 @@ export function GeneratedImage({
               </div>
             ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {output.generationId ? (
+        <div className="flex justify-start">
+          <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button">
+            <Link href={DASHBOARD_ROUTES.createPost({ generationId: output.generationId })}>
+              <SendIcon className="size-3.5" />
+              Post now
+            </Link>
+          </Button>
         </div>
       ) : null}
 

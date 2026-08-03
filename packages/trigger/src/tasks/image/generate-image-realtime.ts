@@ -34,6 +34,7 @@ export const realtimeImageGeneration = schemaTask({
   retry: { maxAttempts: 1 },
   run: async (payload, { ctx }): Promise<ImageGenerationOutput> => {
     let startedAt: Date | undefined
+    let generationId: string | undefined
 
     try {
       await connectDb()
@@ -59,6 +60,7 @@ export const realtimeImageGeneration = schemaTask({
         },
       })
       startedAt = started.startedAt
+      generationId = started.generationId
 
       setGenerationStatus(10, 'Preparing your prompt')
       console.log('payload', payload)
@@ -100,7 +102,11 @@ export const realtimeImageGeneration = schemaTask({
 
       setGenerationStatus(100, 'Complete')
 
-      return { imageUrl: generatedImage, cost: model.cost }
+      if (!generationId) {
+        throw new Error('Missing generationId after successful image generation')
+      }
+
+      return { imageUrl: generatedImage, cost: model.cost, generationId }
     } catch (error) {
       setGenerationFailure(error, 'Image generation failed')
       if (startedAt) {

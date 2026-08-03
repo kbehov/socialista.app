@@ -47,7 +47,7 @@ function errorMessage(error: unknown, fallback = 'Generation failed'): string {
 export async function startGenerationRecord(input: StartGenerationRecordInput) {
   const startedAt = new Date()
 
-  await upsertGenerationByTriggerRunId({
+  const generation = await upsertGenerationByTriggerRunId({
     workspace: input.workspaceId,
     createdBy: input.userId,
     kind: input.kind,
@@ -64,7 +64,7 @@ export async function startGenerationRecord(input: StartGenerationRecordInput) {
     startedAt,
   })
 
-  return { startedAt }
+  return { startedAt, generationId: String(generation._id) }
 }
 
 /** Persist the AI-enhanced / planned prompt. Best-effort — logs and does not throw. */
