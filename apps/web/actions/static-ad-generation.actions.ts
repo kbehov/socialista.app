@@ -3,10 +3,10 @@
 import { auth } from '@/auth'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceBalance } from '@/services/workspace.service'
-import { STATIC_AD_MODEL, TASK_IDS } from '@socialista/types'
-import type { RealtimeStaticAdGenerationTask } from '@socialista/trigger/task-types'
 import { staticAdPayloadObjectSchema } from '@socialista/trigger/schemas/static-ad'
-import { auth as triggerAuth, tasks } from '@trigger.dev/sdk/v3'
+import type { RealtimeStaticAdGenerationTask } from '@socialista/trigger/task-types'
+import { STATIC_AD_MODEL, TASK_IDS } from '@socialista/types'
+import { tasks, auth as triggerAuth } from '@trigger.dev/sdk/v3'
 import { z } from 'zod'
 
 const startStaticAdGenerationSchema = staticAdPayloadObjectSchema.omit({ userId: true, model: true })
@@ -34,9 +34,7 @@ export async function startStaticAdGeneration(
     const balanceRes = await getWorkspaceBalance(parsed.data.workspaceId)
     const credits = balanceRes.data?.aiCreditsBalance ?? 0
 
-    const modelsRes = await getModels(
-      `limit=1&modelType=text-to-image&value=${encodeURIComponent(STATIC_AD_MODEL)}`,
-    )
+    const modelsRes = await getModels(`limit=1&modelType=text-to-image&value=${encodeURIComponent(STATIC_AD_MODEL)}`)
     const model = modelsRes.data?.models[0]
     if (!model) {
       return {

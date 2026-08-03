@@ -1,6 +1,7 @@
 import { FilesBrowser } from '@/components/files/files-browser'
 import { PageHeader } from '@/components/headers/page-header'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
 import { getFolderById, getWorkspaceFiles } from '@/services/files.service'
 import { formatFileCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
@@ -15,7 +16,13 @@ const DashboardFolderPage = async ({ params }: { params: Promise<{ id: string }>
   }
 
   const folder = folderResult.data
-  const filesResult = workspace ? await getWorkspaceFiles(workspace.id, id) : null
+  const filesResult = workspace
+    ? await getWorkspaceFiles(workspace.id, id, {
+        page: 1,
+        limit: WORKSPACE_FILES_PAGE_SIZE,
+        sort: '-createdAt',
+      })
+    : null
   const initialFiles = filesResult?.data?.images ?? []
   const filesError = filesResult && !filesResult.success ? (filesResult.message ?? 'Failed to load files') : null
 
@@ -35,6 +42,8 @@ const DashboardFolderPage = async ({ params }: { params: Promise<{ id: string }>
         workspaceId={workspace?.id}
         initialFiles={initialFiles}
         initialError={filesError}
+        initialHasMore={Boolean(filesResult?.meta?.hasNextPage)}
+        initialTotal={filesResult?.meta?.total}
       />
     </div>
   )

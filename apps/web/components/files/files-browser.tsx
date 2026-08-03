@@ -12,14 +12,21 @@ import { FolderGrid } from '@/components/media/folder-grid'
 import type { MediaGridItem } from '@/components/media/media-grid'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
 import { getFilesPaths, type FilesPathsVariant, type FilesRoutePaths } from '@/constants/app-routes'
+import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
 import { useWorkspaceFiles } from '@/hooks/use-workspace-files'
+import { cn } from '@/lib/utils'
 import { deleteWorkspaceFile, deleteWorkspaceFolder } from '@/services/files.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
 import { formatFileCount } from '@/utils/format'
 import type { CollectionResponse, ImageResponse } from '@socialista/types'
+import { Loader2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
+import InfiniteScroll from 'react-infinite-scroll-component'
 import { toast } from 'sonner'
+
+export const DASHBOARD_FILES_SCROLL_ID = 'dashboard-scroll'
+export const MANAGER_FILES_SCROLL_ID = 'manager-scroll'
 
 type FilesBrowserProps = {
   folders?: CollectionResponse[]
@@ -30,6 +37,11 @@ type FilesBrowserProps = {
   workspaceId?: string
   initialFiles?: ImageResponse[]
   initialError?: string | null
+  initialHasMore?: boolean
+  initialTotal?: number
+  pageSize?: number
+  /** DOM id of the scrollable parent. Defaults by `pathsVariant`. */
+  scrollableTarget?: string
 }
 
 type DeleteTarget =
@@ -64,6 +76,15 @@ function applyFreedStorage(
       storage: Math.max(0, workspace.usage.storage - freedBytes),
     },
   }
+}
+
+function FilesScrollLoader() {
+  return (
+    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+      <Loader2Icon className="size-4 animate-spin" />
+      Loading more files…
+    </div>
+  )
 }
 
 function FinderContent({
@@ -110,6 +131,10 @@ export function FilesBrowser({
   workspaceId,
   initialFiles,
   initialError = null,
+  initialHasMore = false,
+  initialTotal,
+  pageSize = WORKSPACE_FILES_PAGE_SIZE,
+  scrollableTarget,
 }: FilesBrowserProps) {
   const paths = getFilesPaths(pathsVariant)
   const router = useRouter()
@@ -117,20 +142,27 @@ export function FilesBrowser({
   const { updateWorkspace } = useWorkspaceStoreActions()
   const isRootView = !folderId
   const resolvedWorkspaceId = workspaceId ?? currentWorkspace?.id ?? currentWorkspace?._id
+  const resolvedScrollTarget =
+    scrollableTarget ?? (pathsVariant === 'manager' ? MANAGER_FILES_SCROLL_ID : DASHBOARD_FILES_SCROLL_ID)
 
-  const { files, isLoading, isUploading, error, refetch, uploadState, uploadActions } = useWorkspaceFiles({
-    workspaceId: resolvedWorkspaceId,
-    folderId,
-    initialFiles,
-    initialError,
-  })
+  const { files, isLoading, isUploading, error, hasMore, total, fetchMore, refetch, uploadState, uploadActions } =
+    useWorkspaceFiles({
+      workspaceId: resolvedWorkspaceId,
+      folderId,
+      initialFiles,
+      initialError,
+      initialHasMore,
+      initialTotal,
+      pageSize,
+    })
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const { isDragging } = uploadState
-  const totalItems = folders.length + files.length
-  const hasItems = totalItems > 0
+  const fileCountLabel = isRootView ? total : files.length
+  const totalItems = folders.length + fileCountLabel
+  const hasItems = folders.length > 0 || files.length > 0 || hasMore
   const title = folderName ?? currentWorkspace?.name ?? 'Files'
 
   const handleDeleteSuccess = useCallback(
@@ -202,6 +234,22 @@ export function FilesBrowser({
         ? `“${deleteTarget.name}” and ${formatFileCount(deleteTarget.fileCount)} inside it will be permanently removed. This action cannot be undone.`
         : ''
 
+  const browserContent = isRootView ? (
+    <FinderContent
+      folders={folders}
+      files={files}
+      paths={paths}
+      isDragging={isDragging}
+      onUpload={uploadActions.openFileDialog}
+      onDeleteFile={handleDeleteFile}
+      onDeleteFolder={handleDeleteFolder}
+    />
+  ) : files.length === 0 && !hasMore ? (
+    <FilesUploadEmptyState isDragging={isDragging} onUpload={uploadActions.openFileDialog} />
+  ) : (
+    <FileMediaGrid items={toMediaGridItems(files)} onDeleteFile={handleDeleteFile} />
+  )
+
   return (
     <>
       <FilesDropzone
@@ -212,7 +260,7 @@ export function FilesBrowser({
         onDragOver={uploadActions.handleDragOver}
         onDrop={uploadActions.handleDrop}
         inputProps={uploadActions.getInputProps()}
-        className={hasItems ? 'border-solid' : undefined}
+        className={cn(hasItems ? 'border-solid' : undefined)}
         header={
           isRootView ? (
             <FilesToolbar
@@ -225,7 +273,7 @@ export function FilesBrowser({
           ) : (
             <FolderToolbar
               title={title}
-              fileCount={files.length}
+              fileCount={folderFileCount > 0 ? folderFileCount : total}
               isUploading={isUploading}
               onUpload={uploadActions.openFileDialog}
               onDeleteFolder={
@@ -243,20 +291,18 @@ export function FilesBrowser({
           </LoadingState>
         ) : error ? (
           <ErrorState title={error} description="Try refreshing the page or uploading again." />
-        ) : isRootView ? (
-          <FinderContent
-            folders={folders}
-            files={files}
-            paths={paths}
-            isDragging={isDragging}
-            onUpload={uploadActions.openFileDialog}
-            onDeleteFile={handleDeleteFile}
-            onDeleteFolder={handleDeleteFolder}
-          />
-        ) : files.length === 0 ? (
-          <FilesUploadEmptyState isDragging={isDragging} onUpload={uploadActions.openFileDialog} />
         ) : (
-          <FileMediaGrid items={toMediaGridItems(files)} onDeleteFile={handleDeleteFile} />
+          <InfiniteScroll
+            dataLength={files.length}
+            next={fetchMore}
+            hasMore={hasMore}
+            loader={<FilesScrollLoader />}
+            scrollableTarget={resolvedScrollTarget}
+            scrollThreshold={0.9}
+            className="flex flex-col"
+          >
+            {browserContent}
+          </InfiniteScroll>
         )}
       </FilesDropzone>
 

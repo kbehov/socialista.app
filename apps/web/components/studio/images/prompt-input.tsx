@@ -27,6 +27,7 @@ import {
   usePromptInputController,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
+import { AttachImagesDialog, AttachedMediaThumb, type AttachedImage } from '@/components/files/attach-images-dialog'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
 import { useImageStudio } from '@/components/studio/images/image-studio-provider'
@@ -41,11 +42,13 @@ import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatModelCost } from '@/utils/format'
 import { commitHaptic } from '@/utils/haptics'
 import type { Model } from '@socialista/types'
-import { ChevronDownIcon, SparklesIcon } from 'lucide-react'
+import { ChevronDownIcon, ImagePlusIcon, SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { ImagePromptAnatomy } from './prompt-anatomy'
+
+const MAX_REFERENCE_IMAGES = 3
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Square', ratio: 1 },
@@ -120,6 +123,8 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const [isPending, startTransition] = useTransition()
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
+  const [attachDialogOpen, setAttachDialogOpen] = useState(false)
+  const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([])
   const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? '')
   const [aspectRatio, setAspectRatio] = useState<AspectRatioId>('1:1')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -212,11 +217,14 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     }
 
     startTransition(async () => {
+      const imageUrls = attachedImages.map(image => image.url)
       const result = await startImageGeneration({
         prompt,
         model: selectedModel.value,
         workspaceId: currentWorkspace._id,
         aspectRatio,
+        userId: '',
+        ...(imageUrls.length === 1 ? { imageUrl: imageUrls[0] } : imageUrls.length > 1 ? { imageUrls } : {}),
       })
 
       if (!result.success) {
@@ -383,8 +391,48 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           ) : null}
         </PromptInputBody>
 
-        <PromptInputFooter className="border-t border-border/35 bg-muted/12 px-3 py-2.5 sm:px-3.5">
+        {attachedImages.length > 0 ? (
+          <div className="flex w-full gap-2 overflow-x-auto border-t border-border/35 bg-muted/12 px-3 pt-2.5 scrollbar-none sm:px-3.5">
+            {attachedImages.map(image => (
+              <AttachedMediaThumb
+                key={image.id}
+                file={image}
+                size="sm"
+                disabled={isPending}
+                onRemove={id => setAttachedImages(current => current.filter(item => item.id !== id))}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <PromptInputFooter
+          className={cn(
+            'border-t border-border/35 bg-muted/12 px-3 py-2.5 sm:px-3.5',
+            attachedImages.length > 0 && 'border-t-0 pt-2',
+          )}
+        >
           <PromptInputTools className="min-w-0 flex-wrap gap-2">
+            <PromptInputButton
+              aria-label="Attach images"
+              className={cn(
+                'h-7 gap-1.5 rounded-xl border px-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
+                'border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
+                'hover:border-border/65 hover:bg-background',
+                attachedImages.length > 0 && 'border-border/65 bg-background shadow-sm',
+              )}
+              disabled={isPending}
+              onClick={() => setAttachDialogOpen(true)}
+              tooltip="Attach images"
+              type="button"
+            >
+              <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+              <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+                {attachedImages.length > 0 ? attachedImages.length : 'Attach'}
+              </span>
+            </PromptInputButton>
+
+            <Separator className="hidden h-5 bg-border/50 sm:block" orientation="vertical" />
+
             <div
               className="flex items-center gap-0.5 rounded-xl bg-muted/30 p-0.5 ring-1 ring-border/30"
               role="group"
@@ -447,6 +495,18 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           </div>
         </PromptInputFooter>
       </PromptInput>
+
+      <AttachImagesDialog
+        open={attachDialogOpen}
+        accept="image"
+        onOpenChange={setAttachDialogOpen}
+        maxImagesSelect={MAX_REFERENCE_IMAGES}
+        initialSelected={attachedImages}
+        workspaceId={currentWorkspace?._id}
+        title="Attach reference images"
+        description="Guide the model with product shots, mood boards, or style references."
+        onSelect={setAttachedImages}
+      />
 
       <div className="mt-3.5 space-y-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3">

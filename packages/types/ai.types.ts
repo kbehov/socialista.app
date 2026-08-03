@@ -25,7 +25,7 @@ export type UploadGeneratedImageResponse = {
   }
   message?: string
 }
-export type GenerateVercelImageOptions = {
+export type GenerateImageOptions = {
   model: string
   prompt: string
   aspectRatio: AspectRatio
@@ -35,3 +35,25 @@ export type GenerateVercelImageOptions = {
   imageUrls?: string[]
   onProgress?: (progress: number, label: string) => void
 }
+
+export type GeneratedImage = {
+  url: string
+  width: number
+  height: number
+  content_type: string
+  file_name?: string
+}
+
+export type EditImageResult = { success: true; data: GeneratedImage } | { success: false; error: string }
+
+export type GeneratedVideo = {
+  url: string
+  content_type?: string
+  file_name?: string
+}
+
+export type EditVideoResolution = 'auto' | '480p' | '720p'
+
+export type EditVideoResult = { success: true; data: GeneratedVideo } | { success: false; error: string }
+
+export type AnimateImageResult = { success: true; data: GeneratedVideo } | { success: false; error: string }

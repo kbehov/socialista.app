@@ -1,0 +1,11 @@
+{
+  "extends": "@socialista/typescript-config/node-library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"],
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.build.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".trigger", "src/**/*.test.ts"]
+}

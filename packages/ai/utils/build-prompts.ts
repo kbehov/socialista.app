@@ -1,14 +1,18 @@
-import type { SanitizedMedia } from '@socialista/types'
-import type { ModelMessage } from 'ai'
+import type { AspectRatio, SanitizedMedia } from '@socialista/types'
 import { generateText } from 'ai'
 import { generateImagePromptSystemMessage } from '../prompts/image-prompts.js'
 import { buildImagePromptMessages } from './build-messages.js'
 // Improve the prompt for image generation
-export const buildImagePrompt = async (payload: { prompt: string; media: SanitizedMedia[] }) => {
+export const buildImagePrompt = async (payload: {
+  prompt: string
+  media?: SanitizedMedia[]
+  aspectRatio?: AspectRatio
+}) => {
   const enhanced = await generateText({
-    model: 'openai/gpt-5.6-luna',
+    model: 'openai/gpt-5.6-terra',
     system: generateImagePromptSystemMessage,
-    messages: buildImagePromptMessages(payload.prompt, payload.media) as ModelMessage[],
+    messages: buildImagePromptMessages(payload.prompt, payload.media, payload.aspectRatio),
   })
+  console.log('enhanced', enhanced.text)
   return enhanced.text
 }

@@ -48,6 +48,7 @@
     "react-dom": "19.2.4",
     "react-easy-crop": "^6.0.2",
     "react-hook-form": "^7.79.0",
+    "react-infinite-scroll-component": "^7.2.1",
     "react-zoom-pan-pinch": "^4.0.3",
     "recharts": "3.8.0",
     "shadcn": "^4.11.0",

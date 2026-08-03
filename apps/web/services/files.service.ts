@@ -47,11 +47,19 @@ export const getFolderById = async (id: string): Promise<ApiResponse<CollectionR
 export const getWorkspaceFiles = async (
   workspaceId: string,
   folderId?: string,
+  query?: {
+    page?: number
+    limit?: number
+    sort?: string
+  },
 ): Promise<ApiResponse<GetImagesResponse>> => {
   const params = new URLSearchParams()
   if (folderId) params.set('collectionId', folderId)
-  const query = params.toString()
-  const path = `${FILES_API_ROUTES.GET_WORKSPACE_FILES(workspaceId)}${query ? `?${query}` : ''}`
+  if (query?.page != null) params.set('page', String(query.page))
+  if (query?.limit != null) params.set('limit', String(query.limit))
+  if (query?.sort) params.set('sort', query.sort)
+  const search = params.toString()
+  const path = `${FILES_API_ROUTES.GET_WORKSPACE_FILES(workspaceId)}${search ? `?${search}` : ''}`
   return api.get<GetImagesResponse>(path, {
     next: {
       tags: ['workspace-files'],

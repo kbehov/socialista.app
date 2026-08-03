@@ -2,7 +2,7 @@ import type { AspectRatio } from '@socialista/types'
 import { generateImage } from 'ai'
 import { uploadGeneratedImage } from '../utils/image-upload.js'
 
-import type { GenerateVercelImageOptions } from '@socialista/types'
+import type { GenerateImageOptions } from '@socialista/types'
 
 const SIZE_BASED_MODEL_PATTERN = /gpt-image|dall-e/i
 
@@ -31,7 +31,7 @@ export async function generateImageVercel({
   imageUrl,
   imageUrls,
   onProgress,
-}: GenerateVercelImageOptions): Promise<string> {
+}: GenerateImageOptions): Promise<string> {
   onProgress?.(65, 'Rendering')
 
   const referenceImages = [

@@ -1,0 +1,1 @@
+export const WORKSPACE_FILES_PAGE_SIZE = 36

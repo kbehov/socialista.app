@@ -54,7 +54,7 @@ export const getCollectionById = async (c: Context<AppContext>) => {
 }
 
 // GET /collections/workspace/:workspaceId/images
-// Optional query: ?collectionId=<id> to filter by collection
+// Optional query: ?collectionId=<id>&page=<n>&limit=<n>&sort=<field>
 export const getWorkspaceImages = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')

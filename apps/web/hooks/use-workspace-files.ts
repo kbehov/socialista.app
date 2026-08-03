@@ -1,6 +1,7 @@
 'use client'
 
 import { getWorkspaceFiles, uploadToFolder, uploadToWorkspace } from '@/services/files.service'
+import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
 import type { ImageResponse } from '@socialista/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type FileWithPreview, useFileUpload } from './use-file-upload'
@@ -11,13 +12,22 @@ type UseWorkspaceFilesOptions = {
   /** When provided (including empty), skip the initial client fetch. */
   initialFiles?: ImageResponse[]
   initialError?: string | null
+  /** Whether more pages exist after `initialFiles`. Defaults to false. */
+  initialHasMore?: boolean
+  /** Total file count from the first page meta (optional). */
+  initialTotal?: number
+  pageSize?: number
 }
 
 type UseWorkspaceFilesReturn = {
   files: ImageResponse[]
   isLoading: boolean
+  isLoadingMore: boolean
   isUploading: boolean
   error: string | null
+  hasMore: boolean
+  total: number
+  fetchMore: () => void
   refetch: () => Promise<void>
   uploadState: ReturnType<typeof useFileUpload>[0]
   uploadActions: ReturnType<typeof useFileUpload>[1]
@@ -28,22 +38,40 @@ export function useWorkspaceFiles({
   folderId,
   initialFiles,
   initialError = null,
+  initialHasMore = false,
+  initialTotal,
+  pageSize = WORKSPACE_FILES_PAGE_SIZE,
 }: UseWorkspaceFilesOptions = {}): UseWorkspaceFilesReturn {
   const hasServerData = initialFiles !== undefined
   const [files, setFiles] = useState(initialFiles ?? [])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [total, setTotal] = useState(initialTotal ?? initialFiles?.length ?? 0)
   const [isLoading, setIsLoading] = useState(!hasServerData && Boolean(workspaceId))
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(initialError)
+
+  const loadRequestId = useRef(0)
+  const uploadFnRef = useRef<(files: File[]) => Promise<void>>(async () => {})
+  const pageRef = useRef(page)
+  const hasMoreRef = useRef(hasMore)
+  const isLoadingMoreRef = useRef(isLoadingMore)
+
+  pageRef.current = page
+  hasMoreRef.current = hasMore
+  isLoadingMoreRef.current = isLoadingMore
 
   useEffect(() => {
     if (!hasServerData) return
     setTimeout(() => {
       setFiles(initialFiles ?? [])
       setError(initialError ?? null)
+      setPage(1)
+      setHasMore(initialHasMore)
+      setTotal(initialTotal ?? initialFiles?.length ?? 0)
     }, 0)
-  }, [hasServerData, initialFiles, initialError])
-
-  const uploadFnRef = useRef<(files: File[]) => Promise<void>>(async () => {})
+  }, [hasServerData, initialFiles, initialError, initialHasMore, initialTotal])
 
   const handleFilesAdded = useCallback((addedFiles: FileWithPreview[]) => {
     const nextFiles = addedFiles.map(f => f.file).filter((f): f is File => f instanceof File)
@@ -60,31 +88,70 @@ export function useWorkspaceFiles({
     onFilesAdded: handleFilesAdded,
   })
 
-  const fetchFiles = useCallback(async () => {
-    if (!workspaceId) {
-      setIsLoading(false)
-      return
-    }
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await getWorkspaceFiles(workspaceId, folderId)
-      if (response.data) {
-        setFiles(response.data.images)
+  const loadPage = useCallback(
+    async (pageNum: number, mode: 'replace' | 'append') => {
+      if (!workspaceId) {
+        setIsLoading(false)
+        return
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load files')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [workspaceId, folderId])
+
+      const requestId = ++loadRequestId.current
+      if (mode === 'replace') {
+        setIsLoading(true)
+        setError(null)
+      } else {
+        setIsLoadingMore(true)
+      }
+
+      try {
+        const response = await getWorkspaceFiles(workspaceId, folderId, {
+          page: pageNum,
+          limit: pageSize,
+          sort: '-createdAt',
+        })
+
+        if (requestId !== loadRequestId.current) return
+
+        const nextImages = response.data?.images ?? []
+        setFiles(current => (mode === 'append' ? [...current, ...nextImages] : nextImages))
+        setPage(pageNum)
+        setHasMore(Boolean(response.meta?.hasNextPage))
+        if (typeof response.meta?.total === 'number') {
+          setTotal(response.meta.total)
+        }
+      } catch (err) {
+        if (requestId !== loadRequestId.current) return
+        setError(err instanceof Error ? err.message : 'Failed to load files')
+        if (mode === 'replace') {
+          setFiles([])
+          setHasMore(false)
+          setTotal(0)
+        }
+      } finally {
+        if (requestId === loadRequestId.current) {
+          setIsLoading(false)
+          setIsLoadingMore(false)
+        }
+      }
+    },
+    [workspaceId, folderId, pageSize],
+  )
+
+  const fetchFiles = useCallback(async () => {
+    await loadPage(1, 'replace')
+  }, [loadPage])
 
   useEffect(() => {
     if (hasServerData) return
     setTimeout(() => {
-      void fetchFiles()
+      void loadPage(1, 'replace')
     }, 0)
-  }, [hasServerData, fetchFiles])
+  }, [hasServerData, loadPage])
+
+  const fetchMore = useCallback(() => {
+    if (!workspaceId || isLoadingMoreRef.current || !hasMoreRef.current) return
+    void loadPage(pageRef.current + 1, 'append')
+  }, [workspaceId, loadPage])
 
   const upload = useCallback(
     async (incomingFiles: File[]) => {
@@ -102,14 +169,14 @@ export function useWorkspaceFiles({
             await uploadToWorkspace(workspaceId, formData)
           }
         }
-        await fetchFiles()
+        await loadPage(1, 'replace')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to upload files')
       } finally {
         setIsUploading(false)
       }
     },
-    [workspaceId, folderId, fetchFiles],
+    [workspaceId, folderId, loadPage],
   )
 
   useEffect(() => {
@@ -119,8 +186,12 @@ export function useWorkspaceFiles({
   return {
     files,
     isLoading,
+    isLoadingMore,
     isUploading,
     error,
+    hasMore,
+    total,
+    fetchMore,
     refetch: fetchFiles,
     uploadState,
     uploadActions,

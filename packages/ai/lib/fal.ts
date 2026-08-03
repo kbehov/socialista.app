@@ -1,26 +1,17 @@
 import { fal } from '@fal-ai/client'
 
-import type { AspectRatio } from '@socialista/types'
+import type { GenerateImageOptions } from '@socialista/types'
 import { z } from 'zod'
 
 fal.config({
   credentials: process.env.FAL_KEY as string,
 })
-
+// Export the fal client
+export { fal }
+// Export the schema for the image result
 export const FalImageResult = z.object({
   images: z.array(z.object({ url: z.string() })).min(1),
 })
-
-export type GenerateFalImageOptions = {
-  model: string
-  prompt: string
-  aspectRatio: AspectRatio
-  workspaceId: string
-  userId: string
-  imageUrl?: string
-  imageUrls?: string[]
-  onProgress?: (progress: number, label: string) => void
-}
 
 function mapQueueStatus(status: string | undefined): { progress: number; label: string } | null {
   switch (status) {
@@ -42,7 +33,7 @@ export async function generateImageFal({
   imageUrl,
   imageUrls,
   onProgress,
-}: GenerateFalImageOptions): Promise<string> {
+}: GenerateImageOptions): Promise<string> {
   const input: Record<string, string> = {
     prompt,
     aspect_ratio: aspectRatio,

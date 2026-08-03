@@ -1,6 +1,6 @@
+import type { ImageGenerator } from '@socialista/types'
 import { generateImageFal } from './fal.js'
 import { generateImageVercel } from './vercel.js'
-import type { ImageGenerator } from '@socialista/types'
 
 function normalizeProvider(provider: string): string {
   return provider.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')
