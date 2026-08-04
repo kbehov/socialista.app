@@ -6,15 +6,18 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useForwardWheelScroll } from '@/hooks/carousel/use-forward-wheel-scroll'
 import { VERTICAL_STACK_SECTION_PADDING, SLIDESHOW_STACK_SCROLLBAR_CLASS } from '@/lib/carousel/canvas-viewport'
+import { downloadSlideAsPng } from '@/lib/carousel/export'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import type { Slide, SlideId } from '@socialista/types'
-import { CopyIcon, PlusIcon, Trash2Icon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { CopyIcon, DownloadIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { SlideCanvasShell } from './slide-canvas-shell'
 
 type SlidePreviewStackProps = {
   canvasHint?: string | null
+  emptyState?: ReactNode
 }
 
 function AddPageButton({ onClick }: { onClick: () => void }) {
@@ -32,16 +35,34 @@ function AddPageButton({ onClick }: { onClick: () => void }) {
 }
 
 function SlideStackActions({
-  slideId,
+  slide,
+  slideIndex,
   slideCount,
   onDuplicate,
   onRequestDelete,
 }: {
-  slideId: SlideId
+  slide: Slide
+  slideIndex: number
   slideCount: number
   onDuplicate: (id: SlideId) => void
   onRequestDelete: (id: SlideId) => void
 }) {
+  const canvas = useEditorStore(s => s.canvas)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = useCallback(async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      await downloadSlideAsPng(slide, canvas.width, slideIndex)
+      toast.success('Slide exported')
+    } catch {
+      toast.error('Export failed. Try removing external images or re-uploading photos.')
+    } finally {
+      setExporting(false)
+    }
+  }, [canvas.width, exporting, slide, slideIndex])
+
   return (
     <div data-slide-actions className="pointer-events-auto flex w-full items-center justify-end gap-0.5 px-1">
       <Tooltip>
@@ -51,7 +72,28 @@ function SlideStackActions({
             size="icon-sm"
             variant="ghost"
             className="size-8"
-            onClick={() => onDuplicate(slideId)}
+            disabled={exporting}
+            aria-label="Export slide image"
+            aria-busy={exporting}
+            onClick={() => void handleExport()}
+          >
+            {exporting ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : (
+              <DownloadIcon className="size-3.5" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Export image</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            className="size-8"
+            onClick={() => onDuplicate(slide.id)}
             aria-label="Duplicate slide"
           >
             <CopyIcon className="size-3.5" />
@@ -66,7 +108,7 @@ function SlideStackActions({
             size="icon-sm"
             variant="ghost"
             className="size-8 text-destructive hover:text-destructive"
-            onClick={() => onRequestDelete(slideId)}
+            onClick={() => onRequestDelete(slide.id)}
             disabled={slideCount <= 1}
             aria-label="Delete slide"
           >
@@ -112,7 +154,8 @@ function SlideStackItem({
     >
       {isActive ? (
         <SlideStackActions
-          slideId={slide.id}
+          slide={slide}
+          slideIndex={index}
           slideCount={slideCount}
           onDuplicate={onDuplicate}
           onRequestDelete={onRequestDelete}
@@ -151,7 +194,7 @@ function SlideStackItem({
   )
 }
 
-export function SlidePreviewStack({ canvasHint }: SlidePreviewStackProps) {
+export function SlidePreviewStack({ canvasHint, emptyState }: SlidePreviewStackProps) {
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const setActiveSlide = useEditorStore(s => s.setActiveSlide)
@@ -216,6 +259,7 @@ export function SlidePreviewStack({ canvasHint }: SlidePreviewStackProps) {
 
   return (
     <>
+      {emptyState}
       <div
         ref={scrollRef}
         className={cn(
@@ -249,7 +293,7 @@ export function SlidePreviewStack({ canvasHint }: SlidePreviewStackProps) {
             ) : (
               <div
                 key={slide.id}
-                className="w-full max-w-[440px] animate-pulse rounded-lg bg-muted"
+                className="w-full max-w-110 animate-pulse rounded-lg bg-muted"
                 style={{ aspectRatio: `${canvas.width}/${canvas.height}`, maxWidth: slideWidth }}
               />
             ),

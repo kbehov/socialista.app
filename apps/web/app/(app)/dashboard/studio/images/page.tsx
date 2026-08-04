@@ -2,7 +2,8 @@ import { ImageStudioWorkspace } from '@/components/studio/images/image-studio-wo
 import { getModels } from '@/services/models.service'
 
 const ImagesPage = async () => {
-  const { data, success } = await getModels('limit=10&modelType=text-to-image&sort=-usageCount')
+  const { data, success } = await getModels('limit=20&modelType=text-to-image&sort=-usageCount')
+  console.log('models', data?.models)
 
   if (!success) {
     throw new Error('Failed to load models')

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { LayerGeometry } from '@socialista/types'
 import { clamp } from '@/lib/carousel/defaults'
+import { snapLayerPosition, type SnapGuide, type SnapTarget } from '@/lib/carousel/snap-guides'
 
 export type Corner = 'nw' | 'ne' | 'se' | 'sw'
 
@@ -53,17 +54,29 @@ export function useDragResize(opts: {
   canvasRef: RefObject<HTMLElement | null>
   layerRef: RefObject<HTMLElement | null>
   onCommit: (partial: LayerDraft) => void
+  snapTargets?: SnapTarget[]
+  onGuidesChange?: (guides: SnapGuide[]) => void
 }) {
-  const { layer, canvasRef, layerRef, onCommit } = opts
+  const { layer, canvasRef, layerRef, onCommit, snapTargets = [], onGuidesChange } = opts
   const [draft, setDraft] = useState<LayerDraft | null>(null)
   const [isInteracting, setIsInteracting] = useState(false)
   const interaction = useRef<Interaction | null>(null)
   const draftRef = useRef<LayerDraft | null>(null)
   const onCommitRef = useRef(onCommit)
+  const snapTargetsRef = useRef(snapTargets)
+  const onGuidesChangeRef = useRef(onGuidesChange)
 
   useEffect(() => {
     onCommitRef.current = onCommit
   }, [onCommit])
+
+  useEffect(() => {
+    snapTargetsRef.current = snapTargets
+  }, [snapTargets])
+
+  useEffect(() => {
+    onGuidesChangeRef.current = onGuidesChange
+  }, [onGuidesChange])
 
   const updateDraft = useCallback((partial: LayerDraft) => {
     const next = { ...draftRef.current, ...partial }
@@ -79,6 +92,7 @@ export function useDragResize(opts: {
     draftRef.current = null
     setIsInteracting(false)
     setDraft(null)
+    onGuidesChangeRef.current?.([])
 
     if (toCommit) {
       onCommitRef.current(toCommit)
@@ -94,10 +108,21 @@ export function useDragResize(opts: {
       if (it.kind === 'drag') {
         const dxPct = ((e.clientX - it.startPointerX) / it.canvasWidthPx) * 100
         const dyPct = ((e.clientY - it.startPointerY) / it.canvasHeightPx) * 100
-        updateDraft({
-          x: clamp(it.start.x + dxPct, X_MIN, X_MAX),
-          y: clamp(it.start.y + dyPct, Y_MIN, Y_MAX),
+        let nextX = clamp(it.start.x + dxPct, X_MIN, X_MAX)
+        let nextY = clamp(it.start.y + dyPct, Y_MIN, Y_MAX)
+
+        const snapped = snapLayerPosition({
+          x: nextX,
+          y: nextY,
+          width: it.start.width,
+          height: it.start.height,
+          others: snapTargetsRef.current,
         })
+        nextX = snapped.x
+        nextY = snapped.y
+        onGuidesChangeRef.current?.(snapped.guides)
+
+        updateDraft({ x: nextX, y: nextY })
         return
       }
 
@@ -135,6 +160,7 @@ export function useDragResize(opts: {
             x = it.start.x + dxPct
             break
         }
+        onGuidesChangeRef.current?.([])
         updateDraft({
           x: clamp(x, X_MIN, X_MAX),
           y: clamp(y, Y_MIN, Y_MAX),
@@ -148,6 +174,7 @@ export function useDragResize(opts: {
         const startAngle = Math.atan2(it.startPointerY - it.centerY, it.startPointerX - it.centerX)
         const currentAngle = Math.atan2(e.clientY - it.centerY, e.clientX - it.centerX)
         const delta = ((currentAngle - startAngle) * 180) / Math.PI
+        onGuidesChangeRef.current?.([])
         updateDraft({ rotation: normalizeRotation(it.startRotation + delta) })
       }
     },

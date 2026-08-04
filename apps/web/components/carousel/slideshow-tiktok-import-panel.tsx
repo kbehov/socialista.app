@@ -67,7 +67,7 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
     if (!preview || preview.imageUrls.length === 0) return
 
     applyTikTokImport(preview.imageUrls)
-    useEditorStore.getState().setStudioPanelTab('edit')
+    useEditorStore.getState().setStudioPanelTab('design')
     toast.success(`Imported ${preview.imageUrls.length} slides from TikTok`)
     setPreview(null)
     setUrl('')
@@ -141,7 +141,7 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
         {preview ? (
           <div className="space-y-3">
             <div className="flex justify-center rounded-lg border bg-muted/20 p-3">
-              <TikTokPostCard post={preview} className="max-w-[200px] shadow-md" />
+              <TikTokPostCard post={preview} className="max-w-50 shadow-md" />
             </div>
 
             <Button className="w-full" onClick={handleImport} disabled={!canImport}>

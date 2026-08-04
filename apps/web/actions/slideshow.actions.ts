@@ -13,7 +13,7 @@ export async function generateSlideshowSlides(
 ): Promise<GenerateSlideshowActionResult> {
   const trimmed = hook.trim()
   if (!trimmed) {
-    return { success: false, error: 'Enter a hook or topic first' }
+    return { success: false, error: 'Enter a topic or directions first' }
   }
 
   if (slideCount < 2 || slideCount > 10) {

@@ -27,6 +27,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const setClipFilterLive = useVideoEditorStore(s => s.setClipFilterLive)
   const removeClipFilter = useVideoEditorStore(s => s.removeClipFilter)
   const removeClipFilterLive = useVideoEditorStore(s => s.removeClipFilterLive)
+  const setClipFilters = useVideoEditorStore(s => s.setClipFilters)
   const setClipTransition = useVideoEditorStore(s => s.setClipTransition)
   const trimClip = useVideoEditorStore(s => s.trimClip)
   const updateClipTransform = useVideoEditorStore(s => s.updateClipTransform)
@@ -229,10 +230,12 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
         <>
           <FilterControls
             filters={clip.filters}
+            previewImageUrl={asset?.thumbnails?.[0] ?? (asset?.type === 'image' ? asset.objectUrl : null)}
             onChange={f => setClipFilterLive(clip.id, f)}
             onCommit={f => setClipFilter(clip.id, f)}
             onRemove={t => removeClipFilterLive(clip.id, t)}
             onRemoveCommit={t => removeClipFilter(clip.id, t)}
+            onApplyFilters={next => setClipFilters(clip.id, next)}
           />
           <TransitionPicker
             value={clip.transition}

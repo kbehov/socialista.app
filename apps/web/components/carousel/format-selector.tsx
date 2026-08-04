@@ -126,11 +126,11 @@ export function FormatSelector({
         <SelectTrigger
           size="sm"
           aria-label={`Format: ${activePreset.platform} ${activePreset.label}, ${activePreset.dimensions.width} by ${activePreset.dimensions.height}`}
-          className="h-8 w-full min-w-0 max-w-full gap-1 overflow-hidden py-0 pl-2 pr-1.5 data-[size=sm]:h-8"
+          className="h-7 w-full min-w-0 max-w-full gap-1 overflow-hidden py-0 pl-2 pr-1.5 text-xs data-[size=sm]:h-7"
         >
           <FormatTriggerLabel preset={activePreset} />
         </SelectTrigger>
-        <SelectContent position="popper" side="bottom" align="end" sideOffset={6} className="min-w-[280px]">
+        <SelectContent position="popper" side="bottom" align="end" sideOffset={6} className="min-w-70">
           {platforms.map(platform => (
             <SelectGroup key={platform}>
               <SelectLabel className="flex items-center gap-2 px-2 py-1.5">

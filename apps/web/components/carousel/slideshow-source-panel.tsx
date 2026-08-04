@@ -33,8 +33,8 @@ export function SlideshowSourcePanel({
       <div className="shrink-0 space-y-2.5 border-b border-border/60 px-3 py-2.5">
         {panelHeaderVisible ? (
           <StudioPanelHeader
-            title="Generate"
-            description="Create slides with AI or import from TikTok"
+            title="Create"
+            description="Write a topic, add directions, or import from TikTok"
           />
         ) : null}
         <StudioSegmentedTabs tabs={SOURCE_TABS} value={mode} onChange={setMode} size="sm" />

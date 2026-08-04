@@ -1,99 +1,68 @@
 'use client'
 
+import { ImageLayerToolbar } from '@/components/carousel/image-layer-toolbar'
+import { OverlayLayerToolbar } from '@/components/carousel/overlay-layer-toolbar'
+import { SlideBackgroundPanel } from '@/components/carousel/slide-background-panel'
 import {
   StudioPanelHeader,
   StudioPanelScrollArea,
-  StudioSegmentedTabs,
 } from '@/components/carousel/studio-segmented-tabs'
-import { Button } from '@/components/ui/button'
+import { TextToolbar } from '@/components/carousel/text-toolbar'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
-import { ImageIcon, LayersIcon, TypeIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImageLayerToolbar } from './image-layer-toolbar'
-import { LayerList } from './layer-list'
-import { SlideBackgroundPanel } from './slide-background-panel'
-import { TextToolbar } from './text-toolbar'
-
-type InspectorTab = 'slide' | 'text' | 'image' | 'layers'
-
-export type { InspectorTab }
-
-const PRIMARY_TABS = [
-  { id: 'slide' as const, label: 'Slide', icon: ImageIcon },
-  { id: 'text' as const, label: 'Text', icon: TypeIcon },
-  { id: 'image' as const, label: 'Image', icon: ImageIcon },
-]
+import { useMemo } from 'react'
 
 export function EditorInspector({
-  tab: controlledTab,
-  onTabChange: onTabChangeProp,
   embedded = false,
   showPanelHeader,
+  className,
 }: {
-  tab?: InspectorTab
-  onTabChange?: (tab: InspectorTab) => void
   embedded?: boolean
   showPanelHeader?: boolean
+  className?: string
 }) {
-  const [internalTab, setInternalTab] = useState<InspectorTab>('slide')
-  const tab = controlledTab ?? internalTab
-  const onTabChange = onTabChangeProp ?? setInternalTab
-  const activeLayerId = useEditorStore(s => s.activeLayerId)
   const activeLayerType = useEditorStore(s => {
     const slide = s.slides.find(sl => sl.id === s.activeSlideId)
     return slide?.layers.find(l => l.id === s.activeLayerId)?.type ?? null
   })
 
-  const prevActiveLayerIdRef = useRef(activeLayerId)
-
-  useEffect(() => {
-    if (prevActiveLayerIdRef.current === activeLayerId) return
-    prevActiveLayerIdRef.current = activeLayerId
-
-    if (!activeLayerId || !activeLayerType) return
-    if (tab === 'layers') return
-    onTabChange(activeLayerType === 'image' ? 'image' : 'text')
-  }, [activeLayerId, activeLayerType, onTabChange, tab])
-
   const panelHeaderVisible = showPanelHeader ?? embedded
-  const visibleTabs = useMemo(() => PRIMARY_TABS, [])
+
+  const meta = useMemo(() => {
+    if (activeLayerType === 'text') {
+      return { title: 'Text', description: 'Style the selected text box' }
+    }
+    if (activeLayerType === 'image') {
+      return { title: 'Image', description: 'Replace, filter, and transform' }
+    }
+    if (activeLayerType === 'overlay') {
+      return { title: 'Overlay', description: 'Color, opacity, and coverage' }
+    }
+    return { title: 'Slide', description: 'Background color and photo' }
+  }, [activeLayerType])
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="shrink-0 space-y-2.5 border-b border-border/60 px-3 py-2.5">
+    <aside
+      className={cn(
+        'flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l border-border/60 bg-background',
+        className,
+      )}
+      aria-label="Inspector"
+    >
+      <div className="shrink-0 border-b border-border/60 px-3 py-2.5">
         {panelHeaderVisible ? (
-          <StudioPanelHeader title="Edit" description="Background, layers, text, and images" />
-        ) : null}
-        <div className="flex items-center gap-1">
-          <StudioSegmentedTabs
-            tabs={visibleTabs}
-            value={tab === 'layers' ? null : (tab as 'slide' | 'text' | 'image')}
-            onChange={next => onTabChange(next)}
-            size="xs"
-            className="min-w-0 flex-1"
-            ariaLabel="Edit sections"
-          />
-          <Button
-            type="button"
-            size="icon-sm"
-            variant={tab === 'layers' ? 'secondary' : 'ghost'}
-            className={cn('size-8 shrink-0', tab === 'layers' && 'shadow-sm')}
-            aria-label="Layers"
-            aria-pressed={tab === 'layers'}
-            onClick={() => onTabChange('layers')}
-          >
-            <LayersIcon className="size-3.5" />
-          </Button>
-        </div>
+          <StudioPanelHeader title={meta.title} description={meta.description} />
+        ) : (
+          <p className="text-[13px] font-medium tracking-tight text-foreground">{meta.title}</p>
+        )}
       </div>
 
-      <StudioPanelScrollArea>
-        {tab === 'slide' ? <SlideBackgroundPanel /> : null}
-        {tab === 'text' ? <TextToolbar /> : null}
-        {tab === 'image' ? <ImageLayerToolbar /> : null}
-        {tab === 'layers' ? <LayerList forceVisible /> : null}
+      <StudioPanelScrollArea key={activeLayerType ?? 'slide'} contentClassName="animate-in fade-in-0 duration-150">
+        {activeLayerType === 'text' ? <TextToolbar /> : null}
+        {activeLayerType === 'image' ? <ImageLayerToolbar /> : null}
+        {activeLayerType === 'overlay' ? <OverlayLayerToolbar /> : null}
+        {!activeLayerType ? <SlideBackgroundPanel /> : null}
       </StudioPanelScrollArea>
-    </div>
+    </aside>
   )
 }

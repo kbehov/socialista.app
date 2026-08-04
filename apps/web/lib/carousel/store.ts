@@ -4,6 +4,7 @@ import type {
   BackgroundImageFilter,
   ImageLayer,
   LayerId,
+  OverlayLayer,
   Slide,
   SlideId,
   SlideLayer,
@@ -20,6 +21,7 @@ import {
   sortLayers,
   DEFAULT_CANVAS,
   DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT,
+  DEFAULT_LAYER_STYLE,
   DEFAULT_VIEWPORT_ZOOM,
   MIN_VIEWPORT_ZOOM,
   MAX_VIEWPORT_ZOOM,
@@ -47,7 +49,7 @@ interface EditorState {
   slideshowName: string
   isDirty: boolean
   lastSavedAt: number | null
-  studioPanelTab: 'generate' | 'edit'
+  studioPanelTab: 'create' | 'design' | 'text' | 'media' | 'layers'
 
   addSlide: (backgroundImageUrl?: string) => void
   removeSlide: (slideId: SlideId) => void
@@ -62,18 +64,22 @@ interface EditorState {
   removeSlideBackgroundFilter: (slideId: SlideId, filterType: BackgroundImageFilter['type']) => void
   setSlideBackgroundFilterLive: (slideId: SlideId, filter: BackgroundImageFilter) => void
   removeSlideBackgroundFilterLive: (slideId: SlideId, filterType: BackgroundImageFilter['type']) => void
+  setSlideBackgroundFilters: (slideId: SlideId, filters: BackgroundImageFilter[]) => void
   clearSlideBackgroundImage: (slideId: SlideId) => void
 
-  addTextLayer: (slideId: SlideId) => void
+  addTextLayer: (slideId: SlideId, style?: Partial<TextLayer['style']>) => void
   addImageLayer: (slideId: SlideId, imageUrl?: string) => void
-  addOverlayLayer: (slideId: SlideId) => void
+  addOverlayLayer: (slideId: SlideId, partial?: Partial<Pick<OverlayLayer, 'color' | 'opacity'>>) => void
   updateLayer: (slideId: SlideId, layerId: LayerId, partial: Partial<SlideLayer>) => void
+  updateLayerLive: (slideId: SlideId, layerId: LayerId, partial: Partial<SlideLayer>) => void
   updateLayerStyle: (slideId: SlideId, layerId: LayerId, style: Partial<TextLayer['style']>) => void
+  updateLayerStyleLive: (slideId: SlideId, layerId: LayerId, style: Partial<TextLayer['style']>) => void
   setLayerImageUrl: (slideId: SlideId, layerId: LayerId, imageUrl: string) => void
   setImageLayerFilter: (slideId: SlideId, layerId: LayerId, filter: BackgroundImageFilter) => void
   removeImageLayerFilter: (slideId: SlideId, layerId: LayerId, filterType: BackgroundImageFilter['type']) => void
   setImageLayerFilterLive: (slideId: SlideId, layerId: LayerId, filter: BackgroundImageFilter) => void
   removeImageLayerFilterLive: (slideId: SlideId, layerId: LayerId, filterType: BackgroundImageFilter['type']) => void
+  setImageLayerFilters: (slideId: SlideId, layerId: LayerId, filters: BackgroundImageFilter[]) => void
   promoteImageLayerToBackground: (slideId: SlideId, layerId: LayerId) => void
   removeLayer: (slideId: SlideId, layerId: LayerId) => void
   duplicateLayer: (slideId: SlideId, layerId: LayerId) => void
@@ -95,7 +101,7 @@ interface EditorState {
   }) => void
   setSlideshowName: (name: string) => void
   markClean: () => void
-  setStudioPanelTab: (tab: 'generate' | 'edit') => void
+  setStudioPanelTab: (tab: EditorState['studioPanelTab']) => void
   getProjectPayload: () => {
     name: string
     canvas: CanvasDimensions
@@ -176,7 +182,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     slideshowName: 'Untitled slideshow',
     isDirty: false,
     lastSavedAt: null,
-    studioPanelTab: 'generate',
+    studioPanelTab: 'create',
 
     addSlide: backgroundImageUrl => {
       record(state => {
@@ -316,6 +322,15 @@ export const useEditorStore = create<EditorState>((set, get) => {
         })),
       })),
 
+    setSlideBackgroundFilters: (slideId, filters) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide => ({
+          ...slide,
+          backgroundImageFilters: filters.map(filter => ({ ...filter })),
+        })),
+      }))
+    },
+
     clearSlideBackgroundImage: slideId => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide => ({
@@ -327,11 +342,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
-    addTextLayer: slideId => {
+    addTextLayer: (slideId, style) => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide => {
           const zIndex = slide.layers.length
-          const layer = createTextLayer({ zIndex })
+          const layer = createTextLayer({
+            zIndex,
+            ...(style ? { style: { ...DEFAULT_LAYER_STYLE, ...style } } : {}),
+          })
           return { ...slide, layers: [...slide.layers, layer] }
         }),
       }))
@@ -353,11 +371,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (top) set({ activeSlideId: slideId, activeLayerId: top.id })
     },
 
-    addOverlayLayer: slideId => {
+    addOverlayLayer: (slideId, partial) => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide => {
           const zIndex = slide.layers.length
-          const layer = createOverlayLayer({ zIndex })
+          const layer = createOverlayLayer({ zIndex, ...partial })
           return { ...slide, layers: [...slide.layers, layer] }
         }),
       }))
@@ -374,6 +392,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
+    updateLayerLive: (slideId, layerId, partial) =>
+      set(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => ({ ...layer, ...partial }) as SlideLayer),
+        ),
+        isDirty: true,
+      })),
+
     updateLayerStyle: (slideId, layerId, style) => {
       record(state => ({
         slides: mutateSlide(state.slides, slideId, slide =>
@@ -384,6 +410,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
         ),
       }))
     },
+
+    updateLayerStyleLive: (slideId, layerId, style) =>
+      set(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => {
+            if (layer.type !== 'text') return layer
+            return { ...layer, style: { ...layer.style, ...style } }
+          }),
+        ),
+        isDirty: true,
+      })),
 
     setLayerImageUrl: (slideId, layerId, imageUrl) => {
       record(state => ({
@@ -437,6 +474,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
           })),
         ),
       })),
+
+    setImageLayerFilters: (slideId, layerId, filters) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateImageLayer(slide, layerId, layer => ({
+            ...layer,
+            filters: filters.map(filter => ({ ...filter })),
+          })),
+        ),
+      }))
+    },
 
     promoteImageLayerToBackground: (slideId, layerId) => {
       const state = get()
@@ -570,7 +618,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         future: [],
         isDirty: false,
         lastSavedAt: null,
-        studioPanelTab: 'generate',
+        studioPanelTab: 'create',
       })
     },
 
@@ -588,7 +636,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         future: [],
         isDirty: false,
         lastSavedAt: Date.now(),
-        studioPanelTab: 'edit',
+        studioPanelTab: 'design',
       })
     },
 
@@ -623,7 +671,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         future: [],
         isDirty: false,
         lastSavedAt: null,
-        studioPanelTab: 'generate',
+        studioPanelTab: 'create',
       })
     },
 

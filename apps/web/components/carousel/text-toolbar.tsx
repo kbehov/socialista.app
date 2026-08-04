@@ -1,21 +1,29 @@
 'use client'
 
-import { CopyIcon, Trash2Icon, ArrowUpIcon, ArrowDownIcon, BoldIcon, PlusIcon } from 'lucide-react'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  BoldIcon,
+  CopyIcon,
+  PlusIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useActiveLayer } from '@/hooks/carousel/use-active-layer'
 import { cn } from '@/lib/utils'
 import { ColorPicker } from './primitives/color-picker'
 import { FontPicker } from './primitives/font-picker'
 import { AlignmentControl } from './primitives/alignment-control'
+import { StyleSlider } from './primitives/style-slider'
 import { TextPresetPicker } from './text-preset-picker'
 
 export function TextToolbar() {
   const { slide, layer } = useActiveLayer()
   const addTextLayer = useEditorStore(s => s.addTextLayer)
   const updateLayerStyle = useEditorStore(s => s.updateLayerStyle)
+  const updateLayerStyleLive = useEditorStore(s => s.updateLayerStyleLive)
   const updateLayer = useEditorStore(s => s.updateLayer)
   const removeLayer = useEditorStore(s => s.removeLayer)
   const duplicateLayer = useEditorStore(s => s.duplicateLayer)
@@ -24,17 +32,17 @@ export function TextToolbar() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
-        Select a page to edit text. Use the pages bar or canvas stack to switch pages.
+      <div className="rounded-xl border border-dashed border-border/50 bg-muted/10 px-3 py-8 text-center text-xs text-muted-foreground">
+        Select a page to edit text.
       </div>
     )
   }
 
   if (!layer || layer.type !== 'text') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/50 bg-muted/10 px-3 py-8 text-center">
         <p className="text-xs text-muted-foreground">
-          Click a text box on the canvas, or add one below.
+          Select a text box on the canvas, or add one below.
         </p>
         <Button size="sm" variant="outline" onClick={() => addTextLayer(slide.id)}>
           <PlusIcon />
@@ -47,17 +55,32 @@ export function TextToolbar() {
   const style = layer.style
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium text-muted-foreground">Text</span>
-        <div className="flex gap-1">
-          <Button size="icon-xs" variant="ghost" onClick={() => bringForward(slide.id, layer.id)} aria-label="Bring forward">
+        <span className="text-[11px] font-medium tracking-tight text-muted-foreground">Text</span>
+        <div className="flex gap-0.5">
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => bringForward(slide.id, layer.id)}
+            aria-label="Bring forward"
+          >
             <ArrowUpIcon />
           </Button>
-          <Button size="icon-xs" variant="ghost" onClick={() => sendBackward(slide.id, layer.id)} aria-label="Send backward">
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => sendBackward(slide.id, layer.id)}
+            aria-label="Send backward"
+          >
             <ArrowDownIcon />
           </Button>
-          <Button size="icon-xs" variant="ghost" onClick={() => duplicateLayer(slide.id, layer.id)} aria-label="Duplicate layer">
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => duplicateLayer(slide.id, layer.id)}
+            aria-label="Duplicate layer"
+          >
             <CopyIcon />
           </Button>
           <Button
@@ -77,48 +100,63 @@ export function TextToolbar() {
         onApply={next => updateLayerStyle(slide.id, layer.id, next)}
       />
 
-      <Field label="Text" htmlFor="text-layer-content">
+      <Field label="Content" htmlFor="text-layer-content">
         <textarea
           id="text-layer-content"
           value={layer.content}
           onChange={e => updateLayer(slide.id, layer.id, { content: e.target.value })}
-          rows={2}
-          className="w-full resize-none rounded-md border border-input bg-transparent px-2 py-1.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          rows={3}
+          className="w-full resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm leading-relaxed shadow-xs outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          placeholder="Write your caption…"
         />
       </Field>
 
-      <Field label="Font">
-        <FontPicker value={style.fontFamily} onChange={v => updateLayerStyle(slide.id, layer.id, { fontFamily: v })} />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Size">
-          <Input
-            type="number"
-            min={8}
-            max={400}
-            value={Math.round(style.fontSize)}
-            onChange={e => updateLayerStyle(slide.id, layer.id, { fontSize: Number(e.target.value) || 16 })}
+      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+        <Field label="Font">
+          <FontPicker
+            value={style.fontFamily}
+            onChange={v => updateLayerStyle(slide.id, layer.id, { fontFamily: v })}
           />
         </Field>
-        <Field label="Weight">
+
+        <StyleSlider
+          label="Size"
+          value={Math.round(style.fontSize)}
+          min={12}
+          max={220}
+          step={1}
+          suffix="px"
+          onChange={v => updateLayerStyleLive(slide.id, layer.id, { fontSize: v })}
+          onCommit={v => updateLayerStyle(slide.id, layer.id, { fontSize: v })}
+        />
+
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-[11px] font-medium text-muted-foreground">Weight</Label>
           <Button
             type="button"
             variant={style.fontWeight === 'bold' ? 'default' : 'outline'}
             size="sm"
+            className="h-7 px-2.5"
             onClick={() =>
               updateLayerStyle(slide.id, layer.id, {
                 fontWeight: style.fontWeight === 'bold' ? 'normal' : 'bold',
               })
             }
-            className="w-full"
           >
-            <BoldIcon /> Bold
+            <BoldIcon className="size-3.5" />
+            Bold
           </Button>
+        </div>
+
+        <Field label="Alignment">
+          <AlignmentControl
+            value={style.textAlign}
+            onChange={v => updateLayerStyle(slide.id, layer.id, { textAlign: v })}
+          />
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         <Field label="Text color">
           <ColorPicker
             value={style.color}
@@ -133,55 +171,46 @@ export function TextToolbar() {
         </Field>
       </div>
 
-      <Field label="Alignment">
-        <AlignmentControl
-          value={style.textAlign}
-          onChange={v => updateLayerStyle(slide.id, layer.id, { textAlign: v })}
+      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+        <StyleSlider
+          label="Letter spacing"
+          value={style.letterSpacing ?? 0}
+          min={-6}
+          max={24}
+          step={0.5}
+          suffix="px"
+          onChange={v => updateLayerStyleLive(slide.id, layer.id, { letterSpacing: v })}
+          onCommit={v => updateLayerStyle(slide.id, layer.id, { letterSpacing: v })}
         />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Letter spacing">
-          <Input
-            type="number"
-            min={-10}
-            max={40}
-            step={0.5}
-            value={style.letterSpacing ?? 0}
-            onChange={e => updateLayerStyle(slide.id, layer.id, { letterSpacing: Number(e.target.value) || 0 })}
-          />
-        </Field>
-        <Field label="Line height">
-          <Input
-            type="number"
-            min={0.8}
-            max={3}
-            step={0.05}
-            value={style.lineHeight ?? 1.2}
-            onChange={e => updateLayerStyle(slide.id, layer.id, { lineHeight: Number(e.target.value) || 1.2 })}
-          />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Padding">
-          <Input
-            type="number"
-            min={0}
-            max={120}
-            value={style.padding ?? 0}
-            onChange={e => updateLayerStyle(slide.id, layer.id, { padding: Number(e.target.value) || 0 })}
-          />
-        </Field>
-        <Field label="Corner radius">
-          <Input
-            type="number"
-            min={0}
-            max={120}
-            value={style.borderRadius ?? 0}
-            onChange={e => updateLayerStyle(slide.id, layer.id, { borderRadius: Number(e.target.value) || 0 })}
-          />
-        </Field>
+        <StyleSlider
+          label="Line height"
+          value={style.lineHeight ?? 1.2}
+          min={0.8}
+          max={2.4}
+          step={0.05}
+          onChange={v => updateLayerStyleLive(slide.id, layer.id, { lineHeight: v })}
+          onCommit={v => updateLayerStyle(slide.id, layer.id, { lineHeight: v })}
+        />
+        <StyleSlider
+          label="Padding"
+          value={style.padding ?? 0}
+          min={0}
+          max={64}
+          step={1}
+          suffix="px"
+          onChange={v => updateLayerStyleLive(slide.id, layer.id, { padding: v })}
+          onCommit={v => updateLayerStyle(slide.id, layer.id, { padding: v })}
+        />
+        <StyleSlider
+          label="Corner radius"
+          value={style.borderRadius ?? 0}
+          min={0}
+          max={64}
+          step={1}
+          suffix="px"
+          onChange={v => updateLayerStyleLive(slide.id, layer.id, { borderRadius: v })}
+          onCommit={v => updateLayerStyle(slide.id, layer.id, { borderRadius: v })}
+        />
       </div>
     </div>
   )

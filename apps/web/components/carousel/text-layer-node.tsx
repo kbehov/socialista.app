@@ -1,12 +1,22 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import { ArrowDownIcon, ArrowUpIcon, AlignVerticalJustifyCenterIcon, AlignVerticalJustifyEndIcon, AlignVerticalJustifyStartIcon, CopyIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  AlignVerticalJustifyCenterIcon,
+  AlignVerticalJustifyEndIcon,
+  AlignVerticalJustifyStartIcon,
+  CopyIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import type { SlideId, TextLayer } from '@socialista/types'
 import { useEditorStore } from '@/lib/carousel/store'
 import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
 import { useDragResize } from '@/hooks/carousel/use-drag-resize'
+import { useLayerSnap } from '@/hooks/carousel/use-layer-snap'
 import { LayerTransformHandles } from '@/components/carousel/layer-transform-handles'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { clamp } from '@/lib/carousel/defaults'
@@ -21,6 +31,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const CANVAS_EDGE_MARGIN = 8
+const MIN_TEXT_HEIGHT_PCT = 4
+const HEIGHT_FIT_EPSILON = 0.35
 
 type VerticalAlign = 'top' | 'center' | 'bottom'
 
@@ -34,6 +46,18 @@ function getAlignedPosition(layer: Pick<TextLayer, 'width' | 'height'>, alignmen
         : clamp(100 - layer.height - CANVAS_EDGE_MARGIN, -10, 100 - layer.height)
 
   return { x, y }
+}
+
+function measureFitHeightPct(layerEl: HTMLElement, canvasHeight: number): number {
+  const previousHeight = layerEl.style.height
+  const previousMinHeight = layerEl.style.minHeight
+  layerEl.style.height = 'auto'
+  layerEl.style.minHeight = '0'
+  const contentHeight = layerEl.getBoundingClientRect().height
+  layerEl.style.height = previousHeight
+  layerEl.style.minHeight = previousMinHeight
+  if (canvasHeight <= 0 || contentHeight <= 0) return MIN_TEXT_HEIGHT_PCT
+  return clamp((contentHeight / canvasHeight) * 100, MIN_TEXT_HEIGHT_PCT, 100)
 }
 
 type TextLayerNodeProps = {
@@ -56,6 +80,7 @@ export function TextLayerNode({
   selectable = interactive,
 }: TextLayerNodeProps) {
   const updateLayer = useEditorStore(s => s.updateLayer)
+  const updateLayerLive = useEditorStore(s => s.updateLayerLive)
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
   const deselectBackgroundEdit = useSlideImageEditOptional()?.deselectBackgroundEdit
   const duplicateLayer = useEditorStore(s => s.duplicateLayer)
@@ -65,17 +90,24 @@ export function TextLayerNode({
   const [isEditing, setIsEditing] = useState(false)
   const editRef = useRef<HTMLDivElement>(null)
   const layerRef = useRef<HTMLDivElement>(null)
+  const skipNextFitRef = useRef(false)
+  const snap = useLayerSnap(slideId, layer.id)
 
   const { draft, beginDrag, beginResize, beginRotate } = useDragResize({
     layer,
     canvasRef,
     layerRef,
-    onCommit: partial => updateLayer(slideId, layer.id, partial),
+    onCommit: partial => {
+      skipNextFitRef.current = true
+      updateLayer(slideId, layer.id, partial)
+    },
+    snapTargets: snap.snapTargets,
+    onGuidesChange: snap.onGuidesChange,
   })
 
   const effective = useMemo(() => (draft ? { ...layer, ...draft } : layer), [layer, draft])
-
   const textCss = useMemo(() => buildTextLayerCss(effective.style, scale), [effective.style, scale])
+  const isInteracting = draft != null
 
   useEffect(() => {
     if (!isEditing || !editRef.current) return
@@ -90,30 +122,81 @@ export function TextLayerNode({
     const selection = window.getSelection()
     selection?.removeAllRanges()
     selection?.addRange(range)
+    // Keep caret stable while editing — do not re-sync on every content keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing, layer.id])
+
+  useLayoutEffect(() => {
+    if (!interactive) return
+    if (isEditing || isInteracting) return
+    if (skipNextFitRef.current) {
+      skipNextFitRef.current = false
+      return
+    }
+
+    const layerEl = layerRef.current
+    const canvasEl = canvasRef.current
+    if (!layerEl || !canvasEl) return
+
+    const canvasHeight = canvasEl.clientHeight
+    if (canvasHeight <= 0) return
+
+    const nextHeight = measureFitHeightPct(layerEl, canvasHeight)
+    const current = useEditorStore.getState().slides
+      .find(slide => slide.id === slideId)
+      ?.layers.find(item => item.id === layer.id)
+    const height = current && 'height' in current ? current.height : layer.height
+    if (Math.abs(nextHeight - height) <= HEIGHT_FIT_EPSILON) return
+
+    updateLayerLive(slideId, layer.id, { height: nextHeight })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- omit layer.height to avoid fit↔render loops
+  }, [
+    canvasRef,
+    interactive,
+    isEditing,
+    isInteracting,
+    layer.content,
+    layer.id,
+    layer.style.borderRadius,
+    layer.style.fontFamily,
+    layer.style.fontSize,
+    layer.style.fontWeight,
+    layer.style.letterSpacing,
+    layer.style.lineHeight,
+    layer.style.padding,
+    layer.width,
+    scale,
+    slideId,
+    updateLayerLive,
+  ])
+
+  const fitHeightToContent = (sourceEl: HTMLElement) => {
+    const canvasEl = canvasRef.current
+    const layerEl = layerRef.current
+    if (!canvasEl || !layerEl) return null
+    const canvasHeight = canvasEl.clientHeight
+    if (canvasHeight <= 0) return null
+    // Prefer measuring the layer shell so padding/borders are included.
+    void sourceEl
+    return measureFitHeightPct(layerEl, canvasHeight)
+  }
 
   const commitEdit = () => {
     if (!editRef.current) return
     const next = editRef.current.innerText.replace(/\r\n/g, '\n').trim()
-    const canvasEl = canvasRef.current
     const partial: Partial<TextLayer> = {}
 
     if (next !== layer.content.trim()) {
       partial.content = next || ' '
     }
 
-    if (canvasEl && editRef.current.scrollHeight > 0) {
-      const canvasHeight = canvasEl.clientHeight
-      if (canvasHeight > 0) {
-        const neededPct = (editRef.current.scrollHeight / canvasHeight) * 100
-        const minHeight = Math.max(layer.height, neededPct)
-        if (minHeight > layer.height + 0.5) {
-          partial.height = Math.min(minHeight, 100)
-        }
-      }
+    const fitted = fitHeightToContent(editRef.current)
+    if (fitted != null && Math.abs(fitted - layer.height) > HEIGHT_FIT_EPSILON) {
+      partial.height = fitted
     }
 
     if (Object.keys(partial).length > 0) {
+      skipNextFitRef.current = true
       updateLayer(slideId, layer.id, partial)
     }
 
@@ -121,19 +204,17 @@ export function TextLayerNode({
   }
 
   const growToFitContent = () => {
-    if (!isEditing || !editRef.current || !canvasRef.current) return
-    const canvasHeight = canvasRef.current.clientHeight
-    if (canvasHeight <= 0) return
-
-    const neededPct = (editRef.current.scrollHeight / canvasHeight) * 100
+    if (!isEditing || !editRef.current) return
+    const fitted = fitHeightToContent(editRef.current)
+    if (fitted == null) return
     const currentHeight = draft?.height ?? layer.height
-    if (neededPct > currentHeight + 0.5) {
-      updateLayer(slideId, layer.id, { height: Math.min(neededPct, 100) })
-    }
+    if (Math.abs(fitted - currentHeight) <= HEIGHT_FIT_EPSILON) return
+    updateLayerLive(slideId, layer.id, { height: fitted })
   }
 
   const alignLayer = (alignment: VerticalAlign) => {
     const { width, height } = effective
+    skipNextFitRef.current = true
     updateLayer(slideId, layer.id, getAlignedPosition({ width, height }, alignment))
   }
 
@@ -198,10 +279,10 @@ export function TextLayerNode({
             : undefined
         }
         className={cn(
-          'block h-full w-full break-words whitespace-pre-wrap',
+          'block w-full wrap-break-word whitespace-pre-wrap',
           isEditing
-            ? 'cursor-text overflow-y-auto outline-none ring-2 ring-primary/60'
-            : 'overflow-hidden',
+            ? 'min-h-full cursor-text overflow-visible outline-none ring-2 ring-primary/60'
+            : 'h-full overflow-hidden',
         )}
         style={textCss}
       >

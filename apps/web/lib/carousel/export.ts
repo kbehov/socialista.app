@@ -106,6 +106,41 @@ export async function renderSlidesToFiles(
   }
 }
 
+/** Render a single slide to a PNG File at the project's reference canvas width. */
+export async function renderSlideToFile(slide: Slide, canvasWidth: number, index = 0): Promise<File> {
+  const files = await renderSlidesToFiles([slide], canvasWidth)
+  const file = files[0]
+  if (!file) throw new Error('Could not render slide for export')
+  // Preserve caller index for multi-slide naming when exporting one page from a deck.
+  if (index !== 0) {
+    return new File([file], slideFilename(slide, index), { type: 'image/png' })
+  }
+  return file
+}
+
+/** Download a single slide as a PNG. */
+export async function downloadSlideAsPng(slide: Slide, canvasWidth: number, index = 0): Promise<void> {
+  const file = await renderSlideToFile(slide, canvasWidth, index)
+  downloadBlob(file, file.name)
+}
+
+/** Upload a rendered slide PNG to the workspace files library. */
+export async function saveSlideToWorkspace(
+  workspaceId: string,
+  slide: Slide,
+  canvasWidth: number,
+  index = 0,
+): Promise<void> {
+  const { uploadToWorkspace } = await import('@/services/files.service')
+  const file = await renderSlideToFile(slide, canvasWidth, index)
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await uploadToWorkspace(workspaceId, formData)
+  if (!response.success || !response.data) {
+    throw new Error(response.message ?? 'Failed to save to files')
+  }
+}
+
 /** Render each slide off-screen and download as a single ZIP (avoids browser multi-download blocking). */
 export async function exportSlidesAsZip(
   slides: Slide[],

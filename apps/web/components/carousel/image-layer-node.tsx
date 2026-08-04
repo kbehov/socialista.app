@@ -10,6 +10,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { useDragResize } from '@/hooks/carousel/use-drag-resize'
+import { useLayerSnap } from '@/hooks/carousel/use-layer-snap'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { filtersToCss } from '@/utils/media-filters'
@@ -44,12 +45,15 @@ export function ImageLayerNode({
   const promoteImageLayerToBackground = useEditorStore(s => s.promoteImageLayerToBackground)
   const imageEdit = useSlideImageEditOptional()
   const layerRef = useRef<HTMLDivElement>(null)
+  const snap = useLayerSnap(slideId, layer.id)
 
   const { draft, beginDrag, beginResize, beginRotate } = useDragResize({
     layer,
     canvasRef,
     layerRef,
     onCommit: partial => updateLayer(slideId, layer.id, partial),
+    snapTargets: snap.snapTargets,
+    onGuidesChange: snap.onGuidesChange,
   })
 
   const effective = useMemo(() => (draft ? { ...layer, ...draft } : layer), [layer, draft])

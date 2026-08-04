@@ -14,12 +14,9 @@ export function ImageStudioWorkspace({ models }: ImageStudioWorkspaceProps) {
   return (
     <ImageStudioProvider>
       <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] overflow-hidden"
-        >
-          <div className="absolute left-1/2 top-[-6rem] h-[26rem] w-[52rem] -translate-x-1/2 rounded-full bg-foreground/[0.02] blur-[100px]" />
-          <div className="absolute left-[12%] top-20 h-48 w-48 rounded-full bg-foreground/[0.015] blur-[80px]" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-128 overflow-hidden">
+          <div className="absolute left-1/2 -top-24 h-104 w-208 -translate-x-1/2 rounded-full bg-foreground/2 blur-[100px]" />
+          <div className="absolute left-[12%] top-20 h-48 w-48 rounded-full bg-foreground/1.5 blur-[80px]" />
           <div className="absolute right-[8%] top-32 h-40 w-56 rounded-full bg-foreground/[0.012] blur-[72px]" />
         </div>
 

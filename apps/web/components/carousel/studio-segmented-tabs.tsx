@@ -14,9 +14,72 @@ type StudioSegmentedTab<T extends string> = {
 
 export function StudioPanelHeader({ title, description }: { title: string; description?: string }) {
   return (
-    <div>
-      <p className="text-[13px] font-medium tracking-tight text-foreground">{title}</p>
-      {description ? <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{description}</p> : null}
+    <div className="min-w-0">
+      <p className="text-[13px] font-semibold tracking-[-0.01em] text-foreground">{title}</p>
+      {description ? (
+        <p className="mt-0.5 text-[11px] leading-[1.45] tracking-[0.01em] text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export function StudioPanelSection({
+  title,
+  description,
+  action,
+  children,
+  className,
+}: {
+  title?: string
+  description?: string
+  action?: ReactNode
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <section className={cn('flex flex-col gap-2.5', className)}>
+      {title || action ? (
+        <div className="flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            {title ? (
+              <h3 className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">{title}</h3>
+            ) : null}
+            {description ? (
+              <p className="mt-0.5 text-[11px] leading-[1.45] text-muted-foreground/80">{description}</p>
+            ) : null}
+          </div>
+          {action ? <div className="shrink-0">{action}</div> : null}
+        </div>
+      ) : description ? (
+        <p className="text-[11px] leading-[1.45] text-muted-foreground/80">{description}</p>
+      ) : null}
+      {children}
+    </section>
+  )
+}
+
+export function StudioEmptyState({
+  title,
+  description,
+  className,
+}: {
+  title: string
+  description?: string
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/15 px-4 py-8 text-center',
+        className,
+      )}
+    >
+      <p className="text-[12px] font-medium tracking-tight text-foreground/80">{title}</p>
+      {description ? (
+        <p className="mt-1 max-w-[18rem] text-[11px] leading-[1.45] text-muted-foreground">{description}</p>
+      ) : null}
     </div>
   )
 }
@@ -100,7 +163,7 @@ export function StudioPanelScrollArea({
 }) {
   return (
     <ScrollArea className={cn('min-h-0 flex-1 bg-background', className)}>
-      <div className={cn('flex flex-col gap-3 p-3', contentClassName)}>{children}</div>
+      <div className={cn('flex flex-col gap-5 p-3.5 pb-5', contentClassName)}>{children}</div>
     </ScrollArea>
   )
 }

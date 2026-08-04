@@ -28,7 +28,7 @@ export async function generateSlideshow({
 }: GenerateSlideshowInput): Promise<GenerateSlideshowResult> {
   const trimmedHook = hook.trim()
   if (!trimmedHook) {
-    throw new Error('Hook or topic is required')
+    throw new Error('Topic or directions are required')
   }
 
   const clampedCount = Math.min(Math.max(slideCount, MIN_SLIDE_COUNT), MAX_SLIDE_COUNT)

@@ -19,10 +19,37 @@ type ImageSourcePickerProps = {
   disabled?: boolean
   hint?: string
   filesDescription?: string
-  layout?: 'prominent' | 'compact'
+  layout?: 'prominent' | 'compact' | 'studio'
   showUrl?: boolean
   onImageSelected: (url: string) => void
 }
+
+const STUDIO_SOURCES = [
+  {
+    id: 'upload',
+    label: 'Upload',
+    description: 'From your device',
+    icon: UploadIcon,
+  },
+  {
+    id: 'files',
+    label: 'Files',
+    description: 'Workspace library',
+    icon: FolderOpenIcon,
+  },
+  {
+    id: 'unsplash',
+    label: 'Unsplash',
+    description: 'Stock photos',
+    icon: SearchIcon,
+  },
+  {
+    id: 'url',
+    label: 'URL',
+    description: 'Paste a link',
+    icon: LinkIcon,
+  },
+] as const
 
 export function ImageSourcePicker({
   disabled = false,
@@ -108,12 +135,7 @@ export function ImageSourcePicker({
   if (layout === 'compact') {
     return (
       <div className="flex flex-col gap-1.5">
-        <div
-          className={cn(
-            'grid gap-1',
-            showUrl ? 'grid-cols-4' : 'grid-cols-3',
-          )}
-        >
+        <div className={cn('grid gap-1', showUrl ? 'grid-cols-4' : 'grid-cols-3')}>
           <ImageActionButton label="Upload image" disabled={disabled} onClick={() => fileInputRef.current?.click()}>
             <UploadIcon className="size-3" />
           </ImageActionButton>
@@ -130,6 +152,57 @@ export function ImageSourcePicker({
           ) : null}
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+        {sourceDialogs}
+      </div>
+    )
+  }
+
+  if (layout === 'studio') {
+    const sources = showUrl ? STUDIO_SOURCES : STUDIO_SOURCES.filter(source => source.id !== 'url')
+
+    return (
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-1.5">
+          {sources.map(source => {
+            const Icon = source.icon
+            const onClick =
+              source.id === 'upload'
+                ? () => fileInputRef.current?.click()
+                : source.id === 'files'
+                  ? () => setFilesDialogOpen(true)
+                  : source.id === 'unsplash'
+                    ? () => setUnsplashDialogOpen(true)
+                    : () => setUrlVisible(true)
+
+            return (
+              <button
+                key={source.id}
+                type="button"
+                disabled={disabled}
+                onClick={onClick}
+                className={cn(
+                  'group flex w-full items-center gap-2.5 rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5 text-left',
+                  'transition-[background-color,border-color,box-shadow,transform] duration-150',
+                  'hover:border-border/70 hover:bg-muted/30 hover:shadow-xs active:scale-[0.99]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                  'disabled:pointer-events-none disabled:opacity-50',
+                )}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-background shadow-xs ring-1 ring-border/40 transition-colors group-hover:ring-border/70">
+                  <Icon className="size-3.5 text-foreground/75" strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[12px] font-medium tracking-tight text-foreground">{source.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-[1.35] text-muted-foreground">
+                    {source.description}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" disabled={disabled} onChange={handleUpload} />
+        {hint ? <p className="text-[10px] leading-[1.45] tracking-[0.01em] text-muted-foreground/80">{hint}</p> : null}
         {sourceDialogs}
       </div>
     )

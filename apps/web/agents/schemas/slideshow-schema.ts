@@ -5,9 +5,7 @@ export const slideshowContentTypeSchema = z.enum(['story', 'guide', 'list', 'rou
 export type SlideshowContentType = z.infer<typeof slideshowContentTypeSchema>
 
 const slideTextSchema = z.object({
-  text: z
-    .string()
-    .describe('Plain slide copy only — no markdown, emojis, or hashtags. Renders directly on canvas.'),
+  text: z.string().describe('Plain slide copy only — no markdown, emojis, or hashtags. Renders directly on canvas.'),
 })
 
 export function createSlideshowGeneratedSchema(slideCount: number) {
@@ -19,7 +17,9 @@ export function createSlideshowGeneratedSchema(slideCount: number) {
     ),
     hook: z
       .string()
-      .describe('Slide 1 — scroll-stopping hook. Max 12–14 words. No trailing period. Rewrite user input to be punchier.'),
+      .describe(
+        'Slide 1 — scroll-stopping hook. Max 12–14 words. No trailing period. Rewrite user input to be punchier.',
+      ),
     slides: z
       .array(slideTextSchema)
       .length(middleCount)

@@ -5,7 +5,6 @@ import type { TextLayerStyle } from '@socialista/types'
 import { mergeTextPreset, TEXT_PRESETS, type TextPreset } from '@/lib/carousel/text-presets'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { DEFAULT_LAYER_STYLE } from '@/lib/carousel/defaults'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { cn } from '@/lib/utils'
 
 const PREVIEW_SCALE = 0.22
@@ -19,25 +18,19 @@ export function TextPresetPicker({ currentStyle, onApply }: TextPresetPickerProp
   const activeId = useMemo(() => matchActivePreset(currentStyle), [currentStyle])
 
   return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem value="presets" className="border-none">
-        <AccordionTrigger className="py-1.5 text-[11px] font-medium text-muted-foreground hover:no-underline">
-          Presets
-        </AccordionTrigger>
-        <AccordionContent className="pb-1 pt-0">
-          <div className="grid max-h-56 grid-cols-3 gap-1.5 overflow-y-auto pr-0.5">
-            {TEXT_PRESETS.map(preset => (
-              <PresetButton
-                key={preset.id}
-                preset={preset}
-                active={activeId === preset.id}
-                onClick={() => onApply(mergeTextPreset(currentStyle, preset.style))}
-              />
-            ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+    <div className="space-y-2">
+      <p className="text-[11px] font-medium text-muted-foreground">Presets</p>
+      <div className="grid max-h-40 grid-cols-3 gap-1.5 overflow-y-auto pr-0.5">
+        {TEXT_PRESETS.map(preset => (
+          <PresetButton
+            key={preset.id}
+            preset={preset}
+            active={activeId === preset.id}
+            onClick={() => onApply(mergeTextPreset(currentStyle, preset.style))}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -60,20 +53,22 @@ function PresetButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex flex-col items-center gap-1 rounded-md border px-1.5 py-2 transition',
+        'flex flex-col items-center gap-1 rounded-lg border px-1.5 py-2 transition-all duration-150',
         active
-          ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
-          : 'border-border bg-muted/40 hover:border-muted-foreground/30 hover:bg-muted/70',
+          ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary/25'
+          : 'border-border/60 bg-muted/20 hover:border-border hover:bg-muted/40',
       )}
     >
       <span
-        className="flex h-7 w-full items-center justify-center overflow-hidden rounded-sm bg-muted text-sm font-bold leading-none"
+        className="flex h-7 w-full items-center justify-center overflow-hidden rounded-md bg-neutral-900 text-sm font-bold leading-none"
         style={previewStyle}
         aria-hidden
       >
         Aa
       </span>
-      <span className="text-[9px] font-medium text-muted-foreground">{preset.label}</span>
+      <span className="truncate text-[9px] font-medium text-muted-foreground">
+        {preset.label.replace(/^TikTok\s+/i, '')}
+      </span>
     </button>
   )
 }

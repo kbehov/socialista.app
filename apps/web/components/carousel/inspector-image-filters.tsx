@@ -9,6 +9,8 @@ export type InspectorImageFilterHandlers = {
   onCommit?: (filter: MediaFilter) => void
   onRemove: (type: MediaFilterType) => void
   onRemoveCommit?: (type: MediaFilterType) => void
+  onApplyFilters?: (filters: MediaFilter[]) => void
+  previewImageUrl?: string | null
 }
 
 export function InspectorImageFilters(props: InspectorImageFilterHandlers) {

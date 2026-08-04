@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { flushAllBackgroundTransforms } from '@/lib/carousel/background-transform-flush'
@@ -9,9 +10,9 @@ import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { createSlideshow, updateSlideshow } from '@/services/slideshow.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
-import { Loader2Icon, SaveIcon, VideoIcon } from 'lucide-react'
+import { Loader2Icon, SaveIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 function getWorkspaceId(workspace: { id?: string; _id?: string } | null | undefined): string | undefined {
@@ -23,7 +24,7 @@ type PersistSlideshowResult = {
   isNew: boolean
 }
 
-type BusyAction = 'save' | 'create-video' | null
+type BusyAction = 'save' | 'create-video' | 'autosave' | null
 
 function formatSavedAt(timestamp: number | null): string | null {
   if (!timestamp) return null
@@ -36,6 +37,8 @@ function formatSavedAt(timestamp: number | null): string | null {
     return null
   }
 }
+
+const AUTOSAVE_DELAY_MS = 2000
 
 export function SlideshowSaveBar({
   className,
@@ -58,8 +61,10 @@ export function SlideshowSaveBar({
   const isDirty = useEditorStore(s => s.isDirty)
   const lastSavedAt = useEditorStore(s => s.lastSavedAt)
   const [busyAction, setBusyAction] = useState<BusyAction>(null)
-  const isBusy = busyAction !== null
+  const isBusy = busyAction !== null && busyAction !== 'autosave'
   const savedLabel = formatSavedAt(lastSavedAt)
+  const autosaveTimerRef = useRef<number | null>(null)
+  const persistRef = useRef<() => Promise<PersistSlideshowResult | null>>(async () => null)
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -126,6 +131,10 @@ export function SlideshowSaveBar({
     }
   }, [getProjectPayload, loadProject, markClean, slideshowId, workspaceId])
 
+  useEffect(() => {
+    persistRef.current = persistSlideshowDraft
+  }, [persistSlideshowDraft])
+
   const handleSave = useCallback(async () => {
     if (!workspaceId || isBusy) return
     setBusyAction('save')
@@ -158,9 +167,46 @@ export function SlideshowSaveBar({
     }
   }, [isBusy, persistSlideshowDraft, router, workspaceId])
 
+  useEffect(() => {
+    const onSave = () => {
+      void handleSave()
+    }
+    const onCreateVideo = () => {
+      void handleCreateVideo()
+    }
+    window.addEventListener('slideshow:save', onSave)
+    window.addEventListener('slideshow:create-video', onCreateVideo)
+    return () => {
+      window.removeEventListener('slideshow:save', onSave)
+      window.removeEventListener('slideshow:create-video', onCreateVideo)
+    }
+  }, [handleCreateVideo, handleSave])
+
+  // Autosave only after the project already exists (first save needs an explicit action / name)
+  useEffect(() => {
+    if (!workspaceId || !slideshowId || !isDirty) return
+    if (busyAction === 'save' || busyAction === 'create-video') return
+
+    if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = window.setTimeout(() => {
+      void (async () => {
+        setBusyAction('autosave')
+        try {
+          await persistRef.current()
+        } finally {
+          setBusyAction(null)
+        }
+      })()
+    }, AUTOSAVE_DELAY_MS)
+
+    return () => {
+      if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current)
+    }
+  }, [busyAction, isDirty, slideshowId, workspaceId])
+
   const statusText = !workspaceId
     ? 'Select a workspace to save'
-    : busyAction === 'save'
+    : busyAction === 'save' || busyAction === 'autosave'
       ? 'Saving…'
       : isDirty
         ? 'Unsaved changes'
@@ -171,81 +217,61 @@ export function SlideshowSaveBar({
             : 'Not saved yet'
 
   return (
-    <div className={cn('flex min-w-0 flex-col gap-0.5', className)}>
-      <p
-        className={cn(
-          'truncate text-[10px] leading-none',
-          !workspaceId || isDirty ? 'text-muted-foreground' : 'text-muted-foreground/80',
-        )}
-        aria-live="polite"
-      >
-        {statusText}
-      </p>
+    <div className={cn('flex min-w-0 items-center gap-1', className)}>
       {showLabel && !compact ? (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Project name</span>
+        <span className="sr-only">Project name</span>
       ) : null}
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0">
         <Input
           value={slideshowName}
           onChange={event => setSlideshowName(event.target.value)}
           placeholder="Untitled slideshow"
           className={cn(
-            'h-8 min-w-0 flex-1 border-transparent bg-muted/50 px-2 py-1 text-xs font-medium shadow-none transition-colors focus-visible:border-input focus-visible:bg-background sm:text-sm',
-            compact && 'max-w-[140px] sm:max-w-none',
+            'h-7 min-w-0 w-full border-transparent bg-muted/40 px-2 py-0 text-xs font-medium shadow-none transition-colors focus-visible:border-input focus-visible:bg-background',
+            compact && 'max-w-35 sm:max-w-none',
           )}
           aria-label="Slideshow name"
         />
-        <div className="flex h-8 shrink-0 items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                className="h-8 shrink-0 px-2.5"
-                variant="outline"
-                onClick={() => void handleCreateVideo()}
-                disabled={isBusy || !workspaceId}
-                aria-label="Create video"
-              >
-                {busyAction === 'create-video' ? (
-                  <Loader2Icon className="size-3.5 animate-spin" />
-                ) : (
-                  <VideoIcon className="size-3.5" />
-                )}
-                {showLabel && !compact ? (
-                  <span className="hidden lg:inline">
-                    {busyAction === 'create-video' ? 'Saving…' : 'Create video'}
-                  </span>
-                ) : null}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create video from this slideshow</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                className="h-8 shrink-0 px-2.5"
-                variant={slideshowId && !isDirty ? 'outline' : 'default'}
-                onClick={() => void handleSave()}
-                disabled={isBusy || !workspaceId}
-                aria-label={slideshowId ? 'Save' : 'Save draft'}
-              >
-                {busyAction === 'save' ? (
-                  <Loader2Icon className="size-3.5 animate-spin" />
-                ) : (
-                  <SaveIcon className="size-3.5" />
-                )}
-                {showLabel && !compact ? (
-                  <span className="hidden sm:inline">
-                    {busyAction === 'save' ? 'Saving…' : slideshowId ? 'Save' : 'Save draft'}
-                  </span>
-                ) : null}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{slideshowId ? 'Save draft' : 'Save draft'}</TooltipContent>
-          </Tooltip>
-        </div>
+        <p className="sr-only" aria-live="polite">
+          {statusText}
+        </p>
       </div>
+      {!compact ? (
+        <span
+          className={cn(
+            'hidden truncate text-[10px] leading-none sm:inline',
+            !workspaceId || isDirty ? 'text-muted-foreground' : 'text-muted-foreground/80',
+          )}
+        >
+          {statusText}
+        </span>
+      ) : null}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="sm"
+            className="h-7 shrink-0 px-2"
+            variant={slideshowId && !isDirty ? 'outline' : 'default'}
+            onClick={() => void handleSave()}
+            disabled={isBusy || !workspaceId}
+            aria-label={slideshowId ? 'Save' : 'Save draft'}
+          >
+            {busyAction === 'save' ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : (
+              <SaveIcon className="size-3.5" />
+            )}
+            {showLabel && !compact ? (
+              <span className="hidden sm:inline">
+                {busyAction === 'save' ? 'Saving…' : slideshowId ? 'Save' : 'Save draft'}
+              </span>
+            ) : null}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {statusText} <Kbd className="ml-1">⌘S</Kbd>
+        </TooltipContent>
+      </Tooltip>
     </div>
   )
 }

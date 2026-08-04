@@ -14,6 +14,7 @@ import {
   ImageIcon,
   PencilIcon,
   SparklesIcon,
+  SquareIcon,
   Trash2Icon,
   TypeIcon,
   UploadIcon,
@@ -122,6 +123,7 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
 function LayerListActions({ slideId }: { slideId: SlideId }) {
   const addTextLayer = useEditorStore(s => s.addTextLayer)
   const addImageLayer = useEditorStore(s => s.addImageLayer)
+  const addOverlayLayer = useEditorStore(s => s.addOverlayLayer)
   const [filesDialogOpen, setFilesDialogOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -147,12 +149,21 @@ function LayerListActions({ slideId }: { slideId: SlideId }) {
           size="sm"
           variant="outline"
           className="h-7 flex-1 text-xs"
-          onClick={() => setFilesDialogOpen(true)}
+          onClick={() => addOverlayLayer(slideId)}
         >
-          <FolderOpenIcon className="size-3" />
-          Files
+          <SquareIcon className="size-3" />
+          Overlay
         </Button>
       </div>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-7 w-full text-xs text-muted-foreground"
+        onClick={() => setFilesDialogOpen(true)}
+      >
+        <FolderOpenIcon className="size-3" />
+        Add from files
+      </Button>
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <WorkspaceImagePickerDialog
         open={filesDialogOpen}

@@ -110,6 +110,7 @@ interface EditorState {
   setClipSpeed: (clipId: ClipId, speed: number) => void
   setClipFilter: (clipId: ClipId, filter: VideoFilter) => void
   removeClipFilter: (clipId: ClipId, filterType: VideoFilter['type']) => void
+  setClipFilters: (clipId: ClipId, filters: VideoFilter[]) => void
   setClipTransition: (clipId: ClipId, transition: Transition) => void
   /** Live preview updates without undo history (commit with the matching setter on release). */
   setClipVolumeLive: (clipId: ClipId, volume: number) => void
@@ -674,6 +675,15 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         project: mutateClip(state.project, clipId, clip => {
           if (clip.type === 'audio') return clip
           return { ...clip, filters: clip.filters.filter(f => f.type !== filterType) }
+        }),
+      }))
+    },
+
+    setClipFilters: (clipId, filters) => {
+      record(state => ({
+        project: mutateClip(state.project, clipId, clip => {
+          if (clip.type === 'audio') return clip
+          return { ...clip, filters: filters.map(f => ({ ...f })) }
         }),
       }))
     },

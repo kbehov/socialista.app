@@ -8,10 +8,11 @@ import { transformToAdjustment, usesFrame } from '@/lib/carousel/background-imag
 import { fitArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
 import { useCarouselPreviewLayout } from '@/components/carousel/carousel-preview-layout'
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
-import { SlideLayerNode } from './slide-layer-node'
-import { SlideBackgroundImage } from './slide-background-image'
+import { CanvasGuidesProvider } from '@/components/carousel/canvas-guides'
 import { cn } from '@/lib/utils'
 import { MousePointer2Icon } from 'lucide-react'
+import { SlideLayerNode } from './slide-layer-node'
+import { SlideBackgroundImage } from './slide-background-image'
 
 type SlideCanvasProps = {
   slide: Slide
@@ -140,7 +141,7 @@ export function SlideCanvas({
 
   const layerStack =
     scale > 0 ? (
-      <div className="pointer-events-none absolute inset-0 [&>*]:pointer-events-auto [&>*]:overflow-visible">
+      <div className="pointer-events-none absolute inset-0 *:pointer-events-auto *:overflow-visible">
         {sortLayers(slide.layers).map(layer => (
           <SlideLayerNode
             key={layer.id}
@@ -156,6 +157,33 @@ export function SlideCanvas({
       </div>
     ) : null
 
+  const artboardContent = (
+    <>
+      <div
+        data-slot="canvas-bg"
+        className={cn('absolute inset-0', isAdjustingBackground && 'opacity-0')}
+        style={{ backgroundColor }}
+      />
+
+      {slide.backgroundImageUrl && !hideBackgroundImage ? (
+        <SlideBackgroundImage
+          imageUrl={slide.backgroundImageUrl}
+          slideId={slide.id}
+          adjustment={backgroundImageAdjustment}
+          filters={slide.backgroundImageFilters}
+          interactive={interactive}
+          isBackgroundEditing={isBackgroundEditing}
+          isBackgroundSelected={isBackgroundSelected && usesFrame(backgroundImageAdjustment)}
+          canvasRef={innerRef}
+          onSelect={interactive && onBackgroundSelect ? onBackgroundSelect : undefined}
+          onTransformCommit={interactive ? handleTransformCommit : undefined}
+          layoutWidth={isMeasured ? baseWidth : undefined}
+          layoutHeight={isMeasured ? baseHeight : undefined}
+        />
+      ) : null}
+      {layerStack}
+    </>
+  )
   const onCanvasPointerDown = (e: React.PointerEvent) => {
     if (!interactive) return
     const target = e.target as HTMLElement
@@ -222,29 +250,7 @@ export function SlideCanvas({
               backgroundColor,
             }}
           >
-            <div
-              data-slot="canvas-bg"
-              className={cn('absolute inset-0', isAdjustingBackground && 'opacity-0')}
-              style={{ backgroundColor }}
-            />
-
-            {slide.backgroundImageUrl && !hideBackgroundImage ? (
-              <SlideBackgroundImage
-                imageUrl={slide.backgroundImageUrl}
-                slideId={slide.id}
-                adjustment={backgroundImageAdjustment}
-                filters={slide.backgroundImageFilters}
-                interactive={interactive}
-                isBackgroundEditing={isBackgroundEditing}
-                isBackgroundSelected={isBackgroundSelected && usesFrame(backgroundImageAdjustment)}
-                canvasRef={innerRef}
-                onSelect={interactive && onBackgroundSelect ? onBackgroundSelect : undefined}
-                onTransformCommit={interactive ? handleTransformCommit : undefined}
-                layoutWidth={isMeasured ? baseWidth : undefined}
-                layoutHeight={isMeasured ? baseHeight : undefined}
-              />
-            ) : null}
-            {layerStack}
+            {interactive ? <CanvasGuidesProvider>{artboardContent}</CanvasGuidesProvider> : artboardContent}
           </div>
         </div>
 

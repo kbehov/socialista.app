@@ -27,6 +27,7 @@ export function ImageLayerToolbar() {
   const removeImageLayerFilter = useEditorStore(s => s.removeImageLayerFilter)
   const setImageLayerFilterLive = useEditorStore(s => s.setImageLayerFilterLive)
   const removeImageLayerFilterLive = useEditorStore(s => s.removeImageLayerFilterLive)
+  const setImageLayerFilters = useEditorStore(s => s.setImageLayerFilters)
   const { openEditDialog, isEditingSlide } = useSlideImageEdit()
 
   if (!slide) {
@@ -91,10 +92,12 @@ export function ImageLayerToolbar() {
         <>
           <InspectorImageFilters
             filters={imageLayer.filters}
+            previewImageUrl={imageLayer.imageUrl}
             onChange={filter => setImageLayerFilterLive(slide.id, imageLayer.id, filter)}
             onCommit={filter => setImageLayerFilter(slide.id, imageLayer.id, filter)}
             onRemove={type => removeImageLayerFilterLive(slide.id, imageLayer.id, type)}
             onRemoveCommit={type => removeImageLayerFilter(slide.id, imageLayer.id, type)}
+            onApplyFilters={next => setImageLayerFilters(slide.id, imageLayer.id, next)}
           />
 
           <div className="space-y-1.5">

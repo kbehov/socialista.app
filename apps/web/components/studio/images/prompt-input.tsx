@@ -27,7 +27,7 @@ import {
   usePromptInputController,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
-import { AttachImagesDialog, AttachedMediaThumb, type AttachedImage } from '@/components/files/attach-images-dialog'
+import { AttachedMediaThumb, AttachImagesDialog, type AttachedImage } from '@/components/files/attach-images-dialog'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
 import { useImageStudio } from '@/components/studio/images/image-studio-provider'
@@ -41,8 +41,19 @@ import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatModelCost } from '@/utils/format'
 import { commitHaptic } from '@/utils/haptics'
-import type { Model } from '@socialista/types'
-import { ChevronDownIcon, ImagePlusIcon, SparklesIcon } from 'lucide-react'
+import { ContextSupport, type Model } from '@socialista/types'
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  FileIcon,
+  ImageIcon,
+  ImagePlusIcon,
+  MusicIcon,
+  SparklesIcon,
+  TypeIcon,
+  VideoIcon,
+  type LucideIcon,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -108,12 +119,34 @@ function ModelHighlightBadge({ highlight }: { highlight: ModelHighlight }) {
     <Badge
       className={cn(
         config.className,
-        'h-[18px] rounded-md border px-1.5 py-0 text-[10px] font-medium leading-none tracking-[-0.01em]',
+        'h-4 shrink-0 rounded-full border-0 px-1.5 py-0 text-[9px] font-medium leading-none tracking-[-0.01em]',
       )}
     >
       {config.label}
     </Badge>
   )
+}
+const SUPPORT_LABELS: Record<ContextSupport, { label: string; icon: LucideIcon }> = {
+  [ContextSupport.IMAGE]: {
+    label: 'Image',
+    icon: ImageIcon,
+  },
+  [ContextSupport.VIDEO]: {
+    label: 'Video',
+    icon: VideoIcon,
+  },
+  [ContextSupport.AUDIO]: {
+    label: 'Audio',
+    icon: MusicIcon,
+  },
+  [ContextSupport.TEXT]: {
+    label: 'Text',
+    icon: TypeIcon,
+  },
+  [ContextSupport.FILE]: {
+    label: 'File',
+    icon: FileIcon,
+  },
 }
 
 function ImagePromptComposer({ models }: { models: Model[] }) {
@@ -245,15 +278,16 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           aria-expanded={modelSelectorOpen}
           aria-haspopup="dialog"
           className={cn(
-            'h-7 max-w-[min(100%,14rem)] gap-1.5 rounded-xl border px-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
+            'h-7 max-w-[min(100%,14rem)] gap-1.5 rounded-xl border px-1.5 pr-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
             'border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
             'hover:border-border/65 hover:bg-background',
+            'active:scale-[0.97]',
             modelSelectorOpen && 'border-border/65 bg-background shadow-sm',
           )}
           disabled={isPending}
           type="button"
         >
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-lg bg-muted/55 ring-1 ring-border/35">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-[0.4375rem] bg-muted/50 ring-1 ring-border/30">
             <ModelProviderIcon className="size-3" provider={selectedModel.modelProvider} />
           </span>
           {selectedModelHighlights[0] ? (
@@ -267,10 +301,12 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               )}
             />
           ) : null}
-          <ModelSelectorName className="text-xs font-medium leading-none">{selectedModel.name}</ModelSelectorName>
+          <ModelSelectorName className="text-xs font-medium leading-none tracking-[-0.015em]">
+            {selectedModel.name}
+          </ModelSelectorName>
           <ChevronDownIcon
             className={cn(
-              'size-3 shrink-0 text-muted-foreground transition-transform duration-200',
+              'size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 ease-out',
               modelSelectorOpen && 'rotate-180',
             )}
           />
@@ -279,27 +315,17 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 
       <ModelSelectorContent className="sm:max-w-104" title="Choose model">
         <ModelSelectorHeader
-          heading="Choose model"
+          heading="Models"
           description={
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-1.5 rounded-full bg-success" />
-                Cheapest
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-1.5 rounded-full bg-info" />
-                New
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
-                Popular
-              </span>
-            </p>
+            <>
+              {models.length} available
+              {chefs.length > 1 ? ` · ${chefs.length} providers` : null}
+            </>
           }
         />
-        <ModelSelectorInput placeholder="Search models…" />
+        <ModelSelectorInput placeholder="Search by name or provider…" />
         <ModelSelectorList>
-          <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+          <ModelSelectorEmpty>No models match your search.</ModelSelectorEmpty>
           {chefs.map(chef => (
             <ModelSelectorGroup heading={chef} key={chef}>
               {models
@@ -307,30 +333,64 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                 .map(model => {
                   const isSelected = selectedModelId === model._id
                   const highlights = modelHighlights.get(model._id) ?? []
+                  const supports = model.contextSupports ?? []
 
                   return (
                     <ModelSelectorItem
                       key={model._id}
                       data-checked={isSelected ? true : undefined}
                       onSelect={() => handleModelSelect(model._id)}
-                      value={`${model.name} ${model.modelProvider}`}
+                      value={`${model.name} ${model.modelProvider} ${model.chef}`}
                     >
                       <ModelSelectorLogoBadge>
                         <ModelProviderIcon className="size-3.5" provider={model.modelProvider} />
                       </ModelSelectorLogoBadge>
+
                       <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
-                        <ModelSelectorName className="text-[13px] font-medium leading-tight">
-                          {model.name}
-                        </ModelSelectorName>
-                        {highlights.length > 0 ? (
-                          <span className="flex flex-wrap gap-1">
-                            {highlights.map(highlight => (
-                              <ModelHighlightBadge key={highlight} highlight={highlight} />
-                            ))}
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <ModelSelectorName className="min-w-0 flex-1 text-[13px] font-medium leading-none tracking-[-0.016em]">
+                            {model.name}
+                          </ModelSelectorName>
+                          {highlights.length > 0 ? (
+                            <span className="flex shrink-0 items-center gap-1">
+                              {highlights.map(highlight => (
+                                <ModelHighlightBadge key={highlight} highlight={highlight} />
+                              ))}
+                            </span>
+                          ) : null}
+                        </span>
+
+                        {supports.length > 0 ? (
+                          <span className="flex items-center gap-1.5">
+                            {supports.map(support => {
+                              const { icon: Icon, label } = SUPPORT_LABELS[support]
+                              return (
+                                <Icon
+                                  key={support}
+                                  aria-label={label}
+                                  className="size-3 text-muted-foreground/40"
+                                  strokeWidth={1.75}
+                                />
+                              )
+                            })}
                           </span>
                         ) : null}
                       </span>
-                      <ModelSelectorShortcut>{formatModelCost(model.cost, model.costUnit)}</ModelSelectorShortcut>
+
+                      <span className="flex shrink-0 items-center gap-2.5">
+                        <ModelSelectorShortcut>
+                          {formatModelCost(model.cost, model.costUnit)}
+                        </ModelSelectorShortcut>
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'flex size-4 items-center justify-center transition-opacity duration-150',
+                            isSelected ? 'opacity-100' : 'opacity-0',
+                          )}
+                        >
+                          <CheckIcon className="size-3.5 text-foreground" strokeWidth={2.25} />
+                        </span>
+                      </span>
                     </ModelSelectorItem>
                   )
                 })}
@@ -367,7 +427,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           <PromptInputTextarea
             ref={textareaRef}
             className={cn(
-              'min-h-[9rem] px-4 pt-4 pb-10 text-[15px] leading-[1.65] tracking-[-0.012em]',
+              'min-h-36 px-4 pt-4 pb-10 text-[15px] leading-[1.65] tracking-[-0.012em]',
               'placeholder:text-muted-foreground/45 placeholder:transition-opacity placeholder:duration-300',
               'focus:outline-none focus:ring-0',
             )}
@@ -420,9 +480,13 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                 'hover:border-border/65 hover:bg-background',
                 attachedImages.length > 0 && 'border-border/65 bg-background shadow-sm',
               )}
-              disabled={isPending}
+              disabled={isPending || !selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)}
               onClick={() => setAttachDialogOpen(true)}
-              tooltip="Attach images"
+              tooltip={
+                selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
+                  ? 'Attach images'
+                  : 'This model does not support image generation'
+              }
               type="button"
             >
               <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
@@ -486,7 +550,6 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               size="sm"
               status={isPending ? 'submitted' : undefined}
             >
-              <SparklesIcon className="size-3.5 shrink-0" />
               <span className="hidden sm:inline">Generate</span>
               <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
                 ⌘↵

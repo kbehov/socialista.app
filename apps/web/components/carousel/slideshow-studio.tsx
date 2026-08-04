@@ -1,8 +1,8 @@
 'use client'
 
-import { CollapseAppSidebarOnMount } from '@/components/sidebars/collapse-app-sidebar-on-mount'
-import { SlideshowStudioSidebar } from '@/components/carousel/slideshow-studio-sidebar'
 import { CarouselEditor } from '@/components/carousel/carousel-editor'
+import { SlideshowStudioSidebar } from '@/components/carousel/slideshow-studio-sidebar'
+import { CollapseAppSidebarOnMount } from '@/components/sidebars/collapse-app-sidebar-on-mount'
 
 export function SlideshowStudio() {
   return (

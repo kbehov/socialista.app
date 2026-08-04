@@ -1,13 +1,12 @@
 'use client'
 
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, Maximize2Icon, Trash2Icon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, Maximize2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { useActiveLayer } from '@/hooks/carousel/use-active-layer'
 import { overlayFillColor } from '@/lib/carousel/overlay-style'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { ColorPicker } from './primitives/color-picker'
-import { cn } from '@/lib/utils'
 
 const OVERLAY_PRESETS = [
   { label: 'Dark 40%', color: '#000000', opacity: 0.4 },
@@ -15,7 +14,7 @@ const OVERLAY_PRESETS = [
   { label: 'Light 25%', color: '#ffffff', opacity: 0.25 },
 ] as const
 
-export function SlideOverlaySection() {
+export function OverlayLayerToolbar() {
   const { slide, layer } = useActiveLayer()
   const addOverlayLayer = useEditorStore(s => s.addOverlayLayer)
   const updateLayer = useEditorStore(s => s.updateLayer)
@@ -24,21 +23,24 @@ export function SlideOverlaySection() {
   const bringForward = useEditorStore(s => s.bringForward)
   const sendBackward = useEditorStore(s => s.sendBackward)
 
-  if (!slide) return null
+  if (!slide) {
+    return (
+      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
+        Select a slide to edit overlays.
+      </div>
+    )
+  }
 
   if (!layer || layer.type !== 'overlay') {
     return (
-      <div className="space-y-1.5">
-        <Label className="text-[11px] font-medium text-muted-foreground">Overlay</Label>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Darken or tint the slide background so text stays readable.
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          Select an overlay on the canvas, or add one below.
         </p>
-        <Button size="sm" variant="outline" className="w-full" onClick={() => addOverlayLayer(slide.id)}>
-          Add overlay layer
+        <Button size="sm" variant="outline" onClick={() => addOverlayLayer(slide.id)}>
+          <PlusIcon className="size-3.5" />
+          Add overlay
         </Button>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Defaults to a full-slide black overlay at 40% opacity. Select an overlay on the canvas to edit it.
-        </p>
       </div>
     )
   }
@@ -48,13 +50,51 @@ export function SlideOverlaySection() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <Label className="text-[11px] font-medium text-muted-foreground">Overlay</Label>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-muted-foreground">Overlay</span>
+        <div className="flex gap-1">
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => bringForward(slide.id, overlay.id)}
+            aria-label="Bring forward"
+          >
+            <ArrowUpIcon />
+          </Button>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => sendBackward(slide.id, overlay.id)}
+            aria-label="Send backward"
+          >
+            <ArrowDownIcon />
+          </Button>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => duplicateLayer(slide.id, overlay.id)}
+            aria-label="Duplicate layer"
+          >
+            <CopyIcon />
+          </Button>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            className="text-destructive hover:bg-destructive/10"
+            onClick={() => removeLayer(slide.id, overlay.id)}
+            aria-label="Delete layer"
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
+      </div>
+
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Drag to move, resize with handles, or cover the full slide. Reorder in the Layers tab.
+        Drag to move, resize with handles, or cover the full slide.
       </p>
 
       <div
-        className="mx-auto h-16 w-full max-w-[200px] rounded-md border shadow-xs"
+        className="mx-auto h-16 w-full max-w-50 rounded-md border shadow-xs"
         style={{ backgroundColor: previewColor }}
       />
 
@@ -107,7 +147,9 @@ export function SlideOverlaySection() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <Label className="text-[11px] font-medium text-muted-foreground">Corner radius</Label>
-          <span className="text-[11px] tabular-nums text-muted-foreground">{overlay.borderRadius ?? 0}px</span>
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {overlay.borderRadius ?? 0}px
+          </span>
         </div>
         <input
           type="range"
@@ -119,38 +161,22 @@ export function SlideOverlaySection() {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full"
-          onClick={() =>
-            updateLayer(slide.id, overlay.id, { x: 0, y: 0, width: 100, height: 100, rotation: 0 })
-          }
-        >
-          <Maximize2Icon className="size-3.5" />
-          Cover full slide
-        </Button>
-        <div className="grid grid-cols-4 gap-1">
-          <Button size="icon-sm" variant="outline" onClick={() => bringForward(slide.id, overlay.id)}>
-            <ArrowUpIcon className="size-3.5" />
-          </Button>
-          <Button size="icon-sm" variant="outline" onClick={() => sendBackward(slide.id, overlay.id)}>
-            <ArrowDownIcon className="size-3.5" />
-          </Button>
-          <Button size="icon-sm" variant="outline" onClick={() => duplicateLayer(slide.id, overlay.id)}>
-            <CopyIcon className="size-3.5" />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="outline"
-            className={cn('text-destructive hover:bg-destructive/10')}
-            onClick={() => removeLayer(slide.id, overlay.id)}
-          >
-            <Trash2Icon className="size-3.5" />
-          </Button>
-        </div>
-      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full"
+        onClick={() =>
+          updateLayer(slide.id, overlay.id, { x: 0, y: 0, width: 100, height: 100, rotation: 0 })
+        }
+      >
+        <Maximize2Icon className="size-3.5" />
+        Cover full slide
+      </Button>
     </div>
   )
+}
+
+/** @deprecated Use OverlayLayerToolbar — kept for any lingering imports. */
+export function SlideOverlaySection() {
+  return <OverlayLayerToolbar />
 }

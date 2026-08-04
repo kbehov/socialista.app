@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Slide } from '@socialista/types'
 import {
   CropIcon,
+  FolderInputIcon,
   FolderOpenIcon,
   ImagePlusIcon,
   Loader2Icon,
@@ -20,8 +21,11 @@ import {
 } from '@/components/ui/context-menu'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { saveSlideToWorkspace } from '@/lib/carousel/export'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import { getWorkspaceId, useWorkspaceStore } from '@/store/workspace.store'
+import { toast } from 'sonner'
 import { useSlideImageEdit } from './slide-image-edit-provider'
 import { WorkspaceImagePickerDialog } from './workspace-image-picker-dialog'
 import { SlideCanvas } from './slide-canvas'
@@ -46,7 +50,11 @@ export function SlideCanvasShell({
 }: SlideCanvasShellProps) {
   const setActiveLayer = useEditorStore(s => s.setActiveLayer)
   const addImageLayer = useEditorStore(s => s.addImageLayer)
+  const slides = useEditorStore(s => s.slides)
+  const canvasSize = useEditorStore(s => s.canvas)
+  const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const [filesDialogOpen, setFilesDialogOpen] = useState(false)
+  const [savingToFiles, setSavingToFiles] = useState(false)
   const addImageFileRef = useRef<HTMLInputElement>(null)
   const {
     isEditingSlide,
@@ -135,6 +143,29 @@ export function SlideCanvasShell({
     [addImageLayer, slide.id],
   )
 
+  const handleSaveToFiles = useCallback(async () => {
+    const workspaceId = getWorkspaceId(currentWorkspace)
+    if (!workspaceId) {
+      toast.error('No workspace selected')
+      return
+    }
+    if (savingToFiles) return
+
+    setSavingToFiles(true)
+    try {
+      const index = Math.max(
+        0,
+        slides.findIndex(item => item.id === slide.id),
+      )
+      await saveSlideToWorkspace(workspaceId, slide, canvasSize.width, index)
+      toast.success('Saved to your files')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save to files')
+    } finally {
+      setSavingToFiles(false)
+    }
+  }, [canvasSize.width, currentWorkspace, savingToFiles, slide, slides])
+
   useEffect(() => {
     deselectBackgroundEdit()
   }, [slide.backgroundImageUrl, deselectBackgroundEdit])
@@ -205,6 +236,14 @@ export function SlideCanvasShell({
           >
             <FolderOpenIcon />
             Image from files
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            disabled={isEditing || isAdjusting || savingToFiles}
+            onSelect={() => void handleSaveToFiles()}
+          >
+            {savingToFiles ? <Loader2Icon className="animate-spin" /> : <FolderInputIcon />}
+            {savingToFiles ? 'Saving…' : 'Save to files'}
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem disabled={!hasBackground || isEditing || isAdjusting} onSelect={handleEditImage}>

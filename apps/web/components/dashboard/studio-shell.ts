@@ -18,5 +18,7 @@ export const dashboardMainClassName = [
   studioHasUtilities('w-full'),
   studioHasUtilities('gap-0'),
   studioHasUtilities('overflow-hidden'),
-  studioHasUtilities('p-0'),
+  studioHasUtilities('!p-0'),
+  studioHasUtilities('!px-0'),
+  studioHasUtilities('!pb-0'),
 ].join(' ')

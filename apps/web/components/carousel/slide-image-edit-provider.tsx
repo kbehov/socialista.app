@@ -13,7 +13,7 @@ export type ImageEditTarget =
   | { kind: 'background'; slideId: SlideId; imageUrl: string }
   | { kind: 'layer'; slideId: SlideId; layerId: LayerId; imageUrl: string }
 
-type AdjustTarget = {
+type AdjustTarget = { 
   slideId: SlideId
   imageUrl: string
 }
@@ -156,7 +156,6 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
       if (!dialogTarget) return
 
       const target = dialogTarget
-      setDialogTarget(null)
       setEditing(target.slideId, true)
 
       try {
@@ -169,6 +168,7 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
         }
 
         applyEditedImage(target, result.data.url)
+        setDialogTarget(null)
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to edit image')
       } finally {
@@ -233,6 +233,8 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
       {children}
       <SlideImageEditDialog
         open={dialogTarget !== null}
+        imageUrl={dialogTarget?.imageUrl ?? null}
+        kind={dialogTarget?.kind === 'layer' ? 'layer' : 'background'}
         onOpenChange={open => {
           if (!open) setDialogTarget(null)
         }}

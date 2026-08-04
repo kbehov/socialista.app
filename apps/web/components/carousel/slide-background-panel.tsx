@@ -4,36 +4,44 @@ import { ImageActionButton, ImageSourcePicker, ImageUrlInput } from '@/component
 import { InspectorImageFilters } from '@/components/carousel/inspector-image-filters'
 import { InspectorImagePreview } from '@/components/carousel/inspector-image-preview'
 import { useSlideImageEdit } from '@/components/carousel/slide-image-edit-provider'
+import { StudioEmptyState } from '@/components/carousel/studio-segmented-tabs'
 import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { useEditorStore } from '@/lib/carousel/store'
 import { filtersToCss } from '@/utils/media-filters'
+import { cn } from '@/lib/utils'
 import type { Slide } from '@socialista/types'
 import { CropIcon, FolderOpenIcon, ImageIcon, LinkIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ColorPicker } from './primitives/color-picker'
 
-export function SlideBackgroundPanel() {
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-[11px] font-medium tracking-[0.01em] text-muted-foreground/90">{children}</p>
+}
+
+export function SlideBackgroundPanel({ compact = false }: { compact?: boolean }) {
   const slide = useEditorStore(s => s.slides.find(sl => sl.id === s.activeSlideId) ?? null)
   const setSlideBackgroundColor = useEditorStore(s => s.setSlideBackgroundColor)
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
-        Select a slide to edit its background.
-      </div>
+      <StudioEmptyState
+        title="No slide selected"
+        description="Select a slide on the canvas to edit its background."
+      />
     )
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Background color or photo. Click the image on canvas to pan and zoom.
-      </p>
+    <div className={cn('flex flex-col', compact ? 'gap-3.5' : 'gap-3')}>
+      {!compact ? (
+        <p className="text-[11px] leading-[1.45] text-muted-foreground">
+          Background color or photo. Click the image on canvas to pan and zoom.
+        </p>
+      ) : null}
 
-      <div className="space-y-1.5">
-        <Label className="text-[11px] font-medium text-muted-foreground">Fill color</Label>
+      <div className="space-y-2">
+        <FieldLabel>Fill color</FieldLabel>
         <ColorPicker
           value={slide.backgroundColor}
           onChange={color => color && setSlideBackgroundColor(slide.id, color)}
@@ -42,12 +50,12 @@ export function SlideBackgroundPanel() {
         />
       </div>
 
-      <SlideBackgroundImageSection key={slide.id} slide={slide} />
+      <SlideBackgroundImageSection key={slide.id} slide={slide} compact={compact} />
     </div>
   )
 }
 
-function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
+function SlideBackgroundImageSection({ slide, compact }: { slide: Slide; compact: boolean }) {
   const canvas = useEditorStore(s => s.canvas)
   const setSlideBackground = useEditorStore(s => s.setSlideBackground)
   const clearSlideBackgroundImage = useEditorStore(s => s.clearSlideBackgroundImage)
@@ -55,6 +63,7 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
   const removeSlideBackgroundFilter = useEditorStore(s => s.removeSlideBackgroundFilter)
   const setSlideBackgroundFilterLive = useEditorStore(s => s.setSlideBackgroundFilterLive)
   const removeSlideBackgroundFilterLive = useEditorStore(s => s.removeSlideBackgroundFilterLive)
+  const setSlideBackgroundFilters = useEditorStore(s => s.setSlideBackgroundFilters)
   const { openEditDialog, openAdjustMode, replaceSlideImage, isEditingSlide } = useSlideImageEdit()
 
   const [urlVisible, setUrlVisible] = useState(false)
@@ -88,11 +97,11 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
   const editing = isEditingSlide(slide.id)
 
   return (
-    <div className="space-y-1.5">
-      <Label className="text-[11px] font-medium text-muted-foreground">Image</Label>
+    <div className="space-y-2">
+      <FieldLabel>Image</FieldLabel>
 
       {slide.backgroundImageUrl ? (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <InspectorImagePreview
             imageUrl={slide.backgroundImageUrl}
             canvas={canvas}
@@ -102,10 +111,12 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
 
           <InspectorImageFilters
             filters={slide.backgroundImageFilters}
+            previewImageUrl={slide.backgroundImageUrl}
             onChange={filter => setSlideBackgroundFilterLive(slide.id, filter)}
             onCommit={filter => setSlideBackgroundFilter(slide.id, filter)}
             onRemove={type => removeSlideBackgroundFilterLive(slide.id, type)}
             onRemoveCommit={type => removeSlideBackgroundFilter(slide.id, type)}
+            onApplyFilters={next => setSlideBackgroundFilters(slide.id, next)}
           />
 
           {urlVisible ? (
@@ -120,7 +131,7 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
             <div className="flex flex-col gap-1.5">
               <Button
                 size="sm"
-                className="w-full"
+                className="h-8 w-full gap-1.5 rounded-lg text-[12px] font-medium tracking-tight"
                 disabled={editing}
                 onClick={() =>
                   openEditDialog({
@@ -177,7 +188,8 @@ function SlideBackgroundImageSection({ slide }: { slide: Slide }) {
       ) : (
         <ImageSourcePicker
           disabled={editing}
-          hint="Solid color shows when no image is set."
+          layout={compact ? 'studio' : 'prominent'}
+          hint={compact ? 'Solid fill shows when no image is set.' : 'Solid color shows when no image is set.'}
           onImageSelected={url => setSlideBackground(slide.id, url)}
         />
       )}
