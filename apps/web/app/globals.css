@@ -1171,28 +1171,26 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 1px;
-    background: color-mix(in oklch, var(--primary) 70%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 25%, transparent);
+    width: 0;
+    border-left: 1px dashed rgb(236 72 153 / 0.5);
+    background: transparent;
+    box-shadow: none;
     z-index: 20;
   }
 
   .video-studio-snap-guide-pulse {
-    animation: video-studio-snap-pulse 150ms ease-out;
+    animation: video-studio-snap-pulse 140ms ease-out;
   }
 
   @keyframes video-studio-snap-pulse {
     0% {
-      opacity: 0.45;
-      box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 0%, transparent);
+      opacity: 0.35;
     }
-    40% {
-      opacity: 1;
-      box-shadow: 0 0 8px 1px color-mix(in oklch, var(--primary) 55%, transparent);
+    45% {
+      opacity: 0.85;
     }
     100% {
       opacity: 1;
-      box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 25%, transparent);
     }
   }
 

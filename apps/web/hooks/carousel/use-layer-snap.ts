@@ -1,16 +1,17 @@
 'use client'
 
-import { useCanvasGuides } from '@/components/carousel/canvas-guides'
+import { useMemo } from 'react'
+import { useLayerSnap as useEditorLayerSnap } from '@/hooks/editor/use-layer-snap'
 import { useEditorStore } from '@/lib/carousel/store'
-import type { SnapTarget } from '@/lib/carousel/snap-guides'
+import type { SnapTarget } from '@/lib/editor/snap-guides'
 import type { LayerId, SlideId } from '@socialista/types'
-import { useCallback, useMemo } from 'react'
 
+/** Carousel adapter: resolves sibling layers from the editor store. */
 export function useLayerSnap(slideId: SlideId, layerId: LayerId) {
-  const guides = useCanvasGuides()
   const layers = useEditorStore(s => s.slides.find(item => item.id === slideId)?.layers)
+  const snapEnabled = useEditorStore(s => s.snapEnabled)
 
-  const snapTargets = useMemo<SnapTarget[]>(() => {
+  const others = useMemo<SnapTarget[]>(() => {
     if (!layers) return []
     return layers
       .filter(layer => layer.id !== layerId)
@@ -23,17 +24,5 @@ export function useLayerSnap(slideId: SlideId, layerId: LayerId) {
       }))
   }, [layerId, layers])
 
-  const onGuidesChange = useCallback(
-    (next: { orientation: 'vertical' | 'horizontal'; position: number }[]) => {
-      if (!guides) return
-      if (next.length === 0) guides.clearGuides()
-      else guides.setGuides(next)
-    },
-    [guides],
-  )
-
-  return {
-    snapTargets,
-    onGuidesChange: guides ? onGuidesChange : undefined,
-  }
+  return useEditorLayerSnap({ others, enabled: snapEnabled })
 }

@@ -1,17 +1,27 @@
 'use client'
 
 import { MediaPool } from '@/components/video/media-pool'
-import { StudioPanelHeader } from '@/components/carousel/studio-segmented-tabs'
+import { EditorPanelHeader } from '@/components/editor/panel-shell'
 
-export function VideoSourcePanel() {
+export function VideoSourcePanel({
+  embedded = false,
+  showPanelHeader,
+}: {
+  embedded?: boolean
+  showPanelHeader?: boolean
+}) {
+  const panelHeaderVisible = showPanelHeader ?? embedded
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="shrink-0 border-b border-border/40 px-3.5 py-3">
-        <StudioPanelHeader
-          title="Media"
-          description="Import files, library assets, or a URL"
-        />
-      </div>
+      {panelHeaderVisible ? (
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-3">
+          <EditorPanelHeader
+            title="Media"
+            description="Upload, library assets, or paste a URL"
+          />
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1 overflow-hidden">
         <MediaPool embedded />

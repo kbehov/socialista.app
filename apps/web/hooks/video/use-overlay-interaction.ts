@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { TextOverlay } from '@socialista/types'
+import { snapLayerPosition, type SnapGuide, type SnapTarget } from '@/lib/editor/snap-guides'
+import type { Corner } from '@/hooks/editor/use-drag-resize'
 
-export type OverlayResizeEdge = 'w' | 'e'
+export type OverlayResizeEdge = 'w' | 'e' | Corner
 
 type Interaction =
   | {
@@ -20,9 +22,12 @@ type Interaction =
       kind: 'resize'
       edge: OverlayResizeEdge
       startPointerX: number
+      startPointerY: number
       startX: number
+      startY: number
       startWidth: number
       canvasWidthPx: number
+      canvasHeightPx: number
     }
   | {
       kind: 'rotate'
@@ -47,21 +52,54 @@ export function useOverlayInteraction(opts: {
   overlay: TextOverlay
   canvasRef: RefObject<HTMLElement | null>
   onCommit: (partial: Partial<TextOverlay>) => void
+  /** Layer height as % of canvas — used for center/edge snap. */
+  heightPct?: number
+  snapTargets?: SnapTarget[]
+  onGuidesChange?: (guides: SnapGuide[]) => void
+  snapEnabled?: boolean
 }) {
-  const { overlay, canvasRef, onCommit } = opts
+  const {
+    overlay,
+    canvasRef,
+    onCommit,
+    heightPct = 12,
+    snapTargets = [],
+    onGuidesChange,
+    snapEnabled = true,
+  } = opts
   const [draft, setDraft] = useState<Partial<TextOverlay> | null>(null)
   const [isInteracting, setIsInteracting] = useState(false)
   const interaction = useRef<Interaction | null>(null)
   const draftRef = useRef<Partial<TextOverlay> | null>(null)
   const onCommitRef = useRef(onCommit)
+  const snapTargetsRef = useRef(snapTargets)
+  const onGuidesChangeRef = useRef(onGuidesChange)
+  const snapEnabledRef = useRef(snapEnabled)
+  const heightPctRef = useRef(heightPct)
 
   useEffect(() => {
     onCommitRef.current = onCommit
   }, [onCommit])
 
+  useEffect(() => {
+    snapTargetsRef.current = snapTargets
+  }, [snapTargets])
+
+  useEffect(() => {
+    onGuidesChangeRef.current = onGuidesChange
+  }, [onGuidesChange])
+
+  useEffect(() => {
+    snapEnabledRef.current = snapEnabled
+  }, [snapEnabled])
+
+  useEffect(() => {
+    heightPctRef.current = heightPct
+  }, [heightPct])
+
   const updateDraft = useCallback((partial: Partial<TextOverlay>) => {
-    draftRef.current = partial
-    setDraft(partial)
+    draftRef.current = { ...draftRef.current, ...partial }
+    setDraft(draftRef.current)
   }, [])
 
   const stop = useCallback(() => {
@@ -72,6 +110,7 @@ export function useOverlayInteraction(opts: {
     draftRef.current = null
     setIsInteracting(false)
     setDraft(null)
+    onGuidesChangeRef.current?.([])
 
     if (toCommit) {
       onCommitRef.current(toCommit)
@@ -87,25 +126,44 @@ export function useOverlayInteraction(opts: {
       if (it.kind === 'drag') {
         const dxPct = ((e.clientX - it.startPointerX) / it.canvasWidthPx) * 100
         const dyPct = ((e.clientY - it.startPointerY) / it.canvasHeightPx) * 100
-        updateDraft({
-          x: clamp(it.startX + dxPct, X_MIN, X_MAX),
-          y: clamp(it.startY + dyPct, Y_MIN, Y_MAX),
-        })
+        let nextX = clamp(it.startX + dxPct, X_MIN, X_MAX)
+        let nextY = clamp(it.startY + dyPct, Y_MIN, Y_MAX)
+
+        if (snapEnabledRef.current) {
+          const snapped = snapLayerPosition({
+            x: nextX,
+            y: nextY,
+            width: overlay.width,
+            height: heightPctRef.current,
+            others: snapTargetsRef.current,
+          })
+          nextX = snapped.x
+          nextY = snapped.y
+          onGuidesChangeRef.current?.(snapped.guides)
+        } else {
+          onGuidesChangeRef.current?.([])
+        }
+
+        updateDraft({ x: nextX, y: nextY })
         return
       }
 
       if (it.kind === 'resize') {
         const dxPct = ((e.clientX - it.startPointerX) / it.canvasWidthPx) * 100
-        if (it.edge === 'e') {
+        onGuidesChangeRef.current?.([])
+
+        if (it.edge === 'e' || it.edge === 'ne' || it.edge === 'se') {
           updateDraft({ width: clamp(it.startWidth + dxPct, W_MIN, 100) })
           return
         }
-        const nextWidth = clamp(it.startWidth - dxPct, W_MIN, 100)
-        const appliedDx = it.startWidth - nextWidth
-        updateDraft({
-          x: clamp(it.startX + appliedDx, X_MIN, X_MAX),
-          width: nextWidth,
-        })
+        if (it.edge === 'w' || it.edge === 'nw' || it.edge === 'sw') {
+          const nextWidth = clamp(it.startWidth - dxPct, W_MIN, 100)
+          const appliedDx = it.startWidth - nextWidth
+          updateDraft({
+            x: clamp(it.startX + appliedDx, X_MIN, X_MAX),
+            width: nextWidth,
+          })
+        }
         return
       }
 
@@ -113,10 +171,11 @@ export function useOverlayInteraction(opts: {
         const startAngle = Math.atan2(it.startPointerY - it.centerY, it.startPointerX - it.centerX)
         const currentAngle = Math.atan2(e.clientY - it.centerY, e.clientX - it.centerX)
         const delta = ((currentAngle - startAngle) * 180) / Math.PI
+        onGuidesChangeRef.current?.([])
         updateDraft({ rotation: Math.round((it.startRotation + delta) % 360) })
       }
     },
-    [updateDraft],
+    [overlay.width, updateDraft],
   )
 
   useEffect(() => {
@@ -163,9 +222,12 @@ export function useOverlayInteraction(opts: {
       kind: 'resize',
       edge,
       startPointerX: e.clientX,
+      startPointerY: e.clientY,
       startX: overlay.x,
+      startY: overlay.y,
       startWidth: overlay.width,
       canvasWidthPx: rect.width,
+      canvasHeightPx: rect.height,
     }
     setIsInteracting(true)
     updateDraft({ x: overlay.x, width: overlay.width })

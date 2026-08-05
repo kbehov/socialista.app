@@ -32,6 +32,12 @@ import {
 import { createLayerId, createSlideId } from './id'
 import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
 import { proxiedImageUrl } from './image-url'
+import {
+  alignAlongAxis,
+  alignToEdge,
+  type AlignAxis,
+  type AlignEdge,
+} from '@/lib/editor/alignment'
 
 const HISTORY_LIMIT = 50
 
@@ -50,6 +56,9 @@ interface EditorState {
   isDirty: boolean
   lastSavedAt: number | null
   studioPanelTab: 'create' | 'design' | 'text' | 'media' | 'layers'
+  showRulers: boolean
+  showGuides: boolean
+  snapEnabled: boolean
 
   addSlide: (backgroundImageUrl?: string) => void
   removeSlide: (slideId: SlideId) => void
@@ -102,6 +111,14 @@ interface EditorState {
   setSlideshowName: (name: string) => void
   markClean: () => void
   setStudioPanelTab: (tab: EditorState['studioPanelTab']) => void
+  setShowRulers: (show: boolean) => void
+  setShowGuides: (show: boolean) => void
+  setSnapEnabled: (enabled: boolean) => void
+  toggleShowRulers: () => void
+  toggleShowGuides: () => void
+  toggleSnapEnabled: () => void
+  alignLayerCenter: (slideId: SlideId, layerId: LayerId, axis: 'horizontal' | 'vertical' | 'both') => void
+  alignLayerEdge: (slideId: SlideId, layerId: LayerId, edge: 'left' | 'right' | 'top' | 'bottom') => void
   getProjectPayload: () => {
     name: string
     canvas: CanvasDimensions
@@ -183,6 +200,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
     isDirty: false,
     lastSavedAt: null,
     studioPanelTab: 'create',
+    showRulers: false,
+    showGuides: true,
+    snapEnabled: true,
 
     addSlide: backgroundImageUrl => {
       record(state => {
@@ -645,6 +665,41 @@ export const useEditorStore = create<EditorState>((set, get) => {
     markClean: () => set({ isDirty: false, lastSavedAt: Date.now() }),
 
     setStudioPanelTab: tab => set({ studioPanelTab: tab }),
+
+    setShowRulers: show => set({ showRulers: show }),
+    setShowGuides: show => set({ showGuides: show }),
+    setSnapEnabled: enabled => set({ snapEnabled: enabled }),
+    toggleShowRulers: () => set(state => ({ showRulers: !state.showRulers })),
+    toggleShowGuides: () => set(state => ({ showGuides: !state.showGuides })),
+    toggleSnapEnabled: () => set(state => ({ snapEnabled: !state.snapEnabled })),
+
+    alignLayerCenter: (slideId, layerId, axis) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => {
+            const next = alignAlongAxis(
+              { x: layer.x, y: layer.y, width: layer.width, height: layer.height },
+              axis as AlignAxis,
+            )
+            return { ...layer, x: next.x, y: next.y }
+          }),
+        ),
+      }))
+    },
+
+    alignLayerEdge: (slideId, layerId, edge) => {
+      record(state => ({
+        slides: mutateSlide(state.slides, slideId, slide =>
+          mutateLayer(slide, layerId, layer => {
+            const next = alignToEdge(
+              { x: layer.x, y: layer.y, width: layer.width, height: layer.height },
+              edge as AlignEdge,
+            )
+            return { ...layer, x: next.x, y: next.y }
+          }),
+        ),
+      }))
+    },
 
     getProjectPayload: () => {
       const state = get()

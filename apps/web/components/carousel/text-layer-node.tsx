@@ -5,9 +5,6 @@ import type { RefObject } from 'react'
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  AlignVerticalJustifyCenterIcon,
-  AlignVerticalJustifyEndIcon,
-  AlignVerticalJustifyStartIcon,
   CopyIcon,
   PencilIcon,
   Trash2Icon,
@@ -18,8 +15,10 @@ import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edi
 import { useDragResize } from '@/hooks/carousel/use-drag-resize'
 import { useLayerSnap } from '@/hooks/carousel/use-layer-snap'
 import { LayerTransformHandles } from '@/components/carousel/layer-transform-handles'
+import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { clamp } from '@/lib/carousel/defaults'
+import { alignAlongAxis, alignToEdge } from '@/lib/editor/alignment'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -27,26 +26,10 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const CANVAS_EDGE_MARGIN = 8
 const MIN_TEXT_HEIGHT_PCT = 4
 const HEIGHT_FIT_EPSILON = 0.35
-
-type VerticalAlign = 'top' | 'center' | 'bottom'
-
-function getAlignedPosition(layer: Pick<TextLayer, 'width' | 'height'>, alignment: VerticalAlign) {
-  const x = clamp((100 - layer.width) / 2, -10, 100 - layer.width)
-  const y =
-    alignment === 'top'
-      ? clamp(CANVAS_EDGE_MARGIN, -10, 100 - layer.height)
-      : alignment === 'center'
-        ? clamp((100 - layer.height) / 2, -10, 100 - layer.height)
-        : clamp(100 - layer.height - CANVAS_EDGE_MARGIN, -10, 100 - layer.height)
-
-  return { x, y }
-}
 
 function measureFitHeightPct(layerEl: HTMLElement, canvasHeight: number): number {
   const previousHeight = layerEl.style.height
@@ -212,10 +195,20 @@ export function TextLayerNode({
     updateLayerLive(slideId, layer.id, { height: fitted })
   }
 
-  const alignLayer = (alignment: VerticalAlign) => {
-    const { width, height } = effective
+  const alignLayer = (action: AlignmentAction) => {
+    if (action.type === 'distribute') return
+    const rect = {
+      x: effective.x,
+      y: effective.y,
+      width: effective.width,
+      height: effective.height,
+    }
+    const next =
+      action.type === 'center'
+        ? alignAlongAxis(rect, action.axis)
+        : alignToEdge(rect, action.edge)
     skipNextFitRef.current = true
-    updateLayer(slideId, layer.id, getAlignedPosition({ width, height }, alignment))
+    updateLayer(slideId, layer.id, { x: next.x, y: next.y })
   }
 
   const canDrag = interactive && !isEditing
@@ -293,7 +286,20 @@ export function TextLayerNode({
         <LayerTransformHandles
           onResize={beginResize}
           onRotate={beginRotate}
-          toolbar={<TextLayerAlignToolbar onAlign={alignLayer} />}
+          toolbar={
+            <div
+              className="pointer-events-none absolute top-[calc(100%+10px)] left-1/2 z-50 -translate-x-1/2"
+              onPointerDown={event => event.stopPropagation()}
+            >
+              <AlignmentToolbar
+                onAlign={alignLayer}
+                showDistribute={false}
+                showToggles={false}
+                size="xs"
+                className="shadow-lg"
+              />
+            </div>
+          }
         />
       ) : null}
     </div>
@@ -324,47 +330,5 @@ export function TextLayerNode({
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  )
-}
-
-function TextLayerAlignToolbar({ onAlign }: { onAlign: (alignment: VerticalAlign) => void }) {
-  return (
-    <div
-      className="pointer-events-none absolute top-[calc(100%+10px)] left-1/2 z-50 -translate-x-1/2"
-      onPointerDown={event => event.stopPropagation()}
-    >
-      <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border bg-background/95 p-0.5 shadow-lg backdrop-blur-sm">
-        <Button
-          type="button"
-          size="icon-xs"
-          variant="ghost"
-          className="rounded-full"
-          aria-label="Align top center"
-          onClick={() => onAlign('top')}
-        >
-          <AlignVerticalJustifyStartIcon />
-        </Button>
-        <Button
-          type="button"
-          size="icon-xs"
-          variant="ghost"
-          className="rounded-full"
-          aria-label="Align center"
-          onClick={() => onAlign('center')}
-        >
-          <AlignVerticalJustifyCenterIcon />
-        </Button>
-        <Button
-          type="button"
-          size="icon-xs"
-          variant="ghost"
-          className="rounded-full"
-          aria-label="Align bottom center"
-          onClick={() => onAlign('bottom')}
-        >
-          <AlignVerticalJustifyEndIcon />
-        </Button>
-      </div>
-    </div>
   )
 }

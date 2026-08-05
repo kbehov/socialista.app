@@ -16,6 +16,20 @@ import type {
 
 import { showVideoDeleteUndoToast } from './delete-toast'
 import {
+  getClipHeightPercent,
+  computeCoverFitTransform,
+} from './clip-transform'
+import {
+  alignAlongAxis,
+  alignToEdge,
+  type AlignAxis,
+  type AlignEdge,
+} from '@/lib/editor/alignment'
+import {
+  containPercentRect,
+  estimateTextOverlayHeightPct,
+} from './overlay-bounds'
+import {
   clamp,
   clampZoom,
   computeProjectDuration,
@@ -94,6 +108,12 @@ interface EditorState {
   snapGuideTime: number | null
   /** Toggle platform safe-zone overlays on the preview canvas. */
   showSafeZones: boolean
+  /** Show rulers around the preview artboard. */
+  showRulers: boolean
+  /** Show persistent center guides on the preview artboard. */
+  showGuides: boolean
+  /** Magnetic snapping while dragging clips/overlays on the canvas. */
+  canvasSnapEnabled: boolean
   /** Request inline text editing for an overlay (consumed by preview). */
   pendingOverlayEditId: string | null
 
@@ -101,6 +121,12 @@ interface EditorState {
   setSnapEnabled: (enabled: boolean) => void
   setSnapGuideTime: (time: number | null) => void
   setShowSafeZones: (show: boolean) => void
+  setShowRulers: (show: boolean) => void
+  setShowGuides: (show: boolean) => void
+  setCanvasSnapEnabled: (enabled: boolean) => void
+  toggleShowRulers: () => void
+  toggleShowGuides: () => void
+  toggleCanvasSnapEnabled: () => void
   requestOverlayEdit: (id: string | null) => void
 
   // Project / tracks
@@ -152,10 +178,16 @@ interface EditorState {
   updateClipTransform: (clipId: ClipId, partial: Partial<ClipTransform>) => void
   updateClipTransformLive: (clipId: ClipId, partial: Partial<ClipTransform>) => void
   resetClipTransform: (clipId: ClipId) => void
+  centerClipOnCanvas: (clipId: ClipId, axis: 'horizontal' | 'vertical' | 'both') => void
+  alignClipEdge: (clipId: ClipId, edge: 'left' | 'right' | 'top' | 'bottom') => void
   selectClip: (clipId: ClipId | null) => void
 
   // Text overlays
-  addTextOverlay: (startTime: number, endTime: number) => string
+  addTextOverlay: (
+    startTime: number,
+    endTime: number,
+    style?: Partial<TextOverlay['style']>,
+  ) => string
   updateOverlay: (id: string, partial: Partial<TextOverlay>) => void
   /** Live preview update without undo history (e.g. while typing). */
   updateOverlayLive: (id: string, partial: Partial<TextOverlay>) => void
@@ -166,6 +198,8 @@ interface EditorState {
   duplicateOverlay: (id: string) => void
   resetOverlayTransform: (id: string) => void
   anchorOverlay: (id: string, anchor: OverlayAnchor) => void
+  alignOverlayCenter: (id: string, axis: 'horizontal' | 'vertical' | 'both', heightPct?: number) => void
+  alignOverlayEdge: (id: string, edge: 'left' | 'right' | 'top' | 'bottom', heightPct?: number) => void
   bringOverlayToFront: (id: string) => void
   sendOverlayToBack: (id: string) => void
   reorderOverlay: (id: string, direction: 1 | -1) => void
@@ -422,6 +456,9 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     snapEnabled: readStoredBool(SNAP_ENABLED_STORAGE_KEY, true),
     snapGuideTime: null,
     showSafeZones: readStoredBool(SAFE_ZONES_STORAGE_KEY, false),
+    showRulers: false,
+    showGuides: true,
+    canvasSnapEnabled: true,
     pendingOverlayEditId: null,
 
     setTimelineHeight: height => {
@@ -438,6 +475,12 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       writeStored(SAFE_ZONES_STORAGE_KEY, String(show))
       set({ showSafeZones: show })
     },
+    setShowRulers: show => set({ showRulers: show }),
+    setShowGuides: show => set({ showGuides: show }),
+    setCanvasSnapEnabled: enabled => set({ canvasSnapEnabled: enabled }),
+    toggleShowRulers: () => set(state => ({ showRulers: !state.showRulers })),
+    toggleShowGuides: () => set(state => ({ showGuides: !state.showGuides })),
+    toggleCanvasSnapEnabled: () => set(state => ({ canvasSnapEnabled: !state.canvasSnapEnabled })),
     requestOverlayEdit: id => set({ pendingOverlayEditId: id }),
 
     loadProject: ({ id, name, project }) => {
@@ -958,9 +1001,53 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
-    addTextOverlay: (startTime, endTime) => {
+    centerClipOnCanvas: (clipId, axis) => {
+      record(state => {
+        const clip = state.project.clips[clipId]
+        if (!clip || clip.type === 'audio') return {}
+        const asset = state.assets[clip.assetId]
+        const mediaW = asset?.width ?? state.project.resolution.width
+        const mediaH = asset?.height ?? state.project.resolution.height
+        const { width: cw, height: ch } = state.project.resolution
+        const base = clip.transform ?? computeCoverFitTransform(cw, ch, mediaW, mediaH)
+        const heightPct = getClipHeightPercent(base, cw, ch, mediaW, mediaH)
+        const next = alignAlongAxis(
+          { x: base.x, y: base.y, width: base.width, height: heightPct },
+          axis as AlignAxis,
+        )
+        return {
+          project: mutateClip(state.project, clipId, c =>
+            c.type === 'audio' ? c : { ...c, transform: { ...base, x: next.x, y: next.y } },
+          ),
+        }
+      })
+    },
+
+    alignClipEdge: (clipId, edge) => {
+      record(state => {
+        const clip = state.project.clips[clipId]
+        if (!clip || clip.type === 'audio') return {}
+        const asset = state.assets[clip.assetId]
+        const mediaW = asset?.width ?? state.project.resolution.width
+        const mediaH = asset?.height ?? state.project.resolution.height
+        const { width: cw, height: ch } = state.project.resolution
+        const base = clip.transform ?? computeCoverFitTransform(cw, ch, mediaW, mediaH)
+        const heightPct = getClipHeightPercent(base, cw, ch, mediaW, mediaH)
+        const next = alignToEdge(
+          { x: base.x, y: base.y, width: base.width, height: heightPct },
+          edge as AlignEdge,
+        )
+        return {
+          project: mutateClip(state.project, clipId, c =>
+            c.type === 'audio' ? c : { ...c, transform: { ...base, x: next.x, y: next.y } },
+          ),
+        }
+      })
+    },
+
+    addTextOverlay: (startTime, endTime, style) => {
       const maxZ = get().project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
-      const overlay = createTextOverlay(startTime, endTime, maxZ + 1)
+      const overlay = createTextOverlay(startTime, endTime, maxZ + 1, style)
       record(state => ({
         project: recomputeDuration({
           ...state.project,
@@ -1094,6 +1181,48 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
           textOverlays: state.project.textOverlays.map(o =>
             o.id === id ? { ...o, ...preset } : o,
           ),
+        },
+      }))
+    },
+
+    alignOverlayCenter: (id, axis, heightPct) => {
+      record(state => ({
+        project: {
+          ...state.project,
+          textOverlays: state.project.textOverlays.map(o => {
+            if (o.id !== id) return o
+            const height =
+              heightPct ??
+              estimateTextOverlayHeightPct(o, state.project.resolution.height)
+            const next = containPercentRect(
+              alignAlongAxis(
+                { x: o.x, y: o.y, width: o.width, height },
+                axis as AlignAxis,
+              ),
+            )
+            return { ...o, x: next.x, y: next.y }
+          }),
+        },
+      }))
+    },
+
+    alignOverlayEdge: (id, edge, heightPct) => {
+      record(state => ({
+        project: {
+          ...state.project,
+          textOverlays: state.project.textOverlays.map(o => {
+            if (o.id !== id) return o
+            const height =
+              heightPct ??
+              estimateTextOverlayHeightPct(o, state.project.resolution.height)
+            const next = containPercentRect(
+              alignToEdge(
+                { x: o.x, y: o.y, width: o.width, height },
+                edge as AlignEdge,
+              ),
+            )
+            return { ...o, x: next.x, y: next.y }
+          }),
         },
       }))
     },

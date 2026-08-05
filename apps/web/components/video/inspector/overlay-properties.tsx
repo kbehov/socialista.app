@@ -1,23 +1,23 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { BoldIcon } from 'lucide-react'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { ColorPicker } from '@/components/carousel/primitives/color-picker'
-import { FontPicker } from '@/components/carousel/primitives/font-picker'
-import { AlignmentControl } from '@/components/carousel/primitives/alignment-control'
-import type { TextAnimation } from '@socialista/types'
-import type { OverlayAnchor } from '@/lib/video/defaults'
-import { Slider } from './slider'
-import { VideoTextPresetPicker } from './video-text-preset-picker'
+import { ColorPicker } from '@/components/editor/primitives/color-picker'
+import { FontPicker } from '@/components/editor/primitives/font-picker'
+import { AlignmentControl } from '@/components/editor/primitives/alignment-control'
+import { StyleSlider } from '@/components/editor/primitives/style-slider'
+import { TextPresetPicker } from '@/components/editor/text-preset-picker'
+import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { Button } from '@/components/ui/button'
-import { AlignCenterIcon, AlignEndVerticalIcon, AlignStartVerticalIcon } from 'lucide-react'
+import type { TextAnimation, TextOverlayStyle } from '@socialista/types'
+import {
+  DEFAULT_TEXT_LAYER_BASE,
+  layerStyleFromOverlay,
+  overlayStyleFromLayer,
+} from '@/lib/video/defaults'
+import { measureOverlayHeightPct } from '@/lib/video/overlay-bounds'
 import { cn } from '@/lib/utils'
-
-const ANCHORS: { id: OverlayAnchor; label: string; icon: typeof AlignStartVerticalIcon }[] = [
-  { id: 'top', label: 'Top', icon: AlignStartVerticalIcon },
-  { id: 'middle', label: 'Middle', icon: AlignCenterIcon },
-  { id: 'bottom', label: 'Bottom', icon: AlignEndVerticalIcon },
-]
 
 const ANIMATIONS: { value: TextAnimation; label: string }[] = [
   { value: 'none', label: 'None' },
@@ -25,6 +25,9 @@ const ANIMATIONS: { value: TextAnimation; label: string }[] = [
   { value: 'slide-up', label: 'Slide up' },
   { value: 'slide-down', label: 'Slide down' },
 ]
+
+const fieldControlClass =
+  'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-[12px] shadow-xs outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
 
 export function OverlayProperties({ overlayId }: { overlayId: string }) {
   const overlay = useVideoEditorStore(s => s.project.textOverlays.find(o => o.id === overlayId))
@@ -34,7 +37,8 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
   const updateOverlayStyle = useVideoEditorStore(s => s.updateOverlayStyle)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const reorderOverlay = useVideoEditorStore(s => s.reorderOverlay)
-  const anchorOverlay = useVideoEditorStore(s => s.anchorOverlay)
+  const alignOverlayCenter = useVideoEditorStore(s => s.alignOverlayCenter)
+  const alignOverlayEdge = useVideoEditorStore(s => s.alignOverlayEdge)
   const [contentDraft, setContentDraft] = useState('')
   const [startDraft, setStartDraft] = useState('')
   const [endDraft, setEndDraft] = useState('')
@@ -50,28 +54,40 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
     return <div className="text-xs text-muted-foreground">No overlay selected.</div>
   }
 
+  const handleAlign = (action: AlignmentAction) => {
+    if (action.type === 'distribute') return
+    const artboard = document.querySelector('[data-video-canvas]') as HTMLElement | null
+    const heightPct = measureOverlayHeightPct(artboard, overlay.id) ?? undefined
+    if (action.type === 'center') alignOverlayCenter(overlay.id, action.axis, heightPct)
+    else alignOverlayEdge(overlay.id, action.edge, heightPct)
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Text overlay</div>
-        <div className="flex gap-1">
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-normal leading-none tracking-[0.02em] text-muted-foreground/65">
+          Text overlay
+        </p>
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
-            className="rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+            className="rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             onClick={() => reorderOverlay(overlay.id, -1)}
+            aria-label="Bring forward"
           >
             ↑
           </button>
           <button
             type="button"
-            className="rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+            className="rounded-md px-1.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             onClick={() => reorderOverlay(overlay.id, 1)}
+            aria-label="Send backward"
           >
             ↓
           </button>
           <button
             type="button"
-            className="rounded px-1.5 py-0.5 text-xs text-red-500 hover:bg-muted"
+            className="rounded-md px-1.5 py-1 text-[11px] text-red-500/90 transition-colors hover:bg-red-500/10"
             onClick={() => removeOverlay(overlay.id)}
           >
             Delete
@@ -79,44 +95,26 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
         </div>
       </div>
 
-      <p className="text-[10px] text-muted-foreground">
-        Drag on the timeline to move or trim. Press <kbd className="rounded border px-1">S</kbd> to split at the playhead.
-      </p>
-
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-muted-foreground">Position</span>
-        <div className="grid grid-cols-3 gap-1">
-          {ANCHORS.map(({ id, label, icon: Icon }) => (
-            <Button
-              key={id}
-              type="button"
-              size="sm"
-              variant="outline"
-              className={cn(
-                'h-8 gap-1 px-2 text-xs',
-                (id === 'top' && overlay.y <= 12) ||
-                  (id === 'middle' && overlay.y > 12 && overlay.y < 60) ||
-                  (id === 'bottom' && overlay.y >= 60)
-                  ? 'border-primary/50 bg-primary/10 text-primary'
-                  : '',
-              )}
-              onClick={() => anchorOverlay(overlay.id, id)}
-            >
-              <Icon className="size-3.5 shrink-0" />
-              {label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <VideoTextPresetPicker
-        currentStyle={overlay.style}
-        onApply={style => updateOverlayStyle(overlay.id, style)}
+      <AlignmentToolbar
+        onAlign={handleAlign}
+        showDistribute={false}
+        showToggles={false}
+        size="xs"
+        variant="inline"
       />
 
-      <label className="flex flex-col gap-1 text-xs">
-        <span className="text-muted-foreground">Content</span>
+      <TextPresetPicker<TextOverlayStyle>
+        currentStyle={overlay.style}
+        onApply={style => updateOverlayStyle(overlay.id, style)}
+        toLayerStyle={layerStyleFromOverlay}
+        fromLayerStyle={overlayStyleFromLayer}
+        baseStyle={DEFAULT_TEXT_LAYER_BASE}
+        variant="accordion"
+      />
+
+      <Field label="Content" htmlFor="overlay-content">
         <textarea
+          id="overlay-content"
           value={contentDraft}
           onChange={e => {
             setContentDraft(e.target.value)
@@ -128,77 +126,84 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
             }
           }}
           rows={2}
-          className="rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+          className="w-full resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm leading-relaxed shadow-xs outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          placeholder="Write your caption…"
         />
-      </label>
+      </Field>
 
-      <div className="flex flex-col gap-1 text-xs">
-        <span className="text-muted-foreground">Font</span>
-        <FontPicker value={overlay.style.fontFamily} onChange={v => updateOverlayStyle(overlay.id, { fontFamily: v })} />
-      </div>
+      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+        <Field label="Font">
+          <FontPicker
+            value={overlay.style.fontFamily}
+            onChange={v => updateOverlayStyle(overlay.id, { fontFamily: v })}
+          />
+        </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Slider
-          label="Font size"
+        <StyleSlider
+          label="Size"
           min={12}
           max={200}
           step={1}
           value={overlay.style.fontSize}
           onChange={v => updateOverlayStyle(overlay.id, { fontSize: v })}
-          format={v => `${Math.round(v)}px`}
+          suffix="px"
         />
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="text-muted-foreground">Weight</span>
-          <select
-            value={overlay.style.fontWeight}
-            onChange={e => updateOverlayStyle(overlay.id, { fontWeight: e.target.value as 'normal' | 'bold' })}
-            className="h-8 rounded-md border border-input bg-transparent px-2"
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65">
+            Weight
+          </span>
+          <Button
+            type="button"
+            variant={overlay.style.fontWeight === 'bold' ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 gap-1.5 px-2.5"
+            onClick={() =>
+              updateOverlayStyle(overlay.id, {
+                fontWeight: overlay.style.fontWeight === 'bold' ? 'normal' : 'bold',
+              })
+            }
           >
-            <option value="normal">Normal</option>
-            <option value="bold">Bold</option>
-          </select>
-        </label>
+            <BoldIcon className="size-3.5" />
+            Bold
+          </Button>
+        </div>
+
+        <Field label="Alignment">
+          <AlignmentControl
+            value={overlay.style.textAlign}
+            onChange={v => updateOverlayStyle(overlay.id, { textAlign: v })}
+          />
+        </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="text-muted-foreground">Text color</span>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Field label="Text color">
           <ColorPicker
             value={overlay.style.color}
             onChange={v => updateOverlayStyle(overlay.id, { color: v ?? '#ffffff' })}
             allowNone={false}
-            label="Color"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="text-muted-foreground">Background</span>
+        </Field>
+        <Field label="Background">
           <ColorPicker
             value={overlay.style.backgroundColor}
             onChange={v => updateOverlayStyle(overlay.id, { backgroundColor: v })}
-            label="Background"
           />
-        </label>
+        </Field>
       </div>
 
-      <div className="flex flex-col gap-1 text-xs">
-        <span className="text-muted-foreground">Alignment</span>
-        <AlignmentControl
-          value={overlay.style.textAlign}
-          onChange={v => updateOverlayStyle(overlay.id, { textAlign: v })}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Slider
+      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+        <StyleSlider
           label="Letter spacing"
           min={-2}
           max={20}
           step={0.5}
           value={overlay.style.letterSpacing ?? 0}
           onChange={v => updateOverlayStyle(overlay.id, { letterSpacing: v })}
-          format={v => `${v.toFixed(1)}px`}
+          suffix="px"
         />
-        <Slider
+        <StyleSlider
           label="Line height"
           min={0.8}
           max={3}
@@ -206,35 +211,32 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
           value={overlay.style.lineHeight ?? 1.2}
           onChange={v => updateOverlayStyle(overlay.id, { lineHeight: v })}
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Slider
+        <StyleSlider
           label="Padding"
           min={0}
           max={48}
           step={1}
           value={overlay.style.padding ?? 0}
           onChange={v => updateOverlayStyle(overlay.id, { padding: v })}
-          format={v => `${Math.round(v)}px`}
+          suffix="px"
         />
-        <Slider
-          label="Radius"
+        <StyleSlider
+          label="Corner radius"
           min={0}
           max={48}
           step={1}
           value={overlay.style.borderRadius ?? 0}
           onChange={v => updateOverlayStyle(overlay.id, { borderRadius: v })}
-          format={v => `${Math.round(v)}px`}
+          suffix="px"
         />
       </div>
 
-      <label className="flex flex-col gap-1 text-xs">
-        <span className="text-muted-foreground">Animation</span>
+      <Field label="Animation" htmlFor="overlay-animation">
         <select
+          id="overlay-animation"
           value={overlay.style.animation ?? 'none'}
           onChange={e => updateOverlayStyle(overlay.id, { animation: e.target.value as TextAnimation })}
-          className="h-8 rounded-md border border-input bg-transparent px-2"
+          className={fieldControlClass}
         >
           {ANIMATIONS.map(a => (
             <option key={a.value} value={a.value}>
@@ -242,12 +244,12 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
             </option>
           ))}
         </select>
-      </label>
+      </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="text-muted-foreground">Start (s)</span>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Field label="Start (s)" htmlFor="overlay-start">
           <input
+            id="overlay-start"
             type="number"
             min={0}
             step={0.1}
@@ -260,12 +262,12 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
                 setOverlayTiming(overlay.id, start, end)
               }
             }}
-            className="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-xs"
+            className={cn(fieldControlClass, 'font-mono text-[11px] tabular-nums')}
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="text-muted-foreground">End (s)</span>
+        </Field>
+        <Field label="End (s)" htmlFor="overlay-end">
           <input
+            id="overlay-end"
             type="number"
             min={0}
             step={0.1}
@@ -278,10 +280,32 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
                 setOverlayTiming(overlay.id, start, end)
               }
             }}
-            className="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-xs"
+            className={cn(fieldControlClass, 'font-mono text-[11px] tabular-nums')}
           />
-        </label>
+        </Field>
       </div>
+    </div>
+  )
+}
+
+function Field({
+  label,
+  children,
+  htmlFor,
+}: {
+  label: string
+  children: ReactNode
+  htmlFor?: string
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label
+        htmlFor={htmlFor}
+        className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65"
+      >
+        {label}
+      </label>
+      {children}
     </div>
   )
 }

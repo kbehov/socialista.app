@@ -76,7 +76,7 @@ export function TimelineTransport({
   return (
     <div
       data-preview-playback
-      className="video-editor-transport flex min-w-0 shrink-0 items-center gap-1 overflow-x-auto border-b border-border/40 bg-background px-2 py-1 sm:gap-1.5 sm:px-2.5"
+      className="video-editor-transport flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain border-b border-border/40 bg-background px-2 py-1 [scrollbar-width:thin] sm:px-2.5"
     >
       <div className="flex shrink-0 items-center gap-0.5">
         <Tooltip>
@@ -166,7 +166,7 @@ export function TimelineTransport({
         </Tooltip>
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-center justify-center px-1">
         <PreviewControls playback={playback} variant="transport" />
       </div>
 

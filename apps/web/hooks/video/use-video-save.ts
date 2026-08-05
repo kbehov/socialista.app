@@ -187,9 +187,11 @@ export function useVideoSave() {
     workspaceId,
   ])
 
-  // Debounced autosave ~5s after the last undoable change
+  const isPersistedProject = Boolean(project.id && !project.id.startsWith('project_'))
+
+  // Autosave only after the video already exists (first save is explicit — user may just be testing)
   useEffect(() => {
-    if (status !== 'unsaved' || !workspaceId) return
+    if (!isPersistedProject || status !== 'unsaved' || !workspaceId) return
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
     autosaveTimerRef.current = setTimeout(() => {
       void save({ silent: true })
@@ -197,7 +199,7 @@ export function useVideoSave() {
     return () => {
       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
     }
-  }, [past.length, save, status, workspaceId])
+  }, [isPersistedProject, past.length, save, status, workspaceId])
 
   useEffect(() => {
     return () => {

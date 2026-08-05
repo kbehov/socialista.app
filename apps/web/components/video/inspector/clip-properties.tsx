@@ -9,7 +9,8 @@ import { ChevronDownIcon, Loader2Icon, RotateCcwIcon, SparklesIcon } from 'lucid
 import { useClipAiOptional } from '@/components/video/ai/clip-ai-provider'
 import { Button } from '@/components/ui/button'
 import { FilterControls } from './filter-controls'
-import { Slider } from './slider'
+import { InspectorSlider as Slider } from '@/components/media/inspector-slider'
+import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { TransitionPicker } from './transition-picker'
 import { cn } from '@/lib/utils'
 
@@ -30,6 +31,8 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const trimClip = useVideoEditorStore(s => s.trimClip)
   const updateClipTransform = useVideoEditorStore(s => s.updateClipTransform)
   const resetClipTransform = useVideoEditorStore(s => s.resetClipTransform)
+  const centerClipOnCanvas = useVideoEditorStore(s => s.centerClipOnCanvas)
+  const alignClipEdge = useVideoEditorStore(s => s.alignClipEdge)
   const clipAi = useClipAiOptional()
 
   const [trimInDraft, setTrimInDraft] = useState(() => clip?.trimIn.toFixed(2) ?? '0')
@@ -106,6 +109,17 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
               <p className="text-[10px] text-muted-foreground">
                 Drag handles on the preview to resize and reposition this clip.
               </p>
+              <AlignmentToolbar
+                onAlign={(action: AlignmentAction) => {
+                  if (action.type === 'distribute') return
+                  if (action.type === 'center') centerClipOnCanvas(clipId, action.axis)
+                  else alignClipEdge(clipId, action.edge)
+                }}
+                showDistribute={false}
+                showToggles={false}
+                size="xs"
+                variant="inline"
+              />
               <div className="grid grid-cols-2 gap-2">
                 {(['x', 'y', 'width', 'rotation'] as const).map(field => (
                   <label key={field} className="flex flex-col gap-1 text-xs">

@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { useActiveLayer } from '@/hooks/carousel/use-active-layer'
 import { cn } from '@/lib/utils'
 import { ColorPicker } from './primitives/color-picker'
@@ -131,7 +130,9 @@ export function TextToolbar() {
         />
 
         <div className="flex items-center justify-between gap-2">
-          <Label className="text-[11px] font-medium text-muted-foreground">Weight</Label>
+          <span className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65">
+            Weight
+          </span>
           <Button
             type="button"
             variant={style.fontWeight === 'bold' ? 'default' : 'outline'}
@@ -219,9 +220,12 @@ export function TextToolbar() {
 function Field({ label, children, htmlFor }: { label: string; children: React.ReactNode; htmlFor?: string }) {
   return (
     <div className={cn('flex flex-col gap-1.5')}>
-      <Label htmlFor={htmlFor} className="text-[11px] font-medium text-muted-foreground">
+      <label
+        htmlFor={htmlFor}
+        className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65"
+      >
         {label}
-      </Label>
+      </label>
       {children}
     </div>
   )

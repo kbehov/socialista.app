@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { measureOverlayHeightPct } from '@/lib/video/overlay-bounds'
 import { useVideoEditorStore } from '@/lib/video/store'
 
 export function useVideoShortcuts(): void {
@@ -145,6 +146,50 @@ export function useVideoShortcuts(): void {
       if (e.key === '-' || e.key === '_') {
         e.preventDefault()
         zoomOut()
+        return
+      }
+
+      // Canvas alignment: H = horizontal center, V = vertical center
+      if (e.key.toLowerCase() === 'h' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        const state = useVideoEditorStore.getState()
+        if (state.selectedOverlayId) {
+          const artboard = document.querySelector('[data-video-canvas]') as HTMLElement | null
+          const heightPct = measureOverlayHeightPct(artboard, state.selectedOverlayId) ?? undefined
+          state.alignOverlayCenter(state.selectedOverlayId, 'horizontal', heightPct)
+        } else if (state.selectedClipId) state.centerClipOnCanvas(state.selectedClipId, 'horizontal')
+        return
+      }
+
+      if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        const state = useVideoEditorStore.getState()
+        if (state.selectedOverlayId) {
+          const artboard = document.querySelector('[data-video-canvas]') as HTMLElement | null
+          const heightPct = measureOverlayHeightPct(artboard, state.selectedOverlayId) ?? undefined
+          state.alignOverlayCenter(state.selectedOverlayId, 'vertical', heightPct)
+        } else if (state.selectedClipId) state.centerClipOnCanvas(state.selectedClipId, 'vertical')
+        return
+      }
+
+      // Cmd+R toggle rulers
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault()
+        useVideoEditorStore.getState().toggleShowRulers()
+        return
+      }
+
+      // Cmd+; toggle guides
+      if ((e.metaKey || e.ctrlKey) && e.key === ';') {
+        e.preventDefault()
+        useVideoEditorStore.getState().toggleShowGuides()
+        return
+      }
+
+      // Shift+Cmd+G toggle canvas snap
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault()
+        useVideoEditorStore.getState().toggleCanvasSnapEnabled()
         return
       }
     }

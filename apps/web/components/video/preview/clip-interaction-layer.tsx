@@ -1,15 +1,17 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import { useClipInteraction } from '@/hooks/video/use-clip-interaction'
+import { useLayerSnap } from '@/hooks/editor/use-layer-snap'
+import { LayerTransformHandles } from '@/components/editor/layer-transform-handles'
 import {
   getClipHeightPercent,
   resolveClipTransform,
 } from '@/lib/video/clip-transform'
 import { useVideoEditorStore } from '@/lib/video/store'
 import type { ClipId, ClipTransform } from '@socialista/types'
-import { cn } from '@/lib/utils'
+import type { Corner } from '@/hooks/editor/use-drag-resize'
 
 type ClipInteractionLayerProps = {
   clipId: ClipId
@@ -19,17 +21,6 @@ type ClipInteractionLayerProps = {
   mediaWidth: number
   mediaHeight: number
 }
-
-const HANDLES = [
-  { handle: 'nw' as const, className: 'left-0 top-0 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize' },
-  { handle: 'n' as const, className: 'left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 cursor-ns-resize' },
-  { handle: 'ne' as const, className: 'right-0 top-0 translate-x-1/2 -translate-y-1/2 cursor-nesw-resize' },
-  { handle: 'e' as const, className: 'right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-ew-resize' },
-  { handle: 'se' as const, className: 'right-0 bottom-0 translate-x-1/2 translate-y-1/2 cursor-nwse-resize' },
-  { handle: 's' as const, className: 'left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 cursor-ns-resize' },
-  { handle: 'sw' as const, className: 'left-0 bottom-0 -translate-x-1/2 translate-y-1/2 cursor-nesw-resize' },
-  { handle: 'w' as const, className: 'left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize' },
-]
 
 export function ClipInteractionLayer({
   clipId,
@@ -42,6 +33,7 @@ export function ClipInteractionLayer({
   const clip = useVideoEditorStore(s => s.project.clips[clipId])
   const updateClipTransform = useVideoEditorStore(s => s.updateClipTransform)
   const updateClipTransformLive = useVideoEditorStore(s => s.updateClipTransformLive)
+  const canvasSnapEnabled = useVideoEditorStore(s => s.canvasSnapEnabled)
 
   const baseTransform = useMemo(() => {
     if (!clip || clip.type === 'audio') return null
@@ -60,8 +52,14 @@ export function ClipInteractionLayer({
   const ensureTransformLive = useCallback(
     (partial: Partial<ClipTransform>) => {
       if (!clip || clip.type === 'audio' || !baseTransform) return
+      // Live updates may already include the full transform from the interaction draft.
       const seed = clip.transform ?? baseTransform
-      updateClipTransformLive(clipId, { ...seed, ...partial })
+      updateClipTransformLive(clipId, {
+        x: partial.x ?? seed.x,
+        y: partial.y ?? seed.y,
+        width: partial.width ?? seed.width,
+        rotation: partial.rotation ?? seed.rotation,
+      })
     },
     [baseTransform, clip, clipId, updateClipTransformLive],
   )
@@ -84,6 +82,7 @@ export function ClipInteractionLayer({
       artboardRef={artboardRef}
       onCommit={ensureTransform}
       onLiveUpdate={ensureTransformLive}
+      snapEnabled={canvasSnapEnabled}
     />
   )
 }
@@ -99,6 +98,7 @@ function ClipInteractionBox({
   artboardRef,
   onCommit,
   onLiveUpdate,
+  snapEnabled,
 }: {
   transform: ClipTransform
   heightPct: number
@@ -110,7 +110,11 @@ function ClipInteractionBox({
   artboardRef: RefObject<HTMLElement | null>
   onCommit: (partial: Partial<ClipTransform>) => void
   onLiveUpdate: (partial: Partial<ClipTransform>) => void
+  snapEnabled: boolean
 }) {
+  const layerRef = useRef<HTMLDivElement>(null)
+  const snap = useLayerSnap({ others: [], enabled: snapEnabled })
+
   const { draft, beginDrag, beginResize, beginRotate } = useClipInteraction({
     transform,
     heightPct,
@@ -118,6 +122,9 @@ function ClipInteractionBox({
     canvasRef: artboardRef,
     onCommit,
     onLiveUpdate,
+    snapTargets: snap.snapTargets,
+    onGuidesChange: snap.onGuidesChange,
+    snapEnabled,
   })
 
   const effective = draft ? { ...transform, ...draft } : transform
@@ -129,9 +136,12 @@ function ClipInteractionBox({
     mediaHeight,
   )
 
+  const handleCornerResize = (corner: Corner) => beginResize(corner)
+
   return (
     <div
-      className="absolute z-[25] cursor-move"
+      ref={layerRef}
+      className="absolute z-[25] touch-none"
       style={{
         left: `${effective.x}%`,
         top: `${effective.y}%`,
@@ -140,34 +150,13 @@ function ClipInteractionBox({
         transform: `rotate(${effective.rotation}deg)`,
         transformOrigin: 'center center',
       }}
-      onPointerDown={beginDrag}
     >
-      <div className="pointer-events-none absolute inset-0 border border-dashed border-primary/80" />
-      {HANDLES.map(({ handle, className }) => (
-        <Handle key={handle} className={className} onPointerDown={beginResize(handle)} />
-      ))}
-      <Handle
-        className="left-1/2 -top-4 -translate-x-1/2 cursor-grab"
-        onPointerDown={beginRotate}
+      {/* Drag surface — keep below handles so corner resize stays easy to grab */}
+      <div
+        className="absolute inset-0 cursor-move"
+        onPointerDown={beginDrag}
       />
+      <LayerTransformHandles onResize={handleCornerResize} onRotate={beginRotate} />
     </div>
-  )
-}
-
-function Handle({
-  className,
-  onPointerDown,
-}: {
-  className: string
-  onPointerDown: (e: React.PointerEvent) => void
-}) {
-  return (
-    <div
-      onPointerDown={onPointerDown}
-      className={cn(
-        'absolute z-10 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm',
-        className,
-      )}
-    />
   )
 }

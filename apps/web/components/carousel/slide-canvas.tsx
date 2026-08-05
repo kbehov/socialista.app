@@ -9,6 +9,8 @@ import { fitArtboardInWorkspace } from '@/lib/carousel/canvas-viewport'
 import { useCarouselPreviewLayout } from '@/components/carousel/carousel-preview-layout'
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
 import { CanvasGuidesProvider } from '@/components/carousel/canvas-guides'
+import { CanvasRulers, CANVAS_RULER_SIZE } from '@/components/editor/canvas-rulers'
+import type { SnapGuide } from '@/lib/editor/snap-guides'
 import { cn } from '@/lib/utils'
 import { MousePointer2Icon } from 'lucide-react'
 import { SlideLayerNode } from './slide-layer-node'
@@ -49,6 +51,8 @@ export function SlideCanvas({
 }: SlideCanvasProps) {
   const storeCanvas = useEditorStore(s => s.canvas)
   const viewportZoom = useEditorStore(s => s.viewportZoom)
+  const showRulers = useEditorStore(s => s.showRulers)
+  const showGuides = useEditorStore(s => s.showGuides)
   const setSlideBackgroundImageAdjustment = useEditorStore(s => s.setSlideBackgroundImageAdjustment)
   const canvas = canvasDimensions ?? storeCanvas
   const activeSlideId = useEditorStore(s => s.activeSlideId)
@@ -138,6 +142,14 @@ export function SlideCanvas({
   const isAdjustingBackground = isBackgroundSelected && Boolean(slide.backgroundImageUrl)
 
   const isActiveSlide = activeSlideId === slide.id
+
+  const centerGuides = useMemo<SnapGuide[]>(() => {
+    if (!interactive || !showGuides) return []
+    return [
+      { orientation: 'vertical', position: 50 },
+      { orientation: 'horizontal', position: 50 },
+    ]
+  }, [interactive, showGuides])
 
   const layerStack =
     scale > 0 ? (
@@ -250,8 +262,30 @@ export function SlideCanvas({
               backgroundColor,
             }}
           >
-            {interactive ? <CanvasGuidesProvider>{artboardContent}</CanvasGuidesProvider> : artboardContent}
+            {interactive ? (
+              <CanvasGuidesProvider persistentGuides={centerGuides}>{artboardContent}</CanvasGuidesProvider>
+            ) : (
+              artboardContent
+            )}
           </div>
+          {interactive && showRulers && isMeasured ? (
+            <div
+              className="pointer-events-none absolute z-30"
+              style={{
+                left: 0,
+                top: 0,
+                width: visualWidth + CANVAS_RULER_SIZE,
+                height: visualHeight + CANVAS_RULER_SIZE,
+              }}
+            >
+              <CanvasRulers
+                canvasWidth={canvas.width}
+                canvasHeight={canvas.height}
+                displayWidth={visualWidth}
+                displayHeight={visualHeight}
+              />
+            </div>
+          ) : null}
         </div>
 
         {canvasHint ? (

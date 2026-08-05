@@ -121,7 +121,11 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
   useEffect(() => {
     if (selectionKey && selectionKey !== prevSelection.current) {
       setOpen(true)
-      setMobileOpen(true)
+      // Mobile sheet only — opening on desktop still mounts SheetOverlay and dims the UI
+      // even when SheetContent is `lg:hidden`.
+      const isMobileViewport =
+        typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
+      if (isMobileViewport) setMobileOpen(true)
       try {
         sessionStorage.setItem(INSPECTOR_OPEN_KEY, 'true')
       } catch {
@@ -130,6 +134,17 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
     }
     prevSelection.current = selectionKey
   }, [selectionKey])
+
+  // Close the mobile sheet if the viewport grows to desktop while it is open.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const onChange = () => {
+      if (mq.matches) setMobileOpen(false)
+    }
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   const toggle = () => {
     setOpen(prev => {

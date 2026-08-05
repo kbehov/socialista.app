@@ -5,14 +5,16 @@ import type { RefObject } from 'react'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { layerStyleFromOverlay } from '@/lib/video/defaults'
 import { useOverlayInteraction } from '@/hooks/video/use-overlay-interaction'
+import { useLayerSnap } from '@/hooks/editor/use-layer-snap'
+import { LayerTransformHandles } from '@/components/editor/layer-transform-handles'
 import { useVideoEditorStore } from '@/lib/video/store'
 import type { TextOverlay } from '@socialista/types'
+import type { Corner } from '@/hooks/editor/use-drag-resize'
 import { cn } from '@/lib/utils'
 
 type TextOverlayRendererProps = {
   artboardRef: RefObject<HTMLDivElement | null>
   scale: number
-  canSelectClip?: boolean
   onBackgroundPointerDown?: () => void
   editRequestId?: string | null
   onEditRequestHandled?: () => void
@@ -21,7 +23,6 @@ type TextOverlayRendererProps = {
 export function TextOverlayRenderer({
   artboardRef,
   scale,
-  canSelectClip = false,
   onBackgroundPointerDown,
   editRequestId,
   onEditRequestHandled,
@@ -32,6 +33,7 @@ export function TextOverlayRenderer({
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const updateOverlay = useVideoEditorStore(s => s.updateOverlay)
+  const canvasSnapEnabled = useVideoEditorStore(s => s.canvasSnapEnabled)
 
   const interactive = !isPlaying
   const visible = overlays.filter(o => playhead >= o.startTime && playhead < o.endTime)
@@ -42,7 +44,7 @@ export function TextOverlayRenderer({
       className={cn(
         'absolute inset-0 z-20',
         interactive ? 'pointer-events-auto' : 'pointer-events-none',
-        interactive && canSelectClip && 'cursor-pointer',
+        interactive && 'cursor-default',
       )}
       onPointerDown={e => {
         if ((e.target as HTMLElement).closest('[data-clip-actions]')) return
@@ -59,6 +61,8 @@ export function TextOverlayRenderer({
           scale={scale}
           selected={overlay.id === selectedOverlayId}
           interactive={interactive}
+          snapEnabled={canvasSnapEnabled}
+          siblings={sorted.filter(o => o.id !== overlay.id)}
           editRequested={editRequestId === overlay.id}
           onEditRequestHandled={onEditRequestHandled}
           onSelect={() => selectOverlay(overlay.id)}
@@ -75,6 +79,8 @@ function OverlayNode({
   scale,
   selected,
   interactive,
+  snapEnabled,
+  siblings,
   editRequested,
   onEditRequestHandled,
   onSelect,
@@ -85,12 +91,16 @@ function OverlayNode({
   scale: number
   selected: boolean
   interactive: boolean
+  snapEnabled: boolean
+  siblings: TextOverlay[]
   editRequested?: boolean
   onEditRequestHandled?: () => void
   onSelect: () => void
   onCommit: (partial: Partial<TextOverlay>) => void
 }) {
   const [isEditingContent, setIsEditingContent] = useState(false)
+  const [heightPct, setHeightPct] = useState(12)
+  const layerRef = useRef<HTMLDivElement>(null)
   const editRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -99,10 +109,27 @@ function OverlayNode({
     onEditRequestHandled?.()
   }, [editRequested, onEditRequestHandled])
 
+  const others = useMemo(
+    () =>
+      siblings.map(o => ({
+        id: o.id,
+        x: o.x,
+        y: o.y,
+        width: o.width,
+        height: 12,
+      })),
+    [siblings],
+  )
+  const snap = useLayerSnap({ others, enabled: snapEnabled })
+
   const { draft, beginDrag, beginResize, beginRotate } = useOverlayInteraction({
     overlay,
     canvasRef,
     onCommit,
+    heightPct,
+    snapTargets: snap.snapTargets,
+    onGuidesChange: snap.onGuidesChange,
+    snapEnabled,
   })
 
   const effective = useMemo(() => (draft ? { ...overlay, ...draft } : overlay), [overlay, draft])
@@ -110,6 +137,28 @@ function OverlayNode({
     () => buildTextLayerCss(layerStyleFromOverlay(effective.style), scale),
     [effective.style, scale],
   )
+
+  // Measure rendered height so vertical center snap matches the visible text box.
+  useEffect(() => {
+    const layer = layerRef.current
+    const canvas = canvasRef.current
+    if (!layer || !canvas) return
+
+    const measure = () => {
+      const canvasH = canvas.getBoundingClientRect().height
+      if (canvasH <= 0) return
+      const next = (layer.getBoundingClientRect().height / canvasH) * 100
+      setHeightPct(prev => {
+        const clamped = Math.max(2, Math.min(100, next))
+        return Math.abs(prev - clamped) < 0.15 ? prev : clamped
+      })
+    }
+
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    ro?.observe(layer)
+    return () => ro?.disconnect()
+  }, [canvasRef, effective.content, effective.style, effective.width, scale])
 
   useEffect(() => {
     if (!isEditingContent || !editRef.current) return
@@ -149,6 +198,8 @@ function OverlayNode({
     }
   }
 
+  const handleCornerResize = (corner: Corner) => beginResize(corner)
+
   const animation = overlay.style.animation ?? 'none'
   const animationClass =
     interactive && animation === 'fade'
@@ -161,6 +212,8 @@ function OverlayNode({
 
   return (
     <div
+      ref={layerRef}
+      data-video-overlay={overlay.id}
       className={cn(
         'absolute select-none',
         canDrag && 'cursor-move',
@@ -211,34 +264,8 @@ function OverlayNode({
       </div>
 
       {selected && interactive && !isEditingContent ? (
-        <>
-          <div className="pointer-events-none absolute inset-0 rounded-sm border border-dashed border-primary/70" />
-          <Handle className="left-0 top-1/2 -translate-x-1/2 -translate-y-1/2" onPointerDown={beginResize('w')} />
-          <Handle className="right-0 top-1/2 translate-x-1/2 -translate-y-1/2" onPointerDown={beginResize('e')} />
-          <Handle
-            className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2"
-            onPointerDown={beginRotate}
-          />
-        </>
+        <LayerTransformHandles onResize={handleCornerResize} onRotate={beginRotate} />
       ) : null}
     </div>
-  )
-}
-
-function Handle({
-  className,
-  onPointerDown,
-}: {
-  className: string
-  onPointerDown: (e: React.PointerEvent) => void
-}) {
-  return (
-    <div
-      onPointerDown={onPointerDown}
-      className={cn(
-        'absolute z-10 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm',
-        className,
-      )}
-    />
   )
 }

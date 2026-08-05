@@ -1,12 +1,12 @@
 'use client'
 
-import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
+import { CanvasWorkspaceProvider } from '@/components/editor/canvas-workspace-context'
 import { ClipAiProvider } from '@/components/video/ai/clip-ai-provider'
 import { VideoEditorTopBar } from '@/components/video/video-editor-top-bar'
 import { VideoOnboardingTour } from '@/components/video/onboarding-tour'
 import { usePlayback } from '@/hooks/video/use-playback'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
-import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/carousel/defaults'
+import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/editor/zoom'
 import {
   MAX_TIMELINE_HEIGHT,
   MIN_TIMELINE_HEIGHT,

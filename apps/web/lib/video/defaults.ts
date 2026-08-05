@@ -211,7 +211,12 @@ export function createClip(
     : createVideoClip(asset, trackId, startTime, duration)
 }
 
-export function createTextOverlay(startTime: number, endTime: number, zIndex: number): TextOverlay {
+export function createTextOverlay(
+  startTime: number,
+  endTime: number,
+  zIndex: number,
+  style?: Partial<TextOverlay['style']>,
+): TextOverlay {
   return {
     id: createEntityId('overlay'),
     type: 'text',
@@ -223,7 +228,7 @@ export function createTextOverlay(startTime: number, endTime: number, zIndex: nu
     width: 80,
     rotation: 0,
     zIndex,
-    style: { ...DEFAULT_TEXT_OVERLAY_STYLE },
+    style: { ...DEFAULT_TEXT_OVERLAY_STYLE, ...style },
   }
 }
 

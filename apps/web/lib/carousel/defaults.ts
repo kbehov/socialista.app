@@ -24,14 +24,16 @@ export const DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT: BackgroundImageAdjustment = {
 export const MIN_BACKGROUND_SCALE = 1
 export const MAX_BACKGROUND_SCALE = 4
 
-export const DEFAULT_VIEWPORT_ZOOM = 1
-export const DEFAULT_VIDEO_PREVIEW_ZOOM = 1
-export const MIN_VIEWPORT_ZOOM = 0.25
-export const MAX_VIEWPORT_ZOOM = 2
-export const VIEWPORT_ZOOM_STEP = 0.1
+export {
+  DEFAULT_VIEWPORT_ZOOM,
+  DEFAULT_VIDEO_PREVIEW_ZOOM,
+  MIN_VIEWPORT_ZOOM,
+  MAX_VIEWPORT_ZOOM,
+  VIEWPORT_ZOOM_STEP,
+  clamp,
+} from '@/lib/editor/zoom'
 
 export const DEFAULT_CANVAS = { width: 1080, height: 1350 } as const
-
 export const DEFAULT_SLIDE_BACKGROUND = '#f4f4f5'
 
 export const FONT_FAMILIES = [
@@ -260,10 +262,6 @@ export function normalizeLayer(layer: SlideLayer): SlideLayer {
     opacity: typeof layer.opacity === 'number' ? layer.opacity : 1,
     filters: normalizeSlideBackgroundFilters(layer.filters),
   }
-}
-
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
 }
 
 export function normalizeSlideBackgroundAdjustment(
