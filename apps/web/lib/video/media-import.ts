@@ -308,3 +308,21 @@ export async function importMediaFromUrl(remoteUrl: string, name?: string): Prom
 
   return importMediaAsset(file)
 }
+
+/** Import a workspace library file already hosted on CDN — preserves `url`/`fileId` so save skips re-upload. */
+export async function importMediaFromLibrary(input: {
+  url: string
+  name?: string
+  fileId?: string
+  width?: number
+  height?: number
+}): Promise<MediaAsset> {
+  const imported = await importMediaFromUrl(input.url, input.name)
+  return {
+    ...imported,
+    url: input.url,
+    fileId: input.fileId,
+    width: input.width ?? imported.width,
+    height: input.height ?? imported.height,
+  }
+}

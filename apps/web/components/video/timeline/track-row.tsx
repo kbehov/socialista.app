@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
+import { browseVideoFiles } from '@/lib/video/editor-events'
 import { ASSET_DRAG_MIME, addAssetToTimeline } from '@/lib/video/timeline-placement'
 import { timeFromTimelineClientX } from '@/lib/video/timeline-seek'
 import type { Track } from '@socialista/types'
@@ -18,6 +19,7 @@ type TrackRowProps = {
   headerWidth: number
   onScrubPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
   onScrubPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void
+  emptyHint?: string
 }
 
 export function TrackRow({
@@ -29,6 +31,7 @@ export function TrackRow({
   headerWidth,
   onScrubPointerDown,
   onScrubPointerMove,
+  emptyHint,
 }: TrackRowProps) {
   const clips = useVideoEditorStore(s => s.project.clips)
   const assets = useVideoEditorStore(s => s.assets)
@@ -79,7 +82,7 @@ export function TrackRow({
 
   return (
     <div
-      className={`relative cursor-crosshair bg-neutral-100 dark:bg-neutral-900 ${track.locked ? 'opacity-60' : ''} ${isDropTarget ? 'ring-2 ring-inset ring-primary/50' : ''}`}
+      className={`relative cursor-crosshair bg-surface-2 ${track.locked ? 'opacity-60' : ''} ${isDropTarget ? 'ring-2 ring-inset ring-primary/50' : ''}`}
       style={{ width, height }}
       onPointerDown={handleBackgroundPointerDown}
       onPointerMove={onScrubPointerMove}
@@ -97,11 +100,35 @@ export function TrackRow({
       }}
       onDrop={handleDrop}
     >
-      {track.clips.length === 0 && !track.locked && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] text-muted-foreground/70">
-          Drop media here · click to seek
+      {emptyHint ? (
+        <div className="absolute inset-0 z-[1] flex items-center justify-center">
+          <button
+            type="button"
+            className="video-studio-press rounded-xl border border-dashed border-border/60 bg-muted/15 px-3 py-1.5 text-[11px] leading-[1.45] text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+            onClick={e => {
+              e.stopPropagation()
+              browseVideoFiles()
+            }}
+            onPointerDown={e => e.stopPropagation()}
+          >
+            {emptyHint}
+          </button>
         </div>
-      )}
+      ) : track.clips.length === 0 && !track.locked ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <button
+            type="button"
+            className="video-studio-press text-[10px] text-muted-foreground/70 hover:text-muted-foreground"
+            onClick={e => {
+              e.stopPropagation()
+              browseVideoFiles()
+            }}
+            onPointerDown={e => e.stopPropagation()}
+          >
+            Drop media here · click to browse
+          </button>
+        </div>
+      ) : null}
       {track.clips.map(clipId => {
         const clip = clips[clipId]
         if (!clip) return null

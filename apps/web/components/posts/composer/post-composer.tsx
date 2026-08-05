@@ -2,11 +2,20 @@
 
 import { usePostComposerActions, usePostComposerStore } from '@/store/post-composer.store'
 import { ConnectionStatus, type AccountSummary } from '@socialista/types'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
+import { LoadingState } from '@/components/common/loading-state'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { usePostComposerSubmit } from '@/hooks/use-post-composer-submit'
+import {
+  importSlideshowToComposer,
+  type SlideshowComposerImportProgress,
+} from '@/lib/carousel/slideshow-to-composer'
 import { cn } from '@/lib/utils'
+import { fetchSlideshow } from '@/services/slideshow.client'
 import type { ComposerMediaItem } from '@/types/composer-types'
 import { getAccountsWithIssues, getDefaultTimezone } from '@/utils/composer.utils'
 
@@ -23,6 +32,19 @@ type PostComposerProps = {
   accounts: AccountSummary[]
   accountsTotal?: number
   initialMedia?: ComposerMediaItem[]
+  slideshowId?: string
+}
+
+function formatSlideshowImportMessage(progress: SlideshowComposerImportProgress | null): string {
+  if (!progress) return 'Importing slideshow…'
+
+  const label =
+    progress.phase === 'persisting'
+      ? 'Saving images'
+      : progress.phase === 'rendering'
+        ? 'Rendering slides'
+        : 'Uploading slides'
+  return `${label} (${progress.current}/${progress.total})`
 }
 
 export function PostComposer({
@@ -30,8 +52,14 @@ export function PostComposer({
   accounts,
   accountsTotal,
   initialMedia = [],
+  slideshowId,
 }: PostComposerProps) {
+  const router = useRouter()
   const [previewCollapsed, setPreviewCollapsed] = useState(false)
+  const [slideshowImportReady, setSlideshowImportReady] = useState(!slideshowId)
+  const [slideshowImportProgress, setSlideshowImportProgress] =
+    useState<SlideshowComposerImportProgress | null>(null)
+  const slideshowImportedRef = useRef(false)
 
   const connectedAccounts = useMemo(
     () => accounts.filter(account => account.connectionStatus === ConnectionStatus.CONNECTED),
@@ -68,6 +96,73 @@ export function PostComposer({
     // Reset/hydrate only when the workspace changes — not when the account list identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, hydrate, reset])
+
+  useEffect(() => {
+    if (!slideshowId || slideshowImportedRef.current) {
+      setSlideshowImportReady(true)
+      return
+    }
+
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function importSlideshow() {
+      setSlideshowImportReady(false)
+      setSlideshowImportProgress(null)
+
+      try {
+        const response = await fetchSlideshow(slideshowId!, { signal: controller.signal })
+        if (cancelled || controller.signal.aborted) return
+
+        if (!response.success || !response.data?.slideshow) {
+          toast.error(response.message ?? 'Slideshow not found')
+          setSlideshowImportReady(true)
+          router.replace(DASHBOARD_ROUTES.createPost())
+          return
+        }
+
+        const items = await importSlideshowToComposer(workspaceId, response.data.slideshow, {
+          onProgress: progress => {
+            if (!cancelled && !controller.signal.aborted) {
+              setSlideshowImportProgress(progress)
+            }
+          },
+        })
+        if (cancelled || controller.signal.aborted) return
+
+        if (items.length === 0) {
+          toast.error('Slideshow has no slides to import')
+          setSlideshowImportReady(true)
+          router.replace(DASHBOARD_ROUTES.createPost())
+          return
+        }
+
+        for (const item of items) {
+          addMedia(item)
+        }
+
+        slideshowImportedRef.current = true
+        router.replace(DASHBOARD_ROUTES.createPost())
+        setSlideshowImportReady(true)
+        setSlideshowImportProgress(null)
+        toast.success(`Added ${items.length} slide${items.length === 1 ? '' : 's'} to post`)
+      } catch (err) {
+        if (cancelled || controller.signal.aborted) return
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        const message = err instanceof Error ? err.message : 'Failed to import slideshow'
+        toast.error(message)
+        setSlideshowImportReady(true)
+        router.replace(DASHBOARD_ROUTES.createPost())
+      }
+    }
+
+    void importSlideshow()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [addMedia, router, slideshowId, workspaceId])
 
   useEffect(() => {
     if (selectedAccountIds.length !== 1) return
@@ -115,6 +210,29 @@ export function PostComposer({
     media,
     variants,
     onPreviewAccountChange: setPreviewAccountId,
+  }
+
+  if (!slideshowImportReady) {
+    const progressPercent =
+      slideshowImportProgress && slideshowImportProgress.total > 0
+        ? Math.round((slideshowImportProgress.current / slideshowImportProgress.total) * 100)
+        : null
+
+    return (
+      <LoadingState
+        message={formatSlideshowImportMessage(slideshowImportProgress)}
+        className="flex-1 items-center justify-center px-4 py-16"
+      >
+        {progressPercent !== null ? (
+          <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-200"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        ) : null}
+      </LoadingState>
+    )
   }
 
   return (

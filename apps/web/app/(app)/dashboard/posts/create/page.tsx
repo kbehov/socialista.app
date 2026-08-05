@@ -13,12 +13,12 @@ import { Link2Icon } from 'lucide-react'
 import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
 
 type CreatePostPageProps = {
-  searchParams: Promise<{ generationId?: string }>
+  searchParams: Promise<{ generationId?: string; slideshowId?: string }>
 }
 
 export default async function CreatePostPage({ searchParams }: CreatePostPageProps) {
   const workspace = await getCurrentWorkspace()
-  const { generationId } = await searchParams
+  const { generationId, slideshowId } = await searchParams
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to create a post." />
@@ -71,6 +71,7 @@ export default async function CreatePostPage({ searchParams }: CreatePostPagePro
         accounts={accounts}
         accountsTotal={accountsTotal}
         initialMedia={initialMedia}
+        slideshowId={slideshowId}
       />
     </div>
   )

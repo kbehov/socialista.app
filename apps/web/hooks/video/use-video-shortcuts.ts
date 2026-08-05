@@ -70,6 +70,33 @@ export function useVideoShortcuts(): void {
         return
       }
 
+      // J/K/L shuttle — industry-standard playback keys
+      if (e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        const state = useVideoEditorStore.getState()
+        pause()
+        seek(Math.max(0, state.playhead - 1))
+        return
+      }
+
+      if (e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        pause()
+        return
+      }
+
+      if (e.key.toLowerCase() === 'l') {
+        e.preventDefault()
+        const state = useVideoEditorStore.getState()
+        if (!state.isPlaying) {
+          play()
+        } else {
+          // Already playing: nudge forward (repeat L ≈ 2× feel without rate plumbing)
+          seek(Math.min(state.project.duration, state.playhead + 1))
+        }
+        return
+      }
+
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
         const state = useVideoEditorStore.getState()

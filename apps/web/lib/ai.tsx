@@ -1,7 +1,7 @@
 'use server'
 import { generateText } from 'ai'
 
-import { generateSlideshow } from '@/agents/slideshow-generator'
+import { generateSlideshow } from '@socialista/ai'
 
 /** @deprecated Use generateSlideshowSlides from @/actions/slideshow.actions */
 export const generateSlideshowContent = async (hook: string, slideCount: number) => {

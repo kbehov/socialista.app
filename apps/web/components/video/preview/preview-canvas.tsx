@@ -2,37 +2,74 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useCanvasWorkspaceSize } from '@/components/carousel/canvas-workspace-context'
+import { Button } from '@/components/ui/button'
+import { Kbd } from '@/components/ui/kbd'
 import { seekPreview } from '@/hooks/video/use-playback'
 import { fitVideoPreviewInWorkspace } from '@/lib/carousel/canvas-viewport'
 import { pickActiveVideoClip } from '@/lib/video/active-clip'
 import { hitTestOverlayAt, pointerToCanvasPercent } from '@/lib/video/canvas-hit-test'
+import { browseVideoFiles, focusVideoUrlImport } from '@/lib/video/editor-events'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import { cn } from '@/lib/utils'
-import { FilmIcon, Loader2Icon } from 'lucide-react'
-import { SelectedClipActionBar } from '../timeline/selected-clip-action-bar'
+import { FilmIcon, FolderOpenIcon, LinkIcon, Loader2Icon } from 'lucide-react'
 import { TextOverlayRenderer } from './text-overlay-renderer'
 import { ClipInteractionLayer } from './clip-interaction-layer'
 import {
   CanvasElementContextMenu,
   type CanvasContextTarget,
 } from './element-context-menu'
-import { SelectedOverlayActionBar } from './selected-overlay-action-bar'
+import { SelectionToolbar } from './selection-toolbar'
+import { SafeZoneOverlay } from './safe-zone-overlay'
+import { VideoZoomControls } from './video-zoom-controls'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { ScanIcon } from 'lucide-react'
 
 type PreviewCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>
   previewZoom: number
+  onPreviewZoomChange: (zoom: number) => void
   isBuffering?: boolean
 }
 
 function PreviewEmptyState() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-      <FilmIcon className="size-8 text-muted-foreground/50" strokeWidth={1.5} />
-      <p className="text-sm font-medium text-muted-foreground">Import media to preview</p>
-      <p className="max-w-xs text-xs text-muted-foreground/80">
-        Add videos or images from the left panel. Clips appear here once placed on the timeline.
-      </p>
+    <div className="flex h-full items-center justify-center p-6">
+      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg backdrop-blur-sm">
+        <div className="flex size-10 items-center justify-center rounded-xl border border-border/50 bg-muted/30">
+          <FilmIcon className="size-5 text-muted-foreground/70" strokeWidth={1.5} />
+        </div>
+        <div>
+          <p className="text-sm font-medium tracking-tight text-foreground">Drop media to start</p>
+          <p className="mt-1 text-[11px] leading-[1.45] text-muted-foreground">
+            Browse files from the Media panel, import a link, or drag clips onto the timeline.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            className="video-studio-press w-full justify-start"
+            onClick={() => browseVideoFiles()}
+          >
+            <FolderOpenIcon className="size-3.5" />
+            Browse files
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="video-studio-press w-full justify-start"
+            onClick={() => focusVideoUrlImport()}
+          >
+            <LinkIcon className="size-3.5" />
+            Import from URL
+          </Button>
+        </div>
+        <p className="text-center text-[11px] leading-[1.45] text-muted-foreground">
+          Press <Kbd className="mx-0.5">?</Kbd> anytime for shortcuts
+        </p>
+      </div>
     </div>
   )
 }
@@ -40,6 +77,7 @@ function PreviewEmptyState() {
 export function PreviewCanvas({
   canvasRef,
   previewZoom,
+  onPreviewZoomChange,
   isBuffering = false,
 }: PreviewCanvasProps) {
   const artboardRef = useRef<HTMLDivElement>(null)
@@ -55,9 +93,15 @@ export function PreviewCanvas({
   const textOverlays = useVideoEditorStore(s => s.project.textOverlays)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
+  const showSafeZones = useVideoEditorStore(s => s.showSafeZones)
+  const setShowSafeZones = useVideoEditorStore(s => s.setShowSafeZones)
   const workspaceSize = useCanvasWorkspaceSize()
   const [contextTarget, setContextTarget] = useState<CanvasContextTarget | null>(null)
   const [editOverlayRequestId, setEditOverlayRequestId] = useState<string | null>(null)
+  const pendingOverlayEditId = useVideoEditorStore(s => s.pendingOverlayEditId)
+  const requestOverlayEdit = useVideoEditorStore(s => s.requestOverlayEdit)
+
+  const activeEditOverlayId = editOverlayRequestId ?? pendingOverlayEditId
 
   const isEmpty = duration <= 0
   const zoom = Math.max(previewZoom, 0.01)
@@ -143,97 +187,130 @@ export function PreviewCanvas({
   }
 
   return (
-    <div className="video-editor-preview-scroll h-full min-h-0 w-full overflow-auto overscroll-contain">
-      <div className="box-border flex h-full w-max min-w-full items-center justify-center p-4">
-        <div
-          className={cn('relative flex w-auto shrink-0 flex-col items-center gap-2', !isMeasured && 'invisible')}
-        >
-          <div style={{ width: isMeasured ? visualWidth : undefined }}>
-            <CanvasElementContextMenu
-              target={contextTarget}
-              onTargetChange={setContextTarget}
-              onContextMenuResolve={handleContextMenuResolve}
-              onEditOverlay={id => {
-                selectOverlay(id)
-                setEditOverlayRequestId(id)
-              }}
-            >
-              <div
-                className={cn(
-                  'rounded-xl bg-background/80 p-1 shadow-lg ring-1 ring-border/50 backdrop-blur-[2px]',
-                  showCanvasActions ? 'ring-primary/35' : undefined,
-                )}
+    <div className="relative h-full min-h-0 w-full">
+      <div className="video-editor-preview-scroll h-full min-h-0 w-full overflow-auto overscroll-contain">
+        <div className="box-border flex h-full w-max min-w-full items-center justify-center p-4 pb-14">
+          <div
+            className={cn('relative flex w-auto shrink-0 flex-col items-center gap-2', !isMeasured && 'invisible')}
+          >
+            <div style={{ width: isMeasured ? visualWidth : undefined }}>
+              <CanvasElementContextMenu
+                target={contextTarget}
+                onTargetChange={setContextTarget}
+                onContextMenuResolve={handleContextMenuResolve}
+                onEditOverlay={id => {
+                  selectOverlay(id)
+                  setEditOverlayRequestId(id)
+                }}
               >
                 <div
-                  className="relative"
-                  style={
-                    isMeasured
-                      ? {
-                          width: Math.round(baseWidth * zoom),
-                          height: Math.round(baseHeight * zoom),
-                        }
-                      : undefined
-                  }
+                  className={cn(
+                    'rounded-xl bg-background/80 p-1 shadow-lg ring-1 ring-border/50 backdrop-blur-[2px]',
+                    showCanvasActions ? 'ring-primary/35' : undefined,
+                  )}
                 >
                   <div
-                    ref={artboardRef}
-                    data-video-canvas
-                    className={cn(
-                      'absolute left-0 top-0 overflow-hidden rounded-lg bg-black shadow-[0_12px_40px_-12px_rgba(0,0,0,0.55)]',
-                      showCanvasActions ? 'ring-2 ring-primary/40' : 'ring-1 ring-black/20',
-                    )}
-                    style={{
-                      width: isMeasured ? baseWidth : undefined,
-                      height: isMeasured ? baseHeight : undefined,
-                      transform: isMeasured && zoom !== 1 ? `scale(${zoom})` : undefined,
-                      transformOrigin: 'top left',
-                    }}
+                    className="relative"
+                    style={
+                      isMeasured
+                        ? {
+                            width: Math.round(baseWidth * zoom),
+                            height: Math.round(baseHeight * zoom),
+                          }
+                        : undefined
+                    }
                   >
-                  <canvas
-                    ref={canvasRef}
-                    className="pointer-events-none block"
-                    style={isMeasured ? { width: baseWidth, height: baseHeight } : undefined}
-                  />
-                  <TextOverlayRenderer
-                    artboardRef={artboardRef}
-                    scale={scale}
-                    canSelectClip={canSelectClip}
-                    onBackgroundPointerDown={handleCanvasPointerDown}
-                    editRequestId={editOverlayRequestId}
-                    onEditRequestHandled={() => setEditOverlayRequestId(null)}
-                  />
-                  {isActiveClipSelected && activeClip ? (
-                    <ClipInteractionLayer
-                      clipId={activeClip.id}
-                      artboardRef={artboardRef}
-                      canvasWidth={resolution.width}
-                      canvasHeight={resolution.height}
-                      mediaWidth={mediaWidth}
-                      mediaHeight={mediaHeight}
-                    />
-                  ) : null}
-                  {isBuffering && isPlaying ? (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
-                      <Loader2Icon className="size-6 animate-spin text-white/70" aria-hidden />
+                    <div
+                      ref={artboardRef}
+                      data-video-canvas
+                      className={cn(
+                        'absolute left-0 top-0 overflow-hidden rounded-lg bg-black shadow-[0_12px_40px_-12px_rgba(0,0,0,0.55)]',
+                        showCanvasActions ? 'ring-2 ring-primary/40' : 'ring-1 ring-black/20',
+                      )}
+                      style={{
+                        width: isMeasured ? baseWidth : undefined,
+                        height: isMeasured ? baseHeight : undefined,
+                        transform: isMeasured && zoom !== 1 ? `scale(${zoom})` : undefined,
+                        transformOrigin: 'top left',
+                      }}
+                    >
+                      <canvas
+                        ref={canvasRef}
+                        className="pointer-events-none block"
+                        style={isMeasured ? { width: baseWidth, height: baseHeight } : undefined}
+                      />
+                      <TextOverlayRenderer
+                        artboardRef={artboardRef}
+                        scale={scale}
+                        canSelectClip={canSelectClip}
+                        onBackgroundPointerDown={handleCanvasPointerDown}
+                        editRequestId={activeEditOverlayId}
+                        onEditRequestHandled={() => {
+                          setEditOverlayRequestId(null)
+                          requestOverlayEdit(null)
+                        }}
+                      />
+                      {isActiveClipSelected && activeClip ? (
+                        <ClipInteractionLayer
+                          clipId={activeClip.id}
+                          artboardRef={artboardRef}
+                          canvasWidth={resolution.width}
+                          canvasHeight={resolution.height}
+                          mediaWidth={mediaWidth}
+                          mediaHeight={mediaHeight}
+                        />
+                      ) : null}
+                      <SafeZoneOverlay />
+                      {isBuffering && isPlaying ? (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                          <Loader2Icon className="size-6 animate-spin text-white/70" aria-hidden />
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
                   </div>
                 </div>
-              </div>
-            </CanvasElementContextMenu>
-          </div>
+              </CanvasElementContextMenu>
+            </div>
 
-          {isActiveClipSelected && activeClip ? (
-            <SelectedClipActionBar clipId={activeClip.id} variant="floating" />
-          ) : null}
-          {isOverlaySelected && selectedOverlayId ? (
-            <SelectedOverlayActionBar
-              overlayId={selectedOverlayId}
-              variant="floating"
-              onEditText={() => setEditOverlayRequestId(selectedOverlayId)}
+            <SelectionToolbar
+              onEditOverlayText={id => {
+                setEditOverlayRequestId(id)
+                requestOverlayEdit(id)
+              }}
             />
-          ) : null}
+          </div>
         </div>
+      </div>
+
+      <div
+        data-canvas-controls
+        className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-1.5"
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              className={cn(
+                'video-studio-glass video-studio-press pointer-events-auto size-8 rounded-full shadow-sm',
+                showSafeZones && 'bg-primary/15 text-primary',
+              )}
+              onClick={() => setShowSafeZones(!showSafeZones)}
+              aria-pressed={showSafeZones}
+              aria-label={showSafeZones ? 'Hide safe zones' : 'Show safe zones'}
+            >
+              <ScanIcon className="size-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{showSafeZones ? 'Hide safe zones' : 'Safe zones'}</TooltipContent>
+        </Tooltip>
+
+        <VideoZoomControls
+          zoom={previewZoom}
+          onZoomChange={onPreviewZoomChange}
+          className="video-studio-glass pointer-events-auto shadow-sm"
+        />
       </div>
     </div>
   )

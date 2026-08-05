@@ -25,6 +25,16 @@ export const DEFAULT_ZOOM = 20
 export const MIN_ZOOM = ZOOM_LEVELS[0]
 export const MAX_ZOOM = ZOOM_LEVELS[ZOOM_LEVELS.length - 1]
 
+/** Timeline panel height snap stops (px). */
+export const TIMELINE_HEIGHT_STOPS = [152, 240, 320] as const
+export const DEFAULT_TIMELINE_HEIGHT = TIMELINE_HEIGHT_STOPS[0]
+export const MIN_TIMELINE_HEIGHT = 128
+export const MAX_TIMELINE_HEIGHT = 400
+
+export const TIMELINE_HEIGHT_STORAGE_KEY = 'video-timeline-height'
+export const SNAP_ENABLED_STORAGE_KEY = 'video-snap-enabled'
+export const SAFE_ZONES_STORAGE_KEY = 'video-safe-zones'
+
 export const HISTORY_LIMIT = 50
 
 export const THUMBNAIL_COUNT = 8

@@ -9,9 +9,12 @@ export const DASHBOARD_ROUTES = {
   accountAnalytics: (accountId: string) => `/dashboard/accounts/analytics/${accountId}`,
   ANALYTICS: '/dashboard/analytics',
   POSTS: '/dashboard/posts',
-  createPost: (opts?: { generationId?: string }) => {
-    if (!opts?.generationId) return '/dashboard/posts/create'
-    return `/dashboard/posts/create?generationId=${encodeURIComponent(opts.generationId)}`
+  createPost: (opts?: { generationId?: string; slideshowId?: string }) => {
+    const params = new URLSearchParams()
+    if (opts?.generationId) params.set('generationId', opts.generationId)
+    if (opts?.slideshowId) params.set('slideshowId', opts.slideshowId)
+    const qs = params.toString()
+    return qs ? `/dashboard/posts/create?${qs}` : '/dashboard/posts/create'
   },
   GENERATIONS: '/dashboard/generations',
   STUDIO: {

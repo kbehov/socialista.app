@@ -36,6 +36,7 @@ import {
   PaletteIcon,
   PlayIcon,
   Redo2Icon,
+  SendIcon,
   SparklesIcon,
   TypeIcon,
   Undo2Icon,
@@ -137,6 +138,10 @@ function CarouselEditorMain() {
 
   const handleCreateVideo = useCallback(() => {
     window.dispatchEvent(new CustomEvent('slideshow:create-video'))
+  }, [])
+
+  const handlePostNow = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('slideshow:post-now'))
   }, [])
 
   const handleWorkspacePointerDown = useCallback(
@@ -335,6 +340,10 @@ function CarouselEditorMain() {
               Design slide
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
+              <SendIcon className="size-3.5" />
+              Post now
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={handleCreateVideo}>
               <VideoIcon className="size-3.5" />
               Create video
@@ -368,6 +377,10 @@ function CarouselEditorMain() {
             >
               <DownloadIcon className="size-3.5" />
               Download images
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
+              <SendIcon className="size-3.5" />
+              Post now
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={handleCreateVideo}>
               <VideoIcon className="size-3.5" />

@@ -178,12 +178,17 @@ async function prepareSlideForExport(container: HTMLElement): Promise<void> {
 
   // Replace remote http(s) URLs with our same-origin proxy so the browser
   // sends CORS-friendly requests and we can later draw them onto a canvas.
+  // Skip URLs that are already same-origin / already proxied to avoid nesting.
   await Promise.all(
     images.map(img => {
-      if (!img.src.startsWith('http')) return Promise.resolve()
-      const originalSrc = img.src
+      const src = img.src
+      if (!src.startsWith('http')) return Promise.resolve()
+      if (isAlreadyProxiedOrSameOrigin(src)) {
+        img.crossOrigin = 'anonymous'
+        return Promise.resolve()
+      }
       img.crossOrigin = 'anonymous'
-      img.src = `/api/image-proxy?url=${encodeURIComponent(originalSrc)}`
+      img.src = `/api/image-proxy?url=${encodeURIComponent(src)}`
       return new Promise<void>(resolve => {
         img.onload = () => resolve()
         img.onerror = () => resolve()
@@ -223,6 +228,17 @@ async function prepareSlideForExport(container: HTMLElement): Promise<void> {
 
   // Two frames so layout has settled before we capture the bitmap.
   await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+}
+
+function isAlreadyProxiedOrSameOrigin(src: string): boolean {
+  try {
+    const parsed = new URL(src)
+    if (parsed.pathname.includes('/api/image-proxy')) return true
+    if (typeof window !== 'undefined' && parsed.origin === window.location.origin) return true
+  } catch {
+    return false
+  }
+  return false
 }
 
 function dataUrlToBlob(dataUrl: string): Blob {

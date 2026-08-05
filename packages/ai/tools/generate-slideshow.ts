@@ -1,26 +1,16 @@
+import type { GenerateSlideshowInput, GenerateSlideshowResult } from '@socialista/types'
 import { generateObject } from 'ai'
 
-import { buildSlideshowUserPrompt, SLIDESHOW_SYSTEM_PROMPT } from './prompts/slideshow-prompt'
+import { buildSlideshowUserPrompt, SLIDESHOW_SYSTEM_PROMPT } from '../prompts/slideshow-prompt.js'
 import {
   createSlideshowGeneratedSchema,
   slideshowToSlideTexts,
-  type SlideshowGenerated,
-} from './schemas/slideshow-schema'
+} from '../schemas/slideshow-generation.js'
 
 const SLIDESHOW_MODEL = 'anthropic/claude-sonnet-4.6'
 
 const MIN_SLIDE_COUNT = 2
 const MAX_SLIDE_COUNT = 10
-
-export type GenerateSlideshowInput = {
-  hook: string
-  slideCount: number
-}
-
-export type GenerateSlideshowResult = {
-  contentType: SlideshowGenerated['contentType']
-  texts: string[]
-}
 
 export async function generateSlideshow({
   hook,

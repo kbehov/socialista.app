@@ -1,4 +1,4 @@
-import { buildPlatformCopyNotes } from '@/agents/prompts/copywriting'
+import { buildPlatformCopyNotes } from '@socialista/ai'
 import type { SocialProvider } from '@socialista/types'
 import type { FilePart, ModelMessage } from 'ai'
 

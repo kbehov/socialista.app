@@ -23,12 +23,12 @@
   "dependencies": {
     "@ai-sdk/react": "^4.0.39",
     "@fal-ai/client": "^1.10.1",
+    "@socialista/types": "workspace:*",
     "ai": "^7.0.36",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@socialista/eslint-config": "workspace:*",
-    "@socialista/types": "workspace:*",
     "@socialista/typescript-config": "workspace:*",
     "@types/node": "^26.1.2",
     "eslint": "^10.8.0",

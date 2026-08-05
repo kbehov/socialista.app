@@ -1,7 +1,8 @@
 'use client'
 
 import { useVideoEditorStore } from '@/lib/video/store'
-import type { CanvasDimensions } from '@socialista/types'
+import { getVideoFormatPreset } from '@/lib/video/format-presets'
+import { focusVideoFormatSelector } from '@/lib/video/editor-events'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -11,12 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-
-const RESOLUTION_PRESETS: { id: string; label: string; dimensions: CanvasDimensions }[] = [
-  { id: 'vertical', label: '1080×1920 (Reels)', dimensions: { width: 1080, height: 1920 } },
-  { id: 'square', label: '1080×1080 (Square)', dimensions: { width: 1080, height: 1080 } },
-  { id: 'landscape', label: '1920×1080 (Landscape)', dimensions: { width: 1920, height: 1080 } },
-]
+import { Button } from '@/components/ui/button'
+import { PlatformIcon } from '@/components/carousel/format-selector'
 
 const FPS_OPTIONS = [24, 30, 60]
 
@@ -34,58 +31,58 @@ export function ProjectProperties() {
   const fps = useVideoEditorStore(s => s.project.fps)
   const duration = useVideoEditorStore(s => s.project.duration)
   const durationGuide = useVideoEditorStore(s => s.durationGuide)
+  const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
   const setProjectName = useVideoEditorStore(s => s.setProjectName)
-  const setResolution = useVideoEditorStore(s => s.setResolution)
   const setFps = useVideoEditorStore(s => s.setFps)
   const setDurationGuide = useVideoEditorStore(s => s.setDurationGuide)
 
-  const matchedPreset = RESOLUTION_PRESETS.find(
-    p => p.dimensions.width === resolution.width && p.dimensions.height === resolution.height,
-  )
-
+  const formatPreset = getVideoFormatPreset(formatPresetId)
   const guideValue = durationGuide == null ? 'none' : String(durationGuide)
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-xs font-semibold uppercase text-muted-foreground">Project</div>
+      <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Project</div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="project-name" className="text-xs text-muted-foreground">
+        <Label htmlFor="project-name" className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">
           Name
         </Label>
         <Input
           id="project-name"
           value={name}
           onChange={e => setProjectName(e.target.value)}
-          className="h-8 text-sm"
+          className="h-7 text-xs font-medium"
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Resolution</Label>
-        <Select
-          value={matchedPreset?.id ?? 'custom'}
-          onValueChange={id => {
-            const preset = RESOLUTION_PRESETS.find(p => p.id === id)
-            if (preset) setResolution(preset.dimensions)
-          }}
+        <Label className="text-xs text-muted-foreground">Format</Label>
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/15 px-2.5 py-2">
+          {formatPreset ? (
+            <>
+              <PlatformIcon platform={formatPreset.platform} size={16} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium">{formatPreset.label}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {resolution.width}×{resolution.height}
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {resolution.width}×{resolution.height}
+            </p>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="video-studio-press h-7 w-full text-xs"
+          onClick={() => focusVideoFormatSelector()}
         >
-          <SelectTrigger className="h-8 w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {RESOLUTION_PRESETS.map(p => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.label}
-              </SelectItem>
-            ))}
-            {!matchedPreset ? (
-              <SelectItem value="custom">
-                Custom ({resolution.width}×{resolution.height})
-              </SelectItem>
-            ) : null}
-          </SelectContent>
-        </Select>
+          Change format
+        </Button>
       </div>
 
       <div className="space-y-1.5">
@@ -105,7 +102,7 @@ export function ProjectProperties() {
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Duration guide</Label>
+        <Label className="text-xs text-muted-foreground">Target length</Label>
         <Select
           value={guideValue}
           onValueChange={v => setDurationGuide(v === 'none' ? null : parseInt(v, 10))}

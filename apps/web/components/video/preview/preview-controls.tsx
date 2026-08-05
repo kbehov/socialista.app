@@ -1,11 +1,12 @@
 'use client'
 
 import type { CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { formatTimecode } from '@/lib/video/timecode'
+import { formatTimecode, parseTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
 import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon } from 'lucide-react'
 
@@ -15,6 +16,91 @@ type Playback = {
 }
 
 const SKIP_SECONDS = 1
+
+function EditableTimecode({
+  playback,
+  className,
+}: {
+  playback: Playback
+  className?: string
+}) {
+  const playhead = useVideoEditorStore(s => s.playhead)
+  const duration = useVideoEditorStore(s => s.project.duration)
+  const fps = useVideoEditorStore(s => s.project.fps)
+  const seek = useVideoEditorStore(s => s.seek)
+  const pause = useVideoEditorStore(s => s.pause)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const display = formatTimecode(playhead, fps)
+
+  const startEditing = useCallback(() => {
+    pause()
+    setDraft(formatTimecode(playhead, fps))
+    setEditing(true)
+  }, [fps, pause, playhead])
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select()
+  }, [editing])
+
+  const commit = useCallback(() => {
+    const parsed = parseTimecode(draft, fps)
+    setEditing(false)
+    if (parsed == null) return
+    const next = Math.max(0, Math.min(duration, parsed))
+    seek(next)
+    playback.seekTo(next)
+  }, [draft, duration, fps, playback, seek])
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            commit()
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            setEditing(false)
+          }
+        }}
+        className={cn(
+          'h-6 w-22 rounded-md border bg-muted/50 px-1.5 font-mono text-xs tabular-nums outline-none focus-visible:border-ring',
+          className,
+        )}
+        aria-label="Jump to timecode"
+      />
+    )
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={startEditing}
+          className={cn(
+            'video-studio-press rounded-md px-1 py-0.5 font-mono text-xs tabular-nums hover:bg-muted/50',
+            className,
+          )}
+          aria-label="Edit timecode"
+        >
+          <span className="font-medium text-foreground">{display}</span>
+          <span className="mx-1.5 text-muted-foreground/40">|</span>
+          <span className="text-muted-foreground">{formatTimecode(duration, fps)}</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Click to jump to time</TooltipContent>
+    </Tooltip>
+  )
+}
 
 export function PreviewControls({
   playback,
@@ -48,7 +134,7 @@ export function PreviewControls({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                className="size-8 rounded-full text-muted-foreground"
+                className="video-studio-press size-8 rounded-full text-muted-foreground"
                 onClick={() => seekBy(-SKIP_SECONDS)}
                 disabled={!hasContent}
                 aria-label={`Skip back ${SKIP_SECONDS} second`}
@@ -64,7 +150,7 @@ export function PreviewControls({
             onClick={playback.toggle}
             disabled={!hasContent}
             className={cn(
-              'flex size-9 shrink-0 items-center justify-center rounded-full transition-all',
+              'video-studio-press flex size-9 shrink-0 items-center justify-center rounded-full transition-all',
               'bg-foreground text-background hover:opacity-90',
               'disabled:cursor-not-allowed disabled:opacity-40',
             )}
@@ -79,7 +165,7 @@ export function PreviewControls({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                className="size-8 rounded-full text-muted-foreground"
+                className="video-studio-press size-8 rounded-full text-muted-foreground"
                 onClick={() => seekBy(SKIP_SECONDS)}
                 disabled={!hasContent}
                 aria-label={`Skip forward ${SKIP_SECONDS} second`}
@@ -91,11 +177,7 @@ export function PreviewControls({
           </Tooltip>
         </div>
 
-        <div className="font-mono text-xs tabular-nums">
-          <span className="font-medium text-foreground">{formatTimecode(playhead, fps)}</span>
-          <span className="mx-1.5 text-muted-foreground/40">|</span>
-          <span className="text-muted-foreground">{formatTimecode(duration, fps)}</span>
-        </div>
+        <EditableTimecode playback={playback} />
       </div>
     )
   }
@@ -109,7 +191,7 @@ export function PreviewControls({
               type="button"
               size="icon-sm"
               variant="ghost"
-              className="size-8 rounded-full text-muted-foreground"
+              className="video-studio-press size-8 rounded-full text-muted-foreground"
               onClick={() => seekBy(-SKIP_SECONDS)}
               disabled={!hasContent}
               aria-label={`Skip back ${SKIP_SECONDS} second`}
@@ -125,7 +207,7 @@ export function PreviewControls({
           onClick={playback.toggle}
           disabled={!hasContent}
           className={cn(
-            'flex size-10 shrink-0 items-center justify-center rounded-full transition-all',
+            'video-studio-press flex size-10 shrink-0 items-center justify-center rounded-full transition-all',
             'bg-foreground text-background shadow-md hover:opacity-90',
             'disabled:cursor-not-allowed disabled:opacity-40',
           )}
@@ -140,7 +222,7 @@ export function PreviewControls({
               type="button"
               size="icon-sm"
               variant="ghost"
-              className="size-8 rounded-full text-muted-foreground"
+              className="video-studio-press size-8 rounded-full text-muted-foreground"
               onClick={() => seekBy(SKIP_SECONDS)}
               disabled={!hasContent}
               aria-label={`Skip forward ${SKIP_SECONDS} second`}
@@ -152,10 +234,8 @@ export function PreviewControls({
         </Tooltip>
       </div>
 
-      <div className="hidden shrink-0 font-mono text-xs tabular-nums sm:block">
-        <span className="font-medium text-foreground">{formatTimecode(playhead, fps)}</span>
-        <span className="mx-1 text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground">{formatTimecode(duration, fps)}</span>
+      <div className="hidden shrink-0 sm:block">
+        <EditableTimecode playback={playback} />
       </div>
 
       <div className="relative min-w-0 flex-1">
@@ -189,7 +269,8 @@ export function PreviewControls({
       </div>
 
       <p className="hidden shrink-0 text-[10px] text-muted-foreground xl:block">
-        <Kbd>Space</Kbd> play · <Kbd>←</Kbd><Kbd>→</Kbd> seek
+        <Kbd>Space</Kbd> play · <Kbd>←</Kbd>
+        <Kbd>→</Kbd> seek
       </p>
     </div>
   )

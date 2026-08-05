@@ -25,11 +25,13 @@ export function TrackList({
   onScrubPointerMove,
 }: TrackListProps) {
   const tracks = useVideoEditorStore(s => s.project.tracks)
+  const clips = useVideoEditorStore(s => s.project.clips)
   const addTrack = useVideoEditorStore(s => s.addTrack)
+  const hasClips = Object.keys(clips).length > 0
 
   return (
     <div>
-      {tracks.map(track => (
+      {tracks.map((track, index) => (
         <div key={track.id} className="flex border-b">
           <TrackHeader track={track} width={headerWidth} height={rowHeight} />
           <TrackRow
@@ -41,6 +43,7 @@ export function TrackList({
             headerWidth={headerWidth}
             onScrubPointerDown={onScrubPointerDown}
             onScrubPointerMove={onScrubPointerMove}
+            emptyHint={!hasClips && index === 0 ? 'Drag media here to start' : undefined}
           />
         </div>
       ))}
@@ -48,14 +51,14 @@ export function TrackList({
         <button
           type="button"
           onClick={() => addTrack('video')}
-          className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
+          className="video-studio-press flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
         >
           <PlusIcon className="h-3 w-3" /> Video track
         </button>
         <button
           type="button"
           onClick={() => addTrack('audio')}
-          className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
+          className="video-studio-press flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
         >
           <PlusIcon className="h-3 w-3" /> Audio track
         </button>

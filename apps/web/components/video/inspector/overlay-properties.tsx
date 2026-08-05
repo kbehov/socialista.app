@@ -9,9 +9,8 @@ import type { TextAnimation } from '@socialista/types'
 import type { OverlayAnchor } from '@/lib/video/defaults'
 import { Slider } from './slider'
 import { VideoTextPresetPicker } from './video-text-preset-picker'
-import { useAiComingSoonOptional } from '@/components/video/ai/ai-coming-soon-dialog'
 import { Button } from '@/components/ui/button'
-import { AlignCenterIcon, AlignEndVerticalIcon, AlignStartVerticalIcon, SparklesIcon } from 'lucide-react'
+import { AlignCenterIcon, AlignEndVerticalIcon, AlignStartVerticalIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ANCHORS: { id: OverlayAnchor; label: string; icon: typeof AlignStartVerticalIcon }[] = [
@@ -36,7 +35,6 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const reorderOverlay = useVideoEditorStore(s => s.reorderOverlay)
   const anchorOverlay = useVideoEditorStore(s => s.anchorOverlay)
-  const aiComingSoon = useAiComingSoonOptional()
   const [contentDraft, setContentDraft] = useState('')
   const [startDraft, setStartDraft] = useState('')
   const [endDraft, setEndDraft] = useState('')
@@ -55,7 +53,7 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold uppercase text-muted-foreground">Text overlay</div>
+        <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Text overlay</div>
         <div className="flex gap-1">
           <button
             type="button"
@@ -110,19 +108,6 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
           ))}
         </div>
       </div>
-
-      {aiComingSoon ? (
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="h-8 w-full gap-1.5 bg-primary/10 text-primary hover:bg-primary/15"
-          onClick={() => aiComingSoon.open('smart-text')}
-        >
-          <SparklesIcon className="size-3.5" />
-          Generate caption
-        </Button>
-      ) : null}
 
       <VideoTextPresetPicker
         currentStyle={overlay.style}

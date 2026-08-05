@@ -1,18 +1,16 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { persistVideoAssets } from '@/lib/video/persist-video-assets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable, type MediaAsset } from '@/lib/video/types'
 import { createVideo, updateVideo } from '@/services/video.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
-import { Loader2Icon, SaveIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+
+export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error'
 
 function getWorkspaceId(workspace: { id?: string; _id?: string } | null | undefined): string | undefined {
   return workspace?.id ?? workspace?._id
@@ -31,23 +29,63 @@ function applyUsedStorage(
   }
 }
 
-export function VideoSaveBar({ className, showLabel = true }: { className?: string; showLabel?: boolean }) {
+export function useVideoSave() {
   const router = useRouter()
   const workspace = useWorkspaceStore(s => s.currentWorkspace)
   const { updateWorkspace } = useWorkspaceStoreActions()
   const workspaceId = getWorkspaceId(workspace)
   const project = useVideoEditorStore(s => s.project)
   const assets = useVideoEditorStore(s => s.assets)
-  const setProjectName = useVideoEditorStore(s => s.setProjectName)
+  const past = useVideoEditorStore(s => s.past)
   const getProjectPayload = useVideoEditorStore(s => s.getProjectPayload)
   const loadProject = useVideoEditorStore(s => s.loadProject)
   const hydrateRuntimeAssets = useVideoEditorStore(s => s.hydrateRuntimeAssets)
   const applyPersistedAssets = useVideoEditorStore(s => s.applyPersistedAssets)
-  const [isSaving, setIsSaving] = useState(false)
 
-  const handleSave = useCallback(async () => {
-    if (!workspaceId || isSaving) return
-    setIsSaving(true)
+  const [status, setStatus] = useState<SaveStatus>('idle')
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
+  const savedPastLengthRef = useRef(past.length)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const statusRef = useRef(status)
+
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
+
+  useEffect(() => {
+    if (status === 'saving') return
+    if (past.length !== savedPastLengthRef.current) {
+      setStatus('unsaved')
+    }
+  }, [past.length, status])
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (useVideoEditorStore.getState().past.length === savedPastLengthRef.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
+
+  const markSaved = useCallback((opts?: { silent?: boolean }) => {
+    savedPastLengthRef.current = useVideoEditorStore.getState().past.length
+    setLastSavedAt(Date.now())
+    setStatus('saved')
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    savedTimerRef.current = setTimeout(() => {
+      setStatus(prev => (prev === 'saved' ? 'idle' : prev))
+    }, 2000)
+    if (!opts?.silent) {
+      toast.success('Draft saved')
+    }
+  }, [])
+
+  const save = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!workspaceId || statusRef.current === 'saving') return false
+    setStatus('saving')
     const payload = getProjectPayload()
     try {
       const { assets: persistedAssets, uploadedBytes } = await persistVideoAssets(
@@ -76,11 +114,12 @@ export function VideoSaveBar({ className, showLabel = true }: { className?: stri
         })
         if (!response.success) {
           toast.error(response.message ?? 'Failed to save video')
-          return
+          setStatus('error')
+          return false
         }
         applyPersistedAssets(persistedAssets)
-        toast.success('Draft saved')
-        return
+        markSaved({ silent: opts?.silent })
+        return true
       }
 
       const response = await createVideo({
@@ -97,7 +136,8 @@ export function VideoSaveBar({ className, showLabel = true }: { className?: stri
 
       if (!response.success || !response.data?.video) {
         toast.error(response.message ?? 'Failed to save video')
-        return
+        setStatus('error')
+        return false
       }
 
       const { video } = response.data
@@ -126,19 +166,20 @@ export function VideoSaveBar({ className, showLabel = true }: { className?: stri
         }),
       )
       router.replace(DASHBOARD_ROUTES.STUDIO.video(video.id))
-      toast.success('Draft saved')
+      markSaved({ silent: opts?.silent })
+      return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save video')
-    } finally {
-      setIsSaving(false)
+      setStatus('error')
+      return false
     }
   }, [
     applyPersistedAssets,
     assets,
     getProjectPayload,
     hydrateRuntimeAssets,
-    isSaving,
     loadProject,
+    markSaved,
     project.id,
     router,
     updateWorkspace,
@@ -146,34 +187,30 @@ export function VideoSaveBar({ className, showLabel = true }: { className?: stri
     workspaceId,
   ])
 
-  const isPersisted = Boolean(project.id) && !project.id.startsWith('project_')
+  // Debounced autosave ~5s after the last undoable change
+  useEffect(() => {
+    if (status !== 'unsaved' || !workspaceId) return
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      void save({ silent: true })
+    }, 5000)
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [past.length, save, status, workspaceId])
 
-  return (
-    <div className={cn('flex min-w-0 flex-col gap-0.5', className)}>
-      {showLabel ? (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Project name</span>
-      ) : null}
-      <div className="flex min-w-0 items-center gap-1.5">
-        <Input
-          value={project.name}
-          onChange={event => setProjectName(event.target.value)}
-          placeholder="Untitled video"
-          className="h-8 min-w-0 flex-1 border-transparent bg-muted/50 px-2 py-1 text-xs font-medium shadow-none transition-colors focus-visible:border-input focus-visible:bg-background sm:text-sm"
-          aria-label="Video name"
-        />
-        <Button
-          size="sm"
-          className="h-8 shrink-0 px-2.5"
-          variant={isPersisted ? 'outline' : 'default'}
-          onClick={() => void handleSave()}
-          disabled={isSaving || !workspaceId}
-        >
-          {isSaving ? <Loader2Icon className="size-3.5 animate-spin" /> : <SaveIcon className="size-3.5" />}
-          <span className="hidden sm:inline">
-            {isSaving ? 'Saving…' : isPersisted ? 'Save' : 'Save draft'}
-          </span>
-        </Button>
-      </div>
-    </div>
-  )
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [])
+
+  return {
+    save: () => save(),
+    status,
+    lastSavedAt,
+    canSave: Boolean(workspaceId) && status !== 'saving',
+    workspaceId,
+  }
 }

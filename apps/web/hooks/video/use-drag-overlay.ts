@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { collectOverlaySnapTargets, snapTime } from '@/lib/video/snap'
 import { useVideoEditorStore } from '@/lib/video/store'
 
 type Mode = 'move' | 'trim-start' | 'trim-end'
@@ -31,6 +32,7 @@ export function useDragOverlay(pxPerSec: number) {
   const draftRef = useRef<OverlayTimingDraft | null>(null)
   const onTapRef = useRef<(() => void) | null>(null)
   const setOverlayTiming = useVideoEditorStore(s => s.setOverlayTiming)
+  const setSnapGuideTime = useVideoEditorStore(s => s.setSnapGuideTime)
 
   const applyDraft = useCallback((next: OverlayTimingDraft) => {
     draftRef.current = next
@@ -43,20 +45,40 @@ export function useDragOverlay(pxPerSec: number) {
       if (!it) return
       e.preventDefault()
       const deltaSec = (e.clientX - it.startPointerX) / it.pxPerSec
+      const state = useVideoEditorStore.getState()
+      const candidates = collectOverlaySnapTargets({
+        playhead: state.playhead,
+        duration: state.project.duration,
+        overlays: state.project.textOverlays,
+        clips: Object.values(state.project.clips).map(c => ({
+          startTime: c.startTime,
+          duration: c.duration,
+        })),
+        excludeOverlayId: it.overlayId,
+      })
 
       if (it.mode === 'move') {
         const duration = it.startEndTime - it.startStartTime
-        const newStart = Math.max(0, it.startStartTime + deltaSec)
+        const rawStart = Math.max(0, it.startStartTime + deltaSec)
+        const withEnd = [...candidates]
+        for (const t of candidates) {
+          withEnd.push(t - duration)
+        }
+        const snapped = snapTime(rawStart, withEnd, it.pxPerSec, state.snapEnabled)
+        setSnapGuideTime(snapped.guideTime)
         applyDraft({
           overlayId: it.overlayId,
-          startTime: newStart,
-          endTime: newStart + duration,
+          startTime: snapped.time,
+          endTime: snapped.time + duration,
         })
         return
       }
 
       if (it.mode === 'trim-start') {
-        const newStart = Math.max(0, Math.min(it.startEndTime - MIN_DURATION, it.startStartTime + deltaSec))
+        const rawStart = Math.max(0, Math.min(it.startEndTime - MIN_DURATION, it.startStartTime + deltaSec))
+        const snapped = snapTime(rawStart, candidates, it.pxPerSec, state.snapEnabled)
+        setSnapGuideTime(snapped.guideTime)
+        const newStart = Math.max(0, Math.min(it.startEndTime - MIN_DURATION, snapped.time))
         applyDraft({
           overlayId: it.overlayId,
           startTime: newStart,
@@ -65,20 +87,24 @@ export function useDragOverlay(pxPerSec: number) {
         return
       }
 
-      const newEnd = Math.max(it.startStartTime + MIN_DURATION, it.startEndTime + deltaSec)
+      const rawEnd = Math.max(it.startStartTime + MIN_DURATION, it.startEndTime + deltaSec)
+      const snapped = snapTime(rawEnd, candidates, it.pxPerSec, state.snapEnabled)
+      setSnapGuideTime(snapped.guideTime)
+      const newEnd = Math.max(it.startStartTime + MIN_DURATION, snapped.time)
       applyDraft({
         overlayId: it.overlayId,
         startTime: it.startStartTime,
         endTime: newEnd,
       })
     },
-    [applyDraft],
+    [applyDraft, setSnapGuideTime],
   )
 
   const stop = useCallback(() => {
     const it = stateRef.current
     const finalDraft = draftRef.current
     const onTap = onTapRef.current
+    setSnapGuideTime(null)
     if (it && finalDraft) {
       const moved =
         it.mode === 'move'
@@ -98,7 +124,7 @@ export function useDragOverlay(pxPerSec: number) {
     onTapRef.current = null
     setDraft(null)
     setIsDragging(false)
-  }, [setOverlayTiming])
+  }, [setOverlayTiming, setSnapGuideTime])
 
   useEffect(() => {
     if (!isDragging) return

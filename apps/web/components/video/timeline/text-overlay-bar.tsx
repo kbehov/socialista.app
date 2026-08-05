@@ -3,6 +3,7 @@
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useDragOverlay } from '@/hooks/video/use-drag-overlay'
 import { useTimelineFocus } from '@/components/video/timeline/timeline-focus-context'
+import { cn } from '@/lib/utils'
 import type { TextOverlay } from '@socialista/types'
 import { TypeIcon } from 'lucide-react'
 
@@ -11,6 +12,8 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
   const selectClip = useVideoEditorStore(s => s.selectClip)
+  const requestOverlayEdit = useVideoEditorStore(s => s.requestOverlayEdit)
+  const seek = useVideoEditorStore(s => s.seek)
   const { beginMove, beginTrim, draft } = useDragOverlay(pxPerSec)
   const focusAtTime = useTimelineFocus()
 
@@ -34,6 +37,13 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
             onSelect={() => {
               selectClip(null)
               selectOverlay(overlay.id)
+            }}
+            onDoubleClick={() => {
+              selectClip(null)
+              selectOverlay(overlay.id)
+              seek(overlay.startTime)
+              focusAtTime?.(overlay.startTime)
+              requestOverlayEdit(overlay.id)
             }}
             onMove={e => {
               selectClip(null)
@@ -63,6 +73,7 @@ function TextOverlayBlock({
   width,
   selected,
   onSelect,
+  onDoubleClick,
   onMove,
   onTrimStart,
   onTrimEnd,
@@ -72,6 +83,7 @@ function TextOverlayBlock({
   width: number
   selected: boolean
   onSelect: () => void
+  onDoubleClick: () => void
   onMove: (e: React.PointerEvent) => void
   onTrimStart: (e: React.PointerEvent) => void
   onTrimEnd: (e: React.PointerEvent) => void
@@ -80,17 +92,19 @@ function TextOverlayBlock({
     <div
       data-overlay-bar
       data-overlay-id={overlay.id}
-      className={`absolute top-0.5 flex h-[26px] touch-none select-none items-center overflow-hidden rounded border ${
+      onDoubleClick={onDoubleClick}
+      className={cn(
+        'absolute top-0.5 flex h-[26px] touch-none select-none items-center overflow-hidden rounded-md border transition-[box-shadow,border-color]',
         selected
-          ? 'z-10 border-blue-500 bg-blue-500 ring-2 ring-blue-500/40'
-          : 'border-purple-400/80 bg-purple-500/80 hover:bg-purple-500'
-      }`}
+          ? 'z-10 border-primary bg-violet-500/85 ring-2 ring-primary/20'
+          : 'border-violet-400/40 bg-violet-500/65 hover:bg-violet-500/80',
+      )}
       style={{ left, width }}
-      title={`${overlay.content || 'Text overlay'} — drag to move, edges to trim, S to split at playhead`}
+      title={`${overlay.content || 'Text overlay'} — double-click to edit`}
     >
       <div
         onPointerDown={onTrimStart}
-        className="absolute left-0 top-0 z-20 h-full w-3 shrink-0 cursor-ew-resize bg-white/25 hover:bg-white/45"
+        className="absolute left-0 top-0 z-20 h-full w-2.5 shrink-0 cursor-ew-resize bg-white/20 hover:bg-white/40"
         aria-label="Trim start"
       />
       <div
@@ -100,12 +114,12 @@ function TextOverlayBlock({
         }}
         className="flex h-full min-w-0 flex-1 cursor-grab items-center gap-1 px-3 text-[10px] text-white active:cursor-grabbing"
       >
-        <TypeIcon className="h-3 w-3 shrink-0 pointer-events-none" />
-        <span className="truncate pointer-events-none">{overlay.content || 'Text overlay'}</span>
+        <TypeIcon className="pointer-events-none h-3 w-3 shrink-0" />
+        <span className="pointer-events-none truncate">{overlay.content || 'Text overlay'}</span>
       </div>
       <div
         onPointerDown={onTrimEnd}
-        className="absolute right-0 top-0 z-20 h-full w-3 shrink-0 cursor-ew-resize bg-white/25 hover:bg-white/45"
+        className="absolute right-0 top-0 z-20 h-full w-2.5 shrink-0 cursor-ew-resize bg-white/20 hover:bg-white/40"
         aria-label="Trim end"
       />
     </div>

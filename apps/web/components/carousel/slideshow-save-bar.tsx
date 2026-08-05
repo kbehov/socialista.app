@@ -24,7 +24,7 @@ type PersistSlideshowResult = {
   isNew: boolean
 }
 
-type BusyAction = 'save' | 'create-video' | 'autosave' | null
+type BusyAction = 'save' | 'create-video' | 'post-now' | 'autosave' | null
 
 function formatSavedAt(timestamp: number | null): string | null {
   if (!timestamp) return null
@@ -167,6 +167,20 @@ export function SlideshowSaveBar({
     }
   }, [isBusy, persistSlideshowDraft, router, workspaceId])
 
+  const handlePostNow = useCallback(async () => {
+    if (!workspaceId || isBusy) return
+    setBusyAction('post-now')
+
+    try {
+      const result = await persistSlideshowDraft()
+      if (!result) return
+
+      router.push(DASHBOARD_ROUTES.createPost({ slideshowId: result.id }))
+    } finally {
+      setBusyAction(null)
+    }
+  }, [isBusy, persistSlideshowDraft, router, workspaceId])
+
   useEffect(() => {
     const onSave = () => {
       void handleSave()
@@ -174,18 +188,23 @@ export function SlideshowSaveBar({
     const onCreateVideo = () => {
       void handleCreateVideo()
     }
+    const onPostNow = () => {
+      void handlePostNow()
+    }
     window.addEventListener('slideshow:save', onSave)
     window.addEventListener('slideshow:create-video', onCreateVideo)
+    window.addEventListener('slideshow:post-now', onPostNow)
     return () => {
       window.removeEventListener('slideshow:save', onSave)
       window.removeEventListener('slideshow:create-video', onCreateVideo)
+      window.removeEventListener('slideshow:post-now', onPostNow)
     }
-  }, [handleCreateVideo, handleSave])
+  }, [handleCreateVideo, handlePostNow, handleSave])
 
   // Autosave only after the project already exists (first save needs an explicit action / name)
   useEffect(() => {
     if (!workspaceId || !slideshowId || !isDirty) return
-    if (busyAction === 'save' || busyAction === 'create-video') return
+    if (busyAction === 'save' || busyAction === 'create-video' || busyAction === 'post-now') return
 
     if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current)
     autosaveTimerRef.current = window.setTimeout(() => {

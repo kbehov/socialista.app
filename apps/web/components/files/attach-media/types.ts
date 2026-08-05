@@ -53,4 +53,6 @@ export type AttachImagesDialogProps = {
   description?: string
   /** Seeds the draft selection when the dialog opens. */
   initialSelected?: AttachedMedia[]
+  /** Which tab to show when the dialog opens. */
+  defaultTab?: 'upload' | 'library'
 }

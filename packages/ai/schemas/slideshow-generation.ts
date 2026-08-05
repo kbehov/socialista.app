@@ -1,11 +1,12 @@
+import { SLIDESHOW_CONTENT_TYPES } from '@socialista/types'
 import { z } from 'zod'
 
-export const slideshowContentTypeSchema = z.enum(['story', 'guide', 'list', 'routine', 'comparison', 'myth'])
-
-export type SlideshowContentType = z.infer<typeof slideshowContentTypeSchema>
+export const slideshowContentTypeSchema = z.enum(SLIDESHOW_CONTENT_TYPES)
 
 const slideTextSchema = z.object({
-  text: z.string().describe('Plain slide copy only — no markdown, emojis, or hashtags. Renders directly on canvas.'),
+  text: z
+    .string()
+    .describe('Plain slide copy only — no markdown, emojis, or hashtags. Renders directly on canvas.'),
 })
 
 export function createSlideshowGeneratedSchema(slideCount: number) {

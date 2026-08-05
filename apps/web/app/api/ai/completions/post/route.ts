@@ -1,4 +1,4 @@
-import { POST_COPYWRITING_SYSTEM } from '@/agents/prompts/copywriting'
+import { POST_COPYWRITING_SYSTEM } from '@socialista/ai'
 import { auth } from '@/auth'
 import { createCompletionUIStreamResponse } from '@/utils/ai-stream.utils'
 import {

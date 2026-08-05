@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type RefObject } from 'react'
 import { DownloadIcon, Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,13 @@ import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
 import { MAX_IMPORT_BYTES_WARN } from '@/lib/video/defaults'
 import { cn } from '@/lib/utils'
 
-export function VideoUrlImportForm({ className }: { className?: string }) {
+type VideoUrlImportFormProps = {
+  className?: string
+  inputRef?: RefObject<HTMLInputElement | null>
+  compact?: boolean
+}
+
+export function VideoUrlImportForm({ className, inputRef, compact = false }: VideoUrlImportFormProps) {
   const [url, setUrl] = useState('')
   const [isPending, startTransition] = useTransition()
 
@@ -49,11 +55,16 @@ export function VideoUrlImportForm({ className }: { className?: string }) {
   return (
     <div className={cn('space-y-2', className)}>
       <div className="space-y-1.5">
-        <Label htmlFor="video-url" className="text-xs font-medium">
-          Import from URL
-        </Label>
+        {!compact ? (
+          <Label htmlFor="video-url" className="text-xs font-medium">
+            Import from URL
+          </Label>
+        ) : (
+          <p className="text-[11px] font-medium text-muted-foreground">Or paste a link</p>
+        )}
         <div className="flex gap-2">
           <Input
+            ref={inputRef}
             id="video-url"
             type="url"
             placeholder="https://example.com/video.mp4"
@@ -76,9 +87,11 @@ export function VideoUrlImportForm({ className }: { className?: string }) {
             {isPending ? <Loader2Icon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
           </Button>
         </div>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Direct links to video, audio, or image files · added at playhead
-        </p>
+        {!compact ? (
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Direct links to video, audio, or image files · added at playhead
+          </p>
+        ) : null}
       </div>
     </div>
   )

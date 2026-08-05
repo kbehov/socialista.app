@@ -35,6 +35,8 @@ import {
   toAttachedFromUpload,
 } from './utils'
 
+const EMPTY_SELECTION: AttachedMedia[] = []
+
 export function AttachImagesDialog({
   open,
   onOpenChange,
@@ -46,7 +48,8 @@ export function AttachImagesDialog({
   workspaceId: workspaceIdProp,
   title,
   description,
-  initialSelected = [],
+  initialSelected = EMPTY_SELECTION,
+  defaultTab = 'upload',
 }: AttachImagesDialogProps) {
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const workspaceId = workspaceIdProp ?? currentWorkspace?._id ?? currentWorkspace?.id
@@ -62,6 +65,7 @@ export function AttachImagesDialog({
   const [draft, setDraft] = useState<AttachedMedia[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const uploadFnRef = useRef<(files: File[]) => Promise<void>>(async () => {})
+  const wasOpenRef = useRef(false)
 
   const maxReached = draft.length >= resolvedMaxSelect
   const remainingSlots = Math.max(0, resolvedMaxSelect - draft.length)
@@ -74,14 +78,23 @@ export function AttachImagesDialog({
     [onOpenChange],
   )
 
+  // Seed draft/tab only when the dialog opens. Depending on `initialSelected` identity
+  // would reset selection on every parent re-render (default `[]` is a new array each time).
   useEffect(() => {
-    if (!open) return
-    setTimeout(() => {
+    if (!open) {
+      wasOpenRef.current = false
+      return
+    }
+    if (wasOpenRef.current) return
+    wasOpenRef.current = true
+
+    const t = window.setTimeout(() => {
       setDraft(initialSelected)
-      setTab('upload')
+      setTab(defaultTab)
       setIsUploading(false)
     }, 100)
-  }, [open, initialSelected])
+    return () => window.clearTimeout(t)
+  }, [open, initialSelected, defaultTab])
 
   const addToDraft = useCallback(
     (files: AttachedMedia[]) => {

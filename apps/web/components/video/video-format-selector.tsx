@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { PlatformIcon } from '@/components/carousel/format-selector'
 import {
   Select,
@@ -12,11 +13,36 @@ import {
 import { formatAspectRatio } from '@/lib/carousel/aspect-ratios'
 import {
   VIDEO_FORMAT_PRESETS,
+  getVideoFormatPreset,
   type VideoFormatPreset,
   type VideoFormatPresetId,
 } from '@/lib/video/format-presets'
 import { useVideoEditorStore } from '@/lib/video/store'
+import { VIDEO_FOCUS_FORMAT_EVENT } from '@/lib/video/editor-events'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+
+const SAFE_ZONE_NUDGE_KEY = 'video-safe-zone-nudge:v1'
+
+function maybeNudgeSafeZones(presetId: VideoFormatPresetId) {
+  const preset = getVideoFormatPreset(presetId)
+  if (!preset?.safeZone) return
+  const state = useVideoEditorStore.getState()
+  if (state.showSafeZones) return
+  try {
+    if (localStorage.getItem(SAFE_ZONE_NUDGE_KEY) === 'done') return
+    localStorage.setItem(SAFE_ZONE_NUDGE_KEY, 'done')
+  } catch {
+    // still show once per session if storage blocked
+  }
+  toast.message(`${preset.platform} hides UI near the edges`, {
+    description: 'Enable safe zones to keep important content visible.',
+    action: {
+      label: 'Enable',
+      onClick: () => useVideoEditorStore.getState().setShowSafeZones(true),
+    },
+  })
+}
 
 function FormatOption({ preset, className }: { preset: VideoFormatPreset; className?: string }) {
   return (
@@ -62,29 +88,45 @@ export function VideoFormatSelector({
 }) {
   const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
   const setFormatPreset = useVideoEditorStore(s => s.setFormatPreset)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const activePreset =
     VIDEO_FORMAT_PRESETS.find(p => p.id === formatPresetId) ?? VIDEO_FORMAT_PRESETS[0]!
   const platforms = [...new Set(VIDEO_FORMAT_PRESETS.map(preset => preset.platform))]
+
+  useEffect(() => {
+    const focusFormat = () => {
+      triggerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      triggerRef.current?.focus()
+    }
+    window.addEventListener(VIDEO_FOCUS_FORMAT_EVENT, focusFormat)
+    return () => window.removeEventListener(VIDEO_FOCUS_FORMAT_EVENT, focusFormat)
+  }, [])
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-0.5', className)}>
       {showLabel ? (
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Export format
+          Format
         </span>
       ) : null}
       <Select
         value={formatPresetId}
-        onValueChange={id => setFormatPreset(id as VideoFormatPresetId)}
+        onValueChange={id => {
+          const next = id as VideoFormatPresetId
+          setFormatPreset(next)
+          maybeNudgeSafeZones(next)
+        }}
       >
         <SelectTrigger
+          ref={triggerRef}
+          data-video-format-selector
           size="sm"
           aria-label={`Format: ${activePreset.platform} ${activePreset.label}`}
           className="h-8 w-full min-w-0 max-w-full gap-1 overflow-hidden py-0 pl-2 pr-1.5 data-[size=sm]:h-8"
         >
           <FormatTriggerLabel preset={activePreset} />
         </SelectTrigger>
-        <SelectContent position="popper" side="bottom" align="end" sideOffset={6} className="min-w-[280px]">
+        <SelectContent position="popper" side="bottom" align="end" sideOffset={6} className="min-w-70">
           {platforms.map(platform => (
             <SelectGroup key={platform}>
               <SelectLabel className="flex items-center gap-2 px-2 py-1.5">

@@ -14,6 +14,7 @@ import type {
   VideoFilter,
 } from '@socialista/types'
 
+import { showVideoDeleteUndoToast } from './delete-toast'
 import {
   clamp,
   clampZoom,
@@ -30,10 +31,16 @@ import {
   DEFAULT_IMAGE_CLIP_DURATION,
   getClipSourceDuration,
   withClipSpeed,
+  DEFAULT_TIMELINE_HEIGHT,
   HISTORY_LIMIT,
   MAX_CLIP_SPEED,
+  MAX_TIMELINE_HEIGHT,
   MIN_CLIP_SPEED,
+  MIN_TIMELINE_HEIGHT,
   OVERLAY_ANCHOR_PRESETS,
+  SAFE_ZONES_STORAGE_KEY,
+  SNAP_ENABLED_STORAGE_KEY,
+  TIMELINE_HEIGHT_STORAGE_KEY,
   snapToZoomLevel,
   toSerializedAsset,
   type OverlayAnchor,
@@ -78,6 +85,24 @@ interface EditorState {
   /** Selected export preset (e.g. tiktok vs instagram-story at the same resolution). */
   formatPresetId: VideoFormatPresetId
 
+  // Non-history UI state (persisted locally where noted)
+  /** Timeline panel height in px. */
+  timelineHeight: number
+  /** Magnetic snapping for clip/overlay drag & trim. */
+  snapEnabled: boolean
+  /** Active snap guide time while dragging (null when idle). */
+  snapGuideTime: number | null
+  /** Toggle platform safe-zone overlays on the preview canvas. */
+  showSafeZones: boolean
+  /** Request inline text editing for an overlay (consumed by preview). */
+  pendingOverlayEditId: string | null
+
+  setTimelineHeight: (height: number) => void
+  setSnapEnabled: (enabled: boolean) => void
+  setSnapGuideTime: (time: number | null) => void
+  setShowSafeZones: (show: boolean) => void
+  requestOverlayEdit: (id: string | null) => void
+
   // Project / tracks
   loadProject: (input: { id: string; name: string; project: Project }) => void
   setProjectName: (name: string) => void
@@ -106,6 +131,8 @@ interface EditorState {
   trimClip: (clipId: ClipId, trimIn: number, trimOut: number) => void
   splitClip: (clipId: ClipId, atTime: number) => void
   removeClip: (clipId: ClipId) => void
+  /** Delete clip and shift later clips on the same track left to close the gap. */
+  removeClipRipple: (clipId: ClipId) => void
   setClipVolume: (clipId: ClipId, volume: number) => void
   setClipSpeed: (clipId: ClipId, speed: number) => void
   setClipFilter: (clipId: ClipId, filter: VideoFilter) => void
@@ -180,6 +207,39 @@ function takeSnapshot(state: EditorState): Snapshot {
     project: structuredClone(state.project),
     selectedClipId: state.selectedClipId,
     selectedOverlayId: state.selectedOverlayId,
+  }
+}
+
+function readStoredNumber(key: string, fallback: number, min: number, max: number): number {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw === null) return fallback
+    const value = Number(raw)
+    if (!Number.isFinite(value)) return fallback
+    return clamp(value, min, max)
+  } catch {
+    return fallback
+  }
+}
+
+function readStoredBool(key: string, fallback: boolean): boolean {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw === null) return fallback
+    return raw === 'true'
+  } catch {
+    return fallback
+  }
+}
+
+function writeStored(key: string, value: string) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // ignore storage errors
   }
 }
 
@@ -353,6 +413,32 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     past: [],
     future: [],
     formatPresetId: DEFAULT_VIDEO_FORMAT_PRESET_ID,
+    timelineHeight: readStoredNumber(
+      TIMELINE_HEIGHT_STORAGE_KEY,
+      DEFAULT_TIMELINE_HEIGHT,
+      MIN_TIMELINE_HEIGHT,
+      MAX_TIMELINE_HEIGHT,
+    ),
+    snapEnabled: readStoredBool(SNAP_ENABLED_STORAGE_KEY, true),
+    snapGuideTime: null,
+    showSafeZones: readStoredBool(SAFE_ZONES_STORAGE_KEY, false),
+    pendingOverlayEditId: null,
+
+    setTimelineHeight: height => {
+      const next = clamp(Math.round(height), MIN_TIMELINE_HEIGHT, MAX_TIMELINE_HEIGHT)
+      writeStored(TIMELINE_HEIGHT_STORAGE_KEY, String(next))
+      set({ timelineHeight: next })
+    },
+    setSnapEnabled: enabled => {
+      writeStored(SNAP_ENABLED_STORAGE_KEY, String(enabled))
+      set({ snapEnabled: enabled, snapGuideTime: null })
+    },
+    setSnapGuideTime: time => set({ snapGuideTime: time }),
+    setShowSafeZones: show => {
+      writeStored(SAFE_ZONES_STORAGE_KEY, String(show))
+      set({ showSafeZones: show })
+    },
+    requestOverlayEdit: id => set({ pendingOverlayEditId: id }),
 
     loadProject: ({ id, name, project }) => {
       set({
@@ -629,6 +715,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     },
 
     removeClip: clipId => {
+      const hadClip = Boolean(get().project.clips[clipId])
       record(state => {
         const clip = state.project.clips[clipId]
         if (!clip) return {}
@@ -642,6 +729,35 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
           selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
         }
       })
+      if (hadClip) showVideoDeleteUndoToast('Clip deleted')
+    },
+
+    removeClipRipple: clipId => {
+      const hadClip = Boolean(get().project.clips[clipId])
+      record(state => {
+        const clip = state.project.clips[clipId]
+        if (!clip) return {}
+        const gapStart = clip.startTime
+        const gapDuration = clip.duration
+        const clips = { ...state.project.clips }
+        delete clips[clipId]
+
+        for (const [id, other] of Object.entries(clips)) {
+          if (other.trackId !== clip.trackId) continue
+          if (other.startTime >= gapStart + gapDuration - 0.001) {
+            clips[id] = { ...other, startTime: Math.max(0, other.startTime - gapDuration) }
+          }
+        }
+
+        const tracks = state.project.tracks.map(t =>
+          t.id === clip.trackId ? { ...t, clips: t.clips.filter(id => id !== clipId) } : t,
+        )
+        return {
+          project: recomputeDuration({ ...state.project, clips, tracks }),
+          selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
+        }
+      })
+      if (hadClip) showVideoDeleteUndoToast('Clip deleted and gap closed')
     },
 
     setClipVolume: (clipId, volume) => {
@@ -923,6 +1039,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     },
 
     removeOverlay: id => {
+      const hadOverlay = get().project.textOverlays.some(o => o.id === id)
       record(state => ({
         project: {
           ...state.project,
@@ -930,6 +1047,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
         },
         selectedOverlayId: state.selectedOverlayId === id ? null : state.selectedOverlayId,
       }))
+      if (hadOverlay) showVideoDeleteUndoToast('Text deleted')
     },
 
     duplicateOverlay: id => {

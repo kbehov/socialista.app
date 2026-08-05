@@ -1,5 +1,26 @@
 import { AspectRatio } from './image-generation.types.js'
 
+export const SLIDESHOW_CONTENT_TYPES = [
+  'story',
+  'guide',
+  'list',
+  'routine',
+  'comparison',
+  'myth',
+] as const
+
+export type SlideshowContentType = (typeof SLIDESHOW_CONTENT_TYPES)[number]
+
+export type GenerateSlideshowInput = {
+  hook: string
+  slideCount: number
+}
+
+export type GenerateSlideshowResult = {
+  contentType: SlideshowContentType
+  texts: string[]
+}
+
 export type SanitizedMedia = {
   imageUrl: string
 }

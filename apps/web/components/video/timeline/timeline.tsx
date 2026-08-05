@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { seekPreview } from '@/hooks/video/use-playback'
+import { fitZoomToProjectDuration } from '@/lib/video/timeline-zoom'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatRulerTick, formatTimecode } from '@/lib/video/timecode'
 import { scrollTimelineToTime, timeFromTimelineClientX } from '@/lib/video/timeline-seek'
@@ -18,6 +19,7 @@ import { ClipSpeedContextMenuSection } from '@/components/video/clip-speed-menu'
 import {
   CopyIcon,
   FilmIcon,
+  HelpCircleIcon,
   MusicIcon,
   ScissorsIcon,
   Trash2Icon,
@@ -25,6 +27,7 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from 'lucide-react'
+import { openVideoShortcutsHelp } from '@/lib/video/editor-events'
 import { Playhead } from './playhead'
 import { TimelineFocusContext } from './timeline-focus-context'
 import { TrackList } from './track-list'
@@ -58,10 +61,15 @@ export function Timeline() {
   const playhead = useVideoEditorStore(s => s.playhead)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
+  const setZoom = useVideoEditorStore(s => s.setZoom)
 
   const [menuTarget, setMenuTarget] = useState<TimelineMenuTarget | null>(null)
 
   const timelineWidth = Math.max(MIN_TIMELINE_WIDTH, Math.ceil(duration * zoom) + 80)
+
+  const fitToProject = useCallback(() => {
+    setZoom(fitZoomToProjectDuration(duration))
+  }, [duration, setZoom])
 
   const resolveMenuTarget = useCallback(
     (clientX: number, targetEl: EventTarget | null): TimelineMenuTarget => {
@@ -172,6 +180,8 @@ export function Timeline() {
                   onSeekAtClientX={seekAtClientX}
                 />
 
+                <SnapGuideLine pxPerSec={zoom} headerWidth={TRACK_HEADER_WIDTH} />
+
                 {/* Ruler row */}
                 <div className="sticky top-0 z-10 flex bg-background">
                   <div
@@ -185,8 +195,13 @@ export function Timeline() {
                     style={{ width: timelineWidth, height: RULER_HEIGHT }}
                     onPointerDown={handleScrubPointerDown}
                     onPointerMove={handleScrubPointerMove}
+                    onDoubleClick={e => {
+                      e.preventDefault()
+                      fitToProject()
+                    }}
+                    title="Double-click to fit timeline"
                   >
-                    <TimelineRuler duration={duration} pxPerSec={zoom} fps={fps} durationGuide={durationGuide} />
+                    <TimelineRuler duration={duration} pxPerSec={zoom} durationGuide={durationGuide} />
                   </div>
                 </div>
 
@@ -248,6 +263,7 @@ function TimelineContextMenuContent({
   const duplicateClip = useVideoEditorStore(s => s.duplicateClip)
   const duplicateOverlay = useVideoEditorStore(s => s.duplicateOverlay)
   const removeClip = useVideoEditorStore(s => s.removeClip)
+  const removeClipRipple = useVideoEditorStore(s => s.removeClipRipple)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
   const addTrack = useVideoEditorStore(s => s.addTrack)
@@ -294,6 +310,20 @@ function TimelineContextMenuContent({
           Delete clip
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
         </ContextMenuItem>
+        <ContextMenuItem
+          disabled={locked}
+          variant="destructive"
+          onSelect={() => removeClipRipple(target.clipId)}
+        >
+          <Trash2Icon />
+          Delete and shift left
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>
+          <HelpCircleIcon />
+          Shortcuts
+          <ContextMenuShortcut>?</ContextMenuShortcut>
+        </ContextMenuItem>
       </ContextMenuContent>
     )
   }
@@ -326,6 +356,12 @@ function TimelineContextMenuContent({
           <Trash2Icon />
           Delete overlay
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>
+          <HelpCircleIcon />
+          Shortcuts
+          <ContextMenuShortcut>?</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
     )
@@ -360,6 +396,12 @@ function TimelineContextMenuContent({
         Zoom out
         <ContextMenuShortcut>−</ContextMenuShortcut>
       </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>
+        <HelpCircleIcon />
+        Shortcuts
+        <ContextMenuShortcut>?</ContextMenuShortcut>
+      </ContextMenuItem>
     </ContextMenuContent>
   )
 }
@@ -367,12 +409,10 @@ function TimelineContextMenuContent({
 function TimelineRuler({
   duration,
   pxPerSec,
-  fps,
   durationGuide,
 }: {
   duration: number
   pxPerSec: number
-  fps: number
   durationGuide: number | null
 }) {
   const targetSpacing = 100
@@ -411,7 +451,33 @@ function TimelineRuler({
           </span>
         </div>
       ) : null}
-      <span className="hidden">{fps}</span>
     </div>
+  )
+}
+
+function SnapGuideLine({ pxPerSec, headerWidth }: { pxPerSec: number; headerWidth: number }) {
+  const snapGuideTime = useVideoEditorStore(s => s.snapGuideTime)
+  const [pulseKey, setPulseKey] = useState(0)
+  const prevTimeRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (snapGuideTime == null) {
+      prevTimeRef.current = null
+      return
+    }
+    if (prevTimeRef.current !== snapGuideTime) {
+      prevTimeRef.current = snapGuideTime
+      setPulseKey(k => k + 1)
+    }
+  }, [snapGuideTime])
+
+  if (snapGuideTime == null) return null
+  return (
+    <div
+      key={pulseKey}
+      className="video-studio-snap-guide video-studio-snap-guide-pulse"
+      style={{ left: headerWidth + snapGuideTime * pxPerSec }}
+      aria-hidden
+    />
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { exportProject, type AssetMap } from '@/lib/video/export'
+import { getVideoFormatPreset, VIDEO_FORMAT_PRESETS } from '@/lib/video/format-presets'
 import type { ExportQuality, ExportSettings } from '@socialista/types'
 import { DownloadIcon, Loader2Icon } from 'lucide-react'
 import {
@@ -23,11 +24,24 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const RESOLUTION_PRESETS = [
-  { id: '1080x1920', label: '1080×1920 (Reels)', width: 1080, height: 1920 },
-  { id: '1080x1080', label: '1080×1080 (Square)', width: 1080, height: 1080 },
-  { id: '1920x1080', label: '1920×1080 (Landscape)', width: 1920, height: 1080 },
-] as const
+const RESOLUTION_PRESETS = (() => {
+  const seen = new Set<string>()
+  const presets: { id: string; label: string; width: number; height: number }[] = []
+  for (const preset of VIDEO_FORMAT_PRESETS) {
+    const { width, height } = preset.dimensions
+    const id = `${width}x${height}`
+    if (seen.has(id)) continue
+    seen.add(id)
+    const orientation = height > width ? 'Vertical' : width > height ? 'Landscape' : 'Square'
+    presets.push({
+      id,
+      label: `${width}×${height} (${orientation})`,
+      width,
+      height,
+    })
+  }
+  return presets
+})()
 
 const QUALITY_OPTIONS: { value: ExportQuality; label: string }[] = [
   { value: 'low', label: 'Low (smaller file)' },
@@ -35,10 +49,27 @@ const QUALITY_OPTIONS: { value: ExportQuality; label: string }[] = [
   { value: 'high', label: 'High (best quality)' },
 ]
 
+function recommendedQuality(presetId: string): ExportQuality {
+  const preset = getVideoFormatPreset(presetId)
+  if (!preset) return 'medium'
+  // Vertical short-form platforms look best at high; landscape can stay medium
+  if (preset.dimensions.height > preset.dimensions.width) return 'high'
+  return 'medium'
+}
+
+function qualityHint(presetId: string, quality: ExportQuality): string | null {
+  const recommended = recommendedQuality(presetId)
+  if (quality !== recommended) return null
+  const preset = getVideoFormatPreset(presetId)
+  if (!preset) return null
+  return `Recommended for ${preset.platform}`
+}
+
 const FPS_OPTIONS = [24, 30, 60] as const
 
 function resolutionToId(width: number, height: number): string {
-  const match = RESOLUTION_PRESETS.find(p => p.width === width && p.height === height)
+  const id = `${width}x${height}`
+  const match = RESOLUTION_PRESETS.find(p => p.id === id)
   return match?.id ?? RESOLUTION_PRESETS[0]!.id
 }
 
@@ -46,6 +77,25 @@ function durationWarning(seconds: number): string | null {
   if (seconds > 600) return 'TikTok allows up to 10 minutes for most accounts.'
   if (seconds > 90) return 'Instagram Reels max length is 90 seconds.'
   return null
+}
+
+function slugify(name: string): string {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'video'
+  )
+}
+
+function buildExportFilename(projectName: string, presetId: string, width: number, height: number): string {
+  const preset = getVideoFormatPreset(presetId)
+  const platform = (preset?.platform ?? 'export').toLowerCase().replace(/\s+/g, '')
+  const ratio =
+    height > width ? '9x16' : width > height ? '16x9' : '1x1'
+  return `${slugify(projectName)}-${platform}-${ratio}.mp4`
 }
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -64,6 +114,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
 function ExportModalBody({ onClose }: { onClose: () => void }) {
   const project = useVideoEditorStore(s => s.project)
   const assets = useVideoEditorStore(s => s.assets)
+  const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
   const exportProgress = useVideoEditorStore(s => s.exportProgress)
   const exportPhase = useVideoEditorStore(s => s.exportPhase)
   const setExportProgress = useVideoEditorStore(s => s.setExportProgress)
@@ -71,7 +122,7 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
   const [resolutionId, setResolutionId] = useState(() =>
     resolutionToId(project.resolution.width, project.resolution.height),
   )
-  const [quality, setQuality] = useState<ExportQuality>('medium')
+  const [quality, setQuality] = useState<ExportQuality>(() => recommendedQuality(formatPresetId))
   const [fps, setFps] = useState<number>(project.fps)
   const [error, setError] = useState<string | null>(null)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
@@ -100,6 +151,8 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
     fps,
     quality,
   }
+  const filename = buildExportFilename(project.name, formatPresetId, preset.width, preset.height)
+  const qualityRecommendation = qualityHint(formatPresetId, quality)
 
   const handleExport = async () => {
     if (runningRef.current) return
@@ -185,11 +238,19 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
               {QUALITY_OPTIONS.map(q => (
                 <SelectItem key={q.value} value={q.value}>
                   {q.label}
+                  {q.value === recommendedQuality(formatPresetId) ? ' · Recommended' : ''}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {qualityRecommendation ? (
+            <p className="text-[11px] text-muted-foreground">{qualityRecommendation}</p>
+          ) : null}
         </div>
+
+        <p className="truncate rounded-md border bg-muted/40 px-2.5 py-1.5 font-mono text-[11px] text-muted-foreground">
+          {filename}
+        </p>
 
         {warning ? (
           <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-800 dark:text-amber-200">
@@ -221,8 +282,8 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
             <video src={resultUrl} controls className="w-full rounded-md border" />
             <a
               href={resultUrl}
-              download={`${project.name || 'video'}.mp4`}
-              className="flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+              download={filename}
+              className="video-studio-press flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
             >
               <DownloadIcon className="h-4 w-4" /> Download MP4
             </a>

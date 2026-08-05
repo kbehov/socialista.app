@@ -28,17 +28,17 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
   return (
     <div
       data-canvas-controls
-      className={cn(
-        'pointer-events-auto flex items-center gap-0.5 rounded-full border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm',
-        className,
-      )}
+        className={cn(
+          'video-studio-glass pointer-events-auto flex items-center gap-0.5 rounded-full border border-border/50 bg-background/95 p-0.5 shadow-sm backdrop-blur-sm',
+          className,
+        )}
     >
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             size="icon-sm"
             variant="ghost"
-            className="size-7 rounded-full"
+            className="video-studio-press size-7 rounded-full"
             onClick={zoomOut}
             disabled={zoom <= MIN_VIEWPORT_ZOOM}
             aria-label="Zoom preview out"
@@ -63,7 +63,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
           <Button
             size="icon-sm"
             variant="ghost"
-            className="size-7 rounded-full"
+            className="video-studio-press size-7 rounded-full"
             onClick={zoomIn}
             disabled={zoom >= MAX_VIEWPORT_ZOOM}
             aria-label="Zoom preview in"
@@ -80,7 +80,7 @@ export function VideoZoomControls({ zoom, onZoomChange, className }: VideoZoomCo
             <Button
               size="icon-sm"
               variant="ghost"
-              className="size-7 rounded-full"
+              className="video-studio-press size-7 rounded-full"
               onClick={resetZoom}
               aria-label="Reset preview zoom"
             >

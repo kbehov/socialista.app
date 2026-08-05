@@ -1,59 +1,69 @@
 'use client'
 
 import { CanvasWorkspaceProvider } from '@/components/carousel/canvas-workspace-context'
-import { Button } from '@/components/ui/button'
-import { Kbd } from '@/components/ui/kbd'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ClipAiProvider } from '@/components/video/ai/clip-ai-provider'
-import { AiComingSoonProvider, useAiComingSoon } from '@/components/video/ai/ai-coming-soon-dialog'
+import { VideoEditorTopBar } from '@/components/video/video-editor-top-bar'
+import { VideoOnboardingTour } from '@/components/video/onboarding-tour'
 import { usePlayback } from '@/hooks/video/use-playback'
 import { useVideoShortcuts } from '@/hooks/video/use-video-shortcuts'
 import { DEFAULT_VIDEO_PREVIEW_ZOOM } from '@/lib/carousel/defaults'
-import { cn } from '@/lib/utils'
+import {
+  MAX_TIMELINE_HEIGHT,
+  MIN_TIMELINE_HEIGHT,
+  TIMELINE_HEIGHT_STOPS,
+} from '@/lib/video/defaults'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { VideoFormatSelector } from '@/components/video/video-format-selector'
-import { VideoSaveBar } from '@/components/video/video-save-bar'
-import { DownloadIcon, LayoutTemplateIcon, Redo2Icon, Undo2Icon } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { ExportModal } from './export/export-modal'
 import { PreviewCanvas } from './preview/preview-canvas'
 import { Timeline } from './timeline/timeline'
-import { SelectedClipActionBar } from './timeline/selected-clip-action-bar'
-import { SelectedOverlayActionBar } from './preview/selected-overlay-action-bar'
 import { TimelineTransport } from './timeline/timeline-transport'
 
 export function VideoEditor() {
   return (
     <ClipAiProvider>
-      <AiComingSoonProvider>
-        <VideoEditorContent />
-      </AiComingSoonProvider>
+      <VideoEditorContent />
     </ClipAiProvider>
   )
 }
 
+function rubberband(overshoot: number, dimension: number, constant = 0.55) {
+  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot))
+}
+
+function snapTimelineHeight(height: number): number {
+  let best: number = TIMELINE_HEIGHT_STOPS[0]
+  let bestDist = Infinity
+  for (const stop of TIMELINE_HEIGHT_STOPS) {
+    const dist = Math.abs(stop - height)
+    if (dist < bestDist) {
+      best = stop
+      bestDist = dist
+    }
+  }
+  // Only snap when close to a stop
+  if (bestDist <= 24) return best
+  return Math.round(height)
+}
+
 function VideoEditorContent() {
   useVideoShortcuts()
-  const aiComingSoon = useAiComingSoon()
   const workspaceRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const playback = usePlayback(canvasRef)
   const [previewZoom, setPreviewZoom] = useState(DEFAULT_VIDEO_PREVIEW_ZOOM)
-  const undo = useVideoEditorStore(s => s.undo)
-  const redo = useVideoEditorStore(s => s.redo)
-  const past = useVideoEditorStore(s => s.past)
-  const future = useVideoEditorStore(s => s.future)
   const duration = useVideoEditorStore(s => s.project.duration)
-  const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
-  const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
+  const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
+  const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
+  const timelineHeight = useVideoEditorStore(s => s.timelineHeight)
+  const setTimelineHeight = useVideoEditorStore(s => s.setTimelineHeight)
   const [exportOpen, setExportOpen] = useState(false)
+  const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null)
 
-  const canUndo = past.length > 0
-  const canRedo = future.length > 0
   const canSplit = Boolean(selectedClipId || selectedOverlayId)
   const canExport = duration > 0
 
@@ -82,72 +92,46 @@ function VideoEditorContent() {
     selectClip(null)
   }
 
+  const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    resizeRef.current = { startY: e.clientY, startHeight: timelineHeight }
+
+    const onMove = (ev: PointerEvent) => {
+      const start = resizeRef.current
+      if (!start) return
+      const delta = start.startY - ev.clientY
+      let next = start.startHeight + delta
+      if (next < MIN_TIMELINE_HEIGHT) {
+        next = MIN_TIMELINE_HEIGHT - rubberband(MIN_TIMELINE_HEIGHT - next, 80)
+      } else if (next > MAX_TIMELINE_HEIGHT) {
+        next = MAX_TIMELINE_HEIGHT + rubberband(next - MAX_TIMELINE_HEIGHT, 80)
+      }
+      setTimelineHeight(Math.round(next))
+    }
+
+    const onUp = (ev: PointerEvent) => {
+      const start = resizeRef.current
+      resizeRef.current = null
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      if (!start) return
+      const delta = start.startY - ev.clientY
+      const raw = start.startHeight + delta
+      const clamped = Math.min(MAX_TIMELINE_HEIGHT, Math.max(MIN_TIMELINE_HEIGHT, raw))
+      setTimelineHeight(snapTimelineHeight(clamped))
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-      <div className="video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b bg-background px-2 py-1.5 sm:gap-2 sm:px-3">
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" className="size-8" onClick={undo} disabled={!canUndo}>
-                <Undo2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Undo <Kbd className="ml-1">⌘Z</Kbd>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" className="size-8" onClick={redo} disabled={!canRedo}>
-                <Redo2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        <div className="min-w-0 flex-1" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="hidden h-8 gap-1.5 px-2 text-xs text-muted-foreground md:flex"
-              onClick={() => aiComingSoon.open('smart-layout')}
-            >
-              <LayoutTemplateIcon className="size-3.5" />
-              <span className="hidden lg:inline">Auto-arrange</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Smart layout (coming soon)</TooltipContent>
-        </Tooltip>
-
-        <VideoFormatSelector showLabel={false} className="hidden w-[min(100%,160px)] shrink-0 md:flex lg:w-[180px]" />
-        <VideoSaveBar showLabel={false} className="hidden min-w-0 max-w-[160px] shrink-0 md:flex lg:max-w-[180px]" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="sm"
-              className={cn('h-8 gap-1.5 px-3', canExport && 'bg-primary hover:bg-primary/90')}
-              onClick={() => setExportOpen(true)}
-              disabled={!canExport}
-            >
-              <DownloadIcon className="size-3.5" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-          </TooltipTrigger>
-          {!canExport ? (
-            <TooltipContent>Add media before exporting</TooltipContent>
-          ) : (
-            <TooltipContent>Download MP4</TooltipContent>
-          )}
-        </Tooltip>
-      </div>
+      <VideoEditorTopBar onExport={() => setExportOpen(true)} canExport={canExport} />
 
       <CanvasWorkspaceProvider workspaceRef={workspaceRef}>
         <div
@@ -158,28 +142,40 @@ function VideoEditorContent() {
           <PreviewCanvas
             canvasRef={canvasRef}
             previewZoom={previewZoom}
+            onPreviewZoomChange={setPreviewZoom}
             isBuffering={playback.isBuffering}
           />
         </div>
       </CanvasWorkspaceProvider>
 
-      <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden border-t bg-background">
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize timeline"
+        className="video-studio-timeline-resize group relative z-10 flex h-2 shrink-0 cursor-ns-resize items-center justify-center border-t bg-background"
+        onPointerDown={handleResizePointerDown}
+      >
+        <span className="h-0.5 w-8 rounded-full bg-border transition-colors group-hover:bg-muted-foreground/50" />
+      </div>
+
+      <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden">
         <TimelineTransport
           playback={playback}
           onAddText={handleAddText}
           onSplit={handleSplit}
           canSplit={canSplit}
-          previewZoom={previewZoom}
-          onPreviewZoomChange={setPreviewZoom}
         />
-        {selectedClipId ? <SelectedClipActionBar clipId={selectedClipId} /> : null}
-        {selectedOverlayId ? <SelectedOverlayActionBar overlayId={selectedOverlayId} variant="toolbar" /> : null}
-        <div className="h-[min(168px,24vh)] min-h-[128px] min-w-0 overflow-hidden lg:h-[152px]">
+        <div
+          data-tour-anchor="timeline"
+          className="min-h-0 min-w-0 overflow-hidden"
+          style={{ height: timelineHeight }}
+        >
           <Timeline />
         </div>
       </div>
 
       <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
+      <VideoOnboardingTour />
     </div>
   )
 }

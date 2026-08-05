@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { collectClipSnapTargets, snapTime } from '@/lib/video/snap'
 import { useVideoEditorStore } from '@/lib/video/store'
 import type { ClipId, TrackId } from '@socialista/types'
 
@@ -22,6 +23,7 @@ export function useDragClip(pxPerSec: number) {
   const dragRef = useRef<{ clipId: ClipId; deltaSec: number; trackId: TrackId } | null>(null)
   const onTapRef = useRef<((clipId: ClipId) => void) | null>(null)
   const moveClip = useVideoEditorStore(s => s.moveClip)
+  const setSnapGuideTime = useVideoEditorStore(s => s.setSnapGuideTime)
   const tracks = useVideoEditorStore(s => s.project.tracks)
 
   const onMove = useCallback(
@@ -29,18 +31,44 @@ export function useDragClip(pxPerSec: number) {
       const it = stateRef.current
       if (!it) return
       e.preventDefault()
-      const deltaSec = (e.clientX - it.startPointerX) / it.pxPerSec
+      const rawDeltaSec = (e.clientX - it.startPointerX) / it.pxPerSec
+      const rawStart = Math.max(0, it.startStartTime + rawDeltaSec)
+
+      const state = useVideoEditorStore.getState()
+      const clip = state.project.clips[it.clipId]
+      const candidates = collectClipSnapTargets({
+        playhead: state.playhead,
+        duration: state.project.duration,
+        clips: Object.values(state.project.clips).map(c => ({
+          id: c.id,
+          startTime: c.startTime,
+          duration: c.duration,
+        })),
+        excludeClipId: it.clipId,
+      })
+      // Also snap the clip's end edge
+      if (clip) {
+        for (const t of [...candidates]) {
+          candidates.push(t - clip.duration)
+        }
+      }
+
+      const snapped = snapTime(rawStart, candidates, it.pxPerSec, state.snapEnabled)
+      setSnapGuideTime(snapped.guideTime)
+
+      const deltaSec = snapped.time - it.startStartTime
       const next = { clipId: it.clipId, deltaSec, trackId: it.startTrackId }
       dragRef.current = next
       setDrag(next)
     },
-    [],
+    [setSnapGuideTime],
   )
 
   const stop = useCallback(() => {
     const it = stateRef.current
     const finalDrag = dragRef.current
     const onTap = onTapRef.current
+    setSnapGuideTime(null)
     if (it && finalDrag) {
       const pixelDelta = Math.abs(finalDrag.deltaSec * it.pxPerSec)
       if (pixelDelta > TAP_THRESHOLD_PX) {
@@ -55,7 +83,7 @@ export function useDragClip(pxPerSec: number) {
     onTapRef.current = null
     setDrag(null)
     setIsDragging(false)
-  }, [moveClip])
+  }, [moveClip, setSnapGuideTime])
 
   useEffect(() => {
     if (!isDragging) return

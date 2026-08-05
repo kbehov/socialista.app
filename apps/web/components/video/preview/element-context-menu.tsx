@@ -16,12 +16,14 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   CopyIcon,
+  HelpCircleIcon,
   PencilIcon,
   RotateCcwIcon,
   ScissorsIcon,
   Trash2Icon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { openVideoShortcutsHelp } from '@/lib/video/editor-events'
 
 export type CanvasContextTarget =
   | { kind: 'clip'; clipId: ClipId }
@@ -75,6 +77,7 @@ function CanvasContextMenuContent({
   const duplicateClip = useVideoEditorStore(s => s.duplicateClip)
   const duplicateOverlay = useVideoEditorStore(s => s.duplicateOverlay)
   const removeClip = useVideoEditorStore(s => s.removeClip)
+  const removeClipRipple = useVideoEditorStore(s => s.removeClipRipple)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
   const resetClipTransform = useVideoEditorStore(s => s.resetClipTransform)
   const resetOverlayTransform = useVideoEditorStore(s => s.resetOverlayTransform)
@@ -118,6 +121,20 @@ function CanvasContextMenuContent({
           <Trash2Icon />
           Delete
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem
+          disabled={locked}
+          variant="destructive"
+          onSelect={() => removeClipRipple(target.clipId)}
+        >
+          <Trash2Icon />
+          Delete and shift left
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>
+          <HelpCircleIcon />
+          Shortcuts
+          <ContextMenuShortcut>?</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
     )
@@ -164,6 +181,12 @@ function CanvasContextMenuContent({
           <Trash2Icon />
           Delete
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>
+          <HelpCircleIcon />
+          Shortcuts
+          <ContextMenuShortcut>?</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
     )

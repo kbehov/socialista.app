@@ -7,8 +7,6 @@ import { clipHasCustomTransform } from '@/lib/video/clip-transform'
 import type { ClipId, ClipTransform } from '@socialista/types'
 import { ChevronDownIcon, Loader2Icon, RotateCcwIcon, SparklesIcon } from 'lucide-react'
 import { useClipAiOptional } from '@/components/video/ai/clip-ai-provider'
-import { useAiComingSoonOptional } from '@/components/video/ai/ai-coming-soon-dialog'
-import { isVerticalReelsFormat } from '@/lib/video/format'
 import { Button } from '@/components/ui/button'
 import { FilterControls } from './filter-controls'
 import { Slider } from './slider'
@@ -32,9 +30,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const trimClip = useVideoEditorStore(s => s.trimClip)
   const updateClipTransform = useVideoEditorStore(s => s.updateClipTransform)
   const resetClipTransform = useVideoEditorStore(s => s.resetClipTransform)
-  const resolution = useVideoEditorStore(s => s.project.resolution)
   const clipAi = useClipAiOptional()
-  const aiComingSoon = useAiComingSoonOptional()
 
   const [trimInDraft, setTrimInDraft] = useState(() => clip?.trimIn.toFixed(2) ?? '0')
   const [trimOutDraft, setTrimOutDraft] = useState(() => clip?.trimOut.toFixed(2) ?? '0')
@@ -54,7 +50,6 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
     aiMode === 'animate-image'
       ? 'Turn this still image into a short animated video clip.'
       : 'Apply AI edits to this video while keeping the same clip on the timeline.'
-  const isVertical = isVerticalReelsFormat(resolution.width, resolution.height)
   const hasTransform = clip.type !== 'audio' && clipHasCustomTransform(clip)
   const transform = clip.type !== 'audio' ? clip.transform : undefined
 
@@ -68,11 +63,11 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <div className="text-xs font-semibold uppercase text-muted-foreground">Clip</div>
+        <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Clip</div>
         <div className="mt-1 truncate text-sm">{asset ? asset.name : 'Missing media'}</div>
       </div>
 
-      {clip.type !== 'audio' && clipAi ? (
+      {clip.type !== 'audio' && clipAi && canUseAi ? (
         <div className="rounded-lg border bg-muted/20 p-3">
           <div className="flex items-start gap-2">
             <SparklesIcon className="mt-0.5 size-4 shrink-0 text-primary" />
@@ -86,7 +81,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
                 size="sm"
                 className="h-8 w-full"
                 onClick={() => clipAi.openClipAi(clipId)}
-                disabled={!canUseAi || isAiProcessing}
+                disabled={isAiProcessing}
               >
                 {isAiProcessing ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}
                 {isAiProcessing ? 'Generating…' : aiLabel}
@@ -94,19 +89,6 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
             </div>
           </div>
         </div>
-      ) : null}
-
-      {clip.type !== 'audio' && isVertical && aiComingSoon ? (
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-8 w-full gap-1.5"
-          onClick={() => aiComingSoon.open('auto-reframe')}
-        >
-          <SparklesIcon className="size-3.5 text-primary" />
-          Auto-reframe
-        </Button>
       ) : null}
 
       {clip.type !== 'audio' ? (
@@ -158,7 +140,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <div className="text-xs font-medium text-muted-foreground">Timing</div>
+        <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Timing</div>
         <div className="grid grid-cols-2 gap-2">
           <NumberField
             label="Start"
