@@ -9,7 +9,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { ImagesIcon, LayersIcon, PenLineIcon, VideoIcon } from 'lucide-react'
+import { ImagesIcon, LayersIcon, PenLineIcon, UserRoundIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 
 const createOptions = [
@@ -27,6 +27,11 @@ const createOptions = [
     title: 'Video',
     url: DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE,
     icon: VideoIcon,
+  },
+  {
+    title: 'Influencer',
+    url: DASHBOARD_ROUTES.STUDIO.INFLUENCER_CREATE,
+    icon: UserRoundIcon,
   },
 ] as const
 

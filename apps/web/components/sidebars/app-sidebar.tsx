@@ -30,6 +30,7 @@ import {
   MegaphoneIcon,
   SendIcon,
   ShoppingBagIcon,
+  UserRoundIcon,
   VideoIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -64,7 +65,7 @@ function navIcon(Icon: LucideIcon) {
   return <Icon className={iconClassName} strokeWidth={1.75} />
 }
 
-function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'videos') {
+function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'videos' | 'influencers') {
   if (segment === 'images') return isStudioImagesPath(pathname)
   return isStudioSegmentPath(pathname, segment)
 }
@@ -117,6 +118,12 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       url: DASHBOARD_ROUTES.STUDIO.STATIC_ADS,
       icon: navIcon(MegaphoneIcon),
       isActive: isStaticAdsPath(pathname),
+    },
+    {
+      title: 'Influencers',
+      url: DASHBOARD_ROUTES.STUDIO.INFLUENCERS,
+      icon: navIcon(UserRoundIcon),
+      isActive: isStudioRoute(pathname, 'influencers'),
     },
   ]
 }

@@ -27,6 +27,7 @@ allowBuilds:
   '@depot/cli': true
   bcrypt: true
   esbuild: true
+  ffmpeg-static: true
   protobufjs: true
   sharp: true
   unrs-resolver: true

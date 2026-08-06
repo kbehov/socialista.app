@@ -2,6 +2,7 @@ import {
   createVideo,
   deleteVideo,
   duplicateVideo,
+  exportVideo,
   getVideo,
   getWorkspaceVideos,
   updateVideo,
@@ -17,6 +18,7 @@ videoRoutes.use('/*', authMiddleware)
 videoRoutes.post('/', createVideo)
 videoRoutes.get('/workspace/:workspaceId', getWorkspaceVideos)
 videoRoutes.post('/:id/duplicate', duplicateVideo)
+videoRoutes.post('/:id/export', exportVideo)
 videoRoutes.get('/:id', getVideo)
 videoRoutes.patch('/:id', updateVideo)
 videoRoutes.delete('/:id', deleteVideo)

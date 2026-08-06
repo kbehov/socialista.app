@@ -7,6 +7,8 @@ import type {
   ApiResponse,
   CreateVideoPayload,
   DuplicateVideoPayload,
+  ExportSettings,
+  ExportVideoResponse,
   GetVideosResponse,
   UpdateVideoPayload,
   VideoResponse,
@@ -67,4 +69,11 @@ export const duplicateVideo = async (
   const response = await api.post<{ video: VideoResponse }>(VIDEO_ROUTES.DUPLICATE(id), payload ?? {})
   revalidateVideoPaths(response.data?.video.id)
   return response
+}
+
+export const exportVideo = async (
+  id: string,
+  settings: ExportSettings,
+): Promise<ApiResponse<ExportVideoResponse>> => {
+  return api.post<ExportVideoResponse>(VIDEO_ROUTES.EXPORT(id), { settings })
 }

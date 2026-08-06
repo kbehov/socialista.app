@@ -4,7 +4,6 @@ import type {
   Clip,
   ClipId,
   ClipTransform,
-  ExportSettings,
   Project,
   SerializedMediaAsset,
   TextOverlay,
@@ -57,6 +56,7 @@ import {
   TIMELINE_HEIGHT_STORAGE_KEY,
   snapToZoomLevel,
   toSerializedAsset,
+  type AddTextOverlayInput,
   type OverlayAnchor,
   withClipMoved,
   withClipOnTrack,
@@ -89,7 +89,6 @@ interface EditorState {
   selectedClipId: ClipId | null
   selectedOverlayId: string | null
   zoom: number
-  ffmpegReady: boolean
   exportProgress: number | null
   exportPhase: string | null
   /** Visual-only duration marker on timeline ruler (seconds). */
@@ -188,6 +187,8 @@ interface EditorState {
     endTime: number,
     style?: Partial<TextOverlay['style']>,
   ) => string
+  /** Add multiple overlays in a single undo step. Optionally replace existing text. */
+  addTextOverlays: (overlays: AddTextOverlayInput[], options?: { replaceExisting?: boolean }) => string[]
   updateOverlay: (id: string, partial: Partial<TextOverlay>) => void
   /** Live preview update without undo history (e.g. while typing). */
   updateOverlayLive: (id: string, partial: Partial<TextOverlay>) => void
@@ -218,9 +219,7 @@ interface EditorState {
   redo: () => void
 
   // Export
-  setFfmpegReady: (ready: boolean) => void
   setExportProgress: (progress: number | null, phase?: string | null) => void
-  exportVideo: (settings: ExportSettings, runner: (project: Project, assets: AssetMap, settings: ExportSettings) => Promise<void>) => Promise<void>
 
   // Project lifecycle
   clearProject: () => void
@@ -440,7 +439,6 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
     selectedClipId: null,
     selectedOverlayId: null,
     zoom: DEFAULT_ZOOM,
-    ffmpegReady: false,
     exportProgress: null,
     exportPhase: null,
     durationGuide: null,
@@ -1058,6 +1056,39 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       return overlay.id
     },
 
+    addTextOverlays: (overlays, options) => {
+      if (overlays.length === 0) return []
+
+      const replaceExisting = options?.replaceExisting === true
+      const baseZ = replaceExisting
+        ? -1
+        : get().project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
+
+      const created: TextOverlay[] = overlays.map((input, index) => {
+        const startTime = Math.max(0, input.startTime)
+        const endTime = Math.max(startTime + 0.1, input.endTime)
+        const overlay = createTextOverlay(startTime, endTime, baseZ + 1 + index, input.style)
+        return {
+          ...overlay,
+          content: input.content,
+          ...(input.x !== undefined ? { x: input.x } : null),
+          ...(input.y !== undefined ? { y: input.y } : null),
+          ...(input.width !== undefined ? { width: input.width } : null),
+        }
+      })
+
+      record(state => ({
+        project: recomputeDuration({
+          ...state.project,
+          textOverlays: replaceExisting
+            ? created
+            : [...state.project.textOverlays, ...created],
+        }),
+      }))
+      set({ selectedOverlayId: null, selectedClipId: null })
+      return created.map(o => o.id)
+    },
+
     updateOverlay: (id, partial) => {
       record(state => ({
         project: recomputeDuration({
@@ -1316,17 +1347,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       })
     },
 
-    setFfmpegReady: ready => set({ ffmpegReady: ready }),
     setExportProgress: (progress, phase = null) => set({ exportProgress: progress, exportPhase: phase }),
-
-    exportVideo: async (settings, runner) => {
-      set({ exportProgress: 0, exportPhase: 'Preparing' })
-      try {
-        await runner(get().project, get().assets, settings)
-      } finally {
-        set({ exportProgress: null, exportPhase: null })
-      }
-    },
 
     clearProject: () => {
       const state = get()

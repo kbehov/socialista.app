@@ -231,3 +231,19 @@ export type ExportSettings = {
   fps: number
   quality: ExportQuality
 }
+
+export type ExportVideoPayload = {
+  videoId: string
+  workspaceId: string
+  userId: string
+  settings: ExportSettings
+}
+
+export type VideoExportOutput = {
+  videoUrl: string
+}
+
+export type ExportVideoResponse = {
+  runId: string
+  publicAccessToken: string
+}

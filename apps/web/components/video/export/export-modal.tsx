@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useVideoEditorStore } from '@/lib/video/store'
-import { exportProject, type AssetMap } from '@/lib/video/export'
 import { getVideoFormatPreset, VIDEO_FORMAT_PRESETS } from '@/lib/video/format-presets'
-import type { ExportQuality, ExportSettings } from '@socialista/types'
+import { useVideoSave } from '@/hooks/video/use-video-save'
+import { useGenerationRun } from '@/hooks/use-generation-run'
+import { exportVideo as exportVideoRequest } from '@/services/video.service'
+import type { ExportQuality, ExportSettings, VideoExportOutput } from '@socialista/types'
 import { DownloadIcon, Loader2Icon } from 'lucide-react'
 import {
   Dialog,
@@ -52,7 +54,6 @@ const QUALITY_OPTIONS: { value: ExportQuality; label: string }[] = [
 function recommendedQuality(presetId: string): ExportQuality {
   const preset = getVideoFormatPreset(presetId)
   if (!preset) return 'medium'
-  // Vertical short-form platforms look best at high; landscape can stay medium
   if (preset.dimensions.height > preset.dimensions.width) return 'high'
   return 'medium'
 }
@@ -66,6 +67,17 @@ function qualityHint(presetId: string, quality: ExportQuality): string | null {
 }
 
 const FPS_OPTIONS = [24, 30, 60] as const
+
+const TERMINAL_FAIL = new Set([
+  'FAILED',
+  'CRASHED',
+  'SYSTEM_FAILURE',
+  'CANCELED',
+  'CANCELLED',
+  'TIMED_OUT',
+  'EXPIRED',
+  'INTERRUPTED',
+])
 
 function resolutionToId(width: number, height: number): string {
   const id = `${width}x${height}`
@@ -93,8 +105,7 @@ function slugify(name: string): string {
 function buildExportFilename(projectName: string, presetId: string, width: number, height: number): string {
   const preset = getVideoFormatPreset(presetId)
   const platform = (preset?.platform ?? 'export').toLowerCase().replace(/\s+/g, '')
-  const ratio =
-    height > width ? '9x16' : width > height ? '16x9' : '1x1'
+  const ratio = height > width ? '9x16' : width > height ? '16x9' : '1x1'
   return `${slugify(projectName)}-${platform}-${ratio}.mp4`
 }
 
@@ -113,11 +124,11 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
 
 function ExportModalBody({ onClose }: { onClose: () => void }) {
   const project = useVideoEditorStore(s => s.project)
-  const assets = useVideoEditorStore(s => s.assets)
   const formatPresetId = useVideoEditorStore(s => s.formatPresetId)
   const exportProgress = useVideoEditorStore(s => s.exportProgress)
   const exportPhase = useVideoEditorStore(s => s.exportPhase)
   const setExportProgress = useVideoEditorStore(s => s.setExportProgress)
+  const { save } = useVideoSave()
 
   const [resolutionId, setResolutionId] = useState(() =>
     resolutionToId(project.resolution.width, project.resolution.height),
@@ -126,24 +137,50 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
   const [fps, setFps] = useState<number>(project.fps)
   const [error, setError] = useState<string | null>(null)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
+  const [runId, setRunId] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const runningRef = useRef(false)
-  const resultUrlRef = useRef<string | null>(null)
+  const completedRef = useRef(false)
+
+  const { run, error: runHookError } = useGenerationRun({
+    runId: runId ?? '',
+    accessToken,
+  })
 
   useEffect(() => {
-    return () => {
-      if (resultUrlRef.current) {
-        URL.revokeObjectURL(resultUrlRef.current)
-      }
-    }
-  }, [])
+    if (!runId || !run || completedRef.current) return
 
-  const revokeResultUrl = () => {
-    if (resultUrlRef.current) {
-      URL.revokeObjectURL(resultUrlRef.current)
-      resultUrlRef.current = null
+    const statusMeta = run.metadata?.status as { progress?: number; label?: string } | undefined
+    if (typeof statusMeta?.progress === 'number') {
+      setExportProgress(statusMeta.progress / 100, statusMeta.label ?? 'Working…')
     }
-    setResultUrl(null)
-  }
+
+    const errorMeta = run.metadata?.error as { message?: string } | undefined
+    if (run.status && TERMINAL_FAIL.has(run.status)) {
+      completedRef.current = true
+      const message =
+        errorMeta?.message ??
+        (runHookError instanceof Error ? runHookError.message : null) ??
+        'Export failed'
+      setError(message)
+      setExportProgress(null, null)
+      runningRef.current = false
+      return
+    }
+
+    if (run.status === 'COMPLETED') {
+      completedRef.current = true
+      const output = run.output as VideoExportOutput | undefined
+      if (output?.videoUrl) {
+        setResultUrl(output.videoUrl)
+        setExportProgress(1, 'Done')
+      } else {
+        setError('Export completed but no video URL was returned')
+        setExportProgress(null, null)
+      }
+      runningRef.current = false
+    }
+  }, [run, runId, runHookError, setExportProgress])
 
   const preset = RESOLUTION_PRESETS.find(p => p.id === resolutionId) ?? RESOLUTION_PRESETS[0]!
   const settings: ExportSettings = {
@@ -157,32 +194,56 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
   const handleExport = async () => {
     if (runningRef.current) return
     runningRef.current = true
+    completedRef.current = false
     setError(null)
-    revokeResultUrl()
-    setExportProgress(0, 'Starting')
+    setResultUrl(null)
+    setRunId(null)
+    setAccessToken(null)
+    setExportProgress(0, 'Saving draft')
+
     try {
-      const blob = await exportProject(project, assets as AssetMap, settings, (progress, phase) => {
-        setExportProgress(progress, phase)
-      })
-      const url = URL.createObjectURL(blob)
-      resultUrlRef.current = url
-      setResultUrl(url)
-      setExportProgress(1, 'Done')
+      const saved = await save({ silent: true })
+      if (!saved) {
+        setError('Save your video before exporting')
+        setExportProgress(null, null)
+        runningRef.current = false
+        return
+      }
+
+      // Re-read project id after save (first save may assign a real id)
+      const videoId = useVideoEditorStore.getState().project.id
+      if (!videoId || videoId.startsWith('project_')) {
+        setError('Save your video before exporting')
+        setExportProgress(null, null)
+        runningRef.current = false
+        return
+      }
+
+      setExportProgress(0.02, 'Starting export')
+      const response = await exportVideoRequest(videoId, settings)
+      if (!response.success || !response.data) {
+        setError(response.message ?? 'Failed to start export')
+        setExportProgress(null, null)
+        runningRef.current = false
+        return
+      }
+
+      setRunId(response.data.runId)
+      setAccessToken(response.data.publicAccessToken)
+      setExportProgress(0.05, 'Queued')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Export failed')
       setExportProgress(null, null)
-    } finally {
       runningRef.current = false
     }
   }
 
-  const isRunning = exportProgress !== null && exportProgress < 1 && !error
-  const percent = exportProgress ? Math.round(exportProgress * 100) : 0
+  const isRunning = Boolean(runId && !resultUrl && !error) || (exportProgress !== null && exportProgress < 1 && !error && !resultUrl)
+  const percent = exportProgress != null ? Math.round(exportProgress * 100) : 0
   const warning = durationWarning(project.duration)
 
   const handleClose = () => {
     if (isRunning) return
-    revokeResultUrl()
     onClose()
   }
 
@@ -191,7 +252,7 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
       <DialogHeader>
         <DialogTitle>Export video</DialogTitle>
         <DialogDescription>
-          Export your timeline as an MP4. Settings default to your project format.
+          Export your timeline as an MP4. Encoding runs on our servers for faster results.
         </DialogDescription>
       </DialogHeader>
 

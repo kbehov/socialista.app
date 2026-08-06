@@ -41,6 +41,18 @@
       "types": "./dist/schemas/static-ad.schema.d.ts",
       "import": "./dist/schemas/static-ad.schema.js"
     },
+    "./schemas/video-export": {
+      "types": "./dist/schemas/video-export.schema.d.ts",
+      "import": "./dist/schemas/video-export.schema.js"
+    },
+    "./schemas/generate-influencer": {
+      "types": "./dist/schemas/generate-influencer.schema.d.ts",
+      "import": "./dist/schemas/generate-influencer.schema.js"
+    },
+    "./schemas/clone-influencer": {
+      "types": "./dist/schemas/clone-influencer.schema.d.ts",
+      "import": "./dist/schemas/clone-influencer.schema.js"
+    },
     "./task-types": {
       "types": "./dist/task-types.d.ts",
       "import": "./dist/task-types.js"
@@ -48,12 +60,15 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1072.0",
     "@fal-ai/client": "^1.10.1",
     "@socialista/ai": "workspace:*",
     "@socialista/db": "workspace:^",
     "@socialista/types": "workspace:^",
     "@trigger.dev/sdk": "^4.5.3",
     "ai": "^7.0.36",
+    "ffmpeg-static": "^5.3.0",
+    "sharp": "^0.35.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {

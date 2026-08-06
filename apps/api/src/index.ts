@@ -7,6 +7,7 @@ import generationRoutes from '@/routes/generation.routes.js'
 import { generatedImageRoutes } from '@/routes/generated-image.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
+import { influencerRoutes } from '@/routes/influencer.routes.js'
 import modelRoutes from '@/routes/model.routes.js'
 import productRoutes from '@/routes/product.routes.js'
 import postRoutes from '@/routes/post.routes.js'
@@ -46,6 +47,7 @@ app.route('/inspirations', inspirationRoutes)
 app.route('/collections', collectionRoutes)
 app.route('/generated-images', generatedImageRoutes)
 app.route('/generations', generationRoutes)
+app.route('/influencers', influencerRoutes)
 app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)

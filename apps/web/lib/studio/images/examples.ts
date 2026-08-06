@@ -209,7 +209,7 @@ export function filterExamplesByVibe(vibe: VibeId): ImageExample[] {
 
 export function getVibePlaceholder(vibe: VibeId): string {
   if (vibe === 'all') {
-    return 'Describe your image — first-person iPhone selfie, product demo, carousel slide…'
+    return 'Enter your idea or upload image to get started'
   }
   return VIBE_PLACEHOLDERS[vibe]
 }

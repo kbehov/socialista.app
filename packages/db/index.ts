@@ -11,6 +11,8 @@ export * from './repo/post.repo.js'
 export { ImageCollectionModel, ImageModel } from './models/image.model.js'
 export * from './models/inspiration.model.js'
 export { InvitationModel } from './models/invitation.model.js'
+export { InfluencerModel } from './models/influencer.model.js'
+export { InfluencerCloneRequestModel } from './models/influencer-clone-request.model.js'
 export { ModelModel } from './models/model.js'
 export { PolarWebhookEventModel } from './models/polar-webhook-event.model.js'
 export * from './models/product.model.js'
@@ -20,6 +22,8 @@ export { VideoModel } from './models/video.model.js'
 export { WaitlistModel } from './models/waitlist.model.js'
 export { WorkspaceModel } from './models/workspace.model.js'
 export * from './repo/image.repo.js'
+export * from './repo/influencer.repo.js'
+export * from './repo/influencer-clone-request.repo.js'
 export * from './repo/inspiration.repo.js'
 export * from './repo/invitation.repo.js'
 export * from './repo/model.repo.js'
@@ -148,6 +152,27 @@ export {
 } from './config/config.js'
 
 export { InvitationStatus, type Invitation, type InvitationDocument } from './types/invitation.types.js'
+export {
+  InfluencerAgeRange,
+  InfluencerCloneRequestStatus,
+  InfluencerGender,
+  InfluencerHeight,
+  InfluencerIdentityMethod,
+  InfluencerPhotoStyle,
+  InfluencerSource,
+  InfluencerStatus,
+  InfluencerVisibility,
+  type CreateInfluencerCloneRequestInput,
+  type CreateInfluencerInput,
+  type IInfluencer,
+  type IInfluencerCloneRequest,
+  type InfluencerAppearance,
+  type InfluencerCloneRequestDocument,
+  type InfluencerDocument,
+  type InfluencerIdentity,
+  type UpdateInfluencerCloneRequestInput,
+  type UpdateInfluencerInput,
+} from './types/influencer.types.js'
 export type {
   CreateWaitlistEntryInput,
   IWaitlistEntry,

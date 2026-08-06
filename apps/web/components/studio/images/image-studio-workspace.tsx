@@ -10,32 +10,28 @@ type ImageStudioWorkspaceProps = {
   models: Model[]
 }
 
-export function ImageStudioWorkspace({ models }: ImageStudioWorkspaceProps) {
+export function   ImageStudioWorkspace({ models }: ImageStudioWorkspaceProps) {
   return (
     <ImageStudioProvider>
       <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-128 overflow-hidden">
-          <div className="absolute left-1/2 -top-24 h-104 w-208 -translate-x-1/2 rounded-full bg-foreground/2 blur-[100px]" />
-          <div className="absolute left-[12%] top-20 h-48 w-48 rounded-full bg-foreground/1.5 blur-[80px]" />
-          <div className="absolute right-[8%] top-32 h-40 w-56 rounded-full bg-foreground/[0.012] blur-[72px]" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-140 overflow-hidden">
+          <div className="absolute left-1/2 -top-28 h-112 w-220 -translate-x-1/2 rounded-full bg-foreground/[0.025] blur-[110px]" />
+          <div className="absolute left-[10%] top-24 h-52 w-52 rounded-full bg-foreground/[0.015] blur-[90px]" />
+          <div className="absolute right-[6%] top-36 h-44 w-64 rounded-full bg-foreground/[0.012] blur-[80px]" />
         </div>
 
         <div
           aria-hidden
-          className="pointer-events-none sticky top-0 z-10 h-12 bg-linear-to-b from-background via-background/90 to-transparent motion-reduce:hidden"
+          className="pointer-events-none sticky top-0 z-10 h-14 bg-linear-to-b from-background via-background/85 to-transparent motion-reduce:hidden"
         />
 
-        <div className="relative flex flex-1 flex-col px-4 pb-24 pt-5 sm:px-6 sm:pt-7 lg:px-8">
-          <div className="mx-auto w-full max-w-3xl space-y-8 sm:space-y-9">
+        <div className="relative flex flex-1 flex-col px-4 pb-28 pt-6 sm:px-6 sm:pt-10 lg:px-8">
+          <div className="mx-auto w-full max-w-3xl space-y-7 sm:space-y-8">
             <StudioHero />
             <ImageGenerationPromptInput models={models} />
           </div>
 
-          <div className="relative mx-auto mt-16 w-full max-w-6xl sm:mt-20 lg:mt-24">
-            <div
-              aria-hidden
-              className="mb-12 h-px w-full bg-linear-to-r from-transparent via-border/60 to-transparent sm:mb-14"
-            />
+          <div className="relative mx-auto mt-20 w-full max-w-6xl sm:mt-24 lg:mt-28">
             <ExampleGallery />
           </div>
         </div>

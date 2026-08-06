@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, ImageIcon, TypeIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, ImageIcon, SparklesIcon, TypeIcon } from 'lucide-react'
 import { VideoSourcePanel } from '@/components/video/video-source-panel'
+import { VideoScriptPanel } from '@/components/video/video-script-panel'
 import { VideoTextPanel } from '@/components/video/video-text-panel'
 import { VIDEO_OPEN_MEDIA_EVENT } from '@/lib/video/editor-events'
 import { cn } from '@/lib/utils'
@@ -12,11 +13,12 @@ const PANEL_OPEN_STORAGE_KEY = 'video-panel-open'
 const PANEL_TAB_STORAGE_KEY = 'video-panel-tab'
 const PANEL_EASE = 'cubic-bezier(0.32,0.72,0,1)'
 
-export type VideoSidebarTab = 'media' | 'text'
+export type VideoSidebarTab = 'media' | 'text' | 'script'
 
 const SIDEBAR_TABS = [
   { id: 'media' as const, label: 'Media', icon: ImageIcon },
   { id: 'text' as const, label: 'Text', icon: TypeIcon },
+  { id: 'script' as const, label: 'Script', icon: SparklesIcon },
 ]
 
 function readPanelOpen(): boolean {
@@ -33,7 +35,8 @@ function readPanelTab(): VideoSidebarTab {
   if (typeof window === 'undefined') return 'media'
   try {
     const stored = sessionStorage.getItem(PANEL_TAB_STORAGE_KEY)
-    return stored === 'text' ? 'text' : 'media'
+    if (stored === 'text' || stored === 'script' || stored === 'media') return stored
+    return 'media'
   } catch {
     return 'media'
   }
@@ -117,11 +120,20 @@ function VideoPanelContent({
       >
         <VideoTextPanel embedded showPanelHeader={showPanelHeader} />
       </div>
+      <div
+        id={panelId ? `${panelId}-script` : undefined}
+        role="tabpanel"
+        hidden={tab !== 'script'}
+        className={cn('h-full min-h-0', tab !== 'script' && 'hidden')}
+        aria-hidden={tab !== 'script'}
+      >
+        <VideoScriptPanel embedded showPanelHeader={showPanelHeader} />
+      </div>
     </div>
   )
 }
 
-/** Left source rail — Media + Text (inspector lives on the right). */
+/** Left source rail — Media + Text + Script (inspector lives on the right). */
 export function VideoStudioSidebar({ className }: { className?: string }) {
   const [panelOpen, setPanelOpen] = useState(() => readPanelOpen())
   const [tab, setTab] = useState<VideoSidebarTab>(() => readPanelTab())

@@ -60,7 +60,9 @@
     "TRIGGER_ACCESS_TOKEN",
     "FAL_KEY",
     "AI_GATEWAY_API_KEY",
-    "INTERNAL_API_SECRET"
+    "INTERNAL_API_SECRET",
+    "FFMPEG_PATH",
+    "FFPROBE_PATH"
   ],
   "tasks": {
     "build": {

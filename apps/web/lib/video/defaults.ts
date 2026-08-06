@@ -9,6 +9,7 @@ import type {
   Track,
   TrackId,
   VideoClip,
+  VideoScriptSegmentRole,
 } from '@socialista/types'
 
 import { getTextPreset, mergeTextPreset } from '@/lib/carousel/text-presets'
@@ -145,6 +146,62 @@ function defaultTextOverlayStyle(): TextOverlay['style'] {
 }
 
 export const DEFAULT_TEXT_OVERLAY_STYLE: TextOverlay['style'] = defaultTextOverlayStyle()
+
+export type ScriptRoleOverlayPreset = Pick<TextOverlay, 'x' | 'y' | 'width'> & {
+  style: Partial<TextOverlay['style']>
+}
+
+/** Layout + style defaults when applying an AI script segment by role. */
+export const SCRIPT_ROLE_OVERLAY_PRESETS: Record<VideoScriptSegmentRole, ScriptRoleOverlayPreset> = {
+  hook: {
+    x: 8,
+    y: 36,
+    width: 84,
+    style: {
+      fontSize: 72,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      animation: 'slide-up',
+    },
+  },
+  body: {
+    x: 10,
+    y: 70,
+    width: 80,
+    style: {
+      fontSize: 56,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      animation: 'fade',
+    },
+  },
+  cta: {
+    x: 12,
+    y: 74,
+    width: 76,
+    style: {
+      fontSize: 52,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      padding: 14,
+      borderRadius: 10,
+      textStrokeColor: null,
+      textStrokeWidth: 0,
+      animation: 'slide-up',
+    },
+  },
+}
+
+export type AddTextOverlayInput = {
+  content: string
+  startTime: number
+  endTime: number
+  style?: Partial<TextOverlay['style']>
+  x?: number
+  y?: number
+  width?: number
+}
 
 export function createEntityId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`

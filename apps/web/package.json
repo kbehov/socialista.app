@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "node scripts/copy-ffmpeg-core.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.39",
@@ -16,8 +15,6 @@
     "@dnd-kit/helpers": "^0.5.0",
     "@dnd-kit/react": "^0.5.0",
     "@fal-ai/client": "^1.10.1",
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2",
     "@google-cloud/vision": "^5.3.7",
     "@hookform/resolvers": "^5.4.0",
     "@polar-sh/nextjs": "^0.9.6",
@@ -68,8 +65,5 @@
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
     "typescript": "^6.0.3"
-  },
-  "optionalDependencies": {
-    "@ffmpeg/core": "0.12.10"
   }
 }

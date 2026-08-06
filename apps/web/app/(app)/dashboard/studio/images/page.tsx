@@ -3,7 +3,6 @@ import { getModels } from '@/services/models.service'
 
 const ImagesPage = async () => {
   const { data, success } = await getModels('limit=20&modelType=text-to-image&sort=-usageCount')
-  console.log('models', data?.models)
 
   if (!success) {
     throw new Error('Failed to load models')

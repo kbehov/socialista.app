@@ -21,6 +21,32 @@ export type GenerateSlideshowResult = {
   texts: string[]
 }
 
+export const VIDEO_SCRIPT_SEGMENT_ROLES = ['hook', 'body', 'cta'] as const
+
+export type VideoScriptSegmentRole = (typeof VIDEO_SCRIPT_SEGMENT_ROLES)[number]
+
+export const VIDEO_SCRIPT_TONES = ['casual', 'educational', 'hype', 'professional'] as const
+
+export type VideoScriptTone = (typeof VIDEO_SCRIPT_TONES)[number]
+
+export type VideoScriptSegment = {
+  text: string
+  startTime: number
+  endTime: number
+  role: VideoScriptSegmentRole
+}
+
+export type GenerateVideoScriptInput = {
+  description: string
+  duration: number
+  tone?: VideoScriptTone
+}
+
+export type GenerateVideoScriptResult = {
+  title: string
+  segments: VideoScriptSegment[]
+}
+
 export type SanitizedMedia = {
   imageUrl: string
 }

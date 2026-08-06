@@ -32,6 +32,22 @@ export {
 export { analyticsSweepPayloadSchema, type AnalyticsSweepPayload } from './schemas/analytics-sweep.schema.js'
 
 export {
+  videoExportPayloadSchema,
+  exportSettingsSchema,
+  type VideoExportPayload,
+} from './schemas/video-export.schema.js'
+
+export {
+  generateInfluencerPayloadSchema,
+  type GenerateInfluencerPayload,
+} from './schemas/generate-influencer.schema.js'
+
+export {
+  cloneInfluencerPayloadSchema,
+  type CloneInfluencerPayload,
+} from './schemas/clone-influencer.schema.js'
+
+export {
   buildStaticAdCreativeBrief,
   buildStaticAdFinalPrompt,
   sanitizeStaticAdModelPrompt,

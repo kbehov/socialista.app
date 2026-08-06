@@ -209,7 +209,7 @@ export function useVideoSave() {
   }, [])
 
   return {
-    save: () => save(),
+    save: (opts?: { silent?: boolean }) => save(opts),
     status,
     lastSavedAt,
     canSave: Boolean(workspaceId) && status !== 'saving',

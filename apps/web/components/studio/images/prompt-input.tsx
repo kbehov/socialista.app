@@ -36,7 +36,13 @@ import { Kbd } from '@/components/ui/kbd'
 import { Separator } from '@/components/ui/separator'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
-import { getVibePlaceholder, VIBE_LABELS, type AspectRatioId } from '@/lib/studio/images/examples'
+import {
+  getVibePlaceholder,
+  VIBE_IDS,
+  VIBE_LABELS,
+  type AspectRatioId,
+  type VibeId,
+} from '@/lib/studio/images/examples'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatModelCost } from '@/utils/format'
@@ -60,6 +66,8 @@ import { toast } from 'sonner'
 import { ImagePromptAnatomy } from './prompt-anatomy'
 
 const MAX_REFERENCE_IMAGES = 3
+
+const QUICK_VIBES = VIBE_IDS.filter((vibe): vibe is Exclude<VibeId, 'all'> => vibe !== 'all').slice(0, 5)
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Square', ratio: 1 },
@@ -152,7 +160,14 @@ const SUPPORT_LABELS: Record<ContextSupport, { label: string; icon: LucideIcon }
 function ImagePromptComposer({ models }: { models: Model[] }) {
   const router = useRouter()
   const { textInput } = usePromptInputController()
-  const { selectedVibe, activeExampleId, composerRef, registerPromptHandlers, setActiveExampleId } = useImageStudio()
+  const {
+    selectedVibe,
+    setSelectedVibe,
+    activeExampleId,
+    composerRef,
+    registerPromptHandlers,
+    setActiveExampleId,
+  } = useImageStudio()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const [isPending, startTransition] = useTransition()
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
@@ -411,14 +426,15 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     >
       <PromptInput
         className={cn(
-          'rounded-[1.375rem] border-border/50 bg-background transition-[border-color,box-shadow,ring-color] duration-200',
-          'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.03),0_10px_32px_-16px_rgba(0,0,0,0.1)]',
+          'rounded-3xl border-border/45 bg-background/95 transition-[border-color,box-shadow,ring-color] duration-200',
+          'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.03),0_12px_40px_-18px_rgba(0,0,0,0.12)]',
           'has-[[data-slot=input-group-control]:focus-visible]:border-ring/25',
-          'has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.04),0_12px_36px_-16px_rgba(0,0,0,0.12)]',
+          'has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.04),0_16px_44px_-16px_rgba(0,0,0,0.14)]',
           'has-[[data-slot=input-group-control]:focus-visible]:ring-2',
           'has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6',
-          'dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.18),0_10px_32px_-16px_rgba(0,0,0,0.42)]',
-          'dark:has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.22),0_14px_40px_-16px_rgba(0,0,0,0.48)]',
+          'dark:bg-background/80',
+          'dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.2),0_12px_40px_-18px_rgba(0,0,0,0.48)]',
+          'dark:has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.24),0_16px_48px_-16px_rgba(0,0,0,0.52)]',
           activeExampleId && 'border-foreground/15 ring-2 ring-foreground/8',
         )}
         onSubmit={handleSubmit}
@@ -427,7 +443,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           <PromptInputTextarea
             ref={textareaRef}
             className={cn(
-              'min-h-36 px-4 pt-4 pb-10 text-[15px] leading-[1.65] tracking-[-0.012em]',
+              'min-h-40 px-4 pt-4 pb-10 text-[15px] leading-[1.65] tracking-[-0.012em]',
               'placeholder:text-muted-foreground/45 placeholder:transition-opacity placeholder:duration-300',
               'focus:outline-none focus:ring-0',
             )}
@@ -571,23 +587,55 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         onSelect={setAttachedImages}
       />
 
-      <div className="mt-3.5 space-y-3.5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-full bg-muted/20 px-2.5 py-1 text-[11px] tracking-[-0.01em] text-muted-foreground/70 ring-1 ring-border/30">
-            <Kbd className="h-4 min-w-4 border-border/50 bg-background/80 px-1 text-[10px]">/</Kbd>
-            <span>focus</span>
+      <div className="mt-4 space-y-4">
+        <div
+          className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden"
+          role="group"
+          aria-label="Quick vibes"
+        >
+          {QUICK_VIBES.map(vibe => {
+            const isSelected = selectedVibe === vibe
+
+            return (
+              <button
+                key={vibe}
+                type="button"
+                onClick={() => {
+                  commitHaptic({ vibrateDuration: 6 })
+                  setSelectedVibe(isSelected ? 'all' : vibe)
+                  focusPrompt()
+                }}
+                className={cn(
+                  'shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium tracking-[-0.015em]',
+                  'ring-1 transition-[background-color,color,box-shadow,ring-color,transform] duration-150',
+                  'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
+                  isSelected
+                    ? 'bg-foreground/8 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-border/50'
+                    : 'bg-muted/20 text-muted-foreground ring-border/30 hover:bg-muted/35 hover:text-foreground/90 hover:ring-border/45',
+                )}
+              >
+                {VIBE_LABELS[vibe]}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-0.5">
+          <p className="inline-flex items-center gap-1.5 text-[11px] tracking-[-0.01em] text-muted-foreground/55">
+            <Kbd className="h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px] text-muted-foreground/70">
+              /
+            </Kbd>
+            <span>to focus</span>
             <span aria-hidden className="text-muted-foreground/25">
               ·
             </span>
-            <Kbd className="h-4 min-w-4 border-border/50 bg-background/80 px-1 text-[10px]">⌘↵</Kbd>
-            <span>generate</span>
+            <Kbd className="h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px] text-muted-foreground/70">
+              ⌘↵
+            </Kbd>
+            <span>to generate</span>
           </p>
-          {selectedVibe !== 'all' ? (
-            <span className="text-[11px] tracking-[-0.01em] text-muted-foreground/55">
-              {VIBE_LABELS[selectedVibe]} examples
-            </span>
-          ) : null}
         </div>
+
         <ImagePromptAnatomy />
       </div>
     </div>

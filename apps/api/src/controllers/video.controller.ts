@@ -24,8 +24,46 @@ import {
   type IVideo,
   VideoStatus,
 } from '@socialista/db'
-import type { CreateVideoPayload, DuplicateVideoPayload, UpdateVideoPayload } from '@socialista/types'
+import { createPublicAccessToken } from '@socialista/trigger'
+import type { ExportVideoTask } from '@socialista/trigger/task-types'
+import {
+  TASK_IDS,
+  type CreateVideoPayload,
+  type DuplicateVideoPayload,
+  type ExportSettings,
+  type UpdateVideoPayload,
+} from '@socialista/types'
+import { tasks } from '@trigger.dev/sdk/v3'
 import type { Context } from 'hono'
+
+const VALID_QUALITIES = new Set(['low', 'medium', 'high'])
+const VALID_FPS = new Set([24, 30, 60])
+
+function parseExportSettings(raw: unknown): ExportSettings {
+  if (!raw || typeof raw !== 'object') {
+    throw new HttpError(400, 'settings is required')
+  }
+  const settings = raw as Record<string, unknown>
+  const resolution = settings.resolution
+  if (!resolution || typeof resolution !== 'object') {
+    throw new HttpError(400, 'settings.resolution is required')
+  }
+  const { width, height } = resolution as Record<string, unknown>
+  if (typeof width !== 'number' || typeof height !== 'number' || width < 1 || height < 1) {
+    throw new HttpError(400, 'settings.resolution must include positive width and height')
+  }
+  if (typeof settings.fps !== 'number' || !VALID_FPS.has(settings.fps)) {
+    throw new HttpError(400, 'settings.fps must be 24, 30, or 60')
+  }
+  if (typeof settings.quality !== 'string' || !VALID_QUALITIES.has(settings.quality)) {
+    throw new HttpError(400, 'settings.quality must be low, medium, or high')
+  }
+  return {
+    resolution: { width, height },
+    fps: settings.fps,
+    quality: settings.quality as ExportSettings['quality'],
+  }
+}
 
 export const createVideo = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
@@ -165,4 +203,39 @@ export const duplicateVideo = async (c: Context<AppContext>) => {
   })
 
   return successResponse(c, 201, { video: serializeVideoDoc(video.toObject()) })
+}
+
+export const exportVideo = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'video ID')
+  const video = await getVideoForMember(id, userId)
+
+  const body = (await c.req.json()) as { settings?: unknown }
+  const settings = parseExportSettings(body.settings)
+
+  if (!video.clips.length) {
+    throw new HttpError(400, 'Add clips to the timeline before exporting')
+  }
+
+  const assetsById = new Map(video.assets.map(asset => [asset.id, asset]))
+  for (const clip of video.clips) {
+    const asset = assetsById.get(clip.assetId)
+    if (!asset?.url) {
+      throw new HttpError(400, 'Save your video before exporting')
+    }
+  }
+
+  const handle = await tasks.trigger<ExportVideoTask>(TASK_IDS.videoExport, {
+    videoId: id,
+    workspaceId: video.workspace.toString(),
+    userId,
+    settings,
+  })
+
+  const publicAccessToken = await createPublicAccessToken(handle.id)
+
+  return successResponse(c, 202, {
+    runId: handle.id,
+    publicAccessToken,
+  })
 }

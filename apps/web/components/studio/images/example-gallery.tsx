@@ -2,15 +2,15 @@
 
 import { EmptyState } from '@/components/common/empty-state'
 import { useImageStudio } from '@/components/studio/images/image-studio-provider'
+import { useCopyPrompt } from '@/hooks/use-copy-prompt'
+import { filterExamplesByVibe, VIBE_LABELS, type ImageExample } from '@/lib/studio/images/examples'
 import { cn } from '@/lib/utils'
+import { getAspectRatioClass } from '@/utils/aspect-ratio'
 import { commitHaptic } from '@/utils/haptics'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { CopyIcon, ImagesIcon, SparklesIcon, WandSparklesIcon } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Image from 'next/image'
 import { useMemo } from 'react'
-import { useCopyPrompt } from '@/hooks/use-copy-prompt'
-import { getAspectRatioClass } from '@/utils/aspect-ratio'
-import { filterExamplesByVibe, VIBE_LABELS, type ImageExample } from '@/lib/studio/images/examples'
 import { VibeSelector } from './vibe-selector'
 
 function ExampleCard({
@@ -78,9 +78,7 @@ function ExampleCard({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-2.5 p-3 pt-12">
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold tracking-[-0.02em] text-white">
-              {example.title}
-            </p>
+            <p className="truncate text-[13px] font-semibold tracking-[-0.02em] text-white">{example.title}</p>
             <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug tracking-[-0.01em] text-white/60">
               {example.hook}
             </p>
@@ -136,30 +134,25 @@ export function ExampleGallery() {
   const examples = useMemo(() => filterExamplesByVibe(selectedVibe), [selectedVibe])
 
   return (
-    <section className="space-y-7 sm:space-y-8" aria-labelledby="examples-gallery-heading">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2
-              id="examples-gallery-heading"
-              className="text-[16px] font-semibold tracking-[-0.02em] text-foreground"
-            >
-              Examples
-            </h2>
-            {examples.length > 0 ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted/60 px-1.5 text-[10px] font-medium tabular-nums tracking-[-0.01em] text-muted-foreground ring-1 ring-border/40">
-                {examples.length}
-              </span>
-            ) : null}
-          </div>
-          <p className="max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
-            Remix a look or copy the prompt to start faster.
+    <section className="space-y-6 sm:space-y-7" aria-labelledby="examples-gallery-heading">
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <h2
+            id="examples-gallery-heading"
+            className="text-[1.125rem] font-semibold tracking-[-0.025em] text-foreground sm:text-[1.25rem]"
+          >
+            Inspiration
+          </h2>
+          <p className="text-[13px] leading-normal tracking-[-0.01em] text-muted-foreground">
+            Remix a look, or copy the prompt to start faster.
           </p>
         </div>
+
         <VibeSelector
           value={selectedVibe}
           onChange={setSelectedVibe}
-          className="w-full sm:max-w-md sm:shrink-0"
+          variant="pills"
+          className="w-full"
         />
       </div>
 
@@ -180,7 +173,7 @@ export function ExampleGallery() {
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             className="columns-2 gap-3.5 sm:columns-3 sm:gap-4 lg:columns-4"
             role="list"
-            aria-label="Example gallery"
+            aria-label="Inspiration gallery"
           >
             {examples.map(example => (
               <ExampleCard

@@ -79,6 +79,7 @@ export const VIDEO_ROUTES = {
   UPDATE: (id: string) => `/videos/${id}`,
   DELETE: (id: string) => `/videos/${id}`,
   DUPLICATE: (id: string) => `/videos/${id}/duplicate`,
+  EXPORT: (id: string) => `/videos/${id}/export`,
   GET_WORKSPACE_VIDEOS: (workspaceId: string) => `/videos/workspace/${workspaceId}`,
 } as const
 export function inspirationRoute(template: string, id: string): string {
@@ -129,6 +130,17 @@ export const POST_ROUTES = {
 export const GENERATION_ROUTES = {
   GET_BY_ID: (id: string) => `/generations/${id}`,
   GET_WORKSPACE_GENERATIONS: (workspaceId: string) => `/generations/workspace/${workspaceId}`,
+} as const
+
+export const INFLUENCER_ROUTES = {
+  EXPLORE: '/influencers/explore',
+  CREATE: '/influencers',
+  CLONE: '/influencers/clone',
+  GET_BY_ID: (id: string) => `/influencers/${id}`,
+  UPDATE: (id: string) => `/influencers/${id}`,
+  DELETE: (id: string) => `/influencers/${id}`,
+  GET_WORKSPACE_INFLUENCERS: (workspaceId: string) => `/influencers/workspace/${workspaceId}`,
+  GET_CLONE_REQUEST: (id: string) => `/influencers/clone-requests/${id}`,
 } as const
 
 export const ANALYTICS_ROUTES = {

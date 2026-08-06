@@ -84,6 +84,8 @@ const OBJECT_ID_KEYS = new Set([
   'collectionId',
   'categories',
   'niches',
+  'userId',
+  'resultInfluencerId',
 ])
 
 const tryToObjectId = (value: string) => {

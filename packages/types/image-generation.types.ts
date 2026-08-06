@@ -35,6 +35,9 @@ export const TASK_IDS = {
   publishPost: 'publish-post',
   analyticsSweep: 'analytics-sweep',
   fetchAccountAnalytics: 'fetch-account-analytics',
+  videoExport: 'export-video',
+  generateInfluencer: 'generate-influencer',
+  cloneInfluencer: 'clone-influencer',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

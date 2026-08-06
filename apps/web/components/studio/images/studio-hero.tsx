@@ -2,19 +2,17 @@
 
 export function StudioHero() {
   return (
-    <header className="space-y-4 sm:space-y-5">
-      <div className="flex items-center">
-        <span className="inline-flex h-6 items-center rounded-full bg-foreground/[0.035] px-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground ring-1 ring-border/45">
-          Image studio
-        </span>
-      </div>
+    <header className="mx-auto max-w-xl space-y-4 text-center sm:space-y-5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">
+        Image studio
+      </p>
 
-      <div className="space-y-2.5 sm:space-y-3">
-        <h1 className="text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] text-foreground sm:text-[2.375rem]">
-          Generate images
+      <div className="space-y-3 sm:space-y-3.5">
+        <h1 className="font-serif text-balance text-[2.25rem] font-medium leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[2.75rem] sm:leading-[1.05]">
+          Imagine it. Create it.
         </h1>
-        <p className="max-w-lg text-pretty text-[15px] leading-[1.6] tracking-[-0.012em] text-muted-foreground">
-          Describe the mood, style, and scene — then generate visuals ready for your channels.
+        <p className="mx-auto max-w-md text-pretty text-[15px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
+          Describe the mood, style, and scene — generate visuals ready for your channels.
         </p>
       </div>
     </header>
