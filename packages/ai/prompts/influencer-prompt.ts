@@ -37,19 +37,34 @@ const GENDER_LABEL: Record<InfluencerGender, string> = {
   'non-binary': 'non-binary person',
 }
 
+/** Models render age best from a specific number, not a range. */
+const AGE_REPRESENTATIVE: Record<InfluencerAgeRange, number> = {
+  '18-24': 21,
+  '25-34': 28,
+  '35-44': 38,
+  '45+': 50,
+}
+
 const HEIGHT_LABEL: Record<InfluencerHeight, string> = {
   short: 'shorter than average',
   average: 'average height',
   tall: 'tall',
 }
 
+const MAKEUP_PROMPT_LABEL: Record<string, string> = {
+  natural: 'natural, barely-there makeup',
+  'no-makeup': 'bare skin, no makeup',
+  glam: 'glam makeup',
+  bold: 'bold makeup',
+}
+
 const PHOTO_STYLE_CLAUSE: Record<InfluencerPhotoStyle, string> = {
   'ugc-phone':
-    'Shot on a modern smartphone: slight wide-angle distortion, casual framing, natural phone-camera noise, authentic UGC energy.',
+    "Shot on a modern smartphone front camera: arm's-length casual framing, slight wide-angle distortion, on-device HDR processing, subtle phone-camera noise — authentic UGC energy.",
   'creator-camera':
-    'Shot on a mirrorless or DSLR creator camera: clean natural light, shallow depth of field, professional-but-candid social content look.',
+    'Shot on a mirrorless creator camera with a 35mm f/1.8 look: clean natural light, shallow depth of field, natural color science — professional but candid social content.',
   'studio-polish':
-    'Polished studio portrait lighting with soft key light and subtle fill, clean backdrop or soft bokeh, still photoreal — not over-retouched.',
+    'Polished studio portrait with an 85mm f/2.8 look: large soft key light at a 45° angle, subtle fill and gentle rim light, clean backdrop with soft falloff — photoreal, not over-retouched.',
 }
 
 export type InfluencerNicheScene = {
@@ -142,25 +157,30 @@ export const INFLUENCER_NICHE_SCENES: Record<string, InfluencerNicheScene> = {
   },
 }
 
-export const INFLUENCER_NEGATIVE_PROMPT =
-  'No watermarks, logos, captions, or AI-generated text overlays. ' +
-  'No plastic skin, beauty-filter smoothing, CGI, or 3D-render look. ' +
-  'No distorted hands, extra fingers, fused limbs, or duplicate people.'
+/**
+ * Minimal exclusion footer. Keep it short and positively framed — long "no X"
+ * negation lists are poorly attended by image models and often introduce the
+ * artifact they name. Realism is enforced by positive cues in the base fragment.
+ */
+export const INFLUENCER_EXCLUSIONS =
+  'Clean photograph, free of any text, captions, watermarks, logos, or UI overlays.'
 
 /**
  * Locked identity prose reused on every subsequent generation for this influencer.
- * Photoreal / UGC-oriented — no keyword-soup, no "AI look" cues.
+ * Ordered in semantic blocks (identity → face → hair → body → realism → style)
+ * with positive photoreal cues instead of keyword-soup or negations.
  */
 export function buildInfluencerBasePromptFragment(input: BuildInfluencerBasePromptInput): string {
   const { name, gender, ageRange, ethnicity, appearance, aestheticTags, directions, bio, photoStyle } =
     input
   const person = GENDER_LABEL[gender]
+  const age = AGE_REPRESENTATIVE[ageRange]
   const height = appearance.height ? `, ${HEIGHT_LABEL[appearance.height]}` : ''
+  const ethnicityClause = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
   const features =
     appearance.distinguishingFeatures && appearance.distinguishingFeatures.length > 0
-      ? ` Distinguishing features: ${appearance.distinguishingFeatures.join(', ')}.`
+      ? `, ${appearance.distinguishingFeatures.join(', ')}`
       : ''
-  const ethnicityClause = ethnicity?.trim() ? ` ${ethnicity.trim()} heritage,` : ''
   const aesthetic =
     aestheticTags && aestheticTags.length > 0 ? ` Overall vibe leans ${aestheticTags.join(', ')}.` : ''
 
@@ -170,7 +190,7 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
       : ''
   const makeup =
     appearance.makeup && appearance.makeup !== 'none'
-      ? ` Makeup: ${appearance.makeup === 'no-makeup' ? 'bare skin, no makeup' : appearance.makeup}.`
+      ? ` ${MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`}.`
       : ''
 
   const creativeDirection = (directions?.trim() || bio?.trim() || '').trim()
@@ -180,14 +200,12 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
   const photoClause = PHOTO_STYLE_CLAUSE[styleKey]
 
   return (
-    `${name} is a real ${person} in their ${ageRange}s,${ethnicityClause}` +
-    ` with ${appearance.skinTone} skin, ${appearance.eyeColor} eyes,` +
-    ` and ${appearance.hairColor} ${appearance.hairStyle} hair.` +
-    ` Body type is ${appearance.bodyShape}${height}.` +
-    `${facialHair}${makeup}${features}` +
-    ` Photographed like a real social-media creator: natural skin texture with visible pores,` +
-    ` soft real-world lighting, candid expression —` +
-    ` not a CGI render, not plastic skin, not over-smoothed beauty filters.` +
+    `${name} is a ${age}-year-old ${person}${ethnicityClause} — a real social-media creator.` +
+    ` Face: ${appearance.skinTone} skin with natural texture, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
+    ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}, with a few loose flyaway strands at the hairline.` +
+    ` Body: ${appearance.bodyShape} build${height}.` +
+    ` Photorealistic candid photograph of a real person: visible skin pores, subtle facial asymmetry,` +
+    ` natural skin sheen, soft real-world lighting with gentle shadows.` +
     ` ${photoClause}${aesthetic}${directionClause}`
   )
 }
@@ -203,25 +221,25 @@ export const INFLUENCER_ANCHOR_SHOTS: InfluencerAnchorShot[] = [
     id: 'front-portrait',
     aspectRatio: '1:1',
     promptSuffix:
-      'Front-facing head-and-shoulders portrait, neutral expression, looking at camera, soft natural window light, plain lightly blurred indoor background. Clear face, consistent identity.',
+      'Front-facing head-and-shoulders portrait at eye level with an 85mm portrait lens look, relaxed neutral expression with a hint of a smile, looking directly at camera, soft diffused window light from the side, plain indoor background gently out of focus. Visible skin pores, natural catchlights in the eyes, loose flyaway hairs. Identity anchor: the face must be sharp, fully visible, and evenly lit.',
   },
   {
     id: 'three-quarter',
     aspectRatio: '1:1',
     promptSuffix:
-      'Three-quarter turn portrait from the chest up, relaxed candid half-smile, natural daylight, shallow depth of field. Same person as the identity description.',
+      'Same person, three-quarter turn from the chest up, genuine candid laugh mid-conversation, 50mm lens look, natural daylight from a different direction than the anchor portrait, shallow depth of field. Same face and features — identity must hold under the new angle and lighting.',
   },
   {
     id: 'full-body',
     aspectRatio: '9:16',
     promptSuffix:
-      'Full-body standing portrait, full figure clearly visible from head to shoes, natural posture, authentic creator photo.',
+      'Same person, full-body standing portrait framed head-to-shoes with breathing room, 35mm lens at eye level, relaxed natural stance with weight shifted to one leg, real environment softly lit. Authentic creator photo, same face and body proportions.',
   },
   {
     id: 'lifestyle',
     aspectRatio: '9:16',
     promptSuffix:
-      'Lifestyle UGC still of them mid-moment in a real environment, phone-camera framing, authentic creator content energy, same person.',
+      'Same person mid-moment in a real environment — walking, reaching, or sipping a drink — caught candidly on a phone camera, slight motion energy, natural imperfect framing. Unmistakably the same person.',
   },
 ]
 
@@ -250,7 +268,7 @@ export function buildInfluencerAnchorPrompt(
     ctx?.directions?.trim() && (shot.id === 'full-body' || shot.id === 'lifestyle')
       ? ` Scene notes: ${ctx.directions.trim()}.`
       : ''
-  return `${basePromptFragment} ${shot.promptSuffix}${nicheClause}${direction} ${INFLUENCER_NEGATIVE_PROMPT}`
+  return `${basePromptFragment} ${shot.promptSuffix}${nicheClause}${direction} ${INFLUENCER_EXCLUSIONS}`
 }
 
 export type BuildCloneCoverPromptInput = {
@@ -266,7 +284,7 @@ export function buildCloneCoverPrompt(input: BuildCloneCoverPromptInput): string
   return (
     `A photoreal portrait of ${input.name}, matching the person in the reference photos exactly —` +
     ` same face, skin tone, hair, and body proportions. ${suffix}` +
-    ` Real camera look, natural skin texture, no plastic skin, no beauty-filter smoothing.` +
-    ` ${INFLUENCER_NEGATIVE_PROMPT}`
+    ` Real camera look: natural skin texture with visible pores, soft real-world lighting, no beauty-filter smoothing.` +
+    ` ${INFLUENCER_EXCLUSIONS}`
   )
 }

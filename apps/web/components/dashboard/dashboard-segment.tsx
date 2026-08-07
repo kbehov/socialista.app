@@ -34,7 +34,7 @@ function DashboardSegmentButton({ active, className, type = 'button', ...props }
       aria-selected={active}
       className={cn(
         dashboardSurface.segmentItem,
-        'h-7 px-2.5 flex-row flex-nowrap',
+        'inline-flex h-7 flex-row flex-nowrap items-center gap-1.5 px-2.5 whitespace-nowrap',
         active ? dashboardSurface.segmentItemActive : dashboardSurface.segmentItemInactive,
         className,
       )}

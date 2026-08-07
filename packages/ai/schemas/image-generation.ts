@@ -10,6 +10,7 @@ export const imageGenerationPayloadSchema = z.object({
   aspectRatio: z.enum(ASPECT_RATIOS).default('1:1'),
   imageUrl: z.string().url().optional(),
   imageUrls: z.array(z.string().url()).optional(),
+  seed: z.number().int().optional(),
 })
 
 export type ImageGenerationPayload = z.infer<typeof imageGenerationPayloadSchema>

@@ -1,5 +1,6 @@
 import {
   buildInfluencerAnchorPrompt,
+  evaluateAnchorPortrait,
   generateImage,
   INFLUENCER_ANCHOR_SHOTS,
 } from '@socialista/ai'
@@ -11,7 +12,7 @@ import {
   updateInfluencer,
 } from '@socialista/db'
 import { TASK_IDS } from '@socialista/types'
-import { logger, schemaTask } from '@trigger.dev/sdk/v3'
+import { logger, metadata, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateInfluencerPayloadSchema } from '../../schemas/generate-influencer.schema.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
@@ -21,13 +22,13 @@ const SHOT_MAX_ATTEMPTS = 2
 const SHOT_RETRY_DELAY_MS = 1500
 
 async function generateShotWithRetry(
-  generate: () => Promise<string>,
+  generate: (attempt: number) => Promise<string>,
   shotId: string,
-): Promise<string> {
+): Promise<{ imageUrl: string; attempts: number }> {
   let lastError: unknown
   for (let attempt = 1; attempt <= SHOT_MAX_ATTEMPTS; attempt++) {
     try {
-      return await generate()
+      return { imageUrl: await generate(attempt), attempts: attempt }
     } catch (error) {
       lastError = error
       logger.warn('Influencer shot failed', {
@@ -81,38 +82,95 @@ export const generateInfluencer = schemaTask({
         niche: influencer.niche,
         directions: influencer.directions ?? influencer.bio,
       }
+      // Only fal-backed models accept seeds today; vercel/gpt-image ignores them.
+      const seedBase = model.modelProvider.toLowerCase().includes('fal')
+        ? influencer.identity.seed
+        : undefined
 
-      for (let i = 0; i < INFLUENCER_ANCHOR_SHOTS.length; i++) {
-        const shot = INFLUENCER_ANCHOR_SHOTS[i]!
-        const progress = Math.round(((i + 1) / shotCount) * 90)
-        setGenerationStatus(progress, `Generating ${shot.id.replace(/-/g, ' ')}`)
-
-        const prompt = buildInfluencerAnchorPrompt(baseFragment, shot, promptCtx)
-        // Portrait-anchor: first shot has no references; later shots use only the cover portrait.
-        const imageUrls = coverImageUrl ? [coverImageUrl] : undefined
-
-        const imageUrl = await generateShotWithRetry(
-          () =>
-            generateImage(
-              {
-                model: model.value,
-                provider: model.modelProvider,
-                prompt,
-                aspectRatio: shot.aspectRatio,
-                workspaceId: payload.workspaceId,
-                userId: payload.userId,
-                imageUrls,
-              },
-              setGenerationStatus,
-            ),
-          shot.id,
+      let completedShots = 0
+      const reportShotDone = () => {
+        completedShots += 1
+        setGenerationStatus(
+          Math.round(10 + (completedShots / shotCount) * 80),
+          `Rendered ${completedShots} of ${shotCount} anchors`,
         )
+      }
 
-        galleryImageUrls.push(imageUrl)
-        if (!coverImageUrl) {
-          coverImageUrl = imageUrl
-        }
+      const runShot = async (
+        shotIndex: number,
+        referenceUrls: string[] | undefined,
+        seedOffset = 0,
+      ): Promise<string> => {
+        const shot = INFLUENCER_ANCHOR_SHOTS[shotIndex]!
+        let prompt = ''
+        const { imageUrl, attempts } = await generateShotWithRetry(async attempt => {
+          // On retry: fresh seed and drop free-form scene notes (the most common realism-diluter).
+          const ctxForAttempt = attempt > 1 ? { niche: promptCtx.niche } : promptCtx
+          prompt = buildInfluencerAnchorPrompt(baseFragment, shot, ctxForAttempt)
+          return generateImage(
+            {
+              model: model.value,
+              provider: model.modelProvider,
+              prompt,
+              aspectRatio: shot.aspectRatio,
+              workspaceId: payload.workspaceId,
+              userId: payload.userId,
+              imageUrls: referenceUrls,
+              seed:
+                seedBase !== undefined
+                  ? seedBase + shotIndex * 1000 + seedOffset * 100 + (attempt - 1)
+                  : undefined,
+            },
+            shotIndex === 0 ? setGenerationStatus : undefined,
+          )
+        }, shot.id)
+        metadata.set(`shot_${shot.id}`, { prompt, imageUrl, attempts })
         await finalizeGeneration(payload.workspaceId, model)
+        reportShotDone()
+        return imageUrl
+      }
+
+      setGenerationStatus(5, 'Generating front portrait')
+      coverImageUrl = await runShot(0, undefined)
+      galleryImageUrls.push(coverImageUrl)
+
+      // Flag-gated: vision-check the anchor before chaining references off it.
+      if (process.env.INFLUENCER_COVER_QUALITY_GATE === 'true') {
+        try {
+          setGenerationStatus(20, 'Reviewing anchor portrait')
+          const quality = await evaluateAnchorPortrait(coverImageUrl)
+          metadata.set('shot_front-portrait_quality', quality)
+          if (!quality.pass) {
+            logger.warn('Anchor portrait failed quality gate, regenerating', {
+              influencerId: payload.influencerId,
+              reason: quality.reason,
+            })
+            // Regenerate once without the failed cover as reference, fresh seed.
+            coverImageUrl = await runShot(0, undefined, 1)
+            galleryImageUrls[0] = coverImageUrl
+          }
+        } catch (gateError) {
+          logger.warn('Anchor quality gate unavailable, continuing', {
+            error: gateError instanceof Error ? gateError.message : String(gateError),
+          })
+        }
+      }
+
+      // Remaining shots depend only on the cover portrait — run them in parallel.
+      // allSettled keeps successful shots when one fails, so credits spent are not lost.
+      const results = await Promise.allSettled(
+        INFLUENCER_ANCHOR_SHOTS.slice(1).map((_, i) => runShot(i + 1, [coverImageUrl!])),
+      )
+      let firstFailure: unknown
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          galleryImageUrls.push(result.value)
+        } else {
+          firstFailure ??= result.reason
+        }
+      }
+      if (firstFailure) {
+        throw firstFailure instanceof Error ? firstFailure : new Error('Anchor generation failed')
       }
 
       const updated = await updateInfluencer(payload.influencerId, {

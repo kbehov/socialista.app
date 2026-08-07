@@ -32,9 +32,10 @@ export async function generateImageFal({
   aspectRatio,
   imageUrl,
   imageUrls,
+  seed,
   onProgress,
 }: GenerateImageOptions): Promise<string> {
-  const input: Record<string, string> = {
+  const input: Record<string, string | number> = {
     prompt,
     aspect_ratio: aspectRatio,
   }
@@ -42,6 +43,10 @@ export async function generateImageFal({
   const referenceImage = imageUrl ?? imageUrls?.[0]
   if (referenceImage) {
     input.image_url = referenceImage
+  }
+
+  if (seed !== undefined) {
+    input.seed = seed
   }
 
   console.log('Submitting to fal', { model })

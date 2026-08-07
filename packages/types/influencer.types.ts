@@ -226,15 +226,18 @@ export type ExploreInfluencersQuery = {
   limit?: number
   sort?: InfluencerSort
   query?: string
-  gender?: InfluencerGender
-  ageRange?: InfluencerAgeRange
+  /** Single value or comma-separated list for `$in` matching. */
+  gender?: InfluencerGender | string
+  /** Single value or comma-separated list for `$in` matching. */
+  ageRange?: InfluencerAgeRange | string
   hairColor?: string
   hairStyle?: string
   eyeColor?: string
   skinTone?: string
   bodyShape?: string
   niche?: string | string[]
-  status?: InfluencerStatus
+  /** Single value or comma-separated list for `$in` matching. */
+  status?: InfluencerStatus | string
 }
 
 export type WorkspaceInfluencersQuery = ExploreInfluencersQuery & {

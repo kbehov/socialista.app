@@ -80,6 +80,8 @@ export type GenerateImageOptions = {
   userId: string
   imageUrl?: string
   imageUrls?: string[]
+  /** Passed through to providers that support deterministic seeds (fal). */
+  seed?: number
   onProgress?: (progress: number, label: string) => void
 }
 

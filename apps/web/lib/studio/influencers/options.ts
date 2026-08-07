@@ -29,6 +29,8 @@ export type ChoiceOption = {
   id: string
   label: string
   description?: string
+  /** Optional visual group heading for grouped chip rendering */
+  group?: string
 }
 
 export const GENDER_OPTIONS: ReadonlyArray<{ id: InfluencerGender; label: string }> = [
@@ -106,12 +108,15 @@ export const MAKEUP_OPTIONS: ReadonlyArray<{ id: InfluencerMakeupStyle; label: s
   { id: 'bold', label: 'Bold' },
 ]
 
-export const PHOTO_STYLE_OPTIONS: ReadonlyArray<{ id: InfluencerPhotoStyle; label: string; description?: string }> =
-  [
-    { id: 'ugc-phone', label: 'Phone UGC', description: 'Casual smartphone look' },
-    { id: 'creator-camera', label: 'Creator camera', description: 'Mirrorless / DSLR' },
-    { id: 'studio-polish', label: 'Studio polish', description: 'Clean studio light' },
-  ]
+export const PHOTO_STYLE_OPTIONS: ReadonlyArray<{
+  id: InfluencerPhotoStyle
+  label: string
+  description?: string
+}> = [
+  { id: 'ugc-phone', label: 'Phone UGC', description: 'Casual smartphone look' },
+  { id: 'creator-camera', label: 'Creator camera', description: 'Mirrorless / DSLR' },
+  { id: 'studio-polish', label: 'Studio polish', description: 'Clean studio light' },
+]
 
 /** Inclusive Fitzpatrick-inspired skin tone swatches */
 export const SKIN_TONE_OPTIONS: ReadonlyArray<SwatchOption> = [
@@ -149,16 +154,16 @@ export const EYE_COLOR_OPTIONS: ReadonlyArray<SwatchOption> = [
 ]
 
 export const HAIR_STYLE_OPTIONS: ReadonlyArray<ChoiceOption> = [
-  { id: 'straight long', label: 'Straight long' },
-  { id: 'straight short', label: 'Straight short' },
-  { id: 'wavy', label: 'Wavy' },
-  { id: 'curly', label: 'Curly' },
-  { id: 'coily', label: 'Coily' },
-  { id: 'bob', label: 'Bob' },
-  { id: 'pixie', label: 'Pixie' },
-  { id: 'braids', label: 'Braids' },
-  { id: 'bun', label: 'Bun' },
-  { id: 'slicked back', label: 'Slicked back' },
+  { id: 'straight long', label: 'Straight long', group: 'Straight' },
+  { id: 'straight short', label: 'Straight short', group: 'Straight' },
+  { id: 'wavy', label: 'Wavy', group: 'Textured' },
+  { id: 'curly', label: 'Curly', group: 'Textured' },
+  { id: 'coily', label: 'Coily', group: 'Textured' },
+  { id: 'bob', label: 'Bob', group: 'Cuts & updos' },
+  { id: 'pixie', label: 'Pixie', group: 'Cuts & updos' },
+  { id: 'braids', label: 'Braids', group: 'Cuts & updos' },
+  { id: 'bun', label: 'Bun', group: 'Cuts & updos' },
+  { id: 'slicked back', label: 'Slicked back', group: 'Cuts & updos' },
 ]
 
 export const BODY_SHAPE_OPTIONS: ReadonlyArray<ChoiceOption> = [
