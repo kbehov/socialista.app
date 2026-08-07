@@ -9,6 +9,8 @@ import {
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
+import { dashboardSurface } from '@/components/dashboard'
+import { PageHeader } from '@/components/headers/page-header'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
@@ -200,25 +202,26 @@ export function SlideshowList({
   }
 
   const draftCount = slideshows.length
+  const createAction = (
+    <Button asChild size="sm" className={dashboardSurface.createCta}>
+      <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}>
+        <PlusIcon className="size-4" strokeWidth={1.75} />
+        Create slideshow
+      </Link>
+    </Button>
+  )
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-1">
-      <header className="flex shrink-0 items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-base font-semibold tracking-tight">Slideshows</h1>
-          <p className="truncate text-xs text-muted-foreground">
-            {isLoading
-              ? 'Loading drafts…'
-              : `${draftCount} draft${draftCount === 1 ? '' : 's'} in ${workspaceName}`}
-          </p>
-        </div>
-        <Button size="sm" className="h-8 shrink-0 rounded-full px-3.5" asChild>
-          <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}>
-            <PlusIcon className="size-3.5" />
-            Create
-          </Link>
-        </Button>
-      </header>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <PageHeader
+        title="Slideshows"
+        description={
+          isLoading
+            ? 'Loading drafts…'
+            : `${draftCount === 1 ? '1 slideshow' : `${draftCount.toLocaleString()} slideshows`} in ${workspaceName}`
+        }
+        actions={createAction}
+      />
 
       {isLoading ? (
         <LoadingState message="Loading slideshows…" className="flex-1" />
@@ -226,7 +229,7 @@ export function SlideshowList({
         <ErrorState
           title={error}
           description="Try again or refresh the page."
-          className="flex-1"
+          className="flex-1 rounded-xl"
           action={
             <Button size="sm" variant="outline" onClick={() => void loadSlideshows()}>
               Retry
@@ -235,19 +238,14 @@ export function SlideshowList({
         />
       ) : slideshows.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
-          <span className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted">
-            <ImagesIcon className="size-5 text-muted-foreground" strokeWidth={1.5} />
+          <span className={cn('mb-4 flex items-center justify-center', dashboardSurface.emptyIcon)}>
+            <ImagesIcon className="text-muted-foreground" strokeWidth={1.5} />
           </span>
           <p className="text-sm font-semibold tracking-tight">Start your first slideshow</p>
           <p className="mt-1.5 max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
             Build carousel posts for Instagram, TikTok, and more — then save drafts here.
           </p>
-          <Button size="sm" className="mt-5 h-8 rounded-full px-4" asChild>
-            <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}>
-              <PlusIcon className="size-3.5" />
-              Create slideshow
-            </Link>
-          </Button>
+          <div className="mt-5">{createAction}</div>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">

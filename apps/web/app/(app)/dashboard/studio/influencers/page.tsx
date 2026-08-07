@@ -21,6 +21,7 @@ export default async function InfluencersPage() {
   return (
     <InfluencerList
       workspaceId={workspace.id}
+      workspaceName={workspace.name}
       initialInfluencers={influencers}
       initialError={error}
       initialHasMore={Boolean(response.meta?.hasNextPage)}

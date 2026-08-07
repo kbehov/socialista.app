@@ -32,6 +32,10 @@ export const dashboardSurface = {
     'rounded-2xl border border-border/60 bg-gradient-to-b from-muted/20 via-muted/10 to-transparent',
   emptyIcon: 'size-12 rounded-2xl border border-border/60 bg-background shadow-xs [&_svg]:size-5',
 
+  /** Primary page-header CTA — matches Posts / Accounts create actions */
+  createCta:
+    'h-9 rounded-full px-4 shadow-xs transition-all hover:-translate-y-px hover:shadow-sm active:translate-y-0 active:scale-[0.98]',
+
   metricLabel: 'text-[11px] font-medium tracking-tight text-muted-foreground',
   metricValue: 'text-xl font-semibold tracking-[-0.02em] tabular-nums text-foreground',
   metricValueSm: 'text-lg font-semibold tracking-[-0.02em] tabular-nums text-foreground',

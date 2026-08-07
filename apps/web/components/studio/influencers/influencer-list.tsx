@@ -51,6 +51,7 @@ type TabCache = {
 
 type InfluencerListProps = {
   workspaceId: string
+  workspaceName: string
   initialInfluencers: Influencer[]
   initialError?: string | null
   initialHasMore?: boolean
@@ -59,6 +60,7 @@ type InfluencerListProps = {
 
 export function InfluencerList({
   workspaceId,
+  workspaceName,
   initialInfluencers,
   initialError = null,
   initialHasMore = false,
@@ -237,21 +239,27 @@ export function InfluencerList({
     total === influencers.length
       ? `${total} ${total === 1 ? 'influencer' : 'influencers'}`
       : `${influencers.length} of ${total}`
+  const headerDescription =
+    tab === 'public'
+      ? total === 1
+        ? '1 public influencer'
+        : `${total.toLocaleString()} public influencers`
+      : total === 1
+        ? `1 influencer in ${workspaceName}`
+        : `${total.toLocaleString()} influencers in ${workspaceName}`
+
+  const createAction = (
+    <Button asChild size="sm" className={dashboardSurface.createCta}>
+      <Link href={DASHBOARD_ROUTES.STUDIO.INFLUENCER_CREATE}>
+        <PlusIcon className="size-4" strokeWidth={1.75} />
+        Create influencer
+      </Link>
+    </Button>
+  )
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <PageHeader
-        title="Influencers"
-        description="Consistent characters for image and video generations."
-        actions={
-          <Button asChild size="sm" className="h-8 gap-1.5 rounded-lg">
-            <Link href={DASHBOARD_ROUTES.STUDIO.INFLUENCER_CREATE}>
-              <PlusIcon className="size-3.5" strokeWidth={2} />
-              Create
-            </Link>
-          </Button>
-        }
-      />
+      <PageHeader title="Influencers" description={headerDescription} actions={createAction} />
 
       <div className="flex flex-col gap-5 pb-10">
         <div

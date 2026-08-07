@@ -15,7 +15,6 @@ import { Link2Icon, PenLineIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
-import { cn } from '@/lib/utils'
 import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
 type PostsPageProps = {
@@ -66,15 +65,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const meta = postsResponse.meta ?? defaultMeta
 
   const createAction = (
-    <Button
-      asChild
-      size="sm"
-      className={cn(
-        'h-9 rounded-full px-4 shadow-xs transition-all',
-        'hover:-translate-y-px hover:shadow-sm',
-        'active:translate-y-0 active:scale-[0.98]',
-      )}
-    >
+    <Button asChild size="sm" className={dashboardSurface.createCta}>
       <Link href={`${DASHBOARD_ROUTES.POSTS}/create`}>
         <PlusIcon className="size-4" strokeWidth={1.75} />
         Create post
