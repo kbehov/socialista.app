@@ -19,6 +19,7 @@ function mapCreateFields(input: CreateInfluencerInput) {
     bio: input.bio,
     directions: input.directions,
     niche: input.niche,
+    scenes: input.scenes,
     gender: input.gender,
     ageRange: input.ageRange,
     ethnicity: input.ethnicity,
@@ -38,6 +39,7 @@ function mapUpdateFields(updates: UpdateInfluencerInput): Record<string, unknown
 
   if (updates.name !== undefined) $set.name = updates.name
   if (updates.niche !== undefined) $set.niche = updates.niche
+  if (updates.scenes !== undefined) $set.scenes = updates.scenes
   if (updates.aestheticTags !== undefined) $set.aestheticTags = updates.aestheticTags
   if (updates.status !== undefined) $set.status = updates.status
   if (updates.galleryImageUrls !== undefined) $set.galleryImageUrls = updates.galleryImageUrls

@@ -24,7 +24,11 @@ type AudioSlot = {
   source: AudioBufferSourceNode
   gain: GainNode
   clipId: ClipId
+  trackId: string
+  baseVolume: number
 }
+
+const AUDIO_LOOKAHEAD_SEC = 30
 
 const previewSeekRef: { current: ((time: number) => void) | null } = { current: null }
 
@@ -84,11 +88,15 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   const imageSlotsRef = useRef<Map<ClipId, ImageSlot>>(new Map())
   const audioCtxRef = useRef<AudioContext | null>(null)
   const audioBuffersRef = useRef<Map<string, AudioBuffer>>(new Map())
+  const silentAudioAssetsRef = useRef<Set<string>>(new Set())
   const activeAudioSlotsRef = useRef<AudioSlot[]>([])
+  const scheduledAudioClipIdsRef = useRef<Set<ClipId>>(new Set())
+  const audioScheduleGenRef = useRef(0)
   const rafRef = useRef<number | null>(null)
   const startClockRef = useRef<number>(0)
   const startPlayheadRef = useRef<number>(0)
   const lastPlayheadStoreWriteRef = useRef<number>(0)
+  const lastAudioEnsureRef = useRef(0)
   const isBufferingRef = useRef(false)
   const [isBuffering, setIsBuffering] = useState(false)
 
@@ -188,9 +196,10 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
   }
 
   const ensureAudioBuffer = async (clip: Clip): Promise<AudioBuffer | null> => {
-    if (clip.type !== 'audio' && clip.type === 'image') return null
+    if (clip.type === 'image') return null
     const asset = getAsset(clip)
     if (!asset || !isMediaAssetAvailable(asset)) return null
+    if (silentAudioAssetsRef.current.has(asset.id)) return null
     const cached = audioBuffersRef.current.get(asset.id)
     if (cached) return cached
     const ctx = getAudioContext()
@@ -201,11 +210,13 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       audioBuffersRef.current.set(asset.id, audioBuffer)
       return audioBuffer
     } catch {
+      silentAudioAssetsRef.current.add(asset.id)
       return null
     }
   }
 
   const stopAllAudio = () => {
+    audioScheduleGenRef.current += 1
     for (const slot of activeAudioSlotsRef.current) {
       try {
         slot.source.stop()
@@ -216,6 +227,151 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       slot.gain.disconnect()
     }
     activeAudioSlotsRef.current = []
+    scheduledAudioClipIdsRef.current.clear()
+  }
+
+  const applyLiveVolume = (clipId: ClipId, volume: number) => {
+    const clamped = Math.max(0, Math.min(1, volume))
+    for (const slot of activeAudioSlotsRef.current) {
+      if (slot.clipId !== clipId) continue
+      slot.baseVolume = clamped
+      const ctx = getAudioContext()
+      if (!ctx) continue
+      try {
+        slot.gain.gain.cancelScheduledValues(ctx.currentTime)
+        slot.gain.gain.setValueAtTime(clamped, ctx.currentTime)
+      } catch {
+        // noop
+      }
+    }
+  }
+
+  const scheduleClipAudio = async (
+    clip: Clip,
+    fromTime: number,
+    generation: number,
+  ): Promise<void> => {
+    if (clip.type === 'image') return
+    if (clip.volume <= 0) return
+    if (scheduledAudioClipIdsRef.current.has(clip.id)) return
+
+    const state = useVideoEditorStore.getState()
+    const track = state.project.tracks.find(t => t.id === clip.trackId)
+    if (!track || track.muted) return
+
+    const asset = state.assets[clip.assetId]
+    if (!asset || !isMediaAssetAvailable(asset)) return
+
+    const clipEnd = clip.startTime + clip.duration
+    if (clipEnd <= fromTime) return
+    if (clip.startTime > fromTime + AUDIO_LOOKAHEAD_SEC) return
+
+    // Reserve before await so overlapping ensureUpcomingAudio calls don't double-start
+    scheduledAudioClipIdsRef.current.add(clip.id)
+
+    const buffer = await ensureAudioBuffer(clip)
+    if (generation !== audioScheduleGenRef.current) return
+    if (!buffer) {
+      scheduledAudioClipIdsRef.current.delete(clip.id)
+      return
+    }
+
+    const ctx = getAudioContext()
+    if (!ctx) {
+      scheduledAudioClipIdsRef.current.delete(clip.id)
+      return
+    }
+
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    const gain = ctx.createGain()
+    const targetVolume = clip.volume
+    const offsetInClip = Math.max(0, fromTime - clip.startTime)
+    const whenStart = ctx.currentTime + Math.max(0, clip.startTime - fromTime)
+    const remainingTimeline = Math.max(0, clip.duration - offsetInClip)
+
+    if (clip.type === 'video') {
+      const speed = clip.speed ?? 1
+      source.playbackRate.value = speed
+      const startInBuffer = clip.trimIn + offsetInClip * speed
+      const bufferDuration = remainingTimeline * speed
+      gain.gain.setValueAtTime(targetVolume, whenStart)
+      source.connect(gain).connect(ctx.destination)
+      try {
+        source.start(whenStart, Math.max(0, startInBuffer), Math.max(0, bufferDuration))
+        activeAudioSlotsRef.current.push({
+          source,
+          gain,
+          clipId: clip.id,
+          trackId: clip.trackId,
+          baseVolume: targetVolume,
+        })
+      } catch {
+        scheduledAudioClipIdsRef.current.delete(clip.id)
+      }
+      return
+    }
+
+    const startInBuffer = clip.trimIn + offsetInClip
+    gain.gain.setValueAtTime(targetVolume, whenStart)
+    if (clip.fadeIn && clip.fadeIn > 0 && offsetInClip < clip.fadeIn) {
+      gain.gain.setValueAtTime(0, whenStart)
+      gain.gain.linearRampToValueAtTime(targetVolume, whenStart + (clip.fadeIn - offsetInClip))
+    }
+    if (clip.fadeOut && clip.fadeOut > 0) {
+      const fadeStart = whenStart + (remainingTimeline - clip.fadeOut)
+      if (fadeStart > whenStart) {
+        gain.gain.setValueAtTime(targetVolume, fadeStart)
+        gain.gain.linearRampToValueAtTime(0, fadeStart + clip.fadeOut)
+      }
+    }
+    source.connect(gain).connect(ctx.destination)
+    try {
+      source.start(whenStart, Math.max(0, startInBuffer), Math.max(0, remainingTimeline))
+      activeAudioSlotsRef.current.push({
+        source,
+        gain,
+        clipId: clip.id,
+        trackId: clip.trackId,
+        baseVolume: targetVolume,
+      })
+    } catch {
+      scheduledAudioClipIdsRef.current.delete(clip.id)
+    }
+  }
+
+  const scheduleAudioWindow = async (fromTime: number, reset: boolean) => {
+    if (reset) {
+      stopAllAudio()
+    }
+    const generation = audioScheduleGenRef.current
+    const state = useVideoEditorStore.getState()
+    const ctx = getAudioContext()
+    if (!ctx) return
+
+    const tasks: Promise<void>[] = []
+    for (const track of state.project.tracks) {
+      if (track.muted) continue
+      for (const clipId of track.clips) {
+        const clip = state.project.clips[clipId]
+        if (!clip || clip.type === 'image') continue
+        if (clip.type !== 'audio' && clip.type !== 'video') continue
+        tasks.push(scheduleClipAudio(clip, fromTime, generation))
+      }
+    }
+    await Promise.all(tasks)
+  }
+
+  const scheduleAudioAt = async (fromTime: number) => {
+    await scheduleAudioWindow(fromTime, true)
+  }
+
+  const ensureUpcomingAudio = (fromTime: number) => {
+    // eslint-disable-next-line react-hooks/purity -- throttle wall-clock reads during RAF
+    const now = performance.now()
+    if (now - lastAudioEnsureRef.current < 500) return
+    lastAudioEnsureRef.current = now
+    void scheduleAudioWindow(fromTime, false)
   }
 
   const stopAllVideo = () => {
@@ -373,6 +529,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
         }
       }
     }
+    ensureUpcomingAudio(newTime)
     rafRef.current = requestAnimationFrame(tick)
   }
 
@@ -396,56 +553,9 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     // eslint-disable-next-line react-hooks/purity -- playback start records wall clock
     lastPlayheadStoreWriteRef.current = performance.now()
     // Schedule audio for active clips
-    scheduleAudioAt(useVideoEditorStore.getState().playhead)
+    void scheduleAudioAt(useVideoEditorStore.getState().playhead)
     play()
     rafRef.current = requestAnimationFrame(tick)
-  }
-
-  const scheduleAudioAt = async (fromTime: number) => {
-    stopAllAudio()
-    const state = useVideoEditorStore.getState()
-    const ctx = getAudioContext()
-    if (!ctx) return
-    for (const track of state.project.tracks) {
-      if (track.muted) continue
-      for (const clipId of track.clips) {
-        const clip = state.project.clips[clipId]
-        if (!clip || clip.type !== 'audio') continue
-        const asset = state.assets[clip.assetId]
-        if (!asset || !isMediaAssetAvailable(asset)) continue
-        const clipEnd = clip.startTime + clip.duration
-        if (clipEnd <= fromTime) continue
-        if (clip.startTime > fromTime + 5) continue // schedule near-future only
-        const buffer = await ensureAudioBuffer(clip)
-        if (!buffer) continue
-        const source = ctx.createBufferSource()
-        source.buffer = buffer
-        const gain = ctx.createGain()
-        const targetVolume = clip.volume
-        const offsetInClip = Math.max(0, fromTime - clip.startTime)
-        const startInBuffer = clip.trimIn + offsetInClip
-        const whenStart = ctx.currentTime + Math.max(0, clip.startTime - fromTime)
-        gain.gain.setValueAtTime(targetVolume, whenStart)
-        if (clip.fadeIn && clip.fadeIn > 0 && offsetInClip < clip.fadeIn) {
-          gain.gain.setValueAtTime(0, whenStart)
-          gain.gain.linearRampToValueAtTime(targetVolume, whenStart + (clip.fadeIn - offsetInClip))
-        }
-        if (clip.fadeOut && clip.fadeOut > 0) {
-          const fadeStart = whenStart + (clip.duration - offsetInClip - clip.fadeOut)
-          if (fadeStart > whenStart) {
-            gain.gain.setValueAtTime(targetVolume, fadeStart)
-            gain.gain.linearRampToValueAtTime(0, fadeStart + clip.fadeOut)
-          }
-        }
-        source.connect(gain).connect(ctx.destination)
-        try {
-          source.start(whenStart, Math.max(0, startInBuffer), Math.max(0, clip.duration - offsetInClip))
-          activeAudioSlotsRef.current.push({ source, gain, clipId: clip.id })
-        } catch {
-          // noop
-        }
-      }
-    }
   }
 
   const stopPlayback = () => {
@@ -519,6 +629,33 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying])
 
+  // Live volume updates while audio is playing
+  useEffect(() => {
+    return useVideoEditorStore.subscribe((state, prev) => {
+      if (!state.isPlaying) return
+      for (const slot of activeAudioSlotsRef.current) {
+        const clip = state.project.clips[slot.clipId]
+        const prevClip = prev.project.clips[slot.clipId]
+        if (!clip || !prevClip) continue
+        if (clip.volume === prevClip.volume) continue
+        applyLiveVolume(slot.clipId, clip.volume)
+      }
+    })
+  }, [])
+
+  // Reschedule audio when track mute toggles during playback
+  useEffect(() => {
+    return useVideoEditorStore.subscribe((state, prev) => {
+      if (!state.isPlaying) return
+      const muteKey = state.project.tracks.map(t => `${t.id}:${t.muted ? 1 : 0}`).join('|')
+      const prevMuteKey = prev.project.tracks.map(t => `${t.id}:${t.muted ? 1 : 0}`).join('|')
+      if (muteKey === prevMuteKey) return
+      const playheadTime =
+        startPlayheadRef.current + (performance.now() - startClockRef.current) / 1000
+      void scheduleAudioAt(playheadTime)
+    })
+  }, [])
+
   // React to playhead seeks and visual property changes while paused
   useEffect(() => {
     if (isPlaying) return
@@ -584,6 +721,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     const videoSlots = videoSlotsRef.current
     const imageSlots = imageSlotsRef.current
     const audioBuffers = audioBuffersRef.current
+    const silentAssets = silentAudioAssetsRef.current
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
       for (const slot of videoSlots.values()) {
@@ -594,6 +732,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
       imageSlots.clear()
       stopAllAudio()
       audioBuffers.clear()
+      silentAssets.clear()
       if (audioCtxRef.current) {
         void audioCtxRef.current.close()
         audioCtxRef.current = null

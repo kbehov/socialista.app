@@ -5,12 +5,15 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ArrowDown,
   ArrowUp,
+  Baby,
   Briefcase,
   Camera,
+  Car,
   CircleDot,
   CircleUser,
   CircleUserRound,
   ClipboardCheck,
+  Coffee,
   Droplets,
   Dumbbell,
   Eye,
@@ -23,33 +26,46 @@ import {
   Globe,
   GraduationCap,
   Hammer,
+  Headphones,
   Heart,
+  Home,
+  Images,
+  Laptop,
   Laugh,
   Lightbulb,
   LineChart,
   MapPin,
   MessageSquare,
+  Mic,
   Minus,
+  Monitor,
   Mountain,
   Newspaper,
   Palette,
   PawPrint,
   PenLine,
   PersonStanding,
+  Plane,
+  Pointer,
   ScanFace,
   Scissors,
   Settings2,
   Shirt,
+  ShoppingBag,
   Smartphone,
+  Snowflake,
   Sparkles,
   Sprout,
+  Store,
   Sun,
   Target,
   User,
   UserRound,
   UtensilsCrossed,
+  Watch,
   Waves,
   Wind,
+  Wine,
   Wrench,
   Zap,
 } from 'lucide-react'
@@ -111,6 +127,11 @@ export const PHOTO_STYLE_ICONS: Record<string, LucideIcon> = {
   'studio-polish': Lightbulb,
 }
 
+export const SHOT_PACK_ICONS: Record<string, LucideIcon> = {
+  quick: Zap,
+  'ugc-kit': Images,
+}
+
 export const FACIAL_HAIR_ICONS: Record<string, LucideIcon> = {
   none: Minus,
   stubble: ScanFace,
@@ -133,6 +154,58 @@ export const FEATURE_ICONS: Record<string, LucideIcon> = {
   piercings: Gem,
   dimples: Laugh,
   'beauty mark': CircleDot,
+}
+
+export const SCENE_ICONS: Record<string, LucideIcon> = {
+  home: Home,
+  'kitchen-cooking': UtensilsCrossed,
+  'bedroom-morning': Sun,
+  'bathroom-vanity': Droplets,
+  'coffee-shop': Coffee,
+  restaurant: Wine,
+  'podcast-setup': Mic,
+  gym: Dumbbell,
+  yoga: Heart,
+  'outdoor-run': Mountain,
+  airport: Plane,
+  plane: Plane,
+  car: Car,
+  'hotel-room': Home,
+  beach: Waves,
+  street: MapPin,
+  snow: Snowflake,
+  'winter-city': Snowflake,
+  store: Store,
+  'farmers-market': Sprout,
+  'streaming-desk': Monitor,
+  'asmr-desk': Mic,
+  'mirror-ootd': Smartphone,
+  'product-hook': Target,
+  'pointing-reveal': Pointer,
+  'sitting-testimonial': MessageSquare,
+  'pregnant-bump': Baby,
+}
+
+export const ACCESSORY_ICONS: Record<string, LucideIcon> = {
+  headphones: Headphones,
+  glasses: Glasses,
+  sunglasses: Sun,
+  hat: CircleDot,
+  beanie: CircleDot,
+  bag: ShoppingBag,
+  jewelry: Gem,
+  watch: Watch,
+  scarf: Wind,
+  candle: Flame,
+  mic: Mic,
+  phone: Smartphone,
+  laptop: Laptop,
+  dumbbell: Dumbbell,
+  'coffee-cup': Coffee,
+  'water-bottle': Droplets,
+  'skincare-bottle': Sparkles,
+  pet: PawPrint,
+  'shopping-bag': ShoppingBag,
 }
 
 export const GENDER_ICONS: Record<string, LucideIcon> = {
@@ -165,8 +238,12 @@ export const FIELD_ICONS = {
   makeup: Sparkles,
   features: Fingerprint,
   photoStyle: Camera,
+  shotPack: Images,
   aesthetic: Sparkles,
+  scenes: MapPin,
+  accessories: ShoppingBag,
   directions: FileText,
+  model: Zap,
   advanced: Settings2,
 } as const satisfies Record<string, LucideIcon>
 
@@ -178,6 +255,8 @@ export const PREVIEW_SECTION_ICONS = {
   vibe: Sparkles,
   direction: FileText,
   details: Fingerprint,
+  scenes: MapPin,
+  accessories: ShoppingBag,
 } as const satisfies Record<string, LucideIcon>
 
 export const WIZARD_STEP_ICONS: Record<number, LucideIcon> = {
@@ -193,11 +272,14 @@ export type OptionIconGroup =
   | 'hairStyle'
   | 'bodyShape'
   | 'photoStyle'
+  | 'shotPack'
   | 'facialHair'
   | 'makeup'
   | 'feature'
   | 'gender'
   | 'height'
+  | 'scene'
+  | 'accessory'
 
 const ICON_MAPS: Record<OptionIconGroup, Record<string, LucideIcon>> = {
   niche: NICHE_ICONS,
@@ -205,11 +287,14 @@ const ICON_MAPS: Record<OptionIconGroup, Record<string, LucideIcon>> = {
   hairStyle: HAIR_STYLE_ICONS,
   bodyShape: BODY_SHAPE_ICONS,
   photoStyle: PHOTO_STYLE_ICONS,
+  shotPack: SHOT_PACK_ICONS,
   facialHair: FACIAL_HAIR_ICONS,
   makeup: MAKEUP_ICONS,
   feature: FEATURE_ICONS,
   gender: GENDER_ICONS,
   height: HEIGHT_ICONS,
+  scene: SCENE_ICONS,
+  accessory: ACCESSORY_ICONS,
 }
 
 export function getOptionIcon(group: OptionIconGroup, id: string): LucideIcon | undefined {

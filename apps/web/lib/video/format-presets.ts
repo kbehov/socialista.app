@@ -121,7 +121,7 @@ export const VIDEO_FORMAT_PRESETS = [
     id: 'linkedin-landscape',
     label: 'Landscape',
     platform: 'LinkedIn',
-    dimensions: { width: 1200, height: 627 },
+    dimensions: { width: 1200, height: 628 },
     safeZone: LANDSCAPE_SAFE_ZONE,
   },
   {

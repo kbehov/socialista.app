@@ -6,11 +6,14 @@ import {
   InfluencerHeight,
   InfluencerIdentityMethod,
   InfluencerPhotoStyle,
+  InfluencerShotPack,
   InfluencerSource,
   InfluencerStatus,
   InfluencerVisibility,
   type IInfluencer,
   type InfluencerAppearance,
+  type InfluencerCharacterSheet,
+  type InfluencerGalleryShot,
   type InfluencerIdentity,
 } from '../types/influencer.types.js'
 
@@ -25,6 +28,28 @@ const appearanceSchema = new Schema<InfluencerAppearance>(
     distinguishingFeatures: { type: [String], default: undefined },
     facialHair: { type: String },
     makeup: { type: String },
+    accessories: { type: [String], default: undefined },
+  },
+  { _id: false },
+)
+
+const characterSheetSchema = new Schema<InfluencerCharacterSheet>(
+  {
+    identityLock: { type: String, required: true },
+    signatureDetails: { type: [String], default: [] },
+    wardrobe: {
+      type: new Schema(
+        {
+          casual: { type: String, required: true },
+          onCamera: { type: String, required: true },
+          active: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
+    environments: { type: [String], default: [] },
+    expressionRange: { type: [String], default: [] },
   },
   { _id: false },
 )
@@ -41,6 +66,17 @@ const identitySchema = new Schema<InfluencerIdentity>(
     basePromptFragment: { type: String, required: true },
     referenceImageUrls: { type: [String], default: [] },
     loraModelId: { type: String },
+    characterSheet: { type: characterSheetSchema },
+    shotPack: { type: String, enum: enumValues(InfluencerShotPack) },
+  },
+  { _id: false },
+)
+
+const galleryShotSchema = new Schema<InfluencerGalleryShot>(
+  {
+    shotId: { type: String, required: true },
+    url: { type: String, required: true },
+    aspectRatio: { type: String, required: true },
   },
   { _id: false },
 )
@@ -65,6 +101,7 @@ const influencerSchema = new Schema<IInfluencer>(
     bio: { type: String },
     directions: { type: String },
     niche: { type: [String], default: [], index: true },
+    scenes: { type: [String], default: undefined },
     gender: {
       type: String,
       enum: enumValues(InfluencerGender),
@@ -94,6 +131,7 @@ const influencerSchema = new Schema<IInfluencer>(
     },
     coverImageUrl: { type: String },
     galleryImageUrls: { type: [String], default: [] },
+    galleryShots: { type: [galleryShotSchema], default: undefined },
     usageCount: { type: Number, default: 0 },
     error: { type: String },
   },

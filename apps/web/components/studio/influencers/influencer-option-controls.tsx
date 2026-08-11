@@ -404,13 +404,19 @@ export function FormSection({
 }
 
 /** Vertical stack of fields with separators between groups. */
-export function FormFieldStack({ children }: { children: React.ReactNode }) {
+export function FormFieldStack({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   const items = Array.isArray(children) ? children.filter(Boolean) : [children]
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-5', className)}>
       {items.map((child, index) => (
         <div key={index}>
-          {index > 0 ? <Separator className="mb-6 bg-border/40" /> : null}
+          {index > 0 ? <Separator className="mb-5 bg-border/40" /> : null}
           {child}
         </div>
       ))}

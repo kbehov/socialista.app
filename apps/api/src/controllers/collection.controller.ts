@@ -1,4 +1,4 @@
-import { ALLOWED_MIME_TYPES, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '@/config/api.config.js'
+import { ALLOWED_MIME_TYPES, MAX_AUDIO_SIZE, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '@/config/api.config.js'
 import { deleteObjectFromR2, getObjectSizeFromR2, uploadBufferToR2 } from '@/lib/aws.js'
 import type { AppContext } from '@/middlewares/auth.middleware.js'
 import { withQueryParam, getQueryString, parseParamId } from '@/utils/common.utils.js'
@@ -73,9 +73,95 @@ type ProcessedFile = {
   height: number
 }
 
+function maxSizeForMime(mimeType: string): number {
+  if (mimeType.startsWith('image/')) return MAX_IMAGE_SIZE
+  if (mimeType.startsWith('audio/')) return MAX_AUDIO_SIZE
+  return MAX_VIDEO_SIZE
+}
+
+function extensionForMime(mimeType: string): string {
+  switch (mimeType) {
+    case 'audio/mpeg':
+    case 'audio/mp3':
+      return 'mp3'
+    case 'audio/mp4':
+    case 'audio/x-m4a':
+      return 'm4a'
+    case 'audio/aac':
+      return 'aac'
+    case 'audio/wav':
+    case 'audio/wave':
+    case 'audio/x-wav':
+      return 'wav'
+    case 'audio/ogg':
+      return 'ogg'
+    case 'audio/webm':
+      return 'webm'
+    case 'audio/flac':
+    case 'audio/x-flac':
+      return 'flac'
+    case 'video/mp4':
+      return 'mp4'
+    case 'video/webm':
+      return 'webm'
+    case 'video/ogg':
+      return 'ogv'
+    default:
+      return mimeType.split('/')[1] ?? 'bin'
+  }
+}
+
+function inferMimeFromFileName(name: string): string | null {
+  const ext = name.includes('.') ? name.split('.').pop()?.toLowerCase() : undefined
+  if (!ext) return null
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg'
+    case 'png':
+      return 'image/png'
+    case 'webp':
+      return 'image/webp'
+    case 'gif':
+      return 'image/gif'
+    case 'avif':
+      return 'image/avif'
+    case 'svg':
+      return 'image/svg+xml'
+    case 'mp4':
+      return 'video/mp4'
+    case 'webm':
+      return 'video/webm'
+    case 'ogv':
+      return 'video/ogg'
+    case 'mp3':
+      return 'audio/mpeg'
+    case 'm4a':
+      return 'audio/mp4'
+    case 'aac':
+      return 'audio/aac'
+    case 'wav':
+      return 'audio/wav'
+    case 'ogg':
+    case 'oga':
+      return 'audio/ogg'
+    case 'flac':
+      return 'audio/flac'
+    default:
+      return null
+  }
+}
+
+function resolveUploadMimeType(file: File): string {
+  if (file.type && ALLOWED_MIME_TYPES.has(file.type)) return file.type
+  const inferred = inferMimeFromFileName(file.name)
+  if (inferred && ALLOWED_MIME_TYPES.has(inferred)) return inferred
+  return file.type
+}
+
 // Validate the file from FormData and process it:
 //   - Images → converted to WebP via sharp (lossless-safe quality 85) and dimensions extracted
-//   - Videos → passed through as-is with placeholder 0×0 dimensions
+//   - Videos / audio → passed through as-is with placeholder 0×0 dimensions
 async function processFile(c: Context<AppContext>): Promise<ProcessedFile> {
   const formData = await c.req.formData()
   const file = formData.get('file')
@@ -83,17 +169,17 @@ async function processFile(c: Context<AppContext>): Promise<ProcessedFile> {
   if (!file || !(file instanceof File)) {
     throw new HttpError(400, 'File is required')
   }
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+  const mimeType = resolveUploadMimeType(file)
+  if (!ALLOWED_MIME_TYPES.has(mimeType)) {
     throw new HttpError(400, 'Invalid file type')
   }
-  const maxSize = file.type.startsWith('image/') ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE
-  if (file.size > maxSize) {
+  if (file.size > maxSizeForMime(mimeType)) {
     throw new HttpError(400, 'File size exceeds the maximum size')
   }
 
   const rawBuffer = Buffer.from(await file.arrayBuffer())
 
-  if (file.type.startsWith('image/')) {
+  if (mimeType.startsWith('image/')) {
     const sharpInstance = sharp(rawBuffer)
     const { width, height } = await sharpInstance.metadata()
 
@@ -108,9 +194,14 @@ async function processFile(c: Context<AppContext>): Promise<ProcessedFile> {
     return { buffer: webpBuffer, mimeType: 'image/webp', ext: 'webp', width, height }
   }
 
-  // Video: preserve original format, dimensions are not extracted client-side
-  const ext = file.type.split('/')[1] ?? 'mp4'
-  return { buffer: rawBuffer, mimeType: file.type, ext, width: 0, height: 0 }
+  // Video / audio: preserve original format, dimensions are not extracted
+  return {
+    buffer: rawBuffer,
+    mimeType,
+    ext: extensionForMime(mimeType),
+    width: 0,
+    height: 0,
+  }
 }
 
 async function resolveStoredFileSize(image: Pick<IImage, 'key' | 'size'>): Promise<number> {

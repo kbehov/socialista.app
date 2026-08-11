@@ -12,7 +12,7 @@ import type {
 } from '@socialista/types'
 import type { IVideo } from '@socialista/db'
 import { buildFilterGraph, type ClipInput } from './build-filter-complex.js'
-import { runFfmpeg } from './ffmpeg.js'
+import { probeHasAudioStream, runFfmpeg } from './ffmpeg.js'
 import { renderOverlayPngs } from './render-text-overlays.js'
 
 const QUALITY_CRF: Record<ExportSettings['quality'], number> = {
@@ -56,6 +56,21 @@ async function downloadToFile(url: string, dest: string): Promise<void> {
   await writeFile(dest, buffer)
 }
 
+function extensionForAsset(asset: SerializedMediaAsset): string {
+  if (asset.url) {
+    try {
+      const pathname = new URL(asset.url).pathname
+      const ext = pathname.split('.').pop()?.toLowerCase()
+      if (ext && /^[a-z0-9]{2,5}$/.test(ext)) return ext
+    } catch {
+      // ignore invalid URLs
+    }
+  }
+  if (asset.type === 'image') return 'png'
+  if (asset.type === 'audio') return 'mp3'
+  return 'mp4'
+}
+
 async function prepareClipInputs(
   project: Project,
   workDir: string,
@@ -78,8 +93,7 @@ async function prepareClipInputs(
 
       let fsPath = downloaded.get(asset.id)
       if (!fsPath) {
-        const ext =
-          asset.type === 'image' ? 'png' : asset.type === 'audio' ? 'audio' : 'video'
+        const ext = extensionForAsset(asset)
         fsPath = path.join(workDir, `input_${asset.id}.${ext}`)
         downloaded.set(asset.id, fsPath)
         downloads.push(downloadToFile(asset.url, fsPath))
@@ -96,6 +110,24 @@ async function prepareClipInputs(
   }
 
   await Promise.all(downloads)
+
+  const probed = new Map<string, boolean>()
+  await Promise.all(
+    [...downloaded.entries()].map(async ([assetId, fsPath]) => {
+      probed.set(assetId, await probeHasAudioStream(fsPath))
+    }),
+  )
+
+  for (const input of clipInputs) {
+    const asset = assetsById.get(input.clip.assetId)
+    if (!asset) continue
+    if (input.isImage) {
+      input.hasAudioStream = false
+      continue
+    }
+    input.hasAudioStream = probed.get(asset.id) ?? false
+  }
+
   return clipInputs
 }
 

@@ -68,7 +68,6 @@ export const cloneInfluencer = schemaTask({
         ageRange: request.ageRange,
         ethnicity: request.ethnicity,
         appearance,
-        aestheticTags: request.aestheticTags,
       })
 
       setGenerationStatus(15, 'Creating influencer profile')

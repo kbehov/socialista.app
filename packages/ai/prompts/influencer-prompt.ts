@@ -1,9 +1,13 @@
 import type {
+  AspectRatio,
   InfluencerAgeRange,
   InfluencerAppearance,
+  InfluencerCharacterSheet,
   InfluencerGender,
   InfluencerHeight,
   InfluencerPhotoStyle,
+  InfluencerShotId,
+  InfluencerShotPack,
 } from '@socialista/types'
 
 export type InfluencerPromptAppearance = Pick<
@@ -17,6 +21,7 @@ export type InfluencerPromptAppearance = Pick<
   | 'distinguishingFeatures'
   | 'facialHair'
   | 'makeup'
+  | 'accessories'
 >
 
 export type BuildInfluencerBasePromptInput = {
@@ -25,10 +30,8 @@ export type BuildInfluencerBasePromptInput = {
   ageRange: InfluencerAgeRange
   ethnicity?: string
   appearance: InfluencerPromptAppearance
-  aestheticTags?: string[]
-  directions?: string
-  bio?: string
-  photoStyle?: InfluencerPhotoStyle
+  /** When present, identityLock + signatureDetails drive the fragment. */
+  characterSheet?: InfluencerCharacterSheet
 }
 
 const GENDER_LABEL: Record<InfluencerGender, string> = {
@@ -58,131 +61,370 @@ const MAKEUP_PROMPT_LABEL: Record<string, string> = {
   bold: 'bold makeup',
 }
 
-const PHOTO_STYLE_CLAUSE: Record<InfluencerPhotoStyle, string> = {
+const PHOTO_STYLE_CUE: Record<InfluencerPhotoStyle, string> = {
   'ugc-phone':
-    "Shot on a modern smartphone front camera: arm's-length casual framing, slight wide-angle distortion, on-device HDR processing, subtle phone-camera noise — authentic UGC energy.",
+    'Casual smartphone UGC look — slight wide-angle, natural phone HDR, scroll-stopping TikTok/IG authenticity.',
   'creator-camera':
-    'Shot on a mirrorless creator camera with a 35mm f/1.8 look: clean natural light, shallow depth of field, natural color science — professional but candid social content.',
+    'Creator mirrorless look — shallow depth, intentional framing, still lived-in and real.',
   'studio-polish':
-    'Polished studio portrait with an 85mm f/2.8 look: large soft key light at a 45° angle, subtle fill and gentle rim light, clean backdrop with soft falloff — photoreal, not over-retouched.',
+    'Polished creator lighting — flattering key light with a lived-in set, not a blank backdrop.',
+}
+
+export type InfluencerScenePrompt = {
+  environment: string
+  wardrobeHint?: string
+  actionCue?: string
+}
+
+/** Concrete UGC scene expansions — IDs alone are too thin for photoreal prompts. */
+export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
+  home: {
+    environment:
+      'cozy apartment living room with morning window light, plants, and soft everyday clutter',
+    wardrobeHint: 'elevated casual lounge layers',
+  },
+  'kitchen-cooking': {
+    environment:
+      'lived-in kitchen counter with ingredients, warm window sidelight, and a skillet softly out of focus',
+    wardrobeHint: 'casual kitchen clothes, maybe a soft apron',
+    actionCue: 'mid-cooking, natural hands-busy energy',
+  },
+  'bedroom-morning': {
+    environment: 'sunlit bedroom with rumpled linen bedding and soft morning window glow',
+    wardrobeHint: 'soft loungewear or sleep-to-day layers',
+  },
+  'bathroom-vanity': {
+    environment:
+      'bright bathroom vanity with soft mirror glow, skincare bottles softly blurred, daylight from a side window',
+    wardrobeHint: 'simple top that frames the face',
+  },
+  'coffee-shop': {
+    environment:
+      'neighborhood café booth with warm interior bokeh, a latte on the table, soft window sidelight',
+    wardrobeHint: 'everyday café-casual layers',
+    actionCue: 'relaxed mid-conversation energy',
+  },
+  restaurant: {
+    environment:
+      'casual restaurant table with warm ambient light, plates and glasses softly out of focus',
+    wardrobeHint: 'polished casual dinner outfit',
+  },
+  'podcast-setup': {
+    environment:
+      'podcast corner with a boom mic and acoustic panels softly behind, warm desk lamp key light',
+    wardrobeHint: 'smart-casual on-camera layers',
+    actionCue: 'talking into mic, engaged speaking face',
+  },
+  gym: {
+    environment:
+      'sunlit gym floor with mirrors and equipment softly blurred, realistic workout atmosphere',
+    wardrobeHint: 'fitted activewear without visible logos',
+    actionCue: 'between sets, confident athletic ease',
+  },
+  yoga: {
+    environment: 'yoga mat corner by a large window with warm daylight and calm plant bokeh',
+    wardrobeHint: 'soft mindful athleisure',
+    actionCue: 'grounded post-flow stillness',
+  },
+  'outdoor-run': {
+    environment: 'outdoor running path at golden hour with soft green and asphalt bokeh',
+    wardrobeHint: 'breathable running layers',
+    actionCue: 'post-run glow, natural stride pause',
+  },
+  airport: {
+    environment:
+      'airport terminal seating with large windows, soft travel-day light, luggage softly behind',
+    wardrobeHint: 'comfortable travel-ready layers',
+  },
+  plane: {
+    environment: 'airplane cabin window seat with soft daylight on face and aisle bokeh behind',
+    wardrobeHint: 'comfortable flight layers',
+  },
+  car: {
+    environment:
+      'car interior passenger or driver seat, soft daylight through windshield, candid commute vibe',
+    wardrobeHint: 'everyday driving layers',
+    actionCue: 'talking to phone camera, car-selfie energy',
+  },
+  'hotel-room': {
+    environment: 'hotel room with crisp bedding, warm lamp light, and city view soft in the window',
+    wardrobeHint: 'travel-casual layers',
+  },
+  beach: {
+    environment: 'sunny beach with soft ocean and sand bokeh, natural daylight, wind in hair',
+    wardrobeHint: 'light beach-ready clothes',
+  },
+  street: {
+    environment:
+      'city sidewalk with soft daylight and shallow storefront bokeh, real street atmosphere',
+    wardrobeHint: 'curated street-style outfit',
+  },
+  snow: {
+    environment: 'snowy outdoor path with cold daylight, soft snow fall or snow banks behind',
+    wardrobeHint: 'winter coat and scarf-ready layers',
+  },
+  'winter-city': {
+    environment: 'winter city street with cool daylight, breath in air, festive storefronts soft behind',
+    wardrobeHint: 'layered winter city outfit',
+  },
+  store: {
+    environment:
+      'retail aisle or boutique corner with soft overhead light and product shelves in shallow bokeh',
+    wardrobeHint: 'casual shopping outfit',
+    actionCue: 'product discovery / haul energy',
+  },
+  'farmers-market': {
+    environment:
+      'farmers-market stall with produce color, soft outdoor daylight, canvas tents softly behind',
+    wardrobeHint: 'weekend market casual layers',
+  },
+  'streaming-desk': {
+    environment:
+      'streamer desk with soft RGB ambient glow, monitor and mic softly behind, night creator vibe',
+    wardrobeHint: 'relaxed hoodie or gamer-casual tee',
+  },
+  'asmr-desk': {
+    environment:
+      'quiet desk setup with soft key light, mic close, candle or small props softly framed',
+    wardrobeHint: 'soft on-camera layers',
+    actionCue: 'intimate close speaking energy',
+  },
+  'mirror-ootd': {
+    environment: 'bedroom or hallway mirror corner with natural daylight and lived-in home ambience',
+    wardrobeHint: 'outfit-of-the-day look',
+    actionCue: 'mirror check pose with phone in hand',
+  },
+  'product-hook': {
+    environment:
+      'bright lived-in creator space with soft key light, plain unbranded product ready to feature',
+    wardrobeHint: 'clean on-camera casual',
+    actionCue: 'holding product toward camera, scroll-stopping hook face',
+  },
+  'pointing-reveal': {
+    environment: 'clean creator corner with soft daylight and enough negative space for a reveal',
+    wardrobeHint: 'simple layers that keep hands visible',
+    actionCue: 'pointing off-frame or at a product, surprised reveal expression',
+  },
+  'sitting-testimonial': {
+    environment:
+      'seated couch or café booth with warm interior light and soft environmental depth',
+    wardrobeHint: 'approachable everyday layers',
+    actionCue: 'leaning slightly forward mid-testimonial',
+  },
+  'pregnant-bump': {
+    environment: 'soft home living room with warm window light, gentle maternity-friendly framing',
+    wardrobeHint: 'comfortable maternity-friendly clothes',
+    actionCue: 'natural hand-on-bump moment, soft smile',
+  },
+}
+
+/** Accessory prompt phrases locked into identity when selected. */
+export const INFLUENCER_ACCESSORY_PROMPTS: Record<string, string> = {
+  headphones: 'over-ear headphones resting around the neck or on ears',
+  glasses: 'thin clear-lens eyeglasses',
+  sunglasses: 'stylish sunglasses',
+  hat: 'casual brimmed hat',
+  beanie: 'soft knit beanie',
+  bag: 'everyday shoulder bag or crossbody',
+  jewelry: 'subtle everyday jewelry (thin hoops or a simple necklace)',
+  watch: 'minimal wristwatch',
+  scarf: 'soft scarf loosely worn',
+  candle: 'holding or beside a lit candle',
+  mic: 'podcast or creator microphone nearby',
+  phone: 'smartphone in hand',
+  laptop: 'open laptop nearby',
+  dumbbell: 'small dumbbell in hand or nearby',
+  'coffee-cup': 'takeaway coffee cup in hand',
+  'water-bottle': 'reusable water bottle in hand',
+  'skincare-bottle': 'plain unbranded skincare bottle in hand',
+  pet: 'friendly pet nearby (soft focus when not the subject)',
+  'shopping-bag': 'paper shopping bag in hand',
+}
+
+function expandAccessories(accessories: string[] | undefined): string[] {
+  if (!accessories?.length) return []
+  return accessories
+    .map(id => INFLUENCER_ACCESSORY_PROMPTS[id] ?? id.replace(/-/g, ' '))
+    .filter(Boolean)
+}
+
+/** Dedupe distinguishing features that overlap with accessories (e.g. glasses). */
+function featuresWithoutAccessoryOverlap(
+  features: string[] | undefined,
+  accessories: string[] | undefined,
+): string[] {
+  if (!features?.length) return []
+  if (!accessories?.length) return features
+  const accessorySet = new Set(accessories.map(a => a.toLowerCase()))
+  return features.filter(feature => {
+    const lower = feature.toLowerCase()
+    if (accessorySet.has(lower)) return false
+    if (lower.includes('glasses') && (accessorySet.has('glasses') || accessorySet.has('sunglasses'))) {
+      return false
+    }
+    return true
+  })
 }
 
 export type InfluencerNicheScene = {
-  outfits: string
-  settings: string
-  props: string
+  wardrobe: string[]
+  environments: string[]
 }
 
-/** Concrete UGC-flavored scene descriptors keyed by niche. */
+/**
+ * Niche wardrobe + atmosphere cues.
+ * Environments should read as a real creator’s world — not a passport studio wall.
+ */
 export const INFLUENCER_NICHE_SCENES: Record<string, InfluencerNicheScene> = {
   fitness: {
-    outfits: 'athletic wear or gym-ready activewear',
-    settings: 'a gym floor, home workout corner, or outdoor running path',
-    props: 'a water bottle, yoga mat, or resistance bands nearby',
+    wardrobe: ['fitted activewear with subtle branding-free details', 'athleisure training set'],
+    environments: [
+      'sunlit gym floor with mirrors and equipment softly blurred behind',
+      'outdoor running path at golden hour',
+      'home workout corner with a yoga mat and window light',
+    ],
   },
   fashion: {
-    outfits: 'a curated street-style or editorial outfit that matches their vibe',
-    settings: 'a city sidewalk, boutique interior, or loft with clean walls',
-    props: 'a tote bag, coffee cup, or shopping bag as a natural prop',
+    wardrobe: ['curated street-style outfit', 'elevated everyday layers with a statement piece'],
+    environments: [
+      'city sidewalk with soft daylight and shallow bokeh storefronts',
+      'industrial loft with concrete and large windows',
+      'boutique fitting-room mirror corner with warm lamps',
+    ],
   },
   beauty: {
-    outfits: 'a flattering top that keeps focus on face and skin',
-    settings: 'a bright bathroom vanity, bedroom mirror, or soft daylight desk',
-    props: 'skincare bottles or a makeup palette subtly in frame',
+    wardrobe: ['simple top that frames the face', 'soft crewneck that keeps focus on skin and hair'],
+    environments: [
+      'bright bathroom vanity with ring-adjacent daylight and soft mirror glow',
+      'bedroom vanity table with skincare bottles softly out of focus',
+      'sunlit makeup desk with a window and plants in the background',
+    ],
   },
   travel: {
-    outfits: 'comfortable travel-ready clothes suited to the climate',
-    settings: 'an outdoor landmark, café terrace, or scenic overlook',
-    props: 'a camera, backpack, or passport wallet as a natural detail',
+    wardrobe: ['linen travel layers', 'comfortable travel-ready clothes with a light jacket'],
+    environments: [
+      'scenic overlook at golden hour with distant landscape bokeh',
+      'café terrace abroad with warm afternoon light',
+      'cobblestone street with soft travel-day ambience',
+    ],
   },
   tech: {
-    outfits: 'smart-casual creator attire',
-    settings: 'a desk setup, co-working loft, or modern apartment interior',
-    props: 'a laptop, phone, or earbuds casually visible',
+    wardrobe: ['smart-casual hoodie', 'clean creator tee under an open overshirt'],
+    environments: [
+      'modern desk setup with dual monitors softly glowing',
+      'co-working loft with glass and plants behind',
+      'home office nook with a laptop and warm desk lamp',
+    ],
   },
   food: {
-    outfits: 'casual everyday clothes',
-    settings: 'a kitchen counter, restaurant table, or farmers market stall',
-    props: 'a plated dish, coffee, or cooking utensil in frame',
+    wardrobe: ['casual clothes with a soft apron', 'everyday kitchen casual'],
+    environments: [
+      'cozy kitchen counter with ingredients and warm window light',
+      'sunlit dining table with plated food softly blurred',
+      'farmers-market stall with produce color in the background',
+    ],
   },
   gaming: {
-    outfits: 'relaxed gamer-casual wear or branded hoodie',
-    settings: 'a gaming desk with RGB ambient light or a living-room setup',
-    props: 'a headset, controller, or monitor glow in the background',
+    wardrobe: ['relaxed hoodie', 'gamer-casual tee'],
+    environments: [
+      'RGB-lit desk setup with soft ambient glow behind',
+      'living-room couch gaming corner at night',
+      'streamer desk with microphone and monitor bokeh',
+    ],
   },
   lifestyle: {
-    outfits: 'everyday elevated casual clothes',
-    settings: 'a cozy apartment, café, or neighborhood street',
-    props: 'a coffee cup, book, or plant as soft lifestyle detail',
+    wardrobe: ['elevated casual layers', 'soft sweater and jeans'],
+    environments: [
+      'cozy apartment living room with morning window light',
+      'neighborhood café with warm interior bokeh',
+      'sunlit balcony with plants and city haze beyond',
+    ],
   },
   business: {
-    outfits: 'smart-casual or polished professional attire',
-    settings: 'a modern office, co-working space, or clean desk nook',
-    props: 'a notebook, laptop, or coffee cup nearby',
+    wardrobe: ['smart-casual blazer', 'polished business-casual'],
+    environments: [
+      'modern glass office with daylight and soft skyline bokeh',
+      'clean desk nook with a laptop and notebook',
+      'city café meeting corner with warm interior light',
+    ],
   },
   comedy: {
-    outfits: 'expressive casual clothes with personality',
-    settings: 'a lived-in living room, kitchen, or outdoor stoop',
-    props: 'everyday objects they might riff on casually nearby',
+    wardrobe: ['expressive casual clothes', 'graphic tee under an open shirt'],
+    environments: [
+      'lived-in living room with playful everyday clutter',
+      'kitchen with everyday mess and overhead light',
+      'hallway mirror corner with casual home ambience',
+    ],
   },
   wellness: {
-    outfits: 'soft loungewear or mindful athleisure',
-    settings: 'a calm bedroom, yoga corner, or sunlit balcony',
-    props: 'a journal, candle, or tea mug nearby',
+    wardrobe: ['soft loungewear', 'mindful athleisure'],
+    environments: [
+      'sunlit bedroom morning with linen bedding soft behind',
+      'calm balcony with plants and soft outdoor light',
+      'yoga mat corner by a large window with warm daylight',
+    ],
   },
   finance: {
-    outfits: 'clean smart-casual or business-casual attire',
-    settings: 'a tidy desk, home office, or modern café workspace',
-    props: 'a laptop, notepad, or phone with charts softly out of focus',
+    wardrobe: ['clean smart-casual', 'neat sweater over a collared shirt'],
+    environments: [
+      'tidy home office with charts soft on a monitor',
+      'modern workspace with daylight and a clean desk',
+      'quiet café booth with a laptop and notebook',
+    ],
   },
   parenting: {
-    outfits: 'comfortable everyday parent clothes',
-    settings: 'a family kitchen, living room, or park playground edge',
-    props: 'soft family-life details without focusing on children\'s faces',
+    wardrobe: ['comfortable everyday parent clothes', 'practical casual layers'],
+    environments: [
+      'family kitchen with soft morning light',
+      'lived-in living room with toys softly out of focus',
+      'park bench path with green bokeh behind',
+    ],
   },
   pets: {
-    outfits: 'casual outdoor or home clothes',
-    settings: 'a park path, backyard, or cozy living room',
-    props: 'a leash, pet toy, or pet bed nearby',
+    wardrobe: ['casual outdoor clothes', 'walk-ready layers'],
+    environments: [
+      'park path with soft green bokeh',
+      'cozy living room with a pet bed softly behind',
+      'sunny backyard porch with natural light',
+    ],
   },
   education: {
-    outfits: 'approachable smart-casual clothes',
-    settings: 'a study desk, classroom corner, or library nook',
-    props: 'books, sticky notes, or a tablet nearby',
+    wardrobe: ['approachable smart-casual', 'cardigan over a simple top'],
+    environments: [
+      'study desk with books and warm daylight',
+      'library nook with soft bookshelf bokeh',
+      'classroom whiteboard soft behind a teaching desk',
+    ],
   },
   diy: {
-    outfits: 'practical casual clothes suited for making things',
-    settings: 'a workshop bench, craft table, or garage workspace',
-    props: 'tools, materials, or a project in progress nearby',
+    wardrobe: ['practical making clothes', 'apron over casual layers'],
+    environments: [
+      'workshop bench with tools softly out of focus',
+      'craft table by a window with materials and warm light',
+      'garage makerspace with wood and tools in soft bokeh',
+    ],
   },
 }
 
-/**
- * Minimal exclusion footer. Keep it short and positively framed — long "no X"
- * negation lists are poorly attended by image models and often introduce the
- * artifact they name. Realism is enforced by positive cues in the base fragment.
- */
+/** Short photoreal footer — positive cues only. */
 export const INFLUENCER_EXCLUSIONS =
-  'Clean photograph, free of any text, captions, watermarks, logos, or UI overlays.'
+  'Photoreal, unretouched skin with visible pores and natural asymmetry. No text, watermarks, logos, branded marks, or UI. Avoid blank studio seamless, passport-photo framing, celebrity likeness, and sterile empty walls. Prefer real UGC environments with believable depth.'
 
 /**
- * Locked identity prose reused on every subsequent generation for this influencer.
- * Ordered in semantic blocks (identity → face → hair → body → realism → style)
- * with positive photoreal cues instead of keyword-soup or negations.
+ * Locked identity prose — reused byte-identical on every shot.
+ * Scene / camera / wardrobe belong only in the short shot suffix + scene line.
  */
 export function buildInfluencerBasePromptFragment(input: BuildInfluencerBasePromptInput): string {
-  const { name, gender, ageRange, ethnicity, appearance, aestheticTags, directions, bio, photoStyle } =
-    input
+  const { name, gender, ageRange, ethnicity, appearance, characterSheet } = input
   const person = GENDER_LABEL[gender]
   const age = AGE_REPRESENTATIVE[ageRange]
   const height = appearance.height ? `, ${HEIGHT_LABEL[appearance.height]}` : ''
   const ethnicityClause = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
-  const features =
-    appearance.distinguishingFeatures && appearance.distinguishingFeatures.length > 0
-      ? `, ${appearance.distinguishingFeatures.join(', ')}`
-      : ''
-  const aesthetic =
-    aestheticTags && aestheticTags.length > 0 ? ` Overall vibe leans ${aestheticTags.join(', ')}.` : ''
+  const featureList = featuresWithoutAccessoryOverlap(
+    appearance.distinguishingFeatures,
+    appearance.accessories,
+  )
+  const features = featureList.length > 0 ? `, ${featureList.join(', ')}` : ''
 
   const facialHair =
     appearance.facialHair && appearance.facialHair !== 'none'
@@ -193,82 +435,254 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
       ? ` ${MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`}.`
       : ''
 
-  const creativeDirection = (directions?.trim() || bio?.trim() || '').trim()
-  const directionClause = creativeDirection ? ` Creative direction: ${creativeDirection}.` : ''
+  const accessoryPhrases = expandAccessories(appearance.accessories)
+  const accessoriesClause =
+    accessoryPhrases.length > 0 ? ` Accessories: ${accessoryPhrases.join('; ')}.` : ''
 
-  const styleKey: InfluencerPhotoStyle = photoStyle ?? 'ugc-phone'
-  const photoClause = PHOTO_STYLE_CLAUSE[styleKey]
+  const subject = `${name} is a ${age}-year-old ${person}${ethnicityClause}, a real social-media creator.`
+
+  if (characterSheet) {
+    const signatures =
+      characterSheet.signatureDetails.length > 0
+        ? ` Signature: ${characterSheet.signatureDetails.join('; ')}.`
+        : ''
+    return (
+      `${subject} ${characterSheet.identityLock}${signatures}` +
+      ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
+      ` Body: ${appearance.bodyShape} build${height}.${accessoriesClause}` +
+      ` Natural skin texture, believable real-world light.`
+    )
+  }
 
   return (
-    `${name} is a ${age}-year-old ${person}${ethnicityClause} — a real social-media creator.` +
-    ` Face: ${appearance.skinTone} skin with natural texture, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
-    ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}, with a few loose flyaway strands at the hairline.` +
-    ` Body: ${appearance.bodyShape} build${height}.` +
-    ` Photorealistic candid photograph of a real person: visible skin pores, subtle facial asymmetry,` +
-    ` natural skin sheen, soft real-world lighting with gentle shadows.` +
-    ` ${photoClause}${aesthetic}${directionClause}`
+    `${subject}` +
+    ` Face: ${appearance.skinTone} skin, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
+    ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
+    ` Body: ${appearance.bodyShape} build${height}.${accessoriesClause}` +
+    ` Natural skin texture, believable real-world light.`
   )
 }
 
-export type InfluencerAnchorShot = {
-  id: 'front-portrait' | 'three-quarter' | 'full-body' | 'lifestyle'
-  aspectRatio: '1:1' | '9:16'
+export type InfluencerWardrobeSlot = 'casual' | 'onCamera' | 'active'
+
+export type InfluencerShot = {
+  id: InfluencerShotId
+  label: string
+  aspectRatio: AspectRatio
+  /** Tight 1–2 sentence IG / TikTok / Pinterest camera direction. */
   promptSuffix: string
+  wardrobeSlot: InfluencerWardrobeSlot
+  /** When true, append wardrobe + setting from niche / character sheet. */
+  useNicheScene?: boolean
 }
 
-export const INFLUENCER_ANCHOR_SHOTS: InfluencerAnchorShot[] = [
+/**
+ * Shot library tuned for Instagram / TikTok / Pinterest creator aesthetics.
+ * Keep suffixes short — models attend better to ~2 sentences than prompt soup.
+ * Cover shots still prioritize a sharp face, but place the creator in a niche world.
+ */
+export const INFLUENCER_SHOT_LIBRARY: InfluencerShot[] = [
   {
     id: 'front-portrait',
+    label: 'Front portrait',
     aspectRatio: '1:1',
     promptSuffix:
-      'Front-facing head-and-shoulders portrait at eye level with an 85mm portrait lens look, relaxed neutral expression with a hint of a smile, looking directly at camera, soft diffused window light from the side, plain indoor background gently out of focus. Visible skin pores, natural catchlights in the eyes, loose flyaway hairs. Identity anchor: the face must be sharp, fully visible, and evenly lit.',
+      'Instagram profile cover: head-and-shoulders, eye-level 85mm look, sharp face as identity anchor, calm half-smile to camera. Soft environmental depth behind — a niche-true setting, never a blank wall.',
+    wardrobeSlot: 'casual',
+    useNicheScene: true,
   },
   {
     id: 'three-quarter',
+    label: 'Three-quarter',
     aspectRatio: '1:1',
     promptSuffix:
-      'Same person, three-quarter turn from the chest up, genuine candid laugh mid-conversation, 50mm lens look, natural daylight from a different direction than the anchor portrait, shallow depth of field. Same face and features — identity must hold under the new angle and lighting.',
+      'Pinterest lifestyle portrait: chest-up three-quarter turn, candid mid-laugh, 50mm shallow depth, natural daylight with readable environment behind. Same face and features as the cover.',
+    wardrobeSlot: 'casual',
+    useNicheScene: true,
   },
   {
     id: 'full-body',
+    label: 'Full body',
     aspectRatio: '9:16',
     promptSuffix:
-      'Same person, full-body standing portrait framed head-to-shoes with breathing room, 35mm lens at eye level, relaxed natural stance with weight shifted to one leg, real environment softly lit. Authentic creator photo, same face and body proportions.',
+      'TikTok / Reels full-body vertical: head-to-shoes with breathing room, 35mm eye-level, relaxed weight-on-one-leg stance, environment tells the creator vibe. Same person.',
+    wardrobeSlot: 'casual',
+    useNicheScene: true,
   },
   {
-    id: 'lifestyle',
+    id: 'selfie-talking',
+    label: 'Selfie talking',
     aspectRatio: '9:16',
     promptSuffix:
-      'Same person mid-moment in a real environment — walking, reaching, or sipping a drink — caught candidly on a phone camera, slight motion energy, natural imperfect framing. Unmistakably the same person.',
+      "TikTok talking-head selfie: arm's-length phone front camera, face in upper third, eyes locked to lens, mid-sentence expression, slight wide-angle HDR phone look. Authentic UGC in a lived-in niche space.",
+    wardrobeSlot: 'onCamera',
+    useNicheScene: true,
+  },
+  {
+    id: 'product-hold',
+    label: 'Product hold',
+    aspectRatio: '9:16',
+    promptSuffix:
+      'UGC product review frame: chest-up vertical, holding a plain unbranded bottle or box at chest height toward camera, friendly explainer look, soft key light, niche-relevant backdrop softly behind. Same person.',
+    wardrobeSlot: 'onCamera',
+    useNicheScene: true,
+  },
+  {
+    id: 'seated-testimonial',
+    label: 'Seated testimonial',
+    aspectRatio: '1:1',
+    promptSuffix:
+      'Instagram testimonial square: seated mid-shot with headroom for captions, leaning slightly forward mid-conversation, warm speaking expression, environment matches the creator niche. Same person.',
+    wardrobeSlot: 'onCamera',
+    useNicheScene: true,
+  },
+  {
+    id: 'outdoor-walk',
+    label: 'Outdoor walk',
+    aspectRatio: '9:16',
+    promptSuffix:
+      'TikTok day-in-the-life vertical: walking toward camera outdoors, natural stride, soft daylight, candid glance to camera, location fits the niche. Same face and body.',
+    wardrobeSlot: 'active',
+    useNicheScene: true,
+  },
+  {
+    id: 'mirror-ootd',
+    label: 'Mirror OOTD',
+    aspectRatio: '9:16',
+    promptSuffix:
+      'Instagram OOTD mirror selfie: full-length reflection, phone visible in hand, bedroom or hallway daylight, casual outfit-check pose that feels on-brand for the niche. Same person.',
+    wardrobeSlot: 'casual',
+    useNicheScene: true,
   },
 ]
 
-export type BuildInfluencerAnchorPromptContext = {
+const QUICK_SHOT_IDS: InfluencerShotId[] = ['front-portrait', 'three-quarter', 'full-body']
+
+/** UGC kit = quick identity floor + 3 creator formats (6 total). */
+const UGC_KIT_SHOT_IDS: InfluencerShotId[] = [
+  'front-portrait',
+  'three-quarter',
+  'full-body',
+  'selfie-talking',
+  'product-hold',
+  'mirror-ootd',
+]
+
+const SHOT_BY_ID = new Map(INFLUENCER_SHOT_LIBRARY.map(shot => [shot.id, shot]))
+
+/** Resolve ordered shots for a pack. */
+export function getInfluencerShotsForPack(pack: InfluencerShotPack): InfluencerShot[] {
+  const ids = pack === 'ugc-kit' ? UGC_KIT_SHOT_IDS : QUICK_SHOT_IDS
+  return ids.map(id => {
+    const shot = SHOT_BY_ID.get(id)
+    if (!shot) throw new Error(`Unknown influencer shot: ${id}`)
+    return shot
+  })
+}
+
+/** @deprecated Prefer getInfluencerShotsForPack */
+export const INFLUENCER_ANCHOR_SHOTS: InfluencerShot[] = getInfluencerShotsForPack('quick')
+
+export type InfluencerAnchorShot = InfluencerShot
+
+export type BuildInfluencerShotPromptContext = {
   niche?: string[]
-  directions?: string
+  scenes?: string[]
+  accessories?: string[]
+  aestheticTags?: string[]
+  characterSheet?: InfluencerCharacterSheet
+  photoStyle?: InfluencerPhotoStyle
+  /** Rotate wardrobe/environment picks across the pack. */
+  shotIndex?: number
 }
 
-function nicheSceneClause(niche: string[] | undefined, shotId: InfluencerAnchorShot['id']): string {
-  if (shotId !== 'full-body' && shotId !== 'lifestyle') return ''
-  const primary = niche?.[0]
-  if (!primary) return ''
-  const scene = INFLUENCER_NICHE_SCENES[primary]
-  if (!scene) return ''
-  return ` Wearing ${scene.outfits}, located in ${scene.settings}, with ${scene.props}.`
+function pickFromArray<T>(items: T[] | undefined, index: number): T | undefined {
+  if (!items || items.length === 0) return undefined
+  return items[index % items.length]
 }
 
-/** Combine locked identity fragment with a shot-specific pose/scene. */
+function capitalizeSentence(value: string): string {
+  return value.replace(/^./, c => c.toUpperCase())
+}
+
+function expandUserScene(sceneId: string | undefined): InfluencerScenePrompt | undefined {
+  if (!sceneId) return undefined
+  return INFLUENCER_SCENE_PROMPTS[sceneId]
+}
+
+/** One wardrobe + setting line — scene / niche atmosphere without diluting identity. */
+function sceneLine(shot: InfluencerShot, ctx?: BuildInfluencerShotPromptContext): string {
+  if (!shot.useNicheScene) return ''
+
+  const index = ctx?.shotIndex ?? 0
+  const sheetWardrobe = ctx?.characterSheet?.wardrobe?.[shot.wardrobeSlot]
+  const sheetEnv = pickFromArray(ctx?.characterSheet?.environments, index)
+
+  if (sheetWardrobe || sheetEnv) {
+    const parts = [
+      sheetWardrobe ? `wearing ${sheetWardrobe}` : null,
+      sheetEnv ? `in ${sheetEnv}` : null,
+    ].filter(Boolean)
+    return parts.length ? ` ${capitalizeSentence(parts.join(', '))}.` : ''
+  }
+
+  const userScenes = ctx?.scenes?.filter(Boolean) ?? []
+  if (userScenes.length > 0) {
+    const scene = expandUserScene(pickFromArray(userScenes, index))
+    if (scene) {
+      const parts = [
+        scene.wardrobeHint ? `wearing ${scene.wardrobeHint}` : null,
+        `in ${scene.environment}`,
+        scene.actionCue ?? null,
+      ].filter(Boolean)
+      return parts.length ? ` ${capitalizeSentence(parts.join(', '))}.` : ''
+    }
+  }
+
+  const niches = ctx?.niche?.filter(Boolean) ?? []
+  const primary = niches[0]
+  const secondary = niches[1]
+  const primaryScene = primary ? INFLUENCER_NICHE_SCENES[primary] : undefined
+  const secondaryScene = secondary ? INFLUENCER_NICHE_SCENES[secondary] : undefined
+
+  const outfit =
+    pickFromArray(primaryScene?.wardrobe, index) ??
+    pickFromArray(secondaryScene?.wardrobe, index)
+  // Prefer primary env, but borrow secondary when rotating for pack variety.
+  const setting =
+    pickFromArray(primaryScene?.environments, index) ??
+    pickFromArray(secondaryScene?.environments, index)
+
+  const parts = [
+    outfit ? `wearing ${outfit}` : null,
+    setting ? `in ${setting}` : null,
+  ].filter(Boolean)
+
+  return parts.length ? ` ${capitalizeSentence(parts.join(', '))}.` : ''
+}
+
+function vibeLine(ctx?: BuildInfluencerShotPromptContext): string {
+  const bits: string[] = []
+  if (ctx?.photoStyle) {
+    bits.push(PHOTO_STYLE_CUE[ctx.photoStyle])
+  }
+  const aesthetics = ctx?.aestheticTags?.filter(Boolean).slice(0, 2)
+  if (aesthetics && aesthetics.length > 0) {
+    bits.push(`Aesthetic vibe: ${aesthetics.join(', ')}.`)
+  }
+  return bits.length ? ` ${bits.join(' ')}` : ''
+}
+
+/**
+ * identity (fixed) + short shot suffix + niche scene + optional vibe cues.
+ * No LLM per image — string concat only.
+ */
 export function buildInfluencerAnchorPrompt(
   basePromptFragment: string,
-  shot: InfluencerAnchorShot,
-  ctx?: BuildInfluencerAnchorPromptContext,
+  shot: InfluencerShot,
+  ctx?: BuildInfluencerShotPromptContext,
 ): string {
-  const nicheClause = nicheSceneClause(ctx?.niche, shot.id)
-  const direction =
-    ctx?.directions?.trim() && (shot.id === 'full-body' || shot.id === 'lifestyle')
-      ? ` Scene notes: ${ctx.directions.trim()}.`
-      : ''
-  return `${basePromptFragment} ${shot.promptSuffix}${nicheClause}${direction} ${INFLUENCER_EXCLUSIONS}`
+  return `${basePromptFragment} ${shot.promptSuffix}${sceneLine(shot, ctx)}${vibeLine(ctx)} ${INFLUENCER_EXCLUSIONS}`
 }
 
 export type BuildCloneCoverPromptInput = {
@@ -280,11 +694,11 @@ export type BuildCloneCoverPromptInput = {
 export function buildCloneCoverPrompt(input: BuildCloneCoverPromptInput): string {
   const suffix =
     input.promptSuffix ??
-    'Front-facing head-and-shoulders portrait, neutral expression, soft natural light, plain background.'
+    'Front-facing head-and-shoulders portrait, soft natural light, sharp face, with a lived-in creator environment softly behind — not a blank studio wall.'
   return (
     `A photoreal portrait of ${input.name}, matching the person in the reference photos exactly —` +
     ` same face, skin tone, hair, and body proportions. ${suffix}` +
-    ` Real camera look: natural skin texture with visible pores, soft real-world lighting, no beauty-filter smoothing.` +
+    ` Real camera look: natural skin texture with visible pores, soft real-world lighting.` +
     ` ${INFLUENCER_EXCLUSIONS}`
   )
 }

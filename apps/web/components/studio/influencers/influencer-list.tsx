@@ -3,7 +3,7 @@
 import { InfluencerCard } from '@/components/cards/influencer-card'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
-import { dashboardSurface, DashboardSegment, DashboardSegmentButton } from '@/components/dashboard'
+import { DashboardSegment, DashboardSegmentButton, dashboardSurface } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import { Filters, type Filter } from '@/components/reui/filters'
 import { Button } from '@/components/ui/button'
@@ -18,11 +18,7 @@ import {
   type InfluencerListTab,
 } from '@/lib/studio/influencers/influencer-filters'
 import { cn } from '@/lib/utils'
-import {
-  deleteInfluencer,
-  exploreInfluencers,
-  getWorkspaceInfluencers,
-} from '@/services/influencer.service'
+import { deleteInfluencer, exploreInfluencers, getWorkspaceInfluencers } from '@/services/influencer.service'
 import type { ExploreInfluencersQuery, Influencer } from '@socialista/types'
 import {
   CompassIcon,
@@ -76,12 +72,9 @@ export function InfluencerList({
   const [filters, setFilters] = useState<Filter<string>[]>([])
   const deferredSearch = useDeferredValue(search)
   const [pending, startTransition] = useTransition()
-  const [loadingMore, setLoadingMore] = useState(false)
   const skipInitialFetch = useRef(true)
   const requestIdRef = useRef(0)
   const loadingMoreRef = useRef(false)
-  const pageRef = useRef(page)
-  const hasMoreRef = useRef(hasMore)
   const cacheRef = useRef<Record<InfluencerListTab, TabCache>>({
     mine: {
       influencers: initialInfluencers,
@@ -92,14 +85,7 @@ export function InfluencerList({
     public: { influencers: [], page: 1, hasMore: true, total: 0 },
   })
 
-  pageRef.current = page
-  hasMoreRef.current = hasMore
-  loadingMoreRef.current = loadingMore
-
-  const filterFields = useMemo(
-    () => buildInfluencerFilterFields({ includeStatus: tab === 'mine' }),
-    [tab],
-  )
+  const filterFields = useMemo(() => buildInfluencerFilterFields({ includeStatus: tab === 'mine' }), [tab])
   const hasFilters = hasActiveInfluencerFilters(filters)
   const filterQuery = useMemo(() => filtersToInfluencerQuery(filters), [filters])
   const activeFilterCount = filters.filter(f => f.values.length > 0).length
@@ -121,9 +107,7 @@ export function InfluencerList({
       const query = buildQuery(pageNum)
 
       const response =
-        forTab === 'public'
-          ? await exploreInfluencers(query)
-          : await getWorkspaceInfluencers(workspaceId, query)
+        forTab === 'public' ? await exploreInfluencers(query) : await getWorkspaceInfluencers(workspaceId, query)
 
       if (requestId !== requestIdRef.current) return
 
@@ -138,8 +122,7 @@ export function InfluencerList({
 
       const nextItems = response.data?.influencers ?? []
       const nextHasMore = Boolean(response.meta?.hasNextPage)
-      const nextTotal =
-        typeof response.meta?.total === 'number' ? response.meta.total : undefined
+      const nextTotal = typeof response.meta?.total === 'number' ? response.meta.total : undefined
 
       setError(null)
       setPage(pageNum)
@@ -148,8 +131,7 @@ export function InfluencerList({
       setInfluencers(prev => {
         const merged = mode === 'append' ? [...prev, ...nextItems] : nextItems
         const resolvedTotal =
-          nextTotal ??
-          (mode === 'append' ? Math.max(cacheRef.current[forTab].total, merged.length) : merged.length)
+          nextTotal ?? (mode === 'append' ? Math.max(cacheRef.current[forTab].total, merged.length) : merged.length)
 
         cacheRef.current[forTab] = {
           influencers: merged,
@@ -166,8 +148,7 @@ export function InfluencerList({
 
   useEffect(() => {
     const query = deferredSearch.trim()
-    const isPristineMine =
-      tab === 'mine' && !query && !hasActiveInfluencerFilters(filters)
+    const isPristineMine = tab === 'mine' && !query && !hasActiveInfluencerFilters(filters)
 
     if (skipInitialFetch.current && isPristineMine) {
       skipInitialFetch.current = false
@@ -185,12 +166,12 @@ export function InfluencerList({
   }, [deferredSearch, filters, tab, workspaceId, fetchPage])
 
   const fetchMore = useCallback(() => {
-    if (pending || loadingMoreRef.current || !hasMoreRef.current) return
-    setLoadingMore(true)
-    void fetchPage(pageRef.current + 1, 'append', tab).finally(() => {
-      setLoadingMore(false)
+    if (pending || loadingMoreRef.current || !hasMore) return
+    loadingMoreRef.current = true
+    void fetchPage(page + 1, 'append', tab).finally(() => {
+      loadingMoreRef.current = false
     })
-  }, [fetchPage, pending, tab])
+  }, [fetchPage, hasMore, page, pending, tab])
 
   function handleTabChange(next: InfluencerListTab) {
     if (next === tab) return
@@ -413,13 +394,7 @@ function InfluencerGrid({
   }
 
   if (influencers.length === 0) {
-    return (
-      <InfluencerEmptyState
-        tab={tab}
-        emptyContext={emptyContext}
-        onClearFilters={onClearFilters}
-      />
-    )
+    return <InfluencerEmptyState tab={tab} emptyContext={emptyContext} onClearFilters={onClearFilters} />
   }
 
   return (
@@ -435,7 +410,7 @@ function InfluencerGrid({
     >
       <ul
         className={cn(
-          'grid grid-cols-1 gap-x-4 gap-y-7 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
+          'grid grid-cols-1 gap-x-4 gap-y-7 sm:grid-cols-2 md:grid-cols-3  lg:grid-cols-5',
           pending && 'opacity-60 transition-opacity duration-150',
         )}
       >

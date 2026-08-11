@@ -12,9 +12,19 @@ export const ALLOWED_MIME_TYPES = new Set([
   'video/mp4',
   'video/webm',
   'video/ogg',
-  'video/mp4',
-  'video/webm',
-  'video/ogg',
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/ogg',
+  'audio/webm',
+  'audio/flac',
+  'audio/x-flac',
 ])
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10 MiB (original, before conversion)
 export const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50 MiB (original, before conversion)
+export const MAX_AUDIO_SIZE = 50 * 1024 * 1024 // 50 MiB

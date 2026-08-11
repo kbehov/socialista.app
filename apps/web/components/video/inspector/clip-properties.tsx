@@ -198,16 +198,18 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
         </div>
       </div>
 
-      <Slider
-        label="Volume"
-        min={0}
-        max={1}
-        step={0.01}
-        value={clip.volume}
-        onChange={v => setClipVolumeLive(clip.id, v)}
-        onCommit={v => setClipVolume(clip.id, v)}
-        format={v => `${Math.round(v * 100)}%`}
-      />
+      {(clip.type === 'audio' || clip.type === 'video') && (
+        <Slider
+          label="Volume"
+          min={0}
+          max={1}
+          step={0.01}
+          value={clip.volume}
+          onChange={v => setClipVolumeLive(clip.id, v)}
+          onCommit={v => setClipVolume(clip.id, v)}
+          format={v => `${Math.round(v * 100)}%`}
+        />
+      )}
 
       {clip.type !== 'audio' && (
         <Slider

@@ -1,4 +1,5 @@
 import type {
+  InfluencerAccessory,
   InfluencerAgeRange,
   InfluencerEthnicity,
   InfluencerFacialHair,
@@ -6,8 +7,12 @@ import type {
   InfluencerHeight,
   InfluencerMakeupStyle,
   InfluencerPhotoStyle,
+  InfluencerScene,
+  InfluencerShotPack,
 } from '@socialista/types'
 import {
+  INFLUENCER_ACCESSORIES,
+  INFLUENCER_ACCESSORIES_MAX,
   INFLUENCER_AGE_RANGES,
   INFLUENCER_ETHNICITIES,
   INFLUENCER_FACIAL_HAIR,
@@ -16,6 +21,9 @@ import {
   INFLUENCER_MAKEUP_STYLES,
   INFLUENCER_NICHES,
   INFLUENCER_PHOTO_STYLES,
+  INFLUENCER_SCENES,
+  INFLUENCER_SCENES_MAX,
+  INFLUENCER_SHOT_PACK_SPEC,
 } from '@socialista/types'
 
 export type SwatchOption = {
@@ -118,6 +126,23 @@ export const PHOTO_STYLE_OPTIONS: ReadonlyArray<{
   { id: 'studio-polish', label: 'Studio polish', description: 'Clean studio light' },
 ]
 
+export const SHOT_PACK_OPTIONS: ReadonlyArray<{
+  id: InfluencerShotPack
+  label: string
+  description?: string
+}> = [
+  {
+    id: 'quick',
+    label: `Quick · ${INFLUENCER_SHOT_PACK_SPEC.quick.shots} shots`,
+    description: 'Portrait, three-quarter, full body',
+  },
+  {
+    id: 'ugc-kit',
+    label: `UGC kit · ${INFLUENCER_SHOT_PACK_SPEC['ugc-kit'].shots} shots`,
+    description: 'IG / TikTok ready — selfie, product hold, OOTD',
+  },
+]
+
 /** Inclusive Fitzpatrick-inspired skin tone swatches */
 export const SKIN_TONE_OPTIONS: ReadonlyArray<SwatchOption> = [
   { id: 'porcelain', label: 'Porcelain', color: '#F6E6D8' },
@@ -185,6 +210,74 @@ export const AESTHETIC_OPTIONS: ReadonlyArray<ChoiceOption> = [
   { id: 'vintage', label: 'Vintage' },
 ]
 
+const SCENE_META: Record<
+  InfluencerScene,
+  { label: string; group: string; description?: string }
+> = {
+  home: { label: 'Home', group: 'Everyday' },
+  'kitchen-cooking': { label: 'Cooking', group: 'Everyday', description: 'Kitchen UGC' },
+  'bedroom-morning': { label: 'Bedroom morning', group: 'Everyday' },
+  'bathroom-vanity': { label: 'Bathroom vanity', group: 'Everyday' },
+  'coffee-shop': { label: 'Coffee shop', group: 'Social' },
+  restaurant: { label: 'Restaurant', group: 'Social' },
+  'podcast-setup': { label: 'Podcast', group: 'Social' },
+  gym: { label: 'Gym', group: 'Fitness' },
+  yoga: { label: 'Yoga', group: 'Fitness' },
+  'outdoor-run': { label: 'Outdoor run', group: 'Fitness' },
+  airport: { label: 'Airport', group: 'Travel' },
+  plane: { label: 'Plane', group: 'Travel' },
+  car: { label: 'Car', group: 'Travel' },
+  'hotel-room': { label: 'Hotel room', group: 'Travel' },
+  beach: { label: 'Beach', group: 'Outdoor' },
+  street: { label: 'Street', group: 'Outdoor' },
+  snow: { label: 'Snow', group: 'Outdoor' },
+  'winter-city': { label: 'Winter city', group: 'Outdoor' },
+  store: { label: 'Store', group: 'Retail' },
+  'farmers-market': { label: 'Farmers market', group: 'Retail' },
+  'streaming-desk': { label: 'Streaming', group: 'Creator' },
+  'asmr-desk': { label: 'ASMR desk', group: 'Creator' },
+  'mirror-ootd': { label: 'Mirror OOTD', group: 'Creator' },
+  'product-hook': { label: 'Product hook', group: 'Hooks' },
+  'pointing-reveal': { label: 'Pointing reveal', group: 'Hooks' },
+  'sitting-testimonial': { label: 'Sitting testimonial', group: 'Hooks' },
+  'pregnant-bump': { label: 'Pregnant', group: 'Hooks' },
+}
+
+export const SCENE_OPTIONS: ReadonlyArray<ChoiceOption> = INFLUENCER_SCENES.map(id => ({
+  id,
+  label: SCENE_META[id].label,
+  description: SCENE_META[id].description,
+  group: SCENE_META[id].group,
+}))
+
+const ACCESSORY_META: Record<InfluencerAccessory, { label: string; group: string }> = {
+  headphones: { label: 'Headphones', group: 'Wear' },
+  glasses: { label: 'Glasses', group: 'Wear' },
+  sunglasses: { label: 'Sunglasses', group: 'Wear' },
+  hat: { label: 'Hat', group: 'Wear' },
+  beanie: { label: 'Beanie', group: 'Wear' },
+  bag: { label: 'Bag', group: 'Wear' },
+  jewelry: { label: 'Jewelry', group: 'Wear' },
+  watch: { label: 'Watch', group: 'Wear' },
+  scarf: { label: 'Scarf', group: 'Wear' },
+  candle: { label: 'Candle', group: 'Props' },
+  mic: { label: 'Mic', group: 'Props' },
+  phone: { label: 'Phone', group: 'Props' },
+  laptop: { label: 'Laptop', group: 'Props' },
+  dumbbell: { label: 'Dumbbell', group: 'Props' },
+  'coffee-cup': { label: 'Coffee cup', group: 'Props' },
+  'water-bottle': { label: 'Water bottle', group: 'Props' },
+  'skincare-bottle': { label: 'Skincare bottle', group: 'Props' },
+  pet: { label: 'Pet', group: 'Props' },
+  'shopping-bag': { label: 'Shopping bag', group: 'Props' },
+}
+
+export const ACCESSORY_OPTIONS: ReadonlyArray<ChoiceOption> = INFLUENCER_ACCESSORIES.map(id => ({
+  id,
+  label: ACCESSORY_META[id].label,
+  group: ACCESSORY_META[id].group,
+}))
+
 export const FEATURE_SUGGESTIONS = [
   'freckles',
   'glasses',
@@ -195,7 +288,7 @@ export const FEATURE_SUGGESTIONS = [
 ] as const
 
 export const DIRECTIONS_PLACEHOLDER =
-  'e.g. Soft morning light in a sunlit kitchen, linen shirt, holding a ceramic mug — warm, approachable wellness creator energy'
+  'Optional: refine mood or outfit — e.g. soft morning light, linen shirt, warm approachable energy'
 
 export const DEFAULT_CREATE_FORM = {
   name: '',
@@ -204,6 +297,7 @@ export const DEFAULT_CREATE_FORM = {
   gender: 'female' as InfluencerGender,
   ageRange: '25-34' as InfluencerAgeRange,
   niche: [] as string[],
+  scenes: [] as string[],
   ethnicity: '',
   appearance: {
     hairColor: HAIR_COLOR_OPTIONS[1]!.id,
@@ -215,9 +309,11 @@ export const DEFAULT_CREATE_FORM = {
     distinguishingFeatures: [] as string[],
     facialHair: 'none' as InfluencerFacialHair,
     makeup: 'natural' as InfluencerMakeupStyle,
+    accessories: [] as string[],
   },
   aestheticTags: [] as string[],
   photoStyle: 'ugc-phone' as InfluencerPhotoStyle,
+  shotPack: 'quick' as InfluencerShotPack,
 }
 
 export function labelForSwatch(options: ReadonlyArray<SwatchOption>, id: string) {
@@ -237,4 +333,13 @@ export function ethnicityLabel(idOrCustom: string) {
   return preset?.label ?? idOrCustom
 }
 
-export { INFLUENCER_GENDERS, INFLUENCER_HEIGHTS, INFLUENCER_FACIAL_HAIR, INFLUENCER_MAKEUP_STYLES, INFLUENCER_PHOTO_STYLES }
+export {
+  INFLUENCER_ACCESSORIES_MAX,
+  INFLUENCER_FACIAL_HAIR,
+  INFLUENCER_GENDERS,
+  INFLUENCER_HEIGHTS,
+  INFLUENCER_MAKEUP_STYLES,
+  INFLUENCER_PHOTO_STYLES,
+  INFLUENCER_SCENES_MAX,
+  INFLUENCER_SHOT_PACK_SPEC,
+}

@@ -66,11 +66,97 @@ export type InfluencerMakeupStyle = (typeof INFLUENCER_MAKEUP_STYLES)[number]
 export const INFLUENCER_PHOTO_STYLES = ['ugc-phone', 'creator-camera', 'studio-polish'] as const
 export type InfluencerPhotoStyle = (typeof INFLUENCER_PHOTO_STYLES)[number]
 
+/** UGC scene / situation presets for scroll-stopping social content. */
+export const INFLUENCER_SCENES = [
+  'home',
+  'kitchen-cooking',
+  'bedroom-morning',
+  'bathroom-vanity',
+  'coffee-shop',
+  'restaurant',
+  'podcast-setup',
+  'gym',
+  'yoga',
+  'outdoor-run',
+  'airport',
+  'plane',
+  'car',
+  'hotel-room',
+  'beach',
+  'street',
+  'snow',
+  'winter-city',
+  'store',
+  'farmers-market',
+  'streaming-desk',
+  'asmr-desk',
+  'mirror-ootd',
+  'product-hook',
+  'pointing-reveal',
+  'sitting-testimonial',
+  'pregnant-bump',
+] as const
+export type InfluencerScene = (typeof INFLUENCER_SCENES)[number]
+
+/** Worn / held props that stay consistent across the shot pack. */
+export const INFLUENCER_ACCESSORIES = [
+  'headphones',
+  'glasses',
+  'sunglasses',
+  'hat',
+  'beanie',
+  'bag',
+  'jewelry',
+  'watch',
+  'scarf',
+  'candle',
+  'mic',
+  'phone',
+  'laptop',
+  'dumbbell',
+  'coffee-cup',
+  'water-bottle',
+  'skincare-bottle',
+  'pet',
+  'shopping-bag',
+] as const
+export type InfluencerAccessory = (typeof INFLUENCER_ACCESSORIES)[number]
+
+export const INFLUENCER_SCENES_MAX = 3
+export const INFLUENCER_ACCESSORIES_MAX = 4
+
 export const INFLUENCER_SORTS = ['popular', 'newest', 'az'] as const
 export type InfluencerSort = (typeof INFLUENCER_SORTS)[number]
 
 /** Default model for influencer anchor / cover generation. */
 export const INFLUENCER_DEFAULT_MODEL = 'openai/gpt-image-2' as const
+
+/** Shot packs for influencer generation — Quick (identity floor) vs full UGC kit. */
+export const INFLUENCER_SHOT_PACKS = ['quick', 'ugc-kit'] as const
+export type InfluencerShotPack = (typeof INFLUENCER_SHOT_PACKS)[number]
+
+export const INFLUENCER_SHOT_PACK_SPEC = {
+  quick: { shots: 3, coverCandidates: 1, billed: 3 },
+  'ugc-kit': { shots: 6, coverCandidates: 1, billed: 6 },
+} as const satisfies Record<
+  InfluencerShotPack,
+  { shots: number; coverCandidates: number; billed: number }
+>
+
+/** @deprecated Prefer INFLUENCER_SHOT_PACK_SPEC[pack].shots — kept for transitional imports. */
+export const INFLUENCER_ANCHOR_SHOT_COUNT = INFLUENCER_SHOT_PACK_SPEC.quick.shots
+
+export const INFLUENCER_SHOT_IDS = [
+  'front-portrait',
+  'three-quarter',
+  'full-body',
+  'selfie-talking',
+  'product-hold',
+  'seated-testimonial',
+  'outdoor-walk',
+  'mirror-ootd',
+] as const
+export type InfluencerShotId = (typeof INFLUENCER_SHOT_IDS)[number]
 
 export type InfluencerAppearance = {
   hairColor: string
@@ -82,6 +168,23 @@ export type InfluencerAppearance = {
   distinguishingFeatures?: string[]
   facialHair?: string
   makeup?: string
+  /** Worn / held props locked across shots. */
+  accessories?: string[]
+}
+
+/** LLM-authored identity lock reused on every subsequent generation. */
+export type InfluencerCharacterSheet = {
+  identityLock: string
+  signatureDetails: string[]
+  wardrobe: { casual: string; onCamera: string; active: string }
+  environments: string[]
+  expressionRange: string[]
+}
+
+export type InfluencerGalleryShot = {
+  shotId: InfluencerShotId | string
+  url: string
+  aspectRatio: string
 }
 
 export type InfluencerIdentity = {
@@ -90,6 +193,8 @@ export type InfluencerIdentity = {
   basePromptFragment: string
   referenceImageUrls: string[]
   loraModelId?: string
+  characterSheet?: InfluencerCharacterSheet
+  shotPack?: InfluencerShotPack
 }
 
 export type Influencer = {
@@ -103,6 +208,8 @@ export type Influencer = {
   /** Free-text creative direction for scenes, outfits, and mood. */
   directions?: string
   niche: string[]
+  /** Structured UGC situations (max 3); rotates across shot pack. */
+  scenes?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   ethnicity?: string
@@ -113,6 +220,8 @@ export type Influencer = {
   status: InfluencerStatus
   coverImageUrl?: string
   galleryImageUrls: string[]
+  /** Labeled gallery entries for pack shots (preferred over galleryImageUrls alone). */
+  galleryShots?: InfluencerGalleryShot[]
   usageCount: number
   error?: string
   createdAt: Date
@@ -151,6 +260,7 @@ export type CreateInfluencerAppearancePayload = {
   distinguishingFeatures?: string[]
   facialHair?: string
   makeup?: string
+  accessories?: string[]
 }
 
 export type CreateInfluencerPayload = {
@@ -161,12 +271,16 @@ export type CreateInfluencerPayload = {
   /** Free-text creative direction for scenes, outfits, and mood. */
   directions?: string
   niche: string[]
+  /** Structured UGC situations (max 3). */
+  scenes?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   ethnicity?: string
   appearance: CreateInfluencerAppearancePayload
   aestheticTags?: string[]
   photoStyle?: InfluencerPhotoStyle
+  /** Quick (3) or UGC kit (6). Defaults to quick. */
+  shotPack?: InfluencerShotPack
   /** Optional advanced override; otherwise built server-side from appearance. */
   basePromptFragment?: string
 }
@@ -176,6 +290,7 @@ export type UpdateInfluencerPayload = {
   bio?: string
   directions?: string
   niche?: string[]
+  scenes?: string[]
   aestheticTags?: string[]
   photoStyle?: InfluencerPhotoStyle
 }

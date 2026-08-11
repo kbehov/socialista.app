@@ -86,7 +86,7 @@ export function formatDuration(ms: number | undefined): string {
 }
 
 export function formatModelCost(cost: number, costUnit: string): string {
-  const credits = `${cost}$`
+  const credits = `${Number(cost).toFixed(2)}$`
   if (costUnit === 'generation') {
     return credits
   }

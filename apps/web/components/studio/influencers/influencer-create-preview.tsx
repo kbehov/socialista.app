@@ -1,8 +1,8 @@
 'use client'
 
 import { InfluencerAvatarSilhouette } from '@/components/studio/influencers/influencer-avatar-silhouette'
-import { Separator } from '@/components/ui/separator'
 import {
+  ACCESSORY_OPTIONS,
   AESTHETIC_OPTIONS,
   AGE_RANGE_OPTIONS,
   BODY_SHAPE_OPTIONS,
@@ -18,6 +18,8 @@ import {
   MAKEUP_OPTIONS,
   NICHE_OPTIONS,
   PHOTO_STYLE_OPTIONS,
+  SCENE_OPTIONS,
+  SHOT_PACK_OPTIONS,
   SKIN_TONE_OPTIONS,
 } from '@/lib/studio/influencers/options'
 import { cn } from '@/lib/utils'
@@ -26,16 +28,16 @@ import type {
   InfluencerGender,
   InfluencerHeight,
   InfluencerPhotoStyle,
+  InfluencerShotPack,
 } from '@socialista/types'
-import { ChevronDownIcon } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useState } from 'react'
+import type { ReactNode } from 'react'
 
 export type InfluencerCreatePreviewProps = {
   name: string
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   niche: string[]
+  scenes?: string[]
   ethnicity?: string
   hairColor: string
   hairStyle: string
@@ -44,13 +46,18 @@ export type InfluencerCreatePreviewProps = {
   bodyShape: string
   height?: InfluencerHeight
   aestheticTags: string[]
+  accessories?: string[]
   distinguishingFeatures: string[]
   directions?: string
   photoStyle?: InfluencerPhotoStyle
+  shotPack?: InfluencerShotPack
   facialHair?: string
   makeup?: string
   className?: string
-  defaultExpanded?: boolean
+  /** Desktop sticky hero vs mobile sticky strip */
+  variant?: 'panel' | 'compact'
+  /** Optional CTA / footer (e.g. Generate button) — panel only */
+  footer?: ReactNode
 }
 
 export function InfluencerCreatePreview({
@@ -58,6 +65,7 @@ export function InfluencerCreatePreview({
   gender,
   ageRange,
   niche,
+  scenes = [],
   ethnicity,
   hairColor,
   hairStyle,
@@ -66,21 +74,25 @@ export function InfluencerCreatePreview({
   bodyShape,
   height,
   aestheticTags,
+  accessories = [],
   distinguishingFeatures,
   directions,
   photoStyle,
+  shotPack,
   facialHair,
   makeup,
   className,
-  defaultExpanded = false,
+  variant = 'panel',
+  footer,
 }: InfluencerCreatePreviewProps) {
-  const reduceMotion = useReducedMotion()
-  const [open, setOpen] = useState(defaultExpanded)
   const displayName = name.trim() || 'Your influencer'
   const genderLabel = GENDER_OPTIONS.find(g => g.id === gender)?.label ?? gender
   const ageLabel = AGE_RANGE_OPTIONS.find(a => a.id === ageRange)?.label ?? ageRange
   const photoStyleLabel = photoStyle
     ? (PHOTO_STYLE_OPTIONS.find(o => o.id === photoStyle)?.label ?? photoStyle)
+    : null
+  const shotPackLabel = shotPack
+    ? (SHOT_PACK_OPTIONS.find(o => o.id === shotPack)?.label ?? shotPack)
     : null
   const facialHairLabel =
     facialHair && facialHair !== 'none'
@@ -88,10 +100,10 @@ export function InfluencerCreatePreview({
       : null
   const makeupLabel = makeup ? (MAKEUP_OPTIONS.find(o => o.id === makeup)?.label ?? makeup) : null
 
-  const nicheLabels =
-    niche.length > 0
-      ? niche.map(n => NICHE_OPTIONS.find(o => o.id === n)?.label ?? n).join(', ')
-      : null
+  const nicheLabels = niche.map(n => NICHE_OPTIONS.find(o => o.id === n)?.label ?? n)
+  const vibeLabels = aestheticTags.map(t => AESTHETIC_OPTIONS.find(o => o.id === t)?.label ?? t)
+  const sceneLabels = scenes.map(s => SCENE_OPTIONS.find(o => o.id === s)?.label ?? s)
+  const accessoryLabels = accessories.map(a => ACCESSORY_OPTIONS.find(o => o.id === a)?.label ?? a)
 
   const lookSummary = [
     `${labelForSwatch(HAIR_COLOR_OPTIONS, hairColor)} ${labelForChoice(HAIR_STYLE_OPTIONS, hairStyle)} hair`,
@@ -106,126 +118,159 @@ export function InfluencerCreatePreview({
     makeupLabel,
   ].filter(Boolean)
 
-  const vibeLabels =
-    aestheticTags.length > 0
-      ? aestheticTags.map(t => AESTHETIC_OPTIONS.find(o => o.id === t)?.label ?? t).join(', ')
-      : null
-
   const subtitle = [genderLabel, ageLabel, ethnicity?.trim()].filter(Boolean).join(' · ')
+
+  if (variant === 'compact') {
+    return (
+      <aside
+        className={cn(
+          'overflow-hidden rounded-xl bg-muted/15 ring-1 ring-border/40',
+          className,
+        )}
+      >
+        <div className="flex items-center gap-3 px-3.5 py-3 sm:gap-3.5 sm:px-4">
+          <InfluencerAvatarSilhouette
+            skinTone={skinTone}
+            hairColor={hairColor}
+            eyeColor={eyeColor}
+            hairStyle={hairStyle}
+            facialHair={facialHair}
+            size="sm"
+            className="shrink-0"
+          />
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold tracking-[-0.02em] text-foreground">
+              {displayName}
+            </p>
+            <p className="mt-0.5 truncate text-[12px] tracking-[-0.01em] text-muted-foreground">
+              {subtitle}
+            </p>
+            {nicheLabels.length > 0 ? (
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground/80">
+                {nicheLabels.join(' · ')}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5" aria-hidden>
+            <ColorDot color={colorForSwatch(SKIN_TONE_OPTIONS, skinTone)} />
+            <ColorDot color={colorForSwatch(HAIR_COLOR_OPTIONS, hairColor)} />
+            <ColorDot color={colorForSwatch(EYE_COLOR_OPTIONS, eyeColor)} />
+          </div>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <aside
       className={cn(
-        'video-studio-glass overflow-hidden rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+        'flex flex-col overflow-hidden rounded-2xl bg-muted/10 ring-1 ring-border/40',
         className,
       )}
     >
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        aria-expanded={open}
-        className={cn(
-          'flex w-full items-center gap-3 px-3.5 py-3 text-left sm:gap-3.5 sm:px-4',
-          'transition-colors hover:bg-muted/15',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        )}
-      >
+      <div className="flex flex-col items-center px-6 pb-5 pt-8 text-center">
         <InfluencerAvatarSilhouette
           skinTone={skinTone}
           hairColor={hairColor}
           eyeColor={eyeColor}
           hairStyle={hairStyle}
           facialHair={facialHair}
-          size="sm"
-          className="shrink-0"
+          size="md"
+          className="mb-5"
         />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-[14px] font-semibold tracking-[-0.02em] text-foreground">
-              {displayName}
-            </p>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/30">
-              <span className="relative flex size-1">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500/50 motion-reduce:hidden" />
-                <span className="relative inline-flex size-1 rounded-full bg-emerald-500" />
-              </span>
-              Live
-            </span>
-          </div>
-          <p className="mt-0.5 truncate text-[12px] tracking-[-0.01em] text-muted-foreground">{subtitle}</p>
-          {!open && nicheLabels ? (
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground/80">{nicheLabels}</p>
-          ) : null}
+        <h2 className="max-w-full truncate text-[17px] font-semibold tracking-[-0.025em] text-foreground">
+          {displayName}
+        </h2>
+        <p className="mt-1 text-[13px] tracking-[-0.01em] text-muted-foreground">{subtitle}</p>
+
+        <div className="mt-3.5 flex items-center justify-center gap-2" aria-hidden>
+          <ColorDot color={colorForSwatch(SKIN_TONE_OPTIONS, skinTone)} size="md" />
+          <ColorDot color={colorForSwatch(HAIR_COLOR_OPTIONS, hairColor)} size="md" />
+          <ColorDot color={colorForSwatch(EYE_COLOR_OPTIONS, eyeColor)} size="md" />
         </div>
+      </div>
 
-        <ChevronDownIcon
-          className={cn(
-            'size-4 shrink-0 text-muted-foreground/70 transition-transform duration-200',
-            open && 'rotate-180',
-          )}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
-            transition={reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.32 }}
-            className="overflow-hidden"
-          >
-            <Separator className="bg-border/35" />
-            <div className="space-y-2.5 px-4 py-3 text-[12px] leading-[1.55] tracking-[-0.01em] text-foreground/85">
-              <SummaryLine label="Look">
-                <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                  <ColorDot color={colorForSwatch(HAIR_COLOR_OPTIONS, hairColor)} />
-                  {lookSummary}
-                </span>
-              </SummaryLine>
-              {buildParts.length > 0 ? (
-                <SummaryLine label="Build">{buildParts.join(' · ')}</SummaryLine>
-              ) : null}
-              {nicheLabels ? <SummaryLine label="Niche">{nicheLabels}</SummaryLine> : null}
-              {photoStyleLabel ? <SummaryLine label="Photo">{photoStyleLabel}</SummaryLine> : null}
-              {vibeLabels ? <SummaryLine label="Vibe">{vibeLabels}</SummaryLine> : null}
-              {directions?.trim() ? (
-                <SummaryLine label="Direction">
-                  <span className="line-clamp-2 text-foreground/75">{directions.trim()}</span>
-                </SummaryLine>
-              ) : null}
-              {distinguishingFeatures.length > 0 ? (
-                <SummaryLine label="Details">{distinguishingFeatures.join(' · ')}</SummaryLine>
-              ) : null}
-            </div>
-          </motion.div>
+      <div className="space-y-4 border-t border-border/35 px-5 py-4 text-left">
+        {nicheLabels.length > 0 ? (
+          <ChipRow label="Niche" items={nicheLabels} />
         ) : null}
-      </AnimatePresence>
+        {sceneLabels.length > 0 ? (
+          <ChipRow label="Scenes" items={sceneLabels} />
+        ) : null}
+        {vibeLabels.length > 0 ? (
+          <ChipRow label="Vibe" items={vibeLabels} />
+        ) : null}
+        {accessoryLabels.length > 0 ? (
+          <ChipRow label="Accessories" items={accessoryLabels} />
+        ) : null}
+
+        <SummaryBlock label="Look">{lookSummary}</SummaryBlock>
+        {buildParts.length > 0 ? (
+          <SummaryBlock label="Build">{buildParts.join(' · ')}</SummaryBlock>
+        ) : null}
+        {photoStyleLabel ? <SummaryBlock label="Photo">{photoStyleLabel}</SummaryBlock> : null}
+        {shotPackLabel ? <SummaryBlock label="Pack">{shotPackLabel}</SummaryBlock> : null}
+        {directions?.trim() ? (
+          <SummaryBlock label="Direction">
+            <span className="line-clamp-3 text-foreground/75">{directions.trim()}</span>
+          </SummaryBlock>
+        ) : null}
+        {distinguishingFeatures.length > 0 ? (
+          <SummaryBlock label="Details">{distinguishingFeatures.join(' · ')}</SummaryBlock>
+        ) : null}
+      </div>
+
+      {footer ? (
+        <div className="mt-auto border-t border-border/35 px-5 py-4">{footer}</div>
+      ) : null}
     </aside>
   )
 }
 
-function SummaryLine({ label, children }: { label: string; children: React.ReactNode }) {
+function ChipRow({ label, items }: { label: string; items: string[] }) {
   return (
-    <div className="flex gap-3">
-      <span className="w-14 shrink-0 text-[11px] font-medium tracking-[0.04em] text-muted-foreground/70 uppercase">
+    <div>
+      <p className="mb-1.5 text-[11px] font-medium tracking-[0.06em] text-muted-foreground/70 uppercase">
         {label}
-      </span>
-      <span className="min-w-0 flex-1">{children}</span>
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map(item => (
+          <span
+            key={item}
+            className="rounded-md bg-muted/40 px-2 py-0.5 text-[12px] font-medium tracking-[-0.01em] text-foreground/85 ring-1 ring-border/30"
+          >
+            {item}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
 
-function ColorDot({ color }: { color?: string }) {
+function SummaryBlock({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-0.5 text-[11px] font-medium tracking-[0.06em] text-muted-foreground/70 uppercase">
+        {label}
+      </p>
+      <div className="text-[13px] leading-[1.5] tracking-[-0.01em] text-foreground/85">{children}</div>
+    </div>
+  )
+}
+
+function ColorDot({ color, size = 'sm' }: { color?: string; size?: 'sm' | 'md' }) {
   if (!color) return null
   return (
     <span
       aria-hidden
-      className="inline-block size-2 shrink-0 rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)] ring-1 ring-border/30"
+      className={cn(
+        'inline-block shrink-0 rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)] ring-1 ring-border/35',
+        size === 'md' ? 'size-2.5' : 'size-2',
+      )}
       style={{ backgroundColor: color }}
     />
   )
 }
-
-export { AGE_RANGE_OPTIONS }

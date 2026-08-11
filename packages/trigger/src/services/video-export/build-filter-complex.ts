@@ -1,4 +1,4 @@
-import type { Clip, Project, VideoClip } from '@socialista/types'
+import type { AudioClip, Clip, Project, VideoClip } from '@socialista/types'
 
 export type OverlayPng = {
   overlayId: string
@@ -18,6 +18,8 @@ export type ClipInput = {
   fsPath: string
   /** True for image inputs (need -loop 1 -t). */
   isImage: boolean
+  /** False when the media file has no audio stream. */
+  hasAudioStream?: boolean
 }
 
 export type FilterGraph = {
@@ -26,8 +28,77 @@ export type FilterGraph = {
   mapArgs: string[]
 }
 
+/** yuv420p requires even width/height; odd sizes cause chroma scanline artifacts. */
+function even(n: number): number {
+  return Math.max(2, Math.round(n) & ~1)
+}
+
 function getClipSourceEnd(clip: Pick<VideoClip, 'trimIn' | 'duration' | 'speed'>): number {
   return clip.trimIn + clip.duration * (clip.speed ?? 1)
+}
+
+/** atempo only accepts 0.5–2.0; chain filters for other speeds. */
+function atempoFilters(speed: number): string[] {
+  const filters: string[] = []
+  let remaining = speed
+  while (remaining > 2) {
+    filters.push('atempo=2.0')
+    remaining /= 2
+  }
+  while (remaining < 0.5) {
+    filters.push('atempo=0.5')
+    remaining /= 0.5
+  }
+  if (Math.abs(remaining - 1) > 0.001) {
+    filters.push(`atempo=${remaining.toFixed(4)}`)
+  }
+  return filters
+}
+
+function buildAudioClipFilters(clip: AudioClip): string[] {
+  const parts: string[] = []
+  parts.push(`atrim=${clip.trimIn.toFixed(3)}:${(clip.trimIn + clip.duration).toFixed(3)}`)
+  parts.push('asetpts=PTS-STARTPTS')
+  parts.push(`volume=${clip.volume}`)
+  if (clip.fadeIn && clip.fadeIn > 0) {
+    parts.push(`afade=t=in:st=0:d=${clip.fadeIn.toFixed(3)}`)
+  }
+  if (clip.fadeOut && clip.fadeOut > 0) {
+    const fadeStart = Math.max(0, clip.duration - clip.fadeOut)
+    parts.push(`afade=t=out:st=${fadeStart.toFixed(3)}:d=${clip.fadeOut.toFixed(3)}`)
+  }
+  const delayMs = Math.round(clip.startTime * 1000)
+  parts.push(`adelay=${delayMs}|${delayMs}`)
+  return parts
+}
+
+function buildVideoAudioFilters(clip: VideoClip): string[] {
+  const speed = clip.speed ?? 1
+  const parts: string[] = []
+  parts.push(`atrim=${clip.trimIn.toFixed(3)}:${getClipSourceEnd(clip).toFixed(3)}`)
+  parts.push('asetpts=PTS-STARTPTS')
+  parts.push(...atempoFilters(speed))
+  parts.push(`volume=${clip.volume}`)
+  const delayMs = Math.round(clip.startTime * 1000)
+  parts.push(`adelay=${delayMs}|${delayMs}`)
+  return parts
+}
+
+function applyVisualFilters(clip: VideoClip, parts: string[]): void {
+  const eqParts: string[] = []
+  let blurPart = ''
+  let grayscalePart = ''
+  for (const f of clip.filters) {
+    if (f.type === 'brightness') eqParts.push(`brightness=${1 + f.value}`)
+    if (f.type === 'contrast') eqParts.push(`contrast=${1 + f.value}`)
+    if (f.type === 'saturation') eqParts.push(`saturation=${1 + f.value}`)
+    if (f.type === 'blur' && f.value > 0) blurPart = `gblur=sigma=${f.value}`
+    if (f.type === 'grayscale' && f.value > 0)
+      grayscalePart = `hue=s=0${f.value < 1 ? `:s=${1 - f.value}` : ''}`
+  }
+  if (eqParts.length) parts.push(`eq=${eqParts.join(':')}`)
+  if (blurPart) parts.push(blurPart)
+  if (grayscalePart) parts.push(grayscalePart)
 }
 
 /**
@@ -36,8 +107,8 @@ function getClipSourceEnd(clip: Pick<VideoClip, 'trimIn' | 'duration' | 'speed'>
  * Strategy:
  *   - One -i per clip (video/image) and per audio clip's source file.
  *   - Video clips: trim, setpts/speed, scale+crop, fade transitions, filters.
- *   - Concat all video streams.
- *   - Audio: per-clip atrim/atempo/volume/afade/adelay, then amix.
+ *   - Normalize every clip to yuv420p + even SAR before concat/overlay.
+ *   - Audio: video source audio + dedicated audio clips → volume/atempo/afade/adelay → amix.
  *   - Text overlays: sequential overlay filters on the concatenated video.
  */
 export function buildFilterGraph(
@@ -45,9 +116,11 @@ export function buildFilterGraph(
   clipInputs: ClipInput[],
   overlayPngs: OverlayPng[],
 ): FilterGraph {
-  const { resolution, fps } = project
+  const width = even(project.resolution.width)
+  const height = even(project.resolution.height)
+  const { fps } = project
+  const mutedTrackIds = new Set(project.tracks.filter(t => t.muted).map(t => t.id))
   const videoClips = clipInputs.filter(c => c.clip.type !== 'audio')
-  const audioClips = clipInputs.filter(c => c.clip.type === 'audio')
 
   const inputArgs: string[] = []
   for (const input of clipInputs) {
@@ -76,64 +149,44 @@ export function buildFilterGraph(
     }
     const transform = (clip as VideoClip).transform
     if (transform) {
-      const targetW = Math.max(1, Math.round((transform.width / 100) * resolution.width))
-      const overlayX = Math.round((transform.x / 100) * resolution.width)
-      const overlayY = Math.round((transform.y / 100) * resolution.height)
+      const targetW = even(Math.max(2, Math.round((transform.width / 100) * width)))
+      const overlayX = Math.round((transform.x / 100) * width)
+      const overlayY = Math.round((transform.y / 100) * height)
       const scaledLabel = `${outLabel}_s`
       const baseLabel = `${outLabel}_b`
-      parts.push(`scale=${targetW}:-1`)
+      // -2 keeps height divisible by 2 for yuv420p
+      parts.push(`scale=${targetW}:-2`)
       if (transform.rotation !== 0) {
         parts.push(`rotate=${((transform.rotation * Math.PI) / 180).toFixed(6)}:c=black@0`)
       }
       parts.push(`fps=${fps}`)
-      const eqParts: string[] = []
-      let blurPart = ''
-      let grayscalePart = ''
-      for (const f of clip.filters) {
-        if (f.type === 'brightness') eqParts.push(`brightness=${1 + f.value}`)
-        if (f.type === 'contrast') eqParts.push(`contrast=${1 + f.value}`)
-        if (f.type === 'saturation') eqParts.push(`saturation=${1 + f.value}`)
-        if (f.type === 'blur' && f.value > 0) blurPart = `gblur=sigma=${f.value}`
-        if (f.type === 'grayscale' && f.value > 0)
-          grayscalePart = `hue=s=0${f.value < 1 ? `:s=${1 - f.value}` : ''}`
-      }
-      if (eqParts.length) parts.push(`eq=${eqParts.join(':')}`)
-      if (blurPart) parts.push(blurPart)
-      if (grayscalePart) parts.push(grayscalePart)
+      applyVisualFilters(clip, parts)
+      parts.push('format=yuva420p', 'setsar=1')
       filterParts.push(`[${inLabel}]${parts.join(',')}[${scaledLabel}]`)
       filterParts.push(
-        `color=c=black:s=${resolution.width}x${resolution.height}:d=${clip.duration.toFixed(3)}:r=${fps}[${baseLabel}]`,
+        `color=c=black:s=${width}x${height}:d=${clip.duration.toFixed(3)}:r=${fps},format=yuv420p,setsar=1[${baseLabel}]`,
       )
-      filterParts.push(`[${baseLabel}][${scaledLabel}]overlay=x=${overlayX}:y=${overlayY}[${outLabel}]`)
+      filterParts.push(
+        `[${baseLabel}][${scaledLabel}]overlay=x=${overlayX}:y=${overlayY}:format=auto,format=yuv420p,setsar=1[${outLabel}]`,
+      )
       videoLabels.push(`[${outLabel}]`)
       return
     }
 
-    parts.push(`scale=${resolution.width}:${resolution.height}:force_original_aspect_ratio=increase`)
-    parts.push(`crop=${resolution.width}:${resolution.height}`)
+    parts.push(`scale=${width}:${height}:force_original_aspect_ratio=increase`)
+    parts.push(`crop=${width}:${height}`)
     parts.push(`fps=${fps}`)
-    const eqParts: string[] = []
-    let blurPart = ''
-    let grayscalePart = ''
-    for (const f of clip.filters) {
-      if (f.type === 'brightness') eqParts.push(`brightness=${1 + f.value}`)
-      if (f.type === 'contrast') eqParts.push(`contrast=${1 + f.value}`)
-      if (f.type === 'saturation') eqParts.push(`saturation=${1 + f.value}`)
-      if (f.type === 'blur' && f.value > 0) blurPart = `gblur=sigma=${f.value}`
-      if (f.type === 'grayscale' && f.value > 0)
-        grayscalePart = `hue=s=0${f.value < 1 ? `:s=${1 - f.value}` : ''}`
-    }
-    if (eqParts.length) parts.push(`eq=${eqParts.join(':')}`)
-    if (blurPart) parts.push(blurPart)
-    if (grayscalePart) parts.push(grayscalePart)
+    applyVisualFilters(clip, parts)
     if (clip.transition && clip.transition.type !== 'cut' && clip.transition.duration > 0) {
       const d = clip.transition.duration
       if (clip.transition.type === 'fade') {
         parts.push(`fade=t=in:st=0:d=${d.toFixed(3)}`)
       } else if (clip.transition.type === 'dissolve') {
+        parts.push('format=yuva420p')
         parts.push(`fade=t=in:st=0:d=${d.toFixed(3)}:alpha=1`)
       }
     }
+    parts.push('format=yuv420p', 'setsar=1')
     filterParts.push(`[${inLabel}]${parts.join(',')}[${outLabel}]`)
     videoLabels.push(`[${outLabel}]`)
   })
@@ -144,44 +197,47 @@ export function buildFilterGraph(
       vfinalLabel = videoLabels[0]!.replace('[', '').replace(']', '')
     } else {
       const concatIn = videoLabels.join('')
-      filterParts.push(`${concatIn}concat=n=${videoLabels.length}:v=1:a=0[vcat]`)
+      filterParts.push(
+        `${concatIn}concat=n=${videoLabels.length}:v=1:a=0,format=yuv420p,setsar=1[vcat]`,
+      )
       vfinalLabel = 'vcat'
     }
   }
 
   let afinalLabel = ''
   const audioLabels: string[] = []
-  if (audioClips.length > 0) {
-    audioClips.forEach((input, idx) => {
-      const clip = input.clip
-      if (clip.type !== 'audio') return
+  let audioIdx = 0
+
+  for (const input of clipInputs) {
+    const clip = input.clip
+    if (mutedTrackIds.has(clip.trackId)) continue
+    if (clip.volume <= 0) continue
+
+    if (clip.type === 'audio') {
+      if (input.hasAudioStream === false) continue
       const inLabel = `${input.inputIndex}:a`
-      const outLabel = `a${idx}`
-      const parts: string[] = []
-      parts.push(`atrim=${clip.trimIn.toFixed(3)}:${(clip.trimIn + clip.duration).toFixed(3)}`)
-      parts.push('asetpts=PTS-STARTPTS')
-      parts.push(`volume=${clip.volume}`)
-      if (clip.fadeIn && clip.fadeIn > 0) {
-        parts.push(`afade=t=in:st=0:d=${clip.fadeIn.toFixed(3)}`)
-      }
-      if (clip.fadeOut && clip.fadeOut > 0) {
-        const fadeStart = Math.max(0, clip.duration - clip.fadeOut)
-        parts.push(`afade=t=out:st=${fadeStart.toFixed(3)}:d=${clip.fadeOut.toFixed(3)}`)
-      }
-      const delayMs = Math.round(clip.startTime * 1000)
-      parts.push(`adelay=${delayMs}|${delayMs}`)
-      filterParts.push(`[${inLabel}]${parts.join(',')}[${outLabel}]`)
+      const outLabel = `a${audioIdx++}`
+      filterParts.push(`[${inLabel}]${buildAudioClipFilters(clip).join(',')}[${outLabel}]`)
       audioLabels.push(`[${outLabel}]`)
-    })
-    if (audioLabels.length === 1) {
-      afinalLabel = audioLabels[0]!.replace('[', '').replace(']', '')
-    } else {
-      const mixIn = audioLabels.join('')
-      filterParts.push(
-        `${mixIn}amix=inputs=${audioLabels.length}:duration=longest:dropout_transition=0[aout]`,
-      )
-      afinalLabel = 'aout'
+      continue
     }
+
+    if (clip.type !== 'video') continue
+    if (input.hasAudioStream === false) continue
+    const inLabel = `${input.inputIndex}:a`
+    const outLabel = `a${audioIdx++}`
+    filterParts.push(`[${inLabel}]${buildVideoAudioFilters(clip).join(',')}[${outLabel}]`)
+    audioLabels.push(`[${outLabel}]`)
+  }
+
+  if (audioLabels.length === 1) {
+    afinalLabel = audioLabels[0]!.replace('[', '').replace(']', '')
+  } else if (audioLabels.length > 1) {
+    const mixIn = audioLabels.join('')
+    filterParts.push(
+      `${mixIn}amix=inputs=${audioLabels.length}:duration=longest:dropout_transition=0:normalize=0[aout]`,
+    )
+    afinalLabel = 'aout'
   }
 
   let currentVideoLabel = vfinalLabel
@@ -191,14 +247,25 @@ export function buildFilterGraph(
     const inputIndex = clipInputs.length + i
     const inputLabel = `${inputIndex}:v`
     const outLabel = `vt${i}`
+    const mainLabel = `${outLabel}_m`
+    const pngLabel = `${outLabel}_p`
+    filterParts.push(`[${currentVideoLabel}]format=yuva420p[${mainLabel}]`)
+    filterParts.push(`[${inputLabel}]format=rgba[${pngLabel}]`)
     filterParts.push(
-      `[${currentVideoLabel}][${inputLabel}]overlay=x=${png.x}:y=${png.y}:enable='between(t,${png.start.toFixed(3)},${png.end.toFixed(3)})'[${outLabel}]`,
+      `[${mainLabel}][${pngLabel}]overlay=x=${png.x}:y=${png.y}:enable='between(t,${png.start.toFixed(3)},${png.end.toFixed(3)})':format=auto,format=yuv420p,setsar=1[${outLabel}]`,
     )
     currentVideoLabel = outLabel
   }
 
   for (const png of overlayPngs) {
     inputArgs.push('-i', png.fsPath)
+  }
+
+  // Final normalize so encoder always receives clean yuv420p
+  if (currentVideoLabel) {
+    const normalized = 'vout'
+    filterParts.push(`[${currentVideoLabel}]format=yuv420p,setsar=1[${normalized}]`)
+    currentVideoLabel = normalized
   }
 
   const mapArgs: string[] = []

@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import {
+  ACCESSORY_OPTIONS,
   AESTHETIC_OPTIONS,
   AGE_RANGE_OPTIONS,
   BODY_SHAPE_OPTIONS,
@@ -18,11 +19,15 @@ import {
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
   HEIGHT_OPTIONS,
+  INFLUENCER_ACCESSORIES_MAX,
+  INFLUENCER_SCENES_MAX,
   labelForChoice,
   labelForSwatch,
   MAKEUP_OPTIONS,
   NICHE_OPTIONS,
   PHOTO_STYLE_OPTIONS,
+  SCENE_OPTIONS,
+  SHOT_PACK_OPTIONS,
   SKIN_TONE_OPTIONS,
 } from '@/lib/studio/influencers/options'
 import {
@@ -36,6 +41,7 @@ import {
 import { FEATURE_ICONS, FIELD_ICONS } from '@/lib/studio/influencers/option-icons'
 import { cn } from '@/lib/utils'
 import { createInfluencer } from '@/services/influencer.service'
+import { formatModelCost } from '@/utils/format'
 import type {
   InfluencerAgeRange,
   InfluencerFacialHair,
@@ -43,11 +49,13 @@ import type {
   InfluencerHeight,
   InfluencerMakeupStyle,
   InfluencerPhotoStyle,
+  InfluencerShotPack,
+  Model,
 } from '@socialista/types'
+import { INFLUENCER_DEFAULT_MODEL, INFLUENCER_SHOT_PACK_SPEC } from '@socialista/types'
 import {
   ArrowLeftIcon,
   DicesIcon,
-  PencilIcon,
   PlusIcon,
   SparklesIcon,
   XIcon,
@@ -55,24 +63,24 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { InfluencerCreatePreview } from './influencer-create-preview'
 import { InfluencerAvatarSilhouette } from './influencer-avatar-silhouette'
+import { InfluencerModelPicker } from './influencer-model-picker'
 import {
   AdvancedCollapsible,
   ChipMultiSelect,
   ChipSingleSelect,
   ChoiceGrid,
   FieldLabel,
-  FormFieldStack,
   OptionSegmented,
   SwatchPicker,
-  WizardProgress,
 } from './influencer-option-controls'
 
 type InfluencerCreateWorkspaceProps = {
   workspaceId: string
+  models: Model[]
 }
 
 const NICHE_MAX = 3
@@ -81,31 +89,46 @@ const FEATURE_MAX = 3
 const BIO_MAX = 200
 const DIRECTIONS_MAX = 500
 
-type WizardStep = 0 | 1 | 2 | 3 | 4
+type Phase = 'start' | 'design'
 
-const STEP_SPRING = { type: 'spring' as const, bounce: 0, duration: 0.35 }
+const PHASE_SPRING = { type: 'spring' as const, bounce: 0, duration: 0.35 }
 
-export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorkspaceProps) {
+export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCreateWorkspaceProps) {
   const router = useRouter()
   const reduceMotion = useReducedMotion()
   const [pending, startTransition] = useTransition()
-  const [step, setStep] = useState<WizardStep>(0)
-  const [direction, setDirection] = useState(1)
+  const [phase, setPhase] = useState<Phase>('start')
   const [form, setForm] = useState<InfluencerCreateFormState>(cloneDefaultForm)
   const [featureDraft, setFeatureDraft] = useState('')
+  const [selectedModelId, setSelectedModelId] = useState(() => {
+    const preferred = models.find(m => m.value === INFLUENCER_DEFAULT_MODEL)
+    return preferred?._id ?? models[0]?._id ?? ''
+  })
 
-  const { name, bio, directions, gender, ageRange, niche, ethnicity, appearance, aestheticTags, photoStyle } =
-    form
+  const {
+    name,
+    bio,
+    directions,
+    gender,
+    ageRange,
+    niche,
+    scenes,
+    ethnicity,
+    appearance,
+    aestheticTags,
+    photoStyle,
+    shotPack,
+  } = form
 
-  const canContinueIdentity = name.trim().length > 0 && niche.length > 0
+  const selectedModel = useMemo(
+    () => models.find(m => m._id === selectedModelId) ?? models[0],
+    [models, selectedModelId],
+  )
+  const packSpec = INFLUENCER_SHOT_PACK_SPEC[shotPack]
+  const generationCost = selectedModel ? selectedModel.cost * packSpec.billed : 0
+  const canGenerate = name.trim().length > 0 && niche.length > 0 && !!selectedModel
   const showFacialHair = gender === 'male'
   const showMakeup = gender === 'female' || gender === 'non-binary'
-  const showCompactPreview = step > 0 && step < 4
-
-  function goTo(next: WizardStep) {
-    setDirection(next > step ? 1 : -1)
-    setStep(next)
-  }
 
   function applyForm(next: InfluencerCreateFormState) {
     setForm(next)
@@ -142,59 +165,72 @@ export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorks
     )
   }
 
+  function enterDesign(next: InfluencerCreateFormState) {
+    applyForm(next)
+    setPhase('design')
+  }
+
   function handleSelectPreset(preset: InfluencerPreset) {
-    applyForm(clonePresetForm(preset))
-    goTo(1)
+    enterDesign(clonePresetForm(preset))
   }
 
   function handleStartScratch() {
-    applyForm(cloneDefaultForm())
-    goTo(1)
+    enterDesign(cloneDefaultForm())
   }
 
   function handleSurpriseMe() {
-    applyForm(randomizeInfluencerForm())
-    goTo(1)
+    enterDesign(randomizeInfluencerForm())
   }
 
   function handleBack() {
-    if (step === 0) return
-    if (step === 1) {
-      goTo(0)
-      return
+    if (phase === 'design') {
+      setPhase('start')
     }
-    goTo((step - 1) as WizardStep)
   }
 
-  function handleContinue() {
-    if (step === 1 && !canContinueIdentity) return
-    if (step >= 4) return
-    goTo((step + 1) as WizardStep)
+  function focusMissingField() {
+    if (!name.trim()) {
+      document.getElementById('influencer-name')?.focus()
+      document.getElementById('section-identity')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (niche.length === 0) {
+      document.getElementById('section-identity')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   function handleGenerate() {
     const trimmedName = name.trim()
     if (!trimmedName) {
       toast.error('Give your influencer a name')
-      goTo(1)
+      focusMissingField()
       return
     }
     if (niche.length === 0) {
       toast.error('Pick at least one niche')
-      goTo(1)
+      focusMissingField()
+      return
+    }
+    if (!selectedModel) {
+      toast.error('Select a generation model')
+      document.getElementById('section-style')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
 
     startTransition(async () => {
       const response = await createInfluencer({
         workspaceId,
+        model: selectedModel.value,
         name: trimmedName,
         bio: bio.trim() || undefined,
         directions: directions.trim() || undefined,
         gender,
         ageRange,
         niche,
-        ethnicity: ethnicity.trim() || undefined,
+        scenes: scenes.length > 0 ? scenes : undefined,
+        ethnicity: ethnicity.trim()
+          ? (ETHNICITY_OPTIONS.find(o => o.id === ethnicity.trim())?.label ?? ethnicity.trim())
+          : undefined,
         appearance: {
           hairColor: labelForSwatch(HAIR_COLOR_OPTIONS, appearance.hairColor),
           hairStyle: appearance.hairStyle,
@@ -205,9 +241,12 @@ export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorks
           distinguishingFeatures: appearance.distinguishingFeatures,
           facialHair: showFacialHair ? appearance.facialHair : undefined,
           makeup: showMakeup ? appearance.makeup : undefined,
+          accessories:
+            appearance.accessories.length > 0 ? appearance.accessories : undefined,
         },
         aestheticTags,
         photoStyle,
+        shotPack,
       })
 
       if (!response.success || !response.data?.influencer) {
@@ -220,30 +259,12 @@ export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorks
     })
   }
 
-  function onStepKeyDown(e: React.KeyboardEvent) {
-    if (e.key !== 'Enter' || step < 1 || step > 3) return
-    const target = e.target as HTMLElement
-    if (target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON') return
-    if (target.tagName === 'INPUT' && (target as HTMLInputElement).id === 'influencer-feature-draft') {
-      return
-    }
-    e.preventDefault()
-    handleContinue()
-  }
-
-  const slideVariants = {
-    enter: (dir: number) =>
-      reduceMotion ? { opacity: 0 } : { x: dir > 0 ? 24 : -24, opacity: 0 },
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) =>
-      reduceMotion ? { opacity: 0 } : { x: dir > 0 ? -24 : 24, opacity: 0 },
-  }
-
   const previewProps = {
     name,
     gender,
     ageRange,
     niche,
+    scenes,
     ethnicity,
     hairColor: appearance.hairColor,
     hairStyle: appearance.hairStyle,
@@ -252,12 +273,50 @@ export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorks
     bodyShape: appearance.bodyShape,
     height: appearance.height,
     aestheticTags,
+    accessories: appearance.accessories,
     distinguishingFeatures: appearance.distinguishingFeatures,
     directions,
     photoStyle,
+    shotPack,
     facialHair: showFacialHair ? appearance.facialHair : undefined,
     makeup: showMakeup ? appearance.makeup : undefined,
   }
+
+  const generateFooter = (
+    <div className="space-y-3">
+      <InfluencerModelPicker
+        models={models}
+        value={selectedModelId}
+        onChange={setSelectedModelId}
+        shotCount={packSpec.billed}
+        disabled={pending}
+        size="compact"
+        showBreakdown={false}
+      />
+      <Button
+        type="button"
+        size="lg"
+        disabled={pending || !canGenerate}
+        onClick={handleGenerate}
+        className="h-11 w-full rounded-xl text-[15px] tracking-[-0.015em]"
+      >
+        <SparklesIcon className="size-4" strokeWidth={1.75} />
+        {pending
+          ? 'Creating…'
+          : selectedModel
+            ? `Generate · ${formatModelCost(generationCost, selectedModel.costUnit)}`
+            : 'Generate influencer'}
+      </Button>
+      <p className="text-center text-[12px] leading-relaxed text-muted-foreground">
+        ~1–2 min · {packSpec.shots} identity shots
+      </p>
+      {!canGenerate && selectedModel ? (
+        <p className="text-center text-[12px] text-muted-foreground/80">
+          Add a name and at least one niche
+        </p>
+      ) : null}
+    </div>
+  )
 
   return (
     <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -268,254 +327,188 @@ export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorks
 
       <div
         aria-hidden
-        className="pointer-events-none sticky top-0 z-10 h-14 bg-linear-to-b from-background via-background/85 to-transparent motion-reduce:hidden"
+        className="pointer-events-none sticky top-0 z-10 h-12 bg-linear-to-b from-background via-background/85 to-transparent motion-reduce:hidden"
       />
 
       <div
         className={cn(
           'relative mx-auto w-full px-4 pb-28 pt-4 sm:px-6 sm:pt-6 lg:px-8',
-          step === 0 ? 'max-w-3xl' : 'max-w-2xl',
+          phase === 'start' ? 'max-w-3xl' : 'max-w-6xl lg:pb-10',
         )}
       >
         <header className="mb-6 sm:mb-8">
           <div className="mb-5 flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              asChild
-              className="rounded-full text-muted-foreground hover:text-foreground"
-            >
-              <Link href={DASHBOARD_ROUTES.STUDIO.INFLUENCERS} aria-label="Back to influencers">
+            {phase === 'start' ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                asChild
+                className="rounded-full text-muted-foreground hover:text-foreground"
+              >
+                <Link href={DASHBOARD_ROUTES.STUDIO.INFLUENCERS} aria-label="Back to influencers">
+                  <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleBack}
+                className="rounded-full text-muted-foreground hover:text-foreground"
+                aria-label="Back to start"
+              >
                 <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
-              </Link>
-            </Button>
+              </Button>
+            )}
             <span className="text-[11px] font-medium tracking-[0.14em] text-muted-foreground/70 uppercase">
               AI Influencers
             </span>
           </div>
 
-          {step === 0 ? (
+          {phase === 'start' ? (
             <div className="max-w-xl space-y-2">
-              <h1 className="font-serif text-balance text-[2rem] font-medium leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[2.25rem]">
-                Create your AI influencer
+              <h1 className="text-balance text-[1.875rem] font-semibold leading-[1.1] tracking-[-0.03em] text-foreground sm:text-[2.125rem]">
+                Create influencer
               </h1>
               <p className="text-pretty text-[15px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
-                Start with a ready-made persona, or design one from scratch — you can tweak everything next.
+                Start from a persona, or build your own.
               </p>
             </div>
           ) : (
-            <div className="space-y-5">
-              <div className="max-w-xl space-y-2">
-                <h1 className="font-serif text-balance text-[1.75rem] font-medium leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[2rem]">
-                  {step === 1 && 'Who are they?'}
-                  {step === 2 && 'How do they look?'}
-                  {step === 3 && 'What is their vibe?'}
-                  {step === 4 && 'Ready to generate'}
-                </h1>
-                <p className="text-pretty text-[14px] leading-[1.55] tracking-[-0.01em] text-muted-foreground sm:text-[15px]">
-                  {step === 1 && 'Name, niche, and basics — the identity you will reuse across generations.'}
-                  {step === 2 &&
-                    'Physical traits locked into every future generation. You can regenerate looks later — nothing here is permanent.'}
-                  {step === 3 && 'Photo look and creative direction — steers scenes without changing core identity.'}
-                  {step === 4 && 'Review your character, then generate anchor portraits.'}
-                </p>
-              </div>
-              <WizardProgress current={step} onJump={s => goTo(s as WizardStep)} className="max-w-lg" />
+            <div className="max-w-xl space-y-1.5">
+              <h1 className="text-balance text-[1.625rem] font-semibold leading-[1.1] tracking-[-0.03em] text-foreground sm:text-[1.875rem]">
+                Design your influencer
+              </h1>
+              <p className="text-pretty text-[14px] leading-[1.5] tracking-[-0.01em] text-muted-foreground">
+                Tune identity and look — generate when you&apos;re ready.
+              </p>
             </div>
           )}
         </header>
 
-        {showCompactPreview ? (
-          <div className="mb-6 max-w-2xl">
-            <InfluencerCreatePreview {...previewProps} />
-          </div>
-        ) : null}
+        <AnimatePresence mode="wait" initial={false}>
+          {phase === 'start' ? (
+            <motion.div
+              key="start"
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={reduceMotion ? { duration: 0 } : PHASE_SPRING}
+            >
+              <StartStep
+                onSelectPreset={handleSelectPreset}
+                onScratch={handleStartScratch}
+                onSurprise={handleSurpriseMe}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="design"
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={reduceMotion ? { duration: 0 } : PHASE_SPRING}
+            >
+              <div className="mb-5 lg:hidden">
+                <InfluencerCreatePreview {...previewProps} variant="compact" />
+              </div>
 
-        <div className="min-w-0 max-w-2xl" onKeyDown={onStepKeyDown}>
-            <AnimatePresence mode="wait" custom={direction} initial={false}>
-              <motion.div
-                key={step}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={reduceMotion ? { duration: 0 } : STEP_SPRING}
-              >
-                {step === 0 ? (
-                  <StartStep
-                    onSelectPreset={handleSelectPreset}
-                    onScratch={handleStartScratch}
-                    onSurprise={handleSurpriseMe}
-                  />
-                ) : null}
-
-                {step === 1 ? (
-                  <IdentityStep
-                    name={name}
-                    bio={bio}
-                    gender={gender}
-                    ageRange={ageRange}
-                    niche={niche}
-                    ethnicity={ethnicity}
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10 xl:gap-12">
+                <div className="min-w-0">
+                  <DesignForm
+                    form={form}
+                    featureDraft={featureDraft}
+                    showFacialHair={showFacialHair}
+                    showMakeup={showMakeup}
+                    models={models}
+                    selectedModelId={selectedModelId}
+                    onSelectedModelChange={setSelectedModelId}
+                    modelPickerDisabled={pending}
                     onNameChange={v => setForm(prev => ({ ...prev, name: v }))}
                     onBioChange={v => setForm(prev => ({ ...prev, bio: v }))}
                     onGenderChange={v => setForm(prev => ({ ...prev, gender: v }))}
                     onAgeRangeChange={v => setForm(prev => ({ ...prev, ageRange: v }))}
                     onNicheChange={v => setForm(prev => ({ ...prev, niche: v }))}
+                    onScenesChange={v => setForm(prev => ({ ...prev, scenes: v }))}
                     onEthnicityChange={v => setForm(prev => ({ ...prev, ethnicity: v }))}
-                  />
-                ) : null}
-
-                {step === 2 ? (
-                  <AppearanceStep
-                    appearance={appearance}
-                    showFacialHair={showFacialHair}
-                    showMakeup={showMakeup}
-                    featureDraft={featureDraft}
+                    onDirectionsChange={v => setForm(prev => ({ ...prev, directions: v }))}
+                    onPhotoStyleChange={v => setForm(prev => ({ ...prev, photoStyle: v }))}
+                    onShotPackChange={v => setForm(prev => ({ ...prev, shotPack: v }))}
+                    onAestheticChange={v => setForm(prev => ({ ...prev, aestheticTags: v }))}
                     onFeatureDraftChange={setFeatureDraft}
                     onUpdateAppearance={updateAppearance}
                     onAddFeature={addFeature}
                     onRemoveFeature={removeFeature}
                   />
-                ) : null}
 
-                {step === 3 ? (
-                  <StyleStep
-                    directions={directions}
-                    photoStyle={photoStyle}
-                    aestheticTags={aestheticTags}
-                    onDirectionsChange={v => setForm(prev => ({ ...prev, directions: v }))}
-                    onPhotoStyleChange={v => setForm(prev => ({ ...prev, photoStyle: v }))}
-                    onAestheticChange={v => setForm(prev => ({ ...prev, aestheticTags: v }))}
-                  />
-                ) : null}
+                  <div className="mt-10 hidden lg:block">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleBack}
+                      className="rounded-xl text-muted-foreground"
+                    >
+                      Back
+                    </Button>
+                  </div>
+                </div>
 
-                {step === 4 ? (
-                  <ReviewStep
-                    form={form}
-                    showFacialHair={showFacialHair}
-                    showMakeup={showMakeup}
-                    onEdit={goTo}
-                  />
-                ) : null}
-              </motion.div>
-            </AnimatePresence>
-
-            {step > 0 && step < 4 ? (
-              <div className="mt-10 hidden lg:flex lg:items-center lg:justify-between lg:gap-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleBack}
-                  className="rounded-xl text-muted-foreground"
-                >
-                  Back
-                </Button>
-                <div className="flex flex-col items-end gap-1.5">
-                  <Button
-                    type="button"
-                    size="lg"
-                    disabled={step === 1 && !canContinueIdentity}
-                    onClick={handleContinue}
-                    className="h-11 min-w-40 rounded-xl text-[15px] tracking-[-0.015em]"
-                  >
-                    Continue
-                  </Button>
-                  {step === 1 && !canContinueIdentity ? (
-                    <p className="text-[12px] text-muted-foreground">
-                      Add a name and at least one niche to continue.
-                    </p>
-                  ) : null}
+                <div className="hidden lg:block">
+                  <div className="sticky top-6">
+                    <InfluencerCreatePreview
+                      {...previewProps}
+                      variant="panel"
+                      footer={generateFooter}
+                    />
+                  </div>
                 </div>
               </div>
-            ) : null}
-
-            {step === 4 ? (
-              <div className="mt-8 hidden lg:flex lg:items-center lg:justify-between lg:gap-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleBack}
-                  className="rounded-xl text-muted-foreground"
-                >
-                  Back
-                </Button>
-                <div className="flex flex-col items-end gap-1.5">
-                  <Button
-                    type="button"
-                    size="lg"
-                    disabled={pending || !canContinueIdentity}
-                    onClick={handleGenerate}
-                    className="h-11 min-w-56 rounded-xl text-[15px] tracking-[-0.015em]"
-                  >
-                    <SparklesIcon className="size-4" strokeWidth={1.75} />
-                    {pending ? 'Creating…' : 'Generate influencer'}
-                  </Button>
-                  <p className="max-w-sm text-right text-[12px] leading-relaxed text-muted-foreground">
-                    Takes ~1–2 minutes. We&apos;ll create anchor portraits you can reuse everywhere.
-                  </p>
-                </div>
-              </div>
-            ) : null}
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {step > 0 ? (
-        <div className="video-studio-glass fixed inset-x-0 bottom-0 z-30 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden">
-          <div className="mx-auto flex max-w-lg flex-col gap-2">
-            {step < 4 ? (
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  onClick={handleBack}
-                  className="h-11 shrink-0 rounded-xl px-5"
-                >
-                  Back
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  disabled={step === 1 && !canContinueIdentity}
-                  onClick={handleContinue}
-                  className="h-11 flex-1 rounded-xl text-[15px] tracking-[-0.015em]"
-                >
-                  Continue
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  onClick={handleBack}
-                  className="h-11 shrink-0 rounded-xl px-5"
-                >
-                  Back
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  disabled={pending || !canContinueIdentity}
-                  onClick={handleGenerate}
-                  className="h-11 flex-1 rounded-xl text-[15px] tracking-[-0.015em]"
-                >
-                  <SparklesIcon className="size-4" strokeWidth={1.75} />
-                  {pending ? 'Creating…' : 'Generate influencer'}
-                </Button>
-              </div>
-            )}
-            {step === 1 && !canContinueIdentity ? (
+      {phase === 'design' ? (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/40 bg-background/90 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden">
+          <div className="mx-auto flex max-w-lg flex-col gap-2.5">
+            <InfluencerModelPicker
+              models={models}
+              value={selectedModelId}
+              onChange={setSelectedModelId}
+              shotCount={packSpec.billed}
+              disabled={pending}
+              size="compact"
+              showBreakdown={false}
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={handleBack}
+                className="h-11 shrink-0 rounded-xl px-5"
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                disabled={pending || !canGenerate}
+                onClick={handleGenerate}
+                className="h-11 flex-1 rounded-xl text-[15px] tracking-[-0.015em]"
+              >
+                <SparklesIcon className="size-4" strokeWidth={1.75} />
+                {pending
+                  ? 'Creating…'
+                  : selectedModel
+                    ? `Generate · ${formatModelCost(generationCost, selectedModel.costUnit)}`
+                    : 'Generate'}
+              </Button>
+            </div>
+            {!canGenerate && selectedModel ? (
               <p className="text-center text-[12px] text-muted-foreground">
-                Add a name and at least one niche to continue.
-              </p>
-            ) : null}
-            {step === 4 ? (
-              <p className="text-center text-[12px] text-muted-foreground">
-                Takes ~1–2 minutes. Anchor portraits you can reuse everywhere.
+                Add a name and at least one niche
               </p>
             ) : null}
           </div>
@@ -525,7 +518,7 @@ export function InfluencerCreateWorkspace({ workspaceId }: InfluencerCreateWorks
   )
 }
 
-/* ─── Step 0: Start ─────────────────────────────────────────────────────── */
+/* ─── Start ─────────────────────────────────────────────────────────────── */
 
 function StartStep({
   onSelectPreset,
@@ -544,8 +537,12 @@ function StartStep({
         <p className="mb-3 text-[11px] font-medium tracking-[0.08em] text-muted-foreground/80 uppercase">
           Starter personas
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {INFLUENCER_PRESETS.map(preset => (
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {INFLUENCER_PRESETS.map(preset => {
+            const sceneLabels = preset.form.scenes
+              .slice(0, 3)
+              .map(id => labelForChoice(SCENE_OPTIONS, id))
+            return (
             <motion.button
               key={preset.id}
               type="button"
@@ -553,13 +550,13 @@ function StartStep({
               whileTap={reduceMotion ? undefined : { scale: 0.985 }}
               transition={reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.28 }}
               className={cn(
-                'group flex flex-col gap-3.5 rounded-2xl p-4 text-left',
-                'bg-muted/12 ring-1 ring-border/30 transition-[background-color,box-shadow,ring-color] duration-150',
-                'hover:bg-muted/22 hover:ring-border/45 hover:shadow-[0_4px_24px_rgba(0,0,0,0.05)]',
+                'group flex flex-col gap-3 rounded-xl p-3.5 text-left sm:p-4',
+                'bg-muted/10 ring-1 ring-border/35 transition-[background-color,ring-color] duration-150',
+                'hover:bg-muted/20 hover:ring-border/50',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
               )}
             >
-              <div className="flex items-start gap-3.5">
+              <div className="flex items-start gap-3">
                 <InfluencerAvatarSilhouette
                   skinTone={preset.form.appearance.skinTone}
                   hairColor={preset.form.appearance.hairColor}
@@ -569,23 +566,37 @@ function StartStep({
                   size="sm"
                   className="shrink-0 scale-90"
                 />
-                <div className="min-w-0 flex-1 space-y-1">
-                  <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
-                    {preset.title}
+                <div className="min-w-0 flex-1 space-y-0.5 pt-0.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[14px] font-semibold tracking-[-0.02em] text-foreground">
+                      {preset.title}
+                    </p>
+                    <span className="shrink-0 rounded-full bg-muted/40 px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-muted-foreground uppercase ring-1 ring-border/30">
+                      {INFLUENCER_SHOT_PACK_SPEC[preset.shotPack].shots} shots
+                    </span>
+                  </div>
+                  <p className="text-[12px] font-medium tracking-[-0.01em] text-foreground/70">
+                    {preset.useCase}
                   </p>
-                  <p className="text-[13px] leading-[1.45] tracking-[-0.01em] text-muted-foreground">
+                  <p className="text-[13px] leading-[1.4] tracking-[-0.01em] text-muted-foreground">
                     {preset.description}
                   </p>
+                  {sceneLabels.length > 0 ? (
+                    <p className="pt-1 text-[11px] tracking-[-0.01em] text-muted-foreground/75">
+                      {sceneLabels.join(' · ')}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </motion.button>
-          ))}
+            )
+          })}
         </div>
       </div>
 
       <Separator className="bg-border/40" />
 
-      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
         <Button
           type="button"
           variant="outline"
@@ -595,132 +606,478 @@ function StartStep({
         >
           Start from scratch
         </Button>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="lg"
           onClick={onSurprise}
-          className={cn(
-            'inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4',
-            'text-[13px] font-medium tracking-[-0.015em] text-muted-foreground',
-            'transition-colors hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-          )}
+          className="h-11 flex-1 rounded-xl text-[14px] tracking-[-0.015em] text-muted-foreground hover:text-foreground"
         >
           <DicesIcon className="size-3.5" strokeWidth={1.75} />
           Surprise me
-        </button>
+        </Button>
       </div>
     </div>
   )
 }
 
-/* ─── Step 1: Identity ──────────────────────────────────────────────────── */
+/* ─── Design form (Identity + Look + Style) ─────────────────────────────── */
 
-function IdentityStep({
-  name,
-  bio,
-  gender,
-  ageRange,
-  niche,
-  ethnicity,
+function DesignForm({
+  form,
+  featureDraft,
+  showFacialHair,
+  showMakeup,
+  models,
+  selectedModelId,
+  onSelectedModelChange,
+  modelPickerDisabled,
   onNameChange,
   onBioChange,
   onGenderChange,
   onAgeRangeChange,
   onNicheChange,
+  onScenesChange,
   onEthnicityChange,
+  onDirectionsChange,
+  onPhotoStyleChange,
+  onShotPackChange,
+  onAestheticChange,
+  onFeatureDraftChange,
+  onUpdateAppearance,
+  onAddFeature,
+  onRemoveFeature,
 }: {
-  name: string
-  bio: string
-  gender: InfluencerGender
-  ageRange: InfluencerAgeRange
-  niche: string[]
-  ethnicity: string
+  form: InfluencerCreateFormState
+  featureDraft: string
+  showFacialHair: boolean
+  showMakeup: boolean
+  models: Model[]
+  selectedModelId: string
+  onSelectedModelChange: (id: string) => void
+  modelPickerDisabled?: boolean
   onNameChange: (v: string) => void
   onBioChange: (v: string) => void
   onGenderChange: (v: InfluencerGender) => void
   onAgeRangeChange: (v: InfluencerAgeRange) => void
   onNicheChange: (v: string[]) => void
+  onScenesChange: (v: string[]) => void
   onEthnicityChange: (v: string) => void
+  onDirectionsChange: (v: string) => void
+  onPhotoStyleChange: (v: InfluencerPhotoStyle) => void
+  onShotPackChange: (v: InfluencerShotPack) => void
+  onAestheticChange: (v: string[]) => void
+  onFeatureDraftChange: (v: string) => void
+  onUpdateAppearance: <K extends keyof InfluencerCreateFormState['appearance']>(
+    key: K,
+    value: InfluencerCreateFormState['appearance'][K],
+  ) => void
+  onAddFeature: (raw: string) => void
+  onRemoveFeature: (tag: string) => void
 }) {
+  const {
+    name,
+    bio,
+    directions,
+    gender,
+    ageRange,
+    niche,
+    scenes,
+    ethnicity,
+    appearance,
+    aestheticTags,
+    photoStyle,
+    shotPack,
+  } = form
+
   return (
-    <FormFieldStack>
-      <div>
-        <FieldLabel htmlFor="influencer-name" icon={FIELD_ICONS.name}>
-          Name
-        </FieldLabel>
-        <Input
-          id="influencer-name"
-          value={name}
-          onChange={e => onNameChange(e.target.value)}
-          placeholder="e.g. Maya Chen"
-          autoComplete="off"
-          maxLength={80}
-          autoFocus
-          className="h-11 rounded-xl border-border/60 bg-background/80 text-base tracking-[-0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-        />
-      </div>
+    <div className="space-y-10">
+      <section id="section-identity" className="scroll-mt-24 space-y-5">
+        <SectionHeading>Identity</SectionHeading>
 
-      <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <FieldLabel icon={FIELD_ICONS.gender}>Gender</FieldLabel>
-          <OptionSegmented
-            aria-label="Gender"
-            value={gender}
-            options={GENDER_OPTIONS}
-            onChange={onGenderChange}
-            layoutId="influencer-gender-indicator"
-          />
-        </div>
-        <div>
-          <FieldLabel icon={FIELD_ICONS.age}>Age range</FieldLabel>
-          <OptionSegmented
-            aria-label="Age range"
-            value={ageRange}
-            options={AGE_RANGE_OPTIONS}
-            onChange={onAgeRangeChange}
-            layoutId="influencer-age-indicator"
-          />
-        </div>
-      </div>
-
-      <div>
-        <FieldLabel hint={`${niche.length}/${NICHE_MAX}`} icon={FIELD_ICONS.niche}>
-          Niche
-        </FieldLabel>
-        <ChipMultiSelect
-          aria-label="Niche"
-          values={niche}
-          options={NICHE_OPTIONS}
-          onChange={onNicheChange}
-          max={NICHE_MAX}
-          iconGroup="niche"
-        />
-      </div>
-
-      <div>
-        <FieldLabel icon={FIELD_ICONS.ethnicity}>Ethnicity / background</FieldLabel>
-        <EthnicityPicker value={ethnicity} onChange={onEthnicityChange} />
-      </div>
-
-      <AdvancedCollapsible label="Optional — bio" icon={FIELD_ICONS.bio}>
-        <div>
-          <FieldLabel htmlFor="influencer-bio" hint={`${bio.length}/${BIO_MAX}`}>
-            Bio
+          <FieldLabel htmlFor="influencer-name" icon={FIELD_ICONS.name}>
+            Name
           </FieldLabel>
-          <Textarea
-            id="influencer-bio"
-            value={bio}
-            onChange={e => onBioChange(e.target.value.slice(0, BIO_MAX))}
-            placeholder="Optional — a short note for your team"
-            rows={2}
-            className="min-h-18 resize-none rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+          <Input
+            id="influencer-name"
+            value={name}
+            onChange={e => onNameChange(e.target.value)}
+            placeholder="e.g. Maya Chen"
+            autoComplete="off"
+            maxLength={80}
+            autoFocus
+            className="h-11 rounded-xl border-border/60 bg-background/80 text-base tracking-[-0.015em] shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
           />
-          <p className="mt-1.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
-            Also steers generation when no creative direction is set.
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <FieldLabel icon={FIELD_ICONS.gender}>Gender</FieldLabel>
+            <OptionSegmented
+              aria-label="Gender"
+              value={gender}
+              options={GENDER_OPTIONS}
+              onChange={onGenderChange}
+              layoutId="influencer-gender-indicator"
+            />
+          </div>
+          <div>
+            <FieldLabel icon={FIELD_ICONS.age}>Age range</FieldLabel>
+            <OptionSegmented
+              aria-label="Age range"
+              value={ageRange}
+              options={AGE_RANGE_OPTIONS}
+              onChange={onAgeRangeChange}
+              layoutId="influencer-age-indicator"
+            />
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel hint={`${niche.length}/${NICHE_MAX}`} icon={FIELD_ICONS.niche}>
+            Niche
+          </FieldLabel>
+          <ChipMultiSelect
+            aria-label="Niche"
+            values={niche}
+            options={NICHE_OPTIONS}
+            onChange={onNicheChange}
+            max={NICHE_MAX}
+            iconGroup="niche"
+          />
+        </div>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.ethnicity}>Ethnicity / background</FieldLabel>
+          <EthnicityPicker value={ethnicity} onChange={onEthnicityChange} />
+        </div>
+
+        <AdvancedCollapsible label="Optional — bio" icon={FIELD_ICONS.bio}>
+          <div>
+            <FieldLabel htmlFor="influencer-bio" hint={`${bio.length}/${BIO_MAX}`}>
+              Bio
+            </FieldLabel>
+            <Textarea
+              id="influencer-bio"
+              value={bio}
+              onChange={e => onBioChange(e.target.value.slice(0, BIO_MAX))}
+              placeholder="Optional — a short note for your team"
+              rows={2}
+              className="min-h-18 resize-none rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+            />
+          </div>
+        </AdvancedCollapsible>
+      </section>
+
+      <Separator className="bg-border/40" />
+
+      <section id="section-look" className="scroll-mt-24 space-y-6">
+        <SectionHeading>Look</SectionHeading>
+
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div>
+            <FieldLabel icon={FIELD_ICONS.skinTone}>Skin tone</FieldLabel>
+            <SwatchPicker
+              aria-label="Skin tone"
+              value={appearance.skinTone}
+              options={SKIN_TONE_OPTIONS}
+              onChange={v => onUpdateAppearance('skinTone', v)}
+            />
+            <p className="mt-2 text-[12px] tracking-[-0.005em] text-muted-foreground">
+              {labelForSwatch(SKIN_TONE_OPTIONS, appearance.skinTone)}
+            </p>
+          </div>
+          <div>
+            <FieldLabel icon={FIELD_ICONS.eyeColor}>Eye color</FieldLabel>
+            <SwatchPicker
+              aria-label="Eye color"
+              value={appearance.eyeColor}
+              options={EYE_COLOR_OPTIONS}
+              onChange={v => onUpdateAppearance('eyeColor', v)}
+            />
+            <p className="mt-2 text-[12px] tracking-[-0.005em] text-muted-foreground">
+              {labelForSwatch(EYE_COLOR_OPTIONS, appearance.eyeColor)}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.hairColor}>Hair color</FieldLabel>
+          <SwatchPicker
+            aria-label="Hair color"
+            value={appearance.hairColor}
+            options={HAIR_COLOR_OPTIONS}
+            onChange={v => onUpdateAppearance('hairColor', v)}
+          />
+          <p className="mt-2 text-[12px] tracking-[-0.005em] text-muted-foreground">
+            {labelForSwatch(HAIR_COLOR_OPTIONS, appearance.hairColor)}
           </p>
         </div>
-      </AdvancedCollapsible>
-    </FormFieldStack>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.hairStyle}>Hair style</FieldLabel>
+          <ChipSingleSelect
+            aria-label="Hair style"
+            value={appearance.hairStyle}
+            options={HAIR_STYLE_OPTIONS}
+            onChange={v => onUpdateAppearance('hairStyle', v)}
+            iconGroup="hairStyle"
+          />
+        </div>
+
+        {showFacialHair ? (
+          <div>
+            <FieldLabel icon={FIELD_ICONS.facialHair}>Facial hair</FieldLabel>
+            <ChipSingleSelect
+              aria-label="Facial hair"
+              value={appearance.facialHair}
+              options={FACIAL_HAIR_OPTIONS}
+              onChange={v => onUpdateAppearance('facialHair', v as InfluencerFacialHair)}
+              iconGroup="facialHair"
+            />
+          </div>
+        ) : null}
+
+        {showMakeup ? (
+          <div>
+            <FieldLabel icon={FIELD_ICONS.makeup}>Makeup</FieldLabel>
+            <ChipSingleSelect
+              aria-label="Makeup"
+              value={appearance.makeup}
+              options={MAKEUP_OPTIONS}
+              onChange={v => onUpdateAppearance('makeup', v as InfluencerMakeupStyle)}
+              iconGroup="makeup"
+            />
+          </div>
+        ) : null}
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.bodyShape}>Body shape</FieldLabel>
+          <ChoiceGrid
+            aria-label="Body shape"
+            value={appearance.bodyShape}
+            options={BODY_SHAPE_OPTIONS}
+            onChange={v => onUpdateAppearance('bodyShape', v)}
+            iconGroup="bodyShape"
+          />
+        </div>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.height}>Height</FieldLabel>
+          <OptionSegmented
+            aria-label="Height"
+            value={appearance.height}
+            options={HEIGHT_OPTIONS}
+            onChange={(v: InfluencerHeight) => onUpdateAppearance('height', v)}
+            layoutId="influencer-height-indicator"
+          />
+        </div>
+
+        <AdvancedCollapsible label="Advanced — distinguishing features" icon={FIELD_ICONS.features}>
+          <div>
+            <FieldLabel
+              icon={FIELD_ICONS.features}
+              hint={`${appearance.distinguishingFeatures.length}/${FEATURE_MAX}`}
+            >
+              Distinguishing features
+            </FieldLabel>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {FEATURE_SUGGESTIONS.map(tag => {
+                const selected = appearance.distinguishingFeatures.includes(tag)
+                const atMax = !selected && appearance.distinguishingFeatures.length >= FEATURE_MAX
+                const FeatureIcon = FEATURE_ICONS[tag]
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    disabled={atMax}
+                    onClick={() => (selected ? onRemoveFeature(tag) : onAddFeature(tag))}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.015em] ring-1 transition-[background-color,color,box-shadow,ring-color,opacity] duration-150',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
+                      selected
+                        ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.06)] ring-foreground'
+                        : 'bg-muted/25 text-muted-foreground ring-border/30 hover:bg-muted/40 hover:text-foreground hover:ring-border/45',
+                      atMax &&
+                        'cursor-not-allowed opacity-40 hover:bg-muted/25 hover:text-muted-foreground hover:ring-border/30',
+                    )}
+                  >
+                    {FeatureIcon ? (
+                      <FeatureIcon className="size-3.5 shrink-0 stroke-[1.75]" aria-hidden />
+                    ) : null}
+                    {tag}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                id="influencer-feature-draft"
+                value={featureDraft}
+                onChange={e => onFeatureDraftChange(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onAddFeature(featureDraft)
+                  }
+                }}
+                placeholder="Add custom feature…"
+                className="rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-10 shrink-0 rounded-xl"
+                onClick={() => onAddFeature(featureDraft)}
+                aria-label="Add feature"
+              >
+                <PlusIcon className="size-4" strokeWidth={1.75} />
+              </Button>
+            </div>
+            {appearance.distinguishingFeatures.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {appearance.distinguishingFeatures.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-2.5 py-1 text-xs font-medium tracking-[-0.01em] ring-1 ring-border/30"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${tag}`}
+                      onClick={() => onRemoveFeature(tag)}
+                      className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <XIcon className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </AdvancedCollapsible>
+      </section>
+
+      <Separator className="bg-border/40" />
+
+      <section id="section-style" className="scroll-mt-24 space-y-5">
+        <SectionHeading>Style</SectionHeading>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.model}>Model</FieldLabel>
+          <InfluencerModelPicker
+            models={models}
+            value={selectedModelId}
+            onChange={onSelectedModelChange}
+            shotCount={INFLUENCER_SHOT_PACK_SPEC[shotPack].billed}
+            disabled={modelPickerDisabled}
+          />
+        </div>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.shotPack}>Shot pack</FieldLabel>
+          <ChoiceGrid
+            aria-label="Shot pack"
+            value={shotPack}
+            options={SHOT_PACK_OPTIONS}
+            onChange={v => onShotPackChange(v as InfluencerShotPack)}
+            iconGroup="shotPack"
+          />
+        </div>
+
+        <div>
+          <FieldLabel icon={FIELD_ICONS.photoStyle}>Photo style</FieldLabel>
+          <ChoiceGrid
+            aria-label="Photo style"
+            value={photoStyle}
+            options={PHOTO_STYLE_OPTIONS}
+            onChange={v => onPhotoStyleChange(v as InfluencerPhotoStyle)}
+            iconGroup="photoStyle"
+          />
+        </div>
+
+        <div>
+          <FieldLabel hint={`${aestheticTags.length}/${AESTHETIC_MAX}`} icon={FIELD_ICONS.aesthetic}>
+            Aesthetic
+          </FieldLabel>
+          <ChipMultiSelect
+            aria-label="Aesthetic"
+            values={aestheticTags}
+            options={AESTHETIC_OPTIONS}
+            onChange={onAestheticChange}
+            max={AESTHETIC_MAX}
+            iconGroup="aesthetic"
+          />
+        </div>
+
+        <div>
+          <FieldLabel
+            hint={`${scenes.length}/${INFLUENCER_SCENES_MAX}`}
+            icon={FIELD_ICONS.scenes}
+          >
+            Scenes
+          </FieldLabel>
+          <ChipMultiSelect
+            aria-label="Scenes"
+            values={scenes}
+            options={SCENE_OPTIONS}
+            onChange={onScenesChange}
+            max={INFLUENCER_SCENES_MAX}
+            iconGroup="scene"
+          />
+          <p className="mt-1.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
+            UGC situations for TikTok / Instagram — rotates across the shot pack.
+          </p>
+        </div>
+
+        <div>
+          <FieldLabel
+            hint={`${appearance.accessories.length}/${INFLUENCER_ACCESSORIES_MAX}`}
+            icon={FIELD_ICONS.accessories}
+          >
+            Accessories
+          </FieldLabel>
+          <ChipMultiSelect
+            aria-label="Accessories"
+            values={appearance.accessories}
+            options={ACCESSORY_OPTIONS}
+            onChange={v => onUpdateAppearance('accessories', v)}
+            max={INFLUENCER_ACCESSORIES_MAX}
+            iconGroup="accessory"
+          />
+        </div>
+
+        <div>
+          <FieldLabel
+            htmlFor="influencer-directions"
+            hint={`${directions.length}/${DIRECTIONS_MAX}`}
+            icon={FIELD_ICONS.directions}
+          >
+            Extra direction
+          </FieldLabel>
+          <Textarea
+            id="influencer-directions"
+            value={directions}
+            onChange={e => onDirectionsChange(e.target.value.slice(0, DIRECTIONS_MAX))}
+            placeholder={DIRECTIONS_PLACEHOLDER}
+            rows={3}
+            className="min-h-24 resize-none rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+          />
+          <p className="mt-1.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
+            Optional mood or outfit notes on top of scenes and accessories.
+          </p>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-[13px] font-semibold tracking-[-0.01em] text-foreground">{children}</h2>
   )
 }
 
@@ -737,7 +1094,11 @@ function EthnicityPicker({
   onChange: (v: string) => void
 }) {
   const trimmed = value.trim()
-  const presetMatch = ETHNICITY_OPTIONS.find(o => o.label.toLowerCase() === trimmed.toLowerCase())
+  const presetMatch = ETHNICITY_OPTIONS.find(
+    o =>
+      o.id.toLowerCase() === trimmed.toLowerCase() ||
+      o.label.toLowerCase() === trimmed.toLowerCase(),
+  )
   const [customMode, setCustomMode] = useState(() => trimmed.length > 0 && !presetMatch)
   const showCustomInput = customMode || (trimmed.length > 0 && !presetMatch)
 
@@ -745,7 +1106,10 @@ function EthnicityPicker({
     <div className="space-y-3">
       <div role="radiogroup" aria-label="Ethnicity / background" className="flex flex-wrap gap-2">
         {ETHNICITY_OPTIONS.map(option => {
-          const selected = !showCustomInput && trimmed.toLowerCase() === option.label.toLowerCase()
+          const selected =
+            !showCustomInput &&
+            (trimmed.toLowerCase() === option.id.toLowerCase() ||
+              trimmed.toLowerCase() === option.label.toLowerCase())
           return (
             <button
               key={option.id}
@@ -754,7 +1118,7 @@ function EthnicityPicker({
               aria-checked={selected}
               onClick={() => {
                 setCustomMode(false)
-                onChange(selected ? '' : option.label)
+                onChange(selected ? '' : option.id)
               }}
               className={cn(
                 ETHNICITY_CHIP_CLASSES,
@@ -794,491 +1158,6 @@ function EthnicityPicker({
           className="rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
         />
       ) : null}
-    </div>
-  )
-}
-
-/* ─── Step 2: Appearance ────────────────────────────────────────────────── */
-
-function AppearanceStep({
-  appearance,
-  showFacialHair,
-  showMakeup,
-  featureDraft,
-  onFeatureDraftChange,
-  onUpdateAppearance,
-  onAddFeature,
-  onRemoveFeature,
-}: {
-  appearance: InfluencerCreateFormState['appearance']
-  showFacialHair: boolean
-  showMakeup: boolean
-  featureDraft: string
-  onFeatureDraftChange: (v: string) => void
-  onUpdateAppearance: <K extends keyof InfluencerCreateFormState['appearance']>(
-    key: K,
-    value: InfluencerCreateFormState['appearance'][K],
-  ) => void
-  onAddFeature: (raw: string) => void
-  onRemoveFeature: (tag: string) => void
-}) {
-  return (
-    <FormFieldStack>
-      <div>
-        <SectionHeading>Face</SectionHeading>
-        <div className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <FieldLabel icon={FIELD_ICONS.skinTone}>Skin tone</FieldLabel>
-              <SwatchPicker
-                aria-label="Skin tone"
-                value={appearance.skinTone}
-                options={SKIN_TONE_OPTIONS}
-                onChange={v => onUpdateAppearance('skinTone', v)}
-              />
-              <p className="mt-2.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
-                {labelForSwatch(SKIN_TONE_OPTIONS, appearance.skinTone)}
-              </p>
-            </div>
-            <div>
-              <FieldLabel icon={FIELD_ICONS.eyeColor}>Eye color</FieldLabel>
-              <SwatchPicker
-                aria-label="Eye color"
-                value={appearance.eyeColor}
-                options={EYE_COLOR_OPTIONS}
-                onChange={v => onUpdateAppearance('eyeColor', v)}
-              />
-              <p className="mt-2.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
-                {labelForSwatch(EYE_COLOR_OPTIONS, appearance.eyeColor)}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <FieldLabel icon={FIELD_ICONS.hairColor}>Hair color</FieldLabel>
-            <SwatchPicker
-              aria-label="Hair color"
-              value={appearance.hairColor}
-              options={HAIR_COLOR_OPTIONS}
-              onChange={v => onUpdateAppearance('hairColor', v)}
-            />
-            <p className="mt-2.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
-              {labelForSwatch(HAIR_COLOR_OPTIONS, appearance.hairColor)}
-            </p>
-          </div>
-
-          <div>
-            <FieldLabel icon={FIELD_ICONS.hairStyle}>Hair style</FieldLabel>
-            <ChipSingleSelect
-              aria-label="Hair style"
-              value={appearance.hairStyle}
-              options={HAIR_STYLE_OPTIONS}
-              onChange={v => onUpdateAppearance('hairStyle', v)}
-              iconGroup="hairStyle"
-            />
-          </div>
-
-          {showFacialHair ? (
-            <div>
-              <FieldLabel icon={FIELD_ICONS.facialHair}>Facial hair</FieldLabel>
-              <ChipSingleSelect
-                aria-label="Facial hair"
-                value={appearance.facialHair}
-                options={FACIAL_HAIR_OPTIONS}
-                onChange={v => onUpdateAppearance('facialHair', v as InfluencerFacialHair)}
-                iconGroup="facialHair"
-              />
-            </div>
-          ) : null}
-
-          {showMakeup ? (
-            <div>
-              <FieldLabel icon={FIELD_ICONS.makeup}>Makeup</FieldLabel>
-              <ChipSingleSelect
-                aria-label="Makeup"
-                value={appearance.makeup}
-                options={MAKEUP_OPTIONS}
-                onChange={v => onUpdateAppearance('makeup', v as InfluencerMakeupStyle)}
-                iconGroup="makeup"
-              />
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div>
-        <SectionHeading>Body & details</SectionHeading>
-        <div className="space-y-6">
-          <div>
-            <FieldLabel icon={FIELD_ICONS.bodyShape}>Body shape</FieldLabel>
-            <ChoiceGrid
-              aria-label="Body shape"
-              value={appearance.bodyShape}
-              options={BODY_SHAPE_OPTIONS}
-              onChange={v => onUpdateAppearance('bodyShape', v)}
-              iconGroup="bodyShape"
-            />
-          </div>
-
-          <div>
-            <FieldLabel icon={FIELD_ICONS.height}>Height</FieldLabel>
-            <OptionSegmented
-              aria-label="Height"
-              value={appearance.height}
-              options={HEIGHT_OPTIONS}
-              onChange={(v: InfluencerHeight) => onUpdateAppearance('height', v)}
-              layoutId="influencer-height-indicator"
-            />
-          </div>
-
-          <AdvancedCollapsible label="Advanced details — distinguishing features" icon={FIELD_ICONS.features}>
-            <div>
-              <FieldLabel
-                icon={FIELD_ICONS.features}
-                hint={`${appearance.distinguishingFeatures.length}/${FEATURE_MAX}`}
-              >
-                Distinguishing features
-              </FieldLabel>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {FEATURE_SUGGESTIONS.map(tag => {
-                  const selected = appearance.distinguishingFeatures.includes(tag)
-                  const atMax = !selected && appearance.distinguishingFeatures.length >= FEATURE_MAX
-                  const FeatureIcon = FEATURE_ICONS[tag]
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      disabled={atMax}
-                      onClick={() => (selected ? onRemoveFeature(tag) : onAddFeature(tag))}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.015em] ring-1 transition-[background-color,color,box-shadow,ring-color,opacity] duration-150',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-                        selected
-                          ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.06)] ring-foreground'
-                          : 'bg-muted/25 text-muted-foreground ring-border/30 hover:bg-muted/40 hover:text-foreground hover:ring-border/45',
-                        atMax && 'cursor-not-allowed opacity-40 hover:bg-muted/25 hover:text-muted-foreground hover:ring-border/30',
-                      )}
-                    >
-                      {FeatureIcon ? <FeatureIcon className="size-3.5 shrink-0 stroke-[1.75]" aria-hidden /> : null}
-                      {tag}
-                    </button>
-                  )
-                })}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  id="influencer-feature-draft"
-                  value={featureDraft}
-                  onChange={e => onFeatureDraftChange(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      onAddFeature(featureDraft)
-                    }
-                  }}
-                  placeholder="Add custom feature…"
-                  className="rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-10 shrink-0 rounded-xl"
-                  onClick={() => onAddFeature(featureDraft)}
-                  aria-label="Add feature"
-                >
-                  <PlusIcon className="size-4" strokeWidth={1.75} />
-                </Button>
-              </div>
-              {appearance.distinguishingFeatures.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {appearance.distinguishingFeatures.map(tag => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-2.5 py-1 text-xs font-medium tracking-[-0.01em] ring-1 ring-border/30"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${tag}`}
-                        onClick={() => onRemoveFeature(tag)}
-                        className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <XIcon className="size-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </AdvancedCollapsible>
-        </div>
-      </div>
-    </FormFieldStack>
-  )
-}
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-4 text-[11px] font-medium tracking-[0.08em] text-muted-foreground/80 uppercase">
-      {children}
-    </p>
-  )
-}
-
-/* ─── Step 3: Style ─────────────────────────────────────────────────────── */
-
-function StyleStep({
-  directions,
-  photoStyle,
-  aestheticTags,
-  onDirectionsChange,
-  onPhotoStyleChange,
-  onAestheticChange,
-}: {
-  directions: string
-  photoStyle: InfluencerPhotoStyle
-  aestheticTags: string[]
-  onDirectionsChange: (v: string) => void
-  onPhotoStyleChange: (v: InfluencerPhotoStyle) => void
-  onAestheticChange: (v: string[]) => void
-}) {
-  return (
-    <FormFieldStack>
-      <div>
-        <FieldLabel icon={FIELD_ICONS.photoStyle}>Photo style</FieldLabel>
-        <ChoiceGrid
-          aria-label="Photo style"
-          value={photoStyle}
-          options={PHOTO_STYLE_OPTIONS}
-          onChange={v => onPhotoStyleChange(v as InfluencerPhotoStyle)}
-          iconGroup="photoStyle"
-        />
-      </div>
-
-      <div>
-        <FieldLabel hint={`${aestheticTags.length}/${AESTHETIC_MAX}`} icon={FIELD_ICONS.aesthetic}>
-          Aesthetic
-        </FieldLabel>
-        <ChipMultiSelect
-          aria-label="Aesthetic"
-          values={aestheticTags}
-          options={AESTHETIC_OPTIONS}
-          onChange={onAestheticChange}
-          max={AESTHETIC_MAX}
-          iconGroup="aesthetic"
-        />
-      </div>
-
-      <div>
-        <FieldLabel
-          htmlFor="influencer-directions"
-          hint={`${directions.length}/${DIRECTIONS_MAX}`}
-          icon={FIELD_ICONS.directions}
-        >
-          Creative direction
-        </FieldLabel>
-        <Textarea
-          id="influencer-directions"
-          value={directions}
-          onChange={e => onDirectionsChange(e.target.value.slice(0, DIRECTIONS_MAX))}
-          placeholder={DIRECTIONS_PLACEHOLDER}
-          rows={3}
-          className="min-h-24 resize-none rounded-xl border-border/60 bg-background/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-        />
-        <p className="mt-1.5 text-[12px] tracking-[-0.005em] text-muted-foreground">
-          Describe scenes, outfits, and mood — steers every generated image.
-        </p>
-      </div>
-    </FormFieldStack>
-  )
-}
-
-/* ─── Step 4: Review ────────────────────────────────────────────────────── */
-
-function ReviewStep({
-  form,
-  showFacialHair,
-  showMakeup,
-  onEdit,
-}: {
-  form: InfluencerCreateFormState
-  showFacialHair: boolean
-  showMakeup: boolean
-  onEdit: (step: WizardStep) => void
-}) {
-  const genderLabel = GENDER_OPTIONS.find(g => g.id === form.gender)?.label ?? form.gender
-  const ageLabel = AGE_RANGE_OPTIONS.find(a => a.id === form.ageRange)?.label ?? form.ageRange
-  const photoLabel =
-    PHOTO_STYLE_OPTIONS.find(o => o.id === form.photoStyle)?.label ?? form.photoStyle
-  const facialHairLabel =
-    showFacialHair && form.appearance.facialHair !== 'none'
-      ? (FACIAL_HAIR_OPTIONS.find(o => o.id === form.appearance.facialHair)?.label ??
-        form.appearance.facialHair)
-      : null
-  const makeupLabel = showMakeup
-    ? (MAKEUP_OPTIONS.find(o => o.id === form.appearance.makeup)?.label ?? form.appearance.makeup)
-    : null
-
-  return (
-    <div className="space-y-0">
-      <div className="mb-5 flex items-center gap-4 rounded-2xl bg-muted/15 p-4 ring-1 ring-border/35 sm:p-5">
-        <InfluencerAvatarSilhouette
-          skinTone={form.appearance.skinTone}
-          hairColor={form.appearance.hairColor}
-          eyeColor={form.appearance.eyeColor}
-          hairStyle={form.appearance.hairStyle}
-          facialHair={showFacialHair ? form.appearance.facialHair : undefined}
-          size="sm"
-          className="shrink-0"
-        />
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold tracking-[-0.02em] text-foreground">
-            {form.name.trim() || 'Unnamed influencer'}
-          </p>
-          <p className="text-[13px] tracking-[-0.01em] text-muted-foreground">
-            {genderLabel}
-            <span aria-hidden className="mx-1.5 text-border">
-              ·
-            </span>
-            {ageLabel}
-            {form.ethnicity.trim() ? (
-              <>
-                <span aria-hidden className="mx-1.5 text-border">
-                  ·
-                </span>
-                {form.ethnicity.trim()}
-              </>
-            ) : null}
-          </p>
-        </div>
-      </div>
-
-      <ReviewGroup title="Identity" onEdit={() => onEdit(1)}>
-        <ReviewLine label="Niche">
-          {form.niche.length > 0
-            ? form.niche.map(n => NICHE_OPTIONS.find(o => o.id === n)?.label ?? n).join(' · ')
-            : '—'}
-        </ReviewLine>
-        {form.bio.trim() ? <ReviewLine label="Bio">{form.bio.trim()}</ReviewLine> : null}
-      </ReviewGroup>
-
-      <Separator className="my-5 bg-border/40" />
-
-      <ReviewGroup title="Appearance" onEdit={() => onEdit(2)}>
-        <ReviewLine label="Look">
-          {labelForSwatch(HAIR_COLOR_OPTIONS, form.appearance.hairColor)}{' '}
-          {labelForChoice(HAIR_STYLE_OPTIONS, form.appearance.hairStyle)} hair
-          <span aria-hidden className="mx-1 text-border">
-            ·
-          </span>
-          {labelForSwatch(EYE_COLOR_OPTIONS, form.appearance.eyeColor)} eyes
-          <span aria-hidden className="mx-1 text-border">
-            ·
-          </span>
-          {labelForSwatch(SKIN_TONE_OPTIONS, form.appearance.skinTone)} skin
-        </ReviewLine>
-        <ReviewLine label="Build">
-          {labelForChoice(BODY_SHAPE_OPTIONS, form.appearance.bodyShape)}
-          <span aria-hidden className="mx-1 text-border">
-            ·
-          </span>
-          {HEIGHT_OPTIONS.find(h => h.id === form.appearance.height)?.label}
-          {facialHairLabel ? (
-            <>
-              <span aria-hidden className="mx-1 text-border">
-                ·
-              </span>
-              {facialHairLabel}
-            </>
-          ) : null}
-          {makeupLabel ? (
-            <>
-              <span aria-hidden className="mx-1 text-border">
-                ·
-              </span>
-              {makeupLabel}
-            </>
-          ) : null}
-        </ReviewLine>
-        {form.appearance.distinguishingFeatures.length > 0 ? (
-          <ReviewLine label="Details">
-            {form.appearance.distinguishingFeatures.join(' · ')}
-          </ReviewLine>
-        ) : null}
-      </ReviewGroup>
-
-      <Separator className="my-5 bg-border/40" />
-
-      <ReviewGroup title="Style" onEdit={() => onEdit(3)}>
-        <ReviewLine label="Photo">{photoLabel}</ReviewLine>
-        {form.aestheticTags.length > 0 ? (
-          <ReviewLine label="Vibe">
-            {form.aestheticTags
-              .map(t => AESTHETIC_OPTIONS.find(o => o.id === t)?.label ?? t)
-              .join(' · ')}
-          </ReviewLine>
-        ) : null}
-        {form.directions.trim() ? (
-          <ReviewLine label="Direction">
-            <span className="line-clamp-4">{form.directions.trim()}</span>
-          </ReviewLine>
-        ) : null}
-      </ReviewGroup>
-
-      <Separator className="my-5 bg-border/40" />
-
-      <div className="flex items-start gap-2.5 rounded-xl bg-muted/25 px-3.5 py-3 ring-1 ring-border/30">
-        <SparklesIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
-        <p className="text-[12px] leading-[1.55] tracking-[-0.005em] text-muted-foreground">
-          Takes ~1–2 minutes. We&apos;ll create anchor portraits from this identity — consistent across
-          every image and video generation.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function ReviewGroup({
-  title,
-  onEdit,
-  children,
-}: {
-  title: string
-  onEdit: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-2xl bg-muted/15 p-4 ring-1 ring-border/35 sm:p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-[14px] font-semibold tracking-[-0.02em] text-foreground">{title}</h3>
-        <button
-          type="button"
-          onClick={onEdit}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1',
-            'text-[12px] font-medium tracking-[-0.01em] text-muted-foreground',
-            'ring-1 ring-border/35 transition-colors hover:bg-muted/40 hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-          )}
-        >
-          <PencilIcon className="size-3" strokeWidth={1.75} />
-          Edit
-        </button>
-      </div>
-      <div className="space-y-3">{children}</div>
-    </div>
-  )
-}
-
-function ReviewLine({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-0.5">
-      <p className="text-[11px] font-medium tracking-[0.06em] text-muted-foreground/80 uppercase">
-        {label}
-      </p>
-      <div className="text-[13px] leading-[1.55] tracking-[-0.01em] text-foreground/90">{children}</div>
     </div>
   )
 }

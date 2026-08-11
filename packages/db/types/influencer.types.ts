@@ -48,6 +48,11 @@ export enum InfluencerPhotoStyle {
   STUDIO_POLISH = 'studio-polish',
 }
 
+export enum InfluencerShotPack {
+  QUICK = 'quick',
+  UGC_KIT = 'ugc-kit',
+}
+
 export enum InfluencerCloneRequestStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
@@ -65,6 +70,21 @@ export interface InfluencerAppearance {
   distinguishingFeatures?: string[]
   facialHair?: string
   makeup?: string
+  accessories?: string[]
+}
+
+export interface InfluencerCharacterSheet {
+  identityLock: string
+  signatureDetails: string[]
+  wardrobe: { casual: string; onCamera: string; active: string }
+  environments: string[]
+  expressionRange: string[]
+}
+
+export interface InfluencerGalleryShot {
+  shotId: string
+  url: string
+  aspectRatio: string
 }
 
 export interface InfluencerIdentity {
@@ -73,6 +93,8 @@ export interface InfluencerIdentity {
   basePromptFragment: string
   referenceImageUrls: string[]
   loraModelId?: string
+  characterSheet?: InfluencerCharacterSheet
+  shotPack?: InfluencerShotPack
 }
 
 export interface IInfluencer {
@@ -87,6 +109,8 @@ export interface IInfluencer {
   /** Free-text creative direction for scenes, outfits, and mood. */
   directions?: string
   niche: string[]
+  /** Structured UGC situations (max 3); rotates across shot pack. */
+  scenes?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   ethnicity?: string
@@ -97,6 +121,7 @@ export interface IInfluencer {
   status: InfluencerStatus
   coverImageUrl?: string
   galleryImageUrls: string[]
+  galleryShots?: InfluencerGalleryShot[]
   usageCount: number
   error?: string
   createdAt: Date
@@ -114,6 +139,7 @@ export type CreateInfluencerInput = {
   bio?: string
   directions?: string
   niche: string[]
+  scenes?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   ethnicity?: string
@@ -124,6 +150,7 @@ export type CreateInfluencerInput = {
   status?: InfluencerStatus
   coverImageUrl?: string
   galleryImageUrls?: string[]
+  galleryShots?: InfluencerGalleryShot[]
 }
 
 export type UpdateInfluencerInput = {
@@ -131,11 +158,13 @@ export type UpdateInfluencerInput = {
   bio?: string | null
   directions?: string | null
   niche?: string[]
+  scenes?: string[]
   aestheticTags?: string[]
   photoStyle?: InfluencerPhotoStyle | null
   status?: InfluencerStatus
   coverImageUrl?: string | null
   galleryImageUrls?: string[]
+  galleryShots?: InfluencerGalleryShot[]
   identity?: Partial<InfluencerIdentity>
   usageCount?: number
   error?: string | null

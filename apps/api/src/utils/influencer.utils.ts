@@ -3,10 +3,13 @@ import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import {
   getInfluencerById,
   getInfluencerCloneRequestById,
+  getModelByValue,
+  ContextSupport,
   InfluencerAgeRange as DbInfluencerAgeRange,
   InfluencerGender as DbInfluencerGender,
   InfluencerHeight as DbInfluencerHeight,
   InfluencerPhotoStyle as DbInfluencerPhotoStyle,
+  InfluencerShotPack as DbInfluencerShotPack,
   InfluencerStatus,
   InfluencerVisibility,
   type IInfluencer,
@@ -20,12 +23,18 @@ import type {
   InfluencerIdentity,
 } from '@socialista/types'
 import {
+  INFLUENCER_ACCESSORIES,
+  INFLUENCER_ACCESSORIES_MAX,
   INFLUENCER_AGE_RANGES,
+  INFLUENCER_DEFAULT_MODEL,
   INFLUENCER_FACIAL_HAIR,
   INFLUENCER_GENDERS,
   INFLUENCER_HEIGHTS,
   INFLUENCER_MAKEUP_STYLES,
   INFLUENCER_PHOTO_STYLES,
+  INFLUENCER_SCENES,
+  INFLUENCER_SCENES_MAX,
+  INFLUENCER_SHOT_PACKS,
 } from '@socialista/types'
 
 export function serializeInfluencer(doc: IInfluencer): Influencer {
@@ -39,6 +48,7 @@ export function serializeInfluencer(doc: IInfluencer): Influencer {
     bio: doc.bio,
     directions: doc.directions,
     niche: doc.niche,
+    scenes: doc.scenes ?? [],
     gender: doc.gender,
     ageRange: doc.ageRange,
     ethnicity: doc.ethnicity,
@@ -49,6 +59,11 @@ export function serializeInfluencer(doc: IInfluencer): Influencer {
     status: doc.status,
     coverImageUrl: doc.coverImageUrl,
     galleryImageUrls: doc.galleryImageUrls ?? [],
+    galleryShots: (doc.galleryShots ?? []).map(shot => ({
+      shotId: shot.shotId,
+      url: shot.url,
+      aspectRatio: shot.aspectRatio,
+    })),
     usageCount: doc.usageCount ?? 0,
     error: doc.error,
     createdAt: doc.createdAt,
@@ -67,6 +82,7 @@ function serializeAppearance(appearance: InfluencerAppearance): InfluencerAppear
     distinguishingFeatures: appearance.distinguishingFeatures,
     facialHair: appearance.facialHair,
     makeup: appearance.makeup,
+    accessories: appearance.accessories,
   }
 }
 
@@ -77,6 +93,20 @@ function serializeIdentity(identity: IInfluencer['identity']): InfluencerIdentit
     basePromptFragment: identity.basePromptFragment,
     referenceImageUrls: identity.referenceImageUrls ?? [],
     loraModelId: identity.loraModelId,
+    characterSheet: identity.characterSheet
+      ? {
+          identityLock: identity.characterSheet.identityLock,
+          signatureDetails: identity.characterSheet.signatureDetails ?? [],
+          wardrobe: {
+            casual: identity.characterSheet.wardrobe.casual,
+            onCamera: identity.characterSheet.wardrobe.onCamera,
+            active: identity.characterSheet.wardrobe.active,
+          },
+          environments: identity.characterSheet.environments ?? [],
+          expressionRange: identity.characterSheet.expressionRange ?? [],
+        }
+      : undefined,
+    shotPack: identity.shotPack,
   }
 }
 
@@ -177,9 +207,49 @@ export function parsePhotoStyle(value: unknown): DbInfluencerPhotoStyle | undefi
   throw new HttpError(400, 'Invalid photo style')
 }
 
+export function parseShotPack(value: unknown): DbInfluencerShotPack {
+  if (value === undefined || value === null || value === '') {
+    return DbInfluencerShotPack.QUICK
+  }
+  if (typeof value === 'string' && (INFLUENCER_SHOT_PACKS as readonly string[]).includes(value)) {
+    return value as DbInfluencerShotPack
+  }
+  throw new HttpError(400, 'Invalid shot pack (quick | ugc-kit)')
+}
+
 export function parseStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value.filter((item): item is string => typeof item === 'string').map(item => item.trim()).filter(Boolean)
+}
+
+function parseCatalogStringArray(
+  value: unknown,
+  allowed: readonly string[],
+  label: string,
+  max: number,
+): string[] {
+  const items = parseStringArray(value)
+  for (const item of items) {
+    if (!allowed.includes(item)) {
+      throw new HttpError(400, `Invalid ${label}: ${item}`)
+    }
+  }
+  return [...new Set(items)].slice(0, max)
+}
+
+export function parseScenes(value: unknown): string[] {
+  if (value === undefined || value === null) return []
+  return parseCatalogStringArray(value, INFLUENCER_SCENES, 'scene', INFLUENCER_SCENES_MAX)
+}
+
+export function parseAccessories(value: unknown): string[] {
+  if (value === undefined || value === null) return []
+  return parseCatalogStringArray(
+    value,
+    INFLUENCER_ACCESSORIES,
+    'accessory',
+    INFLUENCER_ACCESSORIES_MAX,
+  )
 }
 
 function parseOptionalEnumMember(
@@ -219,6 +289,7 @@ export function parseAppearance(raw: unknown): InfluencerAppearance {
     distinguishingFeatures: parseStringArray(appearance.distinguishingFeatures),
     facialHair: parseOptionalEnumMember(appearance.facialHair, INFLUENCER_FACIAL_HAIR, 'facial hair'),
     makeup: parseOptionalEnumMember(appearance.makeup, INFLUENCER_MAKEUP_STYLES, 'makeup'),
+    accessories: parseAccessories(appearance.accessories),
   }
 }
 
@@ -233,4 +304,28 @@ export function collectInfluencerMediaUrls(influencer: IInfluencer): string[] {
   for (const url of influencer.galleryImageUrls ?? []) urls.add(url)
   for (const url of influencer.identity?.referenceImageUrls ?? []) urls.add(url)
   return [...urls]
+}
+
+/**
+ * Resolve a catalog model for influencer generation.
+ * Requires image context so later anchors can reference the cover portrait.
+ */
+export async function resolveInfluencerGenerationModel(raw: unknown): Promise<string> {
+  const value =
+    typeof raw === 'string' && raw.trim() ? raw.trim() : INFLUENCER_DEFAULT_MODEL
+
+  const model = await getModelByValue(value)
+  if (!model) {
+    throw new HttpError(400, `Model not found: ${value}`)
+  }
+
+  const supports = model.contextSupports ?? []
+  if (!supports.includes(ContextSupport.IMAGE)) {
+    throw new HttpError(
+      400,
+      'Influencer generation requires a model with image context support',
+    )
+  }
+
+  return model.value
 }

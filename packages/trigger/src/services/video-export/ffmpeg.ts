@@ -17,6 +17,29 @@ function resolveFfmpegPath(): string {
 }
 
 /**
+ * Detect whether a media file has at least one audio stream.
+ * Uses ffmpeg -i stderr parsing so we don't need a separate ffprobe binary.
+ */
+export function probeHasAudioStream(fsPath: string): Promise<boolean> {
+  const bin = resolveFfmpegPath()
+  return new Promise(resolve => {
+    const child = spawn(bin, ['-hide_banner', '-i', fsPath], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+
+    let stderr = ''
+    child.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8')
+    })
+
+    child.on('error', () => resolve(false))
+    child.on('close', () => {
+      resolve(/Stream #\d+:\d+.*Audio:/i.test(stderr))
+    })
+  })
+}
+
+/**
  * Run ffmpeg with the given args. Progress is derived from `-progress pipe:1`
  * `out_time_us` relative to `durationSeconds`.
  */

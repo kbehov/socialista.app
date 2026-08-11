@@ -18,9 +18,12 @@ import {
   parseGender,
   parseOptionalAppearance,
   parsePhotoStyle,
+  parseScenes,
+  parseShotPack,
   parseStringArray,
   serializeCloneRequest,
   serializeInfluencer,
+  resolveInfluencerGenerationModel,
 } from '@/utils/influencer.utils.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import { buildInfluencerBasePromptFragment } from '@socialista/ai'
@@ -43,7 +46,6 @@ import {
 import { createPublicAccessToken } from '@socialista/trigger'
 import type { CloneInfluencerTask, GenerateInfluencerTask } from '@socialista/trigger/task-types'
 import {
-  INFLUENCER_DEFAULT_MODEL,
   TASK_IDS,
   type CreateInfluencerPayload,
   type UpdateInfluencerPayload,
@@ -160,13 +162,14 @@ export const createInfluencer = async (c: Context<AppContext>) => {
   const ageRange = parseAgeRange(body.ageRange)
   const appearance = parseAppearance(body.appearance)
   const niche = parseStringArray(body.niche)
+  const scenes = parseScenes(body.scenes)
   const aestheticTags = parseStringArray(body.aestheticTags)
   const bio = optionalTrimmedString(body.bio)
   const directions = parseDirections(body.directions)
   const ethnicity = optionalTrimmedString(body.ethnicity)
   const photoStyle = parsePhotoStyle(body.photoStyle)
-  const model =
-    typeof body.model === 'string' && body.model.trim() ? body.model.trim() : INFLUENCER_DEFAULT_MODEL
+  const shotPack = parseShotPack(body.shotPack)
+  const model = await resolveInfluencerGenerationModel(body.model)
 
   const basePromptFragment =
     optionalTrimmedString(body.basePromptFragment) ??
@@ -176,10 +179,6 @@ export const createInfluencer = async (c: Context<AppContext>) => {
       ageRange,
       ethnicity,
       appearance,
-      aestheticTags,
-      directions,
-      bio,
-      photoStyle,
     })
 
   const seed = Math.floor(Math.random() * 1_000_000_000)
@@ -193,6 +192,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
     bio,
     directions,
     niche,
+    scenes,
     gender,
     ageRange,
     ethnicity,
@@ -204,6 +204,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
       seed,
       basePromptFragment,
       referenceImageUrls: [],
+      shotPack,
     },
     status: InfluencerStatus.GENERATING,
     galleryImageUrls: [],
@@ -214,6 +215,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
     workspaceId,
     userId,
     model,
+    shotPack,
   })
 
   const publicAccessToken = await createPublicAccessToken(handle.id)
@@ -244,8 +246,7 @@ export const cloneInfluencer = async (c: Context<AppContext>) => {
   const aestheticTags = parseStringArray(body.aestheticTags)
   const bio = optionalTrimmedString(body.bio)
   const ethnicity = optionalTrimmedString(body.ethnicity)
-  const model =
-    typeof body.model === 'string' && body.model.trim() ? body.model.trim() : INFLUENCER_DEFAULT_MODEL
+  const model = await resolveInfluencerGenerationModel(body.model)
 
   const cloneRequest = await createInfluencerCloneRequest({
     workspace: workspaceId,
@@ -307,6 +308,7 @@ export const updateInfluencer = async (c: Context<AppContext>) => {
     bio?: string | null
     directions?: string | null
     niche?: string[]
+    scenes?: string[]
     aestheticTags?: string[]
     photoStyle?: ReturnType<typeof parsePhotoStyle> | null
   } = {}
@@ -322,6 +324,9 @@ export const updateInfluencer = async (c: Context<AppContext>) => {
   }
   if (body.niche !== undefined) {
     updates.niche = parseStringArray(body.niche)
+  }
+  if (body.scenes !== undefined) {
+    updates.scenes = parseScenes(body.scenes)
   }
   if (body.aestheticTags !== undefined) {
     updates.aestheticTags = parseStringArray(body.aestheticTags)

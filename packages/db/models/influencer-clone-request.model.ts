@@ -18,6 +18,9 @@ const appearanceSchema = new Schema<InfluencerAppearance>(
     bodyShape: { type: String, required: true },
     height: { type: String, enum: enumValues(InfluencerHeight) },
     distinguishingFeatures: { type: [String], default: undefined },
+    facialHair: { type: String },
+    makeup: { type: String },
+    accessories: { type: [String], default: undefined },
   },
   { _id: false },
 )
