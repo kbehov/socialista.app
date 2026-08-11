@@ -39,6 +39,11 @@ import {
   type InfluencerPreset,
 } from '@/lib/studio/influencers/presets'
 import { FEATURE_ICONS, FIELD_ICONS } from '@/lib/studio/influencers/option-icons'
+import {
+  AttachedMediaThumb,
+  AttachImagesDialog,
+  type AttachedImage,
+} from '@/components/files/attach-images-dialog'
 import { cn } from '@/lib/utils'
 import { createInfluencer } from '@/services/influencer.service'
 import { formatModelCost } from '@/utils/format'
@@ -56,6 +61,7 @@ import { INFLUENCER_DEFAULT_MODEL, INFLUENCER_SHOT_PACK_SPEC } from '@socialista
 import {
   ArrowLeftIcon,
   DicesIcon,
+  ImagePlusIcon,
   PlusIcon,
   SparklesIcon,
   XIcon,
@@ -88,6 +94,7 @@ const AESTHETIC_MAX = 3
 const FEATURE_MAX = 3
 const BIO_MAX = 200
 const DIRECTIONS_MAX = 500
+const MAX_USER_REFERENCE_IMAGES = 3
 
 type Phase = 'start' | 'design'
 
@@ -98,6 +105,8 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
   const reduceMotion = useReducedMotion()
   const [pending, startTransition] = useTransition()
   const [phase, setPhase] = useState<Phase>('start')
+  const [attachDialogOpen, setAttachDialogOpen] = useState(false)
+  const [referenceImages, setReferenceImages] = useState<AttachedImage[]>([])
   const [form, setForm] = useState<InfluencerCreateFormState>(cloneDefaultForm)
   const [featureDraft, setFeatureDraft] = useState('')
   const [selectedModelId, setSelectedModelId] = useState(() => {
@@ -126,7 +135,11 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
   )
   const packSpec = INFLUENCER_SHOT_PACK_SPEC[shotPack]
   const generationCost = selectedModel ? selectedModel.cost * packSpec.billed : 0
-  const canGenerate = name.trim().length > 0 && niche.length > 0 && !!selectedModel
+  const hasReferenceImages = referenceImages.length > 0
+  const canGenerate =
+    name.trim().length > 0 &&
+    !!selectedModel &&
+    (hasReferenceImages || niche.length > 0)
   const showFacialHair = gender === 'male'
   const showMakeup = gender === 'female' || gender === 'non-binary'
 
@@ -194,8 +207,12 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
       document.getElementById('section-identity')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    if (niche.length === 0) {
+    if (!hasReferenceImages && niche.length === 0) {
       document.getElementById('section-identity')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (!hasReferenceImages) {
+      document.getElementById('section-references')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
@@ -206,8 +223,8 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
       focusMissingField()
       return
     }
-    if (niche.length === 0) {
-      toast.error('Pick at least one niche')
+    if (!hasReferenceImages && niche.length === 0) {
+      toast.error('Attach reference photos or pick at least one niche')
       focusMissingField()
       return
     }
@@ -247,6 +264,9 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
         aestheticTags,
         photoStyle,
         shotPack,
+        ...(hasReferenceImages
+          ? { userReferenceImageUrls: referenceImages.map(image => image.url) }
+          : {}),
       })
 
       if (!response.success || !response.data?.influencer) {
@@ -312,7 +332,9 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
       </p>
       {!canGenerate && selectedModel ? (
         <p className="text-center text-[12px] text-muted-foreground/80">
-          Add a name and at least one niche
+          {hasReferenceImages
+            ? 'Add a name to generate'
+            : 'Add a name and reference photos or a niche'}
         </p>
       ) : null}
     </div>
@@ -440,6 +462,10 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
                     onUpdateAppearance={updateAppearance}
                     onAddFeature={addFeature}
                     onRemoveFeature={removeFeature}
+                    referenceImages={referenceImages}
+                    onReferenceImagesChange={setReferenceImages}
+                    onOpenAttachDialog={() => setAttachDialogOpen(true)}
+                    referencesDisabled={pending}
                   />
 
                   <div className="mt-10 hidden lg:block">
@@ -508,12 +534,26 @@ export function InfluencerCreateWorkspace({ workspaceId, models }: InfluencerCre
             </div>
             {!canGenerate && selectedModel ? (
               <p className="text-center text-[12px] text-muted-foreground">
-                Add a name and at least one niche
+                {hasReferenceImages
+                  ? 'Add a name to generate'
+                  : 'Add a name and reference photos or a niche'}
               </p>
             ) : null}
           </div>
         </div>
       ) : null}
+
+      <AttachImagesDialog
+        open={attachDialogOpen}
+        accept="image"
+        onOpenChange={setAttachDialogOpen}
+        maxImagesSelect={MAX_USER_REFERENCE_IMAGES}
+        initialSelected={referenceImages}
+        workspaceId={workspaceId}
+        title="Attach reference images"
+        description="Optional. Up to 3 photos — we generate similar variations (same face, lighting, wardrobe vibe, and set mood)."
+        onSelect={setReferenceImages}
+      />
     </div>
   )
 }
@@ -647,6 +687,10 @@ function DesignForm({
   onUpdateAppearance,
   onAddFeature,
   onRemoveFeature,
+  referenceImages,
+  onReferenceImagesChange,
+  onOpenAttachDialog,
+  referencesDisabled,
 }: {
   form: InfluencerCreateFormState
   featureDraft: string
@@ -674,6 +718,10 @@ function DesignForm({
   ) => void
   onAddFeature: (raw: string) => void
   onRemoveFeature: (tag: string) => void
+  referenceImages: AttachedImage[]
+  onReferenceImagesChange: (images: AttachedImage[]) => void
+  onOpenAttachDialog: () => void
+  referencesDisabled?: boolean
 }) {
   const {
     name,
@@ -711,9 +759,57 @@ function DesignForm({
           />
         </div>
 
+        <div id="section-references">
+          <FieldLabel
+            hint={`${referenceImages.length}/${MAX_USER_REFERENCE_IMAGES}`}
+            icon={ImagePlusIcon}
+          >
+            Reference photos
+          </FieldLabel>
+          <p className="mb-3 text-[12px] tracking-[-0.005em] text-muted-foreground">
+            {referenceImages.length > 0
+              ? 'References drive face + vibe. Everything below is optional — you can generate now.'
+              : 'Up to 3 photos (e.g. Pinterest saves). Attach these to skip look options and generate fast.'}
+          </p>
+
+          {referenceImages.length > 0 ? (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {referenceImages.map(image => (
+                <AttachedMediaThumb
+                  key={image.id}
+                  file={image}
+                  size="sm"
+                  disabled={referencesDisabled}
+                  onRemove={id =>
+                    onReferenceImagesChange(referenceImages.filter(item => item.id !== id))
+                  }
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <Button
+            type="button"
+            variant="outline"
+            disabled={referencesDisabled}
+            onClick={onOpenAttachDialog}
+            className="h-10 rounded-xl border-border/60"
+          >
+            <ImagePlusIcon className="size-4" strokeWidth={1.75} />
+            {referenceImages.length > 0
+              ? `Manage references (${referenceImages.length})`
+              : 'Attach references'}
+          </Button>
+        </div>
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <FieldLabel icon={FIELD_ICONS.gender}>Gender</FieldLabel>
+            <FieldLabel
+              icon={FIELD_ICONS.gender}
+              hint={referenceImages.length > 0 ? 'Optional' : undefined}
+            >
+              Gender
+            </FieldLabel>
             <OptionSegmented
               aria-label="Gender"
               value={gender}
@@ -723,7 +819,12 @@ function DesignForm({
             />
           </div>
           <div>
-            <FieldLabel icon={FIELD_ICONS.age}>Age range</FieldLabel>
+            <FieldLabel
+              icon={FIELD_ICONS.age}
+              hint={referenceImages.length > 0 ? 'Optional' : undefined}
+            >
+              Age range
+            </FieldLabel>
             <OptionSegmented
               aria-label="Age range"
               value={ageRange}
@@ -735,7 +836,14 @@ function DesignForm({
         </div>
 
         <div>
-          <FieldLabel hint={`${niche.length}/${NICHE_MAX}`} icon={FIELD_ICONS.niche}>
+          <FieldLabel
+            hint={
+              referenceImages.length > 0
+                ? `Optional · ${niche.length}/${NICHE_MAX}`
+                : `${niche.length}/${NICHE_MAX}`
+            }
+            icon={FIELD_ICONS.niche}
+          >
             Niche
           </FieldLabel>
           <ChipMultiSelect
@@ -773,7 +881,9 @@ function DesignForm({
       <Separator className="bg-border/40" />
 
       <section id="section-look" className="scroll-mt-24 space-y-6">
-        <SectionHeading>Look</SectionHeading>
+        <SectionHeading>
+          {referenceImages.length > 0 ? 'Look (optional)' : 'Look'}
+        </SectionHeading>
 
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
@@ -964,7 +1074,9 @@ function DesignForm({
       <Separator className="bg-border/40" />
 
       <section id="section-style" className="scroll-mt-24 space-y-5">
-        <SectionHeading>Style</SectionHeading>
+        <SectionHeading>
+          {referenceImages.length > 0 ? 'Style (optional)' : 'Style'}
+        </SectionHeading>
 
         <div>
           <FieldLabel icon={FIELD_ICONS.model}>Model</FieldLabel>

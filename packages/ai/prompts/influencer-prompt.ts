@@ -32,6 +32,8 @@ export type BuildInfluencerBasePromptInput = {
   appearance: InfluencerPromptAppearance
   /** When present, identityLock + signatureDetails drive the fragment. */
   characterSheet?: InfluencerCharacterSheet
+  /** When true, omit form hair/body append — identity comes from refs + sheet. */
+  preferReferenceAppearance?: boolean
 }
 
 const GENDER_LABEL: Record<InfluencerGender, string> = {
@@ -412,10 +414,11 @@ export const INFLUENCER_EXCLUSIONS =
 
 /**
  * Locked identity prose — reused byte-identical on every shot.
- * Scene / camera / wardrobe belong only in the short shot suffix + scene line.
+ * Scene / camera / wardrobe / accessories belong in the shot prompt doc, not here.
  */
 export function buildInfluencerBasePromptFragment(input: BuildInfluencerBasePromptInput): string {
-  const { name, gender, ageRange, ethnicity, appearance, characterSheet } = input
+  const { name, gender, ageRange, ethnicity, appearance, characterSheet, preferReferenceAppearance } =
+    input
   const person = GENDER_LABEL[gender]
   const age = AGE_REPRESENTATIVE[ageRange]
   const height = appearance.height ? `, ${HEIGHT_LABEL[appearance.height]}` : ''
@@ -435,10 +438,6 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
       ? ` ${MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`}.`
       : ''
 
-  const accessoryPhrases = expandAccessories(appearance.accessories)
-  const accessoriesClause =
-    accessoryPhrases.length > 0 ? ` Accessories: ${accessoryPhrases.join('; ')}.` : ''
-
   const subject = `${name} is a ${age}-year-old ${person}${ethnicityClause}, a real social-media creator.`
 
   if (characterSheet) {
@@ -446,10 +445,17 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
       characterSheet.signatureDetails.length > 0
         ? ` Signature: ${characterSheet.signatureDetails.join('; ')}.`
         : ''
+    if (preferReferenceAppearance) {
+      return (
+        `${subject} ${characterSheet.identityLock}${signatures}` +
+        ` Hair, skin, and body match the reference photos and identity lock.` +
+        ` Natural skin texture, believable real-world light.`
+      )
+    }
     return (
       `${subject} ${characterSheet.identityLock}${signatures}` +
       ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
-      ` Body: ${appearance.bodyShape} build${height}.${accessoriesClause}` +
+      ` Body: ${appearance.bodyShape} build${height}.` +
       ` Natural skin texture, believable real-world light.`
     )
   }
@@ -458,7 +464,7 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
     `${subject}` +
     ` Face: ${appearance.skinTone} skin, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
     ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
-    ` Body: ${appearance.bodyShape} build${height}.${accessoriesClause}` +
+    ` Body: ${appearance.bodyShape} build${height}.` +
     ` Natural skin texture, believable real-world light.`
   )
 }
@@ -592,8 +598,40 @@ export type BuildInfluencerShotPromptContext = {
   aestheticTags?: string[]
   characterSheet?: InfluencerCharacterSheet
   photoStyle?: InfluencerPhotoStyle
+  /** Free-text creative direction — optional mood/outfit refine. */
+  directions?: string
   /** Rotate wardrobe/environment picks across the pack. */
   shotIndex?: number
+  /**
+   * When > 0, run in reference-variation mode: preserve ref aesthetic/vibe,
+   * generate similar images (not a new world from form scenes).
+   */
+  userReferenceCount?: number
+}
+
+/** Structured scene block resolved before render. */
+export type InfluencerPromptScene = {
+  id?: string
+  wardrobe?: string
+  environment?: string
+  action?: string
+}
+
+/**
+ * Internal structured prompt document.
+ * Rendered to labeled natural language for image models — never sent as raw JSON.
+ */
+export type InfluencerPromptDoc = {
+  identity: string
+  shot: string
+  scene?: InfluencerPromptScene
+  accessories?: string[]
+  photoStyle?: string
+  aesthetics?: string[]
+  directions?: string
+  /** Hybrid user-ref guidance (cover shots with attached references). */
+  referenceGuidance?: string
+  quality: string
 }
 
 function pickFromArray<T>(items: T[] | undefined, index: number): T | undefined {
@@ -601,41 +639,51 @@ function pickFromArray<T>(items: T[] | undefined, index: number): T | undefined 
   return items[index % items.length]
 }
 
-function capitalizeSentence(value: string): string {
-  return value.replace(/^./, c => c.toUpperCase())
-}
-
 function expandUserScene(sceneId: string | undefined): InfluencerScenePrompt | undefined {
   if (!sceneId) return undefined
   return INFLUENCER_SCENE_PROMPTS[sceneId]
 }
 
-/** One wardrobe + setting line — scene / niche atmosphere without diluting identity. */
-function sceneLine(shot: InfluencerShot, ctx?: BuildInfluencerShotPromptContext): string {
-  if (!shot.useNicheScene) return ''
+/** Resolve wardrobe + setting + action from sheet → user scenes → niche fallback. */
+export function resolveInfluencerPromptScene(
+  shot: InfluencerShot,
+  ctx?: BuildInfluencerShotPromptContext,
+): InfluencerPromptScene | undefined {
+  if (!shot.useNicheScene) return undefined
 
   const index = ctx?.shotIndex ?? 0
   const sheetWardrobe = ctx?.characterSheet?.wardrobe?.[shot.wardrobeSlot]
   const sheetEnv = pickFromArray(ctx?.characterSheet?.environments, index)
+  const refMode = (ctx?.userReferenceCount ?? 0) > 0
+
+  // Reference-variation mode: stay in the sheet world derived from refs — never invent
+  // a competing form-scene / niche environment (that caused vibe drift).
+  if (refMode) {
+    if (!sheetWardrobe && !sheetEnv) return undefined
+    return {
+      wardrobe: sheetWardrobe || undefined,
+      environment: sheetEnv || undefined,
+    }
+  }
 
   if (sheetWardrobe || sheetEnv) {
-    const parts = [
-      sheetWardrobe ? `wearing ${sheetWardrobe}` : null,
-      sheetEnv ? `in ${sheetEnv}` : null,
-    ].filter(Boolean)
-    return parts.length ? ` ${capitalizeSentence(parts.join(', '))}.` : ''
+    return {
+      wardrobe: sheetWardrobe || undefined,
+      environment: sheetEnv || undefined,
+    }
   }
 
   const userScenes = ctx?.scenes?.filter(Boolean) ?? []
   if (userScenes.length > 0) {
-    const scene = expandUserScene(pickFromArray(userScenes, index))
+    const sceneId = pickFromArray(userScenes, index)
+    const scene = expandUserScene(sceneId)
     if (scene) {
-      const parts = [
-        scene.wardrobeHint ? `wearing ${scene.wardrobeHint}` : null,
-        `in ${scene.environment}`,
-        scene.actionCue ?? null,
-      ].filter(Boolean)
-      return parts.length ? ` ${capitalizeSentence(parts.join(', '))}.` : ''
+      return {
+        id: sceneId,
+        wardrobe: scene.wardrobeHint,
+        environment: scene.environment,
+        action: scene.actionCue,
+      }
     }
   }
 
@@ -645,44 +693,153 @@ function sceneLine(shot: InfluencerShot, ctx?: BuildInfluencerShotPromptContext)
   const primaryScene = primary ? INFLUENCER_NICHE_SCENES[primary] : undefined
   const secondaryScene = secondary ? INFLUENCER_NICHE_SCENES[secondary] : undefined
 
-  const outfit =
+  const wardrobe =
     pickFromArray(primaryScene?.wardrobe, index) ??
     pickFromArray(secondaryScene?.wardrobe, index)
-  // Prefer primary env, but borrow secondary when rotating for pack variety.
-  const setting =
+  const environment =
     pickFromArray(primaryScene?.environments, index) ??
     pickFromArray(secondaryScene?.environments, index)
 
-  const parts = [
-    outfit ? `wearing ${outfit}` : null,
-    setting ? `in ${setting}` : null,
-  ].filter(Boolean)
-
-  return parts.length ? ` ${capitalizeSentence(parts.join(', '))}.` : ''
-}
-
-function vibeLine(ctx?: BuildInfluencerShotPromptContext): string {
-  const bits: string[] = []
-  if (ctx?.photoStyle) {
-    bits.push(PHOTO_STYLE_CUE[ctx.photoStyle])
-  }
-  const aesthetics = ctx?.aestheticTags?.filter(Boolean).slice(0, 2)
-  if (aesthetics && aesthetics.length > 0) {
-    bits.push(`Aesthetic vibe: ${aesthetics.join(', ')}.`)
-  }
-  return bits.length ? ` ${bits.join(' ')}` : ''
+  if (!wardrobe && !environment) return undefined
+  return { wardrobe, environment }
 }
 
 /**
- * identity (fixed) + short shot suffix + niche scene + optional vibe cues.
- * No LLM per image — string concat only.
+ * Reference-variation guidance — aesthetic/vibe fidelity is the primary goal.
+ * Framing may follow the shot, but the visual world must stay in the ref series.
+ */
+export function buildHybridCoverRefInstructions(
+  referenceCount: number,
+  options?: { shotIndex?: number },
+): string {
+  const n = Math.min(Math.max(referenceCount, 1), 3)
+  const imageLabel = n === 1 ? 'Image 1' : n === 2 ? 'Images 1–2' : 'Images 1–3'
+  const isCover = (options?.shotIndex ?? 0) === 0
+
+  const variation = isCover
+    ? 'Create a close photoreal VARIATION of the attached reference photo(s) — same person in the same aesthetic world.'
+    : 'Create another shot in the SAME visual series as the attached reference photo(s) and cover — same person, same aesthetic world, different angle/crop/pose.'
+
+  return (
+    `${variation} References: ${imageLabel}. ` +
+    `MUST preserve: lighting quality and direction, color grade, wardrobe vibe, set mood, photographic style, and environment family. ` +
+    `ALLOWED: slight pose, camera angle, crop, or a minor wardrobe swap that still matches the reference vibe. ` +
+    `FORBIDDEN: inventing a new aesthetic (e.g. hard-flash hotel party if refs are soft window-lit living room), ` +
+    `new props that change the vibe, conflicting fashion eras, or a different location family. ` +
+    `Form identity attributes win only on gender/age conflicts — never override the reference look or aesthetic. ` +
+    `Do not copy watermarks, logos, UI chrome, or a celebrity likeness.`
+  )
+}
+
+/** Soften stock shot suffixes so they don't invent a competing UGC world over refs. */
+function adaptShotSuffixForRefs(suffix: string, shotIndex: number): string {
+  if (shotIndex === 0) {
+    return (
+      'Close variation of the reference: head-and-shoulders or similar crop, sharp face as identity anchor, ' +
+      'same lighting and environment family as the references — not a blank wall or a new location.'
+    )
+  }
+  return (
+    `${suffix} Stay inside the reference aesthetic world — same lighting language and vibe; vary angle/pose only.`
+  )
+}
+
+/** Assemble the structured prompt doc from identity + shot + options. */
+export function buildInfluencerPromptDoc(
+  identity: string,
+  shot: InfluencerShot,
+  ctx?: BuildInfluencerShotPromptContext,
+): InfluencerPromptDoc {
+  const accessories = expandAccessories(ctx?.accessories)
+  const userReferenceCount = ctx?.userReferenceCount ?? 0
+  const refMode = userReferenceCount > 0
+  const shotIndex = ctx?.shotIndex ?? 0
+
+  // In ref-variation mode, form aesthetic tags / photo style fight the reference vibe — omit them.
+  const aesthetics = refMode ? undefined : ctx?.aestheticTags?.filter(Boolean).slice(0, 2)
+  const directions = ctx?.directions?.trim() || undefined
+  const photoStyle = refMode
+    ? undefined
+    : ctx?.photoStyle
+      ? PHOTO_STYLE_CUE[ctx.photoStyle]
+      : undefined
+
+  return {
+    identity: identity.trim(),
+    shot: refMode
+      ? adaptShotSuffixForRefs(shot.promptSuffix.trim(), shotIndex)
+      : shot.promptSuffix.trim(),
+    scene: resolveInfluencerPromptScene(shot, ctx),
+    accessories: !refMode && accessories.length > 0 ? accessories : undefined,
+    photoStyle,
+    aesthetics: aesthetics && aesthetics.length > 0 ? aesthetics : undefined,
+    directions,
+    referenceGuidance: refMode
+      ? buildHybridCoverRefInstructions(userReferenceCount, { shotIndex })
+      : undefined,
+    quality: INFLUENCER_EXCLUSIONS,
+  }
+}
+
+function formatSceneSection(scene: InfluencerPromptScene): string {
+  const parts = [
+    scene.wardrobe ? `wearing ${scene.wardrobe}` : null,
+    scene.environment ? `in ${scene.environment}` : null,
+    scene.action ?? null,
+  ].filter(Boolean)
+  return parts.join(', ')
+}
+
+/**
+ * Deterministic labeled prose for image models.
+ * In reference-variation mode, References leads so aesthetic fidelity wins attention.
+ */
+export function renderInfluencerPrompt(doc: InfluencerPromptDoc): string {
+  const sections: string[] = []
+
+  if (doc.referenceGuidance) {
+    sections.push(`References: ${doc.referenceGuidance}`)
+  }
+
+  sections.push(`Identity: ${doc.identity}`, `Shot: ${doc.shot}`)
+
+  if (doc.scene && (doc.scene.wardrobe || doc.scene.environment || doc.scene.action)) {
+    sections.push(`Scene: ${formatSceneSection(doc.scene)}.`)
+  }
+
+  if (doc.accessories && doc.accessories.length > 0) {
+    sections.push(`Accessories: ${doc.accessories.join('; ')}.`)
+  }
+
+  const styleBits = [
+    doc.photoStyle,
+    doc.aesthetics && doc.aesthetics.length > 0
+      ? `Aesthetic vibe: ${doc.aesthetics.join(', ')}.`
+      : null,
+  ].filter(Boolean)
+  if (styleBits.length > 0) {
+    sections.push(`Style: ${styleBits.join(' ')}`)
+  }
+
+  if (doc.directions) {
+    sections.push(`Direction: ${doc.directions}`)
+  }
+
+  sections.push(`Quality: ${doc.quality}`)
+
+  return sections.join('\n')
+}
+
+/**
+ * identity (fixed) + shot + scene + accessories + vibe + directions.
+ * Builds a structured doc, then renders labeled natural language for the image model.
  */
 export function buildInfluencerAnchorPrompt(
   basePromptFragment: string,
   shot: InfluencerShot,
   ctx?: BuildInfluencerShotPromptContext,
 ): string {
-  return `${basePromptFragment} ${shot.promptSuffix}${sceneLine(shot, ctx)}${vibeLine(ctx)} ${INFLUENCER_EXCLUSIONS}`
+  return renderInfluencerPrompt(buildInfluencerPromptDoc(basePromptFragment, shot, ctx))
 }
 
 export type BuildCloneCoverPromptInput = {
@@ -695,10 +852,12 @@ export function buildCloneCoverPrompt(input: BuildCloneCoverPromptInput): string
   const suffix =
     input.promptSuffix ??
     'Front-facing head-and-shoulders portrait, soft natural light, sharp face, with a lived-in creator environment softly behind — not a blank studio wall.'
-  return (
-    `A photoreal portrait of ${input.name}, matching the person in the reference photos exactly —` +
-    ` same face, skin tone, hair, and body proportions. ${suffix}` +
-    ` Real camera look: natural skin texture with visible pores, soft real-world lighting.` +
-    ` ${INFLUENCER_EXCLUSIONS}`
-  )
+
+  return renderInfluencerPrompt({
+    identity:
+      `A photoreal portrait of ${input.name}, matching the person in the reference photos exactly —` +
+      ` same face, skin tone, hair, and body proportions. Real camera look: natural skin texture with visible pores, soft real-world lighting.`,
+    shot: suffix,
+    quality: INFLUENCER_EXCLUSIONS,
+  })
 }

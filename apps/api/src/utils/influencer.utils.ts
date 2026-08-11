@@ -92,6 +92,9 @@ function serializeIdentity(identity: IInfluencer['identity']): InfluencerIdentit
     seed: identity.seed,
     basePromptFragment: identity.basePromptFragment,
     referenceImageUrls: identity.referenceImageUrls ?? [],
+    userReferenceImageUrls: identity.userReferenceImageUrls?.length
+      ? identity.userReferenceImageUrls
+      : undefined,
     loraModelId: identity.loraModelId,
     characterSheet: identity.characterSheet
       ? {
@@ -303,6 +306,7 @@ export function collectInfluencerMediaUrls(influencer: IInfluencer): string[] {
   if (influencer.coverImageUrl) urls.add(influencer.coverImageUrl)
   for (const url of influencer.galleryImageUrls ?? []) urls.add(url)
   for (const url of influencer.identity?.referenceImageUrls ?? []) urls.add(url)
+  for (const url of influencer.identity?.userReferenceImageUrls ?? []) urls.add(url)
   return [...urls]
 }
 

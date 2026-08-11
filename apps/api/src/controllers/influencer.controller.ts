@@ -54,6 +54,7 @@ import { tasks } from '@trigger.dev/sdk/v3'
 import type { Context } from 'hono'
 
 const MIN_CLONE_PHOTOS = 3
+const MAX_USER_REFERENCE_IMAGES = 3
 const DEFAULT_EXPLORE_LIMIT = '24'
 const DIRECTIONS_MAX = 500
 
@@ -79,7 +80,7 @@ function parseDirections(value: unknown): string | undefined {
   return trimmed
 }
 
-function parseImageUrls(value: unknown, label: string, min: number): string[] {
+function parseImageUrls(value: unknown, label: string, min: number, max?: number): string[] {
   if (!Array.isArray(value)) {
     throw new HttpError(400, `${label} must be an array of image URLs`)
   }
@@ -87,12 +88,24 @@ function parseImageUrls(value: unknown, label: string, min: number): string[] {
   if (urls.length < min) {
     throw new HttpError(400, `At least ${min} images are required`)
   }
+  if (max !== undefined && urls.length > max) {
+    throw new HttpError(400, `${label} accepts at most ${max} images`)
+  }
   for (const url of urls) {
     if (!isValidHttpUrl(url)) {
       throw new HttpError(400, `Invalid image URL: ${url}`)
     }
   }
   return urls
+}
+
+function parseOptionalUserReferenceImageUrls(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) return undefined
+  if (!Array.isArray(value)) {
+    throw new HttpError(400, 'userReferenceImageUrls must be an array of image URLs')
+  }
+  if (value.length === 0) return undefined
+  return parseImageUrls(value, 'userReferenceImageUrls', 1, MAX_USER_REFERENCE_IMAGES)
 }
 
 async function bestEffortDeleteMedia(urls: string[], workspaceId: string | null) {
@@ -169,6 +182,8 @@ export const createInfluencer = async (c: Context<AppContext>) => {
   const ethnicity = optionalTrimmedString(body.ethnicity)
   const photoStyle = parsePhotoStyle(body.photoStyle)
   const shotPack = parseShotPack(body.shotPack)
+  const userReferenceImageUrls = parseOptionalUserReferenceImageUrls(body.userReferenceImageUrls)
+  // IMAGE context already required for all influencer models (cover → pack chaining).
   const model = await resolveInfluencerGenerationModel(body.model)
 
   const basePromptFragment =
@@ -204,6 +219,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
       seed,
       basePromptFragment,
       referenceImageUrls: [],
+      ...(userReferenceImageUrls ? { userReferenceImageUrls } : {}),
       shotPack,
     },
     status: InfluencerStatus.GENERATING,

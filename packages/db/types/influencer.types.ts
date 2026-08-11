@@ -91,7 +91,10 @@ export interface InfluencerIdentity {
   method: InfluencerIdentityMethod
   seed?: number
   basePromptFragment: string
+  /** Generated gallery anchors used for future identity-locked shots. */
   referenceImageUrls: string[]
+  /** Optional user-uploaded hybrid refs (face + vibe), max 3. */
+  userReferenceImageUrls?: string[]
   loraModelId?: string
   characterSheet?: InfluencerCharacterSheet
   shotPack?: InfluencerShotPack

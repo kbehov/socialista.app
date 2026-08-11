@@ -191,7 +191,10 @@ export type InfluencerIdentity = {
   method: InfluencerIdentityMethod
   seed?: number
   basePromptFragment: string
+  /** Generated gallery anchors used for future identity-locked shots. */
   referenceImageUrls: string[]
+  /** Optional user-uploaded hybrid refs (face + vibe), max 3. */
+  userReferenceImageUrls?: string[]
   loraModelId?: string
   characterSheet?: InfluencerCharacterSheet
   shotPack?: InfluencerShotPack
@@ -270,6 +273,7 @@ export type CreateInfluencerPayload = {
   bio?: string
   /** Free-text creative direction for scenes, outfits, and mood. */
   directions?: string
+  /** Empty allowed when userReferenceImageUrls are provided. */
   niche: string[]
   /** Structured UGC situations (max 3). */
   scenes?: string[]
@@ -283,6 +287,11 @@ export type CreateInfluencerPayload = {
   shotPack?: InfluencerShotPack
   /** Optional advanced override; otherwise built server-side from appearance. */
   basePromptFragment?: string
+  /**
+   * Optional hybrid reference images (face + vibe), max 3 HTTPS URLs.
+   * When provided, niche / look / style fields may be omitted — refs drive generation.
+   */
+  userReferenceImageUrls?: string[]
 }
 
 export type UpdateInfluencerPayload = {

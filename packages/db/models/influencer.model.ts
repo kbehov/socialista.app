@@ -65,6 +65,7 @@ const identitySchema = new Schema<InfluencerIdentity>(
     seed: { type: Number },
     basePromptFragment: { type: String, required: true },
     referenceImageUrls: { type: [String], default: [] },
+    userReferenceImageUrls: { type: [String], default: undefined },
     loraModelId: { type: String },
     characterSheet: { type: characterSheetSchema },
     shotPack: { type: String, enum: enumValues(InfluencerShotPack) },

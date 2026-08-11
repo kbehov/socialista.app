@@ -100,6 +100,10 @@ export const generateInfluencer = schemaTask({
       setGenerationStatus(5, 'Building character sheet')
       let characterSheet = influencer.identity.characterSheet
       let baseFragment = influencer.identity.basePromptFragment
+      const userReferenceImageUrls = (influencer.identity.userReferenceImageUrls ?? [])
+        .map(url => url.trim())
+        .filter(Boolean)
+        .slice(0, 3)
 
       try {
         characterSheet = await buildInfluencerCharacterSheet({
@@ -114,6 +118,9 @@ export const generateInfluencer = schemaTask({
           directions: influencer.directions,
           bio: influencer.bio,
           photoStyle: influencer.photoStyle,
+          ...(userReferenceImageUrls.length > 0
+            ? { referenceImageUrls: userReferenceImageUrls }
+            : {}),
         })
         baseFragment = buildInfluencerBasePromptFragment({
           name: influencer.name,
@@ -122,6 +129,7 @@ export const generateInfluencer = schemaTask({
           ethnicity: influencer.ethnicity,
           appearance: influencer.appearance,
           characterSheet,
+          preferReferenceAppearance: userReferenceImageUrls.length > 0,
         })
         await updateInfluencer(payload.influencerId, {
           identity: {
@@ -145,6 +153,7 @@ export const generateInfluencer = schemaTask({
         model: model.value,
         shotPack,
         shots: shotCount,
+        userReferenceCount: userReferenceImageUrls.length,
       })
 
       const promptCtxBase = {
@@ -154,6 +163,10 @@ export const generateInfluencer = schemaTask({
         aestheticTags: influencer.aestheticTags,
         characterSheet,
         photoStyle: influencer.photoStyle,
+        directions: influencer.directions,
+        ...(userReferenceImageUrls.length > 0
+          ? { userReferenceCount: userReferenceImageUrls.length }
+          : {}),
       }
 
       const seedBase = model.modelProvider.toLowerCase().includes('fal')
@@ -206,19 +219,24 @@ export const generateInfluencer = schemaTask({
 
       // ── Cover (1×, optional QA retry) ───────────────────────────────────
       const coverShot = shots[0]!
+      const coverRefs =
+        userReferenceImageUrls.length > 0 ? userReferenceImageUrls : undefined
       setGenerationStatus(12, 'Generating cover portrait')
-      coverImageUrl = await runShot(coverShot, 0, undefined)
+      coverImageUrl = await runShot(coverShot, 0, coverRefs)
 
       if (COVER_QUALITY_GATE_ENABLED) {
         try {
           setGenerationStatus(22, 'Reviewing cover portrait')
-          const quality = await evaluateAnchorPortrait(coverImageUrl)
+          const quality = await evaluateAnchorPortrait(coverImageUrl, {
+            referenceImageUrls:
+              userReferenceImageUrls.length > 0 ? userReferenceImageUrls : undefined,
+          })
           metadata.set('shot_front-portrait_quality', quality)
           if (!quality.pass) {
             logger.warn('Cover failed quality gate, regenerating once', {
               reason: quality.reason,
             })
-            coverImageUrl = await runShot(coverShot, 0, undefined, 1)
+            coverImageUrl = await runShot(coverShot, 0, coverRefs, 1)
           }
         } catch (gateError) {
           logger.warn('Cover quality gate unavailable, continuing', {
@@ -233,12 +251,19 @@ export const generateInfluencer = schemaTask({
         aspectRatio: coverShot.aspectRatio,
       })
 
-      // ── Remaining shots in parallel (cover as sole reference) ───────────
+      // ── Remaining shots in parallel ─────────────────────────────────────
+      // With user refs: keep original refs + cover so aesthetic stays locked.
+      // Without: cover alone (identity chain).
       const remaining = shots.slice(1)
       setGenerationStatus(30, `Rendering ${remaining.length} pack shots`)
 
+      const packRefs =
+        userReferenceImageUrls.length > 0
+          ? [coverImageUrl!, ...userReferenceImageUrls].slice(0, 3)
+          : [coverImageUrl!]
+
       const results = await Promise.allSettled(
-        remaining.map((shot, i) => runShot(shot, i + 1, [coverImageUrl!])),
+        remaining.map((shot, i) => runShot(shot, i + 1, packRefs)),
       )
 
       let firstFailure: unknown
@@ -269,7 +294,13 @@ export const generateInfluencer = schemaTask({
         coverImageUrl,
         galleryImageUrls,
         galleryShots,
-        identity: { referenceImageUrls: galleryImageUrls, shotPack: dbShotPack },
+        identity: {
+          ...(userReferenceImageUrls.length > 0
+            ? { userReferenceImageUrls }
+            : {}),
+          referenceImageUrls: galleryImageUrls,
+          shotPack: dbShotPack,
+        },
         error: null,
       })
 
