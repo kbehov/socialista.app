@@ -26,6 +26,34 @@ function mapQueueStatus(status: string | undefined): { progress: number; label: 
   }
 }
 
+function collectReferenceImages(imageUrl?: string, imageUrls?: string[]): string[] {
+  const refs = [...(imageUrls ?? [])]
+  if (imageUrl && !refs.includes(imageUrl)) {
+    refs.push(imageUrl)
+  }
+  return refs
+}
+
+/** Map refs to `image_urls` (edit/multi-ref) or `image_url` (single-image) per fal model schema. */
+function buildFalImageInput(
+  model: string,
+  referenceImages: string[],
+): { image_urls: string[] } | { image_url: string } {
+  const id = model.toLowerCase()
+  const usesImageUrls =
+    id.includes('/edit') ||
+    id.includes('/multi') ||
+    id.includes('nano-banana') ||
+    id.includes('grok-imagine-image') ||
+    id.includes('flux-2')
+
+  if (usesImageUrls) {
+    return { image_urls: referenceImages }
+  }
+
+  return { image_url: referenceImages[0]! }
+}
+
 export async function generateImageFal({
   model,
   prompt,
@@ -35,21 +63,26 @@ export async function generateImageFal({
   seed,
   onProgress,
 }: GenerateImageOptions): Promise<string> {
-  const input: Record<string, string | number> = {
+  const referenceImages = collectReferenceImages(imageUrl, imageUrls)
+
+  const input: Record<string, unknown> = {
     prompt,
     aspect_ratio: aspectRatio,
   }
 
-  const referenceImage = imageUrl ?? imageUrls?.[0]
-  if (referenceImage) {
-    input.image_url = referenceImage
+  if (referenceImages.length > 0) {
+    Object.assign(input, buildFalImageInput(model, referenceImages))
   }
 
   if (seed !== undefined) {
     input.seed = seed
   }
 
-  console.log('Submitting to fal', { model })
+  console.log('Submitting to fal', {
+    model,
+    referenceCount: referenceImages.length,
+    imageField: referenceImages.length > 0 ? ('image_urls' in input ? 'image_urls' : 'image_url') : null,
+  })
 
   const result = await fal.subscribe(model, {
     input,

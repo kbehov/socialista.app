@@ -1,13 +1,6 @@
 import { AspectRatio } from './image-generation.types.js'
 
-export const SLIDESHOW_CONTENT_TYPES = [
-  'story',
-  'guide',
-  'list',
-  'routine',
-  'comparison',
-  'myth',
-] as const
+export const SLIDESHOW_CONTENT_TYPES = ['story', 'guide', 'list', 'routine', 'comparison', 'myth'] as const
 
 export type SlideshowContentType = (typeof SLIDESHOW_CONTENT_TYPES)[number]
 

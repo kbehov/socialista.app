@@ -19,7 +19,6 @@ import {
   parseOptionalAppearance,
   parsePhotoStyle,
   parseScenes,
-  parseShotPack,
   parseStringArray,
   serializeCloneRequest,
   serializeInfluencer,
@@ -46,6 +45,7 @@ import {
 import { createPublicAccessToken } from '@socialista/trigger'
 import type { CloneInfluencerTask, GenerateInfluencerTask } from '@socialista/trigger/task-types'
 import {
+  INFLUENCER_MAX_USER_REFERENCE_IMAGES,
   TASK_IDS,
   type CreateInfluencerPayload,
   type UpdateInfluencerPayload,
@@ -54,7 +54,6 @@ import { tasks } from '@trigger.dev/sdk/v3'
 import type { Context } from 'hono'
 
 const MIN_CLONE_PHOTOS = 3
-const MAX_USER_REFERENCE_IMAGES = 3
 const DEFAULT_EXPLORE_LIMIT = '24'
 const DIRECTIONS_MAX = 500
 
@@ -105,7 +104,7 @@ function parseOptionalUserReferenceImageUrls(value: unknown): string[] | undefin
     throw new HttpError(400, 'userReferenceImageUrls must be an array of image URLs')
   }
   if (value.length === 0) return undefined
-  return parseImageUrls(value, 'userReferenceImageUrls', 1, MAX_USER_REFERENCE_IMAGES)
+  return parseImageUrls(value, 'userReferenceImageUrls', 1, INFLUENCER_MAX_USER_REFERENCE_IMAGES)
 }
 
 async function bestEffortDeleteMedia(urls: string[], workspaceId: string | null) {
@@ -181,7 +180,6 @@ export const createInfluencer = async (c: Context<AppContext>) => {
   const directions = parseDirections(body.directions)
   const ethnicity = optionalTrimmedString(body.ethnicity)
   const photoStyle = parsePhotoStyle(body.photoStyle)
-  const shotPack = parseShotPack(body.shotPack)
   const userReferenceImageUrls = parseOptionalUserReferenceImageUrls(body.userReferenceImageUrls)
   // IMAGE context already required for all influencer models (cover → pack chaining).
   const model = await resolveInfluencerGenerationModel(body.model)
@@ -220,7 +218,6 @@ export const createInfluencer = async (c: Context<AppContext>) => {
       basePromptFragment,
       referenceImageUrls: [],
       ...(userReferenceImageUrls ? { userReferenceImageUrls } : {}),
-      shotPack,
     },
     status: InfluencerStatus.GENERATING,
     galleryImageUrls: [],
@@ -231,7 +228,6 @@ export const createInfluencer = async (c: Context<AppContext>) => {
     workspaceId,
     userId,
     model,
-    shotPack,
   })
 
   const publicAccessToken = await createPublicAccessToken(handle.id)

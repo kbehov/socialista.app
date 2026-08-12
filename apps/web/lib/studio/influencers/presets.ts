@@ -5,7 +5,6 @@ import type {
   InfluencerHeight,
   InfluencerMakeupStyle,
   InfluencerPhotoStyle,
-  InfluencerShotPack,
 } from '@socialista/types'
 import {
   AESTHETIC_OPTIONS,
@@ -46,7 +45,6 @@ export type InfluencerCreateFormState = {
   }
   aestheticTags: string[]
   photoStyle: InfluencerPhotoStyle
-  shotPack: InfluencerShotPack
 }
 
 export type InfluencerPreset = {
@@ -55,7 +53,6 @@ export type InfluencerPreset = {
   description: string
   /** What the user will use this influencer for. */
   useCase: string
-  shotPack: InfluencerShotPack
   /** Gradient colors for the preset card avatar */
   avatar: { skin: string; hair: string }
   form: InfluencerCreateFormState
@@ -67,12 +64,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Product reviewer',
     description: 'Scroll-stopping handheld reviews that convert — phone UGC, chest-height product.',
     useCase: 'Product reviews & unboxings',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#C68642', hair: '#0D0D0D' },
     form: {
       name: 'Jordan Hale',
       bio: 'Honest everyday product reviews without the hype.',
-      directions: 'Friendly mid-explanation face, plain unbranded product at chest height, crisp phone UGC.',
+      directions: 'Friendly mid-explanation energy, plain unbranded product at chest height, crisp phone UGC.',
       gender: 'male',
       ageRange: '25-34',
       niche: ['tech', 'lifestyle'],
@@ -92,7 +88,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['minimalist', 'casual'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -100,12 +95,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Beauty GRWM',
     description: 'Vanity GRWM + serum try-ons — soft daylight, flattering skin focus.',
     useCase: 'Beauty & skincare ads',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#D4A574', hair: '#0D0D0D' },
     form: {
       name: 'Sofia Rivera',
       bio: 'Soft glam routines and honest skincare try-ons.',
-      directions: 'Warm beauty energy, soft skin texture, holding serum toward camera.',
+      directions: 'Warm beauty energy, soft skin texture, serum toward camera, vanity morning light.',
       gender: 'female',
       ageRange: '18-24',
       niche: ['beauty', 'fashion'],
@@ -125,7 +119,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['glam', 'editorial'],
       photoStyle: 'creator-camera',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -133,12 +126,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Fitness coach',
     description: 'Gym + outdoor training frames for workout tips and recovery content.',
     useCase: 'Fitness & wellness ads',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#8D5524', hair: '#3B2314' },
     form: {
       name: 'Riley Park',
       bio: 'Strength training, recovery tips, and showing up every day.',
-      directions: 'Motivating coach energy between sets — sweaty, real, camera-confident.',
+      directions: 'Motivating coach energy between sets — sweaty, real, camera-confident gym light.',
       gender: 'non-binary',
       ageRange: '25-34',
       niche: ['fitness', 'wellness'],
@@ -158,7 +150,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['sporty', 'casual'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -166,12 +157,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Fashion OOTD',
     description: 'Mirror fits + street looks for style hauls and outfit content.',
     useCase: 'Fashion & OOTD',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#E8C4A8', hair: '#3B2314' },
     form: {
       name: 'Maya Chen',
       bio: 'Elevated everyday style with an editorial eye.',
-      directions: 'Outfit-check confidence, full-length readable silhouette, street-style ease.',
+      directions: 'Outfit-check confidence, full-length readable silhouette, street-style daylight.',
       gender: 'female',
       ageRange: '25-34',
       niche: ['fashion', 'lifestyle'],
@@ -191,7 +181,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['streetwear', 'editorial'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -199,12 +188,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Home cook',
     description: 'Kitchen plating + market runs for recipes and food brands.',
     useCase: 'Food & recipes',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#F6E6D8', hair: '#B85C38' },
     form: {
       name: 'Elena Rossi',
       bio: 'Home cooking, seasonal recipes, and sharing the table.',
-      directions: 'Warm host energy, hands-busy cooking moment, inviting food UGC.',
+      directions: 'Warm host energy, hands-busy cooking moment, inviting kitchen daylight.',
       gender: 'female',
       ageRange: '35-44',
       niche: ['food', 'lifestyle'],
@@ -224,7 +212,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['casual', 'vintage'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -232,12 +219,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Tech creator',
     description: 'Desk demos and gadget walkthroughs for launches and SaaS.',
     useCase: 'Tech demos & launches',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#A56C3A', hair: '#0D0D0D' },
     form: {
       name: 'Dev Patel',
       bio: 'Clear product demos, unboxings, and software walkthroughs.',
-      directions: 'Confident explainer tone, clean desk framing, gadget readable in hand.',
+      directions: 'Confident explainer tone, clean desk framing, gadget readable in hand, soft key light.',
       gender: 'male',
       ageRange: '25-34',
       niche: ['tech', 'education'],
@@ -257,7 +243,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['minimalist', 'editorial'],
       photoStyle: 'creator-camera',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -265,7 +250,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Car talker',
     description: 'Passenger-seat confessionals — high-retention TikTok format.',
     useCase: 'Car confessionals & hooks',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#C68642', hair: '#3B2314' },
     form: {
       name: 'Alex Rivera',
@@ -290,7 +274,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['casual', 'streetwear'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -298,12 +281,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Podcast host',
     description: 'Mic-forward talking heads for interviews, tips, and thought leadership.',
     useCase: 'Podcast & thought leadership',
-    shotPack: 'quick',
     avatar: { skin: '#6B3F24', hair: '#0D0D0D' },
     form: {
       name: 'Nina Okonkwo',
       bio: 'Conversations on culture, careers, and creative work.',
-      directions: 'Engaged speaking face into mic, calm authority, soft key light.',
+      directions: 'Engaged speaking face into mic, calm authority, soft podcast key light.',
       gender: 'female',
       ageRange: '25-34',
       niche: ['business', 'education'],
@@ -323,7 +305,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['editorial', 'minimalist'],
       photoStyle: 'creator-camera',
-      shotPack: 'quick',
     },
   },
   {
@@ -331,12 +312,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Travel vlogger',
     description: 'Airport-to-hotel day-in-the-life for travel brands and destinations.',
     useCase: 'Travel & destination UGC',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#D4A574', hair: '#6B3A2A' },
     form: {
       name: 'Samira Haddad',
       bio: 'City weekends, packing tips, and finding the good light abroad.',
-      directions: 'Excited travel-day energy, natural wind/motion, readable destination vibe.',
+      directions: 'Excited travel-day energy, natural wind/motion, golden destination light.',
       gender: 'female',
       ageRange: '25-34',
       niche: ['travel', 'lifestyle'],
@@ -356,7 +336,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['outdoorsy', 'editorial'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -364,12 +343,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Wellness morning',
     description: 'Soft morning rituals for supplements, routines, and mindful living.',
     useCase: 'Wellness & routines',
-    shotPack: 'quick',
     avatar: { skin: '#E8C4A8', hair: '#6B3A2A' },
     form: {
       name: 'Ava Brooks',
       bio: 'Soft mornings, mindful rituals, and everyday wellness.',
-      directions: 'Calm approachable energy, linen textures, soft morning light.',
+      directions: 'Calm approachable energy, linen textures, soft morning window light.',
       gender: 'female',
       ageRange: '25-34',
       niche: ['wellness', 'lifestyle'],
@@ -389,7 +367,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['minimalist', 'casual'],
       photoStyle: 'ugc-phone',
-      shotPack: 'quick',
     },
   },
   {
@@ -397,12 +374,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Retail haul',
     description: 'Store finds and shopping-bag reveals for retail and DTC brands.',
     useCase: 'Hauls & shopping ads',
-    shotPack: 'ugc-kit',
     avatar: { skin: '#E8C4A8', hair: '#0D0D0D' },
     form: {
       name: 'Chloe Park',
       bio: 'Store finds, try-ons, and honest haul reactions.',
-      directions: 'Excited haul energy, product reveal toward camera, bright retail light.',
+      directions: 'Excited haul energy, product reveal toward camera, bright retail lighting.',
       gender: 'female',
       ageRange: '18-24',
       niche: ['fashion', 'lifestyle'],
@@ -422,7 +398,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['casual', 'streetwear'],
       photoStyle: 'ugc-phone',
-      shotPack: 'ugc-kit',
     },
   },
   {
@@ -430,7 +405,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
     title: 'Business explainer',
     description: 'Seated tips for finance, career, and B2B thought leadership.',
     useCase: 'Business & finance tips',
-    shotPack: 'quick',
     avatar: { skin: '#C68642', hair: '#3B2314' },
     form: {
       name: 'Marcus Webb',
@@ -455,7 +429,6 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       },
       aestheticTags: ['minimalist', 'editorial'],
       photoStyle: 'creator-camera',
-      shotPack: 'quick',
     },
   },
 ]
@@ -513,7 +486,6 @@ type Archetype = {
   accessories: string[]
   aestheticTags: string[]
   photoStyle: InfluencerPhotoStyle
-  shotPack: InfluencerShotPack
 }
 
 /** Coherent base people — Surprise Me jitters within an archetype instead of random soup. */
@@ -535,7 +507,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['candle', 'coffee-cup', 'skincare-bottle'],
     aestheticTags: ['minimalist', 'casual'],
     photoStyle: 'ugc-phone',
-    shotPack: 'quick',
   },
   {
     gender: 'male',
@@ -554,7 +525,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['glasses', 'headphones', 'phone'],
     aestheticTags: ['minimalist', 'editorial'],
     photoStyle: 'creator-camera',
-    shotPack: 'ugc-kit',
   },
   {
     gender: 'female',
@@ -573,7 +543,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['skincare-bottle', 'jewelry', 'phone'],
     aestheticTags: ['glam', 'editorial'],
     photoStyle: 'creator-camera',
-    shotPack: 'ugc-kit',
   },
   {
     gender: 'male',
@@ -592,7 +561,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['water-bottle', 'dumbbell', 'headphones'],
     aestheticTags: ['sporty', 'outdoorsy'],
     photoStyle: 'ugc-phone',
-    shotPack: 'ugc-kit',
   },
   {
     gender: 'female',
@@ -611,7 +579,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['coffee-cup', 'phone'],
     aestheticTags: ['casual', 'vintage'],
     photoStyle: 'ugc-phone',
-    shotPack: 'ugc-kit',
   },
   {
     gender: 'non-binary',
@@ -630,7 +597,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['sunglasses', 'bag', 'phone'],
     aestheticTags: ['streetwear', 'editorial'],
     photoStyle: 'ugc-phone',
-    shotPack: 'ugc-kit',
   },
   {
     gender: 'male',
@@ -649,7 +615,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['phone', 'sunglasses', 'coffee-cup'],
     aestheticTags: ['casual', 'streetwear'],
     photoStyle: 'ugc-phone',
-    shotPack: 'ugc-kit',
   },
   {
     gender: 'female',
@@ -668,7 +633,6 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     accessories: ['bag', 'phone', 'sunglasses'],
     aestheticTags: ['outdoorsy', 'editorial'],
     photoStyle: 'ugc-phone',
-    shotPack: 'ugc-kit',
   },
 ]
 
@@ -719,7 +683,6 @@ export function randomizeInfluencerForm(): InfluencerCreateFormState {
     aestheticTags:
       Math.random() > 0.7 ? pickRandomSubset(AESTHETIC_OPTIONS, 2) : [...base.aestheticTags],
     photoStyle: Math.random() > 0.8 ? pickRandom(PHOTO_STYLE_OPTIONS).id : base.photoStyle,
-    shotPack: base.shotPack,
   }
 }
 
@@ -743,7 +706,6 @@ export function clonePresetForm(preset: InfluencerPreset): InfluencerCreateFormS
     niche: [...preset.form.niche],
     scenes: [...preset.form.scenes],
     aestheticTags: [...preset.form.aestheticTags],
-    shotPack: preset.shotPack,
     appearance: {
       ...preset.form.appearance,
       distinguishingFeatures: [...preset.form.appearance.distinguishingFeatures],

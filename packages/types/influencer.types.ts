@@ -131,20 +131,26 @@ export type InfluencerSort = (typeof INFLUENCER_SORTS)[number]
 /** Default model for influencer anchor / cover generation. */
 export const INFLUENCER_DEFAULT_MODEL = 'openai/gpt-image-2' as const
 
-/** Shot packs for influencer generation — Quick (identity floor) vs full UGC kit. */
+/** Fixed generation output: portrait, full body, and one distinct UGC frame. */
+export const INFLUENCER_GENERATION_SHOT_COUNT = 3
+export const INFLUENCER_GENERATION_BILLED = 3
+export const INFLUENCER_MAX_USER_REFERENCE_IMAGES = 1
+
+/** @deprecated Shot packs removed — use INFLUENCER_GENERATION_* constants. */
 export const INFLUENCER_SHOT_PACKS = ['quick', 'ugc-kit'] as const
 export type InfluencerShotPack = (typeof INFLUENCER_SHOT_PACKS)[number]
 
+/** @deprecated Shot packs removed — generation always bills INFLUENCER_GENERATION_BILLED. */
 export const INFLUENCER_SHOT_PACK_SPEC = {
-  quick: { shots: 3, coverCandidates: 1, billed: 3 },
-  'ugc-kit': { shots: 6, coverCandidates: 1, billed: 6 },
+  quick: { shots: INFLUENCER_GENERATION_SHOT_COUNT, coverCandidates: 1, billed: INFLUENCER_GENERATION_BILLED },
+  'ugc-kit': { shots: INFLUENCER_GENERATION_SHOT_COUNT, coverCandidates: 1, billed: INFLUENCER_GENERATION_BILLED },
 } as const satisfies Record<
   InfluencerShotPack,
   { shots: number; coverCandidates: number; billed: number }
 >
 
-/** @deprecated Prefer INFLUENCER_SHOT_PACK_SPEC[pack].shots — kept for transitional imports. */
-export const INFLUENCER_ANCHOR_SHOT_COUNT = INFLUENCER_SHOT_PACK_SPEC.quick.shots
+/** @deprecated Use INFLUENCER_GENERATION_SHOT_COUNT. */
+export const INFLUENCER_ANCHOR_SHOT_COUNT = INFLUENCER_GENERATION_SHOT_COUNT
 
 export const INFLUENCER_SHOT_IDS = [
   'front-portrait',
@@ -193,7 +199,7 @@ export type InfluencerIdentity = {
   basePromptFragment: string
   /** Generated gallery anchors used for future identity-locked shots. */
   referenceImageUrls: string[]
-  /** Optional user-uploaded hybrid refs (face + vibe), max 3. */
+  /** Optional user-uploaded style reference (lighting / palette), max 1. */
   userReferenceImageUrls?: string[]
   loraModelId?: string
   characterSheet?: InfluencerCharacterSheet
@@ -211,7 +217,7 @@ export type Influencer = {
   /** Free-text creative direction for scenes, outfits, and mood. */
   directions?: string
   niche: string[]
-  /** Structured UGC situations (max 3); rotates across shot pack. */
+  /** Structured UGC situations (max 3); rotates across generation shots. */
   scenes?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
@@ -283,13 +289,11 @@ export type CreateInfluencerPayload = {
   appearance: CreateInfluencerAppearancePayload
   aestheticTags?: string[]
   photoStyle?: InfluencerPhotoStyle
-  /** Quick (3) or UGC kit (6). Defaults to quick. */
-  shotPack?: InfluencerShotPack
   /** Optional advanced override; otherwise built server-side from appearance. */
   basePromptFragment?: string
   /**
-   * Optional hybrid reference images (face + vibe), max 3 HTTPS URLs.
-   * When provided, niche / look / style fields may be omitted — refs drive generation.
+   * Optional style reference image (lighting / palette / vibe), max 1 HTTPS URL.
+   * When provided, niche / look / style fields may be omitted — ref drives generation.
    */
   userReferenceImageUrls?: string[]
 }

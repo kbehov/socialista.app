@@ -8,7 +8,6 @@ import type {
   InfluencerMakeupStyle,
   InfluencerPhotoStyle,
   InfluencerScene,
-  InfluencerShotPack,
 } from '@socialista/types'
 import {
   INFLUENCER_ACCESSORIES,
@@ -23,7 +22,9 @@ import {
   INFLUENCER_PHOTO_STYLES,
   INFLUENCER_SCENES,
   INFLUENCER_SCENES_MAX,
-  INFLUENCER_SHOT_PACK_SPEC,
+  INFLUENCER_GENERATION_BILLED,
+  INFLUENCER_GENERATION_SHOT_COUNT,
+  INFLUENCER_MAX_USER_REFERENCE_IMAGES,
 } from '@socialista/types'
 
 export type SwatchOption = {
@@ -124,23 +125,6 @@ export const PHOTO_STYLE_OPTIONS: ReadonlyArray<{
   { id: 'ugc-phone', label: 'Phone UGC', description: 'Casual smartphone look' },
   { id: 'creator-camera', label: 'Creator camera', description: 'Mirrorless / DSLR' },
   { id: 'studio-polish', label: 'Studio polish', description: 'Clean studio light' },
-]
-
-export const SHOT_PACK_OPTIONS: ReadonlyArray<{
-  id: InfluencerShotPack
-  label: string
-  description?: string
-}> = [
-  {
-    id: 'quick',
-    label: `Quick · ${INFLUENCER_SHOT_PACK_SPEC.quick.shots} shots`,
-    description: 'Portrait, three-quarter, full body',
-  },
-  {
-    id: 'ugc-kit',
-    label: `UGC kit · ${INFLUENCER_SHOT_PACK_SPEC['ugc-kit'].shots} shots`,
-    description: 'IG / TikTok ready — selfie, product hold, OOTD',
-  },
 ]
 
 /** Inclusive Fitzpatrick-inspired skin tone swatches */
@@ -287,8 +271,13 @@ export const FEATURE_SUGGESTIONS = [
   'beauty mark',
 ] as const
 
+export const DIRECTIONS_MAX = 1000
+
 export const DIRECTIONS_PLACEHOLDER =
-  'Optional: refine mood or outfit — e.g. soft morning light, linen shirt, warm approachable energy'
+  'Optional: mood, outfit, or energy — e.g. soft morning light, linen shirt, warm approachable vibe'
+
+export const INFLUENCER_PROMPT_PLACEHOLDER =
+  'Creative direction — e.g. soft morning light, linen shirt, warm approachable energy, holding a coffee cup'
 
 export const DEFAULT_CREATE_FORM = {
   name: '',
@@ -313,7 +302,6 @@ export const DEFAULT_CREATE_FORM = {
   },
   aestheticTags: [] as string[],
   photoStyle: 'ugc-phone' as InfluencerPhotoStyle,
-  shotPack: 'quick' as InfluencerShotPack,
 }
 
 export function labelForSwatch(options: ReadonlyArray<SwatchOption>, id: string) {
@@ -341,5 +329,7 @@ export {
   INFLUENCER_MAKEUP_STYLES,
   INFLUENCER_PHOTO_STYLES,
   INFLUENCER_SCENES_MAX,
-  INFLUENCER_SHOT_PACK_SPEC,
+  INFLUENCER_GENERATION_BILLED,
+  INFLUENCER_GENERATION_SHOT_COUNT,
+  INFLUENCER_MAX_USER_REFERENCE_IMAGES,
 }

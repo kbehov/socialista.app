@@ -1,8 +1,8 @@
+import { INFLUENCER_MAX_USER_REFERENCE_IMAGES } from '@socialista/types'
 import { generateObject } from 'ai'
 import { z } from 'zod'
 
 const ANCHOR_QUALITY_MODEL = 'openai/gpt-5.6-terra'
-const MAX_REFERENCE_IMAGES = 3
 
 const anchorQualitySchema = z.object({
   pass: z.boolean(),
@@ -20,11 +20,14 @@ const ANCHOR_QUALITY_INSTRUCTIONS =
   'Lived-in niche backgrounds (kitchen, gym, café, office, etc.) are good and must not cause a fail. ' +
   'Fail anything borderline. One-sentence reason.'
 
-const HYBRID_LIKENESS_ADDENDUM =
-  ' Additional reference photos of the intended look are attached after the cover. ' +
-  'Require BOTH reasonable facial likeness AND aesthetic/vibe alignment with those references ' +
-  '(lighting quality, color grade, wardrobe energy, environment family, photographic style) — not a pixel clone. ' +
-  'Fail if the cover keeps the face but invents a different aesthetic world from the references.'
+const LOOKALIKE_ARCHETYPE_ADDENDUM =
+  ' Style reference photos are attached after the cover (first image = generated cover, following images = user references). ' +
+  'Require alignment with references: same scene/setting type, dominant color palette, lighting direction, composition energy, and Pinterest-ready photographic polish — NOT the same face or body. ' +
+  'PASS if photoreal, a clearly different person from references, and the cover feels like the same frame/world as the references (not a generic bland portrait). ' +
+  'FAIL if the cover ignores reference scene/colors (e.g. wrong location type, flat studio look vs reference gym daylight) or copies the reference person\'s identity.'
+
+/** @deprecated Use LOOKALIKE_ARCHETYPE_ADDENDUM */
+const HYBRID_LIKENESS_ADDENDUM = LOOKALIKE_ARCHETYPE_ADDENDUM
 
 export type EvaluateAnchorPortraitOptions = {
   /** Optional hybrid user refs for likeness / vibe alignment. */
@@ -39,11 +42,11 @@ export async function evaluateAnchorPortrait(
   const refs = (options?.referenceImageUrls ?? [])
     .map(url => url.trim())
     .filter(Boolean)
-    .slice(0, MAX_REFERENCE_IMAGES)
+    .slice(0, INFLUENCER_MAX_USER_REFERENCE_IMAGES)
   const hasRefs = refs.length > 0
 
   const instructions = hasRefs
-    ? ANCHOR_QUALITY_INSTRUCTIONS + HYBRID_LIKENESS_ADDENDUM
+    ? ANCHOR_QUALITY_INSTRUCTIONS + LOOKALIKE_ARCHETYPE_ADDENDUM
     : ANCHOR_QUALITY_INSTRUCTIONS
 
   const result = await generateObject({

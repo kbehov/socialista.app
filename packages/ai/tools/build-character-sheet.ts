@@ -1,9 +1,10 @@
-import type {
-  InfluencerAgeRange,
-  InfluencerAppearance,
-  InfluencerCharacterSheet,
-  InfluencerGender,
-  InfluencerPhotoStyle,
+import {
+  INFLUENCER_MAX_USER_REFERENCE_IMAGES,
+  type InfluencerAgeRange,
+  type InfluencerAppearance,
+  type InfluencerCharacterSheet,
+  type InfluencerGender,
+  type InfluencerPhotoStyle,
 } from '@socialista/types'
 import { generateObject } from 'ai'
 import { z } from 'zod'
@@ -11,7 +12,6 @@ import { z } from 'zod'
 import { INFLUENCER_ACCESSORY_PROMPTS, INFLUENCER_SCENE_PROMPTS } from '../prompts/influencer-prompt.js'
 
 const CHARACTER_SHEET_MODEL = 'anthropic/claude-sonnet-4.6'
-const MAX_REFERENCE_IMAGES = 3
 
 const characterSheetSchema = z.object({
   identityLock: z
@@ -84,14 +84,17 @@ const SYSTEM_INSTRUCTIONS =
   '(9) when accessories are provided, weave wearable/holdable ones into wardrobe and onCamera descriptions naturally; ' +
   '(10) prefer scroll-stopping creator photography over sterile headshots; keep it photoreal, not fashion-editorial extremes.'
 
-const HYBRID_REF_SYSTEM_ADDENDUM =
-  ' REFERENCE-VARIATION MODE: reference photos are attached and OWN identity + aesthetic. ' +
-  'Infer hair color/style, eye color, skin tone, body shape, and wardrobe from the references. ' +
-  'Form physical swatches are soft defaults only — prefer what you see in the photos. ' +
-  'Hard constraints from the form: gender and age band only. ' +
-  'Wardrobe and environments MUST be concrete variations of the reference world ' +
-  '(same place family, lighting language, wardrobe vibe) — not inventing a new location genre. ' +
+const LOOKALIKE_REF_SYSTEM_ADDENDUM =
+  ' STYLE REFERENCE MODE: reference photos are the creative template for scene, colors, and photographic world — NOT identity. ' +
+  'Author identityLock and signatureDetails entirely from the form fields (face, hair, skin, body). ' +
+  'From references, extract and echo: setting/location, dominant color palette, lighting direction, lens/DOF character, and Pinterest-ready polish. ' +
+  'Wardrobe slots: match reference outfit COLOR FAMILY and styling vibe in equivalent garments for the new person — not a pixel copy. ' +
+  'Environments: describe exactly 3 concrete variations of the reference setting (same place family, different angles/light/props) — do NOT invent unrelated generic locations. ' +
+  'Do NOT reproduce faces, bodies, or distinctive marks from the references. ' +
   'Do not copy watermarks, logos, UI chrome, or celebrity likeness.'
+
+/** @deprecated Use LOOKALIKE_REF_SYSTEM_ADDENDUM */
+const HYBRID_REF_SYSTEM_ADDENDUM = LOOKALIKE_REF_SYSTEM_ADDENDUM
 
 function formatSceneHints(scenes: string[] | undefined): string | null {
   if (!scenes?.length) return null
@@ -121,20 +124,13 @@ function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): st
     `Gender: ${input.gender}`,
     `Age range: ${input.ageRange}`,
     input.ethnicity?.trim() ? `Ethnicity / heritage: ${input.ethnicity.trim()}` : null,
-    // Soft defaults only when refs drive look — vision should prefer the photos.
     hasRefs
-      ? 'Form look defaults (soft — prefer reference photos): ' +
-        `hair ${input.appearance.hairColor}/${input.appearance.hairStyle}, ` +
-        `eyes ${input.appearance.eyeColor}, skin ${input.appearance.skinTone}, ` +
-        `body ${input.appearance.bodyShape}` +
-        (input.appearance.height ? `/${input.appearance.height}` : '')
+      ? 'Note: reference images define scene, color palette, and photographic world — author identity from form fields only.'
       : null,
-    hasRefs ? null : `Hair: ${input.appearance.hairColor}, ${input.appearance.hairStyle}`,
-    hasRefs ? null : `Eyes: ${input.appearance.eyeColor}`,
-    hasRefs ? null : `Skin: ${input.appearance.skinTone}`,
-    hasRefs
-      ? null
-      : `Body: ${input.appearance.bodyShape}${input.appearance.height ? `, ${input.appearance.height}` : ''}`,
+    `Hair: ${input.appearance.hairColor}, ${input.appearance.hairStyle}`,
+    `Eyes: ${input.appearance.eyeColor}`,
+    `Skin: ${input.appearance.skinTone}`,
+    `Body: ${input.appearance.bodyShape}${input.appearance.height ? `, ${input.appearance.height}` : ''}`,
     input.appearance.distinguishingFeatures?.length
       ? `Distinguishing features: ${input.appearance.distinguishingFeatures.join(', ')}`
       : null,
@@ -144,21 +140,22 @@ function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): st
     input.appearance.makeup && input.appearance.makeup !== 'none'
       ? `Makeup: ${input.appearance.makeup}`
       : null,
-    hasRefs ? null : formatAccessoryHints(input.appearance.accessories),
+    formatAccessoryHints(input.appearance.accessories),
     input.niche?.length ? `Niche: ${input.niche.join(', ')}` : null,
-    hasRefs ? null : formatSceneHints(input.scenes),
-    hasRefs ? null : input.aestheticTags?.length ? `Aesthetic: ${input.aestheticTags.join(', ')}` : null,
-    hasRefs ? null : input.photoStyle ? `Photo style preference: ${input.photoStyle}` : null,
-    input.directions?.trim() ? `Creative direction (optional refine): ${input.directions.trim()}` : null,
+    formatSceneHints(input.scenes),
+    input.aestheticTags?.length ? `Aesthetic: ${input.aestheticTags.join(', ')}` : null,
+    input.photoStyle ? `Photo style preference: ${input.photoStyle}` : null,
+    input.directions?.trim()
+      ? `Creative brief (HIGHEST PRIORITY — follow this for vibe, scenes, and mood): ${input.directions.trim()}`
+      : null,
     input.bio?.trim() ? `Bio: ${input.bio.trim()}` : null,
   ].filter(Boolean)
 
   const hybridTail = hasRefs
-    ? ' Reference images are attached and define identity + the visual series. ' +
-      'Extract face, hair, skin, body, lighting, wardrobe, set, and photographic style from them. ' +
-      'Environments: exactly 3 concrete variations of the REFERENCE place family / light. ' +
-      'Wardrobe: match the reference outfit energy across casual / onCamera / active slots. ' +
-      'Gender and age band from the form are hard constraints; all other form look fields are soft. ' +
+    ? ' Reference images are attached — PERSON REPLACEMENT mode. ' +
+      'identityLock + signatureDetails: from form fields only (never copy reference faces). ' +
+      'Wardrobe: equivalent color palette and styling vibe from references, fitted to the new person. ' +
+      'Environments: exactly 3 concrete variations of the reference scene/setting (same location family, different angles/light) — read from the attached photos, not generic niche defaults. ' +
       'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, and expressionRange.'
     : 'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, and expressionRange. ' +
       'Environments must feel like this creator’s world (selected scenes when present, else niche + aesthetic), with concrete props/light — not empty rooms. ' +
@@ -179,11 +176,11 @@ export async function buildInfluencerCharacterSheet(
   const refs = (input.referenceImageUrls ?? [])
     .map(url => url.trim())
     .filter(Boolean)
-    .slice(0, MAX_REFERENCE_IMAGES)
+    .slice(0, INFLUENCER_MAX_USER_REFERENCE_IMAGES)
   const hasRefs = refs.length > 0
 
   const userText = buildUserPayload(input, hasRefs)
-  const system = hasRefs ? SYSTEM_INSTRUCTIONS + HYBRID_REF_SYSTEM_ADDENDUM : SYSTEM_INSTRUCTIONS
+  const system = hasRefs ? SYSTEM_INSTRUCTIONS + LOOKALIKE_REF_SYSTEM_ADDENDUM : SYSTEM_INSTRUCTIONS
 
   const result = await generateObject({
     model: CHARACTER_SHEET_MODEL,

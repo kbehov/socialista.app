@@ -19,8 +19,8 @@ import {
   NICHE_OPTIONS,
   PHOTO_STYLE_OPTIONS,
   SCENE_OPTIONS,
-  SHOT_PACK_OPTIONS,
   SKIN_TONE_OPTIONS,
+  INFLUENCER_GENERATION_SHOT_COUNT,
 } from '@/lib/studio/influencers/options'
 import { cn } from '@/lib/utils'
 import type {
@@ -28,7 +28,6 @@ import type {
   InfluencerGender,
   InfluencerHeight,
   InfluencerPhotoStyle,
-  InfluencerShotPack,
 } from '@socialista/types'
 import type { ReactNode } from 'react'
 
@@ -50,7 +49,6 @@ export type InfluencerCreatePreviewProps = {
   distinguishingFeatures: string[]
   directions?: string
   photoStyle?: InfluencerPhotoStyle
-  shotPack?: InfluencerShotPack
   facialHair?: string
   makeup?: string
   className?: string
@@ -78,7 +76,6 @@ export function InfluencerCreatePreview({
   distinguishingFeatures,
   directions,
   photoStyle,
-  shotPack,
   facialHair,
   makeup,
   className,
@@ -90,9 +87,6 @@ export function InfluencerCreatePreview({
   const ageLabel = AGE_RANGE_OPTIONS.find(a => a.id === ageRange)?.label ?? ageRange
   const photoStyleLabel = photoStyle
     ? (PHOTO_STYLE_OPTIONS.find(o => o.id === photoStyle)?.label ?? photoStyle)
-    : null
-  const shotPackLabel = shotPack
-    ? (SHOT_PACK_OPTIONS.find(o => o.id === shotPack)?.label ?? shotPack)
     : null
   const facialHairLabel =
     facialHair && facialHair !== 'none'
@@ -212,7 +206,7 @@ export function InfluencerCreatePreview({
           <SummaryBlock label="Build">{buildParts.join(' · ')}</SummaryBlock>
         ) : null}
         {photoStyleLabel ? <SummaryBlock label="Photo">{photoStyleLabel}</SummaryBlock> : null}
-        {shotPackLabel ? <SummaryBlock label="Pack">{shotPackLabel}</SummaryBlock> : null}
+        <SummaryBlock label="Gallery">{INFLUENCER_GENERATION_SHOT_COUNT} shots</SummaryBlock>
         {directions?.trim() ? (
           <SummaryBlock label="Direction">
             <span className="line-clamp-3 text-foreground/75">{directions.trim()}</span>

@@ -7,7 +7,6 @@ import type {
   InfluencerHeight,
   InfluencerPhotoStyle,
   InfluencerShotId,
-  InfluencerShotPack,
 } from '@socialista/types'
 
 export type InfluencerPromptAppearance = Pick<
@@ -66,10 +65,8 @@ const MAKEUP_PROMPT_LABEL: Record<string, string> = {
 const PHOTO_STYLE_CUE: Record<InfluencerPhotoStyle, string> = {
   'ugc-phone':
     'Casual smartphone UGC look — slight wide-angle, natural phone HDR, scroll-stopping TikTok/IG authenticity.',
-  'creator-camera':
-    'Creator mirrorless look — shallow depth, intentional framing, still lived-in and real.',
-  'studio-polish':
-    'Polished creator lighting — flattering key light with a lived-in set, not a blank backdrop.',
+  'creator-camera': 'Creator mirrorless look — shallow depth, intentional framing, still lived-in and real.',
+  'studio-polish': 'Polished creator lighting — flattering key light with a lived-in set, not a blank backdrop.',
 }
 
 export type InfluencerScenePrompt = {
@@ -81,13 +78,11 @@ export type InfluencerScenePrompt = {
 /** Concrete UGC scene expansions — IDs alone are too thin for photoreal prompts. */
 export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
   home: {
-    environment:
-      'cozy apartment living room with morning window light, plants, and soft everyday clutter',
+    environment: 'cozy apartment living room with morning window light, plants, and soft everyday clutter',
     wardrobeHint: 'elevated casual lounge layers',
   },
   'kitchen-cooking': {
-    environment:
-      'lived-in kitchen counter with ingredients, warm window sidelight, and a skillet softly out of focus',
+    environment: 'lived-in kitchen counter with ingredients, warm window sidelight, and a skillet softly out of focus',
     wardrobeHint: 'casual kitchen clothes, maybe a soft apron',
     actionCue: 'mid-cooking, natural hands-busy energy',
   },
@@ -101,25 +96,21 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     wardrobeHint: 'simple top that frames the face',
   },
   'coffee-shop': {
-    environment:
-      'neighborhood café booth with warm interior bokeh, a latte on the table, soft window sidelight',
+    environment: 'neighborhood café booth with warm interior bokeh, a latte on the table, soft window sidelight',
     wardrobeHint: 'everyday café-casual layers',
     actionCue: 'relaxed mid-conversation energy',
   },
   restaurant: {
-    environment:
-      'casual restaurant table with warm ambient light, plates and glasses softly out of focus',
+    environment: 'casual restaurant table with warm ambient light, plates and glasses softly out of focus',
     wardrobeHint: 'polished casual dinner outfit',
   },
   'podcast-setup': {
-    environment:
-      'podcast corner with a boom mic and acoustic panels softly behind, warm desk lamp key light',
+    environment: 'podcast corner with a boom mic and acoustic panels softly behind, warm desk lamp key light',
     wardrobeHint: 'smart-casual on-camera layers',
     actionCue: 'talking into mic, engaged speaking face',
   },
   gym: {
-    environment:
-      'sunlit gym floor with mirrors and equipment softly blurred, realistic workout atmosphere',
+    environment: 'sunlit gym floor with mirrors and equipment softly blurred, realistic workout atmosphere',
     wardrobeHint: 'fitted activewear without visible logos',
     actionCue: 'between sets, confident athletic ease',
   },
@@ -134,8 +125,7 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     actionCue: 'post-run glow, natural stride pause',
   },
   airport: {
-    environment:
-      'airport terminal seating with large windows, soft travel-day light, luggage softly behind',
+    environment: 'airport terminal seating with large windows, soft travel-day light, luggage softly behind',
     wardrobeHint: 'comfortable travel-ready layers',
   },
   plane: {
@@ -143,8 +133,7 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     wardrobeHint: 'comfortable flight layers',
   },
   car: {
-    environment:
-      'car interior passenger or driver seat, soft daylight through windshield, candid commute vibe',
+    environment: 'car interior passenger or driver seat, soft daylight through windshield, candid commute vibe',
     wardrobeHint: 'everyday driving layers',
     actionCue: 'talking to phone camera, car-selfie energy',
   },
@@ -157,8 +146,7 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     wardrobeHint: 'light beach-ready clothes',
   },
   street: {
-    environment:
-      'city sidewalk with soft daylight and shallow storefront bokeh, real street atmosphere',
+    environment: 'city sidewalk with soft daylight and shallow storefront bokeh, real street atmosphere',
     wardrobeHint: 'curated street-style outfit',
   },
   snow: {
@@ -170,24 +158,20 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     wardrobeHint: 'layered winter city outfit',
   },
   store: {
-    environment:
-      'retail aisle or boutique corner with soft overhead light and product shelves in shallow bokeh',
+    environment: 'retail aisle or boutique corner with soft overhead light and product shelves in shallow bokeh',
     wardrobeHint: 'casual shopping outfit',
     actionCue: 'product discovery / haul energy',
   },
   'farmers-market': {
-    environment:
-      'farmers-market stall with produce color, soft outdoor daylight, canvas tents softly behind',
+    environment: 'farmers-market stall with produce color, soft outdoor daylight, canvas tents softly behind',
     wardrobeHint: 'weekend market casual layers',
   },
   'streaming-desk': {
-    environment:
-      'streamer desk with soft RGB ambient glow, monitor and mic softly behind, night creator vibe',
+    environment: 'streamer desk with soft RGB ambient glow, monitor and mic softly behind, night creator vibe',
     wardrobeHint: 'relaxed hoodie or gamer-casual tee',
   },
   'asmr-desk': {
-    environment:
-      'quiet desk setup with soft key light, mic close, candle or small props softly framed',
+    environment: 'quiet desk setup with soft key light, mic close, candle or small props softly framed',
     wardrobeHint: 'soft on-camera layers',
     actionCue: 'intimate close speaking energy',
   },
@@ -197,8 +181,7 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     actionCue: 'mirror check pose with phone in hand',
   },
   'product-hook': {
-    environment:
-      'bright lived-in creator space with soft key light, plain unbranded product ready to feature',
+    environment: 'bright lived-in creator space with soft key light, plain unbranded product ready to feature',
     wardrobeHint: 'clean on-camera casual',
     actionCue: 'holding product toward camera, scroll-stopping hook face',
   },
@@ -208,8 +191,7 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     actionCue: 'pointing off-frame or at a product, surprised reveal expression',
   },
   'sitting-testimonial': {
-    environment:
-      'seated couch or café booth with warm interior light and soft environmental depth',
+    environment: 'seated couch or café booth with warm interior light and soft environmental depth',
     wardrobeHint: 'approachable everyday layers',
     actionCue: 'leaning slightly forward mid-testimonial',
   },
@@ -245,16 +227,11 @@ export const INFLUENCER_ACCESSORY_PROMPTS: Record<string, string> = {
 
 function expandAccessories(accessories: string[] | undefined): string[] {
   if (!accessories?.length) return []
-  return accessories
-    .map(id => INFLUENCER_ACCESSORY_PROMPTS[id] ?? id.replace(/-/g, ' '))
-    .filter(Boolean)
+  return accessories.map(id => INFLUENCER_ACCESSORY_PROMPTS[id] ?? id.replace(/-/g, ' ')).filter(Boolean)
 }
 
 /** Dedupe distinguishing features that overlap with accessories (e.g. glasses). */
-function featuresWithoutAccessoryOverlap(
-  features: string[] | undefined,
-  accessories: string[] | undefined,
-): string[] {
+function featuresWithoutAccessoryOverlap(features: string[] | undefined, accessories: string[] | undefined): string[] {
   if (!features?.length) return []
   if (!accessories?.length) return features
   const accessorySet = new Set(accessories.map(a => a.toLowerCase()))
@@ -410,29 +387,28 @@ export const INFLUENCER_NICHE_SCENES: Record<string, InfluencerNicheScene> = {
 
 /** Short photoreal footer — positive cues only. */
 export const INFLUENCER_EXCLUSIONS =
-  'Photoreal, unretouched skin with visible pores and natural asymmetry. No text, watermarks, logos, branded marks, or UI. Avoid blank studio seamless, passport-photo framing, celebrity likeness, and sterile empty walls. Prefer real UGC environments with believable depth.'
+  'Photoreal UGC: shot on iPhone, handheld feel, candid framing, slight motion blur acceptable. ' +
+  'Unretouched skin with visible pores, natural asymmetry, no beauty filter or over-smoothing. ' +
+  'Ambient practical lighting (window light, kitchen downlights, car interior) — no studio seamless. ' +
+  'When style references are attached, preserve their scene, color palette, composition, and Pinterest-ready polish — swap only the person. ' +
+  'No text, watermarks, logos, branded marks, or UI. Avoid passport-photo framing, celebrity likeness, and sterile empty walls. ' +
+  'Prefer aspirational creator photography with believable environmental depth — never generic stock-photo blandness.'
 
 /**
  * Locked identity prose — reused byte-identical on every shot.
  * Scene / camera / wardrobe / accessories belong in the shot prompt doc, not here.
  */
 export function buildInfluencerBasePromptFragment(input: BuildInfluencerBasePromptInput): string {
-  const { name, gender, ageRange, ethnicity, appearance, characterSheet, preferReferenceAppearance } =
-    input
+  const { name, gender, ageRange, ethnicity, appearance, characterSheet, preferReferenceAppearance } = input
   const person = GENDER_LABEL[gender]
   const age = AGE_REPRESENTATIVE[ageRange]
   const height = appearance.height ? `, ${HEIGHT_LABEL[appearance.height]}` : ''
   const ethnicityClause = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
-  const featureList = featuresWithoutAccessoryOverlap(
-    appearance.distinguishingFeatures,
-    appearance.accessories,
-  )
+  const featureList = featuresWithoutAccessoryOverlap(appearance.distinguishingFeatures, appearance.accessories)
   const features = featureList.length > 0 ? `, ${featureList.join(', ')}` : ''
 
   const facialHair =
-    appearance.facialHair && appearance.facialHair !== 'none'
-      ? ` Facial hair: ${appearance.facialHair}.`
-      : ''
+    appearance.facialHair && appearance.facialHair !== 'none' ? ` Facial hair: ${appearance.facialHair}.` : ''
   const makeup =
     appearance.makeup && appearance.makeup !== 'none'
       ? ` ${MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`}.`
@@ -442,13 +418,17 @@ export function buildInfluencerBasePromptFragment(input: BuildInfluencerBaseProm
 
   if (characterSheet) {
     const signatures =
-      characterSheet.signatureDetails.length > 0
-        ? ` Signature: ${characterSheet.signatureDetails.join('; ')}.`
-        : ''
+      characterSheet.signatureDetails.length > 0 ? ` Signature: ${characterSheet.signatureDetails.join('; ')}.` : ''
+    const identityDetails =
+      ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
+      ` Face: ${appearance.skinTone} skin, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
+      ` Body: ${appearance.bodyShape} build${height}.`
+
     if (preferReferenceAppearance) {
       return (
         `${subject} ${characterSheet.identityLock}${signatures}` +
-        ` Hair, skin, and body match the reference photos and identity lock.` +
+        identityDetails +
+        ` References define scene, colors, and photographic world — Identity defines the person only.` +
         ` Natural skin texture, believable real-world light.`
       )
     }
@@ -493,7 +473,7 @@ export const INFLUENCER_SHOT_LIBRARY: InfluencerShot[] = [
     label: 'Front portrait',
     aspectRatio: '1:1',
     promptSuffix:
-      'Instagram profile cover: head-and-shoulders, eye-level 85mm look, sharp face as identity anchor, calm half-smile to camera. Soft environmental depth behind — a niche-true setting, never a blank wall.',
+      'Instagram profile portrait: tight head-and-shoulders crop, eye-level 85mm look, face fills the frame as identity anchor, calm half-smile to camera. Soft environmental depth behind — a niche-true setting, never a blank wall.',
     wardrobeSlot: 'casual',
     useNicheScene: true,
   },
@@ -520,7 +500,7 @@ export const INFLUENCER_SHOT_LIBRARY: InfluencerShot[] = [
     label: 'Selfie talking',
     aspectRatio: '9:16',
     promptSuffix:
-      "TikTok talking-head selfie: arm's-length phone front camera, face in upper third, eyes locked to lens, mid-sentence expression, slight wide-angle HDR phone look. Authentic UGC in a lived-in niche space.",
+      "TikTok talking-head selfie: arm's-length phone front camera, face in upper third, eyes locked to lens, mid-sentence expression with open mouth, slight wide-angle HDR phone look. Clearly NOT a studio portrait — handheld UGC energy in a lived-in niche space.",
     wardrobeSlot: 'onCamera',
     useNicheScene: true,
   },
@@ -562,32 +542,26 @@ export const INFLUENCER_SHOT_LIBRARY: InfluencerShot[] = [
   },
 ]
 
-const QUICK_SHOT_IDS: InfluencerShotId[] = ['front-portrait', 'three-quarter', 'full-body']
-
-/** UGC kit = quick identity floor + 3 creator formats (6 total). */
-const UGC_KIT_SHOT_IDS: InfluencerShotId[] = [
-  'front-portrait',
-  'three-quarter',
-  'full-body',
-  'selfie-talking',
-  'product-hold',
-  'mirror-ootd',
-]
+const INFLUENCER_GENERATION_SHOT_IDS: InfluencerShotId[] = ['front-portrait', 'full-body', 'selfie-talking']
 
 const SHOT_BY_ID = new Map(INFLUENCER_SHOT_LIBRARY.map(shot => [shot.id, shot]))
 
-/** Resolve ordered shots for a pack. */
-export function getInfluencerShotsForPack(pack: InfluencerShotPack): InfluencerShot[] {
-  const ids = pack === 'ugc-kit' ? UGC_KIT_SHOT_IDS : QUICK_SHOT_IDS
-  return ids.map(id => {
+/** Ordered shots for influencer creation — portrait, full body, distinct UGC frame. */
+export function getInfluencerGenerationShots(): InfluencerShot[] {
+  return INFLUENCER_GENERATION_SHOT_IDS.map(id => {
     const shot = SHOT_BY_ID.get(id)
     if (!shot) throw new Error(`Unknown influencer shot: ${id}`)
     return shot
   })
 }
 
-/** @deprecated Prefer getInfluencerShotsForPack */
-export const INFLUENCER_ANCHOR_SHOTS: InfluencerShot[] = getInfluencerShotsForPack('quick')
+/** @deprecated Use getInfluencerGenerationShots — pack is ignored. */
+export function getInfluencerShotsForPack(): InfluencerShot[] {
+  return getInfluencerGenerationShots()
+}
+
+/** @deprecated Prefer getInfluencerGenerationShots */
+export const INFLUENCER_ANCHOR_SHOTS: InfluencerShot[] = getInfluencerGenerationShots()
 
 export type InfluencerAnchorShot = InfluencerShot
 
@@ -603,8 +577,8 @@ export type BuildInfluencerShotPromptContext = {
   /** Rotate wardrobe/environment picks across the pack. */
   shotIndex?: number
   /**
-   * When > 0, run in reference-variation mode: preserve ref aesthetic/vibe,
-   * generate similar images (not a new world from form scenes).
+   * When > 0, run in lookalike mode: reference photos inspire archetype/vibe,
+   * but the output must be a clearly different individual (not a pixel clone).
    */
   userReferenceCount?: number
 }
@@ -649,20 +623,28 @@ export function resolveInfluencerPromptScene(
   shot: InfluencerShot,
   ctx?: BuildInfluencerShotPromptContext,
 ): InfluencerPromptScene | undefined {
+  const refMode = (ctx?.userReferenceCount ?? 0) > 0
+  // With references: scene/colors/composition come from attached images + cover chain — skip niche scene text.
+  if (refMode) return undefined
+
   if (!shot.useNicheScene) return undefined
 
   const index = ctx?.shotIndex ?? 0
   const sheetWardrobe = ctx?.characterSheet?.wardrobe?.[shot.wardrobeSlot]
   const sheetEnv = pickFromArray(ctx?.characterSheet?.environments, index)
-  const refMode = (ctx?.userReferenceCount ?? 0) > 0
 
-  // Reference-variation mode: stay in the sheet world derived from refs — never invent
-  // a competing form-scene / niche environment (that caused vibe drift).
-  if (refMode) {
-    if (!sheetWardrobe && !sheetEnv) return undefined
-    return {
-      wardrobe: sheetWardrobe || undefined,
-      environment: sheetEnv || undefined,
+  // User-selected scenes rotate across the pack even in lookalike mode.
+  const userScenes = ctx?.scenes?.filter(Boolean) ?? []
+  if (userScenes.length > 0) {
+    const sceneId = pickFromArray(userScenes, index)
+    const scene = expandUserScene(sceneId)
+    if (scene) {
+      return {
+        id: sceneId,
+        wardrobe: scene.wardrobeHint ?? sheetWardrobe,
+        environment: scene.environment ?? sheetEnv,
+        action: scene.actionCue,
+      }
     }
   }
 
@@ -673,75 +655,62 @@ export function resolveInfluencerPromptScene(
     }
   }
 
-  const userScenes = ctx?.scenes?.filter(Boolean) ?? []
-  if (userScenes.length > 0) {
-    const sceneId = pickFromArray(userScenes, index)
-    const scene = expandUserScene(sceneId)
-    if (scene) {
-      return {
-        id: sceneId,
-        wardrobe: scene.wardrobeHint,
-        environment: scene.environment,
-        action: scene.actionCue,
-      }
-    }
-  }
-
   const niches = ctx?.niche?.filter(Boolean) ?? []
   const primary = niches[0]
   const secondary = niches[1]
   const primaryScene = primary ? INFLUENCER_NICHE_SCENES[primary] : undefined
   const secondaryScene = secondary ? INFLUENCER_NICHE_SCENES[secondary] : undefined
 
-  const wardrobe =
-    pickFromArray(primaryScene?.wardrobe, index) ??
-    pickFromArray(secondaryScene?.wardrobe, index)
+  const wardrobe = pickFromArray(primaryScene?.wardrobe, index) ?? pickFromArray(secondaryScene?.wardrobe, index)
   const environment =
-    pickFromArray(primaryScene?.environments, index) ??
-    pickFromArray(secondaryScene?.environments, index)
+    pickFromArray(primaryScene?.environments, index) ?? pickFromArray(secondaryScene?.environments, index)
 
   if (!wardrobe && !environment) return undefined
   return { wardrobe, environment }
 }
 
 /**
- * Reference-variation guidance — aesthetic/vibe fidelity is the primary goal.
- * Framing may follow the shot, but the visual world must stay in the ref series.
+ * Style-reference guidance — person replacement over reference frames.
+ * Preserve scene, palette, composition, and Pinterest-grade photographic world; swap only identity.
  */
-export function buildHybridCoverRefInstructions(
-  referenceCount: number,
-  options?: { shotIndex?: number },
-): string {
+export function buildLookalikeRefInstructions(referenceCount: number, options?: { shotIndex?: number }): string {
   const n = Math.min(Math.max(referenceCount, 1), 3)
   const imageLabel = n === 1 ? 'Image 1' : n === 2 ? 'Images 1–2' : 'Images 1–3'
   const isCover = (options?.shotIndex ?? 0) === 0
 
-  const variation = isCover
-    ? 'Create a close photoreal VARIATION of the attached reference photo(s) — same person in the same aesthetic world.'
-    : 'Create another shot in the SAME visual series as the attached reference photo(s) and cover — same person, same aesthetic world, different angle/crop/pose.'
+  if (isCover) {
+    return (
+      `PERSON REPLACEMENT over style references (${imageLabel}). ` +
+      `Treat attached photos as the creative template for everything except the human subject. ` +
+      `PRESERVE from references: scene and setting (location, architecture, background depth, bokeh), ` +
+      `dominant color palette and accent colors, wardrobe color family and fabric vibe (dress the Identity person in equivalent hues/textures — not a pixel copy of the reference outfit), ` +
+      `camera angle, framing, crop, pose energy, prop placement (use generic unbranded equivalents — no readable logos), ` +
+      `lighting direction and quality (window sidelight, golden hour, gym daylight, etc.), lens character, shallow depth of field, contrast, HDR/phone look, grain, and Pinterest-ready influencer polish. ` +
+      `REPLACE ONLY: the person — render the Identity subject instead of whoever appears in the references (new face, hair, skin, body per Identity and character sheet). ` +
+      `Do NOT copy reference faces, bodies, tattoos, or distinctive identity marks. ` +
+      `Output must feel like the same photoshoot/frame with a different model — not a generic stock portrait.`
+    )
+  }
 
   return (
-    `${variation} References: ${imageLabel}. ` +
-    `MUST preserve: lighting quality and direction, color grade, wardrobe vibe, set mood, photographic style, and environment family. ` +
-    `ALLOWED: slight pose, camera angle, crop, or a minor wardrobe swap that still matches the reference vibe. ` +
-    `FORBIDDEN: inventing a new aesthetic (e.g. hard-flash hotel party if refs are soft window-lit living room), ` +
-    `new props that change the vibe, conflicting fashion eras, or a different location family. ` +
-    `Form identity attributes win only on gender/age conflicts — never override the reference look or aesthetic. ` +
-    `Do not copy watermarks, logos, UI chrome, or a celebrity likeness.`
+    `Same generated person as the cover portrait — consistent identity across the pack. ` +
+    `Keep the photographic world from references (${imageLabel}) and the cover: same color grade, lighting quality, environmental mood, and creator aesthetic. ` +
+    `Follow Shot for angle/crop variation; do not revert to bland generic backgrounds.`
   )
 }
 
-/** Soften stock shot suffixes so they don't invent a competing UGC world over refs. */
+/** @deprecated Use buildLookalikeRefInstructions */
+export const buildHybridCoverRefInstructions = buildLookalikeRefInstructions
+
+/** Adapt shot suffixes for style-reference cover — match reference frame, substitute Identity person. */
 function adaptShotSuffixForRefs(suffix: string, shotIndex: number): string {
   if (shotIndex === 0) {
     return (
-      'Close variation of the reference: head-and-shoulders or similar crop, sharp face as identity anchor, ' +
-      'same lighting and environment family as the references — not a blank wall or a new location.'
+      'Pinterest-style influencer portrait locked to the reference frame: match reference composition, camera distance, crop, and pose type, ' +
+      'but substitute the Identity person. Sharp face, natural skin texture with pores, aspirational yet authentic smartphone HDR — not a generic studio headshot.'
     )
   }
-  return (
-    `${suffix} Stay inside the reference aesthetic world — same lighting language and vibe; vary angle/pose only.`
-  )
+  return `${suffix} Same generated person as the cover; preserve reference color palette, lighting world, and environmental mood.`
 }
 
 /** Assemble the structured prompt doc from identity + shot + options. */
@@ -754,29 +723,22 @@ export function buildInfluencerPromptDoc(
   const userReferenceCount = ctx?.userReferenceCount ?? 0
   const refMode = userReferenceCount > 0
   const shotIndex = ctx?.shotIndex ?? 0
+  const coverRefMode = refMode && shotIndex === 0
 
-  // In ref-variation mode, form aesthetic tags / photo style fight the reference vibe — omit them.
-  const aesthetics = refMode ? undefined : ctx?.aestheticTags?.filter(Boolean).slice(0, 2)
   const directions = ctx?.directions?.trim() || undefined
-  const photoStyle = refMode
-    ? undefined
-    : ctx?.photoStyle
-      ? PHOTO_STYLE_CUE[ctx.photoStyle]
-      : undefined
+  // On cover with references, let attached images define grade/style — form tags fight the ref frame.
+  const aesthetics = coverRefMode ? undefined : ctx?.aestheticTags?.filter(Boolean).slice(0, 2)
+  const photoStyle = coverRefMode ? undefined : ctx?.photoStyle ? PHOTO_STYLE_CUE[ctx.photoStyle] : undefined
 
   return {
     identity: identity.trim(),
-    shot: refMode
-      ? adaptShotSuffixForRefs(shot.promptSuffix.trim(), shotIndex)
-      : shot.promptSuffix.trim(),
+    shot: refMode ? adaptShotSuffixForRefs(shot.promptSuffix.trim(), shotIndex) : shot.promptSuffix.trim(),
     scene: resolveInfluencerPromptScene(shot, ctx),
-    accessories: !refMode && accessories.length > 0 ? accessories : undefined,
+    accessories: coverRefMode ? undefined : accessories.length > 0 ? accessories : undefined,
     photoStyle,
     aesthetics: aesthetics && aesthetics.length > 0 ? aesthetics : undefined,
     directions,
-    referenceGuidance: refMode
-      ? buildHybridCoverRefInstructions(userReferenceCount, { shotIndex })
-      : undefined,
+    referenceGuidance: refMode ? buildLookalikeRefInstructions(userReferenceCount, { shotIndex }) : undefined,
     quality: INFLUENCER_EXCLUSIONS,
   }
 }
@@ -792,16 +754,18 @@ function formatSceneSection(scene: InfluencerPromptScene): string {
 
 /**
  * Deterministic labeled prose for image models.
- * In reference-variation mode, References leads so aesthetic fidelity wins attention.
+ * In reference mode, References leads — scene/colors/composition lock to attached images.
  */
 export function renderInfluencerPrompt(doc: InfluencerPromptDoc): string {
   const sections: string[] = []
 
   if (doc.referenceGuidance) {
-    sections.push(`References: ${doc.referenceGuidance}`)
+    sections.push(doc.referenceGuidance)
+    sections.push(`Identity: ${doc.identity}`)
+    sections.push(`Shot: ${doc.shot}`)
+  } else {
+    sections.push(`Identity: ${doc.identity}`, `Shot: ${doc.shot}`)
   }
-
-  sections.push(`Identity: ${doc.identity}`, `Shot: ${doc.shot}`)
 
   if (doc.scene && (doc.scene.wardrobe || doc.scene.environment || doc.scene.action)) {
     sections.push(`Scene: ${formatSceneSection(doc.scene)}.`)
@@ -813,9 +777,7 @@ export function renderInfluencerPrompt(doc: InfluencerPromptDoc): string {
 
   const styleBits = [
     doc.photoStyle,
-    doc.aesthetics && doc.aesthetics.length > 0
-      ? `Aesthetic vibe: ${doc.aesthetics.join(', ')}.`
-      : null,
+    doc.aesthetics && doc.aesthetics.length > 0 ? `Aesthetic vibe: ${doc.aesthetics.join(', ')}.` : null,
   ].filter(Boolean)
   if (styleBits.length > 0) {
     sections.push(`Style: ${styleBits.join(' ')}`)

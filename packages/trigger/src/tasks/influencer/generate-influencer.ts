@@ -4,22 +4,21 @@ import {
   buildInfluencerCharacterSheet,
   evaluateAnchorPortrait,
   generateImage,
-  getInfluencerShotsForPack,
+  getInfluencerGenerationShots,
   type InfluencerShot,
 } from '@socialista/ai'
 import {
   connectDb,
   disconnectDb,
   getInfluencerById,
-  InfluencerShotPack as DbInfluencerShotPack,
   InfluencerStatus,
   updateInfluencer,
 } from '@socialista/db'
 import {
-  INFLUENCER_SHOT_PACK_SPEC,
+  INFLUENCER_GENERATION_BILLED,
+  INFLUENCER_MAX_USER_REFERENCE_IMAGES,
   TASK_IDS,
   type InfluencerGalleryShot,
-  type InfluencerShotPack,
 } from '@socialista/types'
 import { logger, metadata, schemaTask } from '@trigger.dev/sdk/v3'
 
@@ -59,9 +58,9 @@ async function generateShotWithRetry(
 /**
  * Balanced influencer generation:
  * 1) Character sheet once → locked identity
- * 2) One cover (+ optional QA retry)
- * 3) Remaining pack shots in parallel, cover as sole reference
- * Prompt = fixed identity + platform shot suffix + niche vibe scene (no LLM per image).
+ * 2) Cover portrait (+ optional QA retry)
+ * 3) Two remaining gallery shots in parallel (full body + selfie talking)
+ * Fixed set: portrait, full body, selfie — visually distinct angles.
  */
 export const generateInfluencer = schemaTask({
   id: TASK_IDS.generateInfluencer,
@@ -80,21 +79,16 @@ export const generateInfluencer = schemaTask({
         throw new Error('Influencer not found')
       }
 
-      const shotPack: InfluencerShotPack =
-        payload.shotPack ?? (influencer.identity.shotPack as InfluencerShotPack | undefined) ?? 'quick'
-      const dbShotPack = shotPack as unknown as DbInfluencerShotPack
-      const packSpec = INFLUENCER_SHOT_PACK_SPEC[shotPack]
-      const shots = getInfluencerShotsForPack(shotPack)
+      const shots = getInfluencerGenerationShots()
       const shotCount = shots.length
 
       await updateInfluencer(payload.influencerId, {
         status: InfluencerStatus.GENERATING,
         error: null,
-        identity: { shotPack: dbShotPack },
       })
 
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
-      assertSufficientCredits(workspace, model.cost * packSpec.billed)
+      assertSufficientCredits(workspace, model.cost * INFLUENCER_GENERATION_BILLED)
 
       // ── Step 0: character sheet (once) ───────────────────────────────────
       setGenerationStatus(5, 'Building character sheet')
@@ -103,7 +97,7 @@ export const generateInfluencer = schemaTask({
       const userReferenceImageUrls = (influencer.identity.userReferenceImageUrls ?? [])
         .map(url => url.trim())
         .filter(Boolean)
-        .slice(0, 3)
+        .slice(0, INFLUENCER_MAX_USER_REFERENCE_IMAGES)
 
       try {
         characterSheet = await buildInfluencerCharacterSheet({
@@ -135,7 +129,6 @@ export const generateInfluencer = schemaTask({
           identity: {
             characterSheet,
             basePromptFragment: baseFragment,
-            shotPack: dbShotPack,
           },
         })
         metadata.set('character_sheet', {
@@ -148,13 +141,17 @@ export const generateInfluencer = schemaTask({
         })
       }
 
-      logger.info('Generating influencer pack', {
+      logger.info('Generating influencer gallery', {
         influencerId: payload.influencerId,
         model: model.value,
-        shotPack,
         shots: shotCount,
         userReferenceCount: userReferenceImageUrls.length,
+        referenceMode: userReferenceImageUrls.length > 0 ? 'style-scene' : 'none',
       })
+
+      if (userReferenceImageUrls.length > 0) {
+        metadata.set('reference_mode', 'style-scene')
+      }
 
       const promptCtxBase = {
         niche: influencer.niche,
@@ -221,7 +218,12 @@ export const generateInfluencer = schemaTask({
       const coverShot = shots[0]!
       const coverRefs =
         userReferenceImageUrls.length > 0 ? userReferenceImageUrls : undefined
-      setGenerationStatus(12, 'Generating cover portrait')
+      setGenerationStatus(
+        12,
+        userReferenceImageUrls.length > 0
+          ? 'Generating cover — matching reference scene & palette'
+          : 'Generating cover portrait',
+      )
       coverImageUrl = await runShot(coverShot, 0, coverRefs)
 
       if (COVER_QUALITY_GATE_ENABLED) {
@@ -255,11 +257,11 @@ export const generateInfluencer = schemaTask({
       // With user refs: keep original refs + cover so aesthetic stays locked.
       // Without: cover alone (identity chain).
       const remaining = shots.slice(1)
-      setGenerationStatus(30, `Rendering ${remaining.length} pack shots`)
+      setGenerationStatus(30, `Rendering ${remaining.length} gallery shots`)
 
       const packRefs =
         userReferenceImageUrls.length > 0
-          ? [coverImageUrl!, ...userReferenceImageUrls].slice(0, 3)
+          ? [coverImageUrl!, ...userReferenceImageUrls].slice(0, INFLUENCER_MAX_USER_REFERENCE_IMAGES + 1)
           : [coverImageUrl!]
 
       const results = await Promise.allSettled(
@@ -299,7 +301,6 @@ export const generateInfluencer = schemaTask({
             ? { userReferenceImageUrls }
             : {}),
           referenceImageUrls: galleryImageUrls,
-          shotPack: dbShotPack,
         },
         error: null,
       })
@@ -308,7 +309,6 @@ export const generateInfluencer = schemaTask({
       logger.info('Influencer ready', {
         influencerId: payload.influencerId,
         runId: ctx.run.id,
-        shotPack,
         shots: galleryShots.length,
       })
 
