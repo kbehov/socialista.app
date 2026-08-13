@@ -1,14 +1,18 @@
 import {
+  createUgcClip,
   createUgcProject,
+  deleteUgcClip,
   deleteUgcProject,
-  generateUgcScript,
-  generateUgcStills,
-  generateUgcVideos,
+  duplicateUgcClip,
+  generateUgcClipScript,
+  generateUgcClipStills,
+  generateUgcClipVideos,
   getUgcProject,
   getWorkspaceUgcProjects,
-  openUgcVariantEditor,
-  regenerateUgcStill,
-  regenerateUgcVideo,
+  openUgcClipEditor,
+  regenerateUgcClipStill,
+  regenerateUgcClipVideo,
+  updateUgcClipHandler,
   updateUgcProject,
 } from '@/controllers/ugc-project.controller.js'
 import type { AppContext } from '@/middlewares/auth.middleware.js'
@@ -24,11 +28,15 @@ ugcProjectRoutes.post('/', createUgcProject)
 ugcProjectRoutes.get('/:id', getUgcProject)
 ugcProjectRoutes.patch('/:id', updateUgcProject)
 ugcProjectRoutes.delete('/:id', deleteUgcProject)
-ugcProjectRoutes.post('/:id/stills', generateUgcStills)
-ugcProjectRoutes.post('/:id/script', generateUgcScript)
-ugcProjectRoutes.post('/:id/videos', generateUgcVideos)
-ugcProjectRoutes.post('/:id/variants/:variantId/stills/:index/regenerate', regenerateUgcStill)
-ugcProjectRoutes.post('/:id/variants/:variantId/video/regenerate', regenerateUgcVideo)
-ugcProjectRoutes.post('/:id/variants/:variantId/open-editor', openUgcVariantEditor)
+ugcProjectRoutes.post('/:id/clips', createUgcClip)
+ugcProjectRoutes.patch('/:id/clips/:clipId', updateUgcClipHandler)
+ugcProjectRoutes.delete('/:id/clips/:clipId', deleteUgcClip)
+ugcProjectRoutes.post('/:id/clips/:clipId/duplicate', duplicateUgcClip)
+ugcProjectRoutes.post('/:id/clips/:clipId/script', generateUgcClipScript)
+ugcProjectRoutes.post('/:id/clips/:clipId/stills', generateUgcClipStills)
+ugcProjectRoutes.post('/:id/clips/:clipId/videos', generateUgcClipVideos)
+ugcProjectRoutes.post('/:id/clips/:clipId/stills/:index/regenerate', regenerateUgcClipStill)
+ugcProjectRoutes.post('/:id/clips/:clipId/video/regenerate', regenerateUgcClipVideo)
+ugcProjectRoutes.post('/:id/clips/:clipId/open-editor', openUgcClipEditor)
 
 export { ugcProjectRoutes }

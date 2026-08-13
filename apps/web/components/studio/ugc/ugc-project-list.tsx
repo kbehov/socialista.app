@@ -108,7 +108,7 @@ export function UgcProjectList({
           </span>
           <p className="text-sm font-semibold tracking-tight">Make your first UGC ad</p>
           <p className="mt-1.5 max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
-            Drop a product photo, pick a creator, type a script, generate.
+            Drop a product photo, add clips — talking, b-roll, unboxing, try-on.
           </p>
           <div className="mt-5">{createAction}</div>
         </div>
@@ -142,7 +142,8 @@ export function UgcProjectList({
                       {project.name}
                     </Link>
                     <p className="text-[11px] text-muted-foreground">
-                      {project.sceneCount} scenes · {formatRelativeTime(project.updatedAt)}
+                      {project.clipCount === 1 ? '1 clip' : `${project.clipCount} clips`} ·{' '}
+                      {formatRelativeTime(project.updatedAt)}
                     </p>
                   </div>
                   <Button

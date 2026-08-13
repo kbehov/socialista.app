@@ -7,6 +7,7 @@ export type GenerateUgcVideoInput = {
   imageUrl: string
   aspectRatio?: string
   negativePrompt?: string
+  duration?: number
   onProgress?: (progress: number, label: string) => void
 }
 
@@ -22,6 +23,7 @@ export async function generateUgcVideo(input: GenerateUgcVideoInput): Promise<st
     imageUrl: input.imageUrl,
     aspectRatio: input.aspectRatio,
     negativePrompt: input.negativePrompt,
+    duration: input.duration,
     onProgress: input.onProgress,
   })
 }

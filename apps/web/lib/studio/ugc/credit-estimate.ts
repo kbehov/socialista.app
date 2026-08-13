@@ -1,6 +1,5 @@
 export type UgcCreditEstimateInput = {
   sceneCount: number
-  variantCount: number
   imageCost: number
   videoCost: number
   plannerCost: number
@@ -17,11 +16,10 @@ export type UgcCreditEstimate = {
 }
 
 export function estimateUgcCredits(input: UgcCreditEstimateInput): UgcCreditEstimate {
-  const variants = Math.max(input.variantCount, 1)
-  const stills = input.sceneCount * variants * input.imageCost
+  const stills = Math.max(input.sceneCount, 1) * input.imageCost
   const script = input.includeScript ? input.scriptCost : 0
-  const planner = variants * input.plannerCost
-  const video = variants * input.videoCost
+  const planner = input.plannerCost
+  const video = input.videoCost
   return {
     stills,
     script,

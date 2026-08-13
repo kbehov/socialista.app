@@ -2,35 +2,31 @@
 
 import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import { ChevronDownIcon, Loader2Icon, SparklesIcon } from 'lucide-react'
+import { UGC_SCRIPT_MAX_CHARS } from '@socialista/types'
+import { Loader2Icon, SparklesIcon } from 'lucide-react'
 import { useState } from 'react'
 
 type UgcScriptPanelProps = {
   script: string
-  directions?: string
   disabled?: boolean
   writing?: boolean
   scriptModelEnabled?: boolean
   onScriptChange: (value: string) => void
-  onDirectionsChange: (value: string) => void
   onWriteWithAi: () => void
 }
 
 export function UgcScriptPanel({
   script,
-  directions,
   disabled,
   writing,
   scriptModelEnabled,
   onScriptChange,
-  onDirectionsChange,
   onWriteWithAi,
 }: UgcScriptPanelProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [directionsOpen, setDirectionsOpen] = useState(Boolean(directions))
+  const count = script.length
 
   const requestWrite = () => {
     if (script.trim()) {
@@ -45,7 +41,7 @@ export function UgcScriptPanel({
       <div className={cn(dashboardSurface.sectionHeader, 'flex items-center justify-between gap-3 px-4 py-3')}>
         <div>
           <h2 className={dashboardSurface.sectionTitle}>Script</h2>
-          <p className={dashboardSurface.sectionDescription}>What should they say?</p>
+          <p className={dashboardSurface.sectionDescription}>What they say. Max {UGC_SCRIPT_MAX_CHARS} characters.</p>
         </div>
         <Button
           type="button"
@@ -63,10 +59,14 @@ export function UgcScriptPanel({
         <Textarea
           value={script}
           disabled={disabled || writing}
-          onChange={event => onScriptChange(event.target.value)}
+          maxLength={UGC_SCRIPT_MAX_CHARS}
+          onChange={event => onScriptChange(event.target.value.slice(0, UGC_SCRIPT_MAX_CHARS))}
           placeholder="What should they say?"
-          className="min-h-28 resize-y"
+          className="min-h-24 resize-y"
         />
+        <p className="text-right text-[11px] tabular-nums text-muted-foreground">
+          {count}/{UGC_SCRIPT_MAX_CHARS}
+        </p>
 
         {confirmOpen ? (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5">
@@ -88,22 +88,6 @@ export function UgcScriptPanel({
             </div>
           </div>
         ) : null}
-
-        <Collapsible open={directionsOpen} onOpenChange={setDirectionsOpen}>
-          <CollapsibleTrigger className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground">
-            Directions
-            <ChevronDownIcon className={cn('size-3.5 transition-transform', directionsOpen && 'rotate-180')} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
-            <Textarea
-              value={directions ?? ''}
-              disabled={disabled}
-              onChange={event => onDirectionsChange(event.target.value)}
-              placeholder="handheld, kitchen, she unscrews the cap"
-              className="min-h-16"
-            />
-          </CollapsibleContent>
-        </Collapsible>
       </div>
     </section>
   )

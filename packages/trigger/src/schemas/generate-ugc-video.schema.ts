@@ -4,7 +4,7 @@ export const generateUgcVideoPayloadSchema = z.object({
   projectId: z.string().min(1),
   workspaceId: z.string().min(1),
   userId: z.string().min(1),
-  variantIds: z.array(z.string().min(1)).max(3).optional(),
+  clipId: z.string().min(1),
   plannedPrompt: z.string().min(1).optional(),
   skipPlanner: z.boolean().optional(),
 })

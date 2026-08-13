@@ -1,5 +1,5 @@
 import { UgcProjectModel } from '../models/ugc-project.model.js'
-import type { IUgcProject } from '../types/ugc-project.types.js'
+import type { IUgcClip, IUgcProject } from '../types/ugc-project.types.js'
 import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 
 export const createUgcProject = async (project: Partial<IUgcProject>) => {
@@ -24,6 +24,53 @@ export const updateUgcProject = async (id: string, updates: Partial<IUgcProject>
     return getUgcProjectById(id)
   }
   return await UgcProjectModel.findByIdAndUpdate(id, ops, { new: true }).lean()
+}
+
+export const updateUgcClip = async (
+  projectId: string,
+  clipId: string,
+  clipUpdates: Partial<IUgcClip>,
+  projectUpdates?: Partial<Pick<IUgcProject, 'status' | 'error' | 'stillsRunId' | 'videoRunId'>>,
+) => {
+  const $set: Record<string, unknown> = {}
+  const $unset: Record<string, 1> = {}
+
+  for (const [key, value] of Object.entries(clipUpdates)) {
+    const path = `clips.$[clip].${key}`
+    if (value === undefined) $unset[path] = 1
+    else $set[path] = value
+  }
+
+  if (projectUpdates) {
+    for (const [key, value] of Object.entries(projectUpdates)) {
+      if (value === undefined) $unset[key] = 1
+      else $set[key] = value
+    }
+  }
+
+  const ops: Record<string, unknown> = {}
+  if (Object.keys($set).length > 0) ops.$set = $set
+  if (Object.keys($unset).length > 0) ops.$unset = $unset
+  if (Object.keys(ops).length === 0) {
+    return getUgcProjectById(projectId)
+  }
+
+  return await UgcProjectModel.findOneAndUpdate({ _id: projectId, 'clips.id': clipId }, ops, {
+    new: true,
+    arrayFilters: [{ 'clip.id': clipId }],
+  }).lean()
+}
+
+export const addUgcClip = async (projectId: string, clip: IUgcClip) => {
+  return await UgcProjectModel.findByIdAndUpdate(projectId, { $push: { clips: clip } }, { new: true }).lean()
+}
+
+export const removeUgcClip = async (projectId: string, clipId: string) => {
+  return await UgcProjectModel.findByIdAndUpdate(
+    projectId,
+    { $pull: { clips: { id: clipId } } },
+    { new: true },
+  ).lean()
 }
 
 export const deleteUgcProject = async (id: string) => {

@@ -7,7 +7,7 @@ export enum UgcProjectStatus {
   FAILED = 'failed',
 }
 
-export enum UgcVariantStatus {
+export enum UgcClipStatus {
   IDLE = 'idle',
   QUEUED = 'queued',
   GENERATING = 'generating',
@@ -15,9 +15,22 @@ export enum UgcVariantStatus {
   FAILED = 'failed',
 }
 
+/** @deprecated Use UgcClipStatus. */
+export const UgcVariantStatus = UgcClipStatus
+export type UgcVariantStatus = UgcClipStatus
+
 export enum UgcScriptSource {
   USER = 'user',
   AI = 'ai',
+}
+
+export enum UgcClipType {
+  TALKING = 'talking',
+  B_ROLL = 'b-roll',
+  UNBOXING = 'unboxing',
+  TRY_ON = 'try-on',
+  PRODUCT_HOLD = 'product-hold',
+  APP_SHOWCASE = 'app-showcase',
 }
 
 export type UgcSceneCount = 1 | 2 | 3
@@ -38,12 +51,37 @@ export interface IUgcSceneStill {
   index: number
   imageUrl?: string
   generationId?: string
+  enhancedPrompt?: string
 }
 
+export interface IUgcClip {
+  id: string
+  type: UgcClipType
+  name?: string
+  status: UgcClipStatus
+  durationSec: number
+  influencerId?: Types.ObjectId
+  script?: IUgcProjectScript
+  scenePrompt?: string
+  directions?: string
+  referenceImageUrls?: string[]
+  stills: IUgcSceneStill[]
+  plannedPrompt?: string
+  negativePrompt?: string
+  videoUrl?: string
+  thumbnailUrl?: string
+  generationId?: string
+  composedVideoId?: Types.ObjectId
+  stillsRunId?: string
+  videoRunId?: string
+  error?: string
+}
+
+/** @deprecated Older influencer-variant shape. Prefer IUgcClip. */
 export interface IUgcVariant {
   id: string
   influencerId: Types.ObjectId
-  status: UgcVariantStatus
+  status: UgcClipStatus
   stills: IUgcSceneStill[]
   plannedPrompt?: string
   negativePrompt?: string
@@ -63,18 +101,20 @@ export interface IUgcProject {
   productId?: Types.ObjectId
   productImageUrls: string[]
   productName?: string
-  influencerIds: Types.ObjectId[]
-  sceneCount: UgcSceneCount
   aspectRatio: string
   models: IUgcProjectModels
-  script: IUgcProjectScript
-  directions?: string
-  variants: IUgcVariant[]
-  stillsRunId?: string
-  videoRunId?: string
+  clips: IUgcClip[]
   error?: string
   createdAt: Date
   updatedAt: Date
+  /** Legacy fields kept so older documents still load. */
+  influencerIds?: Types.ObjectId[]
+  sceneCount?: UgcSceneCount
+  script?: IUgcProjectScript
+  directions?: string
+  variants?: IUgcVariant[]
+  stillsRunId?: string
+  videoRunId?: string
 }
 
 export type UgcProjectDocument = HydratedDocument<IUgcProject>

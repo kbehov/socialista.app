@@ -198,9 +198,12 @@ export {
 } from './types/slideshow.types.js'
 
 export {
+  UgcClipStatus,
+  UgcClipType,
   UgcProjectStatus,
   UgcScriptSource,
   UgcVariantStatus,
+  type IUgcClip,
   type IUgcProject,
   type IUgcProjectModels,
   type IUgcProjectScript,

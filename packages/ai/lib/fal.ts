@@ -125,7 +125,21 @@ export type GenerateFalVideoOptions = {
   imageUrl: string
   aspectRatio?: string
   negativePrompt?: string
+  duration?: number
   onProgress?: (progress: number, label: string) => void
+}
+
+/** Map 5–15s clip length to the closest value the fal model typically accepts. */
+export function mapFalVideoDuration(model: string, durationSec: number): string | number {
+  const id = model.toLowerCase()
+  const clamped = Math.min(15, Math.max(5, Math.round(durationSec)))
+  if (id.includes('kling')) {
+    return clamped <= 7 ? '5' : '10'
+  }
+  if (id.includes('hailuo') || id.includes('minimax')) {
+    return clamped <= 8 ? 6 : 10
+  }
+  return clamped
 }
 
 export async function generateVideoFal({
@@ -134,6 +148,7 @@ export async function generateVideoFal({
   imageUrl,
   aspectRatio = '9:16',
   negativePrompt,
+  duration,
   onProgress,
 }: GenerateFalVideoOptions): Promise<string> {
   const input: Record<string, unknown> = {
@@ -144,6 +159,10 @@ export async function generateVideoFal({
 
   if (negativePrompt) {
     input.negative_prompt = negativePrompt
+  }
+
+  if (duration !== undefined) {
+    input.duration = mapFalVideoDuration(model, duration)
   }
 
   const result = await fal.subscribe(model, {

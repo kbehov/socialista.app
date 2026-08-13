@@ -1,8 +1,9 @@
 import { generateText } from 'ai'
+import { UGC_SCRIPT_MAX_CHARS, clampUgcScript } from '@socialista/types'
 
 import {
+  buildUgcAdScriptSystem,
   buildUgcAdScriptUserPrompt,
-  UGC_AD_SCRIPT_SYSTEM,
   type UgcAdScriptPromptInput,
 } from '../prompts/ugc-ad-script-prompt.js'
 
@@ -13,7 +14,7 @@ export type GenerateUgcAdScriptInput = UgcAdScriptPromptInput & {
 export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Promise<string> {
   const result = await generateText({
     model: input.model,
-    system: UGC_AD_SCRIPT_SYSTEM,
+    system: buildUgcAdScriptSystem(input.durationSec),
     temperature: 0.85,
     prompt: buildUgcAdScriptUserPrompt(input),
   })
@@ -23,5 +24,5 @@ export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Prom
     throw new Error('Script model returned empty text')
   }
 
-  return text.replace(/^["']|["']$/g, '')
+  return clampUgcScript(text.replace(/^["']|["']$/g, '').slice(0, UGC_SCRIPT_MAX_CHARS))
 }

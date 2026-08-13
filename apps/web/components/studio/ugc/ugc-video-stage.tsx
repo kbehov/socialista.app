@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
-import type { UgcVariant } from '@socialista/types'
+import type { UgcClip } from '@socialista/types'
 import { DownloadIcon, Loader2Icon, PencilIcon, RefreshCwIcon, SendIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
 type UgcVideoStageProps = {
-  variant?: UgcVariant
+  clip?: UgcClip
   generating?: boolean
   openingEditor?: boolean
   onPlannedPromptChange: (value: string) => void
@@ -20,7 +20,7 @@ type UgcVideoStageProps = {
 }
 
 export function UgcVideoStage({
-  variant,
+  clip,
   generating,
   openingEditor,
   onPlannedPromptChange,
@@ -28,8 +28,8 @@ export function UgcVideoStage({
   onOpenEditor,
 }: UgcVideoStageProps) {
   const [showPrompt, setShowPrompt] = useState(false)
-  const videoUrl = variant?.videoUrl
-  const planned = variant?.plannedPrompt ?? ''
+  const videoUrl = clip?.videoUrl
+  const planned = clip?.plannedPrompt ?? ''
 
   return (
     <section className={dashboardSurface.section}>
@@ -41,7 +41,7 @@ export function UgcVideoStage({
       <div className="space-y-3 p-4">
         <div className="relative mx-auto aspect-[9/16] w-full max-w-[220px] overflow-hidden rounded-xl bg-black ring-1 ring-border/60">
           {videoUrl ? (
-            <video className="size-full object-cover" controls playsInline src={videoUrl} poster={variant?.thumbnailUrl} />
+            <video className="size-full object-cover" controls playsInline src={videoUrl} poster={clip?.thumbnailUrl} />
           ) : generating ? (
             <div className="flex size-full items-center justify-center text-white/70">
               <Loader2Icon className="size-6 animate-spin" />
@@ -85,9 +85,9 @@ export function UgcVideoStage({
                 {openingEditor ? <Loader2Icon className="size-3.5 animate-spin" /> : <PencilIcon className="size-3.5" />}
                 Open in editor
               </Button>
-              {variant?.generationId ? (
+              {clip?.generationId ? (
                 <Button type="button" size="sm" variant="outline" asChild>
-                  <Link href={DASHBOARD_ROUTES.createPost({ generationId: variant.generationId })}>
+                  <Link href={DASHBOARD_ROUTES.createPost({ generationId: clip.generationId })}>
                     <SendIcon className="size-3.5" />
                     Post
                   </Link>
@@ -99,7 +99,7 @@ export function UgcVideoStage({
             type="button"
             size="sm"
             variant="ghost"
-            disabled={generating || !variant?.stills.some(still => still.imageUrl)}
+            disabled={generating || !clip?.stills.some(still => still.imageUrl)}
             onClick={() => onRegenerateVideo(showPrompt && planned.trim() ? planned : undefined)}
           >
             <RefreshCwIcon className="size-3.5" />

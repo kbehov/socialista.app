@@ -10,9 +10,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { UGC_MAX_VARIANTS } from '@socialista/types'
 import { cn } from '@/lib/utils'
 import { exploreInfluencers, getWorkspaceInfluencers } from '@/services/influencer.service'
+import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { Influencer } from '@socialista/types'
 import { CheckIcon, CompassIcon, Loader2Icon, PlusIcon, SearchIcon, UserRoundIcon, XIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -72,18 +72,21 @@ function InfluencerPickCard({
 type UgcInfluencerPickerProps = {
   workspaceId: string
   selectedIds: string[]
-  influencersById: Record<string, Influencer>
   disabled?: boolean
-  onChange: (ids: string[], influencers: Influencer[]) => void
+  max?: number
+  onChange: (ids: string[]) => void
 }
 
 export function UgcInfluencerPicker({
   workspaceId,
   selectedIds,
-  influencersById,
   disabled,
+  max = 1,
   onChange,
 }: UgcInfluencerPickerProps) {
+  const influencersById = useUgcProjectStore(s => s.influencersById)
+  const cacheInfluencers = useUgcProjectStore(s => s.cacheInfluencers)
+  const ensureInfluencer = useUgcProjectStore(s => s.ensureInfluencer)
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('mine')
   const [query, setQuery] = useState('')
@@ -101,7 +104,8 @@ export function UgcInfluencerPicker({
       return
     }
     setItems(response.data?.influencers ?? [])
-  }, [query, tab, workspaceId])
+    cacheInfluencers(response.data?.influencers ?? [])
+  }, [cacheInfluencers, query, tab, workspaceId])
 
   useEffect(() => {
     if (!open) return
@@ -111,29 +115,35 @@ export function UgcInfluencerPicker({
     return () => window.clearTimeout(timeout)
   }, [load, open])
 
+  const selectedKey = selectedIds.join(',')
+  useEffect(() => {
+    if (!selectedKey) return
+    for (const id of selectedKey.split(',')) {
+      void ensureInfluencer(id)
+    }
+  }, [ensureInfluencer, selectedKey])
+
   const selected = selectedIds
     .map(id => influencersById[id])
     .filter((item): item is Influencer => Boolean(item))
 
   const toggle = (influencer: Influencer) => {
+    cacheInfluencers([influencer])
     const exists = selectedIds.includes(influencer._id)
     if (exists) {
-      const next = selected.filter(item => item._id !== influencer._id)
-      onChange(
-        next.map(item => item._id),
-        next,
-      )
+      onChange(selected.filter(item => item._id !== influencer._id).map(item => item._id))
       return
     }
-    if (selectedIds.length >= UGC_MAX_VARIANTS) {
-      toast.error(`You can pick up to ${UGC_MAX_VARIANTS} creators`)
+    if (max <= 1) {
+      onChange([influencer._id])
+      setOpen(false)
       return
     }
-    const next = [...selected, influencer]
-    onChange(
-      next.map(item => item._id),
-      next,
-    )
+    if (selectedIds.length >= max) {
+      toast.error(`You can pick up to ${max} creators`)
+      return
+    }
+    onChange([...selectedIds, influencer._id])
   }
 
   return (
@@ -141,7 +151,9 @@ export function UgcInfluencerPicker({
       <div className={cn(dashboardSurface.sectionHeader, 'flex items-center justify-between px-4 py-3')}>
         <div>
           <h2 className={dashboardSurface.sectionTitle}>Creator</h2>
-          <p className={dashboardSurface.sectionDescription}>One by default. Up to {UGC_MAX_VARIANTS}.</p>
+          <p className={dashboardSurface.sectionDescription}>
+            One creator per clip. Want another? Add another clip.
+          </p>
         </div>
         <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
           <PlusIcon className="size-3.5" />
@@ -233,7 +245,7 @@ export function UgcInfluencerPicker({
                       key={influencer._id}
                       influencer={influencer}
                       selected={selectedIds.includes(influencer._id)}
-                      disabled={selectedIds.length >= UGC_MAX_VARIANTS}
+                      disabled={max > 1 && selectedIds.length >= max && !selectedIds.includes(influencer._id)}
                       onToggle={() => toggle(influencer)}
                     />
                   ))}

@@ -4,13 +4,13 @@ import {
   disconnectDb,
   getInfluencerById,
   getUgcProjectById,
-  updateUgcProject,
+  updateUgcClip,
+  UgcClipStatus,
   UgcProjectStatus,
-  UgcVariantStatus,
+  type IUgcClip,
   type IUgcProject,
-  type IUgcVariant,
 } from '@socialista/db'
-import { TASK_IDS } from '@socialista/types'
+import { TASK_IDS, type UgcClipType } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateUgcVideoPayloadSchema } from '../../schemas/generate-ugc-video.schema.js'
@@ -24,12 +24,17 @@ import {
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { assertSufficientCredits, finalizeGeneration, loadModel, loadModelAndWorkspace } from '../shared/workspace.js'
 
-function selectVariants(project: IUgcProject, variantIds?: string[]): IUgcVariant[] {
-  if (variantIds && variantIds.length > 0) {
-    const wanted = new Set(variantIds)
-    return project.variants.filter(variant => wanted.has(variant.id))
+function findClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
+  return (project.clips ?? []).find(clip => clip.id === clipId)
+}
+
+function projectStatusFromClips(clips: IUgcClip[]): UgcProjectStatus {
+  if (clips.some(clip => clip.status === UgcClipStatus.GENERATING)) return UgcProjectStatus.GENERATING
+  if (clips.some(clip => clip.status === UgcClipStatus.READY)) return UgcProjectStatus.READY
+  if (clips.every(clip => clip.status === UgcClipStatus.FAILED) && clips.length > 0) {
+    return UgcProjectStatus.FAILED
   }
-  return project.variants
+  return UgcProjectStatus.DRAFT
 }
 
 export const generateUgcVideo = schemaTask({
@@ -45,159 +50,187 @@ export const generateUgcVideo = schemaTask({
         throw new Error('UGC project not found')
       }
 
-      const variants = selectVariants(project, payload.variantIds)
-      if (variants.length === 0) {
-        throw new Error('Select at least one variant')
+      const clip = findClip(project, payload.clipId)
+      if (!clip) {
+        throw new Error('Clip not found')
+      }
+
+      const startFrame = clip.stills[0]?.imageUrl
+      if (!startFrame) {
+        throw new Error('Generate scenes before video')
       }
 
       const { model, workspace } = await loadModelAndWorkspace(project.models.video, payload.workspaceId)
-      assertSufficientCredits(workspace, model.cost * variants.length)
+      assertSufficientCredits(workspace, model.cost)
 
       const plannerValue = project.models.planner ?? project.models.script
       const planner = plannerValue ? await loadModel(plannerValue).catch(() => null) : null
 
-      await updateUgcProject(payload.projectId, {
-        status: UgcProjectStatus.GENERATING,
-        videoRunId: ctx.run.id,
-        error: undefined,
-      })
+      await updateUgcClip(
+        payload.projectId,
+        clip.id,
+        {
+          status: UgcClipStatus.GENERATING,
+          error: undefined,
+          videoRunId: ctx.run.id,
+        },
+        {
+          status: UgcProjectStatus.GENERATING,
+          videoRunId: ctx.run.id,
+          error: undefined,
+        },
+      )
 
-      const nextVariants = project.variants.map(variant => ({ ...variant }))
-      let index = 0
+      const influencer = clip.influencerId
+        ? await getInfluencerById(clip.influencerId.toString())
+        : null
 
-      for (const selected of variants) {
-        const variant = nextVariants.find(item => item.id === selected.id)
-        if (!variant) continue
+      const stillUrls = clip.stills.flatMap(still => (still.imageUrl ? [still.imageUrl] : []))
+      let plannedPrompt = payload.plannedPrompt ?? clip.plannedPrompt
+      let negativePrompt = clip.negativePrompt
+      const script = clip.script?.text ?? ''
+      const directions = clip.directions || clip.scenePrompt
+      const clipType = clip.type as UgcClipType
 
-        const startFrame = variant.stills[0]?.imageUrl
-        if (!startFrame) {
-          variant.status = UgcVariantStatus.FAILED
-          variant.error = 'Generate scenes before video'
-          continue
-        }
-
-        const influencer = await getInfluencerById(variant.influencerId.toString())
-        if (!influencer) {
-          variant.status = UgcVariantStatus.FAILED
-          variant.error = 'Influencer not found'
-          continue
-        }
-
-        variant.status = UgcVariantStatus.GENERATING
-        variant.error = undefined
-        await updateUgcProject(payload.projectId, { variants: nextVariants })
-
-        const stillUrls = variant.stills.flatMap(still => (still.imageUrl ? [still.imageUrl] : []))
-        let plannedPrompt = payload.plannedPrompt ?? variant.plannedPrompt
-        let negativePrompt = variant.negativePrompt
-
-        if (!payload.skipPlanner && !payload.plannedPrompt && planner) {
-          setGenerationStatus(Math.round((index / variants.length) * 40), `Planning ${influencer.name}`)
-          try {
-            const planned = await planUgcVideoPrompt({
-              stillUrls,
-              plannerModel: planner.value,
-              script: project.script.text,
-              directions: project.directions,
-              influencerName: influencer.name,
-              identityFragment: influencer.identity?.basePromptFragment,
-              productName: project.productName,
-              aspectRatio: project.aspectRatio,
-              sceneCount: stillUrls.length,
-              videoModel: model.value,
-            })
-            plannedPrompt = planned.prompt
-            negativePrompt = planned.negativePrompt
-            variant.plannedPrompt = planned.prompt
-            variant.negativePrompt = planned.negativePrompt
-            await finalizeGeneration(payload.workspaceId, planner)
-          } catch (error) {
-            logger.error('UGC planner failed, using fallback prompt', { error })
-            plannedPrompt =
-              plannedPrompt ??
-              `Photoreal UGC video, same person and product as the start frame. Natural handheld motion. The creator says: ${project.script.text || 'talks about the product'}. ${project.directions ?? ''} No on-screen text, no watermark.`
-          }
-        }
-
-        if (!plannedPrompt) {
-          plannedPrompt = `Photoreal UGC video starting from this frame. Keep the same person, clothes, room, and product. Natural phone-camera motion. Spoken energy: ${project.script.text || 'a short product testimonial'}. ${project.directions ?? ''} No captions or logos.`
-          variant.plannedPrompt = plannedPrompt
-        }
-
-        const triggerRunId = `${ctx.run.id}:${variant.id}`
-        const started = await startGenerationRecord({
-          kind: GenerationKind.VIDEO,
-          taskId: TASK_IDS.generateUgcVideo,
-          triggerRunId,
-          workspaceId: payload.workspaceId,
-          userId: payload.userId,
-          prompt: plannedPrompt,
-          model,
-          inputs: {
-            aspectRatio: project.aspectRatio,
-            ugcProjectId: payload.projectId,
-            ugcVariantId: variant.id,
-            referenceImageUrl: startFrame,
-            productImageUrl: project.productImageUrls[0],
-          },
-        })
-
-        setGenerationStatus(50 + Math.round((index / variants.length) * 40), `Rendering ${influencer.name}`)
-
+      if (!payload.skipPlanner && !payload.plannedPrompt && planner) {
+        setGenerationStatus(20, influencer ? `Planning ${influencer.name}` : 'Planning clip')
         try {
-          const videoUrl = await generateUgcVideoClip({
-            model: model.value,
-            provider: model.modelProvider,
-            prompt: plannedPrompt,
-            imageUrl: startFrame,
+          const planned = await planUgcVideoPrompt({
+            stillUrls,
+            plannerModel: planner.value,
+            script,
+            directions,
+            influencerName: influencer?.name,
+            identityFragment: influencer?.identity?.basePromptFragment,
+            productName: project.productName,
             aspectRatio: project.aspectRatio,
-            negativePrompt,
-            onProgress: setGenerationStatus,
+            sceneCount: stillUrls.length,
+            videoModel: model.value,
+            clipType,
+            durationSec: clip.durationSec,
           })
-
-          await finalizeGeneration(payload.workspaceId, model)
-          await completeGenerationRecord({
-            triggerRunId,
-            result: { type: GenerationResultType.VIDEO, url: videoUrl, thumbnailUrl: startFrame },
-            cost: model.cost,
-            startedAt: started.startedAt,
-            enhancedPrompt: plannedPrompt,
+          plannedPrompt = planned.prompt
+          negativePrompt = planned.negativePrompt
+          await updateUgcClip(payload.projectId, clip.id, {
+            plannedPrompt: planned.prompt,
+            negativePrompt: planned.negativePrompt,
           })
-
-          variant.videoUrl = videoUrl
-          variant.thumbnailUrl = startFrame
-          variant.generationId = started.generationId
-          variant.status = UgcVariantStatus.READY
+          await finalizeGeneration(payload.workspaceId, planner)
         } catch (error) {
-          await failGenerationRecord({
-            triggerRunId,
-            error,
-            startedAt: started.startedAt,
-          })
-          variant.status = UgcVariantStatus.FAILED
-          variant.error = error instanceof Error ? error.message : 'Video generation failed'
+          logger.error('UGC planner failed, using fallback prompt', { error })
+          plannedPrompt =
+            plannedPrompt ??
+            `Photoreal UGC video, same subject as the start frame. Natural handheld motion. Duration ${clip.durationSec}s. ${script ? `Spoken energy: ${script}.` : ''} ${directions ?? ''} No on-screen text, no watermark.`
         }
-
-        index += 1
-        await updateUgcProject(payload.projectId, { variants: nextVariants })
       }
 
-      const anyReady = nextVariants.some(variant => variant.status === UgcVariantStatus.READY)
-      const anyFailed = nextVariants.some(variant => variant.status === UgcVariantStatus.FAILED)
-      await updateUgcProject(payload.projectId, {
-        variants: nextVariants,
-        status: anyReady ? UgcProjectStatus.READY : UgcProjectStatus.FAILED,
-        error: anyFailed && !anyReady ? 'Video generation failed' : undefined,
+      if (!plannedPrompt) {
+        plannedPrompt = `Photoreal UGC video starting from this frame. Keep the same person, clothes, room, and product. Natural phone-camera motion for ${clip.durationSec} seconds. ${script ? `Spoken energy: ${script}.` : 'No talking — product or scene motion only.'} ${directions ?? ''} No captions or logos.`
+        await updateUgcClip(payload.projectId, clip.id, { plannedPrompt })
+      }
+
+      const triggerRunId = `${ctx.run.id}:${clip.id}`
+      const started = await startGenerationRecord({
+        kind: GenerationKind.VIDEO,
+        taskId: TASK_IDS.generateUgcVideo,
+        triggerRunId,
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
+        prompt: plannedPrompt,
+        model,
+        inputs: {
+          aspectRatio: project.aspectRatio,
+          ugcProjectId: payload.projectId,
+          ugcClipId: clip.id,
+          referenceImageUrl: startFrame,
+          productImageUrl: project.productImageUrls[0],
+          durationSec: clip.durationSec,
+        },
       })
 
-      setGenerationStatus(100, anyReady ? 'Video ready' : 'Video failed')
-      return { projectId: payload.projectId }
+      setGenerationStatus(55, influencer ? `Rendering ${influencer.name}` : 'Rendering clip')
+
+      try {
+        const videoUrl = await generateUgcVideoClip({
+          model: model.value,
+          provider: model.modelProvider,
+          prompt: plannedPrompt,
+          imageUrl: startFrame,
+          aspectRatio: project.aspectRatio,
+          negativePrompt,
+          duration: clip.durationSec,
+          onProgress: setGenerationStatus,
+        })
+
+        await finalizeGeneration(payload.workspaceId, model)
+        await completeGenerationRecord({
+          triggerRunId,
+          result: {
+            type: GenerationResultType.VIDEO,
+            url: videoUrl,
+            thumbnailUrl: startFrame,
+            durationSec: clip.durationSec,
+          },
+          cost: model.cost,
+          startedAt: started.startedAt,
+          enhancedPrompt: plannedPrompt,
+        })
+
+        const latest = await updateUgcClip(payload.projectId, clip.id, {
+          videoUrl,
+          thumbnailUrl: startFrame,
+          generationId: started.generationId,
+          plannedPrompt,
+          negativePrompt,
+          status: UgcClipStatus.READY,
+          error: undefined,
+        })
+
+        await updateUgcClip(
+          payload.projectId,
+          clip.id,
+          {},
+          { status: projectStatusFromClips(latest?.clips ?? []), error: undefined },
+        )
+
+        setGenerationStatus(100, 'Video ready')
+        return { projectId: payload.projectId, clipId: clip.id }
+      } catch (error) {
+        await failGenerationRecord({
+          triggerRunId,
+          error,
+          startedAt: started.startedAt,
+        })
+        const latest = await updateUgcClip(payload.projectId, clip.id, {
+          status: UgcClipStatus.FAILED,
+          error: error instanceof Error ? error.message : 'Video generation failed',
+        })
+        await updateUgcClip(
+          payload.projectId,
+          clip.id,
+          {},
+          {
+            status: projectStatusFromClips(latest?.clips ?? []),
+            error: error instanceof Error ? error.message : 'Video generation failed',
+          },
+        )
+        throw error as Error
+      }
     } catch (error) {
       setGenerationFailure(error, 'Video generation failed')
-      await updateUgcProject(payload.projectId, {
-        status: UgcProjectStatus.FAILED,
+      const latest = await updateUgcClip(payload.projectId, payload.clipId, {
+        status: UgcClipStatus.FAILED,
         error: error instanceof Error ? error.message : 'Video generation failed',
       }).catch(() => undefined)
+      await updateUgcClip(
+        payload.projectId,
+        payload.clipId,
+        {},
+        {
+          status: projectStatusFromClips(latest?.clips ?? []),
+          error: error instanceof Error ? error.message : 'Video generation failed',
+        },
+      ).catch(() => undefined)
       throw error as Error
     } finally {
       await disconnectDb()

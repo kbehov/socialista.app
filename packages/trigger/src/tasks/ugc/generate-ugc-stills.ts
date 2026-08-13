@@ -1,21 +1,27 @@
 import {
+  buildImagePrompt,
   buildUgcSceneStillPrompt,
   buildUgcStillRefUrls,
   generateImage,
-  UGC_SCENE_STILL_SYSTEM,
+  UGC_STILL_LOCK_FOOTER,
 } from '@socialista/ai'
 import {
   connectDb,
   disconnectDb,
   getInfluencerById,
   getUgcProjectById,
-  updateUgcProject,
+  updateUgcClip,
+  UgcClipStatus,
   UgcProjectStatus,
-  UgcVariantStatus,
+  type IUgcClip,
   type IUgcProject,
-  type IUgcVariant,
 } from '@socialista/db'
-import { TASK_IDS, type AspectRatio } from '@socialista/types'
+import {
+  TASK_IDS,
+  UGC_CLIP_DEFAULT_SCENE_COUNT,
+  type AspectRatio,
+  type UgcClipType,
+} from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateUgcStillsPayloadSchema } from '../../schemas/generate-ugc-stills.schema.js'
@@ -24,6 +30,7 @@ import {
   failGenerationRecord,
   GenerationKind,
   GenerationResultType,
+  setGenerationEnhancedPrompt,
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
@@ -42,16 +49,21 @@ function influencerRefs(influencer: {
   return [...new Set(urls)]
 }
 
-function selectVariants(project: IUgcProject, variantIds?: string[]): IUgcVariant[] {
-  if (variantIds && variantIds.length > 0) {
-    const wanted = new Set(variantIds)
-    return project.variants.filter(variant => wanted.has(variant.id))
-  }
-  return project.variants
+function emptyStills(sceneCount: number): IUgcClip['stills'] {
+  return Array.from({ length: sceneCount }, (_, index) => ({ index }))
 }
 
-function emptyStills(sceneCount: number) {
-  return Array.from({ length: sceneCount }, (_, index) => ({ index }))
+function findClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
+  return (project.clips ?? []).find(clip => clip.id === clipId)
+}
+
+function projectStatusFromClips(clips: IUgcClip[]): UgcProjectStatus {
+  if (clips.some(clip => clip.status === UgcClipStatus.GENERATING)) return UgcProjectStatus.GENERATING
+  if (clips.some(clip => clip.status === UgcClipStatus.READY)) return UgcProjectStatus.READY
+  if (clips.every(clip => clip.status === UgcClipStatus.FAILED) && clips.length > 0) {
+    return UgcProjectStatus.FAILED
+  }
+  return UgcProjectStatus.DRAFT
 }
 
 export const generateUgcStills = schemaTask({
@@ -67,21 +79,39 @@ export const generateUgcStills = schemaTask({
         throw new Error('UGC project not found')
       }
 
-      const variants = selectVariants(project, payload.variantIds)
-      if (variants.length === 0) {
-        throw new Error('Select at least one creator')
+      const clip = findClip(project, payload.clipId)
+      if (!clip) {
+        throw new Error('Clip not found')
       }
 
+      const clipType = clip.type as UgcClipType
+      const sceneCount =
+        clip.stills.length > 0 ? clip.stills.length : UGC_CLIP_DEFAULT_SCENE_COUNT[clipType]
+      const startIndex = payload.stillIndex ?? 0
+      const endIndex = payload.stillIndex ?? sceneCount - 1
+      const stillCount = endIndex - startIndex + 1
+
       const { model, workspace } = await loadModelAndWorkspace(project.models.image, payload.workspaceId)
-      const stillCount =
-        payload.stillIndex === undefined ? project.sceneCount * variants.length : variants.length
       assertSufficientCredits(workspace, model.cost * stillCount)
 
-      await updateUgcProject(payload.projectId, {
-        status: UgcProjectStatus.GENERATING,
-        stillsRunId: ctx.run.id,
-        error: undefined,
-      })
+      const stills: IUgcClip['stills'] =
+        clip.stills.length === sceneCount ? [...clip.stills] : emptyStills(sceneCount)
+
+      await updateUgcClip(
+        payload.projectId,
+        clip.id,
+        {
+          status: UgcClipStatus.GENERATING,
+          error: undefined,
+          stillsRunId: ctx.run.id,
+          stills,
+        },
+        {
+          status: UgcProjectStatus.GENERATING,
+          stillsRunId: ctx.run.id,
+          error: undefined,
+        },
+      )
 
       const aspectRatio = (project.aspectRatio === '1:1' ||
       project.aspectRatio === '16:9' ||
@@ -90,141 +120,168 @@ export const generateUgcStills = schemaTask({
         ? project.aspectRatio
         : '9:16') satisfies AspectRatio
 
-      const nextVariants = project.variants.map(variant => ({ ...variant }))
-      let completed = 0
-      const total = stillCount
+      const influencer = clip.influencerId
+        ? await getInfluencerById(clip.influencerId.toString())
+        : null
 
-      for (const selected of variants) {
-        const variant = nextVariants.find(item => item.id === selected.id)
-        if (!variant) continue
-
-        const influencer = await getInfluencerById(variant.influencerId.toString())
-        if (!influencer) {
-          variant.status = UgcVariantStatus.FAILED
-          variant.error = 'Influencer not found'
-          continue
-        }
-
-        variant.status = UgcVariantStatus.GENERATING
-        variant.error = undefined
-        if (variant.stills.length !== project.sceneCount) {
-          variant.stills = emptyStills(project.sceneCount)
-        }
-
-        const startIndex = payload.stillIndex ?? 0
-        const endIndex = payload.stillIndex ?? project.sceneCount - 1
-
-        for (let sceneIndex = startIndex; sceneIndex <= endIndex; sceneIndex++) {
-          const previousStillUrl =
-            sceneIndex > 0 ? variant.stills[sceneIndex - 1]?.imageUrl : undefined
-          const imageUrls = buildUgcStillRefUrls({
-            influencerReferenceUrls: influencerRefs(influencer),
-            productImageUrls: project.productImageUrls,
-            previousStillUrl,
-            sceneIndex,
-          })
-
-          const prompt = [
-            UGC_SCENE_STILL_SYSTEM,
-            buildUgcSceneStillPrompt({
-              sceneIndex,
-              sceneCount: project.sceneCount,
-              influencerName: influencer.name,
-              identityFragment: influencer.identity?.basePromptFragment ?? '',
-              productName: project.productName,
-              directions: project.directions,
-            }),
-          ].join('\n\n')
-
-          const triggerRunId = `${ctx.run.id}:${variant.id}:${sceneIndex}`
-          const started = await startGenerationRecord({
-            kind: GenerationKind.IMAGE,
-            taskId: TASK_IDS.generateUgcStills,
-            triggerRunId,
-            workspaceId: payload.workspaceId,
-            userId: payload.userId,
-            prompt,
-            model,
-            inputs: {
-              aspectRatio,
-              ugcProjectId: payload.projectId,
-              ugcVariantId: variant.id,
-              ugcShotId: String(sceneIndex),
-              productImageUrl: project.productImageUrls[0],
-              referenceImageUrl: imageUrls[0],
-            },
-          })
-
-          setGenerationStatus(
-            Math.round((completed / Math.max(total, 1)) * 90),
-            `${influencer.name} · scene ${sceneIndex + 1}`,
-          )
-
-          try {
-            const imageUrl = await generateImage(
-              {
-                model: model.value,
-                provider: model.modelProvider,
-                prompt,
-                aspectRatio,
-                workspaceId: payload.workspaceId,
-                userId: payload.userId,
-                imageUrl: imageUrls[0],
-                imageUrls,
-              },
-              setGenerationStatus,
-            )
-
-            await finalizeGeneration(payload.workspaceId, model)
-            await completeGenerationRecord({
-              triggerRunId,
-              result: { type: GenerationResultType.IMAGE, url: imageUrl },
-              cost: model.cost,
-              startedAt: started.startedAt,
-            })
-
-            const still = variant.stills[sceneIndex] ?? { index: sceneIndex }
-            still.index = sceneIndex
-            still.imageUrl = imageUrl
-            still.generationId = started.generationId
-            variant.stills[sceneIndex] = still
-            completed += 1
-          } catch (error) {
-            await failGenerationRecord({
-              triggerRunId,
-              error,
-              startedAt: started.startedAt,
-            })
-            variant.status = UgcVariantStatus.FAILED
-            variant.error = error instanceof Error ? error.message : 'Still generation failed'
-            logger.error('UGC still failed', { variantId: variant.id, sceneIndex, error })
-            break
-          }
-        }
-
-        if (variant.status !== UgcVariantStatus.FAILED) {
-          const hasAll = variant.stills.every(still => Boolean(still.imageUrl))
-          variant.status = hasAll ? UgcVariantStatus.IDLE : UgcVariantStatus.FAILED
-        }
-
-        await updateUgcProject(payload.projectId, { variants: nextVariants })
+      if (clip.influencerId && !influencer) {
+        await updateUgcClip(
+          payload.projectId,
+          clip.id,
+          { status: UgcClipStatus.FAILED, error: 'Influencer not found' },
+          { status: UgcProjectStatus.FAILED, error: 'Influencer not found' },
+        )
+        throw new Error('Influencer not found')
       }
 
-      const failed = nextVariants.some(variant => variant.status === UgcVariantStatus.FAILED)
-      await updateUgcProject(payload.projectId, {
-        variants: nextVariants,
-        status: failed ? UgcProjectStatus.FAILED : UgcProjectStatus.DRAFT,
-        error: failed ? 'One or more scenes failed' : undefined,
+      let failed = false
+      let completed = 0
+
+      for (let sceneIndex = startIndex; sceneIndex <= endIndex; sceneIndex++) {
+        const previousStillUrl = sceneIndex > 0 ? stills[sceneIndex - 1]?.imageUrl : undefined
+        const imageUrls = buildUgcStillRefUrls({
+          influencerReferenceUrls: influencer ? influencerRefs(influencer) : [],
+          productImageUrls: project.productImageUrls,
+          extraReferenceUrls: clip.referenceImageUrls,
+          previousStillUrl,
+          sceneIndex,
+        })
+
+        const seed = buildUgcSceneStillPrompt({
+          clipType,
+          sceneIndex,
+          sceneCount,
+          influencerName: influencer?.name,
+          identityFragment: influencer?.identity?.basePromptFragment,
+          productName: project.productName,
+          scenePrompt: clip.scenePrompt,
+        })
+
+        const triggerRunId = `${ctx.run.id}:${clip.id}:${sceneIndex}`
+        const started = await startGenerationRecord({
+          kind: GenerationKind.IMAGE,
+          taskId: TASK_IDS.generateUgcStills,
+          triggerRunId,
+          workspaceId: payload.workspaceId,
+          userId: payload.userId,
+          prompt: seed,
+          model,
+          inputs: {
+            aspectRatio,
+            ugcProjectId: payload.projectId,
+            ugcClipId: clip.id,
+            ugcShotId: String(sceneIndex),
+            productImageUrl: project.productImageUrls[0],
+            referenceImageUrl: imageUrls[0],
+          },
+        })
+
+        const existingPrompt = stills[sceneIndex]?.enhancedPrompt
+        let enhanced = existingPrompt && payload.skipEnhance ? existingPrompt : seed
+
+        try {
+          if (!payload.skipEnhance) {
+            setGenerationStatus(
+              Math.round((completed / Math.max(stillCount, 1)) * 40),
+              'Preparing your prompt',
+            )
+            const media = imageUrls.slice(0, 4).map(imageUrl => ({ imageUrl }))
+            enhanced = await buildImagePrompt({
+              prompt: seed,
+              media: media.length > 0 ? media : undefined,
+              aspectRatio,
+            })
+            await setGenerationEnhancedPrompt(triggerRunId, enhanced)
+          }
+
+          const finalPrompt = `${enhanced}\n\n${UGC_STILL_LOCK_FOOTER}`
+
+          setGenerationStatus(
+            40 + Math.round((completed / Math.max(stillCount, 1)) * 50),
+            `Generating scene ${sceneIndex + 1}`,
+          )
+
+          const imageUrl = await generateImage(
+            {
+              model: model.value,
+              provider: model.modelProvider,
+              prompt: finalPrompt,
+              aspectRatio,
+              workspaceId: payload.workspaceId,
+              userId: payload.userId,
+              imageUrl: imageUrls[0],
+              imageUrls,
+            },
+            setGenerationStatus,
+          )
+
+          await finalizeGeneration(payload.workspaceId, model)
+          await completeGenerationRecord({
+            triggerRunId,
+            result: { type: GenerationResultType.IMAGE, url: imageUrl },
+            cost: model.cost,
+            startedAt: started.startedAt,
+            enhancedPrompt: enhanced,
+          })
+
+          stills[sceneIndex] = {
+            index: sceneIndex,
+            imageUrl,
+            generationId: started.generationId,
+            enhancedPrompt: enhanced,
+          }
+          completed += 1
+          await updateUgcClip(payload.projectId, clip.id, { stills })
+        } catch (error) {
+          await failGenerationRecord({
+            triggerRunId,
+            error,
+            startedAt: started.startedAt,
+          })
+          failed = true
+          logger.error('UGC still failed', { clipId: clip.id, sceneIndex, error })
+          break
+        }
+      }
+
+      const hasAll = stills.every(still => Boolean(still.imageUrl))
+      const clipStatus = failed || !hasAll ? UgcClipStatus.FAILED : UgcClipStatus.IDLE
+      const latest = await updateUgcClip(payload.projectId, clip.id, {
+        stills,
+        status: clipStatus,
+        error: failed ? 'Scene generation failed' : undefined,
       })
 
+      const clips = (latest?.clips ?? []).map(item =>
+        item.id === clip.id ? { ...item, status: clipStatus } : item,
+      )
+      await updateUgcClip(
+        payload.projectId,
+        clip.id,
+        {},
+        {
+          status: projectStatusFromClips(clips),
+          error: failed ? 'Scene generation failed' : undefined,
+        },
+      )
+
       setGenerationStatus(100, failed ? 'Finished with errors' : 'Scenes ready')
-      return { projectId: payload.projectId }
+      return { projectId: payload.projectId, clipId: clip.id }
     } catch (error) {
       setGenerationFailure(error, 'Scene generation failed')
-      await updateUgcProject(payload.projectId, {
-        status: UgcProjectStatus.FAILED,
+      const latest = await updateUgcClip(payload.projectId, payload.clipId, {
+        status: UgcClipStatus.FAILED,
         error: error instanceof Error ? error.message : 'Scene generation failed',
       }).catch(() => undefined)
+      await updateUgcClip(
+        payload.projectId,
+        payload.clipId,
+        {},
+        {
+          status: projectStatusFromClips(latest?.clips ?? []),
+          error: error instanceof Error ? error.message : 'Scene generation failed',
+        },
+      ).catch(() => undefined)
       throw error as Error
     } finally {
       await disconnectDb()

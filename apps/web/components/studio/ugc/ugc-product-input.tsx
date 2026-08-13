@@ -7,7 +7,7 @@ import { dashboardSurface } from '@/components/dashboard'
 import { cn } from '@/lib/utils'
 import { extractProduct } from '@/services/product.service'
 import { uploadToWorkspace } from '@/services/files.service'
-import type { Product } from '@socialista/types'
+import { useUgcProjectStore } from '@/store/ugc-project.store'
 import { ImageIcon, LinkIcon, Loader2Icon, PackageIcon, UploadIcon, XIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useCallback, useRef, useState, useTransition } from 'react'
@@ -15,8 +15,6 @@ import { toast } from 'sonner'
 
 type UgcProductInputProps = {
   workspaceId: string
-  products: Product[]
-  productsTruncated?: boolean
   imageUrls: string[]
   productName?: string
   productId?: string
@@ -26,14 +24,16 @@ type UgcProductInputProps = {
 
 export function UgcProductInput({
   workspaceId,
-  products,
-  productsTruncated,
   imageUrls,
   productName,
   productId,
   disabled,
   onChange,
 }: UgcProductInputProps) {
+  const products = useUgcProjectStore(s => s.products)
+  const productsTruncated = useUgcProjectStore(s => s.productsTruncated)
+  const productsLoading = useUgcProjectStore(s => s.productsLoading)
+  const ensureProducts = useUgcProjectStore(s => s.ensureProducts)
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [urlValue, setUrlValue] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
@@ -170,7 +170,16 @@ export function UgcProductInput({
             <ImageIcon className="size-3.5" />
             Upload
           </Button>
-          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setCatalogOpen(true)}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setCatalogOpen(true)
+              void ensureProducts(workspaceId)
+            }}
+          >
             <PackageIcon className="size-3.5" />
             Catalog
           </Button>
@@ -202,6 +211,7 @@ export function UgcProductInput({
         products={products}
         workspaceId={workspaceId}
         productsTruncated={productsTruncated}
+        loading={productsLoading}
         selected={previewUrl ? [{ url: previewUrl, productId, label: productName }] : []}
         onConfirm={images => {
           const first = images[0]

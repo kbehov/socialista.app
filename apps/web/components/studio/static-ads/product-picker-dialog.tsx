@@ -34,6 +34,7 @@ type ProductPickerDialogProps = {
   selected: SelectedProductImage[]
   onConfirm: (images: SelectedProductImage[]) => void
   productsTruncated?: boolean
+  loading?: boolean
 }
 
 function formatPrice(price: number) {
@@ -179,6 +180,7 @@ export function ProductPickerDialog({
   selected,
   onConfirm,
   productsTruncated = false,
+  loading = false,
 }: ProductPickerDialogProps) {
   const [draft, setDraft] = useState<SelectedProductImage | null>(selected[0] ?? null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -333,7 +335,11 @@ export function ProductPickerDialog({
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-4">
-                {products.length === 0 ? (
+                {loading ? (
+                  <div className="flex items-center justify-center py-16 text-muted-foreground">
+                    <Loader2Icon className="size-5 animate-spin" />
+                  </div>
+                ) : products.length === 0 ? (
                   <EmptyState
                     action={
                       <div className="flex flex-wrap items-center justify-center gap-2">

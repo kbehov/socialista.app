@@ -9,8 +9,9 @@ export const UGC_STILL_REF_STRATEGY = 'sequential' as const
 const MAX_STILL_REFS = 6
 
 export function buildUgcStillRefUrls(input: {
-  influencerReferenceUrls: string[]
-  productImageUrls: string[]
+  influencerReferenceUrls?: string[]
+  productImageUrls?: string[]
+  extraReferenceUrls?: string[]
   previousStillUrl?: string
   sceneIndex: number
 }): string[] {
@@ -20,11 +21,15 @@ export function buildUgcStillRefUrls(input: {
     urls.push(input.previousStillUrl)
   }
 
-  for (const url of input.influencerReferenceUrls) {
+  for (const url of input.influencerReferenceUrls ?? []) {
     if (url && !urls.includes(url)) urls.push(url)
   }
 
-  for (const url of input.productImageUrls) {
+  for (const url of input.productImageUrls ?? []) {
+    if (url && !urls.includes(url)) urls.push(url)
+  }
+
+  for (const url of input.extraReferenceUrls ?? []) {
     if (url && !urls.includes(url)) urls.push(url)
   }
 
