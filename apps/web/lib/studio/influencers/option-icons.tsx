@@ -12,7 +12,6 @@ import {
   CircleDot,
   CircleUser,
   CircleUserRound,
-  ClipboardCheck,
   Coffee,
   Droplets,
   Dumbbell,
@@ -237,6 +236,7 @@ export const FIELD_ICONS = {
   facialHair: ScanFace,
   makeup: Sparkles,
   features: Fingerprint,
+  styleReference: Images,
   photoStyle: Camera,
   shotPack: Images,
   aesthetic: Sparkles,
@@ -246,25 +246,6 @@ export const FIELD_ICONS = {
   model: Zap,
   advanced: Settings2,
 } as const satisfies Record<string, LucideIcon>
-
-export const PREVIEW_SECTION_ICONS = {
-  look: Scissors,
-  build: PersonStanding,
-  niche: Target,
-  photo: Camera,
-  vibe: Sparkles,
-  direction: FileText,
-  details: Fingerprint,
-  scenes: MapPin,
-  accessories: ShoppingBag,
-} as const satisfies Record<string, LucideIcon>
-
-export const WIZARD_STEP_ICONS: Record<number, LucideIcon> = {
-  1: User,
-  2: ScanFace,
-  3: Palette,
-  4: ClipboardCheck,
-}
 
 export type OptionIconGroup =
   | 'niche'

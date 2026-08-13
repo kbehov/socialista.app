@@ -49,6 +49,14 @@
       "types": "./dist/schemas/generate-influencer.schema.d.ts",
       "import": "./dist/schemas/generate-influencer.schema.js"
     },
+    "./schemas/generate-ugc-stills": {
+      "types": "./dist/schemas/generate-ugc-stills.schema.d.ts",
+      "import": "./dist/schemas/generate-ugc-stills.schema.js"
+    },
+    "./schemas/generate-ugc-video": {
+      "types": "./dist/schemas/generate-ugc-video.schema.d.ts",
+      "import": "./dist/schemas/generate-ugc-video.schema.js"
+    },
     "./schemas/clone-influencer": {
       "types": "./dist/schemas/clone-influencer.schema.d.ts",
       "import": "./dist/schemas/clone-influencer.schema.js"

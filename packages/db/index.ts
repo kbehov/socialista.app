@@ -17,6 +17,7 @@ export { ModelModel } from './models/model.js'
 export { PolarWebhookEventModel } from './models/polar-webhook-event.model.js'
 export * from './models/product.model.js'
 export { SlideshowModel } from './models/slideshow.model.js'
+export { UgcProjectModel } from './models/ugc-project.model.js'
 export { UserModel } from './models/user.model.js'
 export { VideoModel } from './models/video.model.js'
 export { WaitlistModel } from './models/waitlist.model.js'
@@ -30,6 +31,7 @@ export * from './repo/model.repo.js'
 export * from './repo/polar-webhook-event.repo.js'
 export * from './repo/product.repo.js'
 export * from './repo/slideshow.repo.js'
+export * from './repo/ugc-project.repo.js'
 export * from './repo/user.repo.js'
 export * from './repo/video.repo.js'
 export * from './repo/waitlist.repo.js'
@@ -194,6 +196,19 @@ export {
   type SlideshowSlide,
   type SlideshowTextLayer,
 } from './types/slideshow.types.js'
+
+export {
+  UgcProjectStatus,
+  UgcScriptSource,
+  UgcVariantStatus,
+  type IUgcProject,
+  type IUgcProjectModels,
+  type IUgcProjectScript,
+  type IUgcSceneStill,
+  type IUgcVariant,
+  type UgcProjectDocument,
+  type UgcSceneCount,
+} from './types/ugc-project.types.js'
 
 export {
   VideoStatus,

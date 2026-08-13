@@ -132,6 +132,22 @@ export const GENERATION_ROUTES = {
   GET_WORKSPACE_GENERATIONS: (workspaceId: string) => `/generations/workspace/${workspaceId}`,
 } as const
 
+export const UGC_PROJECT_ROUTES = {
+  CREATE: '/ugc-projects',
+  GET_BY_ID: (id: string) => `/ugc-projects/${id}`,
+  UPDATE: (id: string) => `/ugc-projects/${id}`,
+  DELETE: (id: string) => `/ugc-projects/${id}`,
+  GET_WORKSPACE_PROJECTS: (workspaceId: string) => `/ugc-projects/workspace/${workspaceId}`,
+  GENERATE_STILLS: (id: string) => `/ugc-projects/${id}/stills`,
+  GENERATE_SCRIPT: (id: string) => `/ugc-projects/${id}/script`,
+  GENERATE_VIDEOS: (id: string) => `/ugc-projects/${id}/videos`,
+  REGENERATE_STILL: (id: string, variantId: string, index: number) =>
+    `/ugc-projects/${id}/variants/${variantId}/stills/${index}/regenerate`,
+  REGENERATE_VIDEO: (id: string, variantId: string) =>
+    `/ugc-projects/${id}/variants/${variantId}/video/regenerate`,
+  OPEN_EDITOR: (id: string, variantId: string) => `/ugc-projects/${id}/variants/${variantId}/open-editor`,
+} as const
+
 export const INFLUENCER_ROUTES = {
   EXPLORE: '/influencers/explore',
   CREATE: '/influencers',

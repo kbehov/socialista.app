@@ -312,15 +312,6 @@ export function colorForSwatch(options: ReadonlyArray<SwatchOption>, id: string)
   return options.find(o => o.id === id)?.color
 }
 
-export function labelForChoice(options: ReadonlyArray<ChoiceOption>, id: string) {
-  return options.find(o => o.id === id)?.label ?? id
-}
-
-export function ethnicityLabel(idOrCustom: string) {
-  const preset = ETHNICITY_OPTIONS.find(o => o.id === idOrCustom)
-  return preset?.label ?? idOrCustom
-}
-
 export {
   INFLUENCER_ACCESSORIES_MAX,
   INFLUENCER_FACIAL_HAIR,

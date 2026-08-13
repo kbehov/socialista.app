@@ -38,6 +38,8 @@ export const TASK_IDS = {
   videoExport: 'export-video',
   generateInfluencer: 'generate-influencer',
   cloneInfluencer: 'clone-influencer',
+  generateUgcStills: 'generate-ugc-stills',
+  generateUgcVideo: 'generate-ugc-video',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

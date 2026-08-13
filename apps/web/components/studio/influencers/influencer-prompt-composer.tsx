@@ -17,32 +17,28 @@ import {
 import {
   PromptInput,
   PromptInputBody,
-  PromptInputButton,
   PromptInputFooter,
   PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
   usePromptInputController,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
-import { AttachedMediaThumb, AttachImagesDialog, type AttachedImage } from '@/components/files/attach-images-dialog'
 import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
 import { Badge } from '@/components/ui/badge'
 import { Kbd } from '@/components/ui/kbd'
+import { FIELD_ICONS } from '@/lib/studio/influencers/option-icons'
 import { INFLUENCER_PROMPT_PLACEHOLDER } from '@/lib/studio/influencers/options'
 import { cn } from '@/lib/utils'
 import { formatModelCost } from '@/utils/format'
-import { ContextSupport, INFLUENCER_GENERATION_BILLED, INFLUENCER_GENERATION_SHOT_COUNT, INFLUENCER_MAX_USER_REFERENCE_IMAGES, type Model } from '@socialista/types'
+import { INFLUENCER_GENERATION_BILLED, INFLUENCER_GENERATION_SHOT_COUNT, type Model } from '@socialista/types'
 import {
   CheckIcon,
   ChevronDownIcon,
-  ImagePlusIcon,
   SparklesIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-const MAX_REFERENCE_IMAGES = INFLUENCER_MAX_USER_REFERENCE_IMAGES
+import { FieldLabel } from './influencer-option-controls'
 
 type ModelHighlight = 'cheapest' | 'newest' | 'mostUsed'
 
@@ -78,13 +74,12 @@ export type InfluencerPromptComposerProps = {
   models: Model[]
   selectedModelId: string
   onSelectedModelChange: (id: string) => void
-  referenceImages: AttachedImage[]
-  onReferenceImagesChange: (images: AttachedImage[]) => void
-  workspaceId: string
   onSubmit: (message: PromptInputMessage) => void
   disabled?: boolean
-  /** When true, allow generate even without creative direction or style refs (e.g. niche selected). */
+  /** When true, allow generate even without creative direction (e.g. niche selected). */
   formReady?: boolean
+  /** When true, allow generate even without a prompt (style refs attached on the form). */
+  hasStyleReferences?: boolean
   /** Resets prompt text when presets are applied */
   initialInput?: string
   composerKey?: string
@@ -94,16 +89,13 @@ function InfluencerPromptComposerInner({
   models,
   selectedModelId,
   onSelectedModelChange,
-  referenceImages,
-  onReferenceImagesChange,
-  workspaceId,
   onSubmit,
   disabled,
   formReady,
+  hasStyleReferences,
 }: InfluencerPromptComposerProps) {
   const { textInput } = usePromptInputController()
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
-  const [attachDialogOpen, setAttachDialogOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const selectedModel = useMemo(
@@ -115,8 +107,7 @@ function InfluencerPromptComposerInner({
   const generationCost = selectedModel ? selectedModel.cost * INFLUENCER_GENERATION_BILLED : 0
 
   const hasPrompt = textInput.value.trim().length > 0
-  const hasReferences = referenceImages.length > 0
-  const canSubmit = (hasPrompt || hasReferences || formReady) && !!selectedModel && !disabled
+  const canSubmit = (hasPrompt || hasStyleReferences || formReady) && !!selectedModel && !disabled
 
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus()
@@ -139,30 +130,38 @@ function InfluencerPromptComposerInner({
   const modelSelector = selectedModel ? (
     <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
       <ModelSelectorTrigger asChild>
-        <PromptInputButton
+        <button
           aria-expanded={modelSelectorOpen}
           aria-haspopup="dialog"
           className={cn(
-            'h-7 max-w-[min(100%,14rem)] gap-1.5 rounded-xl border px-1.5 pr-2',
-            'border-border/40 bg-background/90 hover:border-border/65 hover:bg-background',
-            modelSelectorOpen && 'border-border/65 bg-background shadow-sm',
+            'flex h-12 w-full items-center gap-3 rounded-[10px] border border-border/50 bg-background px-3 text-left',
+            'shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors duration-150',
+            'hover:border-border/70 hover:bg-muted/15',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30',
+            'disabled:pointer-events-none disabled:opacity-50',
+            modelSelectorOpen && 'border-border/70 bg-muted/15',
           )}
           disabled={disabled}
           type="button"
         >
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-[0.4375rem] bg-muted/50 ring-1 ring-border/30">
-            <ModelProviderIcon className="size-3" provider={selectedModel.modelProvider} />
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/50 ring-1 ring-border/30">
+            <ModelProviderIcon className="size-4" provider={selectedModel.modelProvider} />
           </span>
-          <ModelSelectorName className="text-xs font-medium leading-none tracking-[-0.015em]">
-            {selectedModel.name}
-          </ModelSelectorName>
+          <span className="min-w-0 flex-1">
+            <ModelSelectorName className="block truncate text-[14px] font-medium leading-tight tracking-[-0.015em]">
+              {selectedModel.name}
+            </ModelSelectorName>
+            <span className="mt-0.5 block text-[12px] leading-none text-muted-foreground">
+              {formatModelCost(selectedModel.cost, selectedModel.costUnit)} per portrait
+            </span>
+          </span>
           <ChevronDownIcon
             className={cn(
-              'size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200',
+              'size-4 shrink-0 text-muted-foreground/60 transition-transform duration-200',
               modelSelectorOpen && 'rotate-180',
             )}
           />
-        </PromptInputButton>
+        </button>
       </ModelSelectorTrigger>
       <ModelSelectorContent className="sm:max-w-104" title="Choose model">
         <ModelSelectorHeader heading="Models" description={`${models.length} available`} />
@@ -221,127 +220,87 @@ function InfluencerPromptComposerInner({
     </ModelSelector>
   ) : null
 
+  const generationCostLabel = selectedModel
+    ? formatModelCost(generationCost, selectedModel.costUnit)
+    : null
+
   return (
-    <div className="w-full scroll-mt-10">
-      <p className="mb-2 text-[11px] font-medium tracking-[0.08em] text-muted-foreground/80 uppercase">
-        Creative direction
-      </p>
-      <PromptInput
-        className={cn(
-          'rounded-3xl border-border/45 bg-background/95 shadow-[0_12px_40px_-18px_rgba(0,0,0,0.12)]',
-          'has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6',
-        )}
-        onSubmit={onSubmit}
-        maxFiles={MAX_REFERENCE_IMAGES}
-        accept="image/*"
-      >
-        <PromptInputBody className="relative">
-          <PromptInputTextarea
-            ref={textareaRef}
-            className="min-h-28 px-4 pt-4 pb-3 text-[15px] leading-[1.65] tracking-[-0.012em]"
-            disabled={disabled}
-            placeholder={INFLUENCER_PROMPT_PLACEHOLDER}
-            onKeyDown={event => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                event.preventDefault()
-                event.currentTarget.form?.requestSubmit()
-              }
-            }}
-          />
-        </PromptInputBody>
-
-        {referenceImages.length > 0 ? (
-          <div className="flex w-full gap-2 overflow-x-auto border-t border-border/35 bg-muted/12 px-3 pt-2.5 pb-2">
-            {referenceImages.map(image => (
-              <AttachedMediaThumb
-                key={image.id}
-                file={image}
-                size="sm"
-                disabled={disabled}
-                onRemove={id =>
-                  onReferenceImagesChange(referenceImages.filter(item => item.id !== id))
-                }
-              />
-            ))}
-          </div>
+    <div className="w-full scroll-mt-10 space-y-6" id="influencer-composer">
+      <div>
+        <FieldLabel icon={FIELD_ICONS.model}>Generation model</FieldLabel>
+        {modelSelector}
+        {selectedModel && generationCostLabel ? (
+          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+            This model will generate your influencer.{' '}
+            {INFLUENCER_GENERATION_SHOT_COUNT} portraits for{' '}
+            <span className="font-medium tabular-nums text-foreground">{generationCostLabel}</span>
+            {' '}total.
+          </p>
         ) : null}
+      </div>
 
-        <PromptInputFooter className="border-t border-border/35 bg-muted/12 px-3 py-2.5">
-          <PromptInputTools className="min-w-0 flex-wrap gap-2">
-            <PromptInputButton
-              aria-label="Attach style reference images"
-              className={cn(
-                'h-7 gap-1.5 rounded-xl border px-2',
-                'border-border/40 bg-background/90',
-                referenceImages.length > 0 && 'border-border/65 bg-background shadow-sm',
-              )}
-              disabled={
-                disabled ||
-                !selectedModel?.contextSupports?.includes(ContextSupport.IMAGE) ||
-                referenceImages.length >= MAX_REFERENCE_IMAGES
-              }
-              onClick={() => setAttachDialogOpen(true)}
-              tooltip="Style reference — lighting, color grade (1 image max)"
-              type="button"
-            >
-              <ImagePlusIcon className="size-3.5" strokeWidth={1.75} />
-              <span className="text-xs font-medium">
-                {referenceImages.length > 0 ? referenceImages.length : 'Style refs'}
-              </span>
-            </PromptInputButton>
-            {modelSelector}
-          </PromptInputTools>
+      <div>
+        <FieldLabel htmlFor="influencer-direction" icon={FIELD_ICONS.directions}>
+          Creative direction
+        </FieldLabel>
+        <PromptInput
+          className={cn(
+            'rounded-[14px] border-border/50 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.02)]',
+            'has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/20',
+          )}
+          onSubmit={onSubmit}
+          maxFiles={0}
+        >
+          <PromptInputBody className="relative">
+            <PromptInputTextarea
+              ref={textareaRef}
+              id="influencer-direction"
+              className="min-h-28 px-3.5 pt-3.5 pb-3 text-[15px] leading-[1.65] tracking-[-0.012em]"
+              disabled={disabled}
+              placeholder={INFLUENCER_PROMPT_PLACEHOLDER}
+              onKeyDown={event => {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                  event.preventDefault()
+                  event.currentTarget.form?.requestSubmit()
+                }
+              }}
+            />
+          </PromptInputBody>
 
-          <div className="flex shrink-0 items-center gap-2">
-            {selectedModel ? (
-              <span className="hidden text-[11px] tabular-nums text-muted-foreground/65 lg:inline">
-                {formatModelCost(generationCost, selectedModel.costUnit)} · {INFLUENCER_GENERATION_SHOT_COUNT} shots
-              </span>
-            ) : null}
+          <PromptInputFooter className="flex-col items-stretch border-t border-border/35 bg-muted/10 p-3">
             <PromptInputSubmit
               className={cn(
-                'h-8 gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold',
+                'h-12 w-full gap-2 rounded-[10px] px-5 text-[15px] font-semibold',
                 !canSubmit && 'opacity-45',
               )}
               disabled={!canSubmit}
               size="sm"
               status={disabled ? 'submitted' : undefined}
             >
-              <SparklesIcon className="size-3.5" strokeWidth={1.75} />
-              <span className="hidden sm:inline">Generate</span>
-              <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] lg:inline-flex">
-                ⌘↵
-              </Kbd>
+              <SparklesIcon className="size-4" strokeWidth={1.75} />
+              Generate {INFLUENCER_GENERATION_SHOT_COUNT} portraits
+              {generationCostLabel ? (
+                <span className="font-medium tabular-nums text-primary-foreground/80">
+                  {generationCostLabel}
+                </span>
+              ) : null}
             </PromptInputSubmit>
-          </div>
-        </PromptInputFooter>
-      </PromptInput>
-
-      <AttachImagesDialog
-        open={attachDialogOpen}
-        accept="image"
-        onOpenChange={setAttachDialogOpen}
-        maxImagesSelect={MAX_REFERENCE_IMAGES}
-        initialSelected={referenceImages}
-        workspaceId={workspaceId}
-        title="Attach style reference"
-        description="One photo — we'll match the lighting, color grade, and photographic vibe, not the person."
-        onSelect={onReferenceImagesChange}
-      />
-
-      <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5 text-[11px] text-muted-foreground/55">
-        <Kbd className="h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px]">/</Kbd>
-        <span>to focus</span>
-        <span aria-hidden>·</span>
-        <Kbd className="h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px]">⌘↵</Kbd>
-        <span>to generate</span>
-        {hasReferences ? (
-          <>
-            <span aria-hidden>·</span>
-            <span>Style reference mode — photographic vibe only</span>
-          </>
-        ) : null}
-      </p>
+          </PromptInputFooter>
+        </PromptInput>
+        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground/75">
+          Optional. Lighting, wardrobe, or energy — the look above still defines the person.
+        </p>
+        {!canSubmit && !disabled ? (
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground/75">
+            Pick a niche, add a style reference, or write direction to generate.
+          </p>
+        ) : (
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground/60">
+            <Kbd className="mr-1 h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px]">⌘↵</Kbd>
+            to generate
+          </p>
+        )}
+      </div>
     </div>
   )
 }

@@ -581,6 +581,8 @@ export type BuildInfluencerShotPromptContext = {
    * but the output must be a clearly different individual (not a pixel clone).
    */
   userReferenceCount?: number
+  /** Follow-up shots: only the cover portrait is attached — identity chain, not user refs. */
+  coverChainOnly?: boolean
 }
 
 /** Structured scene block resolved before render. */
@@ -623,8 +625,8 @@ export function resolveInfluencerPromptScene(
   shot: InfluencerShot,
   ctx?: BuildInfluencerShotPromptContext,
 ): InfluencerPromptScene | undefined {
-  const refMode = (ctx?.userReferenceCount ?? 0) > 0
-  // With references: scene/colors/composition come from attached images + cover chain — skip niche scene text.
+  const refMode = (ctx?.userReferenceCount ?? 0) > 0 || ctx?.coverChainOnly
+  // With references or cover chain: scene/colors come from images — skip niche scene text.
   if (refMode) return undefined
 
   if (!shot.useNicheScene) return undefined
@@ -673,7 +675,18 @@ export function resolveInfluencerPromptScene(
  * Style-reference guidance — person replacement over reference frames.
  * Preserve scene, palette, composition, and Pinterest-grade photographic world; swap only identity.
  */
-export function buildLookalikeRefInstructions(referenceCount: number, options?: { shotIndex?: number }): string {
+export function buildLookalikeRefInstructions(
+  referenceCount: number,
+  options?: { shotIndex?: number; coverChainOnly?: boolean },
+): string {
+  if (options?.coverChainOnly) {
+    return (
+      `Identity-locked follow-up: the attached cover portrait is the sole image reference. ` +
+      `Same face, hair, skin, and body as the cover. Preserve the cover's color grade, lighting quality, and environmental mood. ` +
+      `Follow Shot for a clearly different angle and crop — do not revert to generic backgrounds or studio seamless.`
+    )
+  }
+
   const n = Math.min(Math.max(referenceCount, 1), 3)
   const imageLabel = n === 1 ? 'Image 1' : n === 2 ? 'Images 1–2' : 'Images 1–3'
   const isCover = (options?.shotIndex ?? 0) === 0
@@ -703,7 +716,10 @@ export function buildLookalikeRefInstructions(referenceCount: number, options?: 
 export const buildHybridCoverRefInstructions = buildLookalikeRefInstructions
 
 /** Adapt shot suffixes for style-reference cover — match reference frame, substitute Identity person. */
-function adaptShotSuffixForRefs(suffix: string, shotIndex: number): string {
+function adaptShotSuffixForRefs(suffix: string, shotIndex: number, coverChainOnly?: boolean): string {
+  if (coverChainOnly) {
+    return `${suffix} Same generated person as the attached cover portrait; preserve cover color grade, lighting, and environmental mood.`
+  }
   if (shotIndex === 0) {
     return (
       'Pinterest-style influencer portrait locked to the reference frame: match reference composition, camera distance, crop, and pose type, ' +
@@ -720,10 +736,11 @@ export function buildInfluencerPromptDoc(
   ctx?: BuildInfluencerShotPromptContext,
 ): InfluencerPromptDoc {
   const accessories = expandAccessories(ctx?.accessories)
+  const coverChainOnly = ctx?.coverChainOnly ?? false
   const userReferenceCount = ctx?.userReferenceCount ?? 0
-  const refMode = userReferenceCount > 0
+  const refMode = userReferenceCount > 0 || coverChainOnly
   const shotIndex = ctx?.shotIndex ?? 0
-  const coverRefMode = refMode && shotIndex === 0
+  const coverRefMode = userReferenceCount > 0 && shotIndex === 0 && !coverChainOnly
 
   const directions = ctx?.directions?.trim() || undefined
   // On cover with references, let attached images define grade/style — form tags fight the ref frame.
@@ -732,13 +749,17 @@ export function buildInfluencerPromptDoc(
 
   return {
     identity: identity.trim(),
-    shot: refMode ? adaptShotSuffixForRefs(shot.promptSuffix.trim(), shotIndex) : shot.promptSuffix.trim(),
+    shot: refMode
+      ? adaptShotSuffixForRefs(shot.promptSuffix.trim(), shotIndex, coverChainOnly)
+      : shot.promptSuffix.trim(),
     scene: resolveInfluencerPromptScene(shot, ctx),
     accessories: coverRefMode ? undefined : accessories.length > 0 ? accessories : undefined,
     photoStyle,
     aesthetics: aesthetics && aesthetics.length > 0 ? aesthetics : undefined,
     directions,
-    referenceGuidance: refMode ? buildLookalikeRefInstructions(userReferenceCount, { shotIndex }) : undefined,
+    referenceGuidance: refMode
+      ? buildLookalikeRefInstructions(userReferenceCount, { shotIndex, coverChainOnly })
+      : undefined,
     quality: INFLUENCER_EXCLUSIONS,
   }
 }

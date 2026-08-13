@@ -30,6 +30,7 @@ import {
   MegaphoneIcon,
   SendIcon,
   ShoppingBagIcon,
+  SmartphoneIcon,
   UserRoundIcon,
   VideoIcon,
   type LucideIcon,
@@ -65,7 +66,7 @@ function navIcon(Icon: LucideIcon) {
   return <Icon className={iconClassName} strokeWidth={1.75} />
 }
 
-function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'videos' | 'influencers') {
+function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'videos' | 'influencers' | 'ugc') {
   if (segment === 'images') return isStudioImagesPath(pathname)
   return isStudioSegmentPath(pathname, segment)
 }
@@ -124,6 +125,12 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       url: DASHBOARD_ROUTES.STUDIO.INFLUENCERS,
       icon: navIcon(UserRoundIcon),
       isActive: isStudioRoute(pathname, 'influencers'),
+    },
+    {
+      title: 'UGC ads',
+      url: DASHBOARD_ROUTES.STUDIO.UGC,
+      icon: navIcon(SmartphoneIcon),
+      isActive: isStudioRoute(pathname, 'ugc'),
     },
   ]
 }

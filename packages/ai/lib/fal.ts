@@ -109,3 +109,61 @@ export async function generateImageFal({
 
   return imageUrlResult
 }
+
+const FalVideoResult = z
+  .object({
+    video: z.object({ url: z.string() }).optional(),
+    video_url: z.string().optional(),
+  })
+  .refine(data => Boolean(data.video?.url ?? data.video_url), {
+    message: 'No video was returned from the model',
+  })
+
+export type GenerateFalVideoOptions = {
+  model: string
+  prompt: string
+  imageUrl: string
+  aspectRatio?: string
+  negativePrompt?: string
+  onProgress?: (progress: number, label: string) => void
+}
+
+export async function generateVideoFal({
+  model,
+  prompt,
+  imageUrl,
+  aspectRatio = '9:16',
+  negativePrompt,
+  onProgress,
+}: GenerateFalVideoOptions): Promise<string> {
+  const input: Record<string, unknown> = {
+    prompt,
+    image_url: imageUrl,
+    aspect_ratio: aspectRatio,
+  }
+
+  if (negativePrompt) {
+    input.negative_prompt = negativePrompt
+  }
+
+  const result = await fal.subscribe(model, {
+    input,
+    onQueueUpdate: (update: unknown) => {
+      const status =
+        typeof update === 'object' && update !== null && 'status' in update && typeof update.status === 'string'
+          ? mapQueueStatus(update.status)
+          : null
+      if (status) {
+        onProgress?.(status.progress, status.label)
+      }
+    },
+  })
+
+  const parsed = FalVideoResult.parse(result.data)
+  const videoUrl = parsed.video?.url ?? parsed.video_url
+  if (!videoUrl) {
+    throw new Error('No video was returned from the model')
+  }
+
+  return videoUrl
+}

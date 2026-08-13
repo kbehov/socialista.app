@@ -6,12 +6,16 @@ import type { realtimeStaticAdGeneration } from './tasks/image/generate-static-a
 import type { cloneInfluencer } from './tasks/influencer/clone-influencer.js'
 import type { generateInfluencer } from './tasks/influencer/generate-influencer.js'
 import type { publishPost } from './tasks/posts/publish-post.js'
+import type { generateUgcStills } from './tasks/ugc/generate-ugc-stills.js'
+import type { generateUgcVideo } from './tasks/ugc/generate-ugc-video.js'
 import type { exportVideo } from './tasks/video/export-video.js'
 
 export type RealtimeImageGenerationTask = typeof realtimeImageGeneration
 export type RealtimeStaticAdGenerationTask = typeof realtimeStaticAdGeneration
 export type GenerateInfluencerTask = typeof generateInfluencer
 export type CloneInfluencerTask = typeof cloneInfluencer
+export type GenerateUgcStillsTask = typeof generateUgcStills
+export type GenerateUgcVideoTask = typeof generateUgcVideo
 export type RefreshAccountTokenTask = typeof refreshAccountToken
 export type PublishPostTask = typeof publishPost
 export type AnalyticsSweepTask = typeof analyticsSweep

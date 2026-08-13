@@ -1,14 +1,12 @@
 'use client'
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Separator } from '@/components/ui/separator'
 import type { ChoiceOption, SwatchOption } from '@/lib/studio/influencers/options'
 import {
   getOptionIcon,
   OptionIcon,
   FieldIcon,
   type OptionIconGroup,
-  WIZARD_STEP_ICONS,
 } from '@/lib/studio/influencers/option-icons'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
@@ -200,7 +198,7 @@ export function ChipSingleSelect({
       {groups.map(group => (
         <div key={group.label ?? 'ungrouped'}>
           {group.label ? (
-            <p className="mb-2 text-[11px] font-medium tracking-[0.08em] text-muted-foreground/70 uppercase">
+            <p className="mb-2 text-[12px] font-medium tracking-[0.04em] text-muted-foreground/70 uppercase">
               {group.label}
             </p>
           ) : null}
@@ -356,15 +354,17 @@ export function FieldLabel({
   icon?: LucideIcon
 }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-3">
+    <div className="mb-2 flex items-baseline justify-between gap-3">
       <label
         htmlFor={htmlFor}
-        className="inline-flex items-center gap-2 text-[13px] font-medium tracking-[-0.01em] text-foreground/90"
+        className="inline-flex items-center gap-2 text-[13px] font-medium tracking-[-0.012em] text-foreground"
       >
         {icon ? <FieldIcon icon={icon} /> : null}
         {children}
       </label>
-      {hint ? <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">{hint}</span> : null}
+      {hint ? (
+        <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground/70">{hint}</span>
+      ) : null}
     </div>
   )
 }
@@ -372,38 +372,30 @@ export function FieldLabel({
 export function FormSection({
   title,
   description,
-  step,
   children,
 }: {
   title: string
   description?: string
-  step?: number
   children: React.ReactNode
 }) {
   return (
     <section className="scroll-mt-24 space-y-5">
-      <div className="flex items-start gap-3.5">
-        {step !== undefined ? (
-          <span
-            aria-hidden
-            className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-muted/40 text-[11px] font-semibold tabular-nums tracking-tight text-muted-foreground ring-1 ring-border/35"
-          >
-            {step}
-          </span>
+      <div className="space-y-1.5">
+        <h2 className="text-[15px] font-semibold leading-snug tracking-[-0.018em] text-foreground">
+          {title}
+        </h2>
+        {description ? (
+          <p className="max-w-prose text-[13px] leading-relaxed text-muted-foreground">
+            {description}
+          </p>
         ) : null}
-        <div className="min-w-0 flex-1 space-y-1">
-          <h2 className="text-[17px] font-semibold tracking-[-0.025em] text-foreground">{title}</h2>
-          {description ? (
-            <p className="text-[13px] leading-[1.55] text-muted-foreground">{description}</p>
-          ) : null}
-        </div>
       </div>
-      <div className={step !== undefined ? 'pl-9 sm:pl-9' : undefined}>{children}</div>
+      <div>{children}</div>
     </section>
   )
 }
 
-/** Vertical stack of fields with separators between groups. */
+/** Vertical stack of fields with consistent 24px rhythm. */
 export function FormFieldStack({
   children,
   className,
@@ -413,101 +405,11 @@ export function FormFieldStack({
 }) {
   const items = Array.isArray(children) ? children.filter(Boolean) : [children]
   return (
-    <div className={cn('space-y-5', className)}>
+    <div className={cn('flex flex-col gap-6', className)}>
       {items.map((child, index) => (
-        <div key={index}>
-          {index > 0 ? <Separator className="mb-5 bg-border/40" /> : null}
-          {child}
-        </div>
+        <div key={index}>{child}</div>
       ))}
     </div>
-  )
-}
-
-export const WIZARD_STEPS = [
-  { id: 1, label: 'Identity' },
-  { id: 2, label: 'Appearance' },
-  { id: 3, label: 'Style' },
-  { id: 4, label: 'Review' },
-] as const
-
-type WizardProgressProps = {
-  current: number
-  onJump: (step: number) => void
-  className?: string
-}
-
-export function WizardProgress({ current, onJump, className }: WizardProgressProps) {
-  const reduceMotion = useReducedMotion()
-
-  return (
-    <nav
-      aria-label="Creation progress"
-      className={cn(
-        'relative flex flex-wrap gap-0.5 rounded-xl bg-muted/20 p-1 ring-1 ring-border/30',
-        className,
-      )}
-    >
-      {WIZARD_STEPS.map(step => {
-        const selected = step.id === current
-        const completed = step.id < current
-        const clickable = completed
-        const StepIcon = WIZARD_STEP_ICONS[step.id]
-
-        return (
-          <motion.button
-            key={step.id}
-            type="button"
-            disabled={!clickable && !selected}
-            onClick={() => {
-              if (clickable) onJump(step.id)
-            }}
-            whileTap={reduceMotion || !clickable ? undefined : { scale: 0.97 }}
-            transition={reduceMotion ? { duration: 0 } : TAP_SPRING}
-            className={cn(
-              'relative min-h-9 flex-1 rounded-[10px] px-2 text-[12px] font-medium tracking-[-0.015em] sm:px-3 sm:text-[13px]',
-              'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-              selected
-                ? 'text-foreground'
-                : completed
-                  ? 'cursor-pointer text-muted-foreground hover:text-foreground/85'
-                  : 'cursor-default text-muted-foreground/50',
-            )}
-            aria-current={selected ? 'step' : undefined}
-          >
-            {selected ? (
-              <motion.span
-                layoutId="influencer-wizard-progress"
-                className="absolute inset-0 rounded-[10px] bg-background shadow-[0_1px_3px_rgba(0,0,0,0.05)] ring-1 ring-border/40"
-                transition={reduceMotion ? { duration: 0 } : LAYOUT_SPRING}
-              />
-            ) : null}
-            <span className="relative z-10 inline-flex items-center justify-center gap-1.5">
-              <span
-                aria-hidden
-                className={cn(
-                  'flex size-5 items-center justify-center rounded-full',
-                  selected
-                    ? 'bg-foreground text-background'
-                    : completed
-                      ? 'bg-foreground/10 text-foreground'
-                      : 'bg-muted/50 text-muted-foreground/60',
-                )}
-              >
-                {completed ? (
-                  <CheckIcon className="size-2.5" strokeWidth={2.5} />
-                ) : StepIcon ? (
-                  <StepIcon className="size-2.5" strokeWidth={1.75} />
-                ) : (
-                  step.id
-                )}
-              </span>
-              <span className="hidden sm:inline">{step.label}</span>
-            </span>
-          </motion.button>
-        )
-      })}
-    </nav>
   )
 }
 
@@ -533,17 +435,15 @@ export function AdvancedCollapsible({
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger
           className={cn(
-            'group flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-left',
-            'bg-muted/12 ring-1 ring-border/30 transition-[background-color,box-shadow,ring-color] duration-150',
-            'hover:bg-muted/20 hover:ring-border/45',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-            open && 'bg-muted/18 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] ring-border/40',
+            'group flex w-full items-center gap-2 py-1 text-left',
+            'text-[13px] font-medium tracking-[-0.015em] text-muted-foreground',
+            'transition-colors duration-150 hover:text-foreground',
+            'focus-visible:outline-none focus-visible:text-foreground',
+            open && 'text-foreground',
           )}
         >
-          <span className="inline-flex items-center gap-2 text-[13px] font-medium tracking-[-0.015em] text-foreground">
-            {icon ? <FieldIcon icon={icon} className="size-6" /> : null}
-            {label}
-          </span>
+          {icon ? <FieldIcon icon={icon} /> : null}
+          <span>{label}</span>
           <ChevronDownIcon
             className={cn(
               'size-3.5 shrink-0 text-muted-foreground/65 transition-transform duration-200',
@@ -552,7 +452,7 @@ export function AdvancedCollapsible({
           />
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-4 data-[state=closed]:animate-none">
-          <div className="space-y-6">{children}</div>
+          <div className="space-y-5">{children}</div>
         </CollapsibleContent>
       </Collapsible>
     </div>

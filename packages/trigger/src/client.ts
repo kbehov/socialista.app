@@ -43,6 +43,16 @@ export {
 } from './schemas/generate-influencer.schema.js'
 
 export {
+  generateUgcStillsPayloadSchema,
+  type GenerateUgcStillsPayload,
+} from './schemas/generate-ugc-stills.schema.js'
+
+export {
+  generateUgcVideoPayloadSchema,
+  type GenerateUgcVideoPayload,
+} from './schemas/generate-ugc-video.schema.js'
+
+export {
   cloneInfluencerPayloadSchema,
   type CloneInfluencerPayload,
 } from './schemas/clone-influencer.schema.js'

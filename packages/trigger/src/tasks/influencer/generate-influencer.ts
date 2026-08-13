@@ -56,11 +56,10 @@ async function generateShotWithRetry(
 }
 
 /**
- * Balanced influencer generation:
- * 1) Character sheet once → locked identity
- * 2) Cover portrait (+ optional QA retry)
- * 3) Two remaining gallery shots in parallel (full body + selfie talking)
- * Fixed set: portrait, full body, selfie — visually distinct angles.
+ * Balanced influencer generation (3 shots):
+ * 1) Character sheet once (vision LLM when user style ref — richer identity + scene lock)
+ * 2) Cover portrait with user style ref when provided (+ optional QA retry without refs only)
+ * 3) Two follow-ups in parallel — cover portrait only as image reference (identity chain)
  */
 export const generateInfluencer = schemaTask({
   id: TASK_IDS.generateInfluencer,
@@ -90,14 +89,19 @@ export const generateInfluencer = schemaTask({
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
       assertSufficientCredits(workspace, model.cost * INFLUENCER_GENERATION_BILLED)
 
-      // ── Step 0: character sheet (once) ───────────────────────────────────
-      setGenerationStatus(5, 'Building character sheet')
       let characterSheet = influencer.identity.characterSheet
       let baseFragment = influencer.identity.basePromptFragment
       const userReferenceImageUrls = (influencer.identity.userReferenceImageUrls ?? [])
         .map(url => url.trim())
         .filter(Boolean)
         .slice(0, INFLUENCER_MAX_USER_REFERENCE_IMAGES)
+      const hasUserRefs = userReferenceImageUrls.length > 0
+
+      // ── Step 0: character sheet (once — vision LLM when style ref attached) ─
+      setGenerationStatus(
+        5,
+        hasUserRefs ? 'Building character sheet from reference' : 'Building character sheet',
+      )
 
       try {
         characterSheet = await buildInfluencerCharacterSheet({
@@ -112,9 +116,7 @@ export const generateInfluencer = schemaTask({
           directions: influencer.directions,
           bio: influencer.bio,
           photoStyle: influencer.photoStyle,
-          ...(userReferenceImageUrls.length > 0
-            ? { referenceImageUrls: userReferenceImageUrls }
-            : {}),
+          ...(hasUserRefs ? { referenceImageUrls: userReferenceImageUrls } : {}),
         })
         baseFragment = buildInfluencerBasePromptFragment({
           name: influencer.name,
@@ -123,7 +125,7 @@ export const generateInfluencer = schemaTask({
           ethnicity: influencer.ethnicity,
           appearance: influencer.appearance,
           characterSheet,
-          preferReferenceAppearance: userReferenceImageUrls.length > 0,
+          preferReferenceAppearance: hasUserRefs,
         })
         await updateInfluencer(payload.influencerId, {
           identity: {
@@ -139,6 +141,14 @@ export const generateInfluencer = schemaTask({
         logger.warn('Character sheet unavailable, using deterministic fragment', {
           error: sheetError instanceof Error ? sheetError.message : String(sheetError),
         })
+        baseFragment = buildInfluencerBasePromptFragment({
+          name: influencer.name,
+          gender: influencer.gender,
+          ageRange: influencer.ageRange,
+          ethnicity: influencer.ethnicity,
+          appearance: influencer.appearance,
+          preferReferenceAppearance: hasUserRefs,
+        })
       }
 
       logger.info('Generating influencer gallery', {
@@ -146,11 +156,12 @@ export const generateInfluencer = schemaTask({
         model: model.value,
         shots: shotCount,
         userReferenceCount: userReferenceImageUrls.length,
-        referenceMode: userReferenceImageUrls.length > 0 ? 'style-scene' : 'none',
+        referenceMode: hasUserRefs ? 'style-scene' : 'none',
       })
 
-      if (userReferenceImageUrls.length > 0) {
+      if (hasUserRefs) {
         metadata.set('reference_mode', 'style-scene')
+        metadata.set('reference_chain', 'cover-only-followups')
       }
 
       const promptCtxBase = {
@@ -161,9 +172,15 @@ export const generateInfluencer = schemaTask({
         characterSheet,
         photoStyle: influencer.photoStyle,
         directions: influencer.directions,
-        ...(userReferenceImageUrls.length > 0
-          ? { userReferenceCount: userReferenceImageUrls.length }
-          : {}),
+        ...(hasUserRefs ? { userReferenceCount: userReferenceImageUrls.length } : {}),
+      }
+
+      const buildShotPromptCtx = (shotIndex: number) => {
+        if (shotIndex > 0 && hasUserRefs) {
+          const { userReferenceCount: _omit, ...rest } = promptCtxBase
+          return { ...rest, shotIndex, coverChainOnly: true as const }
+        }
+        return { ...promptCtxBase, shotIndex }
       }
 
       const seedBase = model.modelProvider.toLowerCase().includes('fal')
@@ -187,10 +204,7 @@ export const generateInfluencer = schemaTask({
       ): Promise<string> => {
         let prompt = ''
         const { imageUrl, attempts } = await generateShotWithRetry(async attempt => {
-          prompt = buildInfluencerAnchorPrompt(baseFragment, shot, {
-            ...promptCtxBase,
-            shotIndex,
-          })
+          prompt = buildInfluencerAnchorPrompt(baseFragment, shot, buildShotPromptCtx(shotIndex))
           return generateImage(
             {
               model: model.value,
@@ -214,25 +228,22 @@ export const generateInfluencer = schemaTask({
         return imageUrl
       }
 
-      // ── Cover (1×, optional QA retry) ───────────────────────────────────
+      // ── Cover: user style ref on first shot only ───────────────────────────
       const coverShot = shots[0]!
-      const coverRefs =
-        userReferenceImageUrls.length > 0 ? userReferenceImageUrls : undefined
+      const coverRefs = hasUserRefs ? userReferenceImageUrls : undefined
       setGenerationStatus(
         12,
-        userReferenceImageUrls.length > 0
+        hasUserRefs
           ? 'Generating cover — matching reference scene & palette'
           : 'Generating cover portrait',
       )
       coverImageUrl = await runShot(coverShot, 0, coverRefs)
 
-      if (COVER_QUALITY_GATE_ENABLED) {
+      // QA + regen only without user refs — refs already steer the cover; regen would bill a 4th image.
+      if (COVER_QUALITY_GATE_ENABLED && !hasUserRefs) {
         try {
           setGenerationStatus(22, 'Reviewing cover portrait')
-          const quality = await evaluateAnchorPortrait(coverImageUrl, {
-            referenceImageUrls:
-              userReferenceImageUrls.length > 0 ? userReferenceImageUrls : undefined,
-          })
+          const quality = await evaluateAnchorPortrait(coverImageUrl)
           metadata.set('shot_front-portrait_quality', quality)
           if (!quality.pass) {
             logger.warn('Cover failed quality gate, regenerating once', {
@@ -253,16 +264,11 @@ export const generateInfluencer = schemaTask({
         aspectRatio: coverShot.aspectRatio,
       })
 
-      // ── Remaining shots in parallel ─────────────────────────────────────
-      // With user refs: keep original refs + cover so aesthetic stays locked.
-      // Without: cover alone (identity chain).
+      // ── Follow-ups: cover portrait only (identity + aesthetic chain) ─────
       const remaining = shots.slice(1)
       setGenerationStatus(30, `Rendering ${remaining.length} gallery shots`)
 
-      const packRefs =
-        userReferenceImageUrls.length > 0
-          ? [coverImageUrl!, ...userReferenceImageUrls].slice(0, INFLUENCER_MAX_USER_REFERENCE_IMAGES + 1)
-          : [coverImageUrl!]
+      const packRefs = [coverImageUrl!]
 
       const results = await Promise.allSettled(
         remaining.map((shot, i) => runShot(shot, i + 1, packRefs)),

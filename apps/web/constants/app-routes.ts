@@ -32,6 +32,9 @@ export const DASHBOARD_ROUTES = {
     influencer: (id: string) => `/dashboard/studio/influencers/${id}`,
     INFLUENCER_CREATE: '/dashboard/studio/influencers/create',
     INFLUENCER_CLONE: '/dashboard/studio/influencers/clone',
+    UGC: '/dashboard/studio/ugc',
+    ugcProject: (id: string) => `/dashboard/studio/ugc/${id}`,
+    UGC_CREATE: '/dashboard/studio/ugc/create',
   },
 } as const
 
@@ -88,7 +91,7 @@ export function isStaticAdsPath(pathname: string) {
 
 export function isStudioSegmentPath(
   pathname: string,
-  segment: 'slideshows' | 'videos' | 'influencers',
+  segment: 'slideshows' | 'videos' | 'influencers' | 'ugc',
 ) {
   const base = `/dashboard/studio/${segment}`
   return pathname === base || pathname.startsWith(`${base}/`)
