@@ -49,6 +49,13 @@ function findModel(models: Model[] | undefined, value: string | undefined): Mode
 
 function ImagePromptMetaStrip({ payload, model }: { payload: ImageGenerationPayload; model?: Model }) {
   const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
+  const referenceUrls =
+    payload.imageUrls && payload.imageUrls.length > 0
+      ? payload.imageUrls
+      : payload.imageUrl
+        ? [payload.imageUrl]
+        : []
+  const numImages = payload.numImages ?? 1
 
   return (
     <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
@@ -57,21 +64,33 @@ function ImagePromptMetaStrip({ payload, model }: { payload: ImageGenerationPayl
         <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
           {aspectLabel} · {payload.aspectRatio}
         </span>
+        {numImages > 1 ? (
+          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+            {numImages} images
+          </span>
+        ) : null}
         {model ? (
           <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
             {model.name}
           </span>
         ) : null}
-        {payload.imageUrl ? (
-          <div className="relative ml-auto size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30">
-            <Image
-              alt="Reference"
-              className="object-cover"
-              fill
-              sizes="32px"
-              src={resolveGeneratedImagePreviewUrl(payload.imageUrl)}
-              unoptimized
-            />
+        {referenceUrls.length > 0 ? (
+          <div className="ml-auto flex">
+            {referenceUrls.slice(0, 3).map(url => (
+              <div
+                key={url}
+                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
+              >
+                <Image
+                  alt="Reference"
+                  className="object-cover"
+                  fill
+                  sizes="32px"
+                  src={resolveGeneratedImagePreviewUrl(url)}
+                  unoptimized
+                />
+              </div>
+            ))}
           </div>
         ) : null}
       </div>

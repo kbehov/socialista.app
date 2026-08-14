@@ -19,6 +19,7 @@ export type GenerateFalImageOptions = {
   userId: string
   imageUrl?: string
   imageUrls?: string[]
+  numImages?: number
   onProgress?: (progress: number, label: string) => void
 }
 
@@ -41,11 +42,13 @@ export async function generateImageFal({
   aspectRatio,
   imageUrl,
   imageUrls,
+  numImages = 1,
   onProgress,
-}: GenerateFalImageOptions): Promise<string> {
-  const input: Record<string, string> = {
+}: GenerateFalImageOptions): Promise<string[]> {
+  const input: Record<string, unknown> = {
     prompt,
     aspect_ratio: aspectRatio,
+    num_images: numImages,
   }
 
   const referenceImage = imageUrl ?? imageUrls?.[0]
@@ -53,7 +56,7 @@ export async function generateImageFal({
     input.image_url = referenceImage
   }
 
-  logger.info('Submitting to fal', { model })
+  logger.info('Submitting to fal', { model, numImages })
 
   const result = await fal.subscribe(model, {
     input,
@@ -75,11 +78,11 @@ export async function generateImageFal({
   logger.info('fal subscribe resolved', { requestId: result.requestId })
 
   const parsed = FalImageResult.parse(result.data)
-  const imageUrlResult = parsed.images[0]?.url
+  const urls = parsed.images.map(image => image.url).filter(Boolean).slice(0, numImages)
 
-  if (!imageUrlResult) {
+  if (urls.length === 0) {
     throw new Error('No image was returned from the model')
   }
 
-  return imageUrlResult
+  return urls
 }

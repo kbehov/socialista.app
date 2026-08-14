@@ -80,13 +80,12 @@ export function generationToComposerMedia(generation: Generation): ComposerMedia
     ]
   }
 
-  return [
-    {
-      kind: 'image',
-      url: result.url,
-      thumbnailUrl: result.thumbnailUrl,
-    },
-  ]
+  const urls = result.urls && result.urls.length > 0 ? result.urls : [result.url]
+  return urls.map(url => ({
+    kind: 'image' as const,
+    url,
+    thumbnailUrl: result.thumbnailUrl,
+  }))
 }
 
 /** Upload device files into the composer media list (includes video duration). */

@@ -94,7 +94,7 @@ export const realtimeStaticAdGeneration = schemaTask({
       setGenerationStatus(30, 'Rendering campaign creative')
 
       const generateImage = resolveImageGenerator(model.modelProvider)
-      const imageUrl = await generateImage({
+      const [imageUrl] = await generateImage({
         model: model.value,
         prompt: enhancedPrompt,
         aspectRatio: payload.aspectRatio,
@@ -103,6 +103,9 @@ export const realtimeStaticAdGeneration = schemaTask({
         imageUrls: [payload.productImage],
         onProgress: setGenerationStatus,
       })
+      if (!imageUrl) {
+        throw new Error('No image was returned from the model')
+      }
 
       await finalizeGeneration(payload.workspaceId, model)
 

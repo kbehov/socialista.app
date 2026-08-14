@@ -11,6 +11,7 @@ export type GenerateVercelImageOptions = {
   userId: string
   imageUrl?: string
   imageUrls?: string[]
+  numImages?: number
   onProgress?: (progress: number, label: string) => void
 }
 
@@ -40,8 +41,9 @@ export async function generateImageVercel({
   userId,
   imageUrl,
   imageUrls,
+  numImages = 1,
   onProgress,
-}: GenerateVercelImageOptions): Promise<string> {
+}: GenerateVercelImageOptions): Promise<string[]> {
   onProgress?.(65, 'Rendering')
 
   const referenceImages = [
@@ -50,24 +52,49 @@ export async function generateImageVercel({
   ]
   const promptArg = referenceImages.length > 0 ? { text: prompt, images: referenceImages } : prompt
 
-  logger.info('Submitting to Vercel AI', { model, aspectRatio, referenceCount: referenceImages.length })
-
-  const { image } = await generateImage(
-    usesImageSize(model)
-      ? { model, prompt: promptArg, size: aspectRatioToSize(aspectRatio) }
-      : { model, prompt: promptArg, aspectRatio },
-  )
-
-  onProgress?.(90, 'Uploading image')
-
-  const publicUrl = await uploadGeneratedImage({
-    workspaceId,
-    userId,
-    bytes: image.uint8Array,
-    mediaType: image.mediaType,
+  logger.info('Submitting to Vercel AI', {
+    model,
+    aspectRatio,
+    numImages,
+    referenceCount: referenceImages.length,
   })
 
-  logger.info('Vercel image stored', { publicUrl })
+  const { images } = await generateImage(
+    usesImageSize(model)
+      ? {
+          model,
+          prompt: promptArg,
+          n: numImages,
+          maxImagesPerCall: numImages,
+          size: aspectRatioToSize(aspectRatio),
+        }
+      : {
+          model,
+          prompt: promptArg,
+          n: numImages,
+          maxImagesPerCall: numImages,
+          aspectRatio,
+        },
+  )
 
-  return publicUrl
+  if (images.length === 0) {
+    throw new Error('No image was returned from the model')
+  }
+
+  onProgress?.(90, numImages > 1 ? 'Uploading images' : 'Uploading image')
+
+  const urls = await Promise.all(
+    images.slice(0, numImages).map(image =>
+      uploadGeneratedImage({
+        workspaceId,
+        userId,
+        bytes: image.uint8Array,
+        mediaType: image.mediaType,
+      }),
+    ),
+  )
+
+  logger.info('Vercel images stored', { count: urls.length })
+
+  return urls
 }

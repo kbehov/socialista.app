@@ -18,6 +18,11 @@ export {
 } from './schemas/static-ad.schema.js'
 
 export {
+  imageGenerationPayloadSchema,
+  type ImageGenerationPayload,
+} from './schemas/image-generation.schema.js'
+
+export {
   refreshAccountTokenPayloadSchema,
   type RefreshAccountTokenPayload,
 } from './schemas/refresh-account-token.schema.js'

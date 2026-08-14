@@ -52,7 +52,10 @@ export function AttachedMediaThumb({
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             'disabled:pointer-events-none',
           )}
-          onClick={() => onRemove(file.id)}
+          onClick={(event) => {
+            event.stopPropagation()
+            onRemove(file.id)
+          }}
         >
           <XIcon className="size-3" strokeWidth={2.5} />
         </button>

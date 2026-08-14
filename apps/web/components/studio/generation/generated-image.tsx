@@ -6,6 +6,7 @@ import { ASPECT_RATIO_LABELS } from '@/constants/generation.const'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { downloadGeneratedImage, saveGeneratedImageToWorkspace } from '@/lib/image-generation/image-actions'
 import { dataImageUrlToBlobUrl, isDataImageUrl, resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
+import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { ImageGenerationOutput } from '@socialista/types'
@@ -48,9 +49,16 @@ export function GeneratedImage({
   const [isDownloading, setIsDownloading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [previewError, setPreviewError] = useState(false)
   const [isPreviewLoading, setIsPreviewLoading] = useState(true)
+
+  const imageUrls =
+    output.imageUrls && output.imageUrls.length > 0 ? output.imageUrls : [output.imageUrl]
+  const activeIndex = Math.min(selectedIndex, Math.max(0, imageUrls.length - 1))
+  const selectedUrl = imageUrls[activeIndex] ?? output.imageUrl
+  const isMultiple = imageUrls.length > 1
 
   useEffect(() => {
     let blobUrl: string | null = null
@@ -61,15 +69,14 @@ export function GeneratedImage({
       setIsPreviewLoading(true)
       setPreviewSrc(null)
 
-      const imageUrl = output.imageUrl
-      if (!imageUrl) {
+      if (!selectedUrl) {
         setIsPreviewLoading(false)
         return
       }
 
-      if (isDataImageUrl(imageUrl)) {
+      if (isDataImageUrl(selectedUrl)) {
         try {
-          blobUrl = await dataImageUrlToBlobUrl(imageUrl)
+          blobUrl = await dataImageUrlToBlobUrl(selectedUrl)
           if (cancelled) {
             URL.revokeObjectURL(blobUrl)
             return
@@ -87,7 +94,7 @@ export function GeneratedImage({
         return
       }
 
-      setPreviewSrc(resolveGeneratedImagePreviewUrl(imageUrl))
+      setPreviewSrc(resolveGeneratedImagePreviewUrl(selectedUrl))
       setIsPreviewLoading(false)
     }
 
@@ -99,12 +106,12 @@ export function GeneratedImage({
         URL.revokeObjectURL(blobUrl)
       }
     }
-  }, [output.imageUrl])
+  }, [selectedUrl])
 
   const handleDownload = async () => {
     setIsDownloading(true)
     try {
-      await downloadGeneratedImage(output.imageUrl, prompt)
+      await downloadGeneratedImage(selectedUrl, prompt)
       toast.success('Download started')
     } catch {
       toast.error('Could not download image')
@@ -121,7 +128,7 @@ export function GeneratedImage({
 
     setIsSaving(true)
     try {
-      await saveGeneratedImageToWorkspace(currentWorkspace._id, output.imageUrl, prompt)
+      await saveGeneratedImageToWorkspace(currentWorkspace._id, selectedUrl, prompt)
       setSaved(true)
       toast.success('Saved to your files')
     } catch (error) {
@@ -135,12 +142,14 @@ export function GeneratedImage({
   const aspectLabel = aspectRatio ? (ASPECT_RATIO_LABELS[aspectRatio] ?? aspectRatio) : undefined
 
   const isAd = contentKind === 'ad'
-  const resultTitle = isAd ? 'Your ad' : 'Your image'
+  const resultTitle = isAd ? 'Your ad' : isMultiple ? 'Your images' : 'Your image'
   const resultDescription = isAd
     ? 'Ready to download, save to files, or create another variation.'
-    : 'Ready to download or save to your workspace.'
+    : isMultiple
+      ? 'Select an image to download or save to your workspace.'
+      : 'Ready to download or save to your workspace.'
   const newGenerationLabel = isAd ? 'Create another ad' : 'New generation'
-  const previewAlt = isAd ? 'Generated ad' : 'Generated image'
+  const previewAlt = isAd ? 'Generated ad' : isMultiple ? `Generated image ${activeIndex + 1}` : 'Generated image'
 
   return (
     <div ref={imageRef} className="space-y-4">
@@ -215,7 +224,7 @@ export function GeneratedImage({
             <p className="text-sm text-destructive">Could not load the generated image preview.</p>
           </div>
         ) : previewSrc ? (
-          isDataImageUrl(output.imageUrl) || previewSrc.startsWith('blob:') ? (
+          isDataImageUrl(selectedUrl) || previewSrc.startsWith('blob:') ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               alt={previewAlt}
@@ -236,6 +245,47 @@ export function GeneratedImage({
           )
         ) : null}
       </GenerationPreviewFrame>
+
+      {isMultiple ? (
+        <div
+          className="flex flex-wrap items-center justify-center gap-2"
+          role="listbox"
+          aria-label="Generated images"
+        >
+          {imageUrls.map((url, index) => {
+            const isSelected = index === activeIndex
+            return (
+              <button
+                key={url}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                aria-label={`Image ${index + 1}`}
+                onClick={() => {
+                  setSelectedIndex(index)
+                  setSaved(false)
+                }}
+                className={cn(
+                  'relative size-14 overflow-hidden rounded-xl ring-1 transition-[box-shadow,transform,ring-color] duration-150',
+                  'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
+                  isSelected
+                    ? 'ring-2 ring-foreground/40 shadow-sm'
+                    : 'ring-border/50 hover:ring-border',
+                )}
+              >
+                <Image
+                  alt=""
+                  className="object-cover"
+                  fill
+                  sizes="56px"
+                  src={resolveGeneratedImagePreviewUrl(url)}
+                  unoptimized
+                />
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
 
       <p className="text-center text-[12px] tabular-nums text-muted-foreground">
         {formatDuration(durationMs)} · {formatCost(cost)}

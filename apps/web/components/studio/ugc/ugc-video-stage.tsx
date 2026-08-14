@@ -35,11 +35,11 @@ export function UgcVideoStage({
     <section className={dashboardSurface.section}>
       <div className={cn(dashboardSurface.sectionHeader, 'px-4 py-3')}>
         <h2 className={dashboardSurface.sectionTitle}>Video</h2>
-        <p className={dashboardSurface.sectionDescription}>Planned from your stills and script.</p>
+        <p className={dashboardSurface.sectionDescription}>Preview updates as scenes and video finish.</p>
       </div>
 
       <div className="space-y-3 p-4">
-        <div className="relative mx-auto aspect-[9/16] w-full max-w-[220px] overflow-hidden rounded-xl bg-black ring-1 ring-border/60">
+        <div className="relative mx-auto aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-border/60 sm:max-w-[320px]">
           {videoUrl ? (
             <video className="size-full object-cover" controls playsInline src={videoUrl} poster={clip?.thumbnailUrl} />
           ) : generating ? (
@@ -47,9 +47,9 @@ export function UgcVideoStage({
               <Loader2Icon className="size-6 animate-spin" />
             </div>
           ) : (
-            <div className="flex size-full flex-col items-center justify-center gap-1 text-white/55">
-              <VideoIcon className="size-6" strokeWidth={1.5} />
-              <span className="text-[11px]">Generate video</span>
+            <div className="flex size-full flex-col items-center justify-center gap-1.5 text-white/55">
+              <VideoIcon className="size-7" strokeWidth={1.5} />
+              <span className="text-[11px]">Your clip will appear here</span>
             </div>
           )}
         </div>

@@ -13,7 +13,18 @@ export const buildImagePromptMessages = (
   media?: SanitizedMedia[],
   aspectRatio?: AspectRatio,
 ): ModelMessage[] => {
-  const text = aspectRatio ? `${prompt}\n\nDestination format: ${DESTINATION_FORMATS[aspectRatio]}.` : prompt
+  const destination = aspectRatio
+    ? `Destination format: ${DESTINATION_FORMATS[aspectRatio]}.`
+    : null
+
+  const referenceLegend =
+    media && media.length > 0
+      ? `Attached reference images in order: ${media
+          .map((_, index) => `Image ${index + 1} (@image${index + 1})`)
+          .join(', ')}. @imageN in the request maps to Image N.`
+      : null
+
+  const text = [referenceLegend, prompt, destination].filter(Boolean).join('\n\n')
 
   if (!media || media.length === 0) {
     return [{ role: 'user', content: text }]

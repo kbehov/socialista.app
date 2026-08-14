@@ -60,14 +60,16 @@ export async function generateImageFal({
   aspectRatio,
   imageUrl,
   imageUrls,
+  numImages = 1,
   seed,
   onProgress,
-}: GenerateImageOptions): Promise<string> {
+}: GenerateImageOptions): Promise<string[]> {
   const referenceImages = collectReferenceImages(imageUrl, imageUrls)
 
   const input: Record<string, unknown> = {
     prompt,
     aspect_ratio: aspectRatio,
+    num_images: numImages,
   }
 
   if (referenceImages.length > 0) {
@@ -80,6 +82,7 @@ export async function generateImageFal({
 
   console.log('Submitting to fal', {
     model,
+    numImages,
     referenceCount: referenceImages.length,
     imageField: referenceImages.length > 0 ? ('image_urls' in input ? 'image_urls' : 'image_url') : null,
   })
@@ -101,13 +104,13 @@ export async function generateImageFal({
   console.log('fal subscribe resolved', { requestId: result.requestId })
 
   const parsed = FalImageResult.parse(result.data)
-  const imageUrlResult = parsed.images[0]?.url
+  const urls = parsed.images.map(image => image.url).filter(Boolean).slice(0, numImages)
 
-  if (!imageUrlResult) {
+  if (urls.length === 0) {
     throw new Error('No image was returned from the model')
   }
 
-  return imageUrlResult
+  return urls
 }
 
 const FalVideoResult = z

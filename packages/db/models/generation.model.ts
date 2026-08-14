@@ -36,6 +36,7 @@ const generationResultSchema = new Schema(
       required: true,
     },
     url: { type: String, required: true },
+    urls: { type: [String] },
     thumbnailUrl: { type: String },
     width: { type: Number },
     height: { type: Number },

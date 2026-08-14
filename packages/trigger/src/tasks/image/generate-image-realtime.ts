@@ -1,11 +1,11 @@
-import { buildImagePrompt, generateImage } from '@socialista/ai'
+import { buildImagePrompt, generateImages } from '@socialista/ai'
 import { connectDb, disconnectDb } from '@socialista/db'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { ASPECT_RATIOS, TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 
 import { logger } from '@trigger.dev/sdk/v3'
-import { z } from 'zod'
+import { imageGenerationPayloadSchema } from '../../schemas/image-generation.schema.js'
 import {
   completeGenerationRecord,
   failGenerationRecord,
@@ -17,19 +17,15 @@ import {
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
-const taskSchema = z.object({
-  model: z.string().min(1),
-  workspaceId: z.string().min(1),
-  userId: z.string().min(1),
-  prompt: z.string().min(1),
-  aspectRatio: z.enum(ASPECT_RATIOS).default('1:1'),
-  imageUrl: z.string().url().optional(),
-  imageUrls: z.array(z.string().url()).optional(),
-})
+function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
+  const urls = [...(imageUrls ?? [])]
+  if (imageUrl && !urls.includes(imageUrl)) urls.push(imageUrl)
+  return urls
+}
 
 export const realtimeImageGeneration = schemaTask({
   id: TASK_IDS.imageGeneration,
-  schema: taskSchema,
+  schema: imageGenerationPayloadSchema,
   maxDuration: 300,
   retry: { maxAttempts: 1 },
   run: async (payload, { ctx }): Promise<ImageGenerationOutput> => {
@@ -38,14 +34,15 @@ export const realtimeImageGeneration = schemaTask({
 
     try {
       await connectDb()
-      // get the model and workspace
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
-      // assert sufficient credits
-      assertSufficientCredits(workspace, model.cost)
+      const numImages = clampImageGenerationCount(payload.numImages)
+      const billedCost = model.cost * numImages
+      assertSufficientCredits(workspace, billedCost)
       console.log('model', model)
-      logger.info('model', { model: model.value, provider: model.modelProvider })
+      logger.info('model', { model: model.value, provider: model.modelProvider, numImages })
 
-      // start the generation record
+      const referenceUrls = collectReferenceUrls(payload.imageUrl, payload.imageUrls)
+
       const started = await startGenerationRecord({
         kind: GenerationKind.IMAGE,
         taskId: TASK_IDS.imageGeneration,
@@ -56,7 +53,8 @@ export const realtimeImageGeneration = schemaTask({
         model,
         inputs: {
           aspectRatio: payload.aspectRatio,
-          ...(payload.imageUrl ? { referenceImageUrl: payload.imageUrl } : {}),
+          numImages,
+          ...(referenceUrls[0] ? { referenceImageUrl: referenceUrls[0] } : {}),
         },
       })
       startedAt = started.startedAt
@@ -67,17 +65,16 @@ export const realtimeImageGeneration = schemaTask({
 
       const enhanced = await buildImagePrompt({
         prompt: payload.prompt,
-        media: payload.imageUrl ? [{ imageUrl: payload.imageUrl }] : undefined,
+        media: referenceUrls.map(imageUrl => ({ imageUrl })),
         aspectRatio: payload.aspectRatio,
       })
 
       await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
-      // Add no watermarks, or ai generated text and labels to the prompt
       const finalPrompt = `${enhanced}\n\n No watermarks, or ai generated text and labels`
 
-      setGenerationStatus(40, 'Generating image')
+      setGenerationStatus(40, numImages > 1 ? `Generating ${numImages} images` : 'Generating image')
 
-      const generatedImage = await generateImage(
+      const generatedImages = await generateImages(
         {
           model: model.value,
           provider: model.modelProvider,
@@ -85,17 +82,27 @@ export const realtimeImageGeneration = schemaTask({
           aspectRatio: payload.aspectRatio,
           workspaceId: payload.workspaceId,
           userId: payload.userId,
+          numImages,
           imageUrl: payload.imageUrl,
           imageUrls: payload.imageUrls,
         },
         setGenerationStatus,
       )
-      await finalizeGeneration(payload.workspaceId, model)
+      const imageUrl = generatedImages[0]
+      if (!imageUrl) {
+        throw new Error('No image was returned from the model')
+      }
+
+      await finalizeGeneration(payload.workspaceId, model, billedCost)
 
       await completeGenerationRecord({
         triggerRunId: ctx.run.id,
-        result: { type: GenerationResultType.IMAGE, url: generatedImage },
-        cost: model.cost,
+        result: {
+          type: GenerationResultType.IMAGE,
+          url: imageUrl,
+          ...(generatedImages.length > 1 ? { urls: generatedImages } : {}),
+        },
+        cost: billedCost,
         startedAt,
         enhancedPrompt: enhanced,
       })
@@ -106,7 +113,12 @@ export const realtimeImageGeneration = schemaTask({
         throw new Error('Missing generationId after successful image generation')
       }
 
-      return { imageUrl: generatedImage, cost: model.cost, generationId }
+      return {
+        imageUrl,
+        imageUrls: generatedImages,
+        cost: billedCost,
+        generationId,
+      }
     } catch (error) {
       setGenerationFailure(error, 'Image generation failed')
       if (startedAt) {

@@ -41,8 +41,8 @@ export function assertSufficientCredits(workspace: IWorkspace, cost: number) {
   }
 }
 
-export async function finalizeGeneration(workspaceId: string, model: IModel) {
-  await deductAiCredits(workspaceId, model.cost)
+export async function finalizeGeneration(workspaceId: string, model: IModel, credits = model.cost) {
+  await deductAiCredits(workspaceId, credits)
 
   void incrementModelUsage(model._id.toString()).catch(() => {
     // usageCount is an analytics counter; a failed increment shouldn't fail a successful generation.

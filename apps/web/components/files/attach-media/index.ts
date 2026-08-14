@@ -17,6 +17,7 @@ export type {
   AttachImagesDialogProps,
   AttachMediaAccept,
   AttachMediaCopy,
+  AttachMediaSource,
   AttachedImage,
   AttachedMedia,
 } from './types'

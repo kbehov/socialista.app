@@ -3,6 +3,7 @@ export const STUDIO_SHELL_CLASSES = [
   'video-studio',
   'slideshow-studio',
   'image-studio',
+  'ugc-studio',
   'post-composer',
 ] as const
 
@@ -12,7 +13,7 @@ function studioHasUtilities(utility: string): string {
 }
 
 export const dashboardMainClassName = [
-  'mx-auto flex min-h-0 w-full min-w-0 max-w-screen-2xl flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-4 pt-0 pb-6 lg:px-6',
+  'mx-auto flex min-h-0 w-full min-w-0 max-w-screen-7xl flex-1 flex-col gap-6 px-4 pt-0 pb-6 ',
   studioHasUtilities('mx-0'),
   studioHasUtilities('max-w-none'),
   studioHasUtilities('w-full'),

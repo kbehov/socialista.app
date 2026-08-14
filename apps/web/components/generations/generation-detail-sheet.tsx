@@ -58,10 +58,24 @@ function ResultPreview({ generation }: { generation: Generation }) {
     )
   }
 
+  const urls = result.urls && result.urls.length > 0 ? result.urls : [result.url]
+
   return (
-    <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/20">
-      {/* eslint-disable-next-line @next/next/no-img-element -- remote generation URLs vary by provider */}
-      <img src={result.url} alt="" className="max-h-72 w-full object-contain" />
+    <div className="space-y-2">
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+        {/* eslint-disable-next-line @next/next/no-img-element -- remote generation URLs vary by provider */}
+        <img src={urls[0]} alt="" className="max-h-72 w-full object-contain" />
+      </div>
+      {urls.length > 1 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {urls.slice(1).map(url => (
+            <div key={url} className="overflow-hidden rounded-lg border border-border/70 bg-muted/20">
+              {/* eslint-disable-next-line @next/next/no-img-element -- remote generation URLs vary by provider */}
+              <img src={url} alt="" className="aspect-square w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

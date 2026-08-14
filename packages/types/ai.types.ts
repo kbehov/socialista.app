@@ -73,6 +73,8 @@ export type GenerateImageOptions = {
   userId: string
   imageUrl?: string
   imageUrls?: string[]
+  /** Number of images to generate in one call. Default 1, max 3. */
+  numImages?: number
   /** Passed through to providers that support deterministic seeds (fal). */
   seed?: number
   onProgress?: (progress: number, label: string) => void

@@ -1,6 +1,5 @@
 'use client'
 
-import { dashboardSurface } from '@/components/dashboard'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
@@ -148,7 +147,6 @@ export function UgcModelChips({
         onOpen={() => void ensureModels()}
         onChange={value => onChange('video', value)}
       />
-      <span className={cn(dashboardSurface.metricMeta, 'ml-1 hidden sm:inline')}>Advanced</span>
     </div>
   )
 }

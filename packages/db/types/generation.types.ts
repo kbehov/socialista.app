@@ -38,6 +38,8 @@ export type GenerationInputs = {
 export type GenerationResult = {
   type: GenerationResultType
   url: string
+  /** Extra output URLs when a run produced more than one image. */
+  urls?: string[]
   thumbnailUrl?: string
   width?: number
   height?: number

@@ -108,7 +108,7 @@ export function UgcProjectList({
           </span>
           <p className="text-sm font-semibold tracking-tight">Make your first UGC ad</p>
           <p className="mt-1.5 max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
-            Drop a product photo, add clips — talking, b-roll, unboxing, try-on.
+            Drop a product photo → pick a clip type → generate.
           </p>
           <div className="mt-5">{createAction}</div>
         </div>

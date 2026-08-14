@@ -6,7 +6,7 @@ import { getWorkspaceBalance } from '@/services/workspace.service'
 import { createPublicAccessToken } from '@socialista/trigger'
 import type { RealtimeImageGenerationTask } from '@socialista/trigger/task-types'
 import type { GenerateImageOptions } from '@socialista/types'
-import { TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, TASK_IDS } from '@socialista/types'
 import { tasks } from '@trigger.dev/sdk/v3'
 
 export type StartImageGenerationResult =
@@ -30,12 +30,14 @@ export async function startImageGeneration(input: GenerateImageOptions): Promise
       return { success: false, error: 'Model not found.' }
     }
 
-    if (credits < model.cost) {
+    const numImages = clampImageGenerationCount(input.numImages)
+    if (credits < model.cost * numImages) {
       return { success: false, error: 'Insufficient AI credits.' }
     }
 
     const handle = await tasks.trigger<RealtimeImageGenerationTask>(TASK_IDS.imageGeneration, {
       ...input,
+      numImages,
       userId: session.user.id,
     })
 
