@@ -14,6 +14,7 @@ export { InvitationModel } from './models/invitation.model.js'
 export { InfluencerModel } from './models/influencer.model.js'
 export { InfluencerCloneRequestModel } from './models/influencer-clone-request.model.js'
 export { ModelModel } from './models/model.js'
+export { NotificationModel } from './models/notification.model.js'
 export { PolarWebhookEventModel } from './models/polar-webhook-event.model.js'
 export * from './models/product.model.js'
 export { SlideshowModel } from './models/slideshow.model.js'
@@ -28,6 +29,7 @@ export * from './repo/influencer-clone-request.repo.js'
 export * from './repo/inspiration.repo.js'
 export * from './repo/invitation.repo.js'
 export * from './repo/model.repo.js'
+export * from './repo/notification.repo.js'
 export * from './repo/polar-webhook-event.repo.js'
 export * from './repo/product.repo.js'
 export * from './repo/slideshow.repo.js'
@@ -154,6 +156,12 @@ export {
 } from './config/config.js'
 
 export { InvitationStatus, type Invitation, type InvitationDocument } from './types/invitation.types.js'
+export {
+  type CreateNotificationInput,
+  type INotification,
+  type NotificationDocument,
+  type NotifyWorkspaceInput,
+} from './types/notification.types.js'
 export {
   InfluencerAgeRange,
   InfluencerCloneRequestStatus,

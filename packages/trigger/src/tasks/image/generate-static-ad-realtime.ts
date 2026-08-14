@@ -19,6 +19,7 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
+import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 const STATIC_AD_PROMPT_MODEL = 'openai/gpt-5.6-sol'
@@ -135,6 +136,14 @@ export const realtimeStaticAdGeneration = schemaTask({
         throw new Error('Missing generationId after successful static ad generation')
       }
 
+      await notifyGenerationComplete({
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
+        generationId,
+        triggerRunId: ctx.run.id,
+        kind: 'static-ad',
+      })
+
       return {
         imageUrl,
         imageUrls: generatedImages,
@@ -150,6 +159,13 @@ export const realtimeStaticAdGeneration = schemaTask({
           startedAt,
         })
       }
+      await notifyGenerationFailed({
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
+        generationId,
+        triggerRunId: ctx.run.id,
+        kind: 'static-ad',
+      })
       throw error
     } finally {
       await disconnectDb()

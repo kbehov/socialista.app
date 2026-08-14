@@ -14,6 +14,7 @@ import type { Queue } from '@trigger.dev/sdk/v3'
 import { AbortTaskRunError, logger, queue, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { publishPostPayloadSchema } from '../../schemas/publish-post.schema.js'
+import { notifyPostFailed, notifyPostPublished } from '../shared/notify.js'
 import {
   AmbiguousPublishError,
   isRetryablePublishError,
@@ -57,6 +58,15 @@ export const publishPost = schemaTask({
           postId: payload.postId,
           scheduleRevision: payload.scheduleRevision,
           runId: ctx.run.id,
+        })
+      }
+      const post = await getPostById(payload.postId)
+      if (post) {
+        await notifyPostFailed({
+          workspaceId: post.workspace.toString(),
+          userId: post.createdBy.toString(),
+          postId: payload.postId,
+          scheduleRevision: payload.scheduleRevision,
         })
       }
       logger.error('Publish post failed permanently', {
@@ -155,6 +165,13 @@ export const publishPost = schemaTask({
             providerPostId: result.providerPostId,
           }
         }
+
+        await notifyPostPublished({
+          workspaceId: post.workspace.toString(),
+          userId: post.createdBy.toString(),
+          postId: payload.postId,
+          scheduleRevision: payload.scheduleRevision,
+        })
 
         return {
           status: 'published' as const,

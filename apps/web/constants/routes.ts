@@ -132,6 +132,13 @@ export const GENERATION_ROUTES = {
   GET_WORKSPACE_GENERATIONS: (workspaceId: string) => `/generations/workspace/${workspaceId}`,
 } as const
 
+export const NOTIFICATION_ROUTES = {
+  GET_WORKSPACE_NOTIFICATIONS: (workspaceId: string) => `/notifications/workspace/${workspaceId}`,
+  GET_UNREAD_COUNT: (workspaceId: string) => `/notifications/workspace/${workspaceId}/unread-count`,
+  MARK_READ: (id: string) => `/notifications/${id}/read`,
+  MARK_ALL_READ: (workspaceId: string) => `/notifications/workspace/${workspaceId}/read-all`,
+} as const
+
 export const UGC_PROJECT_ROUTES = {
   CREATE: '/ugc-projects',
   GET_BY_ID: (id: string) => `/ugc-projects/${id}`,

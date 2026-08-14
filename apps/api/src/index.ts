@@ -11,6 +11,7 @@ import invitationRoutes from '@/routes/invitation.routes.js'
 import { influencerRoutes } from '@/routes/influencer.routes.js'
 import { ugcProjectRoutes } from '@/routes/ugc-project.routes.js'
 import modelRoutes from '@/routes/model.routes.js'
+import notificationRoutes from '@/routes/notification.routes.js'
 import productRoutes from '@/routes/product.routes.js'
 import postRoutes from '@/routes/post.routes.js'
 import { slideshowRoutes } from '@/routes/slideshow.routes.js'
@@ -55,6 +56,7 @@ app.route('/ugc-projects', ugcProjectRoutes)
 app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)
+app.route('/notifications', notificationRoutes)
 app.route('/products', productRoutes)
 app.route('/posts', postRoutes)
 app.route('/accounts', accountRoutes)

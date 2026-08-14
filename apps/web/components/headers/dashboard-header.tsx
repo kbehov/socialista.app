@@ -1,5 +1,6 @@
 import Logo from '@/components/common/logo'
 import { UserDropdown } from '@/components/common/user-dropdown'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { WorkspaceBalanceHeader } from '@/components/workspace-balance-header'
@@ -28,6 +29,7 @@ function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) 
       <div className="dashboard-header-actions">
         <WorkspaceBalanceHeader balance={workspaceBalance} />
         <ThemeToggle className="size-7 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground" />
+        <NotificationBell className="size-7 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground" />
         <UserDropdown />
       </div>
     </header>

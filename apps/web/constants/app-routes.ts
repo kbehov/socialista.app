@@ -17,6 +17,7 @@ export const DASHBOARD_ROUTES = {
     return qs ? `/dashboard/posts/create?${qs}` : '/dashboard/posts/create'
   },
   GENERATIONS: '/dashboard/generations',
+  NOTIFICATIONS: '/dashboard/notifications',
   STUDIO: {
     IMAGES: '/dashboard/studio/images',
     imageRun: (runId: string) => `/dashboard/studio/images/${runId}`,
@@ -70,6 +71,13 @@ export function isDashboardGenerationsPath(pathname: string) {
   return (
     pathname === DASHBOARD_ROUTES.GENERATIONS ||
     pathname.startsWith(`${DASHBOARD_ROUTES.GENERATIONS}/`)
+  )
+}
+
+export function isDashboardNotificationsPath(pathname: string) {
+  return (
+    pathname === DASHBOARD_ROUTES.NOTIFICATIONS ||
+    pathname.startsWith(`${DASHBOARD_ROUTES.NOTIFICATIONS}/`)
   )
 }
 

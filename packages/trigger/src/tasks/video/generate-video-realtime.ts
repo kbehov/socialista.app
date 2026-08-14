@@ -15,6 +15,7 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
+import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -129,6 +130,15 @@ export const realtimeVideoGeneration = schemaTask({
         throw new Error('Missing generationId after successful video generation')
       }
 
+      await notifyGenerationComplete({
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
+        generationId,
+        triggerRunId: ctx.run.id,
+        kind: 'video',
+        videoId,
+      })
+
       return {
         videoUrl,
         cost: billedCost,
@@ -145,6 +155,13 @@ export const realtimeVideoGeneration = schemaTask({
           startedAt,
         })
       }
+      await notifyGenerationFailed({
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
+        generationId,
+        triggerRunId: ctx.run.id,
+        kind: 'video',
+      })
       throw error as Error
     } finally {
       await disconnectDb()

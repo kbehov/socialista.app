@@ -5,6 +5,7 @@ import {
   getWorkspaceById,
   getWorkspaceByPolarCustomerId,
   getWorkspaceByPolarSubscriptionId,
+  notifyWorkspaceOwnersAndAdmins,
   PLAN_LIMITS,
   Plan,
   provisionPlan,
@@ -20,7 +21,7 @@ import type {
   PolarWebhookEventType,
   PolarWebhookMetadata,
 } from '@socialista/types'
-import { POLAR_WEBHOOK_EVENT_TYPE_SET } from '@socialista/types'
+import { NotificationResourceKind, NotificationType, POLAR_WEBHOOK_EVENT_TYPE_SET } from '@socialista/types'
 
 const acquireWebhookEvent = (eventKey: string) => tryMarkEventProcessed(eventKey)
 const buildWebhookEventKey = (eventType: string, entityId: string) => `${eventType}:${entityId}`
@@ -48,6 +49,35 @@ const mapPolarStatus = (status: string): BillingStatus => {
       return BillingStatus.PENDING
     default:
       return BillingStatus.INACTIVE
+  }
+}
+
+const planLabel = (plan: Plan) => plan.charAt(0).toUpperCase() + plan.slice(1)
+
+async function notifyBillingOwners(
+  workspaceId: string,
+  input: {
+    type: typeof NotificationType.BILLING_SUBSCRIPTION_CREATED
+      | typeof NotificationType.BILLING_SUBSCRIPTION_RENEWED
+      | typeof NotificationType.BILLING_SUBSCRIPTION_CANCELED
+    title: string
+    body: string
+    subscriptionId: string
+    dedupeKey: string
+  },
+) {
+  try {
+    await notifyWorkspaceOwnersAndAdmins({
+      workspace: workspaceId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      resource: { kind: NotificationResourceKind.BILLING, id: input.subscriptionId },
+      metadata: { polarSubscriptionId: input.subscriptionId },
+      dedupeKey: input.dedupeKey,
+    })
+  } catch (error) {
+    console.warn('[polar] failed to create billing notification', error)
   }
 }
 
@@ -127,6 +157,13 @@ export const handleSubscriptionCreated = async (subscription: PolarSubscriptionW
     if (mapPolarStatus(subscription.status) === BillingStatus.ACTIVE) {
       await provisionPlan(workspaceId, plan)
     }
+    await notifyBillingOwners(workspaceId, {
+      type: NotificationType.BILLING_SUBSCRIPTION_CREATED,
+      title: 'Subscription created',
+      body: `Your ${planLabel(plan)} plan is now active.`,
+      subscriptionId: subscription.id,
+      dedupeKey: `billing.created:${workspaceId}:${subscription.id}`,
+    })
   })
 }
 
@@ -137,11 +174,27 @@ export const handleSubscriptionUpdated = async (subscription: PolarSubscriptionW
 }
 
 export const handleSubscriptionActive = async (subscription: PolarSubscriptionWebhookData) => {
-  return withSubscriptionWorkspace('subscription.active', subscription, async (_workspace, workspaceId) => {
+  return withSubscriptionWorkspace('subscription.active', subscription, async (workspace, workspaceId) => {
+    const previousPeriodStart = workspace.billing.currentPeriodStart
+    const newPeriodStart = toDate(subscription.currentPeriodStart)
     const plan = resolvePlanFromProductId(subscription.productId)
     await syncSubscriptionPeriod(workspaceId, subscription)
     await provisionPlan(workspaceId, plan)
     await resetBillingPeriodUsage(workspaceId)
+
+    const isRenewal =
+      previousPeriodStart != null &&
+      newPeriodStart != null &&
+      previousPeriodStart.getTime() !== newPeriodStart.getTime()
+    if (!isRenewal) return
+
+    await notifyBillingOwners(workspaceId, {
+      type: NotificationType.BILLING_SUBSCRIPTION_RENEWED,
+      title: 'Subscription renewed',
+      body: `Your ${planLabel(plan)} plan has renewed.`,
+      subscriptionId: subscription.id,
+      dedupeKey: `billing.renewed:${workspaceId}:${newPeriodStart.toISOString()}`,
+    })
   })
 }
 
@@ -151,6 +204,13 @@ export const handleSubscriptionCanceled = async (subscription: PolarSubscription
       status: BillingStatus.CANCELLED,
       currentPeriodEnd: toDate(subscription.currentPeriodEnd),
       nextBillingDate: toDate(subscription.currentPeriodEnd) ?? workspace.billing.nextBillingDate,
+    })
+    await notifyBillingOwners(workspaceId, {
+      type: NotificationType.BILLING_SUBSCRIPTION_CANCELED,
+      title: 'Subscription canceled',
+      body: 'Your subscription has been canceled. You can resubscribe anytime.',
+      subscriptionId: subscription.id,
+      dedupeKey: `billing.canceled:${workspaceId}:${subscription.id}`,
     })
   })
 }
