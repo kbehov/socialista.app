@@ -55,6 +55,7 @@ export const TASK_IDS = {
   cloneInfluencer: 'clone-influencer',
   generateUgcStills: 'generate-ugc-stills',
   generateUgcVideo: 'generate-ugc-video',
+  videoGeneration: 'realtime-video-generation',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

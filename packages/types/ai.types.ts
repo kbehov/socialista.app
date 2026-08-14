@@ -1,4 +1,5 @@
 import { AspectRatio } from './image-generation.types.js'
+import type { VideoAspectRatio } from './video-generation.types.js'
 
 export const SLIDESHOW_CONTENT_TYPES = ['story', 'guide', 'list', 'routine', 'comparison', 'myth'] as const
 
@@ -78,6 +79,36 @@ export type GenerateImageOptions = {
   /** Passed through to providers that support deterministic seeds (fal). */
   seed?: number
   onProgress?: (progress: number, label: string) => void
+}
+
+export type GenerateVideoOptions = {
+  model: string
+  prompt: string
+  aspectRatio: VideoAspectRatio
+  workspaceId: string
+  userId: string
+  duration: number
+  generateAudio?: boolean
+  imageUrl?: string
+  imageUrls?: string[]
+  onProgress?: (progress: number, label: string) => void
+}
+
+export type UploadGeneratedVideoInput = {
+  workspaceId: string
+  userId: string
+  bytes: Uint8Array
+  mediaType: string
+  filename?: string
+}
+
+export type UploadGeneratedVideoResponse = {
+  success: boolean
+  data?: {
+    url: string
+    _id: string
+  }
+  message?: string
 }
 
 export type GeneratedImage = {

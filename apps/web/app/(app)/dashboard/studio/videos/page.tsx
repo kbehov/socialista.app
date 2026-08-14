@@ -1,20 +1,46 @@
-import { VideoList } from '@/components/video/video-list'
+import { VideoStudioWorkspace } from '@/components/studio/videos/video-studio-workspace'
+import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
+import { getModels } from '@/services/models.service'
 import { getWorkspaceVideos } from '@/services/video.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
-import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
+import type { Model } from '@socialista/types'
+import { preload } from 'react-dom'
+
+function mergeModels(groups: Array<Model[] | undefined>): Model[] {
+  const byId = new Map<string, Model>()
+  for (const group of groups) {
+    for (const model of group ?? []) {
+      byId.set(model._id, model)
+    }
+  }
+  return [...byId.values()]
+}
 
 export default async function VideosPage() {
+  preload('/socialista-video.webp', { as: 'image' })
   const workspace = await getCurrentWorkspace()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view videos." />
   }
 
-  const response = await getWorkspaceVideos(workspace.id, 'draft')
-  const videos = response.data?.videos ?? []
-  const error = response.success ? null : (response.message ?? 'Failed to load videos')
+  const [textToVideo, imageToVideo, videosResponse] = await Promise.all([
+    getModels('limit=20&modelType=text-to-video&sort=-usageCount'),
+    getModels('limit=20&modelType=image-to-video&sort=-usageCount'),
+    getWorkspaceVideos(workspace.id, 'draft'),
+  ])
+
+  const models = mergeModels([textToVideo.data?.models, imageToVideo.data?.models])
+  const videos = videosResponse.data?.videos ?? []
+  const error = videosResponse.success ? null : (videosResponse.message ?? 'Failed to load videos')
 
   return (
-    <VideoList workspaceId={workspace.id} workspaceName={workspace.name} initialVideos={videos} initialError={error} />
+    <VideoStudioWorkspace
+      models={models}
+      workspaceId={workspace.id}
+      workspaceName={workspace.name}
+      initialVideos={videos}
+      initialError={error}
+    />
   )
 }

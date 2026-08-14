@@ -309,6 +309,7 @@ export type StudioPromptComposerProps = {
   onAttachmentsChange: (files: AttachedMedia[]) => void;
   attachSources: readonly StudioAttachSource[];
   maxAttachments?: number;
+  minAttachments?: number;
   workspaceId?: string;
   count?: StudioPromptComposerCount;
   placeholder?: string;
@@ -316,15 +317,20 @@ export type StudioPromptComposerProps = {
   pending?: boolean;
   onSubmit: (message: PromptInputMessage) => void;
   tools?: ReactNode;
+  composerHeader?: ReactNode;
   submitLabel?: string;
   canSubmit?: boolean;
+  requirePrompt?: boolean;
+  hideModelSelector?: boolean;
   highlighted?: boolean;
   textareaRef?: (node: HTMLTextAreaElement | null) => void;
   onPromptChange?: () => void;
   className?: string;
+  surfaceClassName?: string;
   composerRef?: Ref<HTMLDivElement>;
   emptyTitle?: string;
   emptyDescription?: string;
+  submitTitle?: string;
 };
 
 export function StudioPromptComposer({
@@ -335,6 +341,7 @@ export function StudioPromptComposer({
   onAttachmentsChange,
   attachSources,
   maxAttachments = 3,
+  minAttachments = 0,
   workspaceId,
   count,
   placeholder = "Describe what to generate…",
@@ -342,15 +349,20 @@ export function StudioPromptComposer({
   pending,
   onSubmit,
   tools,
+  composerHeader,
   submitLabel = "Generate",
   canSubmit: canSubmitProp,
+  requirePrompt = true,
+  hideModelSelector = false,
   highlighted,
   textareaRef: textareaRefProp,
   onPromptChange,
   className,
+  surfaceClassName,
   composerRef,
   emptyTitle = "No image models yet",
   emptyDescription = "Add a text-to-image model in the manager to start creating.",
+  submitTitle,
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController();
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
@@ -388,13 +400,18 @@ export function StudioPromptComposer({
   );
 
   const hasPrompt = textInput.value.trim().length > 0;
+  const meetsAttachmentRequirement = attachments.length >= minAttachments;
+  const meetsPromptRequirement = !requirePrompt || hasPrompt;
   const ready =
-    canSubmitProp === undefined ? hasPrompt : canSubmitProp || hasPrompt;
+    canSubmitProp === undefined
+      ? meetsPromptRequirement && meetsAttachmentRequirement
+      : canSubmitProp || (meetsPromptRequirement && meetsAttachmentRequirement);
   const canSubmit = ready && !!selectedModel && !disabled && !pending;
   const attachDisabled =
     disabled ||
     pending ||
-    !selectedModel?.contextSupports?.includes(ContextSupport.IMAGE);
+    (!hideModelSelector &&
+      !selectedModel?.contextSupports?.includes(ContextSupport.IMAGE));
   const multiplier = count?.value ?? 1;
   const costLabel = selectedModel
     ? formatModelCost(selectedModel.cost * multiplier, selectedModel.costUnit)
@@ -560,7 +577,8 @@ export function StudioPromptComposer({
     );
   }
 
-  const modelSelector = selectedModel ? (
+  const modelSelector =
+    !hideModelSelector && selectedModel ? (
     <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
       <ModelSelectorTrigger asChild>
         <PromptInputButton
@@ -725,9 +743,16 @@ export function StudioPromptComposer({
           "dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.2),0_12px_40px_-18px_rgba(0,0,0,0.48)]",
           "dark:has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.24),0_16px_48px_-16px_rgba(0,0,0,0.52)]",
           highlighted && "border-foreground/15 ring-2 ring-foreground/8",
+          surfaceClassName,
         )}
         onSubmit={onSubmit}
       >
+        {composerHeader ? (
+          <div className="w-full min-w-0 self-stretch overflow-hidden border-b border-border/35 bg-muted/8 py-2">
+            {composerHeader}
+          </div>
+        ) : null}
+
         <PromptInputBody>
           <div className="relative w-full min-w-0 self-stretch">
             <StudioPromptHighlight
@@ -909,6 +934,7 @@ export function StudioPromptComposer({
               disabled={!canSubmit}
               size="sm"
               status={pending ? "submitted" : undefined}
+              title={submitTitle}
             >
               <span className="hidden sm:inline">{submitLabel}</span>
               <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">

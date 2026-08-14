@@ -1,6 +1,6 @@
 import { connectDb, disconnectDb } from '@socialista/db'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import {
@@ -38,7 +38,9 @@ export const realtimeStaticAdGeneration = schemaTask({
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId, {
         modelNotFoundMessage: `Model not found: ${payload.model}. Add openai/gpt-image-2 in the manager before generating static ads.`,
       })
-      assertSufficientCredits(workspace, model.cost)
+      const numImages = clampImageGenerationCount(payload.numImages)
+      const billedCost = model.cost * numImages
+      assertSufficientCredits(workspace, billedCost)
 
       const started = await startGenerationRecord({
         kind: GenerationKind.STATIC_AD,
@@ -52,6 +54,7 @@ export const realtimeStaticAdGeneration = schemaTask({
           aspectRatio: payload.aspectRatio,
           productImageUrl: payload.productImage,
           language: payload.language,
+          numImages,
           ...(payload.adCopy ? { adCopy: payload.adCopy } : {}),
         },
       })
@@ -91,28 +94,37 @@ export const realtimeStaticAdGeneration = schemaTask({
       ].join('\n')
       await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
 
-      setGenerationStatus(30, 'Rendering campaign creative')
+      setGenerationStatus(
+        30,
+        numImages > 1 ? `Rendering ${numImages} campaign creatives` : 'Rendering campaign creative',
+      )
 
       const generateImage = resolveImageGenerator(model.modelProvider)
-      const [imageUrl] = await generateImage({
+      const generatedImages = await generateImage({
         model: model.value,
         prompt: enhancedPrompt,
         aspectRatio: payload.aspectRatio,
         workspaceId: payload.workspaceId,
         userId: payload.userId,
         imageUrls: [payload.productImage],
+        numImages,
         onProgress: setGenerationStatus,
       })
+      const imageUrl = generatedImages[0]
       if (!imageUrl) {
         throw new Error('No image was returned from the model')
       }
 
-      await finalizeGeneration(payload.workspaceId, model)
+      await finalizeGeneration(payload.workspaceId, model, billedCost)
 
       await completeGenerationRecord({
         triggerRunId: ctx.run.id,
-        result: { type: GenerationResultType.IMAGE, url: imageUrl },
-        cost: model.cost,
+        result: {
+          type: GenerationResultType.IMAGE,
+          url: imageUrl,
+          ...(generatedImages.length > 1 ? { urls: generatedImages } : {}),
+        },
+        cost: billedCost,
         startedAt,
         enhancedPrompt,
       })
@@ -123,7 +135,12 @@ export const realtimeStaticAdGeneration = schemaTask({
         throw new Error('Missing generationId after successful static ad generation')
       }
 
-      return { imageUrl, cost: model.cost, generationId }
+      return {
+        imageUrl,
+        imageUrls: generatedImages,
+        cost: billedCost,
+        generationId,
+      }
     } catch (error) {
       setGenerationFailure(error, 'Static ad generation failed')
       if (startedAt) {

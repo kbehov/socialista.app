@@ -8,7 +8,7 @@ export default async function StaticAdRunPage({ params }: StaticAdRunPageProps) 
   const { runId } = await params
 
   return (
-    <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <StaticAdGenerationProgress runId={runId} />
     </div>
   )

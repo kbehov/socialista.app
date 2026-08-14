@@ -8,6 +8,8 @@ export {
   type ImageGenerationStatus,
   type ImageGenerator,
   type TaskId,
+  type VideoGenerationOutput,
+  type VideoAspectRatio,
 } from '@socialista/types'
 
 export * from './ai/static-ad-prompts.js'
@@ -21,6 +23,11 @@ export {
   imageGenerationPayloadSchema,
   type ImageGenerationPayload,
 } from './schemas/image-generation.schema.js'
+
+export {
+  videoGenerationPayloadSchema,
+  type VideoGenerationPayload,
+} from './schemas/video-generation.schema.js'
 
 export {
   refreshAccountTokenPayloadSchema,

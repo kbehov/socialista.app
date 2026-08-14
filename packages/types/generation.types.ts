@@ -17,6 +17,7 @@ export type GenerationInputs = {
   referenceImageUrl?: string
   productImageUrl?: string
   language?: string
+  numImages?: number
   adCopy?: GenerationAdCopy
   [key: string]: unknown
 }

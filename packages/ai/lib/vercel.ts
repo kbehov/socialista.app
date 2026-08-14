@@ -1,8 +1,7 @@
-import type { AspectRatio } from '@socialista/types'
-import { generateImage } from 'ai'
+import type { AspectRatio, GenerateImageOptions, GenerateVideoOptions } from '@socialista/types'
+import { experimental_generateVideo as generateVideo, generateImage } from 'ai'
 import { uploadGeneratedImage } from '../utils/image-upload.js'
-
-import type { GenerateImageOptions } from '@socialista/types'
+import { uploadGeneratedVideo } from '../utils/video-upload.js'
 
 const SIZE_BASED_MODEL_PATTERN = /gpt-image|dall-e/i
 
@@ -82,4 +81,56 @@ export async function generateImageVercel({
       }),
     ),
   )
+}
+
+export async function generateVideoVercel({
+  model,
+  prompt,
+  aspectRatio,
+  workspaceId,
+  userId,
+  duration,
+  generateAudio,
+  imageUrl,
+  imageUrls,
+  onProgress,
+}: GenerateVideoOptions): Promise<string> {
+  onProgress?.(65, 'Rendering')
+
+  const referenceImages = [
+    ...(imageUrls ?? []),
+    ...(imageUrl && !(imageUrls ?? []).includes(imageUrl) ? [imageUrl] : []),
+  ]
+
+  const promptArg = referenceImages.length > 0 ? { text: prompt, image: referenceImages[0]! } : prompt
+
+  console.log('Submitting video to Vercel AI', {
+    model,
+    aspectRatio,
+    duration,
+    generateAudio,
+    referenceCount: referenceImages.length,
+  })
+
+  const { video } = await generateVideo({
+    model,
+    prompt: promptArg,
+    aspectRatio,
+    duration,
+    generateAudio,
+    ...(referenceImages.length > 1 ? { inputReferences: referenceImages.slice(1) } : {}),
+  })
+
+  if (!video?.uint8Array?.length) {
+    throw new Error('No video was returned from the model')
+  }
+
+  onProgress?.(90, 'Saving to library')
+
+  return uploadGeneratedVideo({
+    workspaceId,
+    userId,
+    bytes: video.uint8Array,
+    mediaType: video.mediaType || 'video/mp4',
+  })
 }

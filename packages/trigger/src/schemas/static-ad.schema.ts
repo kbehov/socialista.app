@@ -1,4 +1,10 @@
-import { ASPECT_RATIOS, STATIC_AD_MODEL } from '@socialista/types'
+import {
+  ASPECT_RATIOS,
+  IMAGE_GENERATION_COUNT_DEFAULT,
+  IMAGE_GENERATION_COUNT_MAX,
+  IMAGE_GENERATION_COUNT_MIN,
+  STATIC_AD_MODEL,
+} from '@socialista/types'
 import { z } from 'zod'
 
 export const staticAdCopySchema = z.object({
@@ -17,6 +23,12 @@ export const staticAdPayloadObjectSchema = z.object({
   model: z.literal(STATIC_AD_MODEL).default(STATIC_AD_MODEL),
   language: z.string().default('en'),
   adCopy: staticAdCopySchema.optional(),
+  numImages: z
+    .number()
+    .int()
+    .min(IMAGE_GENERATION_COUNT_MIN)
+    .max(IMAGE_GENERATION_COUNT_MAX)
+    .default(IMAGE_GENERATION_COUNT_DEFAULT),
 })
 
 export const staticAdPayloadSchema = staticAdPayloadObjectSchema

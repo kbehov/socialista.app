@@ -2,6 +2,7 @@
 
 import { SystemNotice } from '@/components/common/system-notice'
 import { GeneratedImage } from '@/components/studio/generation/generated-image'
+import { GeneratedVideo } from '@/components/studio/generation/generated-video'
 import { GenerationConnectingSection } from '@/components/studio/generation/generation-connecting-section'
 import {
   GenerationFailureAlert,
@@ -24,7 +25,8 @@ import { readGenerationAccessToken } from '@/lib/image-generation/session'
 import { cn } from '@/lib/utils'
 import type { ImageGenerationPayload } from '@socialista/trigger/schemas/image-generation'
 import type { StaticAdGenerationPayload } from '@socialista/trigger/schemas/static-ad'
-import type { ImageGenerationOutput, Model } from '@socialista/types'
+import type { VideoGenerationPayload } from '@socialista/trigger/schemas/video-generation'
+import type { ImageGenerationOutput, Model, VideoGenerationOutput } from '@socialista/types'
 import { ArrowLeftIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -32,7 +34,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 type GenerationRunViewProps = {
   runId: string
-  contentKind: 'image' | 'ad'
+  contentKind: 'image' | 'ad' | 'video'
   backHref: string
   studioLabel: string
   generatingTitle: string
@@ -102,6 +104,7 @@ function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPaylo
   const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
   const languageLabel =
     payload.language && payload.language !== 'en' ? getLanguageLabel(payload.language) : undefined
+  const numImages = payload.numImages ?? 1
 
   return (
     <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
@@ -112,6 +115,11 @@ function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPaylo
         <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
           {aspectLabel} · {payload.aspectRatio}
         </span>
+        {numImages > 1 ? (
+          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+            {numImages} images
+          </span>
+        ) : null}
         {languageLabel ? (
           <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
             {languageLabel}
@@ -139,6 +147,58 @@ function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPaylo
   )
 }
 
+function collectReferenceUrls(payload: VideoGenerationPayload): string[] {
+  const urls = [...(payload.imageUrls ?? [])]
+  if (payload.imageUrl && !urls.includes(payload.imageUrl)) urls.push(payload.imageUrl)
+  return urls
+}
+
+function VideoPromptMetaStrip({ payload, model }: { payload: VideoGenerationPayload; model?: Model }) {
+  const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
+  const referenceUrls = collectReferenceUrls(payload)
+
+  return (
+    <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
+      <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+          {aspectLabel} · {payload.aspectRatio}
+        </span>
+        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+          {payload.duration}s
+        </span>
+        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+          {payload.generateAudio ? 'Audio on' : 'Muted'}
+        </span>
+        {model ? (
+          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+            {model.name}
+          </span>
+        ) : null}
+        {referenceUrls.length > 0 ? (
+          <div className="ml-auto flex">
+            {referenceUrls.slice(0, 3).map(url => (
+              <div
+                key={url}
+                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
+              >
+                <Image
+                  alt="Reference"
+                  className="object-cover"
+                  fill
+                  sizes="32px"
+                  src={resolveGeneratedImagePreviewUrl(url)}
+                  unoptimized
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 export function GenerationRunView({
   runId,
   contentKind,
@@ -158,7 +218,8 @@ export function GenerationRunView({
   const { run, error } = useGenerationRun({ runId, accessToken })
 
   const status = useMemo(() => parseGenerationStatus(run?.metadata), [run?.metadata])
-  const output = run?.output as ImageGenerationOutput | undefined
+  const imageOutput = contentKind !== 'video' ? (run?.output as ImageGenerationOutput | undefined) : undefined
+  const videoOutput = contentKind === 'video' ? (run?.output as VideoGenerationOutput | undefined) : undefined
   const metadataError = useMemo(() => parseMetadataError(run?.metadata), [run?.metadata])
   const failureMessage = useMemo(() => resolveFailureMessage(run), [run])
 
@@ -175,10 +236,12 @@ export function GenerationRunView({
     contentKind === 'image' ? (run?.payload as ImageGenerationPayload | undefined) : undefined
   const adPayload =
     contentKind === 'ad' ? (run?.payload as StaticAdGenerationPayload | undefined) : undefined
+  const videoPayload =
+    contentKind === 'video' ? (run?.payload as VideoGenerationPayload | undefined) : undefined
 
   const model = useMemo(
-    () => findModel(models, imagePayload?.model),
-    [models, imagePayload?.model],
+    () => findModel(models, imagePayload?.model ?? videoPayload?.model),
+    [models, imagePayload?.model, videoPayload?.model],
   )
   const languageLabel =
     adPayload?.language && adPayload.language !== 'en'
@@ -191,7 +254,8 @@ export function GenerationRunView({
   )
 
   const progressWidth = isComplete || isFailed ? 100 : Math.min(status.progress, 100)
-  const aspectRatio = imagePayload?.aspectRatio ?? adPayload?.aspectRatio
+  const aspectRatio = imagePayload?.aspectRatio ?? adPayload?.aspectRatio ?? videoPayload?.aspectRatio
+  const hasCompleteOutput = Boolean(imageOutput?.imageUrl || videoOutput?.videoUrl)
 
   useEffect(() => {
     const reduceMotion =
@@ -199,7 +263,7 @@ export function GenerationRunView({
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const scrollBehavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth'
 
-    if (isComplete && output?.imageUrl) {
+    if (isComplete && hasCompleteOutput) {
       imageRef.current?.scrollIntoView({ behavior: scrollBehavior, block: 'nearest' })
       return
     }
@@ -208,7 +272,7 @@ export function GenerationRunView({
       lastScrolledStepRef.current = activeStepIndex
       activeStepRef.current?.scrollIntoView({ behavior: scrollBehavior, block: 'nearest' })
     }
-  }, [activeStepIndex, isComplete, isFailed, isRunning, output?.imageUrl])
+  }, [activeStepIndex, hasCompleteOutput, isComplete, isFailed, isRunning])
 
   if (!accessToken) {
     return (
@@ -247,6 +311,8 @@ export function GenerationRunView({
       metaStrip = <ImagePromptMetaStrip model={model} payload={imagePayload} />
     } else if (adPayload) {
       metaStrip = <StaticAdPromptMetaStrip payload={adPayload} />
+    } else if (videoPayload) {
+      metaStrip = <VideoPromptMetaStrip model={model} payload={videoPayload} />
     }
   }
 
@@ -300,25 +366,49 @@ export function GenerationRunView({
             />
           ) : null}
 
-          {isComplete && !output?.imageUrl ? <GenerationMissingOutputAlert /> : null}
+          {isComplete && !hasCompleteOutput ? (
+            <GenerationMissingOutputAlert
+              message={
+                contentKind === 'video'
+                  ? 'The run completed but no video was returned.'
+                  : 'The run completed but no image was returned.'
+              }
+            />
+          ) : null}
 
-          {isComplete && output?.imageUrl ? (
+          {isComplete && imageOutput?.imageUrl ? (
             <GeneratedImage
               aspectRatio={aspectRatio}
-              contentKind={contentKind}
-              cost={output.cost}
+              contentKind={contentKind === 'ad' ? 'ad' : 'image'}
+              cost={imageOutput.cost}
               durationMs={run?.durationMs}
               imageRef={imageRef}
               languageLabel={languageLabel}
               modelName={contentKind === 'ad' ? 'GPT Image 2' : model?.name}
               newGenerationHref={backHref}
-              output={output}
+              output={imageOutput}
               productImageUrl={
                 adPayload?.productImage
                   ? resolveGeneratedImagePreviewUrl(adPayload.productImage)
                   : undefined
               }
               prompt={imagePayload?.prompt ?? adPayload?.prompt}
+            />
+          ) : null}
+
+          {isComplete && videoOutput?.videoUrl ? (
+            <GeneratedVideo
+              aspectRatio={aspectRatio}
+              cost={videoOutput.cost}
+              durationMs={run?.durationMs}
+              durationSec={videoOutput.durationSec ?? videoPayload?.duration}
+              generateAudio={videoPayload?.generateAudio}
+              modelName={model?.name}
+              newGenerationHref={backHref}
+              output={videoOutput}
+              prompt={videoPayload?.prompt}
+              referenceUrls={videoPayload ? collectReferenceUrls(videoPayload) : undefined}
+              videoRef={imageRef}
             />
           ) : null}
         </div>

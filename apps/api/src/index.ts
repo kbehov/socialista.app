@@ -5,6 +5,7 @@ import { collectionRoutes } from '@/routes/collection.routes.js'
 import { cronRoutes } from '@/routes/cron.routes.js'
 import generationRoutes from '@/routes/generation.routes.js'
 import { generatedImageRoutes } from '@/routes/generated-image.routes.js'
+import { generatedVideoRoutes } from '@/routes/generated-video.routes.js'
 import inspirationRoutes from '@/routes/inspiration.routes.js'
 import invitationRoutes from '@/routes/invitation.routes.js'
 import { influencerRoutes } from '@/routes/influencer.routes.js'
@@ -47,6 +48,7 @@ app.route('/invitations', invitationRoutes)
 app.route('/inspirations', inspirationRoutes)
 app.route('/collections', collectionRoutes)
 app.route('/generated-images', generatedImageRoutes)
+app.route('/generated-videos', generatedVideoRoutes)
 app.route('/generations', generationRoutes)
 app.route('/influencers', influencerRoutes)
 app.route('/ugc-projects', ugcProjectRoutes)

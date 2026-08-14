@@ -1,6 +1,6 @@
-import type { ImageGenerator } from '@socialista/types'
-import { generateImageFal } from '../lib/fal.js'
-import { generateImageVercel } from '../lib/vercel.js'
+import type { ImageGenerator, VideoGenerator } from '@socialista/types'
+import { generateImageFal, generateVideoFal } from '../lib/fal.js'
+import { generateImageVercel, generateVideoVercel } from '../lib/vercel.js'
 
 function normalizeProvider(provider: string): string {
   return provider.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')
@@ -18,4 +18,18 @@ export function resolveImageGenerator(modelProvider: string): ImageGenerator {
   }
 
   throw new Error(`Unsupported image provider: ${modelProvider}`)
+}
+
+export function resolveVideoGenerator(modelProvider: string): VideoGenerator {
+  const provider = normalizeProvider(modelProvider)
+
+  if (provider.includes('fal')) {
+    return generateVideoFal
+  }
+
+  if (provider === 'vercel') {
+    return generateVideoVercel
+  }
+
+  throw new Error(`Unsupported video provider: ${modelProvider}`)
 }

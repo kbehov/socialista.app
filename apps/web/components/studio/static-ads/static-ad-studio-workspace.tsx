@@ -1,59 +1,44 @@
 'use client'
 
-import type { Model, Product } from '@socialista/types'
-import { StaticAdExamples } from './static-ad-examples'
+import { StudioHero } from '@/components/studio/images/studio-hero'
+import type { Model } from '@socialista/types'
 import { StaticAdPromptInput } from './static-ad-prompt-input'
 import { StaticAdStudioProvider } from './static-ad-studio-provider'
 
 type StaticAdStudioWorkspaceProps = {
-  products: Product[]
   workspaceId: string
   model: Model | null
-  productsTruncated?: boolean
 }
 
-function StaticAdStudioHero() {
-  return (
-    <header className="space-y-1.5">
-      <h1 className="text-balance text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[2rem]">
-        Static ads
-      </h1>
-      <p className="max-w-md text-pretty text-[15px] leading-relaxed text-muted-foreground">
-        Drop in a product photo. Add a brief if you want — or let us invent the creative.
-      </p>
-    </header>
-  )
-}
-
-export function StaticAdStudioWorkspace({
-  products,
-  workspaceId,
-  model,
-  productsTruncated = false,
-}: StaticAdStudioWorkspaceProps) {
+export function StaticAdStudioWorkspace({ workspaceId, model }: StaticAdStudioWorkspaceProps) {
   return (
     <StaticAdStudioProvider>
-      <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div
-          aria-hidden
-          className="pointer-events-none sticky top-0 z-10 h-8 bg-linear-to-b from-background via-background/80 to-transparent motion-reduce:hidden"
+      <div className="image-studio image-studio-workspace relative flex w-full flex-col">
+        <StudioHero
+          imageSrc="/socialista-static-ads.webp"
+          chipLabel="Static ads"
+          title={'Ads\nin seconds.'}
+          description="One product photo. Scroll-stopping creatives — ready to run."
+          imagePosition="object-[50%_42%]"
+          overlayVariant="strong"
+          blurBackground
         />
 
-        <div className="flex flex-1 flex-col px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8">
-          <div className="mx-auto w-full max-w-3xl space-y-8">
-            <StaticAdStudioHero />
-            <StaticAdPromptInput
-              model={model}
-              products={products}
-              productsTruncated={productsTruncated}
-              workspaceId={workspaceId}
+        <section
+          id="static-ad-studio-composer"
+          aria-label="Create a static ad"
+          className="relative z-10 mx-auto flex w-full max-w-3xl flex-col px-4 pb-[max(7rem,calc(env(safe-area-inset-bottom,0px)+5.5rem))] sm:px-6 lg:px-8"
+        >
+          <div className="image-studio-composer relative -mt-[3.25rem] sm:-mt-[4.25rem] lg:-mt-[4.5rem]">
+            <div
+              aria-hidden
+              className="image-studio-composer-lift pointer-events-none absolute -inset-x-3 -top-5 bottom-6 sm:-inset-x-5 motion-reduce:hidden"
             />
+            <div className="relative">
+              <StaticAdPromptInput model={model} workspaceId={workspaceId} />
+            </div>
           </div>
-
-          <div className="mx-auto mt-14 w-full max-w-5xl border-t border-border/50 pt-12 sm:mt-16 sm:pt-14">
-            <StaticAdExamples />
-          </div>
-        </div>
+        </section>
       </div>
     </StaticAdStudioProvider>
   )

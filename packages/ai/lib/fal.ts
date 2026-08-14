@@ -2,6 +2,7 @@ import { fal } from '@fal-ai/client'
 
 import type { GenerateImageOptions } from '@socialista/types'
 import { z } from 'zod'
+import { downloadRemoteVideo, uploadGeneratedVideo } from '../utils/video-upload.js'
 
 fal.config({
   credentials: process.env.FAL_KEY as string,
@@ -125,10 +126,14 @@ const FalVideoResult = z
 export type GenerateFalVideoOptions = {
   model: string
   prompt: string
-  imageUrl: string
+  imageUrl?: string
+  imageUrls?: string[]
   aspectRatio?: string
   negativePrompt?: string
   duration?: number
+  generateAudio?: boolean
+  workspaceId?: string
+  userId?: string
   onProgress?: (progress: number, label: string) => void
 }
 
@@ -136,6 +141,10 @@ export type GenerateFalVideoOptions = {
 export function mapFalVideoDuration(model: string, durationSec: number): string | number {
   const id = model.toLowerCase()
   const clamped = Math.min(15, Math.max(5, Math.round(durationSec)))
+  const isModernKling = id.includes('kling') && (id.includes('/v3') || id.includes('/o3'))
+  if (isModernKling) {
+    return String(clamped)
+  }
   if (id.includes('kling')) {
     return clamped <= 7 ? '5' : '10'
   }
@@ -145,19 +154,40 @@ export function mapFalVideoDuration(model: string, durationSec: number): string 
   return clamped
 }
 
+function buildFalVideoImageInput(
+  model: string,
+  referenceImages: string[],
+): { image_urls: string[] } | { image_url: string } {
+  const id = model.toLowerCase()
+  const usesImageUrls = id.includes('/multi') || id.includes('omni') || referenceImages.length > 1
+  if (usesImageUrls) {
+    return { image_urls: referenceImages }
+  }
+  return { image_url: referenceImages[0]! }
+}
+
 export async function generateVideoFal({
   model,
   prompt,
   imageUrl,
+  imageUrls,
   aspectRatio = '9:16',
   negativePrompt,
   duration,
+  generateAudio,
+  workspaceId,
+  userId,
   onProgress,
 }: GenerateFalVideoOptions): Promise<string> {
+  const referenceImages = collectReferenceImages(imageUrl, imageUrls)
+
   const input: Record<string, unknown> = {
     prompt,
-    image_url: imageUrl,
     aspect_ratio: aspectRatio,
+  }
+
+  if (referenceImages.length > 0) {
+    Object.assign(input, buildFalVideoImageInput(model, referenceImages))
   }
 
   if (negativePrompt) {
@@ -166,6 +196,10 @@ export async function generateVideoFal({
 
   if (duration !== undefined) {
     input.duration = mapFalVideoDuration(model, duration)
+  }
+
+  if (generateAudio !== undefined) {
+    input.generate_audio = generateAudio
   }
 
   const result = await fal.subscribe(model, {
@@ -187,5 +221,16 @@ export async function generateVideoFal({
     throw new Error('No video was returned from the model')
   }
 
-  return videoUrl
+  if (!workspaceId || !userId) {
+    return videoUrl
+  }
+
+  onProgress?.(90, 'Saving to library')
+  const downloaded = await downloadRemoteVideo(videoUrl)
+  return uploadGeneratedVideo({
+    workspaceId,
+    userId,
+    bytes: downloaded.bytes,
+    mediaType: downloaded.mediaType,
+  })
 }

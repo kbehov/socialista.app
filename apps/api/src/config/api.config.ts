@@ -26,5 +26,6 @@ export const ALLOWED_MIME_TYPES = new Set([
   'audio/x-flac',
 ])
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10 MiB (original, before conversion)
-export const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50 MiB (original, before conversion)
+export const MAX_VIDEO_SIZE = 200 * 1024 * 1024 // 200 MiB — generated clips can exceed 50 MiB
+export const MAX_GENERATED_VIDEO_SIZE = MAX_VIDEO_SIZE
 export const MAX_AUDIO_SIZE = 50 * 1024 * 1024 // 50 MiB

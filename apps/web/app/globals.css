@@ -534,6 +534,10 @@
     line-height: 1.04;
   }
 
+  .studio-hero h1 {
+    color: white;
+  }
+
   h2 {
     letter-spacing: var(--tracking-tighter);
     line-height: 1.1;
@@ -690,6 +694,7 @@
   .glass-heavy,
   .dashboard-header,
   .video-studio-glass,
+  .studio-hero-chip,
   [data-slot='dialog-overlay'],
   [data-slot='sheet-overlay'],
   [data-slot='sidebar-inset']::before {
@@ -705,6 +710,14 @@
 
   .dashboard-header {
     background-color: var(--background) !important;
+  }
+
+  .studio-hero-chip {
+    background-color: rgb(0 0 0 / 0.72) !important;
+  }
+
+  .image-studio-composer-lift {
+    display: none;
   }
 
   [data-slot='sidebar-inset']::before {
@@ -1133,12 +1146,44 @@
 
   .video-studio,
   .slideshow-studio,
-  .image-studio {
+  .ugc-studio,
+  .post-composer,
+  .image-studio.studio-shell {
     background-color: var(--background);
     width: 100%;
     min-width: 0;
     max-width: 100%;
     flex: 1 1 0%;
+  }
+
+  .image-studio {
+    background-color: var(--background);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  [data-dashboard-scroll] {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .image-studio-workspace {
+    scroll-padding-bottom: 2rem;
+  }
+
+  .image-studio-composer-lift {
+    background: radial-gradient(
+      ellipse 92% 72% at 50% 8%,
+      color-mix(in oklch, var(--background) 88%, transparent) 0%,
+      color-mix(in oklch, var(--background) 42%, transparent) 48%,
+      transparent 76%
+    );
+    filter: blur(20px);
+    opacity: 0.95;
+  }
+
+  .dark .image-studio-composer-lift {
+    opacity: 0.88;
   }
 
   .video-editor-rail {

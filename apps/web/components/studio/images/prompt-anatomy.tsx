@@ -7,7 +7,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
-import { ChevronDownIcon, LightbulbIcon } from 'lucide-react'
+import { ChevronDownIcon } from 'lucide-react'
 import { useState } from 'react'
 
 export type PromptAnatomySegmentStyles = {
@@ -29,6 +29,7 @@ export type PromptAnatomySegment = {
 type PromptAnatomyProps = {
   segments: readonly PromptAnatomySegment[]
   onInsertSnippet: (snippet: string) => void
+  heading?: string
   tip?: string
   collapsible?: boolean
   defaultOpen?: boolean
@@ -38,7 +39,8 @@ type PromptAnatomyProps = {
 export function PromptAnatomy({
   segments,
   onInsertSnippet,
-  tip = 'Tap a segment or button below to insert it into your prompt.',
+  heading,
+  tip = 'Tap a phrase to add it to your prompt.',
   collapsible = false,
   defaultOpen = false,
   triggerLabel = 'Prompt helper',
@@ -48,12 +50,28 @@ export function PromptAnatomy({
 
   const content = (
     <div className="space-y-3" onMouseLeave={() => setActiveSegment(null)}>
-      <p className="flex items-start gap-2 text-[12px] leading-[1.55] tracking-[-0.01em] text-muted-foreground/85">
-        <LightbulbIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/50" aria-hidden />
-        <span>{tip}</span>
-      </p>
+      {!collapsible && (heading || tip) ? (
+        <div className="space-y-1 px-0.5">
+          {heading ? (
+            <p className="text-[12px] font-medium tracking-[-0.015em] text-foreground/80">
+              {heading}
+            </p>
+          ) : null}
+          {tip ? (
+            <p className="text-[12px] leading-[1.5] tracking-[-0.01em] text-muted-foreground/70">
+              {tip}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="rounded-xl bg-muted/12 px-3.5 py-3 text-[12px] font-normal leading-[1.65] tracking-[-0.01em] ring-1 ring-border/30">
+      {collapsible ? (
+        <p className="text-[12px] leading-[1.55] tracking-[-0.01em] text-muted-foreground/85">
+          {tip}
+        </p>
+      ) : null}
+
+      <div className="rounded-2xl bg-muted/12 px-3.5 py-3 text-[13px] font-normal leading-[1.7] tracking-[-0.015em] ring-1 ring-border/30">
         {segments.map((segment, index) => {
           const isActive = activeSegment === segment.id
           const styles = segment.styles
@@ -62,21 +80,28 @@ export function PromptAnatomy({
             <span key={segment.id}>
               <button
                 type="button"
+                aria-label={`Add ${segment.label}`}
+                onPointerDown={() => setActiveSegment(segment.id)}
                 onMouseEnter={() => setActiveSegment(segment.id)}
                 onFocus={() => setActiveSegment(segment.id)}
                 onBlur={() => setActiveSegment(null)}
                 onClick={() => onInsertSnippet(segment.snippet)}
                 className={cn(
-                  'rounded-md px-1 py-px font-medium underline-offset-[3px] transition-colors duration-150',
+                  'rounded-md px-1 py-px font-medium underline-offset-[3px]',
+                  'transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
                   isActive
                     ? cn(styles.text, styles.surface, 'underline', styles.decoration)
-                    : 'text-foreground/65 hover:bg-muted/45 hover:text-foreground hover:underline hover:decoration-foreground/20',
+                    : 'text-foreground/70 hover:bg-muted/45 hover:text-foreground hover:underline hover:decoration-foreground/20',
                 )}
               >
                 {segment.exampleText}
               </button>
-              {index < segments.length - 1 ? <span className="text-muted-foreground/30">, </span> : null}
+              {index < segments.length - 1 ? (
+                <span className="text-muted-foreground/30">, </span>
+              ) : (
+                <span className="text-muted-foreground/30">.</span>
+              )}
             </span>
           )
         })}
@@ -91,19 +116,22 @@ export function PromptAnatomy({
             <button
               key={segment.id}
               type="button"
+              aria-label={`Add ${segment.label}`}
+              onPointerDown={() => setActiveSegment(segment.id)}
               onMouseEnter={() => setActiveSegment(segment.id)}
               onFocus={() => setActiveSegment(segment.id)}
               onBlur={() => setActiveSegment(null)}
               onClick={() => onInsertSnippet(segment.snippet)}
               className={cn(
-                'rounded-lg border px-2.5 py-1 text-[11px] font-medium tracking-[-0.015em] transition-[background-color,border-color,color,transform,box-shadow] duration-150',
+                'rounded-lg border px-2.5 py-1 text-[11px] font-medium tracking-[-0.015em]',
+                'transition-[background-color,border-color,color,transform,box-shadow] duration-150',
                 'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
                 isActive
                   ? cn(styles.chip, 'shadow-sm')
                   : cn('border-border/40 bg-background/70 text-muted-foreground', styles.chipIdle),
               )}
             >
-              + {segment.label}
+              {segment.label}
             </button>
           )
         })}
@@ -119,24 +147,27 @@ export function PromptAnatomy({
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger
         className={cn(
-          'group flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left',
-          'bg-muted/15 ring-1 ring-border/35 transition-[background-color,box-shadow,ring-color] duration-150',
-          'hover:bg-muted/22 hover:ring-border/50',
+          'group flex w-full items-center justify-between gap-3 rounded-2xl px-3.5 py-3 text-left',
+          'bg-muted/12 ring-1 ring-border/30 transition-[background-color,box-shadow,ring-color] duration-150',
+          'hover:bg-muted/18 hover:ring-border/45',
+          'active:scale-[0.995]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-          open && 'bg-muted/20 ring-border/45 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]',
+          open && 'bg-muted/16 ring-border/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
         )}
       >
-        <span className="text-[13px] font-medium tracking-[-0.015em] text-foreground">
+        <span className="text-[13px] font-medium tracking-[-0.015em] text-foreground/90">
           {triggerLabel}
         </span>
         <ChevronDownIcon
           className={cn(
-            'size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200',
+            'size-3.5 shrink-0 text-muted-foreground/60 transition-transform duration-200 ease-out',
             open && 'rotate-180',
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="pt-3.5 data-[state=closed]:animate-none">{content}</CollapsibleContent>
+      <CollapsibleContent className="overflow-hidden pt-3.5 data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200">
+        {content}
+      </CollapsibleContent>
     </Collapsible>
   )
 }
@@ -149,13 +180,20 @@ const IMAGE_SEGMENT_STYLES = {
     chipIdle: 'hover:border-sky-500/20 hover:bg-sky-500/8 hover:text-sky-700 dark:hover:text-sky-300',
     decoration: 'decoration-sky-500/55',
   },
-  framing: {
+  scene: {
     text: 'text-violet-700 dark:text-violet-300',
     surface: 'bg-violet-500/10',
     chip: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300',
     chipIdle:
       'hover:border-violet-500/20 hover:bg-violet-500/8 hover:text-violet-700 dark:hover:text-violet-300',
     decoration: 'decoration-violet-500/55',
+  },
+  camera: {
+    text: 'text-rose-700 dark:text-rose-300',
+    surface: 'bg-rose-500/10',
+    chip: 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+    chipIdle: 'hover:border-rose-500/20 hover:bg-rose-500/8 hover:text-rose-700 dark:hover:text-rose-300',
+    decoration: 'decoration-rose-500/55',
   },
   lighting: {
     text: 'text-amber-800 dark:text-amber-300',
@@ -179,31 +217,36 @@ export const IMAGE_PROMPT_ANATOMY_SEGMENTS = [
   {
     id: 'subject',
     label: 'Subject',
-    snippet: 'A young Gen-Z creator ',
-    exampleText: 'A young Gen-Z girl',
+    snippet: 'A young woman in a linen shirt, relaxed natural expression, ',
+    exampleText: 'A young woman in a linen shirt',
     styles: IMAGE_SEGMENT_STYLES.subject,
   },
   {
-    id: 'framing',
-    label: 'Framing',
-    snippet: 'first-person POV, front-facing iPhone camera selfie, ',
-    exampleText:
-      'taking a casual iPhone selfie in her bedroom, first-person POV, front-facing iPhone camera selfie',
-    styles: IMAGE_SEGMENT_STYLES.framing,
+    id: 'scene',
+    label: 'Scene',
+    snippet: 'standing at a sunlit kitchen counter, casual in-the-moment lifestyle scene, ',
+    exampleText: 'standing at a sunlit kitchen counter',
+    styles: IMAGE_SEGMENT_STYLES.scene,
+  },
+  {
+    id: 'camera',
+    label: 'Camera',
+    snippet: 'medium shot, 35mm lens, eye-level, shallow depth of field, ',
+    exampleText: 'medium shot on 35mm',
+    styles: IMAGE_SEGMENT_STYLES.camera,
   },
   {
     id: 'lighting',
-    label: 'Lighting',
-    snippet: 'soft window light, ',
-    exampleText: 'soft window light',
+    label: 'Light',
+    snippet: 'soft morning window light from the left, gentle falloff, ',
+    exampleText: 'soft morning window light',
     styles: IMAGE_SEGMENT_STYLES.lighting,
   },
   {
     id: 'style',
     label: 'Style',
-    snippet: 'UGC creator aesthetic, scroll-stopping, not staged',
-    exampleText:
-      'natural relaxed expression, slightly messy authentic background, UGC creator aesthetic, not staged',
+    snippet: 'photorealistic editorial lifestyle photography, natural color, sharp detail',
+    exampleText: 'photorealistic editorial photography',
     styles: IMAGE_SEGMENT_STYLES.style,
   },
 ] as const satisfies readonly PromptAnatomySegment[]
@@ -216,8 +259,9 @@ export function ImagePromptAnatomy() {
       segments={IMAGE_PROMPT_ANATOMY_SEGMENTS}
       onInsertSnippet={insertSnippet}
       collapsible
-      triggerLabel="Build a stronger prompt"
-      tip="Tap a colored phrase or chip to insert it into your prompt."
+      defaultOpen={false}
+      triggerLabel="Prompt structure"
+      tip="Subject, scene, camera, light, then style — tap a phrase to add it."
     />
   )
 }

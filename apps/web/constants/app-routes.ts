@@ -28,6 +28,7 @@ export const DASHBOARD_ROUTES = {
     VIDEOS: '/dashboard/studio/videos',
     video: (id: string) => `/dashboard/studio/videos/${id}`,
     VIDEO_CREATE: '/dashboard/studio/videos/create',
+    videoRun: (runId: string) => `/dashboard/studio/videos/generate/${runId}`,
     INFLUENCERS: '/dashboard/studio/influencers',
     influencer: (id: string) => `/dashboard/studio/influencers/${id}`,
     INFLUENCER_CREATE: '/dashboard/studio/influencers/create',

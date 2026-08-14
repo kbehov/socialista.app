@@ -24,21 +24,21 @@ export default function OpenGraphImage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
+              width: 56,
+              height: 56,
+              borderRadius: 14,
               background: '#ffffff',
               color: '#000000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 28,
-              fontWeight: 700,
             }}
           >
-            ✹
+            <svg width="38" height="38" viewBox="0 0 32 32" fill="#000000">
+              <path d="M16 2.5L18.05 11.06L21.94 10.06L20.94 13.95L29.5 16L20.94 18.05L21.94 21.94L18.05 20.94L16 29.5L13.95 20.94L10.06 21.94L11.06 18.05L2.5 16L11.06 13.95L10.06 10.06L13.95 11.06Z" />
+            </svg>
           </div>
-          <span style={{ fontSize: 32, fontWeight: 600, letterSpacing: -0.5 }}>Socialista</span>
+          <span style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1.2 }}>Socialista</span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 920 }}>

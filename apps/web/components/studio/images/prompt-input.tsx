@@ -9,6 +9,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
 import { useImageStudio } from "@/components/studio/images/image-studio-provider";
+import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
 import {
@@ -22,13 +23,6 @@ import {
 import { Kbd } from "@/components/ui/kbd";
 import { DASHBOARD_ROUTES } from "@/constants/app-routes";
 import { storeGenerationAccessToken } from "@/lib/image-generation/session";
-import {
-  getVibePlaceholder,
-  VIBE_IDS,
-  VIBE_LABELS,
-  type AspectRatioId,
-  type VibeId,
-} from "@/lib/studio/images/examples";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import { commitHaptic } from "@/utils/haptics";
@@ -54,9 +48,9 @@ import { ImagePromptAnatomy } from "./prompt-anatomy";
 
 const MAX_REFERENCE_IMAGES = 3;
 
-const QUICK_VIBES = VIBE_IDS.filter(
-  (vibe): vibe is Exclude<VibeId, "all"> => vibe !== "all",
-).slice(0, 5);
+const DEFAULT_PLACEHOLDER = "Describe the scene, mood, and style…";
+
+type AspectRatioId = "1:1" | "16:9" | "9:16" | "4:3";
 
 const ASPECT_RATIOS = [
   { id: "1:1", label: "Square", ratio: 1 },
@@ -71,14 +65,7 @@ const ASPECT_RATIOS = [
 
 function ImagePromptComposer({ models }: { models: Model[] }) {
   const router = useRouter();
-  const {
-    selectedVibe,
-    setSelectedVibe,
-    activeExampleId,
-    composerRef,
-    registerPromptHandlers,
-    setActiveExampleId,
-  } = useImageStudio();
+  const { composerRef, registerPromptHandlers } = useImageStudio();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const [isPending, startTransition] = useTransition();
   const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>([]);
@@ -95,8 +82,8 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     if (attachedImages.length === 1) {
       return "the person from @image1, standing in a sunlit kitchen…";
     }
-    return getVibePlaceholder(selectedVibe);
-  }, [attachedImages.length, selectedVibe]);
+    return DEFAULT_PLACEHOLDER;
+  }, [attachedImages.length]);
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -128,12 +115,10 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 
   useEffect(() => {
     registerPromptHandlers({
-      setPrompt: textInput.setInput,
-      setAspectRatio,
       insertAtCursor,
       focusPrompt,
     });
-  }, [registerPromptHandlers, textInput.setInput, insertAtCursor, focusPrompt]);
+  }, [registerPromptHandlers, insertAtCursor, focusPrompt]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim();
@@ -247,70 +232,35 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? "Generate" : `Generate ${numImages}`}
         tools={aspectTools}
-        highlighted={Boolean(activeExampleId)}
         textareaRef={(node) => {
           textareaRef.current = node;
         }}
-        onPromptChange={() => setActiveExampleId(null)}
         composerRef={composerRef}
         emptyTitle="No image models yet"
         emptyDescription="Add a text-to-image model in the manager to start creating social visuals."
+        surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
       />
 
-      <div className="mt-2.5">
+      <div className="mt-3 px-0.5">
         <StudioReferenceTagHint attachmentCount={attachedImages.length} />
       </div>
 
-      <div className="mt-4 space-y-4">
-        <div
-          className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden"
-          role="group"
-          aria-label="Quick vibes"
-        >
-          {QUICK_VIBES.map((vibe) => {
-            const isSelected = selectedVibe === vibe;
-
-            return (
-              <button
-                key={vibe}
-                type="button"
-                onClick={() => {
-                  commitHaptic({ vibrateDuration: 6 });
-                  setSelectedVibe(isSelected ? "all" : vibe);
-                  focusPrompt();
-                }}
-                className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium tracking-[-0.015em]",
-                  "ring-1 transition-[background-color,color,box-shadow,ring-color,transform] duration-150",
-                  "active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45",
-                  isSelected
-                    ? "bg-foreground/8 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-border/50"
-                    : "bg-muted/20 text-muted-foreground ring-border/30 hover:bg-muted/35 hover:text-foreground/90 hover:ring-border/45",
-                )}
-              >
-                {VIBE_LABELS[vibe]}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2.5 px-0.5">
-          <p className="inline-flex items-center gap-1.5 text-[11px] tracking-[-0.01em] text-muted-foreground/55">
-            <Kbd className="h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px] text-muted-foreground/70">
-              /
-            </Kbd>
-            <span>to focus</span>
-            <span aria-hidden className="text-muted-foreground/25">
-              ·
-            </span>
-            <Kbd className="h-4 min-w-4 border-border/40 bg-muted/30 px-1 text-[10px] text-muted-foreground/70">
-              ⌘↵
-            </Kbd>
-            <span>to generate</span>
-          </p>
-        </div>
-
+      <div className="mt-6 space-y-5">
         <ImagePromptAnatomy />
+
+        <p className="flex flex-wrap items-center justify-center gap-1.5 px-0.5 text-[11px] tracking-[-0.01em] text-muted-foreground/50">
+          <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
+            /
+          </Kbd>
+          <span>to focus</span>
+          <span aria-hidden className="text-muted-foreground/20">
+            ·
+          </span>
+          <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
+            ⌘↵
+          </Kbd>
+          <span>to generate</span>
+        </p>
       </div>
     </div>
   );
@@ -319,7 +269,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
   if (models.length === 0) {
     return (
-      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-muted/10 px-6 py-14 text-center">
+      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-background/75 px-6 py-14 text-center backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted/40 ring-1 ring-border/35">
           <SparklesIcon className="size-4 text-muted-foreground/80" />
         </div>

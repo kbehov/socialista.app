@@ -31,6 +31,9 @@ export type GenerationInputs = {
   referenceImageUrl?: string
   productImageUrl?: string
   language?: string
+  numImages?: number
+  durationSec?: number
+  generateAudio?: boolean
   adCopy?: GenerationAdCopy
   [key: string]: unknown
 }

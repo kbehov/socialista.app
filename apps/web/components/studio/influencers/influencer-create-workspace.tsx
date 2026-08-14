@@ -226,7 +226,7 @@ export function InfluencerCreateWorkspace({
   }
 
   return (
-    <div className="image-studio relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div className="image-studio relative flex w-full flex-col">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-140 overflow-hidden"

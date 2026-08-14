@@ -1,55 +1,26 @@
 'use client'
 
-import type { AspectRatioId, ImageExample, VibeId } from '@/lib/studio/images/examples'
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
+
+type PromptHandlers = {
+  insertAtCursor: (snippet: string) => void
+  focusPrompt: () => void
+}
 
 type ImageStudioContextValue = {
-  selectedVibe: VibeId
-  setSelectedVibe: (vibe: VibeId) => void
-  activeExampleId: string | null
-  setActiveExampleId: (id: string | null) => void
   composerRef: React.RefObject<HTMLDivElement | null>
-  remixExample: (example: ImageExample) => void
   insertSnippet: (snippet: string) => void
-  registerPromptHandlers: (handlers: {
-    setPrompt: (text: string) => void
-    setAspectRatio: (ratio: AspectRatioId) => void
-    insertAtCursor: (snippet: string) => void
-    focusPrompt: () => void
-  }) => void
+  registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
 const ImageStudioContext = createContext<ImageStudioContextValue | null>(null)
 
 export function ImageStudioProvider({ children }: { children: ReactNode }) {
-  const [selectedVibe, setSelectedVibe] = useState<VibeId>('all')
-  const [activeExampleId, setActiveExampleId] = useState<string | null>(null)
   const composerRef = useRef<HTMLDivElement>(null)
-  const handlersRef = useRef<{
-    setPrompt: (text: string) => void
-    setAspectRatio: (ratio: AspectRatioId) => void
-    insertAtCursor: (snippet: string) => void
-    focusPrompt: () => void
-  } | null>(null)
+  const handlersRef = useRef<PromptHandlers | null>(null)
 
-  const registerPromptHandlers = useCallback(
-    (handlers: {
-      setPrompt: (text: string) => void
-      setAspectRatio: (ratio: AspectRatioId) => void
-      insertAtCursor: (snippet: string) => void
-      focusPrompt: () => void
-    }) => {
-      handlersRef.current = handlers
-    },
-    [],
-  )
-
-  const remixExample = useCallback((example: ImageExample) => {
-    handlersRef.current?.setPrompt(example.prompt)
-    handlersRef.current?.setAspectRatio(example.aspectRatio)
-    handlersRef.current?.focusPrompt()
-    setActiveExampleId(example.id)
-    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const registerPromptHandlers = useCallback((handlers: PromptHandlers) => {
+    handlersRef.current = handlers
   }, [])
 
   const insertSnippet = useCallback((snippet: string) => {
@@ -60,16 +31,11 @@ export function ImageStudioProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      selectedVibe,
-      setSelectedVibe,
-      activeExampleId,
-      setActiveExampleId,
       composerRef,
-      remixExample,
       insertSnippet,
       registerPromptHandlers,
     }),
-    [selectedVibe, activeExampleId, remixExample, insertSnippet, registerPromptHandlers],
+    [insertSnippet, registerPromptHandlers],
   )
 
   return <ImageStudioContext.Provider value={value}>{children}</ImageStudioContext.Provider>

@@ -20,7 +20,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppSidebar workspaces={workspaces} user={user} />
         <SidebarInset className="flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden bg-background">
           <DashboardHeader workspaceBalance={aiCreditsBalance} />
-          <main id="dashboard-scroll" data-dashboard-scroll className={dashboardMainClassName}>
+          <main
+            id="dashboard-scroll"
+            data-dashboard-scroll
+            className={dashboardMainClassName}
+          >
             <PageScrollCompactProvider>{children}</PageScrollCompactProvider>
           </main>
         </SidebarInset>

@@ -5,7 +5,7 @@ import { getModels } from '@/services/models.service'
 import { getWorkspaceBalance } from '@/services/workspace.service'
 import { staticAdPayloadObjectSchema } from '@socialista/trigger/schemas/static-ad'
 import type { RealtimeStaticAdGenerationTask } from '@socialista/trigger/task-types'
-import { STATIC_AD_MODEL, TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, STATIC_AD_MODEL, TASK_IDS } from '@socialista/types'
 import { tasks, auth as triggerAuth } from '@trigger.dev/sdk/v3'
 import { z } from 'zod'
 
@@ -42,7 +42,8 @@ export async function startStaticAdGeneration(
         error: 'GPT Image 2 is not configured. Add openai/gpt-image-2 in the manager.',
       }
     }
-    if (credits < model.cost) {
+    const numImages = clampImageGenerationCount(parsed.data.numImages)
+    if (credits < model.cost * numImages) {
       return { success: false, error: 'Insufficient AI credits.' }
     }
 
@@ -54,6 +55,7 @@ export async function startStaticAdGeneration(
       productImage: parsed.data.productImage,
       adCopy: parsed.data.adCopy,
       language: parsed.data.language,
+      numImages,
       model: STATIC_AD_MODEL,
     })
 

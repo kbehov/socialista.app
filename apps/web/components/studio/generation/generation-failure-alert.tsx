@@ -27,12 +27,16 @@ export function GenerationFailureAlert({ message, retryHref, retryLabel }: Gener
   )
 }
 
-export function GenerationMissingOutputAlert() {
+export function GenerationMissingOutputAlert({
+  message = 'The run completed but no image was returned.',
+}: {
+  message?: string
+}) {
   return (
     <div className="rounded-xl border border-destructive/25 bg-destructive/5 p-4">
       <div className="flex items-start gap-3">
         <AlertCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
-        <p className="text-sm text-destructive">The run completed but no image was returned.</p>
+        <p className="text-sm text-destructive">{message}</p>
       </div>
     </div>
   )

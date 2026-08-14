@@ -45,6 +45,10 @@
       "types": "./dist/schemas/image-generation.schema.d.ts",
       "import": "./dist/schemas/image-generation.schema.js"
     },
+    "./schemas/video-generation": {
+      "types": "./dist/schemas/video-generation.schema.d.ts",
+      "import": "./dist/schemas/video-generation.schema.js"
+    },
     "./schemas/video-export": {
       "types": "./dist/schemas/video-export.schema.d.ts",
       "import": "./dist/schemas/video-export.schema.js"
