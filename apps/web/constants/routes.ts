@@ -8,12 +8,14 @@ export const AUTH_ROUTES = {
 }
 
 export const USER_ROUTES = {
-  ME: `/user/me`,
-  GET_USER: `/user/:id`,
+  ME: `/users/me`,
+  UPDATE_ME: `/users/me`,
+  UPLOAD_AVATAR: `/users/me/avatar`,
+  GET_USER: (id: string) => `/users/${id}`,
   GET_USERS: `/users`,
-  UPDATE_USER: `/user/:id`,
-  DELETE_USER: `/user/:id`,
-}
+  UPDATE_USER: (id: string) => `/users/${id}`,
+  DELETE_USER: (id: string) => `/users/${id}`,
+} as const
 
 export const WORKSPACE_ROUTES = {
   GET_WORKSPACE: (workspaceId: string) => `/workspaces/${workspaceId}`,
@@ -30,6 +32,16 @@ export const WORKSPACE_ROUTES = {
   REMOVE_MEMBER: (workspaceId: string, memberId: string) => `/workspaces/${workspaceId}/members/${memberId}`,
   UPDATE_MEMBER: (workspaceId: string, memberId: string) => `/workspaces/${workspaceId}/members/${memberId}`,
   DEDUCT_AI_CREDITS: (workspaceId: string) => `/workspaces/${workspaceId}/ai-credits/deduct`,
+} as const
+
+export const INVITATION_ROUTES = {
+  LIST: '/invitations',
+  CREATE: '/invitations',
+  PREVIEW: '/invitations/preview',
+  GET: (id: string) => `/invitations/${id}`,
+  DELETE: (id: string) => `/invitations/${id}`,
+  ACCEPT: '/invitations/accept',
+  REJECT: '/invitations/reject',
 } as const
 
 export const BILLING_ROUTES = {

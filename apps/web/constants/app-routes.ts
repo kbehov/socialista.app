@@ -18,6 +18,10 @@ export const DASHBOARD_ROUTES = {
   },
   GENERATIONS: '/dashboard/generations',
   NOTIFICATIONS: '/dashboard/notifications',
+  ACCOUNT: '/dashboard/account',
+  SETTINGS: '/dashboard/settings',
+  SETTINGS_MEMBERS: '/dashboard/settings/members',
+  SETTINGS_BILLING: '/dashboard/settings/billing',
   STUDIO: {
     IMAGES: '/dashboard/studio/images',
     imageRun: (runId: string) => `/dashboard/studio/images/${runId}`,
@@ -81,6 +85,12 @@ export function isDashboardNotificationsPath(pathname: string) {
   )
 }
 
+export function isDashboardSettingsPath(pathname: string) {
+  return (
+    pathname === DASHBOARD_ROUTES.SETTINGS || pathname.startsWith(`${DASHBOARD_ROUTES.SETTINGS}/`)
+  )
+}
+
 export function isDashboardPostsPath(pathname: string) {
   return pathname === DASHBOARD_ROUTES.POSTS || pathname.startsWith(`${DASHBOARD_ROUTES.POSTS}/`)
 }
@@ -135,4 +145,8 @@ const filesPathsByVariant: Record<FilesPathsVariant, FilesRoutePaths> = {
 
 export function getFilesPaths(variant: FilesPathsVariant): FilesRoutePaths {
   return filesPathsByVariant[variant]
+}
+
+export function invitePath(token: string) {
+  return `/invite/${token}`
 }

@@ -6,6 +6,7 @@ import {
 } from '@/services/auth.service'
 import {
   applyAuthToToken,
+  applySessionUserToToken,
   getSocialProfile,
   mapApiUserToSessionUser,
   shouldRefreshAccessToken,
@@ -94,7 +95,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
   return token
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   trustHost: true,
   session: {
@@ -169,12 +170,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       if (trigger === 'update' && session?.user) {
-        const updatedUser = session.user
-        if (updatedUser.name) token.name = updatedUser.name
-        if (updatedUser.email) token.email = updatedUser.email
-        if (updatedUser.image !== undefined) token.picture = updatedUser.image
-        if (updatedUser.status) token.status = updatedUser.status
-        if (updatedUser.role) token.role = updatedUser.role
+        applySessionUserToToken(token, session.user)
       }
 
       if (shouldRefreshAccessToken(token)) {

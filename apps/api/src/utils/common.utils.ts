@@ -137,6 +137,7 @@ const REPO_ERROR_STATUS: Record<string, ContentfulStatusCode> = {
   'Invitation not found': 404,
   'Account not found': 404,
   'User already a member of the workspace': 409,
+  'This person is already a member of the workspace': 409,
   'A pending invitation already exists for this email': 409,
   'This social account is already connected to the workspace': 409,
   'Invitation is no longer pending': 400,

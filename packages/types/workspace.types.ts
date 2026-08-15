@@ -84,6 +84,7 @@ export type WorkspaceMemberResponse = {
 export type CreateWorkspacePayload = {
   name: string
   description?: string
+  logo?: string
   avatar?: string
   settings?: WorkspaceResponse['settings']
 }
@@ -91,6 +92,7 @@ export type CreateWorkspacePayload = {
 export type UpdateWorkspacePayload = {
   name?: string
   description?: string
+  logo?: string
   avatar?: string
   settings?: WorkspaceResponse['settings']
 }

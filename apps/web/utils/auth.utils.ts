@@ -25,6 +25,24 @@ type AuthTokens = {
   refreshExpiresAt: string | Date
 }
 
+export function applySessionUserToToken(
+  token: JWT,
+  user: {
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    status?: string
+    role?: string
+  },
+): JWT {
+  if (user.name) token.name = user.name
+  if (user.email) token.email = user.email
+  if (user.image !== undefined) token.picture = user.image
+  if (user.status) token.status = user.status
+  if (user.role) token.role = user.role
+  return token
+}
+
 export function applyAuthToToken(
   token: JWT,
   user: {

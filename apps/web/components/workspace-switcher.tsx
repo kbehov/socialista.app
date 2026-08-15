@@ -10,10 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { isWorkspaceAdmin } from '@/lib/workspace-role'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
 import { WorkspaceResponse } from '@socialista/types'
-import { ChevronsUpDownIcon, PlusIcon } from 'lucide-react'
+import { ChevronsUpDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
@@ -32,8 +36,10 @@ function WorkspaceAvatar({ workspace }: { workspace: WorkspaceResponse }) {
 export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }) {
   const router = useRouter()
   const { isMobile } = useSidebar()
+  const { data: session } = useSession()
   const { currentWorkspace } = useWorkspaceStore()
   const { setCurrentWorkspace } = useWorkspaceStoreActions()
+  const showSettings = isWorkspaceAdmin(currentWorkspace, session?.user?.id)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -112,6 +118,16 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
+            {showSettings ? (
+              <DropdownMenuItem asChild className="gap-2 p-2">
+                <Link href={DASHBOARD_ROUTES.SETTINGS}>
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                    <Settings2Icon className="size-3.5" strokeWidth={1.75} />
+                  </div>
+                  <div className="font-medium">Settings</div>
+                </Link>
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem className="gap-2 p-2" disabled>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <PlusIcon className="size-4" />

@@ -11,7 +11,6 @@ import {
   isDashboardAccountsPath,
   isDashboardFilesPath,
   isDashboardGenerationsPath,
-  isDashboardNotificationsPath,
   isDashboardPostsPath,
   isDashboardProductsPath,
   isDashboardRootPath,
@@ -22,7 +21,6 @@ import {
 import { cn } from '@/lib/utils'
 import type { WorkspaceResponse } from '@socialista/types'
 import {
-  BellIcon,
   ChartColumnIcon,
   FolderArchiveIcon,
   HistoryIcon,
@@ -156,12 +154,6 @@ function buildWorkspaceItems(pathname: string): SidebarNavItem[] {
       url: DASHBOARD_ROUTES.GENERATIONS,
       icon: navIcon(HistoryIcon),
       isActive: isDashboardGenerationsPath(pathname),
-    },
-    {
-      title: 'Notifications',
-      url: DASHBOARD_ROUTES.NOTIFICATIONS,
-      icon: navIcon(BellIcon),
-      isActive: isDashboardNotificationsPath(pathname),
     },
   ]
 }

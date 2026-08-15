@@ -3,7 +3,7 @@ import { CURRENT_WORKSPACE_COOKIE } from '@/utils/cookie.utils'
 import { NextResponse } from 'next/server'
 
 const AUTH_PATHS = ['/auth/signin', '/auth/signup'] as const
-const PROTECTED_PREFIXES = ['/dashboard', '/manager'] as const
+const PROTECTED_PREFIXES = ['/dashboard', '/manager', '/invite'] as const
 
 function isProtectedPath(pathname: string) {
   return PROTECTED_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))
@@ -53,5 +53,5 @@ export const proxy = auth(req => {
 })
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/manager/:path*', '/auth/signin', '/auth/signup'],
+  matcher: ['/dashboard/:path*', '/manager/:path*', '/invite/:path*', '/auth/signin', '/auth/signup'],
 }

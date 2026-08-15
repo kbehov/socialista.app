@@ -4,6 +4,7 @@ import {
   deleteInvitation,
   getInvitation,
   getInvitations,
+  previewInvitation,
   rejectInvitation,
 } from '@/controllers/invitation.controller.js'
 import { authMiddleware, type AppContext } from '@/middlewares/auth.middleware.js'
@@ -15,6 +16,7 @@ invitationRoutes.use('/*', authMiddleware)
 
 invitationRoutes.post('/accept', acceptInvitation)
 invitationRoutes.post('/reject', rejectInvitation)
+invitationRoutes.get('/preview', previewInvitation)
 invitationRoutes.get('/', getInvitations)
 invitationRoutes.post('/', createInvitation)
 invitationRoutes.get('/:id', getInvitation)

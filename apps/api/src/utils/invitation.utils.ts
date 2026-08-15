@@ -5,6 +5,7 @@ import { isValidWorkspaceMemberRole } from '@/utils/workspace.utils.js'
 import {
   getInvitationById,
   getInvitationByToken,
+  getWorkspaceById,
   isValidEmail,
   WorkspaceMemberRole,
   type Invitation,
@@ -21,6 +22,16 @@ export const serializeInvitation = (invitation: Invitation, includeToken = false
   createdAt: invitation.createdAt,
   updatedAt: invitation.updatedAt,
   ...(includeToken && { token: invitation.invitationToken }),
+})
+
+export const serializeInvitationWorkspace = (workspace: {
+  _id: { toString(): string }
+  name: string
+  logo?: string
+}) => ({
+  id: workspace._id.toString(),
+  name: workspace.name,
+  logo: workspace.logo,
 })
 
 export const getInvitationOrThrow = async (id: string) => {
@@ -49,6 +60,14 @@ export const parseInvitationToken = (body: Record<string, unknown>): string => {
     throw new HttpError(400, 'Token is required')
   }
   return body.token.trim()
+}
+
+export const parseInvitationTokenQuery = (query: string): string => {
+  const token = new URLSearchParams(query).get('token')?.trim()
+  if (!token) {
+    throw new HttpError(400, 'Token is required')
+  }
+  return token
 }
 
 export const parseCreateInvitationInput = (body: Record<string, unknown>) => {
@@ -85,4 +104,12 @@ export const getInvitationForRecipient = async (token: string, userId: string) =
   ])
   assertInvitationRecipient(invitation, user.email)
   return invitation
+}
+
+export const loadInvitationWorkspace = async (workspaceId: string) => {
+  const workspace = await getWorkspaceById(workspaceId)
+  if (!workspace) {
+    throw new HttpError(404, 'Workspace not found')
+  }
+  return workspace
 }

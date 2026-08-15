@@ -1,0 +1,22 @@
+{
+  "name": "@socialista/email",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "resend": "^6.20.0"
+  },
+  "devDependencies": {
+    "@socialista/eslint-config": "workspace:*",
+    "@socialista/typescript-config": "workspace:*",
+    "eslint": "^10.8.0",
+    "typescript": "^6.0.3"
+  }
+}

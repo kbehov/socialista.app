@@ -12,11 +12,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { isWorkspaceAdmin } from '@/lib/workspace-role'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getBillingPortalUrl } from '@/utils/billing-urls'
 import { getInitials } from '@/utils/user'
-import { ChevronsUpDownIcon, CreditCardIcon, LogOutIcon, SparklesIcon } from 'lucide-react'
-import { signOut } from 'next-auth/react'
+import {
+  ChevronsUpDownIcon,
+  CircleUserIcon,
+  CreditCardIcon,
+  LogOutIcon,
+  Settings2Icon,
+  SparklesIcon,
+} from 'lucide-react'
+import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 
 export function NavUser({
@@ -29,10 +37,16 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { data: session } = useSession()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const plan = currentWorkspace?.billing.plan ?? 'free'
   const workspaceId = currentWorkspace?.id
-  const billingHref = plan !== 'free' && workspaceId ? getBillingPortalUrl(workspaceId) : DASHBOARD_ROUTES.UPGRADE
+  const isAdmin = isWorkspaceAdmin(currentWorkspace, session?.user?.id)
+  const billingHref = isAdmin
+    ? DASHBOARD_ROUTES.SETTINGS_BILLING
+    : plan !== 'free' && workspaceId
+      ? getBillingPortalUrl(workspaceId)
+      : DASHBOARD_ROUTES.UPGRADE
   const showUpgradeInMenu = plan === 'free'
   const initials = getInitials(user.name)
 
@@ -76,6 +90,20 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href={DASHBOARD_ROUTES.ACCOUNT}>
+                  <CircleUserIcon />
+                  Account
+                </Link>
+              </DropdownMenuItem>
+              {isAdmin ? (
+                <DropdownMenuItem asChild>
+                  <Link href={DASHBOARD_ROUTES.SETTINGS}>
+                    <Settings2Icon />
+                    Workspace settings
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               {showUpgradeInMenu ? (
                 <DropdownMenuItem asChild>
                   <Link href={DASHBOARD_ROUTES.UPGRADE}>

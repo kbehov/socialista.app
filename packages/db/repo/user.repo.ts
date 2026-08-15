@@ -21,8 +21,23 @@ export const authenticateUser = async (email: string, password: string) => {
   return await UserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }, { new: true })
 }
 
-export const getUserById = async (id: string) => {
-  return await UserModel.findById(id)
+export const getUserById = async (id: string, options?: { includePassword?: boolean }) => {
+  const query = UserModel.findById(id)
+  if (options?.includePassword) {
+    query.select('+password')
+  }
+  return await query
+}
+
+export const userHasPassword = async (id: string) => {
+  const user = await UserModel.findById(id).select('+password')
+  return Boolean(user?.password)
+}
+
+export const verifyUserPassword = async (id: string, password: string) => {
+  const user = await UserModel.findById(id).select('+password')
+  if (!user?.password) return false
+  return compare(password, user.password)
 }
 
 export const createUser = async (user: Partial<IUser>) => {
@@ -30,13 +45,18 @@ export const createUser = async (user: Partial<IUser>) => {
 }
 
 export const updateUser = async (id: string, updates: Partial<IUser>) => {
-  const user = await UserModel.findById(id)
+  const user = await UserModel.findById(id).select('+password')
   if (!user) return null
 
-  const { password, ...rest } = updates
+  const { password, avatar, ...rest } = updates
   Object.assign(user, rest)
   if (password) {
     user.password = password
+  }
+  if (avatar) {
+    user.avatar = avatar
+  } else if ('avatar' in updates) {
+    user.set('avatar', undefined)
   }
   await user.save()
   return user

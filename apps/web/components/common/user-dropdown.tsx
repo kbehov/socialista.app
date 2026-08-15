@@ -16,7 +16,7 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getBillingPortalUrl } from '@/utils/billing-urls'
-import { CreditCardIcon, LogOutIcon } from 'lucide-react'
+import { CircleUserIcon, CreditCardIcon, LogOutIcon } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { getInitials } from '@/utils/user'
@@ -72,6 +72,12 @@ export function UserDropdown() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1" />
         <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link href={DASHBOARD_ROUTES.ACCOUNT}>
+              <CircleUserIcon />
+              Account
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={DASHBOARD_ROUTES.UPGRADE}>
               <Badge variant="default">Pro</Badge>

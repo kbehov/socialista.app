@@ -197,10 +197,18 @@ export const parseCreateWorkspaceInput = (body: Record<string, unknown>) => {
     (body.settings as IWorkspace['settings'] | undefined) ?? defaults.settings,
   )
 
+  const imageUrl =
+    typeof body.logo === 'string'
+      ? body.logo
+      : typeof body.avatar === 'string'
+        ? body.avatar
+        : undefined
+
   return {
     name,
     description: body.description as string | undefined,
-    avatar: body.avatar as string | undefined,
+    avatar: imageUrl,
+    logo: imageUrl,
     settings,
     limits: defaults.limits,
     usage: defaults.usage,
@@ -232,6 +240,11 @@ export const assertModifiableMember = (workspace: IWorkspace, memberId: string):
   }
 }
 
+const optionalImageUrl = (value: unknown): string => {
+  if (typeof value === 'string' && value.trim()) return value.trim()
+  return ''
+}
+
 export const pickWorkspaceUpdates = (body: Record<string, unknown>): Partial<IWorkspace> => {
   const updates: Partial<IWorkspace> = {}
 
@@ -241,8 +254,10 @@ export const pickWorkspaceUpdates = (body: Record<string, unknown>): Partial<IWo
   if (body.description !== undefined) {
     updates.description = body.description as string | undefined
   }
-  if (body.avatar !== undefined) {
-    updates.avatar = body.avatar as string | undefined
+  if (body.logo !== undefined || body.avatar !== undefined) {
+    const imageUrl = optionalImageUrl(body.logo !== undefined ? body.logo : body.avatar)
+    updates.logo = imageUrl
+    updates.avatar = imageUrl
   }
   if (body.settings) {
     updates.settings = normalizeWorkspaceSettings(body.settings as IWorkspace['settings'])
