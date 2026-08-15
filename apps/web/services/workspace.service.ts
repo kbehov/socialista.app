@@ -1,5 +1,6 @@
 'use server'
 
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { WORKSPACE_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
 import type {
@@ -14,7 +15,7 @@ import type {
   WorkspaceResponse,
   WorkspaceUsageSummary,
 } from '@socialista/types'
-import { revalidateTag } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 function workspaceTags(workspaceId?: string) {
   const tags = ['workspaces']
@@ -82,6 +83,7 @@ export const createWorkspace = async (
 ): Promise<ApiResponse<{ workspace: WorkspaceResponse }>> => {
   const response = await api.post<{ workspace: WorkspaceResponse }>(WORKSPACE_ROUTES.CREATE_WORKSPACE, payload)
   revalidateWorkspaces(response.data?.workspace.id)
+  revalidatePath(DASHBOARD_ROUTES.ROOT)
   return response
 }
 

@@ -233,7 +233,11 @@ export function SignUpForm({ className }: SignUpFormProps) {
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link
-            href="/auth/signin"
+            href={
+              callbackUrl && callbackUrl !== '/'
+                ? `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                : '/auth/signin'
+            }
             className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
           >
             Sign in

@@ -238,6 +238,7 @@ export {
 } from './types/video.types.js'
 
 export {
+  ADDITIONAL_WORKSPACE_LIMITS,
   BillingStatus,
   Plan,
   PLAN_LIMITS,

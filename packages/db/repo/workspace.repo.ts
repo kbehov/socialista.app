@@ -1,6 +1,7 @@
 import { Types } from 'mongoose'
 import { WorkspaceModel } from '../models/workspace.model.js'
 import {
+  ADDITIONAL_WORKSPACE_LIMITS,
   BillingStatus,
   IWorkspace,
   PLAN_LIMITS,
@@ -69,6 +70,14 @@ export const getUserWorkspaces = async (userId: string) => {
   return await WorkspaceModel.find({ 'members.userId': new Types.ObjectId(userId) }).lean()
 }
 
+export const countOwnedWorkspaces = async (userId: string) => {
+  if (!userId) {
+    throw new Error('User ID is required')
+  }
+
+  return await WorkspaceModel.countDocuments({ ownerId: new Types.ObjectId(userId) })
+}
+
 export const getWorkspaceByPolarCustomerId = async (customerId: string) => {
   return await WorkspaceModel.findOne({ 'billing.polarCustomerId': customerId }).lean()
 }
@@ -84,14 +93,16 @@ export const createWorkspace = async (workspace: Partial<IWorkspace>, userId: st
     throw new Error('User ID is required')
   }
 
+  const ownedCount = await countOwnedWorkspaces(userId)
   const defaults = defaultFreePlanDefaults()
   const settings = normalizeSettings(workspace.settings ?? defaults.settings)
+  const limits = ownedCount > 0 ? ADDITIONAL_WORKSPACE_LIMITS : (workspace.limits ?? defaults.limits)
 
   return await WorkspaceModel.create({
     ...defaults,
     ...workspace,
     settings,
-    limits: workspace.limits ?? defaults.limits,
+    limits,
     usage: workspace.usage ?? defaults.usage,
     billing: workspace.billing ?? defaults.billing,
     ownerId: new Types.ObjectId(userId),

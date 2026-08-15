@@ -183,7 +183,11 @@ export function SignInForm({ className }: SignInFormProps) {
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
           <Link
-            href="/auth/signup"
+            href={
+              callbackUrl && callbackUrl !== '/'
+                ? `/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                : '/auth/signup'
+            }
             className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
           >
             Create one

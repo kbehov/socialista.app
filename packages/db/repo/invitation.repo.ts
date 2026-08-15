@@ -27,6 +27,14 @@ export const getPendingInvitationByWorkspaceAndEmail = async (workspaceId: strin
   }).lean()
 }
 
+export const getPendingInvitationByEmail = async (email: string) => {
+  return InvitationModel.findOne({
+    email: email.toLowerCase().trim(),
+    status: InvitationStatus.PENDING,
+    invitationExpiresAt: { $gt: new Date() },
+  }).lean()
+}
+
 export const createInvitation = async (input: CreateInvitationInput) => {
   const { workspace, email, invitedBy, role } = input
   if (!workspace || !email || !invitedBy || !role) {

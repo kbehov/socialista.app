@@ -57,6 +57,13 @@ export type WorkspaceLimits = {
   posts: number
 }
 
+export const ADDITIONAL_WORKSPACE_LIMITS: WorkspaceLimits = {
+  members: 1,
+  posts: 0,
+  storage: 0,
+  accounts: 0,
+}
+
 export type WorkspaceUsage = {
   storage: number
   accounts: number

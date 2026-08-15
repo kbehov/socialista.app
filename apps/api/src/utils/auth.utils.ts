@@ -8,6 +8,7 @@ import {
   createUser,
   createWorkspace,
   findUserByPasswordResetToken,
+  getPendingInvitationByEmail,
   getUserByEmail,
   getUserById,
   getUserByOAuthAccount,
@@ -162,7 +163,7 @@ export const authenticateOrRegisterSocialUser = async (input: ParsedSocialLoginI
     avatar,
     oauthAccounts: [{ provider, providerAccountId }],
   })
-  await setupDefaultWorkspace(user, name)
+  await setupWorkspaceUnlessInvited(user, name)
 
   const updatedUser = await updateUser(user._id.toString(), { lastLoginAt: new Date() })
   if (!updatedUser) {
@@ -187,10 +188,16 @@ export const setupDefaultWorkspace = async (user: UserDocument, name: string): P
   )
 }
 
+const setupWorkspaceUnlessInvited = async (user: UserDocument, name: string) => {
+  const pendingInvite = await getPendingInvitationByEmail(user.email)
+  if (pendingInvite) return
+  await setupDefaultWorkspace(user, name)
+}
+
 export const registerUser = async (email: string, password: string, name: string) => {
   await assertEmailUnique(email)
   const user = await createUser({ email, password, name })
-  await setupDefaultWorkspace(user, name)
+  await setupWorkspaceUnlessInvited(user, name)
   return user
 }
 

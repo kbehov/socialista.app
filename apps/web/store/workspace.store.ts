@@ -19,6 +19,7 @@ type WorkspaceActions = {
   setWorkspaces: (workspaces: WorkspaceResponse[]) => void
   setIsLoading: (isLoading: boolean) => void
   setCurrentWorkspace: (currentWorkspace: WorkspaceResponse | null) => void
+  addWorkspace: (workspace: WorkspaceResponse) => void
   updateWorkspace: (workspace: WorkspaceResponse) => void
   reset: () => void
 }
@@ -48,6 +49,16 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }
         set({ currentWorkspace })
       },
+      addWorkspace: workspace =>
+        set(state => {
+          const id = getWorkspaceId(workspace)
+          const exists = state.workspaces.some(item => getWorkspaceId(item) === id)
+          return {
+            workspaces: exists
+              ? state.workspaces.map(item => (getWorkspaceId(item) === id ? workspace : item))
+              : [...state.workspaces, workspace],
+          }
+        }),
       updateWorkspace: workspace =>
         set(state => ({
           workspaces: state.workspaces.map(w => (w.id === workspace.id ? workspace : w)),
@@ -74,7 +85,8 @@ export const useWorkspaceStoreActions = () => {
   const setWorkspaces = useWorkspaceStore(s => s.setWorkspaces)
   const setIsLoading = useWorkspaceStore(s => s.setIsLoading)
   const setCurrentWorkspace = useWorkspaceStore(s => s.setCurrentWorkspace)
+  const addWorkspace = useWorkspaceStore(s => s.addWorkspace)
   const updateWorkspace = useWorkspaceStore(s => s.updateWorkspace)
   const reset = useWorkspaceStore(s => s.reset)
-  return { setWorkspaces, setIsLoading, setCurrentWorkspace, updateWorkspace, reset }
+  return { setWorkspaces, setIsLoading, setCurrentWorkspace, addWorkspace, updateWorkspace, reset }
 }

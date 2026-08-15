@@ -15,14 +15,14 @@ export function getWorkspaceStorageStats(workspace: WorkspaceResponse): Workspac
   const usedBytes = Math.max(0, workspace.usage.storage)
   const limitBytes = Math.max(0, workspace.limits.storage * BYTES_PER_MB)
   const remainingBytes = Math.max(0, limitBytes - usedBytes)
-  const percentUsed = limitBytes > 0 ? Math.min(100, (usedBytes / limitBytes) * 100) : 0
+  const percentUsed = limitBytes > 0 ? Math.min(100, (usedBytes / limitBytes) * 100) : 100
 
   return {
     usedBytes,
     limitBytes,
     remainingBytes,
     percentUsed,
-    isFull: limitBytes > 0 && remainingBytes === 0,
+    isFull: remainingBytes === 0,
     isNearFull: percentUsed >= 85,
   }
 }

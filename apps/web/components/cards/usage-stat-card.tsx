@@ -47,7 +47,7 @@ function UsageStatCard({
   className,
 }: UsageStatCardProps) {
   const percent = clampPercent(percentUsed)
-  const hasLimit = typeof limit === 'number' && limit > 0
+  const hasLimit = typeof limit === 'number' && Number.isFinite(limit)
   const isFull = hasLimit && percent >= 100
   const isNearFull = hasLimit && !isFull && percent >= 85
   const toneStyles = TONE_STYLES[tone]

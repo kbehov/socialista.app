@@ -3,14 +3,15 @@ import { HttpError } from '@/utils/http-response.js'
 import { serializeUser } from '@/utils/user.utils.js'
 
 import {
+  ADDITIONAL_WORKSPACE_LIMITS,
   BillingStatus,
+  PLAN_LIMITS,
+  Plan,
+  WorkspaceMemberRole,
   assertValidTimezone,
   getUserById,
   getWorkspaceById,
   isValidId,
-  PLAN_LIMITS,
-  Plan,
-  WorkspaceMemberRole,
   type IWorkspace,
   type UserDocument,
   type WorkspaceMember,
@@ -43,6 +44,11 @@ export const defaultWorkspaceSettings = () => {
   }
 }
 
+export const additionalWorkspaceLimits = (): IWorkspace['limits'] => ({ ...ADDITIONAL_WORKSPACE_LIMITS })
+
+export const resolveCreateWorkspaceLimits = (ownedWorkspaceCount: number): IWorkspace['limits'] =>
+  ownedWorkspaceCount > 0 ? additionalWorkspaceLimits() : defaultWorkspaceSettings().limits
+
 /** Ensure workspace settings carry a valid IANA timezone. */
 export const normalizeWorkspaceSettings = (
   settings: IWorkspace['settings'],
@@ -57,7 +63,7 @@ const buildUsageQuota = (used: number, limit: number) => {
   const safeUsed = Math.max(0, used)
   const safeLimit = Math.max(0, limit)
   const remaining = Math.max(0, safeLimit - safeUsed)
-  const percentUsed = safeLimit > 0 ? Math.min(100, (safeUsed / safeLimit) * 100) : 0
+  const percentUsed = safeLimit > 0 ? Math.min(100, (safeUsed / safeLimit) * 100) : 100
 
   return { used: safeUsed, limit: safeLimit, remaining, percentUsed }
 }
@@ -139,7 +145,7 @@ export const assertAccountsLimit = (workspace: IWorkspace): void => {
 }
 
 export const assertPostsLimit = (workspace: IWorkspace): void => {
-  if (workspace.limits.posts > 0 && workspace.usage.posts >= workspace.limits.posts) {
+  if (workspace.usage.posts >= workspace.limits.posts) {
     throw new HttpError(403, 'Workspace post limit reached')
   }
 }
@@ -210,7 +216,6 @@ export const parseCreateWorkspaceInput = (body: Record<string, unknown>) => {
     avatar: imageUrl,
     logo: imageUrl,
     settings,
-    limits: defaults.limits,
     usage: defaults.usage,
   }
 }

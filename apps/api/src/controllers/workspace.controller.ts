@@ -14,10 +14,12 @@ import {
   parseCreateWorkspaceInput,
   parseMemberRoleUpdate,
   pickWorkspaceUpdates,
+  resolveCreateWorkspaceLimits,
   serializeWorkspace,
 } from '@/utils/workspace.utils.js'
 import {
   addWorkspaceMember as addWorkspaceMemberRecord,
+  countOwnedWorkspaces,
   createWorkspace as createWorkspaceRecord,
   deductAiCredits,
   deleteWorkspace as deleteWorkspaceRecord,
@@ -33,8 +35,13 @@ export const getUserWorkspaces = async (c: AuthContext) => {
 }
 
 export const createWorkspace = async (c: AuthContext) => {
+  const userId = c.get('userId')
   const input = parseCreateWorkspaceInput(await c.req.json())
-  const workspace = await createWorkspaceRecord(input, c.get('userId'))
+  const ownedWorkspaceCount = await countOwnedWorkspaces(userId)
+  const workspace = await createWorkspaceRecord(
+    { ...input, limits: resolveCreateWorkspaceLimits(ownedWorkspaceCount) },
+    userId,
+  )
 
   return successResponse(c, 201, { workspace: serializeWorkspace(workspace) })
 }

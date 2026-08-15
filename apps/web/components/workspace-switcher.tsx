@@ -10,16 +10,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
+import { CreateWorkspaceDialog } from '@/components/workspace/create-workspace-dialog'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { isWorkspaceAdmin } from '@/lib/workspace-role'
-import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
+import { getWorkspaceId, useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
 import { WorkspaceResponse } from '@socialista/types'
 import { ChevronsUpDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 function WorkspaceAvatar({ workspace }: { workspace: WorkspaceResponse }) {
   return (
@@ -37,8 +38,11 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
   const router = useRouter()
   const { isMobile } = useSidebar()
   const { data: session } = useSession()
-  const { currentWorkspace } = useWorkspaceStore()
+  const currentWorkspace = useWorkspaceStore(state => state.currentWorkspace)
+  const storedWorkspaces = useWorkspaceStore(state => state.workspaces)
   const { setCurrentWorkspace } = useWorkspaceStoreActions()
+  const [createOpen, setCreateOpen] = useState(false)
+  const workspaceList = storedWorkspaces.length > 0 ? storedWorkspaces : workspaces
   const showSettings = isWorkspaceAdmin(currentWorkspace, session?.user?.id)
 
   useEffect(() => {
@@ -48,9 +52,9 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
       if (!/^[1-9]$/.test(event.key)) return
 
       const index = Number.parseInt(event.key, 10) - 1
-      if (index < 0 || index >= workspaces.length) return
+      if (index < 0 || index >= workspaceList.length) return
 
-      const workspace = workspaces[index]
+      const workspace = workspaceList[index]
       if (!workspace) return
 
       event.preventDefault()
@@ -60,7 +64,7 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [workspaces, setCurrentWorkspace, router])
+  }, [workspaceList, setCurrentWorkspace, router])
 
   if (!currentWorkspace) {
     return null
@@ -103,9 +107,9 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="start" side={isMobile ? 'bottom' : 'right'} sideOffset={4}>
             <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
-            {workspaces.map((workspace, index) => (
+            {workspaceList.map((workspace, index) => (
               <DropdownMenuItem
-                key={workspace._id}
+                key={getWorkspaceId(workspace) ?? workspace._id}
                 onClick={() => {
                   setCurrentWorkspace(workspace)
                   router.refresh()
@@ -128,7 +132,7 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
                 </Link>
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem className="gap-2 p-2" disabled>
+            <DropdownMenuItem className="gap-2 p-2" onSelect={() => setCreateOpen(true)}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <PlusIcon className="size-4" />
               </div>
@@ -136,6 +140,7 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
       </SidebarMenuItem>
     </SidebarMenu>
   )
