@@ -4,17 +4,21 @@ import { assertEmailUnique } from '@/utils/user.utils.js'
 import { defaultWorkspaceBilling, defaultWorkspaceSettings } from '@/utils/workspace.utils.js'
 import {
   authenticateUser,
+  clearPasswordResetToken,
   createUser,
   createWorkspace,
+  findUserByPasswordResetToken,
   getUserByEmail,
   getUserById,
   getUserByOAuthAccount,
   isValidEmail,
   isValidPassword,
+  setPasswordResetToken,
   updateUser,
   UserStatus,
   type UserDocument,
 } from '@socialista/db'
+import { createHash, randomBytes } from 'node:crypto'
 
 type SignUpBody = { email?: string; password?: string; name?: string }
 type SignInBody = { email?: string; password?: string }
@@ -141,7 +145,7 @@ export const authenticateOrRegisterSocialUser = async (input: ParsedSocialLoginI
     if (existingOAuthUser.status !== UserStatus.ACTIVE) {
       throw new HttpError(401, 'Account is not active')
     }
-    return linkOAuthAccount(existingOAuthUser, provider, providerAccountId, avatar)
+    return { user: await linkOAuthAccount(existingOAuthUser, provider, providerAccountId, avatar), isNew: false }
   }
 
   const existingEmailUser = await getUserByEmail(email)
@@ -149,7 +153,7 @@ export const authenticateOrRegisterSocialUser = async (input: ParsedSocialLoginI
     if (existingEmailUser.status !== UserStatus.ACTIVE) {
       throw new HttpError(401, 'Account is not active')
     }
-    return linkOAuthAccount(existingEmailUser, provider, providerAccountId, avatar)
+    return { user: await linkOAuthAccount(existingEmailUser, provider, providerAccountId, avatar), isNew: false }
   }
 
   const user = await createUser({
@@ -165,7 +169,7 @@ export const authenticateOrRegisterSocialUser = async (input: ParsedSocialLoginI
     throw new HttpError(500, 'Failed to update user')
   }
 
-  return updatedUser
+  return { user: updatedUser, isNew: true }
 }
 
 export const authenticateActiveUser = async (email: string, password: string) => {
@@ -189,3 +193,71 @@ export const registerUser = async (email: string, password: string, name: string
   await setupDefaultWorkspace(user, name)
   return user
 }
+
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000
+const FORGOT_PASSWORD_MESSAGE = 'If an account exists for that email, we’ve sent a reset link.'
+
+type ForgotPasswordBody = { email?: string }
+type ResetPasswordBody = { token?: string; password?: string }
+
+export const parseForgotPasswordInput = (body: ForgotPasswordBody) => {
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  if (!email || !isValidEmail(email)) {
+    throw new HttpError(400, 'Enter a valid email address')
+  }
+  return { email }
+}
+
+export const parseResetPasswordInput = (body: ResetPasswordBody) => {
+  const token = typeof body.token === 'string' ? body.token.trim() : ''
+  const password = typeof body.password === 'string' ? body.password : ''
+
+  if (!token) {
+    throw new HttpError(400, 'Reset token is required')
+  }
+  if (!isValidPassword(password)) {
+    throw new HttpError(400, 'Password must be at least 8 characters')
+  }
+
+  return { token, password }
+}
+
+export function hashPasswordResetToken(token: string) {
+  return createHash('sha256').update(token).digest('hex')
+}
+
+export function createPasswordResetToken() {
+  const token = randomBytes(32).toString('hex')
+  return {
+    token,
+    tokenHash: hashPasswordResetToken(token),
+    expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+  }
+}
+
+export const requestPasswordReset = async (email: string) => {
+  const user = await getUserByEmail(email)
+  if (!user || user.status !== UserStatus.ACTIVE) {
+    return { user: null, token: null as string | null, expiresAt: null as Date | null }
+  }
+
+  const { token, tokenHash, expiresAt } = createPasswordResetToken()
+  await setPasswordResetToken(user._id.toString(), tokenHash, expiresAt)
+  return { user, token, expiresAt }
+}
+
+export const resetPasswordWithToken = async (token: string, password: string) => {
+  const user = await findUserByPasswordResetToken(hashPasswordResetToken(token))
+  if (!user) {
+    throw new HttpError(400, 'This reset link is invalid or has expired')
+  }
+
+  const updated = await updateUser(user._id.toString(), { password })
+  if (!updated) {
+    throw new HttpError(500, 'Failed to update password')
+  }
+
+  await clearPasswordResetToken(user._id.toString())
+}
+
+export const forgotPasswordMessage = FORGOT_PASSWORD_MESSAGE

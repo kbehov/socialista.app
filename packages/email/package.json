@@ -1,21 +1,38 @@
 {
   "name": "@socialista/email",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "private": true,
   "type": "module",
+  "description": "Transactional email templates and Resend send helpers for Socialista",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc -p tsconfig.check.json",
+    "preview": "email dev --dir templates --port 3333"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "license": "ISC",
   "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-email": "^6.9.2",
     "resend": "^6.20.0"
   },
   "devDependencies": {
     "@socialista/eslint-config": "workspace:*",
     "@socialista/typescript-config": "workspace:*",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "eslint": "^10.8.0",
     "typescript": "^6.0.3"
   }

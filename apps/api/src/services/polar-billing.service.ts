@@ -5,6 +5,7 @@ import {
   getWorkspaceById,
   getWorkspaceByPolarCustomerId,
   getWorkspaceByPolarSubscriptionId,
+  getUsersByIds,
   notifyWorkspaceOwnersAndAdmins,
   PLAN_LIMITS,
   Plan,
@@ -13,6 +14,7 @@ import {
   tryMarkEventProcessed,
   updateWorkspaceBilling,
   type IWorkspace,
+  WorkspaceMemberRole,
 } from '@socialista/db'
 import type {
   PolarOrderWebhookData,
@@ -22,6 +24,13 @@ import type {
   PolarWebhookMetadata,
 } from '@socialista/types'
 import { NotificationResourceKind, NotificationType, POLAR_WEBHOOK_EVENT_TYPE_SET } from '@socialista/types'
+import {
+  getAppUrl,
+  sendBillingCanceledEmail,
+  sendBillingFailedEmail,
+  sendBillingRenewedEmail,
+  sendBillingSuccessEmail,
+} from '@socialista/email'
 
 const acquireWebhookEvent = (eventKey: string) => tryMarkEventProcessed(eventKey)
 const buildWebhookEventKey = (eventType: string, entityId: string) => `${eventType}:${entityId}`
@@ -80,6 +89,43 @@ async function notifyBillingOwners(
     console.warn('[polar] failed to create billing notification', error)
   }
 }
+
+function ownerAndAdminUserIds(workspace: IWorkspace): string[] {
+  const ids = new Set<string>()
+  for (const member of workspace.members) {
+    if (member.role === WorkspaceMemberRole.OWNER || member.role === WorkspaceMemberRole.ADMIN) {
+      ids.add(member.userId.toString())
+    }
+  }
+  if (ids.size === 0) {
+    ids.add(workspace.ownerId.toString())
+  }
+  return [...ids]
+}
+
+async function emailBillingOwners(
+  workspace: IWorkspace,
+  send: (user: { to: string; name: string }) => Promise<void>,
+) {
+  const users = await getUsersByIds(ownerAndAdminUserIds(workspace))
+  await Promise.all(
+    users.map(async user => {
+      try {
+        await send({ to: user.email, name: user.name })
+      } catch (error) {
+        console.warn('[polar] failed to send billing email', error)
+      }
+    }),
+  )
+}
+
+const billingEmailInput = (workspace: IWorkspace, plan: Plan, user: { to: string; name: string }) => ({
+  to: user.to,
+  name: user.name,
+  workspaceName: workspace.name,
+  planLabel: planLabel(plan),
+  manageUrl: `${getAppUrl()}/dashboard/settings/billing`,
+})
 
 const resolveWorkspaceFromSubscription = async (subscription: PolarSubscriptionWebhookData) => {
   const workspaceId = getWorkspaceIdFromMetadata(subscription.metadata)
@@ -164,12 +210,21 @@ export const handleSubscriptionCreated = async (subscription: PolarSubscriptionW
       subscriptionId: subscription.id,
       dedupeKey: `billing.created:${workspaceId}:${subscription.id}`,
     })
+    await emailBillingOwners(_workspace, user =>
+      sendBillingSuccessEmail(billingEmailInput(_workspace, plan, user)),
+    )
   })
 }
 
 export const handleSubscriptionUpdated = async (subscription: PolarSubscriptionWebhookData) => {
-  return withSubscriptionWorkspace('subscription.updated', subscription, async (_workspace, workspaceId) => {
+  return withSubscriptionWorkspace('subscription.updated', subscription, async (workspace, workspaceId) => {
     await syncSubscriptionPeriod(workspaceId, subscription)
+    if (subscription.status !== 'past_due' && subscription.status !== 'incomplete') return
+
+    const plan = resolvePlanFromProductId(subscription.productId)
+    await emailBillingOwners(workspace, user =>
+      sendBillingFailedEmail(billingEmailInput(workspace, plan, user)),
+    )
   })
 }
 
@@ -195,6 +250,9 @@ export const handleSubscriptionActive = async (subscription: PolarSubscriptionWe
       subscriptionId: subscription.id,
       dedupeKey: `billing.renewed:${workspaceId}:${newPeriodStart.toISOString()}`,
     })
+    await emailBillingOwners(workspace, user =>
+      sendBillingRenewedEmail(billingEmailInput(workspace, plan, user)),
+    )
   })
 }
 
@@ -212,6 +270,10 @@ export const handleSubscriptionCanceled = async (subscription: PolarSubscription
       subscriptionId: subscription.id,
       dedupeKey: `billing.canceled:${workspaceId}:${subscription.id}`,
     })
+    const plan = resolvePlanFromProductId(subscription.productId)
+    await emailBillingOwners(workspace, user =>
+      sendBillingCanceledEmail(billingEmailInput(workspace, plan, user)),
+    )
   })
 }
 

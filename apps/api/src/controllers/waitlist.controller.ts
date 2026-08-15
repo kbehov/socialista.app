@@ -1,5 +1,7 @@
 import { HttpError, successResponse } from '@/utils/http-response.js'
+import { dispatchEmail } from '@/utils/email.utils.js'
 import { createWaitlistEntry, isValidEmail } from '@socialista/db'
+import { sendWaitlistEmail } from '@socialista/email'
 import type { JoinWaitlistPayload, JoinWaitlistResult } from '@socialista/types'
 import type { Context } from 'hono'
 
@@ -64,6 +66,10 @@ export const joinWaitlist = async (c: Context) => {
   const data: JoinWaitlistResult = {
     email: entry.email,
     alreadyJoined: !created,
+  }
+
+  if (created) {
+    await dispatchEmail('waitlist', () => sendWaitlistEmail({ to: entry.email }))
   }
 
   return successResponse(c, created ? 201 : 200, data)

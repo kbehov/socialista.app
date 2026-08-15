@@ -26,6 +26,8 @@ export interface IUser {
   lastLoginAt?: Date
   role: UserRole
   oauthAccounts: OAuthAccount[]
+  passwordResetTokenHash?: string
+  passwordResetExpiresAt?: Date
   createdAt: Date
   updatedAt: Date
 }

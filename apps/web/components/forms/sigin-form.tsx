@@ -156,6 +156,14 @@ export function SignInForm({ className }: SignInFormProps) {
               </button>
             </div>
             <FieldError message={errors.password?.message} />
+            <div className="text-right">
+              <Link
+                href="/auth/forgot-password"
+                className="text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <AuthFormRootError message={errors.root?.message} />

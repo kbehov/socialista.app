@@ -35,6 +35,8 @@ const userSchema = new Schema<IUser>(
       enum: enumValues(UserRole),
       default: UserRole.USER,
     },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpiresAt: { type: Date, select: false },
   },
   { timestamps: true },
 )
@@ -45,5 +47,6 @@ userSchema.pre('save', async function (this: UserDocument) {
 })
 
 userSchema.index({ status: 1 })
+userSchema.index({ passwordResetTokenHash: 1 }, { unique: true, sparse: true })
 
 export const UserModel = model<IUser>('User', userSchema)

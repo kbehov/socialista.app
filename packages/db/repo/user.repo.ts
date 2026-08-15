@@ -29,6 +29,11 @@ export const getUserById = async (id: string, options?: { includePassword?: bool
   return await query
 }
 
+export const getUsersByIds = async (ids: string[]) => {
+  if (ids.length === 0) return []
+  return UserModel.find({ _id: { $in: ids } })
+}
+
 export const userHasPassword = async (id: string) => {
   const user = await UserModel.findById(id).select('+password')
   return Boolean(user?.password)
@@ -76,4 +81,24 @@ export const getUsers = async (query: string) => {
     users,
     meta: buildPaginationMeta(total, pagination, sort),
   }
+}
+
+export const setPasswordResetToken = async (userId: string, tokenHash: string, expiresAt: Date) => {
+  return UserModel.findByIdAndUpdate(userId, {
+    passwordResetTokenHash: tokenHash,
+    passwordResetExpiresAt: expiresAt,
+  })
+}
+
+export const findUserByPasswordResetToken = async (tokenHash: string) => {
+  return UserModel.findOne({
+    passwordResetTokenHash: tokenHash,
+    passwordResetExpiresAt: { $gt: new Date() },
+  }).select('+passwordResetTokenHash +passwordResetExpiresAt')
+}
+
+export const clearPasswordResetToken = async (userId: string) => {
+  return UserModel.findByIdAndUpdate(userId, {
+    $unset: { passwordResetTokenHash: 1, passwordResetExpiresAt: 1 },
+  })
 }

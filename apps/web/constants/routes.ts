@@ -5,6 +5,8 @@ export const AUTH_ROUTES = {
   SIGN_UP: `/auth/sign-up`,
   REFRESH: `/auth/refresh`,
   SOCIAL_LOGIN: `/auth/social`,
+  FORGOT_PASSWORD: `/auth/forgot-password`,
+  RESET_PASSWORD: `/auth/reset-password`,
 }
 
 export const USER_ROUTES = {

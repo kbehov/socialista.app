@@ -28,6 +28,24 @@ export type SocialLoginInput = {
   name: string
   avatar?: string
 }
+
+export type ForgotPasswordPayload = {
+  email: string
+}
+
+export type ForgotPasswordResult = {
+  message: string
+}
+
+export type ResetPasswordPayload = {
+  token: string
+  password: string
+}
+
+export type ResetPasswordResult = {
+  message: string
+}
+
 export type MetaResponse = {
   total: number
   page: number

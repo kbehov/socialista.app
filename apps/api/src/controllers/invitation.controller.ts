@@ -15,6 +15,7 @@ import {
   serializeInvitationWorkspace,
 } from '@/utils/invitation.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
+import { dispatchEmail } from '@/utils/email.utils.js'
 import {
   assertMemberLimit,
   getWorkspaceAsAdmin,
@@ -28,8 +29,10 @@ import {
   getInvitations as getInvitationsFromDb,
   getPendingInvitationByWorkspaceAndEmail,
   getUserByEmail,
+  getUserById,
   rejectInvitation as rejectInvitationRecord,
 } from '@socialista/db'
+import { getAppUrl, sendInvitationEmail } from '@socialista/email'
 
 export const createInvitation = async (c: AuthContext) => {
   const userId = c.get('userId')
@@ -57,6 +60,18 @@ export const createInvitation = async (c: AuthContext) => {
     invitedBy: userId,
     role: input.role,
   })
+
+  const inviter = await getUserById(userId)
+  await dispatchEmail('invitation', () =>
+    sendInvitationEmail({
+      to: invitation.email,
+      inviterName: inviter?.name ?? 'A teammate',
+      workspaceName: workspace.name,
+      role: invitation.role,
+      inviteUrl: `${getAppUrl()}/invite/${invitation.invitationToken}`,
+      expiresAt: invitation.invitationExpiresAt,
+    }),
+  )
 
   return successResponse(c, 201, {
     invitation: serializeInvitation(invitation, true),
