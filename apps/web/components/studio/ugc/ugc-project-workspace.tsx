@@ -1,40 +1,54 @@
 'use client'
 
 import { CollapseAppSidebarOnMount } from '@/components/sidebars/collapse-app-sidebar-on-mount'
-import { UgcClipInspector } from '@/components/studio/ugc/ugc-clip-inspector'
+import { UgcClipFlow, type ClipRunProgress } from '@/components/studio/ugc/ugc-clip-flow'
 import { UgcClipRail } from '@/components/studio/ugc/ugc-clip-rail'
-import { UgcStagePanel } from '@/components/studio/ugc/ugc-stage-panel'
 import { UgcStudioTopbar } from '@/components/studio/ugc/ugc-studio-topbar'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { COMPLETED_STATUSES, FAILED_STATUSES } from '@/constants/generation.const'
+import {
+  COMPLETED_STATUSES,
+  FAILED_STATUSES,
+} from '@/constants/generation.const'
 import { useGenerationRun } from '@/hooks/use-generation-run'
 import { parseGenerationStatus } from '@/lib/image-generation/run-utils'
-import { readGenerationAccessToken, storeGenerationAccessToken } from '@/lib/image-generation/session'
 import {
+  readGenerationAccessToken,
+  storeGenerationAccessToken,
+} from '@/lib/image-generation/session'
+import {
+  assembleUgcProject,
   createUgcClip,
   deleteUgcClip,
   duplicateUgcClip,
+  generateUgcImageAd,
   generateUgcScript,
   generateUgcStills,
   generateUgcVideos,
   getUgcProject,
   openUgcClipEditor,
+  openUgcProjectEditor,
   regenerateUgcStill,
-  regenerateUgcVideo,
   updateUgcClip,
   updateUgcProject,
 } from '@/services/ugc-project.service'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
-import type { UgcClip, UgcClipType, UgcProject, UpdateUgcProjectPayload } from '@socialista/types'
-import {
-  UGC_CLIP_DEFAULT_SCENE_COUNT,
-  ugcClipRequiresCreator,
-  ugcClipRequiresProduct,
-  ugcClipRequiresScreenshots,
-  ugcClipRequiresScript,
+import type {
+  UgcClipType,
+  UgcClipVoice,
+  UgcProject,
+  UpdateUgcProjectPayload,
 } from '@socialista/types'
+import { UGC_DEFAULT_CLIP_TYPE } from '@socialista/types'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react'
 import { toast } from 'sonner'
 
 type UgcProjectWorkspaceProps = {
@@ -42,7 +56,17 @@ type UgcProjectWorkspaceProps = {
   initialProject: UgcProject
 }
 
-type Pipeline = 'stills' | 'video' | 'stills-to-video' | null
+type Pipeline = 'stills' | 'video' | 'image-ad' | 'assemble'
+
+type ActiveRun = {
+  key: string
+  clipId?: string
+  runId: string
+  accessToken: string
+  pipeline: Pipeline
+  progress: number
+  progressLabel: string
+}
 
 function UgcRunWatcher({
   runId,
@@ -75,44 +99,62 @@ function UgcRunWatcher({
   return null
 }
 
-function clipRunId(clip?: UgcClip) {
-  return clip?.stillsRunId ?? clip?.videoRunId ?? null
-}
-
 const CLIP_RUN_STORAGE_PREFIX = 'ugc-clip-run:'
+const ASSEMBLE_RUN_STORAGE_KEY = 'ugc-assemble-run:'
 
 function rememberClipRun(clipId: string, runId: string, token: string) {
   storeGenerationAccessToken(runId, token)
   sessionStorage.setItem(`${CLIP_RUN_STORAGE_PREFIX}${clipId}`, runId)
 }
 
-function restoreClipRun(clip?: UgcClip) {
-  if (!clip) return null
-  const storedRunId = sessionStorage.getItem(`${CLIP_RUN_STORAGE_PREFIX}${clip.id}`)
-  const candidates = [storedRunId, clip.videoRunId, clip.stillsRunId].filter(
-    (id): id is string => Boolean(id),
-  )
-  for (const id of candidates) {
-    const token = readGenerationAccessToken(id)
-    if (token) return { runId: id, token }
+function restoreClipRuns(project: UgcProject): ActiveRun[] {
+  const next: ActiveRun[] = []
+  for (const clip of project.clips) {
+    if (clip.status !== 'generating') continue
+    const storedRunId = sessionStorage.getItem(`${CLIP_RUN_STORAGE_PREFIX}${clip.id}`)
+    const candidates = [storedRunId, clip.videoRunId, clip.imageAdRunId, clip.stillsRunId].filter(
+      (id): id is string => Boolean(id),
+    )
+    for (const id of candidates) {
+      const token = readGenerationAccessToken(id)
+      if (!token) continue
+      const pipeline: Pipeline =
+        clip.videoRunId === id ? 'video' : clip.imageAdRunId === id ? 'image-ad' : 'stills'
+      next.push({
+        key: `${clip.id}:${id}`,
+        clipId: clip.id,
+        runId: id,
+        accessToken: token,
+        pipeline,
+        progress: 8,
+        progressLabel: 'Generating…',
+      })
+      break
+    }
   }
-  return null
+  if (project.assembledRunId && project.status === 'generating') {
+    const token = readGenerationAccessToken(project.assembledRunId)
+    const stored = sessionStorage.getItem(`${ASSEMBLE_RUN_STORAGE_KEY}${project.id}`)
+    const runId = stored && token ? stored : project.assembledRunId
+    const accessToken = readGenerationAccessToken(runId)
+    if (accessToken) {
+      next.push({
+        key: `assemble:${runId}`,
+        runId,
+        accessToken,
+        pipeline: 'assemble',
+        progress: 8,
+        progressLabel: 'Assembling…',
+      })
+    }
+  }
+  return next
 }
 
-function clipBlockedReason(project: UgcProject, clip?: UgcClip) {
-  if (!clip) return 'Pick a clip type to continue'
-  const type = clip.type
-  if (ugcClipRequiresCreator(type) && !clip.influencerId) return 'Pick a creator to continue'
-  if (ugcClipRequiresProduct(type) && project.productImageUrls.length === 0) return 'Add a product photo to continue'
-  if (ugcClipRequiresScreenshots(type) && (clip.referenceImageUrls?.length ?? 0) === 0) {
-    return 'Upload app screenshots to continue'
-  }
-  if (ugcClipRequiresScript(type) && !clip.script?.text.trim()) return 'Write a script to continue'
-  if (!project.models.image || !project.models.video) return 'Choose image and video models'
-  return null
-}
-
-export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectWorkspaceProps) {
+export function UgcProjectWorkspace({
+  workspaceId,
+  initialProject,
+}: UgcProjectWorkspaceProps) {
   const router = useRouter()
   const hydrate = useUgcProjectStore(s => s.hydrate)
   const setProject = useUgcProjectStore(s => s.setProject)
@@ -121,21 +163,17 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
   const storeProject = useUgcProjectStore(s => s.project)
   const influencersById = useUgcProjectStore(s => s.influencersById)
   const ensureModels = useUgcProjectStore(s => s.ensureModels)
+  const ensureInfluencer = useUgcProjectStore(s => s.ensureInfluencer)
   const hydratedIdRef = useRef<string | null>(null)
 
-  const project = storeProject?.id === initialProject.id ? storeProject : initialProject
+  const project =
+    storeProject?.id === initialProject.id ? storeProject : initialProject
   const [selectedClipId, setSelectedClipId] = useState(initialProject.clips[0]?.id)
-  const [typeDialogOpen, setTypeDialogOpen] = useState(false)
-  const [runId, setRunId] = useState<string | null>(clipRunId(initialProject.clips[0]))
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [progress, setProgress] = useState(0)
-  const [progressLabel, setProgressLabel] = useState('Generating…')
-  const [pipeline, setPipeline] = useState<Pipeline>(null)
+  const [activeRuns, setActiveRuns] = useState<ActiveRun[]>([])
   const [writingScript, startWriteScript] = useTransition()
   const [openingEditor, startOpenEditor] = useTransition()
-  const [plannedPromptDraft, setPlannedPromptDraft] = useState(initialProject.clips[0]?.plannedPrompt ?? '')
+  const [openingProjectEditor, startOpenProjectEditor] = useTransition()
   const saveTimer = useRef<number | null>(null)
-  const chainVideoRef = useRef(false)
 
   useEffect(() => {
     void ensureModels()
@@ -145,38 +183,42 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
     if (hydratedIdRef.current === initialProject.id) return
     hydratedIdRef.current = initialProject.id
     hydrate(initialProject)
-    const first = initialProject.clips[0]
-    setSelectedClipId(first?.id)
-    setPlannedPromptDraft(first?.plannedPrompt ?? '')
-    const restored = restoreClipRun(first)
-    setRunId(restored?.runId ?? clipRunId(first))
-    setAccessToken(restored?.token ?? null)
-    setProgress(0)
-    setPipeline(first?.status === 'generating' ? (first.videoRunId && restored?.runId === first.videoRunId ? 'video' : 'stills') : null)
+    setSelectedClipId(initialProject.clips[0]?.id)
+    setActiveRuns(restoreClipRuns(initialProject))
   }, [hydrate, initialProject])
 
-  const selectedClip = project.clips.find(clip => clip.id === selectedClipId) ?? project.clips[0]
-  const generating = selectedClip?.status === 'generating'
+  const selectedClip =
+    project.clips.find(clip => clip.id === selectedClipId) ?? project.clips[0]
+  const anyGenerating = project.clips.some(clip => clip.status === 'generating') ||
+    activeRuns.some(run => run.pipeline === 'assemble')
+  const readyVideoCount = project.clips.filter(clip => Boolean(clip.videoUrl)).length
+
+  useEffect(() => {
+    const ids = [
+      project.influencerId,
+      ...project.clips.map(clip => clip.influencerId),
+    ].filter((id): id is string => Boolean(id))
+    for (const id of new Set(ids)) {
+      void ensureInfluencer(id)
+    }
+  }, [ensureInfluencer, project.clips, project.influencerId])
 
   const refreshProject = useCallback(async () => {
     const response = await getUgcProject(project.id)
     if (response.success && response.data?.project) {
       setProject(response.data.project)
-      const clip =
-        response.data.project.clips.find(item => item.id === selectedClipId) ?? response.data.project.clips[0]
-      if (clip?.plannedPrompt) setPlannedPromptDraft(clip.plannedPrompt)
       return response.data.project
     }
     return null
-  }, [project.id, selectedClipId, setProject])
+  }, [project.id, setProject])
 
   useEffect(() => {
-    if (!generating) return
+    if (!anyGenerating) return
     const interval = window.setInterval(() => {
       void refreshProject()
     }, 2500)
     return () => window.clearInterval(interval)
-  }, [generating, refreshProject])
+  }, [anyGenerating, refreshProject])
 
   const patchProject = useCallback(
     async (payload: UpdateUgcProjectPayload) => {
@@ -221,21 +263,37 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
   const startRun = useCallback(
     (
       handle: { project: UgcProject; runId: string; publicAccessToken: string },
-      nextPipeline: Pipeline,
-      clipId: string,
+      pipeline: Pipeline,
+      clipId?: string,
     ) => {
-      rememberClipRun(clipId, handle.runId, handle.publicAccessToken)
+      if (clipId) rememberClipRun(clipId, handle.runId, handle.publicAccessToken)
+      else {
+        storeGenerationAccessToken(handle.runId, handle.publicAccessToken)
+        sessionStorage.setItem(`${ASSEMBLE_RUN_STORAGE_KEY}${handle.project.id}`, handle.runId)
+      }
       setProject(handle.project)
-      setRunId(handle.runId)
-      setAccessToken(handle.publicAccessToken)
-      setProgress(8)
-      setProgressLabel('Starting…')
-      setPipeline(nextPipeline)
+      setActiveRuns(current => {
+        const without = clipId
+          ? current.filter(run => run.clipId !== clipId)
+          : current.filter(run => run.pipeline !== 'assemble')
+        return [
+          ...without,
+          {
+            key: `${clipId ?? 'assemble'}:${handle.runId}`,
+            clipId,
+            runId: handle.runId,
+            accessToken: handle.publicAccessToken,
+            pipeline,
+            progress: 8,
+            progressLabel: 'Starting…',
+          },
+        ]
+      })
     },
     [setProject],
   )
 
-  const handleCreateClip = async (type: UgcClipType) => {
+  const handleCreateClip = async (type: UgcClipType = UGC_DEFAULT_CLIP_TYPE) => {
     const response = await createUgcClip(project.id, { type })
     if (!response.success || !response.data?.project) {
       toast.error(response.message ?? 'Could not add clip')
@@ -243,46 +301,15 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
     }
     const created = response.data.project.clips.at(-1)
     setProject(response.data.project)
-    setTypeDialogOpen(false)
-    if (created) {
-      setSelectedClipId(created.id)
-      setPlannedPromptDraft(created.plannedPrompt ?? '')
-    }
+    if (created) setSelectedClipId(created.id)
   }
 
-  const handleGenerateStills = async (clip: UgcClip, nextPipeline: Pipeline) => {
-    const response = await generateUgcStills(project.id, { clipId: clip.id })
-    if (!response.success || !response.data) {
-      toast.error(response.message ?? 'Could not generate scenes')
-      return false
-    }
-    startRun(response.data, nextPipeline, clip.id)
-    return true
-  }
-
-  const handleGenerateVideo = async (clip: UgcClip, nextPipeline: Pipeline) => {
-    const edited = plannedPromptDraft.trim()
-    const response = await generateUgcVideos(project.id, {
-      clipId: clip.id,
-      ...(edited && edited !== (clip.plannedPrompt ?? '') ? { plannedPrompt: edited, skipPlanner: true } : {}),
-    })
-    if (!response.success || !response.data) {
-      toast.error(response.message ?? 'Could not generate video')
-      return
-    }
-    startRun(response.data, nextPipeline, clip.id)
-  }
-
-  const handleGenerateClip = async () => {
-    if (!selectedClip) return
-    const hasStills = selectedClip.stills.some(still => still.imageUrl)
-    if (!hasStills) {
-      chainVideoRef.current = true
-      await handleGenerateStills(selectedClip, 'stills-to-video')
-      return
-    }
-    chainVideoRef.current = false
-    await handleGenerateVideo(selectedClip, 'video')
+  const handleNameChange = (name: string) => {
+    patchProjectLocal({ name })
+    if (saveTimer.current) window.clearTimeout(saveTimer.current)
+    saveTimer.current = window.setTimeout(() => {
+      void patchProject({ name })
+    }, 400)
   }
 
   const influencerNames = useMemo(
@@ -293,90 +320,88 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
     [influencersById],
   )
 
-  const blockedReason = clipBlockedReason(project, selectedClip)
-  const canGenerate = Boolean(selectedClip) && !generating && !blockedReason
-  const activePhase: 'stills' | 'video' | undefined = generating
-    ? selectedClip?.videoRunId && selectedClip.videoRunId === runId
-      ? 'video'
-      : 'stills'
-    : undefined
+  const selectedRun = activeRuns.find(run => run.clipId === selectedClip?.id)
+  const selectedProgress: ClipRunProgress | undefined =
+    selectedRun && selectedRun.pipeline !== 'assemble'
+      ? {
+          pipeline: selectedRun.pipeline,
+          progress: selectedRun.progress,
+          progressLabel: selectedRun.progressLabel,
+        }
+      : undefined
 
-  const handleNameChange = (name: string) => {
-    patchProjectLocal({ name })
-    if (saveTimer.current) window.clearTimeout(saveTimer.current)
-    saveTimer.current = window.setTimeout(() => {
-      void patchProject({ name })
-    }, 400)
-  }
+  const runsByClipId = useMemo(() => {
+    const map: Record<string, { progress: number; label: string }> = {}
+    for (const run of activeRuns) {
+      if (!run.clipId) continue
+      map[run.clipId] = { progress: run.progress, label: run.progressLabel }
+    }
+    return map
+  }, [activeRuns])
 
   return (
     <div className="ugc-studio flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <CollapseAppSidebarOnMount />
-      {runId && accessToken ? (
+      {activeRuns.map(run => (
         <UgcRunWatcher
-          key={runId}
-          runId={runId}
-          accessToken={accessToken}
-          onProgress={(nextProgress, label) => {
-            setProgress(nextProgress)
-            setProgressLabel(label)
+          key={run.key}
+          runId={run.runId}
+          accessToken={run.accessToken}
+          onProgress={(progress, label) => {
+            setActiveRuns(current =>
+              current.map(item =>
+                item.key === run.key ? { ...item, progress, progressLabel: label } : item,
+              ),
+            )
           }}
           onSettled={() => {
-            setRunId(null)
-            setAccessToken(null)
-            void refreshProject().then(next => {
-              if (!chainVideoRef.current) {
-                setPipeline(null)
-                return
-              }
-              chainVideoRef.current = false
-              const clip = next?.clips.find(item => item.id === selectedClipId) ?? next?.clips[0]
-              if (clip?.stills.some(still => still.imageUrl) && !clip.videoUrl) {
-                void handleGenerateVideo(clip, 'stills-to-video')
-                return
-              }
-              setPipeline(null)
-            })
+            setActiveRuns(current => current.filter(item => item.key !== run.key))
+            void refreshProject()
           }}
         />
-      ) : null}
+      ))}
 
       <UgcStudioTopbar
         name={project.name}
-        generating={generating}
-        imageValue={project.models.image}
-        scriptValue={project.models.script}
-        videoValue={project.models.video}
+        assembling={activeRuns.some(run => run.pipeline === 'assemble')}
+        canAssemble={readyVideoCount >= 2}
+        assembledVideoUrl={project.assembledVideoUrl}
+        openingProjectEditor={openingProjectEditor}
         onNameChange={handleNameChange}
-        onModelChange={(key, value) => {
-          void patchProject({ models: { [key]: value } })
+        onAssemble={() => {
+          void assembleUgcProject(project.id).then(response => {
+            if (!response.success || !response.data) {
+              toast.error(response.message ?? 'Could not assemble clips')
+              return
+            }
+            startRun(response.data, 'assemble')
+          })
+        }}
+        onOpenAssembledEditor={() => {
+          startOpenProjectEditor(async () => {
+            const response = await openUgcProjectEditor(project.id)
+            if (!response.success || !response.data?.videoId) {
+              toast.error(response.message ?? 'Could not open editor')
+              return
+            }
+            router.push(DASHBOARD_ROUTES.STUDIO.video(response.data.videoId))
+          })
         }}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <UgcClipRail
+          project={project}
           clips={project.clips}
           selectedId={selectedClip?.id}
           creatorNames={influencerNames}
-          disabled={generating}
-          typeDialogOpen={typeDialogOpen}
-          onTypeDialogOpenChange={setTypeDialogOpen}
-          onSelect={id => {
-            setSelectedClipId(id)
-            const clip = project.clips.find(item => item.id === id)
-            setPlannedPromptDraft(clip?.plannedPrompt ?? '')
-            const restored = restoreClipRun(clip)
-            setRunId(restored?.runId ?? clipRunId(clip))
-            setAccessToken(restored?.token ?? null)
-            setPipeline(
-              clip?.status === 'generating'
-                ? restored?.runId && clip.videoRunId === restored.runId
-                  ? 'video'
-                  : 'stills'
-                : null,
-            )
+          runsByClipId={runsByClipId}
+          onSelect={setSelectedClipId}
+          onCreate={() => void handleCreateClip()}
+          onReorder={clipOrder => {
+            patchProjectLocal({ clips: clipOrder.flatMap(id => project.clips.filter(clip => clip.id === id)) })
+            void patchProject({ clipOrder })
           }}
-          onCreate={type => void handleCreateClip(type)}
           onDuplicate={id => {
             void duplicateUgcClip(project.id, id).then(response => {
               if (!response.success || !response.data?.project) {
@@ -385,10 +410,7 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
               }
               const created = response.data.project.clips.at(-1)
               setProject(response.data.project)
-              if (created) {
-                setSelectedClipId(created.id)
-                setPlannedPromptDraft(created.plannedPrompt ?? '')
-              }
+              if (created) setSelectedClipId(created.id)
             })
           }}
           onDelete={id => {
@@ -398,131 +420,141 @@ export function UgcProjectWorkspace({ workspaceId, initialProject }: UgcProjectW
                 return
               }
               setProject(response.data.project)
-              const next = response.data.project.clips[0]
-              setSelectedClipId(next?.id)
-              setPlannedPromptDraft(next?.plannedPrompt ?? '')
+              setSelectedClipId(response.data.project.clips[0]?.id)
             })
           }}
         />
 
-        <UgcStagePanel
-          clip={selectedClip}
-          empty={project.clips.length === 0}
-          hasProduct={project.productImageUrls.length > 0}
-          generating={Boolean(generating)}
-          openingEditor={openingEditor}
-          canGenerate={canGenerate}
-          blockedReason={blockedReason}
-          sceneCount={selectedClip?.stills.length || (selectedClip ? UGC_CLIP_DEFAULT_SCENE_COUNT[selectedClip.type] : 1)}
-          imageValue={project.models.image}
-          scriptValue={project.models.script}
-          videoValue={project.models.video}
-          plannerValue={project.models.planner}
-          progress={progress}
-          progressLabel={progressLabel}
-          activePhase={activePhase}
-          pipeline={pipeline}
-          plannedPromptDraft={plannedPromptDraft}
-          disabled={generating}
-          onSelectType={type => void handleCreateClip(type)}
-          onPlannedPromptChange={setPlannedPromptDraft}
-          onRegenerateVideo={plannedPrompt => {
-            if (!selectedClip) return
-            void regenerateUgcVideo(
-              project.id,
-              selectedClip.id,
-              plannedPrompt
-                ? { clipId: selectedClip.id, plannedPrompt, skipPlanner: true }
-                : { clipId: selectedClip.id },
-            ).then(response => {
-              if (!response.success || !response.data) {
-                toast.error(response.message ?? 'Could not regenerate video')
-                return
-              }
-              startRun(response.data, 'video', selectedClip.id)
-            })
-          }}
-          onOpenEditor={() => {
-            if (!selectedClip) return
-            startOpenEditor(async () => {
-              const response = await openUgcClipEditor(project.id, selectedClip.id)
-              if (!response.success || !response.data?.videoId) {
-                toast.error(response.message ?? 'Could not open editor')
-                return
-              }
-              router.push(DASHBOARD_ROUTES.STUDIO.video(response.data.videoId))
-            })
-          }}
-          onRegenerateStill={(index, skipEnhance) => {
-            if (!selectedClip) return
-            void regenerateUgcStill(project.id, selectedClip.id, index, { skipEnhance }).then(response => {
-              if (!response.success || !response.data) {
-                toast.error(response.message ?? 'Could not regenerate scene')
-                return
-              }
-              startRun(response.data, 'stills', selectedClip.id)
-            })
-          }}
-          onEnhancedPromptChange={(index, prompt) => {
-            if (!selectedClip) return
-            const stills = selectedClip.stills.map((still, stillIndex) =>
-              stillIndex === index ? { ...still, enhancedPrompt: prompt } : still,
-            )
-            patchClipLocal(selectedClip.id, { stills })
-          }}
-          onGenerate={() => void handleGenerateClip()}
-        />
-
-        <UgcClipInspector
-          workspaceId={workspaceId}
-          project={project}
-          clip={selectedClip}
-          generating={generating}
-          writingScript={writingScript}
-          onProductChange={next => {
-            void patchProject({
-              productImageUrls: next.imageUrls,
-              productName: next.productName,
-              productId: next.productId,
-            })
-          }}
-          onDurationChange={durationSec => {
-            if (!selectedClip) return
-            patchClipLocal(selectedClip.id, { durationSec })
-            void patchClip(selectedClip.id, { durationSec })
-          }}
-          onInfluencerChange={ids => {
-            if (!selectedClip) return
-            void patchClip(selectedClip.id, { influencerId: ids[0] ?? null })
-          }}
-          onScreenshotsChange={urls => {
-            if (!selectedClip) return
-            void patchClip(selectedClip.id, { referenceImageUrls: urls })
-          }}
-          onScriptChange={text => {
-            if (!selectedClip) return
-            patchClipLocal(selectedClip.id, { script: { text, source: 'user' } })
-            scheduleClipPatch(selectedClip.id, { script: { text, source: 'user' } })
-          }}
-          onWriteWithAi={() => {
-            if (!selectedClip) return
-            startWriteScript(async () => {
-              const response = await generateUgcScript(project.id, selectedClip.id, {
-                model: project.models.script,
-              })
-              if (!response.success || !response.data?.project) {
-                toast.error(response.message ?? 'Could not write a script')
-                return
-              }
-              setProject(response.data.project)
-            })
-          }}
-          onSceneLookChange={scenePrompt => {
-            if (!selectedClip) return
-            patchClipLocal(selectedClip.id, { scenePrompt })
-            scheduleClipPatch(selectedClip.id, { scenePrompt })
-          }}
-        />
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-muted/10">
+          {selectedClip ? (
+            <UgcClipFlow
+              workspaceId={workspaceId}
+              project={project}
+              clip={selectedClip}
+              writingScript={writingScript}
+              openingEditor={openingEditor}
+              run={selectedProgress}
+              onSelectType={type => {
+                void patchClip(selectedClip.id, { type })
+              }}
+              onProductChange={next => {
+                void patchProject({
+                  productImageUrls: next.imageUrls,
+                  productName: next.productName,
+                  productId: next.productId,
+                })
+              }}
+              onInfluencerChange={ids => {
+                void patchProject({ influencerId: ids[0] ?? null })
+              }}
+              onGenerateStills={async input => {
+                await patchClip(selectedClip.id, {
+                  scenePrompt: input.prompt,
+                  sceneCount: input.sceneCount,
+                  referenceImageUrls: input.imageUrls,
+                  models: { image: input.modelValue },
+                })
+                if (input.aspectRatio !== project.aspectRatio) {
+                  await patchProject({ aspectRatio: input.aspectRatio })
+                }
+                const response = await generateUgcStills(project.id, { clipId: selectedClip.id })
+                if (!response.success || !response.data) {
+                  toast.error(response.message ?? 'Could not generate photos')
+                  return
+                }
+                startRun(response.data, 'stills', selectedClip.id)
+              }}
+              onRegenerateStill={index => {
+                void regenerateUgcStill(project.id, selectedClip.id, index).then(response => {
+                  if (!response.success || !response.data) {
+                    toast.error(response.message ?? 'Could not regenerate photo')
+                    return
+                  }
+                  startRun(response.data, 'stills', selectedClip.id)
+                })
+              }}
+              onUseAsStartFrame={index => {
+                void patchClip(selectedClip.id, { startFrameIndex: index })
+              }}
+              onScriptChange={text => {
+                patchClipLocal(selectedClip.id, { script: { text, source: 'user' } })
+                scheduleClipPatch(selectedClip.id, { script: { text, source: 'user' } })
+              }}
+              onWriteWithAi={modelValue => {
+                startWriteScript(async () => {
+                  const response = await generateUgcScript(project.id, selectedClip.id, {
+                    model: modelValue ?? project.models.script,
+                  })
+                  if (!response.success || !response.data?.project) {
+                    toast.error(response.message ?? 'Could not write a script')
+                    return
+                  }
+                  setProject(response.data.project)
+                })
+              }}
+              onVoiceChange={(voice: UgcClipVoice) => {
+                patchClipLocal(selectedClip.id, { voice })
+                scheduleClipPatch(selectedClip.id, { voice })
+              }}
+              onGenerateVideo={async input => {
+                await patchClip(selectedClip.id, {
+                  durationSec: input.durationSec,
+                  plannedPrompt: input.prompt || null,
+                  models: { video: input.modelValue },
+                })
+                const response = await generateUgcVideos(project.id, {
+                  clipId: selectedClip.id,
+                  ...(input.skipPlanner
+                    ? { plannedPrompt: input.prompt, skipPlanner: true }
+                    : {}),
+                })
+                if (!response.success || !response.data) {
+                  toast.error(response.message ?? 'Could not generate video')
+                  return
+                }
+                startRun(response.data, 'video', selectedClip.id)
+              }}
+              onOpenEditor={() => {
+                startOpenEditor(async () => {
+                  const response = await openUgcClipEditor(project.id, selectedClip.id)
+                  if (!response.success || !response.data?.videoId) {
+                    toast.error(response.message ?? 'Could not open editor')
+                    return
+                  }
+                  router.push(DASHBOARD_ROUTES.STUDIO.video(response.data.videoId))
+                })
+              }}
+              onGenerateImageAd={async input => {
+                const response = await generateUgcImageAd(project.id, {
+                  clipId: selectedClip.id,
+                  prompt: input.prompt,
+                  language: input.language,
+                  aspectRatio: input.aspectRatio,
+                  productImage: input.productImage,
+                })
+                if (!response.success || !response.data) {
+                  toast.error(response.message ?? 'Could not generate image ad')
+                  return
+                }
+                startRun(response.data, 'image-ad', selectedClip.id)
+              }}
+            />
+          ) : (
+            <div className="mx-auto flex max-w-md flex-col items-center px-6 py-16 text-center">
+              <p className="text-lg font-semibold tracking-tight">Add your first clip</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Generate photos, a script, then a video — or skip any step. Add another clip while one is rendering.
+              </p>
+              <button
+                type="button"
+                className="mt-5 rounded-full bg-foreground px-4 py-2 text-[13px] font-medium text-background transition active:scale-[0.98]"
+                onClick={() => void handleCreateClip()}
+              >
+                Add clip
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

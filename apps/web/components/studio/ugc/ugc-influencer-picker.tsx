@@ -152,7 +152,7 @@ export function UgcInfluencerPicker({
         <div>
           <h2 className={dashboardSurface.sectionTitle}>Creator</h2>
           <p className={dashboardSurface.sectionDescription}>
-            One creator per clip. Want another? Add another clip.
+            Same creator on every clip in this campaign.
           </p>
         </div>
         <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
@@ -208,7 +208,7 @@ export function UgcInfluencerPicker({
         <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Pick a creator</DialogTitle>
-            <DialogDescription>Same person across every scene still.</DialogDescription>
+            <DialogDescription>This person appears in every clip. Keep them consistent.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">

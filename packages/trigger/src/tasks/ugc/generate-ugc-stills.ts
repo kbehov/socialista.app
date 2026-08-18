@@ -18,9 +18,10 @@ import {
 } from '@socialista/db'
 import {
   TASK_IDS,
-  UGC_CLIP_DEFAULT_SCENE_COUNT,
+  ugcClipSceneCount,
   type AspectRatio,
   type UgcClipType,
+  SKILL_SLOTS,
 } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
@@ -34,6 +35,7 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
+import { loadSkillForTask } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function influencerRefs(influencer: {
@@ -55,6 +57,10 @@ function emptyStills(sceneCount: number): IUgcClip['stills'] {
 
 function findClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
   return (project.clips ?? []).find(clip => clip.id === clipId)
+}
+
+function resolveInfluencerId(project: IUgcProject, clip: IUgcClip): string | undefined {
+  return clip.influencerId?.toString() ?? project.influencerId?.toString()
 }
 
 function projectStatusFromClips(clips: IUgcClip[]): UgcProjectStatus {
@@ -85,13 +91,17 @@ export const generateUgcStills = schemaTask({
       }
 
       const clipType = clip.type as UgcClipType
-      const sceneCount =
-        clip.stills.length > 0 ? clip.stills.length : UGC_CLIP_DEFAULT_SCENE_COUNT[clipType]
+      const sceneCount = ugcClipSceneCount({
+        type: clipType,
+        stills: clip.stills ?? [],
+        sceneCount: clip.sceneCount,
+      })
       const startIndex = payload.stillIndex ?? 0
       const endIndex = payload.stillIndex ?? sceneCount - 1
       const stillCount = endIndex - startIndex + 1
 
-      const { model, workspace } = await loadModelAndWorkspace(project.models.image, payload.workspaceId)
+      const imageModelValue = clip.models?.image || project.models.image
+      const { model, workspace } = await loadModelAndWorkspace(imageModelValue, payload.workspaceId)
       assertSufficientCredits(workspace, model.cost * stillCount)
 
       const stills: IUgcClip['stills'] =
@@ -120,11 +130,10 @@ export const generateUgcStills = schemaTask({
         ? project.aspectRatio
         : '9:16') satisfies AspectRatio
 
-      const influencer = clip.influencerId
-        ? await getInfluencerById(clip.influencerId.toString())
-        : null
+      const influencerId = resolveInfluencerId(project, clip)
+      const influencer = influencerId ? await getInfluencerById(influencerId) : null
 
-      if (clip.influencerId && !influencer) {
+      if (influencerId && !influencer) {
         await updateUgcClip(
           payload.projectId,
           clip.id,
@@ -133,6 +142,13 @@ export const generateUgcStills = schemaTask({
         )
         throw new Error('Influencer not found')
       }
+
+      const skill = await loadSkillForTask({
+        skillId: payload.skillId,
+        slot: SKILL_SLOTS.imagePromptEnhance,
+        workspaceId: payload.workspaceId,
+        variables: payload.skillVariables,
+      })
 
       let failed = false
       let completed = 0
@@ -190,6 +206,8 @@ export const generateUgcStills = schemaTask({
               prompt: seed,
               media: media.length > 0 ? media : undefined,
               aspectRatio,
+              systemPrompt: skill.content,
+              modelConfig: skill.modelConfig,
             })
             await setGenerationEnhancedPrompt(triggerRunId, enhanced)
           }

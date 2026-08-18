@@ -1,7 +1,7 @@
 import { buildVideoPrompt, generateVideo } from '@socialista/ai'
 import { connectDb, CostUnit, disconnectDb } from '@socialista/db'
 import type { VideoGenerationOutput } from '@socialista/types'
-import { clampVideoDuration, TASK_IDS } from '@socialista/types'
+import { clampVideoDuration, SKILL_SLOTS, TASK_IDS } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { videoGenerationPayloadSchema } from '../../schemas/video-generation.schema.js'
@@ -16,6 +16,7 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
+import { loadSkillForTask } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -69,12 +70,21 @@ export const realtimeVideoGeneration = schemaTask({
 
       setGenerationStatus(10, 'Preparing your prompt')
 
+      const skill = await loadSkillForTask({
+        skillId: payload.skillId,
+        slot: SKILL_SLOTS.videoPromptEnhance,
+        workspaceId: payload.workspaceId,
+        variables: payload.skillVariables,
+      })
+
       const enhanced = await buildVideoPrompt({
         prompt: payload.prompt,
         media: referenceUrls.map(imageUrl => ({ imageUrl })),
         aspectRatio: payload.aspectRatio,
         durationSec: duration,
         generateAudio,
+        systemPrompt: skill.content,
+        modelConfig: skill.modelConfig,
       })
 
       await setGenerationEnhancedPrompt(ctx.run.id, enhanced)

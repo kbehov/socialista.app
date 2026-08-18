@@ -116,6 +116,26 @@ export const PRODUCT_ROUTES = {
   GET_WORKSPACE_PRODUCTS: (workspaceId: string) => `/products/workspace/${workspaceId}`,
 } as const
 
+export const SKILL_ROUTES = {
+  CREATE: '/skills',
+  GET_BY_ID: (id: string) => `/skills/${id}`,
+  UPDATE: (id: string) => `/skills/${id}`,
+  DELETE: (id: string) => `/skills/${id}`,
+  FORK: (id: string) => `/skills/${id}/fork`,
+  PUBLISH: (id: string) => `/skills/${id}/publish`,
+  ARCHIVE: (id: string) => `/skills/${id}/archive`,
+  GET_WORKSPACE_SKILLS: (workspaceId: string) => `/skills/workspace/${workspaceId}`,
+  RESOLVE: '/skills/resolve',
+} as const
+
+export const SKILL_CATEGORY_ROUTES = {
+  CREATE: '/skill-categories',
+  GET_BY_ID: (id: string) => `/skill-categories/${id}`,
+  UPDATE: (id: string) => `/skill-categories/${id}`,
+  DELETE: (id: string) => `/skill-categories/${id}`,
+  GET_WORKSPACE_CATEGORIES: (workspaceId: string) => `/skill-categories/workspace/${workspaceId}`,
+} as const
+
 export const ACCOUNT_ROUTES = {
   CONNECT: '/accounts/connect',
   CREATE: '/accounts',
@@ -170,6 +190,9 @@ export const UGC_PROJECT_ROUTES = {
     `/ugc-projects/${id}/clips/${clipId}/stills/${index}/regenerate`,
   REGENERATE_VIDEO: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/video/regenerate`,
   OPEN_EDITOR: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/open-editor`,
+  GENERATE_IMAGE_AD: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/image-ad`,
+  ASSEMBLE: (id: string) => `/ugc-projects/${id}/assemble`,
+  OPEN_PROJECT_EDITOR: (id: string) => `/ugc-projects/${id}/open-editor`,
 } as const
 
 export const INFLUENCER_ROUTES = {

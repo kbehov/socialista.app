@@ -121,6 +121,14 @@ export const MANAGER_FILES_ROUTES = {
   folder: (id: string) => `/manager/files/${id}`,
 } as const
 
+export const MANAGER_SKILL_ROUTES = {
+  LIST: '/manager/skills',
+  CREATE: '/manager/skills/create',
+  CATEGORIES: '/manager/skills/categories',
+  skill: (id: string) => `/manager/skills/${id}`,
+  edit: (id: string) => `/manager/skills/${id}/edit`,
+} as const
+
 export type FilesRoutePaths = {
   root: string
   folder: (id: string) => string

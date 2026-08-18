@@ -2,9 +2,10 @@
 
 import { auth } from '@/auth'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
+import { resolveSkillForSlot } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateVideoScript } from '@socialista/ai'
-import type { VideoScriptSegment, VideoScriptTone } from '@socialista/types'
+import { SKILL_SLOTS, type VideoScriptSegment, type VideoScriptTone } from '@socialista/types'
 
 export type GenerateVideoScriptActionResult =
   | { success: true; title: string; segments: VideoScriptSegment[] }
@@ -41,7 +42,14 @@ export async function generateVideoScriptAction(
       return { success: false, error: 'You must be in a workspace to generate a script' }
     }
 
-    const result = await generateVideoScript({ description: trimmed, duration, tone })
+    const skill = await resolveSkillForSlot(workspaceId._id, SKILL_SLOTS.videoScript)
+    const result = await generateVideoScript({
+      description: trimmed,
+      duration,
+      tone,
+      systemPrompt: skill?.content,
+      modelConfig: skill?.modelConfig,
+    })
     if (result.segments.length === 0) {
       return { success: false, error: 'No script segments were generated' }
     }

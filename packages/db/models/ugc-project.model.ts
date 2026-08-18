@@ -5,7 +5,10 @@ import {
   UgcClipType,
   UgcProjectStatus,
   UgcScriptSource,
+  UgcVoiceProvider,
   type IUgcClip,
+  type IUgcClipModels,
+  type IUgcClipVoice,
   type IUgcProject,
   type IUgcProjectModels,
   type IUgcProjectScript,
@@ -35,6 +38,32 @@ const scriptSchema = new Schema<IUgcProjectScript>(
   { _id: false },
 )
 
+const clipModelsSchema = new Schema<IUgcClipModels>(
+  {
+    image: { type: String },
+    script: { type: String },
+    video: { type: String },
+    planner: { type: String },
+  },
+  { _id: false },
+)
+
+const voiceSchema = new Schema<IUgcClipVoice>(
+  {
+    provider: {
+      type: String,
+      enum: enumValues(UgcVoiceProvider),
+      default: UgcVoiceProvider.ELEVENLABS,
+    },
+    voiceId: { type: String },
+    voiceName: { type: String },
+    speed: { type: Number },
+    stability: { type: Number },
+    enabled: { type: Boolean },
+  },
+  { _id: false },
+)
+
 const stillSchema = new Schema<IUgcSceneStill>(
   {
     index: { type: Number, required: true },
@@ -60,8 +89,11 @@ const clipSchema = new Schema<IUgcClip>(
       default: UgcClipStatus.IDLE,
     },
     durationSec: { type: Number, default: 8 },
+    sceneCount: { type: Number, enum: [1, 2, 3] },
     influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer' },
     script: { type: scriptSchema },
+    voice: { type: voiceSchema },
+    models: { type: clipModelsSchema },
     scenePrompt: { type: String },
     directions: { type: String },
     referenceImageUrls: { type: [String], default: [] },
@@ -74,6 +106,9 @@ const clipSchema = new Schema<IUgcClip>(
     composedVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
     stillsRunId: { type: String },
     videoRunId: { type: String },
+    imageAdUrl: { type: String },
+    imageAdGenerationId: { type: String },
+    imageAdRunId: { type: String },
     error: { type: String },
   },
   { _id: false },
@@ -113,9 +148,14 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     productId: { type: Schema.Types.ObjectId, ref: 'Product' },
     productImageUrls: { type: [String], default: [] },
     productName: { type: String },
+    influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer' },
     aspectRatio: { type: String, default: '9:16' },
     models: { type: modelsSchema, required: true },
     clips: { type: [clipSchema], default: [] },
+    assembledVideoUrl: { type: String },
+    assembledGenerationId: { type: String },
+    assembledRunId: { type: String },
+    composedProjectVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
     error: { type: String },
     influencerIds: { type: [{ type: Schema.Types.ObjectId, ref: 'Influencer' }], default: undefined },
     sceneCount: { type: Number, enum: [1, 2, 3] },

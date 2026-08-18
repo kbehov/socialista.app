@@ -28,8 +28,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <UserDropdown />
           </header>
 
-          <main id="manager-scroll" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 overflow-auto px-6 py-4 lg:py-5">
-            {children}
+          <main id="manager-scroll" className="flex w-full flex-1 flex-col overflow-auto px-6 py-4 lg:py-5">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10">
+              {children}
+            </div>
           </main>
         </SidebarInset>
       </SidebarProvider>

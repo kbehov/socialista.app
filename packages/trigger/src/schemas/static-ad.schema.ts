@@ -7,6 +7,8 @@ import {
 } from '@socialista/types'
 import { z } from 'zod'
 
+import { skillPayloadFields } from './skill-payload.js'
+
 export const staticAdCopySchema = z.object({
   headline: z.string().max(40).optional(),
   subheadline: z.string().max(80).optional(),
@@ -29,6 +31,7 @@ export const staticAdPayloadObjectSchema = z.object({
     .min(IMAGE_GENERATION_COUNT_MIN)
     .max(IMAGE_GENERATION_COUNT_MAX)
     .default(IMAGE_GENERATION_COUNT_DEFAULT),
+  ...skillPayloadFields,
 })
 
 export const staticAdPayloadSchema = staticAdPayloadObjectSchema

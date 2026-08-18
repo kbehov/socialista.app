@@ -10,7 +10,7 @@ import {
   type IUgcClip,
   type IUgcProject,
 } from '@socialista/db'
-import { TASK_IDS, type UgcClipType } from '@socialista/types'
+import { TASK_IDS, type UgcClipType, SKILL_SLOTS } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateUgcVideoPayloadSchema } from '../../schemas/generate-ugc-video.schema.js'
@@ -22,10 +22,15 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
+import { loadSkillForTask } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModel, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function findClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
   return (project.clips ?? []).find(clip => clip.id === clipId)
+}
+
+function resolveInfluencerId(project: IUgcProject, clip: IUgcClip): string | undefined {
+  return clip.influencerId?.toString() ?? project.influencerId?.toString()
 }
 
 function projectStatusFromClips(clips: IUgcClip[]): UgcProjectStatus {
@@ -60,10 +65,11 @@ export const generateUgcVideo = schemaTask({
         throw new Error('Generate scenes before video')
       }
 
-      const { model, workspace } = await loadModelAndWorkspace(project.models.video, payload.workspaceId)
+      const videoModelValue = clip.models?.video || project.models.video
+      const { model, workspace } = await loadModelAndWorkspace(videoModelValue, payload.workspaceId)
       assertSufficientCredits(workspace, model.cost)
 
-      const plannerValue = project.models.planner ?? project.models.script
+      const plannerValue = clip.models?.planner || project.models.planner || clip.models?.script || project.models.script
       const planner = plannerValue ? await loadModel(plannerValue).catch(() => null) : null
 
       await updateUgcClip(
@@ -81,9 +87,8 @@ export const generateUgcVideo = schemaTask({
         },
       )
 
-      const influencer = clip.influencerId
-        ? await getInfluencerById(clip.influencerId.toString())
-        : null
+      const influencerId = resolveInfluencerId(project, clip)
+      const influencer = influencerId ? await getInfluencerById(influencerId) : null
 
       const stillUrls = clip.stills.flatMap(still => (still.imageUrl ? [still.imageUrl] : []))
       let plannedPrompt = payload.plannedPrompt ?? clip.plannedPrompt
@@ -95,6 +100,12 @@ export const generateUgcVideo = schemaTask({
       if (!payload.skipPlanner && !payload.plannedPrompt && planner) {
         setGenerationStatus(20, influencer ? `Planning ${influencer.name}` : 'Planning clip')
         try {
+          const skill = await loadSkillForTask({
+            skillId: payload.skillId,
+            slot: SKILL_SLOTS.ugcVideoPlanner,
+            workspaceId: payload.workspaceId,
+            variables: payload.skillVariables,
+          })
           const planned = await planUgcVideoPrompt({
             stillUrls,
             plannerModel: planner.value,
@@ -108,6 +119,8 @@ export const generateUgcVideo = schemaTask({
             videoModel: model.value,
             clipType,
             durationSec: clip.durationSec,
+            systemPrompt: skill.content,
+            modelConfig: skill.modelConfig,
           })
           plannedPrompt = planned.prompt
           negativePrompt = planned.negativePrompt

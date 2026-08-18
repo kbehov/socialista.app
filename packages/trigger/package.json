@@ -13,7 +13,8 @@
     "check-types": "tsc -p tsconfig.check.json",
     "test": "vitest run",
     "dev:trigger": "trigger dev",
-    "deploy:trigger": "trigger deploy"
+    "deploy:trigger": "trigger deploy",
+    "seed:skills": "tsx scripts/seed-skills.ts"
   },
   "types": "./dist/index.d.ts",
   "exports": {
@@ -65,6 +66,14 @@
       "types": "./dist/schemas/generate-ugc-video.schema.d.ts",
       "import": "./dist/schemas/generate-ugc-video.schema.js"
     },
+    "./schemas/generate-ugc-image-ad": {
+      "types": "./dist/schemas/generate-ugc-image-ad.schema.d.ts",
+      "import": "./dist/schemas/generate-ugc-image-ad.schema.js"
+    },
+    "./schemas/assemble-ugc-project": {
+      "types": "./dist/schemas/assemble-ugc-project.schema.d.ts",
+      "import": "./dist/schemas/assemble-ugc-project.schema.js"
+    },
     "./schemas/clone-influencer": {
       "types": "./dist/schemas/clone-influencer.schema.d.ts",
       "import": "./dist/schemas/clone-influencer.schema.js"
@@ -93,6 +102,7 @@
     "@trigger.dev/build": "^4.5.3",
     "@types/node": "^25.9.3",
     "eslint": "^10.8.0",
+    "tsx": "^4.7.1",
     "trigger.dev": "^4.5.3",
     "typescript": "^6.0.3",
     "vitest": "^3.2.4"

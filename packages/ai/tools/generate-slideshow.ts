@@ -1,4 +1,4 @@
-import type { GenerateSlideshowInput, GenerateSlideshowResult } from '@socialista/types'
+import type { GenerateSlideshowInput, GenerateSlideshowResult, SkillModelConfig } from '@socialista/types'
 import { generateObject } from 'ai'
 
 import { buildSlideshowUserPrompt, SLIDESHOW_SYSTEM_PROMPT } from '../prompts/slideshow-prompt.js'
@@ -15,7 +15,12 @@ const MAX_SLIDE_COUNT = 10
 export async function generateSlideshow({
   hook,
   slideCount,
-}: GenerateSlideshowInput): Promise<GenerateSlideshowResult> {
+  systemPrompt,
+  modelConfig,
+}: GenerateSlideshowInput & {
+  systemPrompt?: string
+  modelConfig?: SkillModelConfig
+}): Promise<GenerateSlideshowResult> {
   const trimmedHook = hook.trim()
   if (!trimmedHook) {
     throw new Error('Topic or directions are required')
@@ -25,10 +30,11 @@ export async function generateSlideshow({
   const schema = createSlideshowGeneratedSchema(clampedCount)
 
   const result = await generateObject({
-    model: SLIDESHOW_MODEL,
+    model: modelConfig?.model ?? SLIDESHOW_MODEL,
     schema,
-    system: SLIDESHOW_SYSTEM_PROMPT,
-    temperature: 0.85,
+    system: systemPrompt ?? SLIDESHOW_SYSTEM_PROMPT,
+    temperature: modelConfig?.temperature ?? 0.85,
+    maxOutputTokens: modelConfig?.maxTokens,
     prompt: buildSlideshowUserPrompt(trimmedHook, clampedCount),
   })
 

@@ -6,6 +6,8 @@ import {
 } from '@socialista/types'
 import { z } from 'zod'
 
+import { skillPayloadFields } from './skill-payload.js'
+
 export const videoGenerationPayloadSchema = z.object({
   model: z.string().min(1),
   workspaceId: z.string().min(1),
@@ -21,6 +23,7 @@ export const videoGenerationPayloadSchema = z.object({
   generateAudio: z.boolean().default(true),
   imageUrl: z.string().url().optional(),
   imageUrls: z.array(z.string().url()).optional(),
+  ...skillPayloadFields,
 })
 
 export type VideoGenerationPayload = z.infer<typeof videoGenerationPayloadSchema>

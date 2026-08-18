@@ -2,32 +2,38 @@ import type { AppContext } from '@/middlewares/auth.middleware.js'
 import { parseParamId, withQueryParam } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
+  assertCanAssemble,
+  assertCanGenerateImageAd,
   assertCanGenerateScript,
   assertCanGenerateStills,
   assertCanGenerateVideo,
   assertClipLimit,
   assertClipNotGenerating,
   buildNewClip,
+  clipTypeValue,
   emptyStills,
   getUgcProjectForMember,
   parseClipType,
   parseScriptText,
   requireClip,
+  resolveClipInfluencerId,
   serializeUgcProject,
   serializeUgcProjectSummary,
 } from '@/utils/ugc-project.utils.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import { DEFAULT_VIDEO_FPS, DEFAULT_VIDEO_RESOLUTION } from '@/utils/video.utils.js'
-import { generateUgcAdScript } from '@socialista/ai'
+import { getSystemSkillBySlot, generateUgcAdScript, renderSkillContent } from '@socialista/ai'
 import {
   addUgcClip,
   createUgcProject as createUgcProjectInDb,
   createVideo as createVideoInDb,
   deleteUgcProject as deleteUgcProjectInDb,
+  findDefaultSkill,
   getInfluencerById,
   getModels,
   getProductById,
   getUgcProjects,
+  incrementSkillUsage,
   removeUgcClip,
   toObjectId,
   updateUgcClip,
@@ -35,22 +41,30 @@ import {
   UgcClipStatus,
   UgcProjectStatus,
   UgcScriptSource,
+  UgcVoiceProvider,
   VideoStatus,
   type IUgcClip,
   type IUgcProject,
   type IUgcProjectModels,
 } from '@socialista/db'
 import { createPublicAccessToken } from '@socialista/trigger'
-import type { GenerateUgcStillsTask, GenerateUgcVideoTask } from '@socialista/trigger/task-types'
+import type { GenerateUgcStillsTask, GenerateUgcVideoTask, GenerateUgcImageAdTask, AssembleUgcProjectTask } from '@socialista/trigger/task-types'
 import {
   clampUgcDuration,
+  clampUgcSceneCount,
+  SKILL_SLOTS,
+  moveUgcStillToStart,
+  resizeUgcStills,
   TASK_IDS,
   UGC_CLIP_DEFAULT_SCENE_COUNT,
   UGC_CLIP_TYPE_LABELS,
   UGC_DEFAULT_ASPECT_RATIO,
   UGC_DEFAULT_DURATION,
+  ugcClipSceneCount,
+  ugcScriptTargetChars,
   type CreateUgcClipPayload,
   type CreateUgcProjectPayload,
+  type GenerateUgcImageAdPayload,
   type UpdateUgcClipPayload,
   type UpdateUgcProjectPayload,
   type UgcClipType,
@@ -155,7 +169,7 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'project ID')
   const input = (await c.req.json()) as UpdateUgcProjectPayload
-  await getUgcProjectForMember(id, userId)
+  const project = await getUgcProjectForMember(id, userId)
 
   const updates: Partial<IUgcProject> = {}
   if (typeof input.name === 'string' && input.name.trim()) updates.name = input.name.trim()
@@ -168,9 +182,22 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
   } else if (typeof input.productId === 'string' && input.productId) {
     updates.productId = toObjectId(parseParamId(input.productId, 'product ID'))
   }
+  if (input.influencerId === null) {
+    updates.influencerId = undefined
+  } else if (typeof input.influencerId === 'string' && input.influencerId) {
+    const nextId = toObjectId(parseParamId(input.influencerId, 'influencer ID'))
+    updates.influencerId = nextId
+    const previousId = project.influencerId?.toString()
+    updates.clips = (project.clips ?? []).map(clip => {
+      const currentId = clip.influencerId?.toString()
+      if (!currentId || currentId === previousId) {
+        return { ...clip, influencerId: nextId }
+      }
+      return clip
+    })
+  }
   if (typeof input.aspectRatio === 'string' && input.aspectRatio) updates.aspectRatio = input.aspectRatio
   if (input.models) {
-    const project = await getUgcProjectForMember(id, userId)
     updates.models = {
       ...project.models,
       ...(input.models.image ? { image: input.models.image } : {}),
@@ -178,6 +205,19 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
       ...(input.models.script ? { script: input.models.script } : {}),
       ...(input.models.planner ? { planner: input.models.planner } : {}),
     }
+  }
+  if (Array.isArray(input.clipOrder) && input.clipOrder.length > 0) {
+    const byId = new Map((project.clips ?? []).map(clip => [clip.id, clip]))
+    const next: IUgcClip[] = []
+    for (const id of input.clipOrder) {
+      const clip = byId.get(id)
+      if (clip) {
+        next.push(clip)
+        byId.delete(id)
+      }
+    }
+    for (const clip of byId.values()) next.push(clip)
+    updates.clips = next
   }
 
   if (Object.keys(updates).length === 0) {
@@ -209,11 +249,12 @@ export const createUgcClip = async (c: Context<AppContext>) => {
   const influencerId =
     typeof input.influencerId === 'string' && input.influencerId
       ? parseParamId(input.influencerId, 'influencer ID')
-      : undefined
+      : project.influencerId?.toString()
 
   const clip = buildNewClip({
     type,
     durationSec: input.durationSec,
+    sceneCount: input.sceneCount,
     influencerId,
     name: input.name,
   })
@@ -233,8 +274,32 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
 
   const clipUpdates: Partial<IUgcClip> = {}
   if (typeof input.name === 'string' && input.name.trim()) clipUpdates.name = input.name.trim()
+  if (input.type) {
+    const nextType = parseClipType(input.type)
+    const nextTypeValue = clipTypeValue(nextType)
+    clipUpdates.type = nextType
+    const hasImages = (clip.stills ?? []).some(still => still.imageUrl)
+    if (!hasImages) {
+      const sceneCount = UGC_CLIP_DEFAULT_SCENE_COUNT[nextTypeValue]
+      clipUpdates.sceneCount = sceneCount
+      clipUpdates.stills = emptyStills(sceneCount)
+    }
+    const previousLabel = UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)]
+    if (!input.name && (!clip.name || clip.name.startsWith(previousLabel))) {
+      clipUpdates.name = `${UGC_CLIP_TYPE_LABELS[nextTypeValue]} · ${clip.durationSec ?? UGC_DEFAULT_DURATION}s`
+    }
+  }
   if (input.durationSec !== undefined) {
     clipUpdates.durationSec = clampUgcDuration(input.durationSec)
+  }
+  if (input.sceneCount !== undefined) {
+    const sceneCount = clampUgcSceneCount(input.sceneCount)
+    clipUpdates.sceneCount = sceneCount
+    clipUpdates.stills = resizeUgcStills(clip.stills ?? [], sceneCount)
+  }
+  if (typeof input.startFrameIndex === 'number') {
+    const stills = clipUpdates.stills ?? clip.stills ?? []
+    clipUpdates.stills = moveUgcStillToStart(stills, input.startFrameIndex)
   }
   if (input.influencerId === null) {
     clipUpdates.influencerId = undefined
@@ -245,6 +310,27 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
     clipUpdates.script = {
       text: typeof input.script.text === 'string' ? parseScriptText(input.script.text) : (clip.script?.text ?? ''),
       source: input.script.source === 'ai' ? UgcScriptSource.AI : UgcScriptSource.USER,
+    }
+  }
+  if (input.voice === null) {
+    clipUpdates.voice = undefined
+  } else if (input.voice) {
+    clipUpdates.voice = {
+      provider: UgcVoiceProvider.ELEVENLABS,
+      voiceId: input.voice.voiceId,
+      voiceName: input.voice.voiceName,
+      speed: input.voice.speed,
+      stability: input.voice.stability,
+      enabled: input.voice.enabled,
+    }
+  }
+  if (input.models) {
+    clipUpdates.models = {
+      ...clip.models,
+      ...(input.models.image ? { image: input.models.image } : {}),
+      ...(input.models.video ? { video: input.models.video } : {}),
+      ...(input.models.script ? { script: input.models.script } : {}),
+      ...(input.models.planner ? { planner: input.models.planner } : {}),
     }
   }
   if (typeof input.scenePrompt === 'string') clipUpdates.scenePrompt = input.scenePrompt
@@ -290,14 +376,20 @@ export const duplicateUgcClip = async (c: Context<AppContext>) => {
   const copy = buildNewClip({
     type: clip.type,
     durationSec: clip.durationSec,
-    influencerId: clip.influencerId?.toString(),
-    name: clip.name ? `${clip.name} copy` : `${UGC_CLIP_TYPE_LABELS[type]} · ${clip.durationSec}s`,
+    sceneCount: ugcClipSceneCount({
+      type,
+      stills: clip.stills ?? [],
+      sceneCount: clip.sceneCount,
+    }),
+    influencerId: clip.influencerId?.toString() ?? project.influencerId?.toString(),
+    name: clip.name ? `${clip.name} copy` : `${UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)]} · ${clip.durationSec}s`,
   })
   copy.script = clip.script ? { ...clip.script } : copy.script
   copy.scenePrompt = clip.scenePrompt
   copy.directions = clip.directions
+  copy.voice = clip.voice ? { ...clip.voice } : copy.voice
   copy.referenceImageUrls = [...(clip.referenceImageUrls ?? [])]
-  copy.stills = emptyStills(UGC_CLIP_DEFAULT_SCENE_COUNT[type])
+  copy.stills = emptyStills(copy.sceneCount ?? UGC_CLIP_DEFAULT_SCENE_COUNT[type])
 
   const updated = await addUgcClip(id, copy)
   if (!updated) throw new HttpError(404, 'UGC project not found')
@@ -314,19 +406,41 @@ export const generateUgcClipScript = async (c: Context<AppContext>) => {
   assertClipNotGenerating(clip)
   assertCanGenerateScript(clip)
 
-  const modelValue = body.model || project.models.script
+  const modelValue = body.model || clip.models?.script || project.models.script
   if (!modelValue) {
     throw new HttpError(400, 'Choose a script model')
   }
 
-  const influencer = clip.influencerId ? await getInfluencerById(clip.influencerId.toString()) : null
+  const influencerId = resolveClipInfluencerId(project, clip)
+  const influencer = influencerId ? await getInfluencerById(influencerId) : null
+  const durationSec = clip.durationSec ?? UGC_DEFAULT_DURATION
+  const skillVariables = {
+    durationSec: clampUgcDuration(durationSec),
+    targetChars: ugcScriptTargetChars(durationSec),
+  }
+  const storedSkill = await findDefaultSkill(
+    SKILL_SLOTS.ugcAdScript,
+    project.workspace.toString(),
+  )
+  const systemSkill = getSystemSkillBySlot(SKILL_SLOTS.ugcAdScript)
+  const systemPrompt = storedSkill
+    ? renderSkillContent(storedSkill.content, storedSkill.variables, skillVariables)
+    : systemSkill
+      ? renderSkillContent(systemSkill.content, systemSkill.variables ?? [], skillVariables)
+      : undefined
+  if (storedSkill) {
+    await incrementSkillUsage(storedSkill._id.toString()).catch(() => undefined)
+  }
+
   const text = await generateUgcAdScript({
     model: modelValue,
     productName: project.productName,
     directions: clip.directions || clip.scenePrompt,
     influencerName: influencer?.name,
     clipType: clip.type,
-    durationSec: clip.durationSec ?? UGC_DEFAULT_DURATION,
+    durationSec,
+    systemPrompt,
+    modelConfig: storedSkill?.modelConfig ?? systemSkill?.modelConfig,
   })
 
   const updated = await updateUgcClip(id, clip.id, {
@@ -519,5 +633,133 @@ export const openUgcClipEditor = async (c: Context<AppContext>) => {
   })
 
   await updateUgcClip(id, clip.id, { composedVideoId: video._id })
+  return successResponse(c, 201, { videoId: video._id.toString() })
+}
+
+export const generateUgcClipImageAd = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const clipId = c.req.param('clipId')
+  const body = (await c.req.json().catch(() => ({}))) as GenerateUgcImageAdPayload
+  const project = await getUgcProjectForMember(id, userId)
+  const clip = requireClip(project, clipId)
+  assertClipNotGenerating(clip)
+  assertCanGenerateImageAd(project)
+
+  const handle = await tasks.trigger<GenerateUgcImageAdTask>(TASK_IDS.generateUgcImageAd, {
+    projectId: project._id.toString(),
+    workspaceId: project.workspace.toString(),
+    userId,
+    clipId: clip.id,
+    prompt: typeof body.prompt === 'string' ? body.prompt : undefined,
+    language: typeof body.language === 'string' ? body.language : undefined,
+    aspectRatio: typeof body.aspectRatio === 'string' ? body.aspectRatio : undefined,
+    productImage: typeof body.productImage === 'string' ? body.productImage : undefined,
+  })
+  const publicAccessToken = await createPublicAccessToken(handle.id)
+  const updated = await updateUgcClip(
+    project._id.toString(),
+    clip.id,
+    { status: UgcClipStatus.GENERATING, imageAdRunId: handle.id, error: undefined },
+    { status: UgcProjectStatus.GENERATING, error: undefined },
+  )
+
+  return successResponse(c, 202, {
+    project: serializeUgcProject(updated ?? project),
+    runId: handle.id,
+    publicAccessToken,
+  })
+}
+
+export const assembleUgcProject = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const project = await getUgcProjectForMember(id, userId)
+  assertCanAssemble(project)
+
+  const handle = await tasks.trigger<AssembleUgcProjectTask>(TASK_IDS.assembleUgcProject, {
+    projectId: project._id.toString(),
+    workspaceId: project.workspace.toString(),
+    userId,
+  })
+  const publicAccessToken = await createPublicAccessToken(handle.id)
+  const updated = await updateUgcProjectInDb(id, {
+    status: UgcProjectStatus.GENERATING,
+    assembledRunId: handle.id,
+    error: undefined,
+  })
+
+  return successResponse(c, 202, {
+    project: serializeUgcProject(updated ?? project),
+    runId: handle.id,
+    publicAccessToken,
+  })
+}
+
+export const openUgcProjectEditor = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const project = await getUgcProjectForMember(id, userId)
+
+  if (project.composedProjectVideoId) {
+    return successResponse(c, 200, { videoId: project.composedProjectVideoId.toString() })
+  }
+
+  const readyClips = (project.clips ?? []).filter(clip => Boolean(clip.videoUrl))
+  if (readyClips.length === 0) {
+    throw new HttpError(400, 'Generate at least one clip video first')
+  }
+
+  let cursor = 0
+  const tracks = [{ id: 'track_ugc', type: 'video' as const, name: 'Video', muted: false, locked: false, clips: [] as string[] }]
+  const clips = []
+  const assets = []
+
+  for (const clip of readyClips) {
+    const duration = clip.durationSec || UGC_DEFAULT_DURATION
+    const assetId = `asset_${clip.id}`
+    const timelineClipId = `clip_${clip.id}`
+    tracks[0]!.clips.push(timelineClipId)
+    clips.push({
+      id: timelineClipId,
+      type: 'video' as const,
+      assetId,
+      trackId: 'track_ugc',
+      startTime: cursor,
+      duration,
+      trimIn: 0,
+      trimOut: duration,
+      volume: 1,
+      speed: 1,
+      filters: [],
+    })
+    assets.push({
+      id: assetId,
+      name: `${clip.name ?? clip.id}.mp4`,
+      type: 'video' as const,
+      hash: clip.id,
+      duration,
+      width: DEFAULT_VIDEO_RESOLUTION.width,
+      height: DEFAULT_VIDEO_RESOLUTION.height,
+      url: clip.videoUrl as string,
+    })
+    cursor += duration
+  }
+
+  const video = await createVideoInDb({
+    name: `${project.name} · assembled`,
+    status: VideoStatus.DRAFT,
+    workspace: project.workspace,
+    createdBy: toObjectId(userId),
+    resolution: DEFAULT_VIDEO_RESOLUTION,
+    fps: DEFAULT_VIDEO_FPS,
+    duration: cursor,
+    tracks,
+    clips,
+    textOverlays: [],
+    assets,
+  })
+
+  await updateUgcProjectInDb(id, { composedProjectVideoId: video._id })
   return successResponse(c, 201, { videoId: video._id.toString() })
 }

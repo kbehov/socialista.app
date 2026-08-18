@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import { UGC_SCRIPT_MAX_CHARS, clampUgcScript } from '@socialista/types'
+import type { SkillModelConfig } from '@socialista/types'
 
 import {
   buildUgcAdScriptSystem,
@@ -9,13 +10,16 @@ import {
 
 export type GenerateUgcAdScriptInput = UgcAdScriptPromptInput & {
   model: string
+  systemPrompt?: string
+  modelConfig?: SkillModelConfig
 }
 
 export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Promise<string> {
   const result = await generateText({
-    model: input.model,
-    system: buildUgcAdScriptSystem(input.durationSec),
-    temperature: 0.85,
+    model: input.modelConfig?.model ?? input.model,
+    system: input.systemPrompt ?? buildUgcAdScriptSystem(input.durationSec),
+    temperature: input.modelConfig?.temperature ?? 0.85,
+    maxOutputTokens: input.modelConfig?.maxTokens,
     prompt: buildUgcAdScriptUserPrompt(input),
   })
 

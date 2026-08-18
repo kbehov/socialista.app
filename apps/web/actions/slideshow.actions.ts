@@ -2,9 +2,10 @@
 
 import { auth } from '@/auth'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
+import { resolveSkillForSlot } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSlideshow } from '@socialista/ai'
-import type { SlideshowContentType } from '@socialista/types'
+import { SKILL_SLOTS, type SlideshowContentType } from '@socialista/types'
 export type GenerateSlideshowActionResult =
   | { success: true; texts: string[]; contentType: SlideshowContentType }
   | { success: false; error: string }
@@ -34,7 +35,13 @@ export async function generateSlideshowSlides(
       return { success: false, error: 'You must be in a workspace to generate slides' }
     }
 
-    const result = await generateSlideshow({ hook: trimmed, slideCount })
+    const skill = await resolveSkillForSlot(workspaceId._id, SKILL_SLOTS.slideshow)
+    const result = await generateSlideshow({
+      hook: trimmed,
+      slideCount,
+      systemPrompt: skill?.content,
+      modelConfig: skill?.modelConfig,
+    })
     if (result.texts.length === 0) {
       return { success: false, error: 'No slides were generated' }
     }

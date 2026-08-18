@@ -1,7 +1,7 @@
 import { buildImagePrompt, generateImages } from '@socialista/ai'
 import { connectDb, disconnectDb } from '@socialista/db'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { clampImageGenerationCount, TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, SKILL_SLOTS, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 
 import { logger } from '@trigger.dev/sdk/v3'
@@ -16,6 +16,7 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
+import { loadSkillForTask } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -64,10 +65,19 @@ export const realtimeImageGeneration = schemaTask({
       setGenerationStatus(10, 'Preparing your prompt')
       console.log('payload', payload)
 
+      const skill = await loadSkillForTask({
+        skillId: payload.skillId,
+        slot: SKILL_SLOTS.imagePromptEnhance,
+        workspaceId: payload.workspaceId,
+        variables: payload.skillVariables,
+      })
+
       const enhanced = await buildImagePrompt({
         prompt: payload.prompt,
         media: referenceUrls.map(imageUrl => ({ imageUrl })),
         aspectRatio: payload.aspectRatio,
+        systemPrompt: skill.content,
+        modelConfig: skill.modelConfig,
       })
 
       await setGenerationEnhancedPrompt(ctx.run.id, enhanced)

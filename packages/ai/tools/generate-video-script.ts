@@ -1,4 +1,4 @@
-import type { GenerateVideoScriptInput, GenerateVideoScriptResult } from '@socialista/types'
+import type { GenerateVideoScriptInput, GenerateVideoScriptResult, SkillModelConfig } from '@socialista/types'
 import { generateObject } from 'ai'
 
 import {
@@ -19,7 +19,12 @@ export async function generateVideoScript({
   description,
   duration,
   tone,
-}: GenerateVideoScriptInput): Promise<GenerateVideoScriptResult> {
+  systemPrompt,
+  modelConfig,
+}: GenerateVideoScriptInput & {
+  systemPrompt?: string
+  modelConfig?: SkillModelConfig
+}): Promise<GenerateVideoScriptResult> {
   const trimmed = description.trim()
   if (!trimmed) {
     throw new Error('Description is required')
@@ -28,10 +33,11 @@ export async function generateVideoScript({
   const clampedDuration = Math.min(Math.max(duration, MIN_DURATION), MAX_DURATION)
 
   const result = await generateObject({
-    model: VIDEO_SCRIPT_MODEL,
+    model: modelConfig?.model ?? VIDEO_SCRIPT_MODEL,
     schema: videoScriptGeneratedSchema,
-    system: VIDEO_SCRIPT_SYSTEM_PROMPT,
-    temperature: 0.8,
+    system: systemPrompt ?? VIDEO_SCRIPT_SYSTEM_PROMPT,
+    temperature: modelConfig?.temperature ?? 0.8,
+    maxOutputTokens: modelConfig?.maxTokens,
     prompt: buildVideoScriptUserPrompt(trimmed, clampedDuration, tone),
   })
 

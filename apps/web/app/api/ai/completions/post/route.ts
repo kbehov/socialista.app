@@ -1,5 +1,6 @@
 import { POST_COPYWRITING_SYSTEM } from '@socialista/ai'
 import { auth } from '@/auth'
+import { resolveSkillForSlot } from '@/services/skill.service'
 import { createCompletionUIStreamResponse } from '@/utils/ai-stream.utils'
 import {
   buildPostCopywriterMessages,
@@ -8,14 +9,11 @@ import {
   type PostCompletionBody,
 } from '@/utils/post-copywriter.utils'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { SKILL_SLOTS } from '@socialista/types'
 import { streamText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
-  // auth() and getCurrentWorkspace() are independent I/O calls — run them
-  // concurrently instead of serially to shave latency off every request.
-  // Parse the body in parallel too; only bail out on a bad body after we
-  // already need it, so this doesn't waste the auth/workspace round trip.
   const [session, workspace, parsedBody] = await Promise.all([
     auth(),
     getCurrentWorkspace(),
@@ -37,13 +35,16 @@ export async function POST(request: NextRequest) {
   }
 
   const userPrompt = buildPostCopywriterUserPrompt(sanitized)
+  const skill = await resolveSkillForSlot(workspace._id, SKILL_SLOTS.postCopywriter, {
+    skillId: sanitized.skillId,
+  })
 
   try {
     const result = streamText({
-      model: 'openai/gpt-5.6-luna',
-      system: POST_COPYWRITING_SYSTEM,
-      // Higher temp + light penalties: more voice/angle variety, less formulaic AI cadence.
-      temperature: 0.92,
+      model: skill?.modelConfig?.model ?? 'openai/gpt-5.6-luna',
+      system: skill?.content ?? POST_COPYWRITING_SYSTEM,
+      temperature: skill?.modelConfig?.temperature ?? 0.92,
+      maxOutputTokens: skill?.modelConfig?.maxTokens,
       frequencyPenalty: 0.4,
       presencePenalty: 0.2,
       messages: buildPostCopywriterMessages(userPrompt, sanitized.media),

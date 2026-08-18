@@ -7,11 +7,13 @@ import {
   type UgcVideoPlannerInput,
 } from '../prompts/ugc-video-planner-prompt.js'
 import { buildImagePromptMessages } from '../utils/build-messages.js'
-import type { AspectRatio } from '@socialista/types'
+import type { AspectRatio, SkillModelConfig } from '@socialista/types'
 
 export type PlanUgcVideoPromptInput = UgcVideoPlannerInput & {
   stillUrls: string[]
   plannerModel: string
+  systemPrompt?: string
+  modelConfig?: SkillModelConfig
 }
 
 export type PlannedUgcVideoPrompt = {
@@ -44,10 +46,11 @@ export async function planUgcVideoPrompt(input: PlanUgcVideoPromptInput): Promis
   const userText = buildUgcVideoPlannerUserPrompt(input)
 
   const result = await generateObject({
-    model: input.plannerModel,
+    model: input.modelConfig?.model ?? input.plannerModel,
     schema: plannedPromptSchema,
-    system: UGC_VIDEO_PLANNER_SYSTEM,
-    temperature: 0.7,
+    system: input.systemPrompt ?? UGC_VIDEO_PLANNER_SYSTEM,
+    temperature: input.modelConfig?.temperature ?? 0.7,
+    maxOutputTokens: input.modelConfig?.maxTokens,
     messages: buildImagePromptMessages(userText, media.length > 0 ? media : undefined, aspectRatio),
   })
 

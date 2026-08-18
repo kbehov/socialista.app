@@ -37,6 +37,7 @@ export type PostCompletionBody = {
   captionMax?: number
   tone?: string
   media?: CopywriterMediaItem[]
+  skillId?: string
 }
 
 export type SanitizedMedia = {
@@ -52,6 +53,7 @@ export type SanitizedPostCompletionInput = {
   captionMax?: number
   tone?: string
   media: SanitizedMedia[]
+  skillId?: string
 }
 
 export function parseHttpsUrl(value?: string): URL | null {
@@ -108,6 +110,7 @@ export function sanitizePostCompletionBody(body: PostCompletionBody): SanitizedP
     tone: body.tone?.trim().slice(0, POST_COPYWRITER_LIMITS.tone) || undefined,
     existingCaption: body.existingCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
     previousCaption: body.previousCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
+    skillId: body.skillId?.trim() || undefined,
   }
 }
 

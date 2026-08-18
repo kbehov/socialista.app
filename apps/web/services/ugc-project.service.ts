@@ -7,6 +7,7 @@ import type {
   ApiResponse,
   CreateUgcClipPayload,
   CreateUgcProjectPayload,
+  GenerateUgcImageAdPayload,
   GenerateUgcScriptPayload,
   GenerateUgcStillsPayload,
   GenerateUgcVideosPayload,
@@ -132,4 +133,23 @@ export const openUgcClipEditor = async (
   clipId: string,
 ): Promise<ApiResponse<OpenUgcEditorResponse>> => {
   return api.post<OpenUgcEditorResponse>(UGC_PROJECT_ROUTES.OPEN_EDITOR(id, clipId), {})
+}
+
+export const generateUgcImageAd = async (
+  id: string,
+  payload: GenerateUgcImageAdPayload,
+): Promise<ApiResponse<UgcGenerationHandle>> => {
+  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_IMAGE_AD(id, payload.clipId), payload)
+}
+
+export const assembleUgcProject = async (
+  id: string,
+): Promise<ApiResponse<UgcGenerationHandle>> => {
+  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.ASSEMBLE(id), {})
+}
+
+export const openUgcProjectEditor = async (
+  id: string,
+): Promise<ApiResponse<OpenUgcEditorResponse>> => {
+  return api.post<OpenUgcEditorResponse>(UGC_PROJECT_ROUTES.OPEN_PROJECT_EDITOR(id), {})
 }

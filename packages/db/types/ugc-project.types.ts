@@ -33,6 +33,10 @@ export enum UgcClipType {
   APP_SHOWCASE = 'app-showcase',
 }
 
+export enum UgcVoiceProvider {
+  ELEVENLABS = 'elevenlabs',
+}
+
 export type UgcSceneCount = 1 | 2 | 3
 
 export interface IUgcProjectModels {
@@ -45,6 +49,22 @@ export interface IUgcProjectModels {
 export interface IUgcProjectScript {
   text: string
   source: UgcScriptSource
+}
+
+export interface IUgcClipModels {
+  image?: string
+  script?: string
+  video?: string
+  planner?: string
+}
+
+export interface IUgcClipVoice {
+  provider: UgcVoiceProvider
+  voiceId?: string
+  voiceName?: string
+  speed?: number
+  stability?: number
+  enabled?: boolean
 }
 
 export interface IUgcSceneStill {
@@ -60,8 +80,11 @@ export interface IUgcClip {
   name?: string
   status: UgcClipStatus
   durationSec: number
+  sceneCount?: UgcSceneCount
   influencerId?: Types.ObjectId
   script?: IUgcProjectScript
+  voice?: IUgcClipVoice
+  models?: IUgcClipModels
   scenePrompt?: string
   directions?: string
   referenceImageUrls?: string[]
@@ -74,6 +97,9 @@ export interface IUgcClip {
   composedVideoId?: Types.ObjectId
   stillsRunId?: string
   videoRunId?: string
+  imageAdUrl?: string
+  imageAdGenerationId?: string
+  imageAdRunId?: string
   error?: string
 }
 
@@ -101,9 +127,14 @@ export interface IUgcProject {
   productId?: Types.ObjectId
   productImageUrls: string[]
   productName?: string
+  influencerId?: Types.ObjectId
   aspectRatio: string
   models: IUgcProjectModels
   clips: IUgcClip[]
+  assembledVideoUrl?: string
+  assembledGenerationId?: string
+  assembledRunId?: string
+  composedProjectVideoId?: Types.ObjectId
   error?: string
   createdAt: Date
   updatedAt: Date

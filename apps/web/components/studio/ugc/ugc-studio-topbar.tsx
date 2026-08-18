@@ -1,33 +1,33 @@
 'use client'
 
-import { UgcModelChips } from '@/components/studio/ugc/ugc-model-chips'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceStore } from '@/store/workspace.store'
-import { ChevronLeftIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { ChevronLeftIcon, LayersIcon, Loader2Icon, PencilIcon } from 'lucide-react'
 import Link from 'next/link'
 
 type UgcStudioTopbarProps = {
   name: string
-  generating?: boolean
-  imageValue?: string
-  scriptValue?: string
-  videoValue?: string
+  assembling?: boolean
+  canAssemble?: boolean
+  assembledVideoUrl?: string
+  openingProjectEditor?: boolean
   onNameChange: (name: string) => void
-  onModelChange: (key: 'image' | 'script' | 'video', value: string) => void
+  onAssemble: () => void
+  onOpenAssembledEditor: () => void
 }
 
 export function UgcStudioTopbar({
   name,
-  generating,
-  imageValue,
-  scriptValue,
-  videoValue,
+  assembling,
+  canAssemble,
+  assembledVideoUrl,
+  openingProjectEditor,
   onNameChange,
-  onModelChange,
+  onAssemble,
+  onOpenAssembledEditor,
 }: UgcStudioTopbarProps) {
   const credits = useWorkspaceStore(s => s.currentWorkspace?.billing.aiCreditsBalance ?? 0)
 
@@ -57,28 +57,42 @@ export function UgcStudioTopbar({
         <span className="hidden text-[11px] tabular-nums text-muted-foreground sm:inline">
           {credits} credits
         </span>
-
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button type="button" size="sm" variant="outline" className="h-7 gap-1.5 px-2.5 text-[11px]">
-              <SlidersHorizontalIcon className="size-3.5" />
-              <span className="hidden sm:inline">Models</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 p-3">
-            <p className="mb-2.5 text-[11px] leading-relaxed text-muted-foreground">
-              Image builds scenes, script writes dialogue, video animates the clip.
-            </p>
-            <UgcModelChips
-              imageValue={imageValue}
-              scriptValue={scriptValue}
-              videoValue={videoValue}
-              scriptEnabled
-              disabled={generating}
-              onChange={onModelChange}
-            />
-          </PopoverContent>
-        </Popover>
+        {assembledVideoUrl ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2.5 text-[11px]"
+            disabled={openingProjectEditor}
+            onClick={onOpenAssembledEditor}
+          >
+            {openingProjectEditor ? (
+              <Loader2Icon className="size-3.5 animate-spin" />
+            ) : (
+              <PencilIcon className="size-3.5" />
+            )}
+            Edit ad
+          </Button>
+        ) : null}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 px-2.5 text-[11px]"
+                disabled={!canAssemble || assembling}
+                onClick={onAssemble}
+              >
+                {assembling ? <Loader2Icon className="size-3.5 animate-spin" /> : <LayersIcon className="size-3.5" />}
+                Assemble
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {canAssemble ? 'Stitch ready clips into one ad' : 'Generate at least two clip videos first'}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   )
