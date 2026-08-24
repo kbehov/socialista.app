@@ -13,7 +13,7 @@ type DashboardHeaderProps = {
 
 function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) {
   return (
-    <header className={cn('dashboard-header flex items-center gap-3 px-4 lg:px-6', className)}>
+    <header className={cn('dashboard-header flex items-center gap-3 px-5 sm:px-6 lg:px-8', className)}>
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <SidebarTrigger
           className={cn(

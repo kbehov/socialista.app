@@ -39,7 +39,7 @@ function CreateMenuItems() {
   return createOptions.map(option => (
     <DropdownMenuItem key={option.url} asChild>
       <Link href={option.url}>
-        <option.icon className="size-4" strokeWidth={1.75} />
+        <option.icon className="size-3.5" strokeWidth={1.5} />
         {option.title}
       </Link>
     </DropdownMenuItem>
@@ -53,7 +53,7 @@ export function SidebarCreateAction() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button type="button" className="sidebar-create-cta">
-              <PenLineIcon className="size-3.5" strokeWidth={1.75} />
+              <PenLineIcon className="size-3.5" strokeWidth={1.5} />
               Create
             </button>
           </DropdownMenuTrigger>
@@ -70,7 +70,7 @@ export function SidebarCreateAction() {
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton size="sm" className="text-primary hover:text-primary">
-                    <PenLineIcon className="size-4" strokeWidth={1.75} />
+                    <PenLineIcon className="size-3.5" strokeWidth={1.5} />
                     <span className="sr-only">Create</span>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>

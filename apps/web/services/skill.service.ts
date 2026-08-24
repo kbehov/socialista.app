@@ -5,14 +5,10 @@ import { api } from '@/lib/api'
 import type {
   ApiResponse,
   CreateSkillPayload,
-  ForkSkillPayload,
   GetSkillResponse,
   GetSkillsResponse,
-  ResolveSkillQuery,
-  ResolveSkillResponse,
+  PromptKey,
   Skill,
-  SkillSlot,
-  SkillVariableValue,
   UpdateSkillPayload,
 } from '@socialista/types'
 
@@ -32,11 +28,7 @@ export const getWorkspaceSkills = async (
     page?: number
     limit?: number
     sort?: string
-    categoryId?: string
-    source?: string
-    status?: string
-    binding?: string
-    slot?: string
+    target?: PromptKey
     query?: string
   },
 ): Promise<ApiResponse<GetSkillsResponse>> => {
@@ -44,11 +36,7 @@ export const getWorkspaceSkills = async (
   if (query?.page) params.set('page', String(query.page))
   if (query?.limit) params.set('limit', String(query.limit))
   if (query?.sort) params.set('sort', query.sort)
-  if (query?.categoryId) params.set('categoryId', query.categoryId)
-  if (query?.source) params.set('source', query.source)
-  if (query?.status) params.set('status', query.status)
-  if (query?.binding) params.set('binding', query.binding)
-  if (query?.slot) params.set('slot', query.slot)
+  if (query?.target) params.set('target', query.target)
   if (query?.query) params.set('query', query.query)
 
   const search = params.toString()
@@ -67,49 +55,20 @@ export const deleteSkill = async (id: string): Promise<ApiResponse<{ id: string 
   return api.delete<{ id: string }>(SKILL_ROUTES.DELETE(id))
 }
 
-export const forkSkill = async (
-  id: string,
-  payload: ForkSkillPayload,
-): Promise<ApiResponse<{ skill: Skill }>> => {
-  return api.post<{ skill: Skill }>(SKILL_ROUTES.FORK(id), payload)
-}
-
-export const publishSkill = async (id: string): Promise<ApiResponse<{ skill: Skill }>> => {
-  return api.post<{ skill: Skill }>(SKILL_ROUTES.PUBLISH(id), {})
-}
-
-export const archiveSkill = async (id: string): Promise<ApiResponse<{ skill: Skill }>> => {
-  return api.post<{ skill: Skill }>(SKILL_ROUTES.ARCHIVE(id), {})
-}
-
-export const resolveSkill = async (
-  query: ResolveSkillQuery,
-): Promise<ApiResponse<ResolveSkillResponse>> => {
-  const params = new URLSearchParams()
-  params.set('workspaceId', query.workspaceId)
-  if (query.slot) params.set('slot', query.slot)
-  if (query.skillId) params.set('skillId', query.skillId)
-  if (query.variables) params.set('variables', JSON.stringify(query.variables))
-  return api.get<ResolveSkillResponse>(`${SKILL_ROUTES.RESOLVE}?${params.toString()}`)
-}
-
-export async function resolveSkillForSlot(
+export async function loadSkillOverride(
   workspaceId: string,
-  slot: SkillSlot,
-  options?: {
-    skillId?: string
-    variables?: Record<string, SkillVariableValue>
-  },
-): Promise<ResolveSkillResponse | null> {
+  target: PromptKey,
+  skillId?: string,
+): Promise<string | undefined> {
+  if (!skillId) return undefined
   try {
-    const response = await resolveSkill({
-      workspaceId,
-      slot,
-      skillId: options?.skillId,
-      variables: options?.variables,
-    })
-    return response.data ?? null
+    const response = await getSkill(skillId)
+    const skill = response.data?.skill
+    if (!skill) return undefined
+    if (skill.workspaceId !== workspaceId) return undefined
+    if (skill.target !== target) return undefined
+    return skill.content
   } catch {
-    return null
+    return undefined
   }
 }

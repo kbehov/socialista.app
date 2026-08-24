@@ -23,6 +23,7 @@ export const imageGenerationPayloadSchema = z.object({
     .max(IMAGE_GENERATION_COUNT_MAX)
     .default(IMAGE_GENERATION_COUNT_DEFAULT),
   ...skillPayloadFields,
+  enhance: z.boolean().optional(),
 })
 
 export type ImageGenerationPayload = z.infer<typeof imageGenerationPayloadSchema>

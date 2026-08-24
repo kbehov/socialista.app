@@ -4,7 +4,11 @@ export const DASHBOARD_ROUTES = {
   UPGRADE: '/dashboard/upgrade',
   FILES: '/dashboard/files',
   folder: (id: string) => `/dashboard/files/${id}`,
-  PRODUCTS: '/dashboard/products',
+  CONTEXT: '/dashboard/context',
+  PRODUCTS: '/dashboard/context/products',
+  SKILLS: '/dashboard/context/skills',
+  createSkill: '/dashboard/context/skills/create',
+  editSkill: (id: string) => `/dashboard/context/skills/${id}/edit`,
   ACCOUNTS: '/dashboard/accounts',
   accountAnalytics: (accountId: string) => `/dashboard/accounts/analytics/${accountId}`,
   ANALYTICS: '/dashboard/analytics',
@@ -48,10 +52,18 @@ export function isDashboardFilesPath(pathname: string) {
   return pathname === DASHBOARD_ROUTES.FILES || pathname.startsWith(`${DASHBOARD_ROUTES.FILES}/`)
 }
 
+export function isDashboardContextPath(pathname: string) {
+  return pathname === DASHBOARD_ROUTES.CONTEXT || pathname.startsWith(`${DASHBOARD_ROUTES.CONTEXT}/`)
+}
+
 export function isDashboardProductsPath(pathname: string) {
   return (
     pathname === DASHBOARD_ROUTES.PRODUCTS || pathname.startsWith(`${DASHBOARD_ROUTES.PRODUCTS}/`)
   )
+}
+
+export function isDashboardSkillsPath(pathname: string) {
+  return pathname === DASHBOARD_ROUTES.SKILLS || pathname.startsWith(`${DASHBOARD_ROUTES.SKILLS}/`)
 }
 
 export function isDashboardAccountsPath(pathname: string) {
@@ -119,14 +131,6 @@ export function isStudioSegmentPath(
 export const MANAGER_FILES_ROUTES = {
   HOME: '/manager/files',
   folder: (id: string) => `/manager/files/${id}`,
-} as const
-
-export const MANAGER_SKILL_ROUTES = {
-  LIST: '/manager/skills',
-  CREATE: '/manager/skills/create',
-  CATEGORIES: '/manager/skills/categories',
-  skill: (id: string) => `/manager/skills/${id}`,
-  edit: (id: string) => `/manager/skills/${id}/edit`,
 } as const
 
 export type FilesRoutePaths = {

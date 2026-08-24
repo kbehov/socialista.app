@@ -49,7 +49,15 @@ function findModel(models: Model[] | undefined, value: string | undefined): Mode
   return models.find(model => model.value === value)
 }
 
-function ImagePromptMetaStrip({ payload, model }: { payload: ImageGenerationPayload; model?: Model }) {
+function ImagePromptMetaStrip({
+  payload,
+  model,
+  enhancedPrompt,
+}: {
+  payload: ImageGenerationPayload
+  model?: Model
+  enhancedPrompt?: string
+}) {
   const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
   const referenceUrls =
     payload.imageUrls && payload.imageUrls.length > 0
@@ -58,10 +66,17 @@ function ImagePromptMetaStrip({ payload, model }: { payload: ImageGenerationPayl
         ? [payload.imageUrl]
         : []
   const numImages = payload.numImages ?? 1
+  const showEnhanced = Boolean(enhancedPrompt && enhancedPrompt !== payload.prompt)
 
   return (
     <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
       <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
+      {showEnhanced ? (
+        <p className="line-clamp-4 text-[12px] leading-relaxed text-muted-foreground">
+          <span className="font-medium text-foreground/70">Enhanced · </span>
+          {enhancedPrompt}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
           {aspectLabel} · {payload.aspectRatio}
@@ -248,6 +263,9 @@ export function GenerationRunView({
       ? getLanguageLabel(adPayload.language)
       : undefined
 
+  const enhancedPrompt =
+    typeof run?.metadata?.enhancedPrompt === 'string' ? run.metadata.enhancedPrompt : undefined
+
   const activeStepIndex = useMemo(
     () => computeActiveStepIndex(status.progress, isComplete, isFailed),
     [status.progress, isComplete, isFailed],
@@ -308,7 +326,9 @@ export function GenerationRunView({
   let metaStrip: ReactNode = null
   if (!isComplete) {
     if (imagePayload) {
-      metaStrip = <ImagePromptMetaStrip model={model} payload={imagePayload} />
+      metaStrip = (
+        <ImagePromptMetaStrip enhancedPrompt={enhancedPrompt} model={model} payload={imagePayload} />
+      )
     } else if (adPayload) {
       metaStrip = <StaticAdPromptMetaStrip payload={adPayload} />
     } else if (videoPayload) {
@@ -392,7 +412,7 @@ export function GenerationRunView({
                   ? resolveGeneratedImagePreviewUrl(adPayload.productImage)
                   : undefined
               }
-              prompt={imagePayload?.prompt ?? adPayload?.prompt}
+              prompt={enhancedPrompt ?? imagePayload?.prompt ?? adPayload?.prompt}
             />
           ) : null}
 

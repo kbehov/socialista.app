@@ -10,7 +10,7 @@ import {
   type IUgcClip,
   type IUgcProject,
 } from '@socialista/db'
-import { TASK_IDS, type UgcClipType, SKILL_SLOTS } from '@socialista/types'
+import { TASK_IDS, type UgcClipType, PROMPT_KEYS } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateUgcVideoPayloadSchema } from '../../schemas/generate-ugc-video.schema.js'
@@ -22,7 +22,7 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
-import { loadSkillForTask } from '../shared/skills.js'
+import { loadSkillOverride } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModel, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function findClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
@@ -100,15 +100,13 @@ export const generateUgcVideo = schemaTask({
       if (!payload.skipPlanner && !payload.plannedPrompt && planner) {
         setGenerationStatus(20, influencer ? `Planning ${influencer.name}` : 'Planning clip')
         try {
-          const skill = await loadSkillForTask({
+          const systemOverride = await loadSkillOverride({
             skillId: payload.skillId,
-            slot: SKILL_SLOTS.ugcVideoPlanner,
+            target: PROMPT_KEYS.ugcVideoPlanner,
             workspaceId: payload.workspaceId,
-            variables: payload.skillVariables,
           })
           const planned = await planUgcVideoPrompt({
             stillUrls,
-            plannerModel: planner.value,
             script,
             directions,
             influencerName: influencer?.name,
@@ -119,8 +117,7 @@ export const generateUgcVideo = schemaTask({
             videoModel: model.value,
             clipType,
             durationSec: clip.durationSec,
-            systemPrompt: skill.content,
-            modelConfig: skill.modelConfig,
+            systemOverride,
           })
           plannedPrompt = planned.prompt
           negativePrompt = planned.negativePrompt

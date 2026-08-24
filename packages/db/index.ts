@@ -17,7 +17,6 @@ export { ModelModel } from './models/model.js'
 export { NotificationModel } from './models/notification.model.js'
 export { PolarWebhookEventModel } from './models/polar-webhook-event.model.js'
 export * from './models/product.model.js'
-export { SkillCategoryModel } from './models/skill-category.model.js'
 export { SkillModel } from './models/skill.model.js'
 export { SlideshowModel } from './models/slideshow.model.js'
 export { UgcProjectModel } from './models/ugc-project.model.js'
@@ -34,7 +33,6 @@ export * from './repo/model.repo.js'
 export * from './repo/notification.repo.js'
 export * from './repo/polar-webhook-event.repo.js'
 export * from './repo/product.repo.js'
-export * from './repo/skill-category.repo.js'
 export * from './repo/skill.repo.js'
 export * from './repo/slideshow.repo.js'
 export * from './repo/ugc-project.repo.js'
@@ -58,24 +56,9 @@ export {
 } from './types/models.types.js'
 export type { Iproduct, ProductDocument } from './types/product.types.js'
 export {
-  SkillBinding,
-  SkillCategoryStatus,
-  SkillSource,
-  SkillStatus,
-  SkillVariableType,
-  SkillVisibility,
-  type CreateSkillCategoryInput,
   type CreateSkillInput,
   type ISkill,
-  type ISkillCategory,
-  type ISkillModelConfig,
-  type ISkillVariable,
-  type SkillCategoryDocument,
   type SkillDocument,
-  type SkillVariableValue,
-  type SystemCategorySyncInput,
-  type SystemSkillSyncInput,
-  type UpdateSkillCategoryInput,
   type UpdateSkillInput,
 } from './types/skill.types.js'
 export {

@@ -50,6 +50,7 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       generateAudio: input.generateAudio ?? true,
       ...(input.imageUrl ? { imageUrl: input.imageUrl } : {}),
       ...(input.imageUrls && input.imageUrls.length > 0 ? { imageUrls: input.imageUrls } : {}),
+      ...(input.skillId ? { skillId: input.skillId } : {}),
     })
 
     const publicAccessToken = await createPublicAccessToken(handle.id)

@@ -1,16 +1,13 @@
-import type { GenerateVideoScriptInput, GenerateVideoScriptResult, SkillModelConfig } from '@socialista/types'
+import type { GenerateVideoScriptInput, GenerateVideoScriptResult } from '@socialista/types'
+import { PROMPT_KEYS } from '@socialista/types'
 import { generateObject } from 'ai'
 
-import {
-  buildVideoScriptUserPrompt,
-  VIDEO_SCRIPT_SYSTEM_PROMPT,
-} from '../prompts/video-script-prompt.js'
+import { resolvePrompt } from '../registry.js'
+import { buildVideoScriptUserPrompt } from '../builders/video-script.js'
 import {
   normalizeVideoScriptSegments,
   videoScriptGeneratedSchema,
 } from '../schemas/video-script-generation.js'
-
-const VIDEO_SCRIPT_MODEL = 'anthropic/claude-sonnet-4.6'
 
 const MIN_DURATION = 5
 const MAX_DURATION = 600
@@ -19,11 +16,9 @@ export async function generateVideoScript({
   description,
   duration,
   tone,
-  systemPrompt,
-  modelConfig,
+  systemOverride,
 }: GenerateVideoScriptInput & {
-  systemPrompt?: string
-  modelConfig?: SkillModelConfig
+  systemOverride?: string
 }): Promise<GenerateVideoScriptResult> {
   const trimmed = description.trim()
   if (!trimmed) {
@@ -31,13 +26,13 @@ export async function generateVideoScript({
   }
 
   const clampedDuration = Math.min(Math.max(duration, MIN_DURATION), MAX_DURATION)
+  const { model, system } = resolvePrompt(PROMPT_KEYS.videoScript, systemOverride)
 
   const result = await generateObject({
-    model: modelConfig?.model ?? VIDEO_SCRIPT_MODEL,
+    model,
     schema: videoScriptGeneratedSchema,
-    system: systemPrompt ?? VIDEO_SCRIPT_SYSTEM_PROMPT,
-    temperature: modelConfig?.temperature ?? 0.8,
-    maxOutputTokens: modelConfig?.maxTokens,
+    system,
+    temperature: 0.8,
     prompt: buildVideoScriptUserPrompt(trimmed, clampedDuration, tone),
   })
 

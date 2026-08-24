@@ -1,4 +1,4 @@
-import { generateVideoFal } from '../lib/fal.js'
+import { generateVideoFal } from '../providers/fal.js'
 
 export type GenerateUgcVideoInput = {
   model: string

@@ -2,12 +2,14 @@
 
 import { generateSlideshowSlides } from '@/actions/slideshow.actions'
 import { StudioPanelScrollArea, StudioPanelSection } from '@/components/carousel/studio-segmented-tabs'
+import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Textarea } from '@/components/ui/textarea'
 import { isBlankSlide } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import { PROMPT_KEYS } from '@socialista/types'
 import { Loader2Icon, MinusIcon, PlusIcon, SparklesIcon } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -68,6 +70,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
 
   const [prompt, setPrompt] = useState('')
   const [slideCount, setSlideCount] = useState<number>(5)
+  const [skillId, setSkillId] = useState<string | undefined>()
   const [isPending, startTransition] = useTransition()
 
   const trimmed = prompt.trim()
@@ -82,7 +85,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
     }
 
     startTransition(async () => {
-      const result = await generateSlideshowSlides(trimmed, slideCount)
+      const result = await generateSlideshowSlides(trimmed, slideCount, skillId)
       if (!result.success) {
         toast.error(result.error)
         return
@@ -289,6 +292,12 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
       </StudioPanelScrollArea>
 
       <div className="shrink-0 space-y-2 border-t border-border/40 bg-background/80 p-3.5 backdrop-blur-sm">
+        <StudioSkillPicker
+          target={PROMPT_KEYS.slideshow}
+          value={skillId}
+          onChange={setSkillId}
+          disabled={isPending}
+        />
         <Button
           className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium tracking-tight shadow-xs"
           onClick={handleGenerate}

@@ -121,19 +121,7 @@ export const SKILL_ROUTES = {
   GET_BY_ID: (id: string) => `/skills/${id}`,
   UPDATE: (id: string) => `/skills/${id}`,
   DELETE: (id: string) => `/skills/${id}`,
-  FORK: (id: string) => `/skills/${id}/fork`,
-  PUBLISH: (id: string) => `/skills/${id}/publish`,
-  ARCHIVE: (id: string) => `/skills/${id}/archive`,
   GET_WORKSPACE_SKILLS: (workspaceId: string) => `/skills/workspace/${workspaceId}`,
-  RESOLVE: '/skills/resolve',
-} as const
-
-export const SKILL_CATEGORY_ROUTES = {
-  CREATE: '/skill-categories',
-  GET_BY_ID: (id: string) => `/skill-categories/${id}`,
-  UPDATE: (id: string) => `/skill-categories/${id}`,
-  DELETE: (id: string) => `/skill-categories/${id}`,
-  GET_WORKSPACE_CATEGORIES: (workspaceId: string) => `/skill-categories/workspace/${workspaceId}`,
 } as const
 
 export const ACCOUNT_ROUTES = {

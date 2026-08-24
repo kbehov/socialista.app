@@ -1,6 +1,7 @@
+import { resolvePrompt } from '@socialista/ai'
 import { connectDb, disconnectDb } from '@socialista/db'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { clampImageGenerationCount, SKILL_SLOTS, TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import {
@@ -19,10 +20,8 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
-import { loadSkillForTask } from '../shared/skills.js'
+import { loadSkillOverride } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
-
-const STATIC_AD_PROMPT_MODEL = 'openai/gpt-5.6-sol'
 
 export const realtimeStaticAdGeneration = schemaTask({
   id: TASK_IDS.staticAdGeneration,
@@ -71,18 +70,16 @@ export const realtimeStaticAdGeneration = schemaTask({
         adCopy: payload.adCopy,
       })
 
-      const skill = await loadSkillForTask({
+      const systemOverride = await loadSkillOverride({
         skillId: payload.skillId,
-        slot: SKILL_SLOTS.staticAdVision,
+        target: PROMPT_KEYS.staticAd,
         workspaceId: payload.workspaceId,
-        variables: payload.skillVariables,
       })
+      const { model: plannerModel, system } = resolvePrompt(PROMPT_KEYS.staticAd, systemOverride)
 
       const planned = await generateText({
-        model: skill.modelConfig?.model ?? STATIC_AD_PROMPT_MODEL,
-        system: skill.content,
-        temperature: skill.modelConfig?.temperature,
-        maxOutputTokens: skill.modelConfig?.maxTokens,
+        model: plannerModel,
+        system,
         messages: [
           {
             role: 'user',

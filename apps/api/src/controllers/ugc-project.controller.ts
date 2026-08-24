@@ -22,16 +22,16 @@ import {
 } from '@/utils/ugc-project.utils.js'
 import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
 import { DEFAULT_VIDEO_FPS, DEFAULT_VIDEO_RESOLUTION } from '@/utils/video.utils.js'
-import { getSystemSkillBySlot, generateUgcAdScript, renderSkillContent } from '@socialista/ai'
+import { generateUgcAdScript } from '@socialista/ai'
 import {
   addUgcClip,
   createUgcProject as createUgcProjectInDb,
   createVideo as createVideoInDb,
   deleteUgcProject as deleteUgcProjectInDb,
-  findDefaultSkill,
   getInfluencerById,
   getModels,
   getProductById,
+  getSkillById,
   getUgcProjects,
   incrementSkillUsage,
   removeUgcClip,
@@ -52,7 +52,7 @@ import type { GenerateUgcStillsTask, GenerateUgcVideoTask, GenerateUgcImageAdTas
 import {
   clampUgcDuration,
   clampUgcSceneCount,
-  SKILL_SLOTS,
+  PROMPT_KEYS,
   moveUgcStillToStart,
   resizeUgcStills,
   TASK_IDS,
@@ -61,7 +61,6 @@ import {
   UGC_DEFAULT_ASPECT_RATIO,
   UGC_DEFAULT_DURATION,
   ugcClipSceneCount,
-  ugcScriptTargetChars,
   type CreateUgcClipPayload,
   type CreateUgcProjectPayload,
   type GenerateUgcImageAdPayload,
@@ -400,7 +399,7 @@ export const generateUgcClipScript = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'project ID')
   const clipId = c.req.param('clipId')
-  const body = (await c.req.json().catch(() => ({}))) as { model?: string }
+  const body = (await c.req.json().catch(() => ({}))) as { model?: string; skillId?: string }
   const project = await getUgcProjectForMember(id, userId)
   const clip = requireClip(project, clipId)
   assertClipNotGenerating(clip)
@@ -414,33 +413,31 @@ export const generateUgcClipScript = async (c: Context<AppContext>) => {
   const influencerId = resolveClipInfluencerId(project, clip)
   const influencer = influencerId ? await getInfluencerById(influencerId) : null
   const durationSec = clip.durationSec ?? UGC_DEFAULT_DURATION
-  const skillVariables = {
-    durationSec: clampUgcDuration(durationSec),
-    targetChars: ugcScriptTargetChars(durationSec),
-  }
-  const storedSkill = await findDefaultSkill(
-    SKILL_SLOTS.ugcAdScript,
-    project.workspace.toString(),
-  )
-  const systemSkill = getSystemSkillBySlot(SKILL_SLOTS.ugcAdScript)
-  const systemPrompt = storedSkill
-    ? renderSkillContent(storedSkill.content, storedSkill.variables, skillVariables)
-    : systemSkill
-      ? renderSkillContent(systemSkill.content, systemSkill.variables ?? [], skillVariables)
-      : undefined
-  if (storedSkill) {
-    await incrementSkillUsage(storedSkill._id.toString()).catch(() => undefined)
+  const workspaceId = project.workspace.toString()
+  let systemOverride: string | undefined
+  if (body.skillId) {
+    try {
+      const skill = await getSkillById(body.skillId)
+      if (
+        skill &&
+        skill.workspaceId.toString() === workspaceId &&
+        skill.target === PROMPT_KEYS.ugcAdScript
+      ) {
+        systemOverride = skill.content
+        await incrementSkillUsage(skill._id.toString()).catch(() => undefined)
+      }
+    } catch {
+      // Invalid or missing skill — use the registry default.
+    }
   }
 
   const text = await generateUgcAdScript({
-    model: modelValue,
     productName: project.productName,
     directions: clip.directions || clip.scenePrompt,
     influencerName: influencer?.name,
     clipType: clip.type,
     durationSec,
-    systemPrompt,
-    modelConfig: storedSkill?.modelConfig ?? systemSkill?.modelConfig,
+    systemOverride,
   })
 
   const updated = await updateUgcClip(id, clip.id, {

@@ -1,5 +1,5 @@
 import { type VideoGenerationPayload, videoGenerationPayloadSchema } from '../schemas/video-generation.js'
-import { resolveVideoGenerator } from '../utils/resolve-provider.js'
+import { resolveVideoGenerator } from '../providers/resolve-provider.js'
 
 export const generateVideo = async (
   payload: VideoGenerationPayload,

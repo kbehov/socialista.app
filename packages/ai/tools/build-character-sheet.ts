@@ -9,7 +9,7 @@ import {
 import { generateObject } from 'ai'
 import { z } from 'zod'
 
-import { INFLUENCER_ACCESSORY_PROMPTS, INFLUENCER_SCENE_PROMPTS } from '../prompts/influencer-prompt.js'
+import { INFLUENCER_ACCESSORY_PROMPTS, INFLUENCER_SCENE_PROMPTS } from '../builders/influencer.js'
 
 const CHARACTER_SHEET_MODEL = 'anthropic/claude-sonnet-4.6'
 

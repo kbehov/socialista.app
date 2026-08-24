@@ -13,8 +13,7 @@
     "check-types": "tsc -p tsconfig.check.json",
     "test": "vitest run",
     "dev:trigger": "trigger dev",
-    "deploy:trigger": "trigger deploy",
-    "seed:skills": "tsx scripts/seed-skills.ts"
+    "deploy:trigger": "trigger deploy"
   },
   "types": "./dist/index.d.ts",
   "exports": {

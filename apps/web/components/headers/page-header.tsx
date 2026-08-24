@@ -48,8 +48,8 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'sticky top-0 z-20 -mx-4 shrink-0 bg-background px-4 pt-6 lg:-mx-6 lg:px-6',
-        compact ? 'mb-2 space-y-2 pb-2' : 'mb-3 space-y-5 pb-1',
+        'sticky top-0 z-20 -mx-(--spacing-dashboard-x) shrink-0 bg-background/95 px-(--spacing-dashboard-x) pt-7 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8',
+        compact ? 'mb-3 space-y-2 pb-2' : 'mb-4 space-y-6 pb-2',
         className,
       )}
     >

@@ -1,6 +1,7 @@
 'use client'
 
 import { generateVideoScriptAction } from '@/actions/video.actions'
+import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import {
   EditorPanelHeader,
   EditorPanelScrollArea,
@@ -17,7 +18,7 @@ import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
 import type { VideoScriptSegment, VideoScriptTone } from '@socialista/types'
-import { VIDEO_SCRIPT_TONES } from '@socialista/types'
+import { PROMPT_KEYS, VIDEO_SCRIPT_TONES } from '@socialista/types'
 import {
   ArrowLeftIcon,
   Loader2Icon,
@@ -91,6 +92,7 @@ export function VideoScriptPanel({
   const [segments, setSegments] = useState<VideoScriptSegment[]>([])
   const [replaceExisting, setReplaceExisting] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [skillId, setSkillId] = useState<string | undefined>()
 
   const hasTimeline = projectDuration > 0
   const effectiveDuration = hasTimeline
@@ -109,7 +111,7 @@ export function VideoScriptPanel({
     }
 
     startTransition(async () => {
-      const result = await generateVideoScriptAction(trimmed, effectiveDuration, tone)
+      const result = await generateVideoScriptAction(trimmed, effectiveDuration, tone, skillId)
       if (!result.success) {
         toast.error(result.error)
         return
@@ -119,7 +121,7 @@ export function VideoScriptPanel({
       setView('preview')
       toast.success(`Generated ${result.segments.length} captions`)
     })
-  }, [effectiveDuration, tone, trimmed])
+  }, [effectiveDuration, skillId, tone, trimmed])
 
   const updateSegment = useCallback((index: number, partial: Partial<VideoScriptSegment>) => {
     setSegments(prev =>
@@ -330,6 +332,12 @@ export function VideoScriptPanel({
           </EditorPanelScrollArea>
 
           <div className="shrink-0 space-y-2 border-t border-border/40 bg-background/80 p-3.5 backdrop-blur-sm">
+            <StudioSkillPicker
+              target={PROMPT_KEYS.videoScript}
+              value={skillId}
+              onChange={setSkillId}
+              disabled={isPending}
+            />
             <Button
               className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium tracking-tight shadow-xs"
               onClick={handleGenerate}

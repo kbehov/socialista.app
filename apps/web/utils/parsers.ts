@@ -31,14 +31,18 @@ const PERFORMANCE_RANK_VALUES = new Set<AnalyticsAccountPerformanceRankBy>(
   PERFORMANCE_METRIC_OPTIONS.map(option => option.value),
 )
 
+export function firstSearchParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value
+}
+
 export function parseAnalyticsRange(value: string | string[] | undefined): AnalyticsRange {
-  const raw = Array.isArray(value) ? value[0] : value
+  const raw = firstSearchParam(value)
   if (raw && RANGE_VALUES.has(raw as AnalyticsRange)) return raw as AnalyticsRange
   return 'daily'
 }
 
 export function parseAnalyticsProvider(value: string | string[] | undefined): SocialProvider | 'all' {
-  const raw = Array.isArray(value) ? value[0] : value
+  const raw = firstSearchParam(value)
   if (raw && PROVIDER_VALUES.has(raw as SocialProvider)) return raw as SocialProvider
   return 'all'
 }
@@ -46,7 +50,7 @@ export function parseAnalyticsProvider(value: string | string[] | undefined): So
 export function parseAnalyticsRankBy(
   value: string | string[] | undefined,
 ): AnalyticsAccountPerformanceRankBy {
-  const raw = Array.isArray(value) ? value[0] : value
+  const raw = firstSearchParam(value)
   if (raw && PERFORMANCE_RANK_VALUES.has(raw as AnalyticsAccountPerformanceRankBy)) {
     return raw as AnalyticsAccountPerformanceRankBy
   }

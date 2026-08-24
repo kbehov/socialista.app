@@ -2,10 +2,10 @@
 
 import { auth } from '@/auth'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
-import { resolveSkillForSlot } from '@/services/skill.service'
+import { loadSkillOverride } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateVideoScript } from '@socialista/ai'
-import { SKILL_SLOTS, type VideoScriptSegment, type VideoScriptTone } from '@socialista/types'
+import { PROMPT_KEYS, type VideoScriptSegment, type VideoScriptTone } from '@socialista/types'
 
 export type GenerateVideoScriptActionResult =
   | { success: true; title: string; segments: VideoScriptSegment[] }
@@ -18,6 +18,7 @@ export async function generateVideoScriptAction(
   description: string,
   duration: number,
   tone?: VideoScriptTone,
+  skillId?: string,
 ): Promise<GenerateVideoScriptActionResult> {
   const trimmed = description.trim()
   if (!trimmed) {
@@ -42,13 +43,12 @@ export async function generateVideoScriptAction(
       return { success: false, error: 'You must be in a workspace to generate a script' }
     }
 
-    const skill = await resolveSkillForSlot(workspaceId._id, SKILL_SLOTS.videoScript)
+    const systemOverride = await loadSkillOverride(workspaceId._id, PROMPT_KEYS.videoScript, skillId)
     const result = await generateVideoScript({
       description: trimmed,
       duration,
       tone,
-      systemPrompt: skill?.content,
-      modelConfig: skill?.modelConfig,
+      systemOverride,
     })
     if (result.segments.length === 0) {
       return { success: false, error: 'No script segments were generated' }

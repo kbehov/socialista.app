@@ -16,16 +16,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <WorkspaceProvider workspaces={workspaces}>
-      <SidebarProvider className="h-svh max-h-svh overflow-hidden">
+      <SidebarProvider className="dashboard-shell h-svh max-h-svh overflow-hidden">
         <AppSidebar workspaces={workspaces} user={user} />
-        <SidebarInset className="flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden bg-background">
+        <SidebarInset className="dashboard-inset flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden">
           <DashboardHeader workspaceBalance={aiCreditsBalance} />
-          <main
-            id="dashboard-scroll"
-            data-dashboard-scroll
-            className={dashboardMainClassName}
-          >
-            <PageScrollCompactProvider>{children}</PageScrollCompactProvider>
+          <main id="dashboard-scroll" data-dashboard-scroll className={dashboardMainClassName}>
+            <PageScrollCompactProvider>
+              <div className="dashboard-page">{children}</div>
+            </PageScrollCompactProvider>
           </main>
         </SidebarInset>
       </SidebarProvider>

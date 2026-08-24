@@ -1,7 +1,7 @@
 import { buildVideoPrompt, generateVideo } from '@socialista/ai'
 import { connectDb, CostUnit, disconnectDb } from '@socialista/db'
 import type { VideoGenerationOutput } from '@socialista/types'
-import { clampVideoDuration, SKILL_SLOTS, TASK_IDS } from '@socialista/types'
+import { clampVideoDuration, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { videoGenerationPayloadSchema } from '../../schemas/video-generation.schema.js'
@@ -16,7 +16,7 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
-import { loadSkillForTask } from '../shared/skills.js'
+import { loadSkillOverride } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -70,11 +70,10 @@ export const realtimeVideoGeneration = schemaTask({
 
       setGenerationStatus(10, 'Preparing your prompt')
 
-      const skill = await loadSkillForTask({
+      const systemOverride = await loadSkillOverride({
         skillId: payload.skillId,
-        slot: SKILL_SLOTS.videoPromptEnhance,
+        target: PROMPT_KEYS.videoPrompt,
         workspaceId: payload.workspaceId,
-        variables: payload.skillVariables,
       })
 
       const enhanced = await buildVideoPrompt({
@@ -83,12 +82,12 @@ export const realtimeVideoGeneration = schemaTask({
         aspectRatio: payload.aspectRatio,
         durationSec: duration,
         generateAudio,
-        systemPrompt: skill.content,
-        modelConfig: skill.modelConfig,
+        systemOverride,
+        targetModel: model.value,
       })
 
       await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
-      const finalPrompt = `${enhanced}\n\nNo watermarks, captions, or AI-generated labels.`
+      const finalPrompt = enhanced
 
       setGenerationStatus(40, 'Generating video')
 

@@ -9,10 +9,10 @@ import { TeamSwitcher } from '@/components/workspace-switcher'
 import {
   DASHBOARD_ROUTES,
   isDashboardAccountsPath,
+  isDashboardContextPath,
   isDashboardFilesPath,
   isDashboardGenerationsPath,
   isDashboardPostsPath,
-  isDashboardProductsPath,
   isDashboardRootPath,
   isStaticAdsPath,
   isStudioImagesPath,
@@ -29,7 +29,7 @@ import {
   Link2Icon,
   MegaphoneIcon,
   SendIcon,
-  ShoppingBagIcon,
+  SparklesIcon,
   SmartphoneIcon,
   UserRoundIcon,
   VideoIcon,
@@ -60,10 +60,10 @@ const defaultUser = {
   avatar: '',
 }
 
-const iconClassName = 'nav-icon size-4 shrink-0'
+const iconClassName = 'nav-icon size-3.5 shrink-0'
 
 function navIcon(Icon: LucideIcon) {
-  return <Icon className={iconClassName} strokeWidth={1.75} />
+  return <Icon className={iconClassName} strokeWidth={1.5} />
 }
 
 function isStudioRoute(pathname: string, segment: 'images' | 'slideshows' | 'videos' | 'influencers' | 'ugc') {
@@ -144,10 +144,10 @@ function buildWorkspaceItems(pathname: string): SidebarNavItem[] {
       isActive: isDashboardFilesPath(pathname),
     },
     {
-      title: 'Products',
-      url: DASHBOARD_ROUTES.PRODUCTS,
-      icon: navIcon(ShoppingBagIcon),
-      isActive: isDashboardProductsPath(pathname),
+      title: 'Context & skills',
+      url: DASHBOARD_ROUTES.CONTEXT,
+      icon: navIcon(SparklesIcon),
+      isActive: isDashboardContextPath(pathname),
     },
     {
       title: 'Generations',
@@ -167,17 +167,17 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
 
   return (
     <Sidebar collapsible="icon" className={cn(className)} {...props}>
-      <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-border/80 px-2 py-0">
+      <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-separator px-2 py-0">
         <TeamSwitcher workspaces={workspaces} />
       </SidebarHeader>
 
-      <SidebarContent className="sidebar-scrollbar gap-1 overflow-x-hidden px-0 py-2">
+      <SidebarContent className="sidebar-scrollbar gap-1 overflow-x-hidden px-0 py-2 ">
         <NavMain items={platformItems} sectionTitle="Overview" />
         <NavMain items={studioItems} sectionTitle="Studio" />
         <NavMain items={workspaceItems} sectionTitle="Workspace" />
       </SidebarContent>
 
-      <SidebarFooter className="shrink-0 gap-2 border-t border-sidebar-border/80 p-2">
+      <SidebarFooter className="shrink-0 gap-2 border-t border-sidebar-separator p-2">
         <SidebarUpgradeCard />
         <SidebarStorageFooter />
         <NavUser user={user} />

@@ -1,5 +1,5 @@
 import { type ImageGenerationPayload, imageGenerationPayloadSchema } from '../schemas/image-generation.js'
-import { resolveImageGenerator } from '../utils/resolve-provider.js'
+import { resolveImageGenerator } from '../providers/resolve-provider.js'
 
 export const generateImages = async (
   payload: ImageGenerationPayload,

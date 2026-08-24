@@ -78,6 +78,9 @@ export type GenerateImageOptions = {
   numImages?: number
   /** Passed through to providers that support deterministic seeds (fal). */
   seed?: number
+  skillId?: string
+  /** When false, send the user prompt to the image model without rewriting it. Default true. */
+  enhance?: boolean
   onProgress?: (progress: number, label: string) => void
 }
 
@@ -91,6 +94,7 @@ export type GenerateVideoOptions = {
   generateAudio?: boolean
   imageUrl?: string
   imageUrls?: string[]
+  skillId?: string
   onProgress?: (progress: number, label: string) => void
 }
 

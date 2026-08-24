@@ -1,19 +1,14 @@
 import { generateObject } from 'ai'
 import { z } from 'zod'
+import { PROMPT_KEYS, type AspectRatio } from '@socialista/types'
 
-import {
-  buildUgcVideoPlannerUserPrompt,
-  UGC_VIDEO_PLANNER_SYSTEM,
-  type UgcVideoPlannerInput,
-} from '../prompts/ugc-video-planner-prompt.js'
-import { buildImagePromptMessages } from '../utils/build-messages.js'
-import type { AspectRatio, SkillModelConfig } from '@socialista/types'
+import { resolvePrompt } from '../registry.js'
+import { buildUgcVideoPlannerUserPrompt, type UgcVideoPlannerInput } from '../builders/ugc-video-planner.js'
+import { buildImagePromptMessages } from '../builders/image.js'
 
 export type PlanUgcVideoPromptInput = UgcVideoPlannerInput & {
   stillUrls: string[]
-  plannerModel: string
-  systemPrompt?: string
-  modelConfig?: SkillModelConfig
+  systemOverride?: string
 }
 
 export type PlannedUgcVideoPrompt = {
@@ -44,13 +39,13 @@ export async function planUgcVideoPrompt(input: PlanUgcVideoPromptInput): Promis
 
   const media = stillUrls.map(imageUrl => ({ imageUrl }))
   const userText = buildUgcVideoPlannerUserPrompt(input)
+  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcVideoPlanner, input.systemOverride)
 
   const result = await generateObject({
-    model: input.modelConfig?.model ?? input.plannerModel,
+    model,
     schema: plannedPromptSchema,
-    system: input.systemPrompt ?? UGC_VIDEO_PLANNER_SYSTEM,
-    temperature: input.modelConfig?.temperature ?? 0.7,
-    maxOutputTokens: input.modelConfig?.maxTokens,
+    system,
+    temperature: 0.7,
     messages: buildImagePromptMessages(userText, media.length > 0 ? media : undefined, aspectRatio),
   })
 

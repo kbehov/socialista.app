@@ -2,10 +2,10 @@
 
 import { auth } from '@/auth'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
-import { resolveSkillForSlot } from '@/services/skill.service'
+import { loadSkillOverride } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSlideshow } from '@socialista/ai'
-import { SKILL_SLOTS, type SlideshowContentType } from '@socialista/types'
+import { PROMPT_KEYS, type SlideshowContentType } from '@socialista/types'
 export type GenerateSlideshowActionResult =
   | { success: true; texts: string[]; contentType: SlideshowContentType }
   | { success: false; error: string }
@@ -13,6 +13,7 @@ export type GenerateSlideshowActionResult =
 export async function generateSlideshowSlides(
   hook: string,
   slideCount: number,
+  skillId?: string,
 ): Promise<GenerateSlideshowActionResult> {
   const trimmed = hook.trim()
   if (!trimmed) {
@@ -25,22 +26,19 @@ export async function generateSlideshowSlides(
 
   try {
     const session = await auth()
-    // ensure user is signed in
     if (!session?.user?.id) {
       return { success: false, error: 'You must be signed in to generate slides' }
     }
-    // ensure user is in a workspace
     const workspaceId = await getCurrentWorkspace()
     if (!workspaceId) {
       return { success: false, error: 'You must be in a workspace to generate slides' }
     }
 
-    const skill = await resolveSkillForSlot(workspaceId._id, SKILL_SLOTS.slideshow)
+    const systemOverride = await loadSkillOverride(workspaceId._id, PROMPT_KEYS.slideshow, skillId)
     const result = await generateSlideshow({
       hook: trimmed,
       slideCount,
-      systemPrompt: skill?.content,
-      modelConfig: skill?.modelConfig,
+      systemOverride,
     })
     if (result.texts.length === 0) {
       return { success: false, error: 'No slides were generated' }

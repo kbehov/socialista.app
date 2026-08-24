@@ -6,6 +6,7 @@ import {
   COPYWRITER_FADE_EASE,
   TONE_OPTIONS,
 } from '@/components/posts/composer/copywriter/copywriter-constants'
+import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { CopywriterFooter } from '@/components/posts/composer/copywriter/copywriter-footer'
 import { CopywriterResult } from '@/components/posts/composer/copywriter/copywriter-result'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ import { formatProviderList, getStrictestCaptionLimit } from '@/constants/platfo
 import type { ComposerMediaItem } from '@/types/composer-types'
 import { useCompletion } from '@ai-sdk/react'
 import type { SocialProvider } from '@socialista/types'
+import { PROMPT_KEYS } from '@socialista/types'
 import { AnimatePresence, motion } from 'motion/react'
 import { AlertCircleIcon, ImagesIcon, SparklesIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -53,6 +55,7 @@ export function PostCopywriterDialog({
   const [tone, setTone] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [skillId, setSkillId] = useState<string | undefined>()
   const previewRef = useRef<HTMLDivElement>(null)
   const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -136,6 +139,7 @@ export function PostCopywriterDialog({
         captionMax: limit,
         tone: tone || undefined,
         media: mediaPayload.length > 0 ? mediaPayload : undefined,
+        ...(skillId ? { skillId } : {}),
       },
     })
   }, [
@@ -147,6 +151,7 @@ export function PostCopywriterDialog({
     prompt,
     selectedProviders,
     setCompletion,
+    skillId,
     tone,
     trimmedCaption,
   ])
@@ -461,6 +466,14 @@ export function PostCopywriterDialog({
             </AnimatePresence>
           </div>
 
+          <div className="px-4 pb-2">
+            <StudioSkillPicker
+              target={PROMPT_KEYS.postCopy}
+              value={skillId}
+              onChange={setSkillId}
+              disabled={isLoading}
+            />
+          </div>
           <CopywriterFooter
             isLoading={isLoading}
             hasResult={hasResult}

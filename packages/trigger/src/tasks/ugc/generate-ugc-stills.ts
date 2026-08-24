@@ -21,7 +21,7 @@ import {
   ugcClipSceneCount,
   type AspectRatio,
   type UgcClipType,
-  SKILL_SLOTS,
+  PROMPT_KEYS,
 } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
@@ -35,7 +35,7 @@ import {
   startGenerationRecord,
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
-import { loadSkillForTask } from '../shared/skills.js'
+import { loadSkillOverride } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function influencerRefs(influencer: {
@@ -143,11 +143,10 @@ export const generateUgcStills = schemaTask({
         throw new Error('Influencer not found')
       }
 
-      const skill = await loadSkillForTask({
+      const systemOverride = await loadSkillOverride({
         skillId: payload.skillId,
-        slot: SKILL_SLOTS.imagePromptEnhance,
+        target: PROMPT_KEYS.imagePrompt,
         workspaceId: payload.workspaceId,
-        variables: payload.skillVariables,
       })
 
       let failed = false
@@ -206,8 +205,8 @@ export const generateUgcStills = schemaTask({
               prompt: seed,
               media: media.length > 0 ? media : undefined,
               aspectRatio,
-              systemPrompt: skill.content,
-              modelConfig: skill.modelConfig,
+              systemOverride,
+              targetModel: model.value,
             })
             await setGenerationEnhancedPrompt(triggerRunId, enhanced)
           }

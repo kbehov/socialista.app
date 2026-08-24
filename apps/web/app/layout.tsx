@@ -4,20 +4,20 @@ import { AuthProvider } from '@/context/auth-provider'
 import { ThemeProvider } from '@/context/theme-provider'
 import { cn } from '@/lib/utils'
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Inter } from 'next/font/google'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
-
 const geistSans = Geist({
-  variable: '--font-geist-sans',
   subsets: ['latin'],
+  variable: '--font-geist-sans',
+  display: 'swap',
 })
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
   subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -43,7 +43,7 @@ export default async function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={cn('h-full', 'antialiased', geistSans.variable, geistMono.variable, 'font-sans', inter.variable)}
+      className={cn('h-full antialiased', geistSans.className, geistSans.variable, geistMono.variable)}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AuthProvider session={session}>

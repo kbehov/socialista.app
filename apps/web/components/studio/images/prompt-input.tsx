@@ -9,6 +9,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
 import { useImageStudio } from "@/components/studio/images/image-studio-provider";
+import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
 import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
@@ -31,9 +32,10 @@ import {
   IMAGE_GENERATION_COUNT_DEFAULT,
   IMAGE_GENERATION_COUNT_MAX,
   IMAGE_GENERATION_COUNT_MIN,
+  PROMPT_KEYS,
   type Model,
 } from "@socialista/types";
-import { ChevronDownIcon, SparklesIcon } from "lucide-react";
+import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -72,6 +74,8 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? "");
   const [aspectRatio, setAspectRatio] = useState<AspectRatioId>("1:1");
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT);
+  const [skillId, setSkillId] = useState<string | undefined>();
+  const [enhance, setEnhance] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
 
@@ -146,6 +150,8 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         userId: "",
         numImages,
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
+        ...(skillId ? { skillId } : {}),
+        ...(enhance ? {} : { enhance: false }),
       });
 
       if (!result.success) {
@@ -231,7 +237,42 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? "Generate" : `Generate ${numImages}`}
-        tools={aspectTools}
+        tools={
+          <>
+            {aspectTools}
+            <PromptInputButton
+              aria-label={enhance ? "Prompt enhancement on" : "Prompt enhancement off"}
+              aria-pressed={enhance}
+              className={cn(
+                "h-7 gap-1.5 rounded-xl border px-1.5 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
+                "transition-[border-color,background-color,box-shadow] duration-150",
+                "active:scale-[0.97]",
+                enhance
+                  ? "border-border/65 bg-background"
+                  : "border-border/40 bg-background/90 hover:border-border/65 hover:bg-background",
+              )}
+              disabled={isPending}
+              onClick={() => setEnhance((value) => !value)}
+              type="button"
+            >
+              <WandSparklesIcon
+                className={cn(
+                  "size-3.5 shrink-0",
+                  enhance ? "text-foreground/80" : "text-muted-foreground/60",
+                )}
+              />
+              <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+                {enhance ? "Enhance" : "Raw"}
+              </span>
+            </PromptInputButton>
+            <StudioSkillPicker
+              target={PROMPT_KEYS.imagePrompt}
+              value={skillId}
+              onChange={setSkillId}
+              disabled={isPending || !enhance}
+            />
+          </>
+        }
         textareaRef={(node) => {
           textareaRef.current = node;
         }}

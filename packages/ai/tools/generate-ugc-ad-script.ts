@@ -1,25 +1,19 @@
 import { generateText } from 'ai'
-import { UGC_SCRIPT_MAX_CHARS, clampUgcScript } from '@socialista/types'
-import type { SkillModelConfig } from '@socialista/types'
+import { UGC_SCRIPT_MAX_CHARS, clampUgcScript, PROMPT_KEYS } from '@socialista/types'
 
-import {
-  buildUgcAdScriptSystem,
-  buildUgcAdScriptUserPrompt,
-  type UgcAdScriptPromptInput,
-} from '../prompts/ugc-ad-script-prompt.js'
+import { resolvePrompt } from '../registry.js'
+import { buildUgcAdScriptUserPrompt, type UgcAdScriptPromptInput } from '../builders/ugc-ad-script.js'
 
 export type GenerateUgcAdScriptInput = UgcAdScriptPromptInput & {
-  model: string
-  systemPrompt?: string
-  modelConfig?: SkillModelConfig
+  systemOverride?: string
 }
 
 export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Promise<string> {
+  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcAdScript, input.systemOverride)
   const result = await generateText({
-    model: input.modelConfig?.model ?? input.model,
-    system: input.systemPrompt ?? buildUgcAdScriptSystem(input.durationSec),
-    temperature: input.modelConfig?.temperature ?? 0.85,
-    maxOutputTokens: input.modelConfig?.maxTokens,
+    model,
+    system,
+    temperature: 0.85,
     prompt: buildUgcAdScriptUserPrompt(input),
   })
 

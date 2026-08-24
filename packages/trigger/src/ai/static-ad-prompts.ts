@@ -33,8 +33,6 @@ const NO_NOTES_BRIEF = [
   'Invent only concise claim-safe on-image copy in the requested language. Lean hierarchy: hook + product + headline + optional CTA.',
 ].join(' ')
 
-export { staticAdVisionSystemPrompt } from '@socialista/ai'
-
 /**
  * Deterministic text brief sent to the vision planner alongside the product image.
  */

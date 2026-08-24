@@ -57,6 +57,7 @@ export async function startStaticAdGeneration(
       language: parsed.data.language,
       numImages,
       model: STATIC_AD_MODEL,
+      ...(parsed.data.skillId ? { skillId: parsed.data.skillId } : {}),
     })
 
     const publicAccessToken = await triggerAuth.createPublicToken({

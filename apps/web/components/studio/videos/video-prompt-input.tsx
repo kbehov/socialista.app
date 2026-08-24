@@ -8,6 +8,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
+import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
 import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
@@ -29,6 +30,7 @@ import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
   ModelType,
+  PROMPT_KEYS,
   VIDEO_DURATION_DEFAULT,
   VIDEO_DURATIONS,
   type Model,
@@ -76,6 +78,7 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("9:16");
   const [duration, setDuration] = useState(VIDEO_DURATION_DEFAULT);
   const [generateAudio, setGenerateAudio] = useState(true);
+  const [skillId, setSkillId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
 
@@ -167,6 +170,7 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
         generateAudio,
         userId: "",
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
+        ...(skillId ? { skillId } : {}),
       });
 
       if (!result.success) {
@@ -276,6 +280,12 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
           {generateAudio ? "Audio" : "Muted"}
         </span>
       </PromptInputButton>
+      <StudioSkillPicker
+        target={PROMPT_KEYS.videoPrompt}
+        value={skillId}
+        onChange={setSkillId}
+        disabled={isPending}
+      />
     </>
   );
 

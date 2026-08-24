@@ -67,7 +67,7 @@ export function NavUser({
                 <span className="truncate font-medium tracking-tight">{user.name}</span>
                 <span className="truncate text-[11px] text-muted-foreground">{user.email}</span>
               </div>
-              <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" strokeWidth={1.75} />
+              <ChevronsUpDownIcon className="ml-auto size-3.5 text-muted-foreground" strokeWidth={1.5} />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

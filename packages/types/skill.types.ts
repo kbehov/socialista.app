@@ -1,159 +1,42 @@
-export type SkillBinding = 'image' | 'video' | 'text'
-
-export const SKILL_BINDINGS = {
-  image: 'image',
-  video: 'video',
-  text: 'text',
-} as const satisfies Record<string, SkillBinding>
-
-export const SKILL_BINDING_VALUES = Object.values(SKILL_BINDINGS) as SkillBinding[]
-
-/** Call-site keys for default skills the user cannot pick. Code resolves by slot. */
-export const SKILL_SLOTS = {
-  imagePromptEnhance: 'image-prompt-enhance',
-  videoPromptEnhance: 'video-prompt-enhance',
-  staticAdVision: 'static-ad-vision',
+export const PROMPT_KEYS = {
+  imagePrompt: 'image-prompt',
+  videoPrompt: 'video-prompt',
+  staticAd: 'static-ad',
   ugcVideoPlanner: 'ugc-video-planner',
   ugcAdScript: 'ugc-ad-script',
-  ugcSceneStill: 'ugc-scene-still',
   videoScript: 'video-script',
   slideshow: 'slideshow',
-  postCopywriter: 'post-copywriter',
+  postCopy: 'post-copy',
 } as const
 
-export type SkillSlot = (typeof SKILL_SLOTS)[keyof typeof SKILL_SLOTS]
+export type PromptKey = (typeof PROMPT_KEYS)[keyof typeof PROMPT_KEYS]
 
-export const SKILL_SLOT_VALUES = Object.values(SKILL_SLOTS) as SkillSlot[]
+export const PROMPT_KEY_VALUES = Object.values(PROMPT_KEYS) as PromptKey[]
 
-/** Seed slugs for built-in categories. New categories are documents, not this list. */
-export const SYSTEM_CATEGORY_SLUGS = {
-  productEcommerce: 'product-ecommerce',
-  socialAds: 'social-ads',
-  brandIdentity: 'brand-identity',
-  influencerPersona: 'influencer-persona',
-  seasonalCampaign: 'seasonal-campaign',
-  editorialContent: 'editorial-content',
-  restyleEnhancement: 'restyle-enhancement',
-} as const
-
-export type SystemCategorySlug = (typeof SYSTEM_CATEGORY_SLUGS)[keyof typeof SYSTEM_CATEGORY_SLUGS]
-
-export type SkillSource = 'system' | 'user' | 'forked'
-
-export type SkillVisibility = 'private' | 'workspace' | 'public'
-
-export type SkillStatus = 'draft' | 'published' | 'archived'
-
-export type SkillCategoryStatus = 'active' | 'archived'
-
-export type SkillVariableType = 'text' | 'number' | 'select' | 'boolean'
-
-export const SKILL_SOURCES = ['system', 'user', 'forked'] as const satisfies readonly SkillSource[]
-
-export const SKILL_VISIBILITIES = ['private', 'workspace', 'public'] as const satisfies readonly SkillVisibility[]
-
-export const SKILL_STATUSES = ['draft', 'published', 'archived'] as const satisfies readonly SkillStatus[]
-
-export const SKILL_CATEGORY_STATUSES = ['active', 'archived'] as const satisfies readonly SkillCategoryStatus[]
-
-export const SKILL_VARIABLE_TYPES = [
-  'text',
-  'number',
-  'select',
-  'boolean',
-] as const satisfies readonly SkillVariableType[]
-
-export type SkillVariableValue = string | number | boolean
-
-export type SkillVariable = {
-  key: string
-  label: string
-  description?: string
-  type: SkillVariableType
-  required: boolean
-  defaultValue?: SkillVariableValue
-  options?: string[]
-}
-
-export type SkillModelConfig = {
-  model?: string
-  temperature?: number
-  maxTokens?: number
-}
-
-export type SkillCategory = {
-  _id: string
-  workspaceId: string | null
-  slug: string
-  name: string
-  description: string
-  icon?: string
-  sortOrder: number
-  source: 'system' | 'user'
-  status: SkillCategoryStatus
-  createdBy?: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-export type SkillCategorySummary = {
-  _id: string
-  slug: string
-  name: string
-  icon?: string
+export const PROMPT_KEY_LABELS: Record<PromptKey, string> = {
+  'image-prompt': 'Image generation',
+  'video-prompt': 'Video generation',
+  'static-ad': 'Static ads',
+  'ugc-video-planner': 'UGC planner',
+  'ugc-ad-script': 'UGC script',
+  'video-script': 'Video script',
+  slideshow: 'Slideshow',
+  'post-copy': 'Post copy',
 }
 
 export type Skill = {
   _id: string
-  workspaceId: string | null
+  workspaceId: string
   slug: string
   name: string
   description: string
-  categoryId: string
-  category?: SkillCategorySummary
-  binding: SkillBinding
-  slot?: SkillSlot
   icon?: string
+  target: PromptKey
   content: string
-  variables: SkillVariable[]
-  outputSchema?: Record<string, unknown>
-  toolBindings?: string[]
-  modelConfig?: SkillModelConfig
-  source: SkillSource
-  forkedFrom?: string
-  visibility: SkillVisibility
-  status: SkillStatus
-  version: number
   usageCount: number
   createdBy?: string
   createdAt: Date
   updatedAt: Date
-}
-
-export type CreateSkillCategoryPayload = {
-  workspaceId: string
-  name: string
-  slug?: string
-  description?: string
-  icon?: string
-  sortOrder?: number
-}
-
-export type UpdateSkillCategoryPayload = {
-  name?: string
-  slug?: string
-  description?: string
-  icon?: string | null
-  sortOrder?: number
-  status?: SkillCategoryStatus
-}
-
-export type GetSkillCategoriesResponse = {
-  categories: SkillCategory[]
-}
-
-export type GetSkillCategoryResponse = {
-  category: SkillCategory
 }
 
 export type CreateSkillPayload = {
@@ -161,40 +44,18 @@ export type CreateSkillPayload = {
   name: string
   slug?: string
   description?: string
-  categoryId: string
-  binding: SkillBinding
-  slot?: SkillSlot
   icon?: string
+  target: PromptKey
   content: string
-  variables?: SkillVariable[]
-  outputSchema?: Record<string, unknown>
-  toolBindings?: string[]
-  modelConfig?: SkillModelConfig
-  visibility?: SkillVisibility
-  status?: SkillStatus
 }
 
 export type UpdateSkillPayload = {
   name?: string
   slug?: string
   description?: string
-  categoryId?: string
-  binding?: SkillBinding
-  slot?: SkillSlot | null
   icon?: string | null
+  target?: PromptKey
   content?: string
-  variables?: SkillVariable[]
-  outputSchema?: Record<string, unknown> | null
-  toolBindings?: string[] | null
-  modelConfig?: SkillModelConfig | null
-  visibility?: SkillVisibility
-  status?: SkillStatus
-}
-
-export type ForkSkillPayload = {
-  workspaceId: string
-  name?: string
-  slug?: string
 }
 
 export type GetSkillsResponse = {
@@ -203,45 +64,4 @@ export type GetSkillsResponse = {
 
 export type GetSkillResponse = {
   skill: Skill
-}
-
-export type ResolveSkillQuery = {
-  workspaceId: string
-  slot?: SkillSlot
-  skillId?: string
-  variables?: Record<string, SkillVariableValue>
-}
-
-export type ResolveSkillResponse = {
-  skillId?: string
-  slug?: string
-  binding?: SkillBinding
-  slot?: SkillSlot
-  content: string
-  modelConfig?: SkillModelConfig
-  source: SkillSource | 'fallback'
-}
-
-export type SystemCategoryDefinition = {
-  slug: string
-  name: string
-  description: string
-  icon?: string
-  sortOrder?: number
-}
-
-/** Seed / sync payload for system skills (no Mongo ids). */
-export type SystemSkillDefinition = {
-  slug: string
-  name: string
-  description: string
-  categorySlug: string
-  binding: SkillBinding
-  slot?: SkillSlot
-  content: string
-  icon?: string
-  variables?: SkillVariable[]
-  outputSchema?: Record<string, unknown>
-  toolBindings?: string[]
-  modelConfig?: SkillModelConfig
 }

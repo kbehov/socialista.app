@@ -1,4 +1,4 @@
-import { BoxIcon, FolderArchive, LayoutDashboardIcon, LightbulbIcon, SparklesIcon } from 'lucide-react'
+import { BoxIcon, FolderArchive, LayoutDashboardIcon, LightbulbIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import {
@@ -39,21 +39,6 @@ const items = [
     ],
   },
   {
-    title: 'Skills',
-    url: '/manager/skills',
-    icon: <SparklesIcon />,
-    items: [
-      {
-        title: 'All skills',
-        url: '/manager/skills',
-      },
-      {
-        title: 'Categories',
-        url: '/manager/skills/categories',
-      },
-    ],
-  },
-  {
     title: 'Files',
     url: '/manager/files',
     icon: <FolderArchive />,
@@ -68,7 +53,7 @@ const items = [
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
+      <SidebarHeader className="border-b border-sidebar-separator h-16 flex items-center justify-center">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="default" asChild>

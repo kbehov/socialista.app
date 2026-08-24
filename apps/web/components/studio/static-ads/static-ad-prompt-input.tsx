@@ -9,6 +9,7 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
+import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { STUDIO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
@@ -37,6 +38,7 @@ import {
   IMAGE_GENERATION_COUNT_DEFAULT,
   IMAGE_GENERATION_COUNT_MAX,
   IMAGE_GENERATION_COUNT_MIN,
+  PROMPT_KEYS,
   type Model,
 } from '@socialista/types'
 import { ChevronDownIcon, SparklesIcon } from 'lucide-react'
@@ -90,6 +92,7 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
   const [isPending, startTransition] = useTransition()
   const [attachments, setAttachments] = useState<AttachedMedia[]>([])
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT)
+  const [skillId, setSkillId] = useState<string | undefined>()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const productImage = resolveStaticAdProductImage(attachments)
@@ -187,6 +190,7 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         productImage: imageUrl,
         language,
         numImages,
+        ...(skillId ? { skillId } : {}),
       })
 
       if (!result.success) {
@@ -296,6 +300,12 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         tools={
           <>
             {aspectTools}
+            <StudioSkillPicker
+              target={PROMPT_KEYS.staticAd}
+              value={skillId}
+              onChange={setSkillId}
+              disabled={isPending}
+            />
             <LanguageSelector
               value={language}
               onChange={setLanguage}

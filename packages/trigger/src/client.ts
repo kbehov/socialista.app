@@ -73,7 +73,6 @@ export {
   buildStaticAdCreativeBrief,
   buildStaticAdFinalPrompt,
   sanitizeStaticAdModelPrompt,
-  staticAdVisionSystemPrompt,
   type StaticAdPromptInput,
 } from './ai/static-ad-prompts.js'
 export * from './auth.js'

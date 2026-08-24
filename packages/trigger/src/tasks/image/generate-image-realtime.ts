@@ -1,7 +1,7 @@
 import { buildImagePrompt, generateImages } from '@socialista/ai'
 import { connectDb, disconnectDb } from '@socialista/db'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { clampImageGenerationCount, SKILL_SLOTS, TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 
 import { logger } from '@trigger.dev/sdk/v3'
@@ -16,7 +16,7 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
-import { loadSkillForTask } from '../shared/skills.js'
+import { loadSkillOverride } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -40,7 +40,6 @@ export const realtimeImageGeneration = schemaTask({
       const numImages = clampImageGenerationCount(payload.numImages)
       const billedCost = model.cost * numImages
       assertSufficientCredits(workspace, billedCost)
-      console.log('model', model)
       logger.info('model', { model: model.value, provider: model.modelProvider, numImages })
 
       const referenceUrls = collectReferenceUrls(payload.imageUrl, payload.imageUrls)
@@ -63,25 +62,26 @@ export const realtimeImageGeneration = schemaTask({
       generationId = started.generationId
 
       setGenerationStatus(10, 'Preparing your prompt')
-      console.log('payload', payload)
 
-      const skill = await loadSkillForTask({
-        skillId: payload.skillId,
-        slot: SKILL_SLOTS.imagePromptEnhance,
-        workspaceId: payload.workspaceId,
-        variables: payload.skillVariables,
-      })
+      const shouldEnhance = payload.enhance !== false
+      let enhanced = payload.prompt
+      if (shouldEnhance) {
+        const systemOverride = await loadSkillOverride({
+          skillId: payload.skillId,
+          target: PROMPT_KEYS.imagePrompt,
+          workspaceId: payload.workspaceId,
+        })
+        enhanced = await buildImagePrompt({
+          prompt: payload.prompt,
+          media: referenceUrls.map(imageUrl => ({ imageUrl })),
+          aspectRatio: payload.aspectRatio,
+          systemOverride,
+          targetModel: model.value,
+        })
+        await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
+      }
 
-      const enhanced = await buildImagePrompt({
-        prompt: payload.prompt,
-        media: referenceUrls.map(imageUrl => ({ imageUrl })),
-        aspectRatio: payload.aspectRatio,
-        systemPrompt: skill.content,
-        modelConfig: skill.modelConfig,
-      })
-
-      await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
-      const finalPrompt = `${enhanced}\n\n No watermarks, or ai generated text and labels`
+      const finalPrompt = enhanced
 
       setGenerationStatus(40, numImages > 1 ? `Generating ${numImages} images` : 'Generating image')
 
@@ -115,7 +115,7 @@ export const realtimeImageGeneration = schemaTask({
         },
         cost: billedCost,
         startedAt,
-        enhancedPrompt: enhanced,
+        ...(shouldEnhance ? { enhancedPrompt: enhanced } : {}),
       })
 
       setGenerationStatus(100, 'Complete')

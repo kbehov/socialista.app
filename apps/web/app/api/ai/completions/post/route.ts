@@ -1,6 +1,6 @@
-import { POST_COPYWRITING_SYSTEM } from '@socialista/ai'
+import { resolvePrompt } from '@socialista/ai'
 import { auth } from '@/auth'
-import { resolveSkillForSlot } from '@/services/skill.service'
+import { loadSkillOverride } from '@/services/skill.service'
 import { createCompletionUIStreamResponse } from '@/utils/ai-stream.utils'
 import {
   buildPostCopywriterMessages,
@@ -9,7 +9,7 @@ import {
   type PostCompletionBody,
 } from '@/utils/post-copywriter.utils'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
-import { SKILL_SLOTS } from '@socialista/types'
+import { PROMPT_KEYS } from '@socialista/types'
 import { streamText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -35,16 +35,14 @@ export async function POST(request: NextRequest) {
   }
 
   const userPrompt = buildPostCopywriterUserPrompt(sanitized)
-  const skill = await resolveSkillForSlot(workspace._id, SKILL_SLOTS.postCopywriter, {
-    skillId: sanitized.skillId,
-  })
+  const systemOverride = await loadSkillOverride(workspace._id, PROMPT_KEYS.postCopy, sanitized.skillId)
+  const { model, system } = resolvePrompt(PROMPT_KEYS.postCopy, systemOverride)
 
   try {
     const result = streamText({
-      model: skill?.modelConfig?.model ?? 'openai/gpt-5.6-luna',
-      system: skill?.content ?? POST_COPYWRITING_SYSTEM,
-      temperature: skill?.modelConfig?.temperature ?? 0.92,
-      maxOutputTokens: skill?.modelConfig?.maxTokens,
+      model,
+      system,
+      temperature: 0.92,
       frequencyPenalty: 0.4,
       presencePenalty: 0.2,
       messages: buildPostCopywriterMessages(userPrompt, sanitized.media),

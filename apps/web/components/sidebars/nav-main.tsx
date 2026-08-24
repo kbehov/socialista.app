@@ -48,9 +48,9 @@ export function NavMain({
   const pathname = usePathname()
 
   return (
-    <SidebarGroup className={cn('px-2 py-1', className)}>
-      <SidebarGroupLabel className="mb-0.5 h-7 px-2.5">{sectionTitle}</SidebarGroupLabel>
-      <SidebarMenu className="gap-0.5">
+    <SidebarGroup className={cn('px-2 py-0.5', className)}>
+      <SidebarGroupLabel className="mb-0 h-6 px-2.5">{sectionTitle}</SidebarGroupLabel>
+      <SidebarMenu className="gap-px">
         {items.map(item =>
           item.items?.length ? (
             <Collapsible

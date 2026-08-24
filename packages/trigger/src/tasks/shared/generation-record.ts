@@ -8,7 +8,7 @@ import {
   type GenerationResult,
   type IModel,
 } from '@socialista/db'
-import { logger } from '@trigger.dev/sdk/v3'
+import { logger, metadata } from '@trigger.dev/sdk/v3'
 
 export type StartGenerationRecordInput = {
   kind: GenerationKind
@@ -69,6 +69,7 @@ export async function startGenerationRecord(input: StartGenerationRecordInput) {
 
 /** Persist the AI-enhanced / planned prompt. Best-effort — logs and does not throw. */
 export async function setGenerationEnhancedPrompt(triggerRunId: string, enhancedPrompt: string) {
+  metadata.set('enhancedPrompt', enhancedPrompt)
   try {
     await updateGenerationByTriggerRunId(triggerRunId, { enhancedPrompt })
   } catch (error) {
