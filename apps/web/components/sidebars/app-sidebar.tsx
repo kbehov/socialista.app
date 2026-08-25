@@ -157,17 +157,17 @@ export function AppSidebar({ workspaces, projects, className, ...props }: AppSid
 
   return (
     <Sidebar collapsible="icon" className={cn(className)} {...props}>
-      <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-separator px-2 py-0">
+      <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-separator px-2 py-0 group-data-[collapsible=icon]:px-1">
         <ProjectSwitcher projects={projects} />
       </SidebarHeader>
 
-      <SidebarContent className="sidebar-scrollbar gap-1 overflow-x-hidden px-0 py-2 ">
+      <SidebarContent className="sidebar-scrollbar gap-5 overflow-x-hidden px-0 py-3 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:py-2">
         <NavMain items={platformItems} sectionTitle="Overview" />
         <NavMain items={studioItems} sectionTitle="Studio" />
         <NavMain items={workspaceItems} sectionTitle="Workspace" />
       </SidebarContent>
 
-      <SidebarFooter className="shrink-0 gap-2 border-t border-sidebar-separator p-2">
+      <SidebarFooter className="shrink-0 gap-1 border-t border-sidebar-separator p-2">
         <SidebarUpgradeCard />
         <SidebarStorageFooter />
         <TeamSwitcher workspaces={workspaces} />

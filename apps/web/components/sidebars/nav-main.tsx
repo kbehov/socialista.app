@@ -48,8 +48,8 @@ export function NavMain({
   const pathname = usePathname()
 
   return (
-    <SidebarGroup className={cn('px-2 py-0.5', className)}>
-      <SidebarGroupLabel className="mb-0 h-6 px-2.5">{sectionTitle}</SidebarGroupLabel>
+    <SidebarGroup className={cn('px-2 py-0', className)}>
+      <SidebarGroupLabel className="mb-1 h-auto px-2.5 py-1">{sectionTitle}</SidebarGroupLabel>
       <SidebarMenu className="gap-px">
         {items.map(item =>
           item.items?.length ? (
@@ -64,7 +64,10 @@ export function NavMain({
                   <SidebarMenuButton tooltip={item.title} isActive={isItemActive(pathname, item)}>
                     {item.icon}
                     <span>{item.title}</span>
-                    <ChevronRightIcon className="ml-auto size-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    <ChevronRightIcon
+                      className="ml-auto size-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                      strokeWidth={1.5}
+                    />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

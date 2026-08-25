@@ -38,7 +38,7 @@ function statusClassName(isFull: boolean, isNearFull: boolean) {
 
 function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
-    <div className="px-1 py-1.5 group-data-[collapsible=icon]:hidden">
+    <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
       <div className="flex items-center gap-2">
         <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <div className="min-w-0 flex-1">
@@ -57,20 +57,22 @@ function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFul
 
 function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
-    <div className="rounded-lg border border-sidebar-border/80 bg-sidebar-accent/60 px-3 py-2.5 group-data-[collapsible=icon]:hidden">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
-          <span className="text-xs font-medium tracking-tight text-sidebar-foreground">Storage</span>
+    <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
+      <div className="flex items-center gap-2">
+        <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-medium tracking-tight text-sidebar-foreground">Storage</span>
+            <span
+              className={cn('shrink-0 text-[11px] font-medium tabular-nums', statusClassName(isFull, isNearFull))}
+            >
+              {Math.round(percentUsed)}%
+            </span>
+          </div>
+          <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} />
         </div>
-        <span className={cn('shrink-0 text-[11px] font-medium tabular-nums', statusClassName(isFull, isNearFull))}>
-          {Math.round(percentUsed)}%
-        </span>
       </div>
-
-      <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} />
-
-      <p className="mt-2 truncate text-[11px] leading-snug tabular-nums text-muted-foreground">
+      <p className="mt-1.5 truncate pl-5.5 text-[11px] tabular-nums text-muted-foreground">
         {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
       </p>
     </div>

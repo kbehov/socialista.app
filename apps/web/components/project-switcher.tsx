@@ -11,13 +11,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import { formatTimezoneLocation } from '@/utils/timezone'
 import { ProjectResponse } from '@socialista/types'
-import { ChevronsUpDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
+import { CheckIcon, ChevronsUpDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+const SWITCHER_ICON_STROKE = 1.5
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
@@ -29,16 +32,37 @@ function projectTimezoneLabel(project: ProjectResponse): string | null {
   return project.timezone ? formatTimezoneLocation(project.timezone) : null
 }
 
-function ProjectAvatar({ project }: { project: ProjectResponse }) {
+function projectSubtitle(project: ProjectResponse): string {
+  const timezone = projectTimezoneLabel(project)
+  if (timezone) return timezone
+  if (project.isDefault) return 'Default project'
+  return 'Project'
+}
+
+type SwitcherAvatarProps = {
+  project: ProjectResponse
+  size?: 'sm' | 'md'
+  className?: string
+}
+
+function ProjectAvatar({ project, size = 'sm', className }: SwitcherAvatarProps) {
   return (
     <div
-      className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-sidebar-primary text-sidebar-primary-foreground"
+      className={cn('sidebar-switcher-avatar', size === 'md' && 'sidebar-switcher-avatar-md', className)}
       style={!project.icon && project.color ? { backgroundColor: project.color } : undefined}
     >
       {project.icon ? (
-        <Image src={project.icon} alt={project.name} width={24} height={24} className="size-full object-cover" />
+        <Image
+          src={project.icon}
+          alt=""
+          width={size === 'md' ? 32 : 24}
+          height={size === 'md' ? 32 : 24}
+          className="size-full object-cover"
+        />
       ) : (
-        <span className="text-xs font-medium">{project.name.charAt(0).toUpperCase()}</span>
+        <span className={cn('font-medium', size === 'md' ? 'text-sm' : 'text-xs')}>
+          {project.name.charAt(0).toUpperCase()}
+        </span>
       )}
     </div>
   )
@@ -53,6 +77,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const projectList = storedProjects.length > 0 ? storedProjects : projects
+  const currentProjectId = currentProject ? (getProjectId(currentProject) ?? currentProject._id) : null
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -85,12 +110,12 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
             className="group-data-[collapsible=icon]:justify-center"
             onClick={() => setCreateOpen(true)}
           >
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border/60 bg-sidebar-primary text-sidebar-primary-foreground">
-              <PlusIcon className="size-4" strokeWidth={1.75} />
+            <div className="sidebar-switcher-avatar sidebar-switcher-avatar-md">
+              <PlusIcon className="size-4" strokeWidth={SWITCHER_ICON_STROKE} />
             </div>
-            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-medium tracking-tight">Add project</span>
-              <span className="truncate text-[11px] text-muted-foreground">Create your first project</span>
+            <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+              <span className="truncate text-[13px] font-medium tracking-tight">Add project</span>
+              <span className="sidebar-switcher-meta truncate">Create your first project</span>
             </div>
           </SidebarMenuButton>
           <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
@@ -98,8 +123,6 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
       </SidebarMenu>
     )
   }
-
-  const timezoneLabel = projectTimezoneLabel(currentProject)
 
   return (
     <SidebarMenu>
@@ -111,69 +134,56 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
               tooltip={currentProject.name}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
-              <div
-                className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-sidebar-border/60 bg-sidebar-primary text-sidebar-primary-foreground"
-                style={!currentProject.icon && currentProject.color ? { backgroundColor: currentProject.color } : undefined}
-              >
-                {currentProject.icon ? (
-                  <Image
-                    src={currentProject.icon}
-                    alt={currentProject.name}
-                    width={32}
-                    height={32}
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm font-medium">{currentProject.name.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium tracking-tight">{currentProject.name}</span>
-                <span className="truncate text-[11px] text-muted-foreground">
-                  {timezoneLabel ?? (currentProject.isDefault ? 'Default project' : 'Project')}
-                </span>
+              <ProjectAvatar project={currentProject} size="md" />
+              <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-[13px] font-medium tracking-tight">{currentProject.name}</span>
+                <span className="sidebar-switcher-meta truncate">{projectSubtitle(currentProject)}</span>
               </div>
               <ChevronsUpDownIcon
-                className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden"
-                strokeWidth={1.75}
+                className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                strokeWidth={SWITCHER_ICON_STROKE}
               />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="start" side={isMobile ? 'bottom' : 'right'} sideOffset={4}>
-            <DropdownMenuLabel className="text-xs text-muted-foreground">Projects</DropdownMenuLabel>
+            <DropdownMenuLabel className="sidebar-switcher-meta px-2 py-1.5 text-xs font-medium">
+              Projects
+            </DropdownMenuLabel>
             {projectList.map((project, index) => {
+              const projectId = getProjectId(project) ?? project._id
+              const isSelected = projectId === currentProjectId
               const city = projectTimezoneLabel(project)
 
               return (
                 <DropdownMenuItem
-                  key={getProjectId(project) ?? project._id}
+                  key={projectId}
                   onClick={() => {
                     setCurrentProject(project)
                     router.refresh()
                   }}
-                  className="gap-2 p-2"
+                  className="gap-2.5 px-2 py-2"
                 >
                   <ProjectAvatar project={project} />
                   <div className="grid min-w-0 flex-1 leading-tight">
-                    <span className="truncate">{project.name}</span>
-                    {city ? <span className="truncate text-[11px] text-muted-foreground">{city}</span> : null}
+                    <span className="truncate text-sm">{project.name}</span>
+                    {city ? <span className="sidebar-switcher-meta truncate">{city}</span> : null}
                   </div>
-                  {index < 9 ? <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut> : null}
+                  {isSelected ? (
+                    <CheckIcon className="size-3.5 shrink-0 text-foreground" strokeWidth={SWITCHER_ICON_STROKE} />
+                  ) : index < 9 ? (
+                    <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                  ) : null}
                 </DropdownMenuItem>
               )
             })}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2" onSelect={() => setEditOpen(true)}>
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <Settings2Icon className="size-3.5" strokeWidth={1.75} />
-              </div>
-              <div className="font-medium">Edit project</div>
+            <DropdownMenuItem className="gap-2.5 px-2 py-2" onSelect={() => setEditOpen(true)}>
+              <Settings2Icon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={SWITCHER_ICON_STROKE} />
+              <span className="font-medium">Edit project</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 p-2" onSelect={() => setCreateOpen(true)}>
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <PlusIcon className="size-4" />
-              </div>
-              <div className="font-medium text-muted-foreground">Add project</div>
+            <DropdownMenuItem className="gap-2.5 px-2 py-2" onSelect={() => setCreateOpen(true)}>
+              <PlusIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={SWITCHER_ICON_STROKE} />
+              <span className="text-muted-foreground">Add project</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

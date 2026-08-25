@@ -16,11 +16,10 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getBillingPortalUrl } from '@/utils/billing-urls'
-import { CircleUserIcon, CreditCardIcon, LogOutIcon } from 'lucide-react'
+import { ArrowUpRightIcon, CircleUserIcon, CreditCardIcon, LogOutIcon } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { getInitials } from '@/utils/user'
-import { Badge } from '../ui/badge'
 
 export function UserDropdown() {
   const { data: session, status } = useSession()
@@ -35,7 +34,7 @@ export function UserDropdown() {
   const billingHref = plan !== 'free' && workspaceId ? getBillingPortalUrl(workspaceId) : DASHBOARD_ROUTES.UPGRADE
 
   if (status === 'loading') {
-    return <Skeleton className="size-7 shrink-0 rounded-md" />
+    return <Skeleton className="size-8 shrink-0 rounded-[10px]" />
   }
 
   return (
@@ -45,12 +44,12 @@ export function UserDropdown() {
           variant="ghost"
           size="icon-sm"
           className={cn(
-            'size-7 rounded-md p-0 transition-colors',
-            'hover:bg-muted/60 aria-expanded:bg-muted/60',
+            'p-0 text-muted-foreground transition-colors',
+            'hover:bg-muted/60 hover:text-foreground aria-expanded:bg-muted/60',
           )}
           aria-label="Open account menu"
         >
-          <Avatar className="size-6 rounded-md ring-1 ring-border/60">
+          <Avatar className="size-6 rounded-md">
             <AvatarImage src={avatar} alt={name} />
             <AvatarFallback className="rounded-md text-[10px] font-medium">{getInitials(user?.name)}</AvatarFallback>
           </Avatar>
@@ -66,7 +65,10 @@ export function UserDropdown() {
             <div className="grid min-w-0 flex-1 gap-0.5 text-left leading-none">
               <span className="truncate text-sm font-medium">{name}</span>
               {email ? <span className="truncate text-xs text-muted-foreground">{email}</span> : null}
-              <span className="truncate text-[11px] capitalize text-muted-foreground/80">{plan} plan</span>
+              <span className="truncate text-[11px] text-muted-foreground">
+                {plan.charAt(0).toUpperCase()}
+                {plan.slice(1)} plan
+              </span>
             </div>
           </div>
         </DropdownMenuLabel>
@@ -80,7 +82,7 @@ export function UserDropdown() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={DASHBOARD_ROUTES.UPGRADE}>
-              <Badge variant="default">Pro</Badge>
+              <ArrowUpRightIcon />
               Upgrade plan
             </Link>
           </DropdownMenuItem>

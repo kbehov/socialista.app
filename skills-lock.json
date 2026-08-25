@@ -8,6 +8,12 @@
       "skillPath": "skills/apple-design/SKILL.md",
       "computedHash": "8b94db67cb9edaad5f1501010804caa610131f1d2dfda0a27664b2e858deade3"
     },
+    "scandinavian-design": {
+      "source": "ericzakariasson/scandinavian-design",
+      "sourceType": "github",
+      "skillPath": "skills/scandinavian-design/SKILL.md",
+      "computedHash": "b1856501e2bbdee6b3958799510c2474ea5b597a88300850df74ce200bc50b01"
+    },
     "turborepo": {
       "source": "vercel/turborepo",
       "sourceType": "github",

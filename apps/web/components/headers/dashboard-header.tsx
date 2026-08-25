@@ -11,26 +11,24 @@ type DashboardHeaderProps = {
   className?: string
 }
 
+const headerIconClassName = 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+
 function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) {
   return (
-    <header className={cn('dashboard-header flex items-center gap-3 px-5 sm:px-6 lg:px-8', className)}>
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <SidebarTrigger
-          className={cn(
-            '-ml-1 size-8 rounded-lg text-muted-foreground',
-            'hover:bg-muted/60 hover:text-foreground',
-            'focus-visible:ring-2 focus-visible:ring-ring/40',
-          )}
-        />
-        <div className="hidden h-4 w-px bg-border/60 sm:block" aria-hidden />
+    <header className={cn('dashboard-header flex items-center gap-4 px-5 sm:px-6 lg:px-8', className)}>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <SidebarTrigger className={cn('-ml-1.5', headerIconClassName)} />
         <Logo className="hidden sm:flex" />
       </div>
 
       <div className="dashboard-header-actions">
         <WorkspaceBalanceHeader balance={workspaceBalance} />
-        <ThemeToggle className="size-7 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground" />
-        <NotificationBell className="size-7 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground" />
-        <UserDropdown />
+        <div className="dashboard-header-actions-divider hidden h-4 w-px bg-border sm:block" aria-hidden />
+        <div className="dashboard-header-actions-cluster">
+          <ThemeToggle className={headerIconClassName} />
+          <NotificationBell className={headerIconClassName} />
+          <UserDropdown />
+        </div>
       </div>
     </header>
   )

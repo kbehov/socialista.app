@@ -35,8 +35,8 @@ function getBalanceTone(balance: number) {
     }
   }
   return {
-    icon: 'text-emerald-500',
-    text: '',
+    icon: 'text-muted-foreground',
+    text: 'text-foreground',
     message: 'Available balance for generation',
   }
 }
@@ -58,16 +58,16 @@ export function WorkspaceBalanceHeader({
         <button
           type="button"
           aria-label={`Wallet balance ${formatCredits(balance)}. Open to top up.`}
-          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="rounded-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <Badge
             variant="ghost"
             className={cn(
-              'h-7 cursor-pointer gap-1.5 rounded-md px-2 font-medium tabular-nums transition-colors hover:bg-muted',
+              'h-8 cursor-pointer gap-1.5 rounded-[10px] px-2.5 font-medium tabular-nums transition-colors hover:bg-muted/60',
               className,
             )}
           >
-            <WalletIcon className={cn('size-3', tone.icon)} strokeWidth={1.75} />
+            <WalletIcon className={cn('size-3.5', tone.icon)} strokeWidth={1.5} />
             <span className={cn('text-xs', tone.text)}>{formatCredits(balance)}</span>
           </Badge>
         </button>
@@ -81,8 +81,8 @@ export function WorkspaceBalanceHeader({
           className="mt-1.5 w-full bg-foreground text-xs text-background"
           onClick={onTopUp}
         >
-          <CreditCardIcon className="size-3.5" strokeWidth={1.75} />
-          <span className="text-xs">Top Up</span>
+          <CreditCardIcon className="size-3.5" strokeWidth={1.5} />
+          <span className="text-xs">Top up</span>
         </Button>
       </PopoverContent>
     </Popover>
