@@ -19,6 +19,7 @@ import {
 } from '@/lib/studio/influencers/influencer-filters'
 import { cn } from '@/lib/utils'
 import { deleteInfluencer, exploreInfluencers, getWorkspaceInfluencers } from '@/services/influencer.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { ExploreInfluencersQuery, Influencer } from '@socialista/types'
 import {
   CompassIcon,
@@ -62,6 +63,7 @@ export function InfluencerList({
   initialHasMore = false,
   initialTotal,
 }: InfluencerListProps) {
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [tab, setTab] = useState<InfluencerListTab>('mine')
   const [influencers, setInfluencers] = useState(initialInfluencers)
   const [page, setPage] = useState(1)
@@ -107,7 +109,9 @@ export function InfluencerList({
       const query = buildQuery(pageNum)
 
       const response =
-        forTab === 'public' ? await exploreInfluencers(query) : await getWorkspaceInfluencers(workspaceId, query)
+        forTab === 'public'
+          ? await exploreInfluencers(query)
+          : await getWorkspaceInfluencers(workspaceId, { ...query, projectId })
 
       if (requestId !== requestIdRef.current) return
 
@@ -143,7 +147,7 @@ export function InfluencerList({
       })
       setTotal(cacheRef.current[forTab].total)
     },
-    [buildQuery, workspaceId],
+    [buildQuery, workspaceId, projectId],
   )
 
   useEffect(() => {

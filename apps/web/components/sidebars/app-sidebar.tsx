@@ -1,10 +1,10 @@
 'use client'
 
 import { NavMain } from '@/components/sidebars/nav-main'
-import { NavUser } from '@/components/sidebars/nav-user'
 import { SidebarStorageFooter } from '@/components/sidebars/sidebar-storage-footer'
 import { SidebarUpgradeCard } from '@/components/sidebars/sidebar-upgrade-card'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
+import { ProjectSwitcher } from '@/components/project-switcher'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import {
   DASHBOARD_ROUTES,
@@ -19,7 +19,7 @@ import {
   isStudioSegmentPath,
 } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
-import type { WorkspaceResponse } from '@socialista/types'
+import type { ProjectResponse, WorkspaceResponse } from '@socialista/types'
 import {
   ChartColumnIcon,
   FolderArchiveIcon,
@@ -40,11 +40,7 @@ import { useMemo } from 'react'
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   workspaces: WorkspaceResponse[]
-  user?: {
-    name: string
-    email: string
-    avatar: string
-  }
+  projects: ProjectResponse[]
 }
 
 type SidebarNavItem = {
@@ -52,12 +48,6 @@ type SidebarNavItem = {
   url: string
   icon: React.ReactNode
   isActive: boolean
-}
-
-const defaultUser = {
-  name: 'User',
-  email: '',
-  avatar: '',
 }
 
 const iconClassName = 'nav-icon size-3.5 shrink-0'
@@ -158,7 +148,7 @@ function buildWorkspaceItems(pathname: string): SidebarNavItem[] {
   ]
 }
 
-export function AppSidebar({ workspaces, user = defaultUser, className, ...props }: AppSidebarProps) {
+export function AppSidebar({ workspaces, projects, className, ...props }: AppSidebarProps) {
   const pathname = usePathname()
 
   const platformItems = useMemo(() => buildPlatformItems(pathname), [pathname])
@@ -168,7 +158,7 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
   return (
     <Sidebar collapsible="icon" className={cn(className)} {...props}>
       <SidebarHeader className="h-14 shrink-0 justify-center border-b border-sidebar-separator px-2 py-0">
-        <TeamSwitcher workspaces={workspaces} />
+        <ProjectSwitcher projects={projects} />
       </SidebarHeader>
 
       <SidebarContent className="sidebar-scrollbar gap-1 overflow-x-hidden px-0 py-2 ">
@@ -180,7 +170,7 @@ export function AppSidebar({ workspaces, user = defaultUser, className, ...props
       <SidebarFooter className="shrink-0 gap-2 border-t border-sidebar-separator p-2">
         <SidebarUpgradeCard />
         <SidebarStorageFooter />
-        <NavUser user={user} />
+        <TeamSwitcher workspaces={workspaces} />
       </SidebarFooter>
 
       <SidebarRail />

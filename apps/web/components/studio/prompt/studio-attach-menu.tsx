@@ -15,6 +15,7 @@ import { ProductPickerDialog } from "@/components/studio/static-ads/product-pick
 import { InfluencerPickerDialog } from "@/components/studio/influencers/influencer-picker-dialog";
 import { cn } from "@/lib/utils";
 import { getWorkspaceProducts } from "@/services/product.service";
+import { getProjectId, useProjectStore } from "@/store/project.store";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import type { Product } from "@socialista/types";
 import type { SelectedProductImage } from "@/types/static-ads.types";
@@ -25,7 +26,7 @@ import {
   UploadIcon,
   UserRoundIcon,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export type StudioAttachSource =
@@ -104,6 +105,7 @@ export function StudioAttachMenu({
   disabledReason,
 }: StudioAttachMenuProps) {
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const workspaceId =
     workspaceIdProp ?? currentWorkspace?._id ?? currentWorkspace?.id;
   const [mediaOpen, setMediaOpen] = useState(false);
@@ -113,6 +115,11 @@ export function StudioAttachMenu({
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsTruncated, setProductsTruncated] = useState(false);
+
+  useEffect(() => {
+    setProducts([]);
+    setProductsTruncated(false);
+  }, [projectId]);
 
   const mediaAttachments = attachments.filter(
     (file) => file.source === "upload" || file.source === "library",
@@ -158,6 +165,7 @@ export function StudioAttachMenu({
     const response = await getWorkspaceProducts(workspaceId, {
       limit: 50,
       sort: "-updatedAt",
+      projectId,
     });
     setProductsLoading(false);
     if (!response.success) {
@@ -167,7 +175,7 @@ export function StudioAttachMenu({
     const next = response.data?.products ?? [];
     setProducts(next);
     setProductsTruncated((response.meta?.total ?? next.length) > next.length);
-  }, [products.length, workspaceId]);
+  }, [products.length, workspaceId, projectId]);
 
   const handleSource = (source: StudioAttachSource) => {
     if (source === "upload" || source === "library") {

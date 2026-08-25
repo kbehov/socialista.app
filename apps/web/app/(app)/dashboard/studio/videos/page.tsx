@@ -2,7 +2,7 @@ import { VideoStudioWorkspace } from '@/components/studio/videos/video-studio-wo
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceVideos } from '@/services/video.service'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { Model } from '@socialista/types'
 import { preload } from 'react-dom'
 
@@ -18,7 +18,7 @@ function mergeModels(groups: Array<Model[] | undefined>): Model[] {
 
 export default async function VideosPage() {
   preload('/socialista-video.webp', { as: 'image' })
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view videos." />
@@ -27,7 +27,7 @@ export default async function VideosPage() {
   const [textToVideo, imageToVideo, videosResponse] = await Promise.all([
     getModels('limit=20&modelType=text-to-video&sort=-usageCount'),
     getModels('limit=20&modelType=image-to-video&sort=-usageCount'),
-    getWorkspaceVideos(workspace.id, 'draft'),
+    getWorkspaceVideos(workspace.id, 'draft', { projectId: project?.id }),
   ])
 
   const models = mergeModels([textToVideo.data?.models, imageToVideo.data?.models])

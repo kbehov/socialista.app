@@ -144,6 +144,7 @@ const ugcProjectSchema = new Schema<IUgcProject>(
       default: UgcProjectStatus.DRAFT,
     },
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true, index: true },
+    project: { type: Schema.Types.ObjectId, ref: 'Project', index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     productId: { type: Schema.Types.ObjectId, ref: 'Product' },
     productImageUrls: { type: [String], default: [] },
@@ -170,5 +171,7 @@ const ugcProjectSchema = new Schema<IUgcProject>(
 
 ugcProjectSchema.index({ workspace: 1, updatedAt: -1 })
 ugcProjectSchema.index({ workspace: 1, status: 1 })
+ugcProjectSchema.index({ project: 1, updatedAt: -1 })
+ugcProjectSchema.index({ project: 1, status: 1 })
 
 export const UgcProjectModel = model<IUgcProject>('UgcProject', ugcProjectSchema)

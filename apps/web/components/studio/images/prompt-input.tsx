@@ -26,6 +26,7 @@ import { DASHBOARD_ROUTES } from "@/constants/app-routes";
 import { storeGenerationAccessToken } from "@/lib/image-generation/session";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/workspace.store";
+import { getProjectId, useProjectStore } from "@/store/project.store";
 import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
@@ -69,6 +70,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   const router = useRouter();
   const { composerRef, registerPromptHandlers } = useImageStudio();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
+  const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [isPending, startTransition] = useTransition();
   const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>([]);
   const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? "");
@@ -152,6 +154,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
         ...(skillId ? { skillId } : {}),
         ...(enhance ? {} : { enhance: false }),
+        ...(projectId ? { projectId } : {}),
       });
 
       if (!result.success) {

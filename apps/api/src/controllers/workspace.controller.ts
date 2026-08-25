@@ -18,8 +18,10 @@ import {
   serializeWorkspace,
 } from '@/utils/workspace.utils.js'
 import {
+  ProjectStatus,
   addWorkspaceMember as addWorkspaceMemberRecord,
   countOwnedWorkspaces,
+  createProject as createProjectRecord,
   createWorkspace as createWorkspaceRecord,
   deductAiCredits,
   deleteWorkspace as deleteWorkspaceRecord,
@@ -42,6 +44,15 @@ export const createWorkspace = async (c: AuthContext) => {
     { ...input, limits: resolveCreateWorkspaceLimits(ownedWorkspaceCount) },
     userId,
   )
+
+  await createProjectRecord({
+    workspace: workspace._id.toString(),
+    name: workspace.name.trim() || 'Default project',
+    createdBy: userId,
+    timezone: workspace.settings.timezone,
+    isDefault: true,
+    status: ProjectStatus.ACTIVE,
+  })
 
   return successResponse(c, 201, { workspace: serializeWorkspace(workspace) })
 }

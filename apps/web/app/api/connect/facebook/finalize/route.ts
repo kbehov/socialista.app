@@ -59,6 +59,7 @@ export async function POST(request: Request) {
       const { candidate } = asset
       toConnect.push({
         workspaceId: session.workspaceId,
+        projectId: session.projectId,
         provider: candidate.provider,
         providerAccountId: candidate.providerAccountId,
         accountName: candidate.accountName,
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         accountAvatar: candidate.accountAvatar,
         biography: candidate.biography,
         followersCount: candidate.followersCount,
-        timezone: session.workspace.settings?.timezone,
+        timezone: session.project?.timezone ?? session.workspace.settings?.timezone,
         connectionStatus: ConnectionStatus.CONNECTED,
         scopes: handoff.scopes,
         metadata: {

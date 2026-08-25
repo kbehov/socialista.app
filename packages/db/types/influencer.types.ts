@@ -104,6 +104,7 @@ export interface IInfluencer {
   _id: Types.ObjectId
   /** Null for system/library influencers. */
   workspace: Types.ObjectId | null
+  project?: Types.ObjectId | null
   createdBy: Types.ObjectId | null
   visibility: InfluencerVisibility
   source: InfluencerSource
@@ -135,6 +136,7 @@ export type InfluencerDocument = HydratedDocument<IInfluencer>
 
 export type CreateInfluencerInput = {
   workspace?: string | null
+  project?: string | null
   createdBy?: string | null
   visibility: InfluencerVisibility
   source: InfluencerSource

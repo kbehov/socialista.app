@@ -6,15 +6,15 @@ import { AddProductTrigger } from '@/components/products/add-product-trigger'
 import { ProductsTable } from '@/components/tables/products.table'
 import { Button } from '@/components/ui/button'
 import { getWorkspaceProducts } from '@/services/product.service'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import { PackageIcon, ShoppingBagIcon } from 'lucide-react'
 
 export default async function ContextProductsPage() {
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
 
   if (!workspace) return null
 
-  const response = await getWorkspaceProducts(workspace.id)
+  const response = await getWorkspaceProducts(workspace.id, { projectId: project?.id })
   const products = response.data?.products ?? []
 
   if (!response.success) {

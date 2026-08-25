@@ -17,10 +17,10 @@ import type {
 } from '@socialista/types'
 import { cache } from 'react'
 import { getWorkspacePublishedActivity } from './post.service'
-import { getWorkspaceUsage } from './workspace.service'
 
 export type GetAnalyticsQuery = {
   range?: AnalyticsRange
+  projectId?: string
 }
 
 export type GetAnalyticsPerformanceQuery = GetAnalyticsQuery & {
@@ -39,22 +39,26 @@ function withQuery(path: string, query?: Record<string, string | number | undefi
   return qs ? `${path}?${qs}` : path
 }
 
-function withRange(path: string, range?: AnalyticsRange): string {
-  return withQuery(path, { range })
+function analyticsQuery(query?: GetAnalyticsQuery): Record<string, string | undefined> {
+  return {
+    range: query?.range,
+    project: query?.projectId,
+  }
 }
 
-const overviewTag = (workspaceId: string) => `workspace-analytics-${workspaceId}`
+const overviewTag = (workspaceId: string, projectId?: string) =>
+  projectId ? `workspace-analytics-${workspaceId}-${projectId}` : `workspace-analytics-${workspaceId}`
 
 /** Tiered overview: free stats always; premium totals when the workspace is Pro+. */
 export const getAnalyticsOverview = async (
   workspaceId: string,
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AnalyticsOverviewResponse>> => {
-  const path = withRange(ANALYTICS_ROUTES.GET_OVERVIEW(workspaceId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.GET_OVERVIEW(workspaceId), analyticsQuery(query))
   return api.get<AnalyticsOverviewResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId)],
+      tags: [overviewTag(workspaceId, query?.projectId)],
     },
   })
 }
@@ -64,11 +68,11 @@ export const getAnalyticsGrowth = async (
   workspaceId: string,
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AnalyticsGrowthResponse>> => {
-  const path = withRange(ANALYTICS_ROUTES.GET_GROWTH(workspaceId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.GET_GROWTH(workspaceId), analyticsQuery(query))
   return api.get<AnalyticsGrowthResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId)],
+      tags: [overviewTag(workspaceId, query?.projectId)],
     },
   })
 }
@@ -78,11 +82,11 @@ export const getAnalyticsPlatforms = async (
   workspaceId: string,
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AnalyticsPlatformsResponse>> => {
-  const path = withRange(ANALYTICS_ROUTES.GET_PLATFORMS(workspaceId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.GET_PLATFORMS(workspaceId), analyticsQuery(query))
   return api.get<AnalyticsPlatformsResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId)],
+      tags: [overviewTag(workspaceId, query?.projectId)],
     },
   })
 }
@@ -92,11 +96,11 @@ export const getAnalyticsAnomalies = async (
   workspaceId: string,
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AnalyticsAnomaliesResponse>> => {
-  const path = withRange(ANALYTICS_ROUTES.GET_ANOMALIES(workspaceId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.GET_ANOMALIES(workspaceId), analyticsQuery(query))
   return api.get<AnalyticsAnomaliesResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId)],
+      tags: [overviewTag(workspaceId, query?.projectId)],
     },
   })
 }
@@ -107,14 +111,14 @@ export const getAnalyticsAccountPerformance = async (
   query?: GetAnalyticsPerformanceQuery,
 ): Promise<ApiResponse<AnalyticsAccountPerformanceResponse>> => {
   const path = withQuery(ANALYTICS_ROUTES.GET_PERFORMANCE(workspaceId), {
-    range: query?.range,
+    ...analyticsQuery(query),
     rankBy: query?.rankBy,
     limit: query?.limit,
   })
   return api.get<AnalyticsAccountPerformanceResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId)],
+      tags: [overviewTag(workspaceId, query?.projectId)],
     },
   })
 }
@@ -125,11 +129,11 @@ export const getAccountAnalytics = async (
   accountId: string,
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AccountAnalyticsResponse>> => {
-  const path = withRange(ANALYTICS_ROUTES.GET_ACCOUNT(workspaceId, accountId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.GET_ACCOUNT(workspaceId, accountId), { range: query?.range })
   return api.get<AccountAnalyticsResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId), `account-analytics-${accountId}`],
+      tags: [overviewTag(workspaceId, query?.projectId), `account-analytics-${accountId}`],
     },
   })
 }
@@ -139,11 +143,11 @@ export const getWorkspaceAnalyticsSummary = async (
   workspaceId: string,
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<WorkspaceAnalyticsSummaryResponse>> => {
-  const path = withRange(ANALYTICS_ROUTES.GET_SUMMARY(workspaceId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.GET_SUMMARY(workspaceId), analyticsQuery(query))
   return api.get<WorkspaceAnalyticsSummaryResponse>(path, {
     next: {
       revalidate: 300, // 5 minutes
-      tags: [overviewTag(workspaceId)],
+      tags: [overviewTag(workspaceId, query?.projectId)],
     },
   })
 }
@@ -167,7 +171,7 @@ export const exportWorkspaceAnalyticsSummaryCsv = async (
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AnalyticsCsvExport>> => {
   const range = query?.range ?? 'daily'
-  const path = withRange(ANALYTICS_ROUTES.EXPORT_SUMMARY(workspaceId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.EXPORT_SUMMARY(workspaceId), analyticsQuery(query))
   const { text, contentDisposition } = await api.getText(path)
   return {
     success: true,
@@ -185,7 +189,7 @@ export const exportAccountAnalyticsCsv = async (
   query?: GetAnalyticsQuery,
 ): Promise<ApiResponse<AnalyticsCsvExport>> => {
   const range = query?.range ?? 'daily'
-  const path = withRange(ANALYTICS_ROUTES.EXPORT_ACCOUNT(workspaceId, accountId), query?.range)
+  const path = withQuery(ANALYTICS_ROUTES.EXPORT_ACCOUNT(workspaceId, accountId), { range: query?.range })
   const { text, contentDisposition } = await api.getText(path)
   return {
     success: true,
@@ -197,41 +201,71 @@ export const exportAccountAnalyticsCsv = async (
 }
 
 // React Server Component cache
-export const loadGrowth = cache(async ({ workspaceId, range }: { workspaceId: string; range: AnalyticsRange }) => {
-  try {
-    const { success, data, message } = await getAnalyticsGrowth(workspaceId, { range })
-    if (!success) {
-      throw new Error(message)
+export const loadGrowth = cache(
+  async ({
+    workspaceId,
+    range,
+    projectId,
+  }: {
+    workspaceId: string
+    range: AnalyticsRange
+    projectId?: string
+  }) => {
+    try {
+      const { success, data, message } = await getAnalyticsGrowth(workspaceId, { range, projectId })
+      if (!success) {
+        throw new Error(message)
+      }
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Failed to load growth data' }
     }
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error instanceof Error ? error.message : 'Failed to load growth data' }
-  }
-})
+  },
+)
 
-export const loadPlatforms = cache(async ({ workspaceId, range }: { workspaceId: string; range: AnalyticsRange }) => {
-  try {
-    const { success, data, message } = await getAnalyticsPlatforms(workspaceId, { range })
-    if (!success) {
-      throw new Error(message)
+export const loadPlatforms = cache(
+  async ({
+    workspaceId,
+    range,
+    projectId,
+  }: {
+    workspaceId: string
+    range: AnalyticsRange
+    projectId?: string
+  }) => {
+    try {
+      const { success, data, message } = await getAnalyticsPlatforms(workspaceId, { range, projectId })
+      if (!success) {
+        throw new Error(message)
+      }
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Failed to load platforms data' }
     }
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error instanceof Error ? error.message : 'Failed to load platforms data' }
-  }
-})
+  },
+)
 
-export const loadAnomalies = cache(async ({ workspaceId, range }: { workspaceId: string; range: AnalyticsRange }) => {
-  try {
-    const { success, data, message } = await getAnalyticsAnomalies(workspaceId, { range })
-    if (!success) {
-      throw new Error(message)
+export const loadAnomalies = cache(
+  async ({
+    workspaceId,
+    range,
+    projectId,
+  }: {
+    workspaceId: string
+    range: AnalyticsRange
+    projectId?: string
+  }) => {
+    try {
+      const { success, data, message } = await getAnalyticsAnomalies(workspaceId, { range, projectId })
+      if (!success) {
+        throw new Error(message)
+      }
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Failed to load anomalies data' }
     }
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error instanceof Error ? error.message : 'Failed to load anomalies data' }
-  }
-})
+  },
+)
 
 export const loadAccountPerformance = cache(
   async ({
@@ -239,17 +273,20 @@ export const loadAccountPerformance = cache(
     range,
     rankBy,
     limit,
+    projectId,
   }: {
     workspaceId: string
     range: AnalyticsRange
     rankBy?: AnalyticsAccountPerformanceRankBy
     limit?: number
+    projectId?: string
   }) => {
     try {
       const { success, data, message } = await getAnalyticsAccountPerformance(workspaceId, {
         range,
         rankBy,
         limit,
+        projectId,
       })
       if (!success) {
         throw new Error(message)
@@ -265,11 +302,20 @@ export const loadAccountPerformance = cache(
 )
 
 export const loadPublishedActivity = cache(
-  async ({ workspaceId, provider }: { workspaceId: string; provider?: SocialProvider }) => {
+  async ({
+    workspaceId,
+    provider,
+    projectId,
+  }: {
+    workspaceId: string
+    provider?: SocialProvider
+    projectId?: string
+  }) => {
     try {
       const { success, data, message } = await getWorkspacePublishedActivity(workspaceId, {
         days: 365,
         provider,
+        projectId,
       })
       if (!success) {
         throw new Error(message)
@@ -280,18 +326,6 @@ export const loadPublishedActivity = cache(
     }
   },
 )
-
-export const loadUsage = cache(async ({ workspaceId }: { workspaceId: string }) => {
-  try {
-    const { success, data, message } = await getWorkspaceUsage(workspaceId)
-    if (!success) {
-      throw new Error(message)
-    }
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: error instanceof Error ? error.message : 'Failed to load usage data' }
-  }
-})
 
 export const loadAccountAnalytics = cache(
   async ({

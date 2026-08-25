@@ -59,6 +59,11 @@ const generationSchema = new Schema<IGeneration>(
       required: true,
       index: true,
     },
+    project: {
+      type: Schema.Types.ObjectId,
+      ref: 'Project',
+      index: true,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -101,5 +106,7 @@ generationSchema.index({ workspace: 1, kind: 1, createdAt: -1 })
 generationSchema.index({ triggerRunId: 1 }, { unique: true })
 generationSchema.index({ workspace: 1, createdBy: 1, createdAt: -1 })
 generationSchema.index({ workspace: 1, status: 1, createdAt: -1 })
+generationSchema.index({ project: 1, createdAt: -1 })
+generationSchema.index({ project: 1, kind: 1, createdAt: -1 })
 
 export const GenerationModel = model<IGeneration>('Generation', generationSchema)

@@ -20,6 +20,7 @@ export const staticAdPayloadObjectSchema = z.object({
   prompt: z.string().trim().min(1).optional(),
   workspaceId: z.string().min(1),
   userId: z.string().min(1),
+  projectId: z.string().min(1).optional(),
   aspectRatio: z.enum(ASPECT_RATIOS).default('1:1'),
   productImage: z.string().url(),
   model: z.literal(STATIC_AD_MODEL).default(STATIC_AD_MODEL),

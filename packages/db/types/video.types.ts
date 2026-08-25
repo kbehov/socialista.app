@@ -110,6 +110,7 @@ export interface IVideo {
   name: string
   status: VideoStatus
   workspace: Types.ObjectId
+  project?: Types.ObjectId
   createdBy: Types.ObjectId
   resolution: { width: number; height: number }
   fps: number

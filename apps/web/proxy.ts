@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { CURRENT_WORKSPACE_COOKIE } from '@/utils/cookie.utils'
+import { CURRENT_PROJECT_COOKIE, CURRENT_WORKSPACE_COOKIE } from '@/utils/cookie.utils'
 import { NextResponse } from 'next/server'
 
 const AUTH_PATHS = ['/auth/signin', '/auth/signup', '/auth/forgot-password', '/auth/reset-password'] as const
@@ -13,7 +13,7 @@ function isAuthPath(pathname: string) {
   return AUTH_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`))
 }
 
-function isCorruptWorkspaceCookie(value: string | undefined) {
+function isCorruptIdCookie(value: string | undefined) {
   return value === 'undefined' || value === 'null' || value === ''
 }
 
@@ -45,8 +45,13 @@ export const proxy = auth(req => {
   const response = NextResponse.next()
 
   const workspaceCookie = req.cookies.get(CURRENT_WORKSPACE_COOKIE)?.value
-  if (workspaceCookie !== undefined && isCorruptWorkspaceCookie(workspaceCookie)) {
+  if (workspaceCookie !== undefined && isCorruptIdCookie(workspaceCookie)) {
     response.cookies.delete(CURRENT_WORKSPACE_COOKIE)
+  }
+
+  const projectCookie = req.cookies.get(CURRENT_PROJECT_COOKIE)?.value
+  if (projectCookie !== undefined && isCorruptIdCookie(projectCookie)) {
+    response.cookies.delete(CURRENT_PROJECT_COOKIE)
   }
 
   return response

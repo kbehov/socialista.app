@@ -16,6 +16,7 @@ export type StartGenerationRecordInput = {
   triggerRunId: string
   workspaceId: string
   userId: string
+  projectId?: string
   prompt?: string
   model: IModel
   inputs?: GenerationInputs
@@ -49,6 +50,7 @@ export async function startGenerationRecord(input: StartGenerationRecordInput) {
 
   const generation = await upsertGenerationByTriggerRunId({
     workspace: input.workspaceId,
+    ...(input.projectId ? { project: input.projectId } : {}),
     createdBy: input.userId,
     kind: input.kind,
     status: GenerationStatus.RUNNING,

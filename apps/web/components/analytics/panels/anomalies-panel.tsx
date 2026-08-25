@@ -9,10 +9,11 @@ type AnomaliesPanelProps = {
   workspaceId: string
   range: AnalyticsRange
   provider?: SocialProvider | 'all'
+  projectId?: string
 }
 
-export async function AnomaliesPanel({ workspaceId, range, provider }: AnomaliesPanelProps) {
-  const { data, error } = await loadAnomalies({ workspaceId, range })
+export async function AnomaliesPanel({ workspaceId, range, provider, projectId }: AnomaliesPanelProps) {
+  const { data, error } = await loadAnomalies({ workspaceId, range, projectId })
 
   if (error || !data) {
     return (

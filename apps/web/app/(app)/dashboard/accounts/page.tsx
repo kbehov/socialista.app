@@ -12,7 +12,7 @@ import {
 } from '@/lib/accounts/account-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { formatItemCount } from '@/utils/format'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { MetaResponse } from '@socialista/types'
 import { Link2Icon } from 'lucide-react'
 import { Suspense } from 'react'
@@ -31,7 +31,7 @@ const defaultMeta: MetaResponse = {
 }
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view connected accounts." />
@@ -49,6 +49,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     query: query.query,
     provider: query.provider,
     connectionStatus: query.connectionStatus,
+    projectId: project?.id,
   })
 
   const accounts = data?.accounts ?? []

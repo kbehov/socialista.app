@@ -57,6 +57,7 @@ export const getWorkspacePosts = async (
     account?: string
     from?: string
     to?: string
+    projectId?: string
   },
 ): Promise<ApiResponse<GetPostsResponse>> => {
   const params = new URLSearchParams()
@@ -69,6 +70,7 @@ export const getWorkspacePosts = async (
   if (query?.account) params.set('account', query.account)
   if (query?.from) params.set('from', query.from)
   if (query?.to) params.set('to', query.to)
+  if (query?.projectId) params.set('project', query.projectId)
 
   const search = params.toString()
   const path = `${POST_ROUTES.GET_WORKSPACE_POSTS(workspaceId)}${search ? `?${search}` : ''}`
@@ -112,6 +114,7 @@ export const getWorkspacePostStats = async (workspaceId: string): Promise<ApiRes
 export type GetPublishedActivityQuery = {
   days?: number
   provider?: SocialProvider
+  projectId?: string
 }
 
 /** Daily published-post counts for the analytics publishing heatmap. */
@@ -122,6 +125,7 @@ export const getWorkspacePublishedActivity = async (
   const params = new URLSearchParams()
   if (query?.days) params.set('days', String(query.days))
   if (query?.provider) params.set('provider', query.provider)
+  if (query?.projectId) params.set('project', query.projectId)
 
   const search = params.toString()
   const path = `${POST_ROUTES.GET_WORKSPACE_PUBLISHED_ACTIVITY(workspaceId)}${search ? `?${search}` : ''}`

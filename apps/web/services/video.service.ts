@@ -39,9 +39,11 @@ export const getVideo = async (id: string): Promise<ApiResponse<{ video: VideoRe
 export const getWorkspaceVideos = async (
   workspaceId: string,
   status?: string,
+  options?: { projectId?: string },
 ): Promise<ApiResponse<GetVideosResponse>> => {
   const params = new URLSearchParams()
   if (status) params.set('status', status)
+  if (options?.projectId) params.set('project', options.projectId)
   const query = params.toString()
   const path = `${VIDEO_ROUTES.GET_WORKSPACE_VIDEOS(workspaceId)}${query ? `?${query}` : ''}`
   return api.get<GetVideosResponse>(path)

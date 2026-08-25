@@ -9,9 +9,12 @@ import {
   Plan,
   WorkspaceMemberRole,
   assertValidTimezone,
+  getDefaultWorkspaceProject,
+  getProjectById,
   getUserById,
   getWorkspaceById,
   isValidId,
+  type IProject,
   type IWorkspace,
   type UserDocument,
   type WorkspaceMember,
@@ -190,6 +193,43 @@ export const getWorkspaceAsOwner = async (id: string, userId: string) => {
   const workspace = await getWorkspaceOrThrow(id)
   assertWorkspaceOwner(workspace, userId)
   return workspace
+}
+
+export const getProjectOrThrow = async (id: string) => {
+  if (!isValidId(id)) {
+    throw new HttpError(400, 'Invalid project ID')
+  }
+  const project = await getProjectById(id)
+  if (!project) {
+    throw new HttpError(404, 'Project not found')
+  }
+  return project
+}
+
+export const getProjectAsMember = async (id: string, userId: string) => {
+  const project = await getProjectOrThrow(id)
+  await getWorkspaceAsMember(project.workspace.toString(), userId)
+  return project
+}
+
+/** Ensures `projectId` belongs to `workspaceId`. Falls back to the workspace default project. */
+export const resolveProjectForWorkspace = async (
+  workspaceId: string,
+  projectId?: string,
+): Promise<IProject> => {
+  if (projectId) {
+    const project = await getProjectOrThrow(projectId)
+    if (project.workspace.toString() !== workspaceId) {
+      throw new HttpError(400, 'Project does not belong to this workspace')
+    }
+    return project
+  }
+
+  const fallback = await getDefaultWorkspaceProject(workspaceId)
+  if (!fallback) {
+    throw new HttpError(400, 'No project found for this workspace')
+  }
+  return fallback
 }
 
 export const parseCreateWorkspaceInput = (body: Record<string, unknown>) => {

@@ -8,10 +8,10 @@ import {
   toCreateAccountInput,
   toUpdateAccountInput,
 } from '@/utils/account.utils.js'
-import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
+import { applyProjectQueryAlias, withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { searchAccountLocations as searchLocationsForAccount } from '@/utils/location-search.utils.js'
-import { assertAccountsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
+import { assertAccountsLimit, getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import {
   SocialProvider,
   createAccount as createAccountInDb,
@@ -49,8 +49,11 @@ export const connectAccount = async (c: Context<AppContext>) => {
     assertAccountsLimit(workspace)
   }
 
-  const timezone = resolveAccountTimezone(input.timezone, workspace.settings.timezone)
-  const { account, created } = await upsertAccount(toCreateAccountInput({ ...input, timezone }, userId))
+  const project = await resolveProjectForWorkspace(input.workspaceId, input.projectId)
+  const timezone = resolveAccountTimezone(input.timezone, project.timezone || workspace.settings.timezone)
+  const { account, created } = await upsertAccount(
+    toCreateAccountInput({ ...input, timezone, projectId: project._id.toString() }, userId),
+  )
 
   if (created) {
     await incrementAccountsUsage(input.workspaceId)
@@ -68,8 +71,11 @@ export const createAccount = async (c: Context<AppContext>) => {
   const { userId, workspace } = await authorizeWorkspaceAccountAction(c, input.workspaceId)
   assertAccountsLimit(workspace)
 
-  const timezone = resolveAccountTimezone(input.timezone, workspace.settings.timezone)
-  const account = await createAccountInDb(toCreateAccountInput({ ...input, timezone }, userId))
+  const project = await resolveProjectForWorkspace(input.workspaceId, input.projectId)
+  const timezone = resolveAccountTimezone(input.timezone, project.timezone || workspace.settings.timezone)
+  const account = await createAccountInDb(
+    toCreateAccountInput({ ...input, timezone, projectId: project._id.toString() }, userId),
+  )
   await incrementAccountsUsage(input.workspaceId)
 
   return successResponse(c, 201, { account: serializeAccount(account) })
@@ -79,7 +85,9 @@ export const getWorkspaceAccounts = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await authorizeWorkspaceAccountAction(c, workspaceId)
 
-  const data = await getAccounts(withQueryParam(c.req.url, 'workspace', workspaceId))
+  const data = await getAccounts(
+    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspace', workspaceId)),
+  )
   return successResponse(
     c,
     200,
@@ -99,7 +107,11 @@ export const updateAccount = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'account ID')
   const input = parseUpdateAccountInput((await c.req.json()) as Record<string, unknown>)
-  await getAccountForMember(id, userId)
+  const existing = await getAccountForMember(id, userId)
+
+  if (input.projectId) {
+    await resolveProjectForWorkspace(existing.workspace.toString(), input.projectId)
+  }
 
   const account = await updateAccountInDb(id, toUpdateAccountInput(input))
   if (!account) {

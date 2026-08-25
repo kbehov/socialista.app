@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
+import { applyProjectQueryAlias, withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   cloneVideoTimeline,
@@ -10,7 +10,7 @@ import {
   serializeVideoDoc,
   serializeVideoSummary,
 } from '@/utils/video.utils.js'
-import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
+import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import {
   createVideo as createVideoInDb,
   deleteVideo as deleteVideoInDb,
@@ -70,6 +70,7 @@ export const createVideo = async (c: Context<AppContext>) => {
   const input = (await c.req.json()) as CreateVideoPayload
   const workspaceId = parseParamId(input.workspaceId, 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
+  const project = await resolveProjectForWorkspace(workspaceId, input.projectId)
 
   const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim() : 'Untitled video'
 
@@ -77,6 +78,7 @@ export const createVideo = async (c: Context<AppContext>) => {
     name,
     status: VideoStatus.DRAFT,
     workspace: toObjectId(workspaceId),
+    project: toObjectId(project._id.toString()),
     createdBy: toObjectId(userId),
     resolution: input.resolution ?? DEFAULT_VIDEO_RESOLUTION,
     fps: input.fps ?? DEFAULT_VIDEO_FPS,
@@ -95,7 +97,9 @@ export const getWorkspaceVideos = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const data = await getVideos(withQueryParam(c.req.url, 'workspace', workspaceId))
+  const data = await getVideos(
+    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspace', workspaceId)),
+  )
   return successResponse(
     c,
     200,
@@ -192,6 +196,7 @@ export const duplicateVideo = async (c: Context<AppContext>) => {
     name,
     status: VideoStatus.DRAFT,
     workspace: source.workspace,
+    ...(source.project ? { project: source.project } : {}),
     createdBy: toObjectId(userId),
     resolution: source.resolution,
     fps: source.fps,

@@ -6,6 +6,7 @@ import {
   parseParamId,
   requireTrimmedString,
   withQueryParam,
+  applyProjectQueryAlias,
 } from "@/utils/common.utils.js";
 import { HttpError, successResponse } from "@/utils/http-response.js";
 import {
@@ -24,7 +25,7 @@ import {
   serializeInfluencer,
   resolveInfluencerGenerationModel,
 } from "@/utils/influencer.utils.js";
-import { getWorkspaceAsMember } from "@/utils/workspace.utils.js";
+import { getWorkspaceAsMember, resolveProjectForWorkspace } from "@/utils/workspace.utils.js";
 import { buildInfluencerBasePromptFragment } from "@socialista/ai";
 import {
   createInfluencer as createInfluencerInDb,
@@ -176,7 +177,7 @@ export const getWorkspaceInfluencers = async (c: Context<AppContext>) => {
   await getWorkspaceAsMember(workspaceId, userId);
 
   const params = new URLSearchParams(
-    withQueryParam(c.req.url, "workspace", workspaceId),
+    applyProjectQueryAlias(withQueryParam(c.req.url, "workspace", workspaceId)),
   );
   if (!params.has("limit")) params.set("limit", DEFAULT_EXPLORE_LIMIT);
 
@@ -204,6 +205,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
     Record<string, unknown>;
   const workspaceId = parseParamId(body.workspaceId, "workspace ID");
   await getWorkspaceAsMember(workspaceId, userId);
+  const project = await resolveProjectForWorkspace(workspaceId, body.projectId);
 
   const name = requireTrimmedString(body.name, "Name");
   const gender = parseGender(body.gender);
@@ -237,6 +239,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
 
   const influencer = await createInfluencerInDb({
     workspace: workspaceId,
+    project: project._id.toString(),
     createdBy: userId,
     visibility: InfluencerVisibility.PRIVATE,
     source: InfluencerSource.GENERATED,

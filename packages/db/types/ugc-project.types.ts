@@ -123,6 +123,7 @@ export interface IUgcProject {
   name: string
   status: UgcProjectStatus
   workspace: Types.ObjectId
+  project?: Types.ObjectId
   createdBy: Types.ObjectId
   productId?: Types.ObjectId
   productImageUrls: string[]

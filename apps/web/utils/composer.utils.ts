@@ -326,6 +326,7 @@ export function buildCreatePayload(params: {
 
   return {
     workspaceId,
+    projectId: account.projectId,
     accountId: account._id,
     provider: account.provider,
     type,
@@ -340,10 +341,15 @@ export function buildCreatePayload(params: {
   }
 }
 
-export function getDefaultTimezone(accounts: AccountSummary[], selectedIds: string[]): string {
+export function getDefaultTimezone(
+  accounts: AccountSummary[],
+  selectedIds: string[],
+  fallback?: string,
+): string {
   const firstSelected = accounts.find(account => selectedIds.includes(account._id))
   if (firstSelected?.timezone) return firstSelected.timezone
   if (accounts[0]?.timezone) return accounts[0].timezone
+  if (fallback) return fallback
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
   } catch {

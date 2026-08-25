@@ -78,6 +78,7 @@ const OBJECT_ID_KEYS = new Set([
   'account',
   'workspace',
   'workspaceId',
+  'project',
   'createdBy',
   'uploadedBy',
   'ownerId',

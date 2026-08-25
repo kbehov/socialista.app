@@ -12,7 +12,7 @@ import {
   toSeriesPoints,
   type AnalyticsPeriodWindow,
 } from '@/utils/analytics.utils.js'
-import { parseParamId } from '@/utils/common.utils.js'
+import { parseOptionalId, parseParamId } from '@/utils/common.utils.js'
 import { csvResponse } from '@/utils/csv.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
@@ -20,6 +20,7 @@ import {
   countPostsByStatus,
   getAccountAnalyticsSeries,
   getAccountById,
+  getAccountIdsByWorkspace,
   getAccounts,
   getLatestMissingMetrics,
   getWorkspaceAccountBreakdown,
@@ -104,6 +105,24 @@ function capitalizeMetric(key: keyof AnalyticsMetrics): string {
 
 function csvDateStamp(date = new Date()): string {
   return date.toISOString().slice(0, 10)
+}
+
+function parseAnalyticsProjectId(value: string | undefined): string | undefined {
+  return parseOptionalId(value, 'project ID')
+}
+
+async function resolveProjectAccountIds(
+  workspaceId: string,
+  projectId: string | undefined,
+): Promise<string[] | undefined> {
+  if (!projectId) return undefined
+  return getAccountIdsByWorkspace(workspaceId, projectId)
+}
+
+function accountsListQuery(workspaceId: string, projectId?: string): string {
+  const params = new URLSearchParams({ workspace: workspaceId, limit: '100' })
+  if (projectId) params.set('project', projectId)
+  return params.toString()
 }
 
 function csvCell(value: string | number | null | undefined): string | number {
@@ -305,7 +324,9 @@ export const getAccountAnalytics = async (c: Context<AnalyticsContext>) => {
 export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>) => {
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [seriesPoints, breakdownRows, accountsResult] = await Promise.all([
     getWorkspaceAnalyticsSeries({
@@ -313,6 +334,7 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
       start: periods.seriesStart,
       end: periods.currentEnd,
       granularity: periods.granularity,
+      accountIds,
     }),
     getWorkspaceAccountBreakdown({
       workspaceId,
@@ -320,8 +342,9 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
       currentEnd: periods.currentEnd,
       previousStart: periods.previousStart,
       previousEnd: periods.previousEnd,
+      accountIds,
     }),
-    getAccounts(`workspace=${workspaceId}&limit=100`),
+    getAccounts(accountsListQuery(workspaceId, projectId)),
   ])
 
   const accounts = buildWorkspaceAccountBreakdownRows(
@@ -410,7 +433,9 @@ export const getWorkspaceAnalyticsSummary = async (c: Context<AnalyticsContext>)
 export const exportWorkspaceAnalyticsSummaryCsv = async (c: Context<AnalyticsContext>) => {
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [breakdownRows, accountsResult] = await Promise.all([
     getWorkspaceAccountBreakdown({
@@ -419,8 +444,9 @@ export const exportWorkspaceAnalyticsSummaryCsv = async (c: Context<AnalyticsCon
       currentEnd: periods.currentEnd,
       previousStart: periods.previousStart,
       previousEnd: periods.previousEnd,
+      accountIds,
     }),
-    getAccounts(`workspace=${workspaceId}&limit=100`),
+    getAccounts(accountsListQuery(workspaceId, projectId)),
   ])
 
   const accounts = buildWorkspaceAccountBreakdownRows(
@@ -506,12 +532,14 @@ export const getAnalyticsOverview = async (c: Context<AnalyticsContext>) => {
   const workspace = c.get('workspace')
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
   const isPremium = hasAnalyticsAccess(workspace)
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [accountStats, postCounts, spend, seriesPoints] = await Promise.all([
-    getWorkspaceAccountStats(workspaceId),
-    countPostsByStatus(workspaceId),
+    getWorkspaceAccountStats(workspaceId, projectId),
+    countPostsByStatus(workspaceId, projectId),
     getWorkspaceGenerationSpend({ workspaceId }),
     isPremium
       ? getWorkspaceAnalyticsSeries({
@@ -519,6 +547,7 @@ export const getAnalyticsOverview = async (c: Context<AnalyticsContext>) => {
           start: periods.previousStart,
           end: periods.currentEnd,
           granularity: periods.granularity,
+          accountIds,
         })
       : Promise.resolve(null),
   ])
@@ -569,7 +598,9 @@ export const getAnalyticsOverview = async (c: Context<AnalyticsContext>) => {
 export const getAnalyticsGrowth = async (c: Context<AnalyticsContext>) => {
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [seriesPoints, providerSeries] = await Promise.all([
     getWorkspaceAnalyticsSeries({
@@ -577,12 +608,14 @@ export const getAnalyticsGrowth = async (c: Context<AnalyticsContext>) => {
       start: periods.seriesStart,
       end: periods.currentEnd,
       granularity: periods.granularity,
+      accountIds,
     }),
     getWorkspaceProviderSeries({
       workspaceId,
       start: periods.seriesStart,
       end: periods.currentEnd,
       granularity: periods.granularity,
+      accountIds,
     }),
   ])
 
@@ -607,7 +640,9 @@ export const getAnalyticsGrowth = async (c: Context<AnalyticsContext>) => {
 export const getAnalyticsPlatforms = async (c: Context<AnalyticsContext>) => {
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [breakdownRows, accountStats] = await Promise.all([
     getWorkspaceProviderBreakdown({
@@ -616,8 +651,9 @@ export const getAnalyticsPlatforms = async (c: Context<AnalyticsContext>) => {
       currentEnd: periods.currentEnd,
       previousStart: periods.previousStart,
       previousEnd: periods.previousEnd,
+      accountIds,
     }),
-    getWorkspaceAccountStats(workspaceId),
+    getWorkspaceAccountStats(workspaceId, projectId),
   ])
 
   const accountCountByProvider = new Map(
@@ -662,7 +698,9 @@ export const getAnalyticsPlatforms = async (c: Context<AnalyticsContext>) => {
 export const getAnalyticsAnomalies = async (c: Context<AnalyticsContext>) => {
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [seriesPoints, providerSeries] = await Promise.all([
     getWorkspaceAnalyticsSeries({
@@ -670,12 +708,14 @@ export const getAnalyticsAnomalies = async (c: Context<AnalyticsContext>) => {
       start: periods.seriesStart,
       end: periods.currentEnd,
       granularity: 'day',
+      accountIds,
     }),
     getWorkspaceProviderSeries({
       workspaceId,
       start: periods.seriesStart,
       end: periods.currentEnd,
       granularity: 'day',
+      accountIds,
     }),
   ])
 
@@ -765,9 +805,11 @@ function toPerformanceRow(
 export const getAnalyticsAccountPerformance = async (c: Context<AnalyticsContext>) => {
   const workspaceId = c.get('workspaceId')
   const range = parseAnalyticsRange(c.req.query('range'))
+  const projectId = parseAnalyticsProjectId(c.req.query('project'))
   const periods = resolveAnalyticsPeriods(range)
   const rankBy = parsePerformanceRankBy(c.req.query('rankBy'))
   const limit = parsePerformanceLimit(c.req.query('limit'))
+  const accountIds = await resolveProjectAccountIds(workspaceId, projectId)
 
   const [leaders, accountsResult] = await Promise.all([
     getWorkspaceAccountPerformanceLeaders({
@@ -778,8 +820,9 @@ export const getAnalyticsAccountPerformance = async (c: Context<AnalyticsContext
       previousEnd: periods.previousEnd,
       rankBy,
       limit,
+      accountIds,
     }),
-    getAccounts(`workspace=${workspaceId}&limit=100`),
+    getAccounts(accountsListQuery(workspaceId, projectId)),
   ])
 
   const accountsById = new Map(

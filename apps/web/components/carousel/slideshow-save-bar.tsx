@@ -9,6 +9,7 @@ import { flushAllBackgroundTransforms } from '@/lib/carousel/background-transfor
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { createSlideshow, updateSlideshow } from '@/services/slideshow.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { Loader2Icon, SaveIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -52,6 +53,7 @@ export function SlideshowSaveBar({
   const router = useRouter()
   const workspace = useWorkspaceStore(s => s.currentWorkspace)
   const workspaceId = getWorkspaceId(workspace)
+  const studioProjectId = useProjectStore(s => getProjectId(s.currentProject))
   const slideshowId = useEditorStore(s => s.slideshowId)
   const slideshowName = useEditorStore(s => s.slideshowName)
   const setSlideshowName = useEditorStore(s => s.setSlideshowName)
@@ -104,6 +106,7 @@ export function SlideshowSaveBar({
 
       const response = await createSlideshow({
         workspaceId,
+        projectId: studioProjectId,
         name: payload.name,
         canvas: payload.canvas,
         aspectRatioId: payload.aspectRatioId,
@@ -129,7 +132,7 @@ export function SlideshowSaveBar({
       toast.error('Failed to save slideshow')
       return null
     }
-  }, [getProjectPayload, loadProject, markClean, slideshowId, workspaceId])
+  }, [getProjectPayload, loadProject, markClean, slideshowId, studioProjectId, workspaceId])
 
   useEffect(() => {
     persistRef.current = persistSlideshowDraft

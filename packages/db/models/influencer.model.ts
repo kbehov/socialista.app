@@ -85,6 +85,7 @@ const galleryShotSchema = new Schema<InfluencerGalleryShot>(
 const influencerSchema = new Schema<IInfluencer>(
   {
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', default: null, index: true },
+    project: { type: Schema.Types.ObjectId, ref: 'Project', default: null, index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     visibility: {
       type: String,
@@ -143,6 +144,7 @@ influencerSchema.index({ visibility: 1, status: 1, usageCount: -1 })
 influencerSchema.index({ visibility: 1, status: 1, createdAt: -1 })
 influencerSchema.index({ workspace: 1, status: 1, updatedAt: -1 })
 influencerSchema.index({ workspace: 1, name: 1 })
+influencerSchema.index({ project: 1, status: 1, updatedAt: -1 })
 influencerSchema.index({ name: 'text', bio: 'text' })
 influencerSchema.index({
   gender: 1,

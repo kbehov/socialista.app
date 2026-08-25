@@ -1,4 +1,5 @@
 export const CURRENT_WORKSPACE_COOKIE = 'socialista_cwp'
+export const CURRENT_PROJECT_COOKIE = 'socialista_cpj'
 
 const DEFAULT_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 
@@ -69,4 +70,23 @@ export function setCurrentWorkspaceIdClient(workspaceId: string): void {
 
 export function removeCurrentWorkspaceIdClient(): void {
   removeClientCookie(CURRENT_WORKSPACE_COOKIE)
+}
+
+export function getCurrentProjectIdClient(): string | undefined {
+  const value = getClientCookie(CURRENT_PROJECT_COOKIE)
+  if (!value || value === 'undefined' || value === 'null') {
+    if (value === 'undefined' || value === 'null') {
+      removeCurrentProjectIdClient()
+    }
+    return undefined
+  }
+  return value
+}
+
+export function setCurrentProjectIdClient(projectId: string): void {
+  setClientCookie(CURRENT_PROJECT_COOKIE, projectId)
+}
+
+export function removeCurrentProjectIdClient(): void {
+  removeClientCookie(CURRENT_PROJECT_COOKIE)
 }

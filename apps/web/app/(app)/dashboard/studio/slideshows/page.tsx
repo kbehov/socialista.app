@@ -1,16 +1,16 @@
 import { SlideshowList } from '@/components/carousel/slideshow-list'
 import { getWorkspaceSlideshows } from '@/services/slideshow.service'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
 
 export default async function SlideshowsPage() {
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view slideshows." />
   }
 
-  const response = await getWorkspaceSlideshows(workspace.id, 'draft')
+  const response = await getWorkspaceSlideshows(workspace.id, 'draft', { projectId: project?.id })
   const slideshows = response.data?.slideshows ?? []
   const error = response.success ? null : (response.message ?? 'Failed to load slideshows')
 

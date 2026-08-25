@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     const results = await connectAccountsBatch([
       {
         workspaceId: oauthState.workspaceId,
+        projectId: session.projectId,
         provider: 'tiktok',
         providerAccountId: profile.openId,
         accountName: profile.accountName,

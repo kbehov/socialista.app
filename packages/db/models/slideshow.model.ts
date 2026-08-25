@@ -130,6 +130,7 @@ const slideshowSchema = new Schema<ISlideshow>(
     name: { type: String, required: true, trim: true },
     status: { type: String, enum: enumValues(SlideshowStatus), default: SlideshowStatus.DRAFT },
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true, index: true },
+    project: { type: Schema.Types.ObjectId, ref: 'Project', index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     canvas: {
       width: { type: Number, required: true },
@@ -142,5 +143,6 @@ const slideshowSchema = new Schema<ISlideshow>(
 )
 
 slideshowSchema.index({ workspace: 1, status: 1, updatedAt: -1 })
+slideshowSchema.index({ project: 1, status: 1, updatedAt: -1 })
 
 export const SlideshowModel = model<ISlideshow>('Slideshow', slideshowSchema)

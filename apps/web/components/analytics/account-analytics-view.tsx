@@ -8,14 +8,17 @@ import { GrowthChart } from './growth-chart'
 export type AccountAnalyticsViewProps = {
   workspaceId: string
   data: AccountAnalyticsResponse
+  hideExport?: boolean
 }
 
-function AccountAnalyticsView({ workspaceId, data }: AccountAnalyticsViewProps) {
+function AccountAnalyticsView({ workspaceId, data, hideExport = false }: AccountAnalyticsViewProps) {
   return (
     <div className="flex w-full flex-col gap-4 pb-8">
-      <div className="flex justify-end">
-        <AnalyticsExportCsvButton workspaceId={workspaceId} accountId={data.account.id} range={data.range} />
-      </div>
+      {hideExport ? null : (
+        <div className="flex justify-end">
+          <AnalyticsExportCsvButton workspaceId={workspaceId} accountId={data.account.id} range={data.range} />
+        </div>
+      )}
 
       <AccountAnalyticsQuality dataQuality={data.dataQuality} />
 

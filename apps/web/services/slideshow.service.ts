@@ -40,9 +40,11 @@ export const getSlideshow = async (
 export const getWorkspaceSlideshows = async (
   workspaceId: string,
   status?: string,
+  options?: { projectId?: string },
 ): Promise<ApiResponse<GetSlideshowsResponse>> => {
   const params = new URLSearchParams()
   if (status) params.set('status', status)
+  if (options?.projectId) params.set('project', options.projectId)
   const query = params.toString()
   const path = `${SLIDESHOW_ROUTES.GET_WORKSPACE_SLIDESHOWS(workspaceId)}${query ? `?${query}` : ''}`
   return api.get<GetSlideshowsResponse>(path)

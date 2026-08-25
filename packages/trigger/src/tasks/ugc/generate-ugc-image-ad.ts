@@ -123,6 +123,7 @@ export const generateUgcImageAd = schemaTask({
         triggerRunId,
         workspaceId: payload.workspaceId,
         userId: payload.userId,
+        projectId: project.project?.toString(),
         prompt,
         model,
         inputs: {

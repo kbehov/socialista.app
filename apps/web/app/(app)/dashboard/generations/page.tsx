@@ -5,7 +5,7 @@ import { GenerationsView } from '@/components/generations/generations-view'
 import { PageHeader } from '@/components/headers/page-header'
 import { getWorkspaceGenerations, type GetWorkspaceGenerationsQuery } from '@/services/generation.service'
 import { formatItemCount } from '@/utils/format'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { GenerationKind, GenerationStatus, MetaResponse } from '@socialista/types'
 import { SparklesIcon } from 'lucide-react'
 import { Suspense } from 'react'
@@ -74,7 +74,7 @@ function getGenerationsListQuery(
 }
 
 export default async function GenerationsPage({ searchParams }: GenerationsPageProps) {
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view generation history." />
@@ -82,7 +82,10 @@ export default async function GenerationsPage({ searchParams }: GenerationsPageP
 
   const params = await searchParams
   const query = getGenerationsListQuery(params)
-  const response = await getWorkspaceGenerations(workspace.id, query)
+  const response = await getWorkspaceGenerations(workspace.id, {
+    ...query,
+    projectId: project?.id,
+  })
 
   const generations = response.data?.generations ?? []
   const meta = response.meta ?? defaultMeta

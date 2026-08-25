@@ -179,6 +179,7 @@ export const generateUgcStills = schemaTask({
           triggerRunId,
           workspaceId: payload.workspaceId,
           userId: payload.userId,
+          projectId: project.project?.toString(),
           prompt: seed,
           model,
           inputs: {

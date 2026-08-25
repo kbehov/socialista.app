@@ -25,6 +25,7 @@ import {
   type InfluencerPreset,
 } from "@/lib/studio/influencers/presets";
 import { createInfluencer } from "@/services/influencer.service";
+import { getProjectId, useProjectStore } from "@/store/project.store";
 import { commitHaptic } from "@/utils/haptics";
 import type {
   InfluencerAgeRange,
@@ -76,6 +77,7 @@ export function InfluencerCreateWorkspace({
   models,
 }: InfluencerCreateWorkspaceProps) {
   const router = useRouter();
+  const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [pending, startTransition] = useTransition();
   const [referenceImages, setReferenceImages] = useState<AttachedMedia[]>([]);
   const [form, setForm] = useState<InfluencerCreateFormState>(cloneDefaultForm);
@@ -173,6 +175,7 @@ export function InfluencerCreateWorkspace({
       commitHaptic({});
       const response = await createInfluencer({
         workspaceId,
+        projectId,
         model: selectedModel.value,
         name: trimmedName,
         bio: form.bio.trim() || undefined,

@@ -10,6 +10,7 @@
     "build:db": "turbo run build --filter=@socialista/db",
     "lint:db": "turbo run lint --filter=@socialista/db",
     "check-types:db": "turbo run check-types --filter=@socialista/db",
+    "migrate:projects": "pnpm --filter @socialista/db migrate:projects",
     "start:api": "turbo run start --filter=@socialista/api",
     "dev:api": "turbo run dev --filter=@socialista/api",
     "lint:api": "turbo run lint --filter=@socialista/api",

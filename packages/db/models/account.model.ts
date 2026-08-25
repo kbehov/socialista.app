@@ -30,6 +30,11 @@ const accountSchema = new Schema<IAccount>(
       required: true,
       index: true,
     },
+    project: {
+      type: Schema.Types.ObjectId,
+      ref: 'Project',
+      index: true,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -78,6 +83,9 @@ accountSchema.index({ workspace: 1, connectionStatus: 1 })
 accountSchema.index({ workspace: 1, provider: 1 })
 accountSchema.index({ workspace: 1, accountName: 1 })
 accountSchema.index({ workspace: 1, createdAt: -1 })
+accountSchema.index({ project: 1, provider: 1 })
+accountSchema.index({ project: 1, connectionStatus: 1 })
+accountSchema.index({ project: 1, createdAt: -1 })
 accountSchema.index({ connectionStatus: 1, accessTokenExpiresAt: 1 })
 accountSchema.index({ provider: 1, connectionStatus: 1, _id: 1 })
 accountSchema.index({ provider: 1, connectionStatus: 1, 'analytics.refreshSlot': 1, _id: 1 })

@@ -32,6 +32,7 @@ import { storeGenerationAccessToken } from '@/lib/image-generation/session'
 import { resolveStaticAdProductImage } from '@/lib/studio/static-ads/resolve-product-image'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { StaticAdAspectRatio } from '@/types/static-ads.types'
 import { commitHaptic } from '@/utils/haptics'
 import {
@@ -78,6 +79,7 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
   const [submitShortcut] = useState(getSubmitShortcutLabel)
   const { textInput } = usePromptInputController()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const { credits } = useWorkspaceBilling()
   const {
     composerRef,
@@ -191,6 +193,7 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         language,
         numImages,
         ...(skillId ? { skillId } : {}),
+        ...(projectId ? { projectId } : {}),
       })
 
       if (!result.success) {

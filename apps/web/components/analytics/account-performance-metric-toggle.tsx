@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 import { DashboardSegment, dashboardSegmentLinkClass } from '@/components/dashboard/dashboard-segment'
-import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
+import { buildAnalyticsDashboardHref } from '@/utils/analytics-href'
 import { PERFORMANCE_METRIC_OPTIONS } from '@/utils/parsers'
 import type {
   AnalyticsAccountPerformanceRankBy,
@@ -15,17 +15,6 @@ export type AccountPerformanceMetricToggleProps = {
   range: AnalyticsRange
   provider?: SocialProvider | 'all'
   className?: string
-}
-
-function buildHref(
-  rankBy: AnalyticsAccountPerformanceRankBy,
-  range: AnalyticsRange,
-  provider?: SocialProvider | 'all',
-) {
-  const search = new URLSearchParams({ range })
-  if (rankBy !== 'followerGrowth') search.set('rankBy', rankBy)
-  if (provider && provider !== 'all') search.set('provider', provider)
-  return `${DASHBOARD_ROUTES.ROOT}?${search.toString()}`
 }
 
 function AccountPerformanceMetricToggle({
@@ -41,7 +30,7 @@ function AccountPerformanceMetricToggle({
         return (
           <Link
             key={option.value}
-            href={buildHref(option.value, range, provider)}
+            href={buildAnalyticsDashboardHref({ range, rankBy: option.value, provider })}
             role="tab"
             aria-selected={active}
             className={dashboardSegmentLinkClass(active)}

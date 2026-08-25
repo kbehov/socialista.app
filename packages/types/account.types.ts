@@ -19,6 +19,7 @@ export type SocialProvider =
 export type AccountSummary = {
   _id: string
   workspaceId: string
+  projectId?: string
   provider: SocialProvider
   providerAccountId: string
   accountName: string
@@ -45,6 +46,7 @@ export type Account = AccountSummary & {
 
 export type CreateAccountPayload = {
   workspaceId: string
+  projectId?: string
   provider: SocialProvider
   providerAccountId: string
   accountName: string
@@ -65,6 +67,7 @@ export type CreateAccountPayload = {
 
 export type UpdateAccountPayload = {
   accountName?: string
+  projectId?: string
   username?: string
   accountAvatar?: string
   biography?: string

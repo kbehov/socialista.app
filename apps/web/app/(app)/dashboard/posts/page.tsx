@@ -9,7 +9,7 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getPostsListQuery, hasActivePostFilters, parsePostFiltersFromSearchParams } from '@/lib/posts/post-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getWorkspacePosts } from '@/services/post.service'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { MetaResponse } from '@socialista/types'
 import { Link2Icon, PenLineIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -35,7 +35,7 @@ function formatPostsDescription(total: number, workspaceName: string) {
 }
 
 export default async function PostsPage({ searchParams }: PostsPageProps) {
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to view posts." />
@@ -47,7 +47,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const hasFilters = hasActivePostFilters(filters)
 
   const [accountsResponse, postsResponse] = await Promise.all([
-    getWorkspaceAccounts(workspace.id, { limit: 100, connectionStatus: 'connected' }),
+    getWorkspaceAccounts(workspace.id, { limit: 100, connectionStatus: 'connected', projectId: project?.id }),
     getWorkspacePosts(workspace.id, {
       page: query.page,
       limit: query.limit,
@@ -57,6 +57,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       account: query.account,
       from: query.from,
       to: query.to,
+      projectId: project?.id,
     }),
   ])
 

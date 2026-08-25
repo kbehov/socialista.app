@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { exploreInfluencers, getWorkspaceInfluencers } from '@/services/influencer.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { Influencer } from '@socialista/types'
 import { CheckIcon, CompassIcon, Loader2Icon, PlusIcon, SearchIcon, UserRoundIcon, XIcon } from 'lucide-react'
@@ -87,6 +88,7 @@ export function UgcInfluencerPicker({
   const influencersById = useUgcProjectStore(s => s.influencersById)
   const cacheInfluencers = useUgcProjectStore(s => s.cacheInfluencers)
   const ensureInfluencer = useUgcProjectStore(s => s.ensureInfluencer)
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('mine')
   const [query, setQuery] = useState('')
@@ -97,7 +99,9 @@ export function UgcInfluencerPicker({
     setLoading(true)
     const params = { query: query.trim() || undefined, limit: 24, status: 'ready' as const, sort: 'newest' as const }
     const response =
-      tab === 'explore' ? await exploreInfluencers(params) : await getWorkspaceInfluencers(workspaceId, params)
+      tab === 'explore'
+        ? await exploreInfluencers(params)
+        : await getWorkspaceInfluencers(workspaceId, { ...params, projectId })
     setLoading(false)
     if (!response.success) {
       toast.error(response.message ?? 'Failed to load creators')
@@ -105,7 +109,7 @@ export function UgcInfluencerPicker({
     }
     setItems(response.data?.influencers ?? [])
     cacheInfluencers(response.data?.influencers ?? [])
-  }, [cacheInfluencers, query, tab, workspaceId])
+  }, [cacheInfluencers, projectId, query, tab, workspaceId])
 
   useEffect(() => {
     if (!open) return

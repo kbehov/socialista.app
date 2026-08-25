@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteVideo, duplicateVideo, getWorkspaceVideos } from '@/services/video.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { VideoSummaryResponse } from '@socialista/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -12,6 +13,7 @@ type UseVideosListOptions = {
 }
 
 export function useVideosList({ workspaceId, initialVideos, initialError = null }: UseVideosListOptions) {
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [videos, setVideos] = useState(initialVideos)
   const [error, setError] = useState<string | null>(initialError)
   const [isLoading, setIsLoading] = useState(false)
@@ -32,7 +34,7 @@ export function useVideosList({ workspaceId, initialVideos, initialError = null 
   const loadVideos = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    const response = await getWorkspaceVideos(workspaceId, 'draft')
+    const response = await getWorkspaceVideos(workspaceId, 'draft', { projectId })
     if (!response.success || !response.data) {
       setError(response.message ?? 'Failed to load videos')
       setVideos([])
@@ -41,7 +43,7 @@ export function useVideosList({ workspaceId, initialVideos, initialError = null 
     }
     setVideos(response.data.videos)
     setIsLoading(false)
-  }, [workspaceId])
+  }, [workspaceId, projectId])
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget || isDeleting) return false

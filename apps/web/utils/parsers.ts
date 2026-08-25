@@ -56,3 +56,12 @@ export function parseAnalyticsRankBy(
   }
   return 'followerGrowth'
 }
+
+const OBJECT_ID_RE = /^[a-f0-9]{24}$/i
+
+/** Optional Mongo account id from `?account=`. Invalid values are ignored. */
+export function parseAnalyticsAccountId(value: string | string[] | undefined): string | undefined {
+  const raw = firstSearchParam(value)
+  if (!raw || !OBJECT_ID_RE.test(raw)) return undefined
+  return raw
+}

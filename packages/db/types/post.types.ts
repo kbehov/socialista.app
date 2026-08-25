@@ -77,6 +77,7 @@ export interface IPost {
   _id: Types.ObjectId
   account: Types.ObjectId
   workspace: Types.ObjectId
+  project?: Types.ObjectId
   createdBy: Types.ObjectId
   provider: SocialProvider
   type: PostType
@@ -116,6 +117,7 @@ export type PostDocument = HydratedDocument<IPost>
 export type CreatePostInput = {
   account: string
   workspace: string
+  project?: string
   createdBy: string
   provider: SocialProvider
   type: PostType

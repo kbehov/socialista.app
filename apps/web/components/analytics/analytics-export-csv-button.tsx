@@ -14,6 +14,7 @@ export type AnalyticsExportCsvButtonProps = {
   range: AnalyticsRange
   /** When set, export a single account summary instead of the workspace breakdown. */
   accountId?: string
+  projectId?: string
 }
 
 function downloadCsv(csv: string, filename: string) {
@@ -28,7 +29,7 @@ function downloadCsv(csv: string, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-function AnalyticsExportCsvButton({ workspaceId, range, accountId }: AnalyticsExportCsvButtonProps) {
+function AnalyticsExportCsvButton({ workspaceId, range, accountId, projectId }: AnalyticsExportCsvButtonProps) {
   const [isPending, startTransition] = useTransition()
 
   const handleExport = () => {
@@ -36,7 +37,7 @@ function AnalyticsExportCsvButton({ workspaceId, range, accountId }: AnalyticsEx
       try {
         const { success, data, message } = accountId
           ? await exportAccountAnalyticsCsv(workspaceId, accountId, { range })
-          : await exportWorkspaceAnalyticsSummaryCsv(workspaceId, { range })
+          : await exportWorkspaceAnalyticsSummaryCsv(workspaceId, { range, projectId })
         if (!success || !data) {
           throw new Error(message ?? 'Failed to export CSV')
         }

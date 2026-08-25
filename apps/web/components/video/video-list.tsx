@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { deleteVideo, duplicateVideo, getWorkspaceVideos } from '@/services/video.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { VideoSummaryResponse } from '@socialista/types'
 import { PlusIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -31,6 +32,7 @@ export function VideoList({
   initialError = null,
 }: VideoListProps) {
   const router = useRouter()
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [videos, setVideos] = useState(initialVideos)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError)
@@ -46,7 +48,7 @@ export function VideoList({
   const loadVideos = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    const response = await getWorkspaceVideos(workspaceId, 'draft')
+    const response = await getWorkspaceVideos(workspaceId, 'draft', { projectId })
     if (!response.success || !response.data) {
       setError(response.message ?? 'Failed to load videos')
       setVideos([])
@@ -55,7 +57,7 @@ export function VideoList({
     }
     setVideos(response.data.videos)
     setIsLoading(false)
-  }, [workspaceId])
+  }, [workspaceId, projectId])
 
   const handleDelete = async () => {
     if (!deleteTarget || isDeleting) return

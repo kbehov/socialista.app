@@ -39,6 +39,7 @@ export type GenerationResult = {
 export type Generation = {
   _id: string
   workspaceId: string
+  projectId?: string
   createdBy: string
   kind: GenerationKind
   status: GenerationStatus

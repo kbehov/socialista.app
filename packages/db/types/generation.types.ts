@@ -55,6 +55,7 @@ export type GenerationResult = {
 export interface IGeneration {
   _id: Types.ObjectId
   workspace: Types.ObjectId
+  project?: Types.ObjectId
   createdBy: Types.ObjectId
   kind: GenerationKind
   status: GenerationStatus
@@ -82,6 +83,7 @@ export type GenerationDocument = HydratedDocument<IGeneration>
 
 export type CreateGenerationInput = {
   workspace: string
+  project?: string
   createdBy: string
   kind: GenerationKind
   status?: GenerationStatus

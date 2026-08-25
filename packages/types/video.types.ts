@@ -163,6 +163,7 @@ export type VideoResponse = {
   name: string
   status: VideoStatus
   workspaceId: string
+  projectId?: string
   createdBy: string
   resolution: CanvasDimensions
   fps: number
@@ -181,6 +182,7 @@ export type VideoSummaryResponse = Pick<
   | 'name'
   | 'status'
   | 'workspaceId'
+  | 'projectId'
   | 'resolution'
   | 'fps'
   | 'duration'
@@ -196,6 +198,7 @@ export type VideoSummaryResponse = Pick<
 
 export type CreateVideoPayload = {
   workspaceId: string
+  projectId?: string
   name?: string
   resolution?: CanvasDimensions
   fps?: number

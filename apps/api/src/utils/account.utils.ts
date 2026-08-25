@@ -2,6 +2,7 @@ import {
   assertHasUpdates,
   optionalTrimmedString,
   parseOptionalDate,
+  parseOptionalId,
   parseOptionalNullableDate,
   parseParamId,
   parsePlainObject,
@@ -42,6 +43,7 @@ export const isConnectionStatus = (value: unknown): value is ApiConnectionStatus
 export const serializeAccount = (account: IAccount): Account => ({
   _id: account._id.toString(),
   workspaceId: account.workspace.toString(),
+  ...(account.project ? { projectId: account.project.toString() } : {}),
   createdBy: account.createdBy.toString(),
   provider: account.provider,
   providerAccountId: account.providerAccountId,
@@ -65,6 +67,7 @@ export const serializeAccount = (account: IAccount): Account => ({
 export const serializeAccountSummary = (account: IAccount): AccountSummary => ({
   _id: account._id.toString(),
   workspaceId: account.workspace.toString(),
+  ...(account.project ? { projectId: account.project.toString() } : {}),
   provider: account.provider,
   providerAccountId: account.providerAccountId,
   accountName: account.accountName,
@@ -97,6 +100,7 @@ export const parseCreateAccountInput = (body: Record<string, unknown>): CreateAc
 
   return {
     workspaceId,
+    projectId: parseOptionalId(body.projectId, 'project ID'),
     provider: body.provider,
     providerAccountId,
     accountName,
@@ -125,6 +129,13 @@ export const parseUpdateAccountInput = (body: Record<string, unknown>): UpdateAc
       throw new HttpError(400, 'Account name cannot be empty')
     }
     updates.accountName = accountName
+  }
+
+  if (body.projectId !== undefined) {
+    updates.projectId = parseParamId(
+      typeof body.projectId === 'string' ? body.projectId : undefined,
+      'project ID',
+    )
   }
 
   if (body.username !== undefined) {
@@ -201,6 +212,7 @@ export const toCreateAccountInput = (
   userId: string,
 ): CreateAccountInput => ({
   workspace: input.workspaceId,
+  project: input.projectId,
   createdBy: userId,
   provider: input.provider as SocialProvider,
   providerAccountId: input.providerAccountId,
@@ -219,13 +231,17 @@ export const toCreateAccountInput = (
   refreshTokenExpiresAt: toDate(input.refreshTokenExpiresAt),
 })
 
-export const toUpdateAccountInput = (input: UpdateAccountPayload): UpdateAccountInput => ({
-  ...input,
-  connectionStatus: input.connectionStatus as ConnectionStatus | undefined,
-  accessTokenExpiresAt: toNullableDate(input.accessTokenExpiresAt),
-  refreshTokenExpiresAt: toNullableDate(input.refreshTokenExpiresAt),
-  lastSyncedAt: toNullableDate(input.lastSyncedAt),
-})
+export const toUpdateAccountInput = (input: UpdateAccountPayload): UpdateAccountInput => {
+  const { projectId, ...rest } = input
+  return {
+    ...rest,
+    project: projectId,
+    connectionStatus: input.connectionStatus as ConnectionStatus | undefined,
+    accessTokenExpiresAt: toNullableDate(input.accessTokenExpiresAt),
+    refreshTokenExpiresAt: toNullableDate(input.refreshTokenExpiresAt),
+    lastSyncedAt: toNullableDate(input.lastSyncedAt),
+  }
+}
 
 export const getAccountOrThrow = async (id: string) => {
   const account = await getAccountById(id)

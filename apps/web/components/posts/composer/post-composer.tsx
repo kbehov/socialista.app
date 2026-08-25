@@ -1,6 +1,7 @@
 'use client'
 
 import { usePostComposerActions, usePostComposerStore } from '@/store/post-composer.store'
+import { useProjectStore } from '@/store/project.store'
 import { ConnectionStatus, type AccountSummary } from '@socialista/types'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -73,6 +74,7 @@ export function PostComposer({
   const schedule = usePostComposerStore(s => s.schedule)
   const previewAccountId = usePostComposerStore(s => s.previewAccountId)
   const storeWorkspaceId = usePostComposerStore(s => s.workspaceId)
+  const projectTimezone = useProjectStore(s => s.currentProject?.timezone)
 
   const {
     hydrate,
@@ -91,7 +93,7 @@ export function PostComposer({
   } = usePostComposerActions()
 
   useEffect(() => {
-    hydrate(workspaceId, getDefaultTimezone(connectedAccounts, []), initialMedia)
+    hydrate(workspaceId, getDefaultTimezone(connectedAccounts, [], projectTimezone), initialMedia)
     return () => reset()
     // Reset/hydrate only when the workspace changes — not when the account list identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,11 +168,11 @@ export function PostComposer({
 
   useEffect(() => {
     if (selectedAccountIds.length !== 1) return
-    const timezone = getDefaultTimezone(connectedAccounts, selectedAccountIds)
+    const timezone = getDefaultTimezone(connectedAccounts, selectedAccountIds, projectTimezone)
     if (timezone && timezone !== schedule.timezone) {
       setSchedule({ timezone })
     }
-  }, [selectedAccountIds, connectedAccounts, schedule.timezone, setSchedule])
+  }, [selectedAccountIds, connectedAccounts, projectTimezone, schedule.timezone, setSchedule])
 
   const selectedProviders = useMemo(
     () =>

@@ -6,6 +6,7 @@ import type { Generation } from '@socialista/types'
 export const serializeGeneration = (generation: IGeneration): Generation => ({
   _id: generation._id.toString(),
   workspaceId: generation.workspace.toString(),
+  ...(generation.project ? { projectId: generation.project.toString() } : {}),
   createdBy: generation.createdBy.toString(),
   kind: generation.kind,
   status: generation.status,

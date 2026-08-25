@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { createUgcProject, deleteUgcProject, getWorkspaceUgcProjects } from '@/services/ugc-project.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import { formatRelativeTime } from '@/utils/format'
 import type { UgcProjectSummary } from '@socialista/types'
 import { Loader2Icon, PlusIcon, SmartphoneIcon, Trash2Icon } from 'lucide-react'
@@ -31,6 +32,7 @@ export function UgcProjectList({
   initialError = null,
 }: UgcProjectListProps) {
   const router = useRouter()
+  const studioProjectId = useProjectStore(s => getProjectId(s.currentProject))
   const [projects, setProjects] = useState(initialProjects)
   const [error, setError] = useState(initialError)
   const [creating, startCreate] = useTransition()
@@ -39,7 +41,7 @@ export function UgcProjectList({
 
   const handleCreate = () => {
     startCreate(async () => {
-      const response = await createUgcProject({ workspaceId })
+      const response = await createUgcProject({ workspaceId, projectId: studioProjectId })
       if (!response.success || !response.data?.project) {
         toast.error(response.message ?? 'Could not create a UGC ad')
         return
@@ -87,7 +89,7 @@ export function UgcProjectList({
               size="sm"
               variant="outline"
               onClick={() => {
-                void getWorkspaceUgcProjects(workspaceId).then(response => {
+                void getWorkspaceUgcProjects(workspaceId, { projectId: studioProjectId }).then(response => {
                   if (!response.success) {
                     setError(response.message ?? 'Failed to load')
                     return

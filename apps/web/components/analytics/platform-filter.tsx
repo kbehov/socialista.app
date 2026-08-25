@@ -6,6 +6,7 @@ import { DashboardSegment, dashboardSegmentLinkClass } from '@/components/dashbo
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
+import { buildAnalyticsDashboardHref } from '@/utils/analytics-href'
 import type {
   AnalyticsAccountPerformanceRankBy,
   AnalyticsRange,
@@ -23,17 +24,6 @@ export type PlatformFilterProps = {
   range: AnalyticsRange
   rankBy?: AnalyticsAccountPerformanceRankBy
   className?: string
-}
-
-function buildHref(
-  range: AnalyticsRange,
-  provider?: SocialProvider | 'all',
-  rankBy?: AnalyticsAccountPerformanceRankBy,
-) {
-  const search = new URLSearchParams({ range })
-  if (provider && provider !== 'all') search.set('provider', provider)
-  if (rankBy && rankBy !== 'followerGrowth') search.set('rankBy', rankBy)
-  return `${DASHBOARD_ROUTES.ROOT}?${search.toString()}`
 }
 
 function PlatformFilter({
@@ -56,14 +46,14 @@ function PlatformFilter({
       aria-label="Filter by platform"
     >
       <DashboardSegment label="Filter by platform">
-        <FilterPill href={buildHref(range, 'all', rankBy)} active={current === 'all'}>
+        <FilterPill href={buildAnalyticsDashboardHref({ range, rankBy })} active={current === 'all'}>
           All
         </FilterPill>
 
         {platforms.map(platform => (
           <FilterPill
             key={platform.provider}
-            href={buildHref(range, platform.provider, rankBy)}
+            href={buildAnalyticsDashboardHref({ range, rankBy, provider: platform.provider })}
             active={current === platform.provider}
           >
             <SocialPlatformIcon provider={platform.provider} size={12} className="size-3.5 rounded [&_svg]:size-2.5" />

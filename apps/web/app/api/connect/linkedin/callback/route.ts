@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const results = await connectAccountsBatch([
       {
         workspaceId: oauthState.workspaceId,
+        projectId: session.projectId,
         provider: 'linkedin',
         providerAccountId: profile.linkedInId,
         accountName: profile.accountName,

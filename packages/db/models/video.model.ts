@@ -124,6 +124,7 @@ const videoSchema = new Schema<IVideo>(
     name: { type: String, required: true, trim: true },
     status: { type: String, enum: enumValues(VideoStatus), default: VideoStatus.DRAFT },
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true, index: true },
+    project: { type: Schema.Types.ObjectId, ref: 'Project', index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     resolution: {
       width: { type: Number, required: true },
@@ -140,5 +141,6 @@ const videoSchema = new Schema<IVideo>(
 )
 
 videoSchema.index({ workspace: 1, status: 1, updatedAt: -1 })
+videoSchema.index({ project: 1, status: 1, updatedAt: -1 })
 
 export const VideoModel = model<IVideo>('Video', videoSchema)

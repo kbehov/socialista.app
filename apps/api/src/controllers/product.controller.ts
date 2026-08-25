@@ -1,8 +1,8 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
+import { withQueryParam, parseParamId, parseOptionalId, applyProjectQueryAlias } from '@/utils/common.utils.js'
 import { extractProductFromUrl } from '@/utils/extract-product.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
-import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
+import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import {
   createProduct as createProductInDb,
   deleteProduct as deleteProductInDb,
@@ -19,6 +19,7 @@ function serializeProduct(product: Iproduct): Product {
   return {
     _id: product._id.toString(),
     workspaceId: product.workspaceId.toString(),
+    ...(product.project ? { projectId: product.project.toString() } : {}),
     name: product.name,
     images: product.images,
     description: product.description,
@@ -56,6 +57,7 @@ function parseCreateProductInput(body: Record<string, unknown>): CreateProductPa
 
   return {
     workspaceId,
+    projectId: parseOptionalId(body.projectId, 'project ID'),
     name,
     url,
     price: parsePrice(body.price),
@@ -130,9 +132,11 @@ export const createProduct = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const input = parseCreateProductInput((await c.req.json()) as Record<string, unknown>)
   await getWorkspaceAsMember(input.workspaceId, userId)
+  const project = await resolveProjectForWorkspace(input.workspaceId, input.projectId)
 
   const product = await createProductInDb({
     workspaceId: toObjectId(input.workspaceId),
+    project: toObjectId(project._id.toString()),
     name: input.name,
     description: input.description ?? '',
     url: input.url,
@@ -148,7 +152,9 @@ export const getWorkspaceProducts = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const data = await getProducts(withQueryParam(c.req.url, 'workspaceId', workspaceId))
+  const data = await getProducts(
+    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspaceId', workspaceId)),
+  )
   return successResponse(
     c,
     200,

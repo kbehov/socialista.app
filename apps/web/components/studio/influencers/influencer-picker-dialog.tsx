@@ -17,6 +17,7 @@ import {
   exploreInfluencers,
   getWorkspaceInfluencers,
 } from "@/services/influencer.service";
+import { getProjectId, useProjectStore } from "@/store/project.store";
 import type { Influencer } from "@socialista/types";
 import {
   CheckIcon,
@@ -109,6 +110,7 @@ export function InfluencerPickerDialog({
   excludeIds = [],
   onSelect,
 }: InfluencerPickerDialogProps) {
+  const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [tab, setTab] = useState<Tab>("mine");
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<Influencer[]>([]);
@@ -125,14 +127,14 @@ export function InfluencerPickerDialog({
     const response =
       tab === "explore"
         ? await exploreInfluencers(params)
-        : await getWorkspaceInfluencers(workspaceId, params);
+        : await getWorkspaceInfluencers(workspaceId, { ...params, projectId });
     setLoading(false);
     if (!response.success) {
       toast.error(response.message ?? "Failed to load creators");
       return;
     }
     setItems(response.data?.influencers ?? []);
-  }, [query, tab, workspaceId]);
+  }, [projectId, query, tab, workspaceId]);
 
   useEffect(() => {
     if (!open) return;

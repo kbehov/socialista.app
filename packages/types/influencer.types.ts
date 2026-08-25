@@ -260,6 +260,7 @@ export type InfluencerIdentity = {
 export type Influencer = {
   _id: string;
   workspaceId: string | null;
+  projectId?: string | null;
   createdBy: string | null;
   visibility: InfluencerVisibility;
   source: InfluencerSource;
@@ -325,6 +326,7 @@ export type CreateInfluencerAppearancePayload = {
 
 export type CreateInfluencerPayload = {
   workspaceId: string;
+  projectId?: string;
   model?: string;
   name: string;
   bio?: string;
@@ -424,4 +426,5 @@ export type ExploreInfluencersQuery = {
 export type WorkspaceInfluencersQuery = ExploreInfluencersQuery & {
   visibility?: InfluencerVisibility;
   source?: InfluencerSource;
+  projectId?: string;
 };

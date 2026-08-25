@@ -15,6 +15,7 @@ export type ExtractProductResponse = ProductData
 export type Product = {
   _id: string
   workspaceId: string
+  projectId?: string
   name: string
   images: string[]
   description: string
@@ -26,6 +27,7 @@ export type Product = {
 
 export type CreateProductPayload = {
   workspaceId: string
+  projectId?: string
   name: string
   description?: string
   url: string

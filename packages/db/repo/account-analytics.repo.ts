@@ -234,6 +234,7 @@ type WorkspaceSeriesQuery = {
   start: Date
   end: Date
   granularity: AnalyticsGranularity
+  accountIds?: string[]
 }
 
 /** Workspace-level series: sum gauges/flows across accounts per date bucket. */
@@ -265,6 +266,7 @@ export const getWorkspaceAnalyticsSeries = async (
       start: query.start,
       end: query.end,
       unit: ANALYTICS_UNIT_MAP[query.granularity],
+      accountIds: query.accountIds,
     }),
   )
 
@@ -294,6 +296,7 @@ type BreakdownQuery = {
   currentEnd: Date
   previousStart: Date
   previousEnd: Date
+  accountIds?: string[]
 }
 
 /** Per-account totals for the current and previous periods (for summary table). */
@@ -320,7 +323,7 @@ export const getWorkspaceAccountBreakdown = async (
     hasReach: number
     hasEngagement: number
   }>([
-    matchWorkspaceBucketRange(query.workspaceId, query.previousStart, query.currentEnd),
+    matchWorkspaceBucketRange(query.workspaceId, query.previousStart, query.currentEnd, query.accountIds),
     sortByBucketAtAsc,
     {
       $group: {
@@ -374,6 +377,7 @@ type ProviderSeriesQuery = {
   start: Date
   end: Date
   granularity: AnalyticsGranularity
+  accountIds?: string[]
 }
 
 /**
@@ -408,6 +412,7 @@ export const getWorkspaceProviderSeries = async (
       start: query.start,
       end: query.end,
       unit: ANALYTICS_UNIT_MAP[query.granularity],
+      accountIds: query.accountIds,
     }),
   )
 
@@ -451,6 +456,7 @@ type ProviderBreakdownQuery = {
   currentEnd: Date
   previousStart: Date
   previousEnd: Date
+  accountIds?: string[]
 }
 
 /** Per-provider totals for current and previous periods (side-by-side platform comparison). */
@@ -485,7 +491,7 @@ export const getWorkspaceProviderBreakdown = async (
     hasPreviousReach: number
     hasPreviousEngagement: number
   }>([
-    matchWorkspaceBucketRange(query.workspaceId, query.previousStart, query.currentEnd),
+    matchWorkspaceBucketRange(query.workspaceId, query.previousStart, query.currentEnd, query.accountIds),
     sortByBucketAtAsc,
     {
       $group: {
@@ -594,6 +600,7 @@ type PerformanceLeadersQuery = {
   rankBy?: AccountPerformanceRankBy
   /** Defaults to 10; capped at 50. */
   limit?: number
+  accountIds?: string[]
 }
 
 function clampPerformanceLimit(limit: number | undefined): number {
@@ -648,6 +655,7 @@ export const getWorkspaceAccountPerformanceLeaders = async (
       previousEnd: query.previousEnd,
       rankBy,
       limit,
+      accountIds: query.accountIds,
     }),
   )
 

@@ -83,6 +83,7 @@ export type Post = {
   /** Present when the API populates account for list/calendar display. */
   account?: AccountSummary
   workspaceId: string
+  projectId?: string
   createdBy: string
   provider: SocialProvider
   type: PostType
@@ -107,6 +108,7 @@ export type Post = {
 
 export type CreatePostPayload = {
   workspaceId: string
+  projectId?: string
   accountId: string
   provider: SocialProvider
   type: PostType

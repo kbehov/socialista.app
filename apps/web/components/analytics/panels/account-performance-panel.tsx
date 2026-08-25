@@ -10,6 +10,7 @@ type AccountPerformancePanelProps = {
   range: AnalyticsRange
   rankBy?: AnalyticsAccountPerformanceRankBy
   provider?: SocialProvider | 'all'
+  projectId?: string
 }
 
 export async function AccountPerformancePanel({
@@ -17,12 +18,14 @@ export async function AccountPerformancePanel({
   range,
   rankBy = 'followerGrowth',
   provider,
+  projectId,
 }: AccountPerformancePanelProps) {
   const { data, error } = await loadAccountPerformance({
     workspaceId,
     range,
     rankBy,
     limit: 5,
+    projectId,
   })
 
   if (error || !data) {

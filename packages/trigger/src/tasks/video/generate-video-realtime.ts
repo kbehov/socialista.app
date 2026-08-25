@@ -56,6 +56,7 @@ export const realtimeVideoGeneration = schemaTask({
         triggerRunId: ctx.run.id,
         workspaceId: payload.workspaceId,
         userId: payload.userId,
+        projectId: payload.projectId,
         prompt: payload.prompt,
         model,
         inputs: {

@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
+import { applyProjectQueryAlias, withQueryParam, parseParamId } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   cloneSlides,
@@ -10,7 +10,7 @@ import {
   serializeSlideshow,
   serializeSlideshowSummary,
 } from '@/utils/slideshow.utils.js'
-import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
+import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import {
   createSlideshow as createSlideshowInDb,
   deleteSlideshow as deleteSlideshowInDb,
@@ -24,6 +24,7 @@ import type { Context } from 'hono'
 
 type CreateSlideshowPayload = {
   workspaceId: string
+  projectId?: string
   name?: string
   canvas?: ISlideshow['canvas']
   aspectRatioId?: string
@@ -47,6 +48,7 @@ export const createSlideshow = async (c: Context<AppContext>): Promise<Response>
   const input = (await c.req.json()) as CreateSlideshowPayload
   const workspaceId = parseParamId(input.workspaceId, 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
+  const project = await resolveProjectForWorkspace(workspaceId, input.projectId)
 
   const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim() : 'Untitled slideshow'
 
@@ -54,6 +56,7 @@ export const createSlideshow = async (c: Context<AppContext>): Promise<Response>
     name,
     status: SlideshowStatus.DRAFT,
     workspace: toObjectId(workspaceId),
+    project: toObjectId(project._id.toString()),
     createdBy: toObjectId(userId),
     canvas: input.canvas ?? DEFAULT_SLIDESHOW_CANVAS,
     aspectRatioId: input.aspectRatioId ?? DEFAULT_ASPECT_RATIO_ID,
@@ -68,7 +71,9 @@ export const getWorkspaceSlideshows = async (c: Context<AppContext>): Promise<Re
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const data = await getSlideshows(withQueryParam(c.req.url, 'workspace', workspaceId))
+  const data = await getSlideshows(
+    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspace', workspaceId)),
+  )
   return successResponse(
     c,
     200,
@@ -152,6 +157,7 @@ export const duplicateSlideshow = async (c: Context<AppContext>): Promise<Respon
     name: duplicateSlideshowName(source.name, input.name),
     status: SlideshowStatus.DRAFT,
     workspace: source.workspace,
+    ...(source.project ? { project: source.project } : {}),
     createdBy: toObjectId(userId),
     canvas: source.canvas,
     aspectRatioId: source.aspectRatioId,

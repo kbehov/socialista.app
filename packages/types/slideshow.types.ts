@@ -7,6 +7,7 @@ export type SlideshowResponse = {
   name: string
   status: SlideshowStatus
   workspaceId: string
+  projectId?: string
   createdBy: string
   canvas: CanvasDimensions
   aspectRatioId: string
@@ -17,7 +18,7 @@ export type SlideshowResponse = {
 
 export type SlideshowSummaryResponse = Pick<
   SlideshowResponse,
-  'id' | 'name' | 'status' | 'workspaceId' | 'canvas' | 'aspectRatioId' | 'createdAt' | 'updatedAt'
+  'id' | 'name' | 'status' | 'workspaceId' | 'projectId' | 'canvas' | 'aspectRatioId' | 'createdAt' | 'updatedAt'
 > & {
   slideCount: number
   previewSlide?: Slide
@@ -25,6 +26,7 @@ export type SlideshowSummaryResponse = Pick<
 
 export type CreateSlideshowPayload = {
   workspaceId: string
+  projectId?: string
   name?: string
   canvas?: CanvasDimensions
   aspectRatioId?: string

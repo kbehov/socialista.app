@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { withQueryParam, parseParamId } from '@/utils/common.utils.js'
+import { applyProjectQueryAlias, parseOptionalId, parseParamId, withQueryParam } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import { getAccountOrThrow, getAccountForMember } from '@/utils/account.utils.js'
 import {
@@ -15,7 +15,7 @@ import {
   toUpdatePostInput,
 } from '@/utils/post.utils.js'
 import { buildPublishPostTriggerItem } from '@/utils/publish-dispatch.utils.js'
-import { assertPostsLimit, getWorkspaceAsMember } from '@/utils/workspace.utils.js'
+import { assertPostsLimit, getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import {
   PostStatus,
   SocialProvider,
@@ -59,7 +59,13 @@ export const createPost = async (c: Context<AppContext>) => {
   assertPostsLimit(workspace)
 
   const timezone = await resolvePostTimezone(input.timezone, input.accountId)
-  const post = await createPostInDb(toCreatePostInput(input, userId, timezone))
+  const project = await resolveProjectForWorkspace(
+    input.workspaceId,
+    input.projectId ?? account.project?.toString(),
+  )
+  const post = await createPostInDb(
+    toCreatePostInput({ ...input, projectId: project._id.toString() }, userId, timezone),
+  )
   await incrementPostsUsage(input.workspaceId)
 
   return successResponse(c, 201, { post: serializePost(post) })
@@ -70,7 +76,9 @@ export const getWorkspacePosts = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const data = await getAllPosts(withQueryParam(c.req.url, 'workspace', workspaceId))
+  const data = await getAllPosts(
+    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspace', workspaceId)),
+  )
   return successResponse(
     c,
     200,
@@ -290,6 +298,7 @@ export const getWorkspacePublishedActivity = async (c: Context<AppContext>) => {
 
   const days = parseActivityDays(c.req.query('days'))
   const provider = parseActivityProvider(c.req.query('provider'))
+  const projectId = parseOptionalId(c.req.query('project'), 'project ID')
 
   const end = startOfUtcDay(new Date())
   end.setUTCDate(end.getUTCDate() + 1) // exclusive end = tomorrow 00:00 UTC
@@ -301,6 +310,7 @@ export const getWorkspacePublishedActivity = async (c: Context<AppContext>) => {
     start,
     end,
     provider,
+    projectId,
   })
 
   const total = activity.reduce((sum, day) => sum + day.count, 0)

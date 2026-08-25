@@ -51,6 +51,7 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       ...(input.imageUrl ? { imageUrl: input.imageUrl } : {}),
       ...(input.imageUrls && input.imageUrls.length > 0 ? { imageUrls: input.imageUrls } : {}),
       ...(input.skillId ? { skillId: input.skillId } : {}),
+      ...(input.projectId ? { projectId: input.projectId } : {}),
     })
 
     const publicAccessToken = await createPublicAccessToken(handle.id)

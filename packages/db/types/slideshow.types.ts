@@ -118,6 +118,7 @@ export interface ISlideshow {
   name: string
   status: SlideshowStatus
   workspace: Types.ObjectId
+  project?: Types.ObjectId
   createdBy: Types.ObjectId
   canvas: SlideshowCanvas
   aspectRatioId: string

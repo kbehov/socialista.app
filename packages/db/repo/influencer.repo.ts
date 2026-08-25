@@ -12,6 +12,7 @@ const APPEARANCE_FILTER_KEYS = ['hairColor', 'eyeColor', 'skinTone', 'bodyShape'
 function mapCreateFields(input: CreateInfluencerInput) {
   return {
     workspace: input.workspace ? toObjectId(input.workspace) : null,
+    project: input.project ? toObjectId(input.project) : null,
     createdBy: input.createdBy ? toObjectId(input.createdBy) : null,
     visibility: input.visibility,
     source: input.source,

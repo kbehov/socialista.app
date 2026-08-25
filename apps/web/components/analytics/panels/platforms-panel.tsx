@@ -10,10 +10,17 @@ type PlatformsPanelProps = {
   range: AnalyticsRange
   provider?: SocialProvider | 'all'
   overview: AnalyticsOverviewResponse
+  projectId?: string
 }
 
-export async function PlatformsPanel({ workspaceId, range, provider, overview }: PlatformsPanelProps) {
-  const { data, error } = await loadPlatforms({ workspaceId, range })
+export async function PlatformsPanel({
+  workspaceId,
+  range,
+  provider,
+  overview,
+  projectId,
+}: PlatformsPanelProps) {
+  const { data, error } = await loadPlatforms({ workspaceId, range, projectId })
 
   if (error || !data) {
     return (

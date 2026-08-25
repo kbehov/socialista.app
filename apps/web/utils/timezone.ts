@@ -1,5 +1,7 @@
 import { formatInTimeZone, getTimezoneOffset } from 'date-fns-tz'
 
+import { TIMEZONE_COUNTRY_CODES } from './timezone-country-codes'
+
 /** Frequently used IANA zones — shown first in the selector. */
 export const COMMON_TIMEZONE_VALUES = [
   'UTC',
@@ -92,6 +94,39 @@ export function formatTimezoneCity(timezone: string): string {
   const parts = timezone.split('/')
   const city = parts[parts.length - 1]
   return city?.replaceAll('_', ' ') ?? timezone
+}
+
+let regionDisplayNames: Intl.DisplayNames | null = null
+
+function getRegionDisplayNames(): Intl.DisplayNames | null {
+  if (regionDisplayNames) return regionDisplayNames
+  if (typeof Intl === 'undefined' || !('DisplayNames' in Intl)) return null
+  try {
+    regionDisplayNames = new Intl.DisplayNames(['en'], { type: 'region' })
+    return regionDisplayNames
+  } catch {
+    return null
+  }
+}
+
+export function formatTimezoneCountry(timezone: string): string | null {
+  const code = TIMEZONE_COUNTRY_CODES[timezone]
+  if (!code) return null
+  return getRegionDisplayNames()?.of(code) ?? null
+}
+
+/** Human-friendly location label, e.g. `Europe/Sofia` → `Sofia / Bulgaria`. */
+export function formatTimezoneLocation(timezone: string): string {
+  const trimmed = timezone.trim()
+  if (!trimmed) return ''
+
+  if (!trimmed.includes('/')) {
+    return trimmed
+  }
+
+  const city = formatTimezoneCity(trimmed)
+  const country = formatTimezoneCountry(trimmed)
+  return country ? `${city} / ${country}` : city
 }
 
 export function formatTimezoneOffset(timezone: string, at: Date = new Date()): string {

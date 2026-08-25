@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { createProduct, extractProduct } from '@/services/product.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { ExtractProductResponse } from '@socialista/types'
 import {
   AlertCircleIcon,
@@ -78,6 +79,7 @@ function getHostname(url: string) {
 }
 
 export function AddProductDialog({ open, onOpenChange, workspaceId, onCreated }: AddProductDialogProps) {
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [url, setUrl] = useState('')
   const [extractState, setExtractState] = useState<ExtractState>({ status: 'idle' })
   const [isExtracting, startExtract] = useTransition()
@@ -139,6 +141,7 @@ export function AddProductDialog({ open, onOpenChange, workspaceId, onCreated }:
     startCreate(async () => {
       const response = await createProduct({
         workspaceId,
+        projectId,
         name,
         description: data.description?.trim() ?? '',
         url: data.url,

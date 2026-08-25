@@ -71,6 +71,7 @@ export type GenerateImageOptions = {
   prompt: string
   aspectRatio: AspectRatio
   workspaceId: string
+  projectId?: string
   userId: string
   imageUrl?: string
   imageUrls?: string[]
@@ -89,6 +90,7 @@ export type GenerateVideoOptions = {
   prompt: string
   aspectRatio: VideoAspectRatio
   workspaceId: string
+  projectId?: string
   userId: string
   duration: number
   generateAudio?: boolean

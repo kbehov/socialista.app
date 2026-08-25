@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     const results = await connectAccountsBatch([
       {
         workspaceId: oauthState.workspaceId,
+        projectId: session.projectId,
         provider: 'threads',
         providerAccountId: profile.threadsUserId,
         accountName: profile.accountName,

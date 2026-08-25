@@ -49,6 +49,7 @@ function mapCreateGenerationFields(input: CreateGenerationInput) {
 
   return {
     workspace: toObjectId(workspace),
+    ...(input.project ? { project: toObjectId(input.project) } : {}),
     createdBy: toObjectId(createdBy),
     kind,
     status,
@@ -96,6 +97,7 @@ export const upsertGenerationByTriggerRunId = async (
     creditsCharged,
     startedAt,
     status,
+    project,
   } = fields
 
   const generation = await GenerationModel.findOneAndUpdate(
@@ -116,6 +118,7 @@ export const upsertGenerationByTriggerRunId = async (
         creditsCharged,
         startedAt,
         status,
+        ...(project ? { project } : {}),
       },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },

@@ -95,6 +95,7 @@ export const createPost = async (input: CreatePostInput): Promise<IPost> => {
   const post = await PostModel.create({
     account: toObjectId(input.account),
     workspace: toObjectId(input.workspace),
+    ...(input.project ? { project: toObjectId(input.project) } : {}),
     createdBy: toObjectId(input.createdBy),
     provider: input.provider,
     type: input.type,
@@ -724,12 +725,16 @@ export const getNextScheduledPost = async (
 /** Count of posts per status for a workspace — used by dashboard stats. */
 export const countPostsByStatus = async (
   workspaceId: string,
+  projectId?: string,
 ): Promise<Record<PostStatus, number>> => {
+  const match: Record<string, unknown> = { workspace: toObjectId(workspaceId) }
+  if (projectId) match.project = toObjectId(projectId)
+
   const counts = await PostModel.aggregate<{
     _id: PostStatus
     count: number
   }>([
-    { $match: { workspace: toObjectId(workspaceId) } },
+    { $match: match },
     { $group: { _id: '$status', count: { $sum: 1 } } },
   ])
 
@@ -745,6 +750,7 @@ export type PublishedPostsByDayQuery = {
   /** Exclusive range end (UTC day). */
   end: Date
   provider?: SocialProvider
+  projectId?: string
 }
 
 export type PublishedPostsByDayRow = {
@@ -762,6 +768,7 @@ export const getPublishedPostsByDay = async (
     publishedAt: { $gte: query.start, $lt: query.end },
   }
   if (query.provider) match.provider = query.provider
+  if (query.projectId) match.project = toObjectId(query.projectId)
 
   const rows = await PostModel.aggregate<{ _id: string; count: number }>([
     { $match: match },

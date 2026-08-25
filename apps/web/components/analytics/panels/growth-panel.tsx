@@ -9,10 +9,11 @@ type GrowthPanelProps = {
   workspaceId: string
   range: AnalyticsRange
   provider?: SocialProvider | 'all'
+  projectId?: string
 }
 
-export async function GrowthPanel({ workspaceId, range, provider }: GrowthPanelProps) {
-  const { data, error } = await loadGrowth({ workspaceId, range })
+export async function GrowthPanel({ workspaceId, range, provider, projectId }: GrowthPanelProps) {
+  const { data, error } = await loadGrowth({ workspaceId, range, projectId })
 
   if (error || !data) {
     return (

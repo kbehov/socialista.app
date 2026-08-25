@@ -5,6 +5,7 @@ import { persistVideoAssets } from '@/lib/video/persist-video-assets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable, type MediaAsset } from '@/lib/video/types'
 import { createVideo, updateVideo } from '@/services/video.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -34,6 +35,7 @@ export function useVideoSave() {
   const workspace = useWorkspaceStore(s => s.currentWorkspace)
   const { updateWorkspace } = useWorkspaceStoreActions()
   const workspaceId = getWorkspaceId(workspace)
+  const studioProjectId = useProjectStore(s => getProjectId(s.currentProject))
   const project = useVideoEditorStore(s => s.project)
   const assets = useVideoEditorStore(s => s.assets)
   const past = useVideoEditorStore(s => s.past)
@@ -124,6 +126,7 @@ export function useVideoSave() {
 
       const response = await createVideo({
         workspaceId,
+        projectId: studioProjectId,
         name: savePayload.name,
         resolution: savePayload.resolution,
         fps: savePayload.fps,
@@ -185,6 +188,7 @@ export function useVideoSave() {
     updateWorkspace,
     workspace,
     workspaceId,
+    studioProjectId,
   ])
 
   const isPersistedProject = Boolean(project.id && !project.id.startsWith('project_'))

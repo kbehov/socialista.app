@@ -17,6 +17,7 @@ export type GetWorkspaceGenerationsQuery = {
   kind?: GenerationKind
   status?: GenerationStatus
   createdBy?: string
+  projectId?: string
 }
 
 export const getGeneration = async (
@@ -36,6 +37,7 @@ export const getWorkspaceGenerations = async (
   if (query?.kind) params.set('kind', query.kind)
   if (query?.status) params.set('status', query.status)
   if (query?.createdBy) params.set('createdBy', query.createdBy)
+  if (query?.projectId) params.set('project', query.projectId)
 
   const search = params.toString()
   const path = `${GENERATION_ROUTES.GET_WORKSPACE_GENERATIONS(workspaceId)}${search ? `?${search}` : ''}`

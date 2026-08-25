@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc -p tsconfig.check.json"
+    "check-types": "tsc -p tsconfig.check.json",
+    "migrate:projects": "tsx --env-file=.env scripts/migrate-projects.ts"
   },
   "exports": {
     ".": {
@@ -26,6 +27,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.9.3",
     "eslint": "^10.8.0",
+    "tsx": "^4.7.1",
     "typescript": "^6.0.3"
   },
   "dependencies": {

@@ -45,6 +45,7 @@ const postSchema = new Schema<IPost>(
   {
     account: { type: Schema.Types.ObjectId, ref: 'Account', required: true },
     workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true },
+    project: { type: Schema.Types.ObjectId, ref: 'Project', index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     provider: { type: String, enum: enumValues(SocialProvider), required: true },
     type: { type: String, enum: enumValues(PostType), required: true },
@@ -117,6 +118,8 @@ postSchema.index({ workspace: 1, status: 1, scheduledAt: 1 })
 
 // Recent activity feeds.
 postSchema.index({ workspace: 1, createdAt: -1 })
+postSchema.index({ project: 1, status: 1, scheduledAt: 1 })
+postSchema.index({ project: 1, createdAt: -1 })
 postSchema.index({ createdBy: 1, createdAt: -1 })
 
 // Analytics on published posts — partial index keeps it small.

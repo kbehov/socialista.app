@@ -275,6 +275,7 @@ export type UgcProject = {
   name: string
   status: UgcProjectStatus
   workspaceId: string
+  projectId?: string
   createdBy: string
   productId?: string
   productImageUrls: string[]
@@ -294,7 +295,7 @@ export type UgcProject = {
 
 export type UgcProjectSummary = Pick<
   UgcProject,
-  'id' | 'name' | 'status' | 'workspaceId' | 'productImageUrls' | 'createdAt' | 'updatedAt'
+  'id' | 'name' | 'status' | 'workspaceId' | 'projectId' | 'productImageUrls' | 'createdAt' | 'updatedAt'
 > & {
   clipCount: number
   readyCount: number
@@ -303,6 +304,7 @@ export type UgcProjectSummary = Pick<
 
 export type CreateUgcProjectPayload = {
   workspaceId: string
+  projectId?: string
   name?: string
   productId?: string
   productImageUrls?: string[]

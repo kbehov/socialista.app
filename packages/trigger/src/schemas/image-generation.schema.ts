@@ -12,6 +12,7 @@ export const imageGenerationPayloadSchema = z.object({
   model: z.string().min(1),
   workspaceId: z.string().min(1),
   userId: z.string().min(1),
+  projectId: z.string().min(1).optional(),
   prompt: z.string().min(1),
   aspectRatio: z.enum(ASPECT_RATIOS).default('1:1'),
   imageUrl: z.string().url().optional(),

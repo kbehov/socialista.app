@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 
-import { CURRENT_WORKSPACE_COOKIE } from '@/utils/cookie.utils'
+import { CURRENT_PROJECT_COOKIE, CURRENT_WORKSPACE_COOKIE } from '@/utils/cookie.utils'
 
 export async function getServerCookie(name: string): Promise<string | undefined> {
   const cookieStore = await cookies()
@@ -22,4 +22,12 @@ export async function getCurrentWorkspaceId(): Promise<string | undefined> {
 
 export async function setCurrentWorkspaceId(workspaceId: string): Promise<void> {
   await setServerCookie(CURRENT_WORKSPACE_COOKIE, workspaceId)
+}
+
+export async function getCurrentProjectId(): Promise<string | undefined> {
+  return getServerCookie(CURRENT_PROJECT_COOKIE)
+}
+
+export async function setCurrentProjectId(projectId: string): Promise<void> {
+  await setServerCookie(CURRENT_PROJECT_COOKIE, projectId)
 }

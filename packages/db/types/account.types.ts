@@ -42,6 +42,7 @@ export type AccountAnalyticsState = {
 export interface IAccount {
   _id: Types.ObjectId
   workspace: Types.ObjectId
+  project?: Types.ObjectId
   createdBy: Types.ObjectId
   provider: SocialProvider
   providerAccountId: string
@@ -70,6 +71,7 @@ export type AccountDocument = HydratedDocument<IAccount>
 
 export type CreateAccountInput = {
   workspace: string
+  project?: string
   createdBy: string
   provider: SocialProvider
   providerAccountId: string
@@ -91,6 +93,7 @@ export type CreateAccountInput = {
 
 export type UpdateAccountInput = {
   accountName?: string
+  project?: string
   username?: string
   accountAvatar?: string
   biography?: string

@@ -43,8 +43,13 @@ export const getUgcProject = async (
 
 export const getWorkspaceUgcProjects = async (
   workspaceId: string,
+  query?: { projectId?: string },
 ): Promise<ApiResponse<GetUgcProjectsResponse>> => {
-  return api.get<GetUgcProjectsResponse>(UGC_PROJECT_ROUTES.GET_WORKSPACE_PROJECTS(workspaceId))
+  const params = new URLSearchParams()
+  if (query?.projectId) params.set('project', query.projectId)
+  const search = params.toString()
+  const path = `${UGC_PROJECT_ROUTES.GET_WORKSPACE_PROJECTS(workspaceId)}${search ? `?${search}` : ''}`
+  return api.get<GetUgcProjectsResponse>(path)
 }
 
 export const updateUgcProject = async (

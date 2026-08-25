@@ -2,6 +2,7 @@ import { HydratedDocument, Types } from 'mongoose'
 export interface Iproduct {
   _id: Types.ObjectId
   workspaceId: Types.ObjectId
+  project?: Types.ObjectId
   name: string
   images: string[]
   description: string

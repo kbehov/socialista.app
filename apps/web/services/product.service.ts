@@ -37,12 +37,13 @@ export const getProduct = async (id: string): Promise<ApiResponse<{ product: Pro
 
 export const getWorkspaceProducts = async (
   workspaceId: string,
-  query?: { page?: number; limit?: number; sort?: string },
+  query?: { page?: number; limit?: number; sort?: string; projectId?: string },
 ): Promise<ApiResponse<GetProductsResponse>> => {
   const params = new URLSearchParams()
   if (query?.page) params.set('page', String(query.page))
   if (query?.limit) params.set('limit', String(query.limit))
   if (query?.sort) params.set('sort', query.sort)
+  if (query?.projectId) params.set('project', query.projectId)
 
   const search = params.toString()
   const path = `${PRODUCT_ROUTES.GET_WORKSPACE_PRODUCTS(workspaceId)}${search ? `?${search}` : ''}`

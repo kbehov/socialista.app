@@ -8,6 +8,7 @@ import {
 import { getInfluencer } from '@/services/influencer.service'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceProducts } from '@/services/product.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { Influencer, Model, Product, UgcClip, UgcProject } from '@socialista/types'
 import { ContextSupport } from '@socialista/types'
 import { create } from 'zustand'
@@ -25,6 +26,7 @@ type UgcProjectData = {
   productsLoaded: boolean
   productsLoading: boolean
   productsWorkspaceId: string | null
+  productsProjectId: string | null
 }
 
 type UgcProjectActions = {
@@ -54,6 +56,7 @@ const initialData: UgcProjectData = {
   productsLoaded: false,
   productsLoading: false,
   productsWorkspaceId: null,
+  productsProjectId: null,
 }
 
 let modelsPromise: Promise<void> | null = null
@@ -149,11 +152,18 @@ export const useUgcProjectStore = create<UgcProjectState>((set, get) => ({
   },
 
   ensureProducts: async workspaceId => {
-    if (get().productsLoaded && get().productsWorkspaceId === workspaceId) return
+    const projectId = getProjectId(useProjectStore.getState().currentProject)
+    if (
+      get().productsLoaded &&
+      get().productsWorkspaceId === workspaceId &&
+      get().productsProjectId === (projectId ?? null)
+    ) {
+      return
+    }
     if (productsPromise) return productsPromise
 
     set({ productsLoading: true })
-    productsPromise = getWorkspaceProducts(workspaceId, { limit: 50, sort: '-updatedAt' })
+    productsPromise = getWorkspaceProducts(workspaceId, { limit: 50, sort: '-updatedAt', projectId })
       .then(response => {
         const products = response.data?.products ?? []
         set({
@@ -162,6 +172,7 @@ export const useUgcProjectStore = create<UgcProjectState>((set, get) => ({
           productsLoaded: true,
           productsLoading: false,
           productsWorkspaceId: workspaceId,
+          productsProjectId: projectId ?? null,
         })
       })
       .catch(() => {

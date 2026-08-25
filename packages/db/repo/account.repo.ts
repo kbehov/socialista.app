@@ -23,6 +23,7 @@ import { assertValidTimezone } from '../utils/timezone.js'
 const ACCOUNT_LIST_PROJECTION = {
   _id: 1,
   workspace: 1,
+  project: 1,
   provider: 1,
   providerAccountId: 1,
   accountName: 1,
@@ -93,7 +94,11 @@ export type WorkspaceAccountStats = {
 /** Lightweight connected-account rollup for the free-tier analytics overview. */
 export const getWorkspaceAccountStats = async (
   workspaceId: string,
+  projectId?: string,
 ): Promise<WorkspaceAccountStats> => {
+  const match: Record<string, unknown> = { workspace: toObjectId(workspaceId) }
+  if (projectId) match.project = toObjectId(projectId)
+
   const rows = await AccountModel.aggregate<{
     _id: SocialProvider
     accounts: number
@@ -101,7 +106,7 @@ export const getWorkspaceAccountStats = async (
     hasFollowers: number
     needsReauth: number
   }>([
-    { $match: { workspace: toObjectId(workspaceId) } },
+    { $match: match },
     {
       $group: {
         _id: '$provider',
@@ -172,6 +177,17 @@ export const getWorkspaceAccountStats = async (
   }
 }
 
+/** Account ids in a workspace, optionally limited to one project. */
+export const getAccountIdsByWorkspace = async (
+  workspaceId: string,
+  projectId?: string,
+): Promise<string[]> => {
+  const match: Record<string, unknown> = { workspace: toObjectId(workspaceId) }
+  if (projectId) match.project = toObjectId(projectId)
+  const rows = await AccountModel.find(match).select({ _id: 1 }).lean()
+  return rows.map(row => row._id.toString())
+}
+
 export const createAccount = async (input: CreateAccountInput): Promise<IAccount> => {
   const {
     workspace,
@@ -202,6 +218,7 @@ export const createAccount = async (input: CreateAccountInput): Promise<IAccount
   try {
     const account = await AccountModel.create({
       workspace: toObjectId(workspace),
+      ...(input.project ? { project: toObjectId(input.project) } : {}),
       createdBy: toObjectId(createdBy),
       provider,
       providerAccountId,
@@ -331,6 +348,10 @@ export const updateAccount = async (
     } else {
       $set[key] = value
     }
+  }
+
+  if (normalized.project !== undefined) {
+    $set.project = toObjectId(normalized.project)
   }
 
   if (normalized.lastError !== undefined) {

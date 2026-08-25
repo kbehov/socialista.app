@@ -1,5 +1,5 @@
 import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { parseParamId, withQueryParam } from '@/utils/common.utils.js'
+import { parseParamId, withQueryParam, applyProjectQueryAlias } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   assertCanAssemble,
@@ -20,7 +20,7 @@ import {
   serializeUgcProject,
   serializeUgcProjectSummary,
 } from '@/utils/ugc-project.utils.js'
-import { getWorkspaceAsMember } from '@/utils/workspace.utils.js'
+import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import { DEFAULT_VIDEO_FPS, DEFAULT_VIDEO_RESOLUTION } from '@/utils/video.utils.js'
 import { generateUgcAdScript } from '@socialista/ai'
 import {
@@ -103,6 +103,7 @@ export const createUgcProject = async (c: Context<AppContext>) => {
   const input = (await c.req.json()) as CreateUgcProjectPayload
   const workspaceId = parseParamId(input.workspaceId, 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
+  const studioProject = await resolveProjectForWorkspace(workspaceId, input.projectId)
 
   const defaults = await resolveDefaultModels()
   const productImageUrls = input.productImageUrls?.filter(url => typeof url === 'string' && url.length > 0) ?? []
@@ -131,6 +132,7 @@ export const createUgcProject = async (c: Context<AppContext>) => {
     name: typeof input.name === 'string' && input.name.trim() ? input.name.trim() : 'Untitled UGC ad',
     status: UgcProjectStatus.DRAFT,
     workspace: toObjectId(workspaceId),
+    project: toObjectId(studioProject._id.toString()),
     createdBy: toObjectId(userId),
     ...(productId ? { productId: toObjectId(productId) } : {}),
     productImageUrls,
@@ -148,7 +150,9 @@ export const getWorkspaceUgcProjects = async (c: Context<AppContext>) => {
   const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
   await getWorkspaceAsMember(workspaceId, userId)
 
-  const data = await getUgcProjects(withQueryParam(c.req.url, 'workspace', workspaceId))
+  const data = await getUgcProjects(
+    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspace', workspaceId)),
+  )
   return successResponse(
     c,
     200,

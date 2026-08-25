@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getWorkspaceAccounts } from '@/services/account.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import {
   buildDuplicateNameKeys,
   getAccountChipLabel,
@@ -42,6 +43,7 @@ export function AccountSelector({
   accountsWithIssues,
   className,
 }: AccountSelectorProps) {
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [providerFilter, setProviderFilter] = useState<SocialProvider | 'all'>('all')
@@ -99,6 +101,7 @@ export function AccountSelector({
           query: trimmed || undefined,
           connectionStatus: 'connected',
           limit: 50,
+          projectId,
         })
           .then(response => {
             if (!cancelled) {
@@ -116,7 +119,7 @@ export function AccountSelector({
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [search, workspaceId])
+  }, [search, workspaceId, projectId])
 
   const filteredAllSelected =
     filteredAccounts.length > 0 && filteredAccounts.every(account => selectedSet.has(account._id))

@@ -9,12 +9,18 @@ import { PublishedActivity } from '../published-activity'
 type PublishedActivityPanelProps = {
   workspaceId: string
   provider?: SocialProvider | 'all'
+  projectId?: string
 }
 
-export async function PublishedActivityPanel({ workspaceId, provider = 'all' }: PublishedActivityPanelProps) {
+export async function PublishedActivityPanel({
+  workspaceId,
+  provider = 'all',
+  projectId,
+}: PublishedActivityPanelProps) {
   const { data, error } = await loadPublishedActivity({
     workspaceId,
     provider: provider === 'all' ? undefined : provider,
+    projectId,
   })
 
   if (error || !data) {

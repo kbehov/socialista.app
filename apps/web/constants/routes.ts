@@ -124,6 +124,14 @@ export const SKILL_ROUTES = {
   GET_WORKSPACE_SKILLS: (workspaceId: string) => `/skills/workspace/${workspaceId}`,
 } as const
 
+export const PROJECT_ROUTES = {
+  GET_WORKSPACE_PROJECTS: (workspaceId: string) => `/projects/workspace/${workspaceId}`,
+  CREATE: '/projects',
+  GET_BY_ID: (id: string) => `/projects/${id}`,
+  UPDATE: (id: string) => `/projects/${id}`,
+  DELETE: (id: string) => `/projects/${id}`,
+} as const
+
 export const ACCOUNT_ROUTES = {
   CONNECT: '/accounts/connect',
   CREATE: '/accounts',

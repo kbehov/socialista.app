@@ -17,6 +17,7 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getAspectRatioPreset } from '@/lib/carousel/aspect-ratios'
 import { cn } from '@/lib/utils'
 import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/services/slideshow.service'
+import { getProjectId, useProjectStore } from '@/store/project.store'
 import { formatRelativeTime } from '@/utils/format'
 import type { SlideshowSummaryResponse } from '@socialista/types'
 import { CopyIcon, ImagesIcon, LayersIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
@@ -140,6 +141,7 @@ export function SlideshowList({
   initialError = null,
 }: SlideshowListProps) {
   const router = useRouter()
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [slideshows, setSlideshows] = useState(initialSlideshows)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError)
@@ -156,7 +158,7 @@ export function SlideshowList({
     setIsLoading(true)
     setError(null)
 
-    const response = await getWorkspaceSlideshows(workspaceId, 'draft')
+    const response = await getWorkspaceSlideshows(workspaceId, 'draft', { projectId })
     if (!response.success || !response.data) {
       setError(response.message ?? 'Failed to load slideshows')
       setSlideshows([])
@@ -166,7 +168,7 @@ export function SlideshowList({
 
     setSlideshows(response.data.slideshows)
     setIsLoading(false)
-  }, [workspaceId])
+  }, [workspaceId, projectId])
 
   const handleDelete = async () => {
     if (!deleteTarget || isDeleting) return

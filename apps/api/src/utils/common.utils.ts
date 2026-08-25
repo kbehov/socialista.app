@@ -22,6 +22,22 @@ export const withQueryParam = (url: string, key: string, value: string): string 
   return params.toString()
 }
 
+/** Map `projectId` query alias onto the Mongo `project` field used by `buildFilters`. */
+export const applyProjectQueryAlias = (query: string): string => {
+  const params = new URLSearchParams(query)
+  const projectId = params.get('projectId')
+  if (projectId && !params.get('project')) {
+    params.set('project', projectId)
+  }
+  params.delete('projectId')
+  return params.toString()
+}
+
+export const parseOptionalId = (value: unknown, label: string): string | undefined => {
+  if (typeof value !== 'string' || !value.trim()) return undefined
+  return parseParamId(value, label)
+}
+
 export const assertHasUpdates = (updates: object): void => {
   if (Object.keys(updates).length === 0) {
     throw new HttpError(400, 'No valid fields to update')

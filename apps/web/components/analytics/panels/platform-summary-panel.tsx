@@ -10,6 +10,7 @@ type PlatformSummaryPanelProps = {
   range: AnalyticsRange
   overview: AnalyticsOverviewResponse
   provider?: SocialProvider | 'all'
+  projectId?: string
 }
 
 export async function PlatformSummaryPanel({
@@ -17,8 +18,9 @@ export async function PlatformSummaryPanel({
   range,
   overview,
   provider,
+  projectId,
 }: PlatformSummaryPanelProps) {
-  const { data, error } = await loadGrowth({ workspaceId, range })
+  const { data, error } = await loadGrowth({ workspaceId, range, projectId })
 
   if (error || !data) {
     return (

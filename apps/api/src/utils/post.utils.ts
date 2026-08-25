@@ -3,6 +3,7 @@ import {
   assertHasUpdates,
   optionalTrimmedString,
   parseOptionalDate,
+  parseOptionalId,
   parseOptionalNullableDate,
   parseParamId,
   toNullableDate,
@@ -170,6 +171,7 @@ export const serializePost = (post: IPost): Post => {
     accountId: populatedAccount ? populatedAccount._id.toString() : refId(post.account, 'account'),
     account: populatedAccount ? serializeAccountSummary(populatedAccount) : undefined,
     workspaceId: refId(post.workspace, 'workspace'),
+    ...(post.project ? { projectId: refId(post.project, 'project') } : {}),
     createdBy: refId(post.createdBy, 'createdBy'),
     provider: post.provider,
     type: post.type,
@@ -254,6 +256,7 @@ export const parseCreatePostInput = (body: Record<string, unknown>): CreatePostP
 
   return {
     workspaceId,
+    projectId: parseOptionalId(body.projectId, 'project ID'),
     accountId,
     provider: body.provider,
     type: body.type,
@@ -345,6 +348,7 @@ export const toCreatePostInput = (
 ): CreatePostInput => ({
   account: input.accountId,
   workspace: input.workspaceId,
+  project: input.projectId,
   createdBy: userId,
   provider: input.provider as SocialProvider,
   type: input.type as PostType,

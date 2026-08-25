@@ -41,6 +41,7 @@ export function serializeInfluencer(doc: IInfluencer): Influencer {
   return {
     _id: doc._id.toString(),
     workspaceId: doc.workspace?.toString() ?? null,
+    ...(doc.project ? { projectId: doc.project.toString() } : {}),
     createdBy: doc.createdBy?.toString() ?? null,
     visibility: doc.visibility,
     source: doc.source,

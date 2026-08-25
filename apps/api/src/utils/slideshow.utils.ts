@@ -14,6 +14,7 @@ export type SlideshowResponse = {
   name: string
   status: SlideshowStatus
   workspaceId: string
+  projectId?: string
   createdBy: string
   canvas: ISlideshow['canvas']
   aspectRatioId: string
@@ -24,7 +25,7 @@ export type SlideshowResponse = {
 
 export type SlideshowSummaryResponse = Pick<
   SlideshowResponse,
-  'id' | 'name' | 'status' | 'workspaceId' | 'canvas' | 'aspectRatioId' | 'createdAt' | 'updatedAt'
+  'id' | 'name' | 'status' | 'workspaceId' | 'projectId' | 'canvas' | 'aspectRatioId' | 'createdAt' | 'updatedAt'
 > & {
   slideCount: number
   previewSlide?: ISlideshow['slides'][number]
@@ -60,6 +61,7 @@ export function serializeSlideshow(slideshow: ISlideshow): SlideshowResponse {
     name: slideshow.name,
     status: slideshow.status,
     workspaceId: slideshow.workspace.toString(),
+    ...(slideshow.project ? { projectId: slideshow.project.toString() } : {}),
     createdBy: slideshow.createdBy.toString(),
     canvas: slideshow.canvas,
     aspectRatioId: slideshow.aspectRatioId,
@@ -75,6 +77,7 @@ export function serializeSlideshowSummary(slideshow: ISlideshow): SlideshowSumma
     name: slideshow.name,
     status: slideshow.status,
     workspaceId: slideshow.workspace.toString(),
+    ...(slideshow.project ? { projectId: slideshow.project.toString() } : {}),
     canvas: slideshow.canvas,
     aspectRatioId: slideshow.aspectRatioId,
     slideCount: slideshow.slides.length,

@@ -55,6 +55,9 @@ function appendInfluencerQuery(params: URLSearchParams, query?: ExploreInfluence
   if ('source' in query && query.source) {
     params.set('source', query.source)
   }
+  if ('projectId' in query && query.projectId) {
+    params.set('project', query.projectId)
+  }
 }
 
 export const exploreInfluencers = async (

@@ -32,18 +32,21 @@ export function matchAccountBucketRange(
   }
 }
 
-/** $match snapshots for a workspace in [start, end). */
+/** $match snapshots for a workspace in [start, end). Optional accountIds scopes to a project. */
 export function matchWorkspaceBucketRange(
   workspaceId: string,
   start: Date,
   end: Date,
+  accountIds?: string[],
 ): PipelineStage.Match {
-  return {
-    $match: {
-      workspace: toObjectId(workspaceId),
-      bucketAt: { $gte: start, $lt: end },
-    },
+  const match: Record<string, unknown> = {
+    workspace: toObjectId(workspaceId),
+    bucketAt: { $gte: start, $lt: end },
   }
+  if (accountIds) {
+    match.account = { $in: accountIds.map(id => toObjectId(id)) }
+  }
+  return { $match: match }
 }
 
 export const sortByBucketAtAsc: PipelineStage.Sort = { $sort: { bucketAt: 1 } }
@@ -285,9 +288,10 @@ export function workspaceAnalyticsSeriesPipeline(input: {
   start: Date
   end: Date
   unit: AnalyticsDateUnit
+  accountIds?: string[]
 }): PipelineStage[] {
   return [
-    matchWorkspaceBucketRange(input.workspaceId, input.start, input.end),
+    matchWorkspaceBucketRange(input.workspaceId, input.start, input.end, input.accountIds),
     sortByBucketAtAsc,
     {
       $group: {
@@ -317,9 +321,10 @@ export function workspaceProviderSeriesPipeline(input: {
   start: Date
   end: Date
   unit: AnalyticsDateUnit
+  accountIds?: string[]
 }): PipelineStage[] {
   return [
-    matchWorkspaceBucketRange(input.workspaceId, input.start, input.end),
+    matchWorkspaceBucketRange(input.workspaceId, input.start, input.end, input.accountIds),
     sortByBucketAtAsc,
     {
       $group: {
@@ -422,13 +427,14 @@ export function workspaceAccountPerformanceLeadersPipeline(input: {
   previousEnd: Date
   rankBy: AccountPerformanceRankBy
   limit: number
+  accountIds?: string[]
 }): PipelineStage[] {
   const current = { start: input.currentStart, end: input.currentEnd }
   const previous = { start: input.previousStart, end: input.previousEnd }
   const score = scoreExpression(input.rankBy)
 
   return [
-    matchWorkspaceBucketRange(input.workspaceId, input.previousStart, input.currentEnd),
+    matchWorkspaceBucketRange(input.workspaceId, input.previousStart, input.currentEnd, input.accountIds),
     sortByBucketAtAsc,
     {
       $group: {

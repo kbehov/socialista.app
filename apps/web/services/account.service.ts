@@ -96,6 +96,7 @@ export const getWorkspaceAccounts = async (
     connectionStatus?: string
     /** Text search — matches account name, username, or provider account id. */
     query?: string
+    projectId?: string
   },
 ): Promise<ApiResponse<GetAccountsResponse>> => {
   const params = new URLSearchParams()
@@ -105,6 +106,7 @@ export const getWorkspaceAccounts = async (
   if (query?.provider) params.set('provider', query.provider)
   if (query?.connectionStatus) params.set('connectionStatus', query.connectionStatus)
   if (query?.query) params.set('query', query.query)
+  if (query?.projectId) params.set('project', query.projectId)
 
   const search = params.toString()
   const path = `${ACCOUNT_ROUTES.GET_WORKSPACE_ACCOUNTS(workspaceId)}${search ? `?${search}` : ''}`

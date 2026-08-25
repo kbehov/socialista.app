@@ -7,7 +7,7 @@ import { getWorkspaceAccounts } from '@/services/account.service'
 import { getGeneration } from '@/services/generation.service'
 import type { ComposerMediaItem } from '@/types/composer-types'
 import { generationToComposerMedia } from '@/utils/composer-media.utils'
-import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import { Link2Icon } from 'lucide-react'
 
 import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
@@ -17,7 +17,7 @@ type CreatePostPageProps = {
 }
 
 export default async function CreatePostPage({ searchParams }: CreatePostPageProps) {
-  const workspace = await getCurrentWorkspace()
+  const { workspace, project } = await getCurrentWorkspaceContext()
   const { generationId, slideshowId } = await searchParams
 
   if (!workspace) {
@@ -28,6 +28,7 @@ export default async function CreatePostPage({ searchParams }: CreatePostPagePro
     getWorkspaceAccounts(workspace.id, {
       limit: 50,
       connectionStatus: 'connected',
+      projectId: project?.id,
     }),
     loadInitialMedia(generationId),
   ])

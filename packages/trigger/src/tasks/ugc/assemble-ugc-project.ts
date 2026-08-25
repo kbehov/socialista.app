@@ -67,6 +67,7 @@ export const assembleUgcProject = schemaTask({
         triggerRunId: ctx.run.id,
         workspaceId: payload.workspaceId,
         userId: payload.userId,
+        projectId: project.project?.toString(),
         prompt: `Assemble ${readyClips.length} UGC clips`,
         model,
         inputs: {
