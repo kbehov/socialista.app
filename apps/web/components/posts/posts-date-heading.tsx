@@ -2,6 +2,7 @@
 
 import { usePageScrollCompact } from '@/components/headers/page-scroll-compact'
 import { PostStatusCountsText } from '@/components/posts/post-status-counts-text'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import {
   POST_DATE_RELATIVE_BADGE_LABEL,
   formatPostDateGroupHeading,
@@ -28,85 +29,30 @@ export function PostsDateHeading({ date, posts, headingId }: PostsDateHeadingPro
         'sticky top-0 z-10 -mx-3 px-3 sm:-mx-4 sm:px-4',
         'bg-background/85 backdrop-blur-xl backdrop-saturate-150',
         'supports-backdrop-filter:bg-background/70',
-        'transition-[padding] duration-200 ease-out motion-reduce:transition-none',
-        compact ? 'pt-0.5 pb-1.5' : 'pt-1 pb-3',
+        compact ? 'pt-0.5 pb-2' : 'pt-1 pb-3',
       )}
     >
-      <div
-        className={cn(
-          'flex flex-wrap items-end justify-between gap-x-4',
-          'transition-[gap] duration-200 ease-out motion-reduce:transition-none',
-          compact ? 'gap-y-1' : 'gap-y-2',
-        )}
-      >
-        <div className="min-w-0">
-          <div className={cn('flex flex-wrap items-center', compact ? 'gap-1.5' : 'gap-2')}>
-            <h2
-              id={headingId}
-              className={cn(
-                'font-semibold tracking-[-0.02em] text-foreground',
-                'transition-[font-size,line-height] duration-200 ease-out motion-reduce:transition-none',
-                compact ? 'text-[13px] leading-snug' : 'text-[15px] leading-tight',
-              )}
-            >
-              {heading.label}
-            </h2>
-            {heading.relativeBadge ? (
-              <span
-                className={cn(
-                  'rounded-full font-semibold tracking-wide uppercase',
-                  'transition-[padding,font-size] duration-200 ease-out motion-reduce:transition-none',
-                  compact ? 'px-1.5 py-px text-[9px]' : 'px-2 py-0.5 text-[10px]',
-                  heading.relativeBadge === 'today'
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted/80 text-muted-foreground',
-                )}
-              >
-                {POST_DATE_RELATIVE_BADGE_LABEL[heading.relativeBadge]}
-              </span>
-            ) : null}
-          </div>
-          {heading.subtitle ? (
-            <p
-              className={cn(
-                'text-[11px] leading-snug text-muted-foreground',
-                'transition-[margin,opacity,max-height] duration-200 ease-out motion-reduce:transition-none',
-                compact ? 'pointer-events-none mt-0 max-h-0 overflow-hidden opacity-0' : 'mt-0.5 max-h-8 opacity-100',
-              )}
-            >
-              {heading.subtitle}
-            </p>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <h2 id={headingId} className={cn(dashboardSurface.sectionTitle, 'text-[15px]')}>
+            {heading.label}
+          </h2>
+          {heading.relativeBadge ? (
+            <span className="text-[12px] font-medium text-muted-foreground">
+              {POST_DATE_RELATIVE_BADGE_LABEL[heading.relativeBadge]}
+            </span>
           ) : null}
         </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
-          <p
-            className={cn(
-              'font-medium tabular-nums tracking-tight text-muted-foreground',
-              'transition-[font-size] duration-200 ease-out motion-reduce:transition-none',
-              compact ? 'text-[10px]' : 'text-[11px]',
-            )}
-          >
-            {pluralizePosts(posts.length)}
-          </p>
-          <PostStatusCountsText
-            counts={statusCounts}
-            className={cn(
-              'max-w-[min(100%,16rem)] leading-snug text-muted-foreground/80',
-              'transition-[opacity,max-height] duration-200 ease-out motion-reduce:transition-none',
-              compact ? 'pointer-events-none max-h-0 overflow-hidden opacity-0' : 'max-h-8 opacity-100',
-            )}
-          />
-        </div>
+        <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
+          <span className="tabular-nums tracking-tight">{pluralizePosts(posts.length)}</span>
+          {Object.values(statusCounts).some(count => (count ?? 0) > 0) ? (
+            <>
+              <span aria-hidden> · </span>
+              <PostStatusCountsText counts={statusCounts} className="text-[12px]" />
+            </>
+          ) : null}
+        </p>
       </div>
-      <div
-        className={cn(
-          'pointer-events-none h-px bg-linear-to-r from-transparent via-border/60 to-transparent',
-          'transition-[margin] duration-200 ease-out motion-reduce:transition-none',
-          compact ? 'mt-1.5' : 'mt-3',
-        )}
-        aria-hidden
-      />
     </header>
   )
 }

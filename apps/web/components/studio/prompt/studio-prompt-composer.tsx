@@ -35,6 +35,7 @@ import {
   attachmentChipLabel,
   type StudioAttachSource,
 } from "@/components/studio/prompt/studio-attach-menu";
+import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import { StudioPromptHighlight, PROMPT_FIELD_STYLE } from "@/components/studio/prompt/studio-prompt-highlight";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
@@ -110,9 +111,10 @@ const SUPPORT_LABELS: Record<
 };
 
 const TOOL_BUTTON_CLASS = cn(
-  "h-7 gap-1.5 rounded-xl border px-1.5 pr-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
-  "border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150",
-  "hover:border-border/65 hover:bg-background",
+  "h-7 gap-1.5 rounded-lg border px-1.5 pr-2",
+  "border-black/10 bg-black/[0.02] transition-[border-color,background-color] duration-150",
+  "hover:border-black/18 hover:bg-black/[0.04]",
+  "dark:border-white/12 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
   "active:scale-[0.97]",
 );
 
@@ -192,6 +194,7 @@ function StudioCountStepper({
         className="size-6 rounded-lg text-muted-foreground hover:text-foreground"
         disabled={disabled || value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
+        tooltip="Generate fewer images"
         type="button"
       >
         <MinusIcon className="size-3" strokeWidth={2.25} />
@@ -204,6 +207,7 @@ function StudioCountStepper({
         className="size-6 rounded-lg text-muted-foreground hover:text-foreground"
         disabled={disabled || value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
+        tooltip="Generate more images"
         type="button"
       >
         <PlusIcon className="size-3" strokeWidth={2.25} />
@@ -563,14 +567,14 @@ export function StudioPromptComposer({
 
   if (models.length === 0) {
     return (
-      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-muted/10 px-6 py-14 text-center">
-        <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted/40 ring-1 ring-border/35">
-          <SparklesIcon className="size-4 text-muted-foreground/80" />
+      <div className="rounded-xl border border-dashed border-black/12 bg-black/[0.02] px-6 py-14 text-left dark:border-white/12 dark:bg-white/[0.02]">
+        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.04] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
+          <SparklesIcon className="size-4 text-black/56 dark:text-white/56" />
         </div>
-        <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
           {emptyTitle}
         </p>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
+        <p className="mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/56 dark:text-white/56">
           {emptyDescription}
         </p>
       </div>
@@ -580,14 +584,15 @@ export function StudioPromptComposer({
   const modelSelector =
     !hideModelSelector && selectedModel ? (
     <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
-      <ModelSelectorTrigger asChild>
-        <PromptInputButton
+      <StudioInputActionTooltip label="Choose generation model">
+        <ModelSelectorTrigger asChild>
+          <PromptInputButton
           aria-expanded={modelSelectorOpen}
           aria-haspopup="dialog"
           className={cn(
             TOOL_BUTTON_CLASS,
             "max-w-[min(100%,14rem)]",
-            modelSelectorOpen && "border-border/65 bg-background shadow-sm",
+            modelSelectorOpen && "border-black/18 bg-black/[0.04] dark:border-white/20 dark:bg-white/[0.06]",
           )}
           disabled={disabled || pending}
           type="button"
@@ -619,7 +624,8 @@ export function StudioPromptComposer({
             )}
           />
         </PromptInputButton>
-      </ModelSelectorTrigger>
+        </ModelSelectorTrigger>
+      </StudioInputActionTooltip>
 
       <ModelSelectorContent className="sm:max-w-104" title="Choose model">
         <ModelSelectorHeader
@@ -733,15 +739,12 @@ export function StudioPromptComposer({
     >
       <PromptInput
         className={cn(
-          "rounded-3xl border-border/45 bg-background/95 transition-[border-color,box-shadow,ring-color] duration-200",
-          "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.03),0_12px_40px_-18px_rgba(0,0,0,0.12)]",
-          "has-[[data-slot=input-group-control]:focus-visible]:border-ring/25",
-          "has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_1px_2px_rgba(0,0,0,0.04),0_16px_44px_-16px_rgba(0,0,0,0.14)]",
+          "rounded-2xl border-black/10 bg-background transition-[border-color,ring-color] duration-200",
+          "has-[[data-slot=input-group-control]:focus-visible]:border-black/18",
           "has-[[data-slot=input-group-control]:focus-visible]:ring-2",
           "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6",
-          "dark:bg-background/80",
-          "dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.2),0_12px_40px_-18px_rgba(0,0,0,0.48)]",
-          "dark:has-[[data-slot=input-group-control]:focus-visible]:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03),0_1px_2px_rgba(0,0,0,0.24),0_16px_48px_-16px_rgba(0,0,0,0.52)]",
+          "dark:border-white/12",
+          "dark:has-[[data-slot=input-group-control]:focus-visible]:border-white/20",
           highlighted && "border-foreground/15 ring-2 ring-foreground/8",
           surfaceClassName,
         )}
@@ -886,14 +889,16 @@ export function StudioPromptComposer({
                   className="hidden h-5 bg-border/50 sm:block"
                   orientation="vertical"
                 />
-                <StudioCountStepper
-                  value={count.value}
-                  min={count.min}
-                  max={count.max}
-                  onChange={count.onChange}
-                  disabled={disabled || pending}
-                  label={count.label}
-                />
+                <StudioInputActionTooltip label={count.label ?? "Number of images to generate"}>
+                  <StudioCountStepper
+                    value={count.value}
+                    min={count.min}
+                    max={count.max}
+                    onChange={count.onChange}
+                    disabled={disabled || pending}
+                    label={count.label}
+                  />
+                </StudioInputActionTooltip>
               </>
             ) : null}
 
@@ -924,23 +929,26 @@ export function StudioPromptComposer({
                 {costLabel}
               </span>
             ) : null}
-            <PromptInputSubmit
-              className={cn(
-                "h-8 gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold tracking-[-0.015em]",
-                "shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_-4px_rgba(0,0,0,0.12)]",
-                "transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.98]",
-                !canSubmit && "opacity-45 shadow-none",
-              )}
-              disabled={!canSubmit}
-              size="sm"
-              status={pending ? "submitted" : undefined}
-              title={submitTitle}
+            <StudioInputActionTooltip
+              label={submitTitle ?? submitLabel}
+              shortcut={canSubmit ? "⌘↵" : undefined}
             >
-              <span className="hidden sm:inline">{submitLabel}</span>
-              <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
-                ⌘↵
-              </Kbd>
-            </PromptInputSubmit>
+              <PromptInputSubmit
+                className={cn(
+                  "h-8 gap-1.5 rounded-lg px-3.5 text-[13px] font-medium tracking-[-0.015em]",
+                  "transition-[transform,opacity] duration-150 active:scale-[0.98]",
+                  !canSubmit && "opacity-45",
+                )}
+                disabled={!canSubmit}
+                size="sm"
+                status={pending ? "submitted" : undefined}
+              >
+                <span className="hidden sm:inline">{submitLabel}</span>
+                <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
+                  ⌘↵
+                </Kbd>
+              </PromptInputSubmit>
+            </StudioInputActionTooltip>
           </div>
         </PromptInputFooter>
       </PromptInput>

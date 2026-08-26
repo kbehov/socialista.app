@@ -14,9 +14,11 @@ export {
 
 export * from './ai/static-ad-prompts.js'
 export {
+  resolveStaticAdImages,
   staticAdPayloadObjectSchema,
   staticAdPayloadSchema,
   type StaticAdGenerationPayload,
+  type StaticAdImageInput,
 } from './schemas/static-ad.schema.js'
 
 export {

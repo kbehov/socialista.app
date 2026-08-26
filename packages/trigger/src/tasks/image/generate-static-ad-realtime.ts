@@ -1,16 +1,23 @@
 import { resolvePrompt } from '@socialista/ai'
-import { connectDb, disconnectDb } from '@socialista/db'
+import { connectDb, ContextSupport, disconnectDb } from '@socialista/db'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { clampImageGenerationCount, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
+import {
+  clampImageGenerationCount,
+  PROMPT_KEYS,
+  TASK_IDS,
+} from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import {
   assembleStaticAdImagePrompt,
   buildStaticAdCreativeBrief,
-  sanitizeStaticAdModelPrompt,
+  sanitizeStaticAdModelPrompts,
 } from '../../ai/static-ad-prompts.js'
 import { resolveImageGenerator } from '../../providers/resolve-provider.js'
-import { staticAdPayloadSchema } from '../../schemas/static-ad.schema.js'
+import {
+  resolveStaticAdImages,
+  staticAdPayloadSchema,
+} from '../../schemas/static-ad.schema.js'
 import {
   completeGenerationRecord,
   failGenerationRecord,
@@ -19,10 +26,20 @@ import {
   setGenerationEnhancedPrompt,
   startGenerationRecord,
 } from '../shared/generation-record.js'
-import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
-import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
+import {
+  setGenerationFailure,
+  setGenerationStatus,
+} from '../shared/metadata.js'
+import {
+  notifyGenerationComplete,
+  notifyGenerationFailed,
+} from '../shared/notify.js'
 import { loadSkillOverride } from '../shared/skills.js'
-import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
+import {
+  assertSufficientCredits,
+  finalizeGeneration,
+  loadModelAndWorkspace,
+} from '../shared/workspace.js'
 
 export const realtimeStaticAdGeneration = schemaTask({
   id: TASK_IDS.staticAdGeneration,
@@ -36,12 +53,27 @@ export const realtimeStaticAdGeneration = schemaTask({
     try {
       await connectDb()
 
-      const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId, {
-        modelNotFoundMessage: `Model not found: ${payload.model}. Add openai/gpt-image-2 in the manager before generating static ads.`,
-      })
+      const { model, workspace } = await loadModelAndWorkspace(
+        payload.model,
+        payload.workspaceId,
+        {
+          modelNotFoundMessage: `Model not found: ${payload.model}. Add a text-to-image model with image input support in the manager.`,
+        },
+      )
+      if (!(model.contextSupports ?? []).includes(ContextSupport.IMAGE)) {
+        throw new Error(`Model ${payload.model} does not support image inputs.`)
+      }
       const numImages = clampImageGenerationCount(payload.numImages)
-      const billedCost = model.cost * numImages
-      assertSufficientCredits(workspace, billedCost)
+      assertSufficientCredits(workspace, model.cost * numImages)
+
+      const images = resolveStaticAdImages(payload)
+      if (images.length === 0) {
+        throw new Error('Add at least one reference image.')
+      }
+      const productImage =
+        images.find((image) => image.role === 'product') ?? images[0]
+      const templateImage = images.find((image) => image.role === 'template')
+      const hasTemplate = Boolean(templateImage)
 
       const started = await startGenerationRecord({
         kind: GenerationKind.STATIC_AD,
@@ -54,8 +86,9 @@ export const realtimeStaticAdGeneration = schemaTask({
         model,
         inputs: {
           aspectRatio: payload.aspectRatio,
-          productImageUrl: payload.productImage,
-          ...(payload.referenceImage ? { referenceImageUrl: payload.referenceImage } : {}),
+          ...(productImage ? { productImageUrl: productImage.url } : {}),
+          ...(templateImage ? { referenceImageUrl: templateImage.url } : {}),
+          imageUrls: images.map((image) => image.url),
           language: payload.language,
           numImages,
           ...(payload.adCopy ? { adCopy: payload.adCopy } : {}),
@@ -64,10 +97,13 @@ export const realtimeStaticAdGeneration = schemaTask({
       startedAt = started.startedAt
       generationId = started.generationId
 
-      const hasReferenceImage = Boolean(payload.referenceImage)
       setGenerationStatus(
         10,
-        hasReferenceImage ? 'Art-directing from product and template' : 'Art-directing from product photo',
+        hasTemplate
+          ? 'Art-directing from template and references'
+          : images.length > 1
+            ? 'Art-directing from your references'
+            : 'Art-directing from your reference',
       )
 
       const creativeBrief = buildStaticAdCreativeBrief({
@@ -75,7 +111,8 @@ export const realtimeStaticAdGeneration = schemaTask({
         language: payload.language,
         aspectRatio: payload.aspectRatio,
         adCopy: payload.adCopy,
-        hasReferenceImage,
+        images,
+        count: numImages,
       })
 
       const systemOverride = await loadSkillOverride({
@@ -83,7 +120,10 @@ export const realtimeStaticAdGeneration = schemaTask({
         target: PROMPT_KEYS.staticAd,
         workspaceId: payload.workspaceId,
       })
-      const { model: plannerModel, system } = resolvePrompt(PROMPT_KEYS.staticAd, systemOverride)
+      const { model: plannerModel, system } = resolvePrompt(
+        PROMPT_KEYS.staticAd,
+        systemOverride,
+      )
 
       const planned = await generateText({
         model: plannerModel,
@@ -92,36 +132,51 @@ export const realtimeStaticAdGeneration = schemaTask({
           {
             role: 'user',
             content: [
+              ...images.map((image) => ({
+                type: 'image' as const,
+                image: image.url,
+              })),
               { type: 'text', text: creativeBrief },
-              { type: 'image', image: payload.productImage },
-              ...(payload.referenceImage ? [{ type: 'image' as const, image: payload.referenceImage }] : []),
             ],
           },
         ],
       })
 
-      const plannedPrompt = sanitizeStaticAdModelPrompt(planned.text)
-      const enhancedPrompt = assembleStaticAdImagePrompt(plannedPrompt, hasReferenceImage)
+      const plannedPrompts = sanitizeStaticAdModelPrompts(
+        planned.text,
+        numImages,
+      )
+      const enhancedPrompts = plannedPrompts.map((prompt) =>
+        assembleStaticAdImagePrompt(prompt, images),
+      )
+      const billedCost = model.cost * enhancedPrompts.length
+      const enhancedPrompt = enhancedPrompts.join('\n\n---\n\n')
       await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
 
       setGenerationStatus(
         30,
-        numImages > 1 ? `Rendering ${numImages} campaign creatives` : 'Rendering campaign creative',
+        enhancedPrompts.length > 1
+          ? `Rendering ${enhancedPrompts.length} campaign creatives`
+          : 'Rendering campaign creative',
       )
 
       const generateImage = resolveImageGenerator(model.modelProvider)
-      const generatedImages = await generateImage({
-        model: model.value,
-        prompt: enhancedPrompt,
-        aspectRatio: payload.aspectRatio,
-        workspaceId: payload.workspaceId,
-        userId: payload.userId,
-        imageUrls: payload.referenceImage
-          ? [payload.productImage, payload.referenceImage]
-          : [payload.productImage],
-        numImages,
-        onProgress: setGenerationStatus,
-      })
+      const generatedImages = (
+        await Promise.all(
+          enhancedPrompts.map((prompt) =>
+            generateImage({
+              model: model.value,
+              prompt,
+              aspectRatio: payload.aspectRatio,
+              workspaceId: payload.workspaceId,
+              userId: payload.userId,
+              imageUrls: images.map((image) => image.url),
+              numImages: 1,
+              onProgress: setGenerationStatus,
+            }),
+          ),
+        )
+      ).flat()
       const imageUrl = generatedImages[0]
       if (!imageUrl) {
         throw new Error('No image was returned from the model')
@@ -144,7 +199,9 @@ export const realtimeStaticAdGeneration = schemaTask({
       setGenerationStatus(100, 'Complete')
 
       if (!generationId) {
-        throw new Error('Missing generationId after successful static ad generation')
+        throw new Error(
+          'Missing generationId after successful static ad generation',
+        )
       }
 
       await notifyGenerationComplete({

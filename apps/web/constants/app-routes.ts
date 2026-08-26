@@ -35,6 +35,12 @@ export const DASHBOARD_ROUTES = {
     slideshow: (id: string) => `/dashboard/studio/slideshows/${id}`,
     SLIDESHOW_CREATE: '/dashboard/studio/slideshows/create',
     VIDEOS: '/dashboard/studio/videos',
+    createVideo: (opts?: { generationId?: string }) => {
+      const params = new URLSearchParams()
+      if (opts?.generationId) params.set('generationId', opts.generationId)
+      const qs = params.toString()
+      return qs ? `/dashboard/studio/videos?${qs}` : '/dashboard/studio/videos'
+    },
     video: (id: string) => `/dashboard/studio/videos/${id}`,
     VIDEO_CREATE: '/dashboard/studio/videos/create',
     videoRun: (runId: string) => `/dashboard/studio/videos/generate/${runId}`,

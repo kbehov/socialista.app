@@ -2,6 +2,7 @@ import { fal } from '@fal-ai/client'
 import { logger } from '@trigger.dev/sdk/v3'
 import { z } from 'zod'
 import type { AspectRatio } from '@socialista/types'
+import { downloadRemoteImage, uploadGeneratedImage } from '../services/image-upload.js'
 
 fal.config({
   credentials: process.env.FAL_KEY,
@@ -36,10 +37,33 @@ function mapQueueStatus(status: string | undefined): { progress: number; label: 
   }
 }
 
+async function persistFalImageUrl(
+  url: string,
+  workspaceId: string,
+  userId: string,
+): Promise<string> {
+  try {
+    const downloaded = await downloadRemoteImage(url)
+    return await uploadGeneratedImage({
+      workspaceId,
+      userId,
+      bytes: downloaded.bytes,
+      mediaType: downloaded.mediaType,
+    })
+  } catch (error) {
+    logger.error('Failed to persist fal image, using provider URL', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return url
+  }
+}
+
 export async function generateImageFal({
   model,
   prompt,
   aspectRatio,
+  workspaceId,
+  userId,
   imageUrl,
   imageUrls,
   numImages = 1,
@@ -84,5 +108,10 @@ export async function generateImageFal({
     throw new Error('No image was returned from the model')
   }
 
-  return urls
+  if (!workspaceId || !userId) {
+    return urls
+  }
+
+  onProgress?.(90, 'Saving to files')
+  return Promise.all(urls.map(url => persistFalImageUrl(url, workspaceId, userId)))
 }

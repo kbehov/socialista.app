@@ -34,8 +34,8 @@ export function StudioReferenceTagHint({
           {isStaticAd ? (
             <>
               {" "}
-              Example: the creator from <TagChip index={0} /> holding the product
-              from <TagChip index={1} />.
+              Example: recreate the template with the creator from <TagChip index={0} />{" "}
+              holding the product from <TagChip index={1} />.
             </>
           ) : (
             <>
@@ -47,8 +47,9 @@ export function StudioReferenceTagHint({
         </>
       ) : isStaticAd ? (
         <>
-          Attach your product photo, an avatar, or style references — then tag them
-          with <TagChip index={0} /> and <TagChip index={1} />.
+          Attach a product, creator, style shot, or mix — then tag them with{" "}
+          <TagChip index={0} /> and <TagChip index={1} />. Apply a template to
+          recreate its layout.
         </>
       ) : (
         <>

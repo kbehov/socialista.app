@@ -6,7 +6,7 @@ import { useEffect, useMemo } from 'react'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
 import { SmartPagination } from '@/components/common/smart-pagination'
-import { dashboardSurface } from '@/components/dashboard'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { useReportPageScroll } from '@/components/headers/page-scroll-compact'
 import { PostEditSheet } from '@/components/posts/post-edit-sheet'
 import { PostsCalendarView } from '@/components/posts/posts-calendar-view'
@@ -65,7 +65,7 @@ function PostsEmptyState({
             <button
               type="button"
               onClick={onClearFilters}
-              className="rounded-full border border-border/60 bg-background px-3.5 py-1.5 text-[12px] font-medium text-foreground shadow-xs transition-colors hover:bg-muted/40 active:scale-[0.98]"
+              className="text-sm font-medium text-foreground underline-offset-4 transition-colors duration-150 hover:underline"
             >
               Clear filters
             </button>
@@ -114,7 +114,7 @@ export function PostsView({ posts, meta, accounts, filters, view, month, hasFilt
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       <PostsToolbar accounts={accounts} filters={filters} total={meta.total} view={view} />
 
       {view === 'calendar' ? (
@@ -142,9 +142,7 @@ export function PostsView({ posts, meta, accounts, filters, view, month, hasFilt
               publishingPostId={publishingPostId}
             />
           </ScrollArea>
-          <div className="shrink-0 border-t border-border/40 bg-background/80 px-1 pt-3 pb-1 backdrop-blur-xl supports-backdrop-filter:bg-background/65">
-            <SmartPagination meta={meta} className="shrink-0" />
-          </div>
+          <SmartPagination meta={meta} className="shrink-0 px-3 sm:px-4" />
           <PostEditSheet
             post={editingPost}
             account={editingPost ? (accountsById[editingPost.accountId] ?? editingPost.account) : undefined}

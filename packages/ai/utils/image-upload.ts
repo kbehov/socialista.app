@@ -1,11 +1,32 @@
 import type { UploadGeneratedImageInput, UploadGeneratedImageResponse } from '@socialista/types'
 import { Buffer } from 'node:buffer'
 
+const MAX_REMOTE_IMAGE_BYTES = 50 * 1024 * 1024
+
 function extensionForMediaType(mediaType: string): string {
   if (mediaType.includes('jpeg') || mediaType.includes('jpg')) return 'jpg'
   if (mediaType.includes('webp')) return 'webp'
   if (mediaType.includes('gif')) return 'gif'
   return 'png'
+}
+
+function normalizeImageMediaType(value: string | null): string {
+  const mediaType = (value ?? 'image/png').split(';')[0]?.trim() || 'image/png'
+  return mediaType.startsWith('image/') ? mediaType : 'image/png'
+}
+
+export async function downloadRemoteImage(url: string): Promise<{ bytes: Uint8Array; mediaType: string }> {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to download generated image (${response.status})`)
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer())
+  if (bytes.byteLength > MAX_REMOTE_IMAGE_BYTES) {
+    throw new Error('Generated image exceeds the maximum size')
+  }
+
+  return { bytes, mediaType: normalizeImageMediaType(response.headers.get('content-type')) }
 }
 
 export async function uploadGeneratedImage({

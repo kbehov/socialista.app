@@ -19,11 +19,11 @@ export function GenerationConnectingSection({
 }: GenerationConnectingSectionProps) {
   return (
     <section aria-labelledby={headingId} className="space-y-4">
-      <div className="space-y-1 text-center">
-        <h2 id={headingId} className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+      <div className="space-y-1 text-left">
+        <h2 id={headingId} className="text-[15px] font-medium tracking-[-0.015em] text-foreground">
           {isConnecting ? 'Connecting' : title}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[13px] leading-[1.5] text-black/56 dark:text-white/56">
           {isConnecting ? 'Linking to your generation…' : <Shimmer as="span">{statusLabel}</Shimmer>}
         </p>
       </div>

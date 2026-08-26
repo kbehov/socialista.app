@@ -7,6 +7,7 @@ import { Markdown } from '@tiptap/markdown'
 import NodeRange from '@tiptap/extension-node-range'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import { countWords } from '@socialista/types'
 import { useEffect, useRef, useState } from 'react'
 
 import { MarkdownBlockHandle } from './markdown-block-handle'
@@ -61,6 +62,7 @@ export type MarkdownEditorProps = {
   'aria-label'?: string
   'aria-invalid'?: boolean
   slashCommands?: SlashCommand[]
+  maxWords?: number
 }
 
 export function MarkdownEditor({
@@ -76,6 +78,7 @@ export function MarkdownEditor({
   'aria-label': ariaLabel,
   'aria-invalid': ariaInvalid,
   slashCommands = DEFAULT_SLASH_COMMANDS,
+  maxWords,
 }: MarkdownEditorProps) {
   const onChangeRef = useRef(onChange)
   const onBlurRef = useRef(onBlur)
@@ -144,6 +147,9 @@ export function MarkdownEditor({
   }, [editor, value])
 
   const markdown = value ?? uncontrolled
+  const wordCount = maxWords === undefined ? 0 : countWords(markdown)
+  const overLimit = maxWords !== undefined && wordCount > maxWords
+  const nearLimit = maxWords !== undefined && !overLimit && wordCount >= Math.floor(maxWords * 0.9)
 
   if (!editor) {
     return (
@@ -158,6 +164,7 @@ export function MarkdownEditor({
       className={cn(
         'min-w-0',
         ariaInvalid && '[&_.tiptap]:caret-destructive',
+        overLimit && '[&_.tiptap]:caret-destructive',
         disabled && 'pointer-events-none opacity-60',
         className,
       )}
@@ -188,6 +195,21 @@ export function MarkdownEditor({
           <MarkdownBubbleToolbar containerRef={surfaceRef} />
         </div>
       </ToolbarProvider>
+      {maxWords !== undefined ? (
+        <p
+          className={cn(
+            'mt-2 px-2 text-right text-[12px] tabular-nums tracking-tight',
+            overLimit
+              ? 'text-destructive'
+              : nearLimit
+                ? 'text-muted-foreground'
+                : 'text-muted-foreground/50',
+          )}
+          aria-live="polite"
+        >
+          {wordCount.toLocaleString('en-US')} / {maxWords.toLocaleString('en-US')} words
+        </p>
+      ) : null}
     </div>
   )
 }

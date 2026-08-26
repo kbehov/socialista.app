@@ -1,6 +1,7 @@
 'use client'
 
 import { PromptInputButton } from '@/components/ai-elements/prompt-input'
+import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,11 +54,16 @@ export function StudioSkillPicker({
 
   const selected = skills.find(skill => skill._id === value)
 
+  const skillTooltip = selected
+    ? `Skill: ${selected.name}`
+    : 'Workspace skill — custom system prompt'
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <PromptInputButton
-          aria-label={selected ? `Skill ${selected.name}` : 'Default system prompt'}
+      <StudioInputActionTooltip label={skillTooltip}>
+        <DropdownMenuTrigger asChild>
+          <PromptInputButton
+            aria-label={selected ? `Skill ${selected.name}` : 'Default system prompt'}
           className={cn(
             'h-7 max-w-40 gap-1.5 rounded-xl border px-1.5 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
             'border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
@@ -73,7 +79,8 @@ export function StudioSkillPicker({
             {selected?.name ?? 'Default'}
           </span>
         </PromptInputButton>
-      </DropdownMenuTrigger>
+        </DropdownMenuTrigger>
+      </StudioInputActionTooltip>
       <DropdownMenuContent align="start" className="min-w-48">
         <DropdownMenuRadioGroup
           value={value ?? NONE}

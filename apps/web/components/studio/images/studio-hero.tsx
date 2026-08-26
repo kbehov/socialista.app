@@ -8,9 +8,9 @@ export type StudioHeroProps = {
   title?: string
   description?: string
   imagePosition?: string
-  /** Stronger scrim + text shadow when the hero photo is bright or busy. */
+  /** @deprecated Scrim strength is now unified for readability. */
   overlayVariant?: 'default' | 'strong'
-  /** Soft-focus the photo so type stays readable over busy imagery. */
+  /** @deprecated Background blur is no longer applied — scrim handles legibility. */
   blurBackground?: boolean
   actions?: ReactNode
 }
@@ -23,93 +23,57 @@ const DEFAULT_HERO = {
   imagePosition: 'object-[52%_38%]',
 } as const
 
+function parseTitle(title: string) {
+  const newlineIndex = title.indexOf('\n')
+  if (newlineIndex === -1) {
+    return { primary: title, secondary: null }
+  }
+
+  return {
+    primary: title.slice(0, newlineIndex),
+    secondary: title.slice(newlineIndex + 1),
+  }
+}
+
 export function StudioHero({
   imageSrc = DEFAULT_HERO.imageSrc,
   chipLabel = DEFAULT_HERO.chipLabel,
   title = DEFAULT_HERO.title,
   description = DEFAULT_HERO.description,
   imagePosition = DEFAULT_HERO.imagePosition,
-  overlayVariant = 'default',
-  blurBackground = false,
   actions,
 }: StudioHeroProps = {}) {
-  const isStrong = overlayVariant === 'strong'
+  const { primary, secondary } = parseTitle(title)
 
   return (
     <header className="studio-hero px-4 pt-3 sm:px-6 sm:pt-4 lg:px-8">
-      <div className="relative isolate min-h-[24rem] overflow-hidden rounded-[1.25rem] sm:min-h-[26rem] sm:rounded-[1.5rem] lg:min-h-[28rem]">
-        {actions ? (
-          <div className="absolute top-3 right-3 z-20 sm:top-4 sm:right-4">{actions}</div>
-        ) : null}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <Image
-            src={imageSrc}
-            alt=""
-            fill
-            priority
-            quality={90}
-            sizes="(max-width: 768px) 100vw, calc(100vw - 16rem)"
-            className={cn(
-              'select-none object-cover',
-              imagePosition,
-              blurBackground && 'scale-[1.08] blur-[8px]',
-            )}
-          />
-          <div
-            className={cn(
-              'absolute inset-0 bg-linear-to-b to-transparent to-64%',
-              isStrong ? 'from-black/68 via-black/38' : 'from-black/52 via-black/22',
-            )}
-          />
-          <div
-            className={cn(
-              'absolute inset-0',
-              isStrong
-                ? 'bg-[radial-gradient(ellipse_at_50%_26%,transparent_8%,rgba(0,0,0,0.48)_100%)]'
-                : 'bg-[radial-gradient(ellipse_at_50%_30%,transparent_18%,rgba(0,0,0,0.3)_100%)]',
-            )}
-          />
-          <div className="absolute inset-x-0 bottom-0 h-[52%] bg-linear-to-b from-transparent via-background/32 to-background" />
-        </div>
+      <div className="relative mx-auto max-w-5xl overflow-hidden rounded-xl ring-1 ring-black/10 dark:ring-white/12">
+        <div className="relative min-h-[11rem] sm:min-h-[12.5rem] lg:min-h-[13.5rem]">
+          {actions ? (
+            <div className="absolute top-3 right-3 z-20 sm:top-4 sm:right-4">{actions}</div>
+          ) : null}
 
-        <div className="relative flex min-h-[24rem] flex-col items-center justify-center px-5 pb-24 pt-12 text-center sm:min-h-[26rem] sm:px-8 sm:pb-28 sm:pt-14 lg:min-h-[28rem] lg:pb-28 lg:pt-16">
-          <div className="mx-auto flex max-w-[22.5rem] flex-col items-center sm:max-w-lg">
-            <div className="studio-hero-chip inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/28 px-2.5 py-1 backdrop-blur-md backdrop-saturate-150">
-              <span
-                aria-hidden
-                className="size-1.5 rounded-full bg-white/85 shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-              />
-              <span
-                className={cn(
-                  'text-[12px] font-medium tracking-[-0.012em]',
-                  isStrong
-                    ? 'text-white/92 [text-shadow:0_1px_8px_rgba(0,0,0,0.4)]'
-                    : 'text-white/84',
-                )}
-              >
-                {chipLabel}
-              </span>
-            </div>
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            <Image
+              src={imageSrc}
+              alt=""
+              fill
+              priority
+              quality={88}
+              sizes="(max-width: 768px) 100vw, 1024px"
+              className={cn('select-none object-cover', imagePosition)}
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-black/78 via-black/32 to-black/8" />
+            <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/15 to-transparent sm:from-black/45" />
+          </div>
 
-            <h1
-              className={cn(
-                'mt-5 whitespace-pre-line font-sans text-[clamp(2.6rem,6.4vw,3.85rem)] font-semibold leading-[0.96] tracking-[-0.048em] text-white sm:mt-6',
-                isStrong
-                  ? '[text-shadow:0_1px_2px_rgba(0,0,0,0.52),0_12px_40px_rgba(0,0,0,0.42),0_28px_64px_rgba(0,0,0,0.28)]'
-                  : '[text-shadow:0_1px_2px_rgba(0,0,0,0.34),0_16px_48px_rgba(0,0,0,0.24)]',
-              )}
-            >
-              {title}
+          <div className="relative flex min-h-[11rem] flex-col justify-end px-5 pb-5 pt-10 text-left sm:min-h-[12.5rem] sm:px-7 sm:pb-6 sm:pt-12 lg:min-h-[13.5rem] lg:px-8">
+            <p className="text-[12px] font-medium tracking-[-0.015em] text-white/64">{chipLabel}</p>
+            <h1 className="mt-1.5 max-w-[16rem] text-[clamp(1.75rem,4.5vw,2.5rem)] font-medium leading-[1.05] tracking-[-0.035em] text-white sm:max-w-none">
+              <span>{primary}</span>
+              {secondary ? <span className="text-white/58"> {secondary}</span> : null}
             </h1>
-
-            <p
-              className={cn(
-                'mt-4 max-w-[21rem] text-[15px] font-normal leading-[1.5] tracking-[0.008em] sm:mt-5 sm:max-w-[23rem]',
-                isStrong
-                  ? 'text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.48),0_10px_28px_rgba(0,0,0,0.34)]'
-                  : 'text-white/76 [text-shadow:0_1px_14px_rgba(0,0,0,0.3)]',
-              )}
-            >
+            <p className="mt-2 max-w-[18rem] text-[14px] leading-[1.5] tracking-[-0.01em] text-white/72 sm:max-w-sm">
               {description}
             </p>
           </div>

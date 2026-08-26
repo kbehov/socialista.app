@@ -9,6 +9,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
 import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
+import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
@@ -70,13 +71,32 @@ const TOOL_BUTTON_CLASS = cn(
   "active:scale-[0.97]",
 );
 
-function VideoPromptComposer({ models }: { models: Model[] }) {
+function VideoPromptComposer({
+  models,
+  initialAttachmentUrl,
+}: {
+  models: Model[];
+  initialAttachmentUrl?: string;
+}) {
   const router = useRouter();
   const { composerRef, registerPromptHandlers } = useVideoStudio();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [isPending, startTransition] = useTransition();
-  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>([]);
+  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() =>
+    initialAttachmentUrl
+      ? [
+          {
+            id: "generation-source",
+            url: initialAttachmentUrl,
+            kind: "image",
+            source: "library",
+            label: "Generated",
+            name: "Generated image",
+          },
+        ]
+      : [],
+  );
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("9:16");
   const [duration, setDuration] = useState(VIDEO_DURATION_DEFAULT);
   const [generateAudio, setGenerateAudio] = useState(true);
@@ -193,20 +213,22 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
   const tools = (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <PromptInputButton
-            aria-label={`Aspect ratio ${selectedAspect.id}`}
-            className={TOOL_BUTTON_CLASS}
-            disabled={isPending}
-            type="button"
-          >
-            <AspectRatioIcon active ratio={selectedAspect.ratio} />
-            <span className="text-xs font-medium leading-none tracking-[-0.015em]">
-              {selectedAspect.id}
-            </span>
-            <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
-          </PromptInputButton>
-        </DropdownMenuTrigger>
+        <StudioInputActionTooltip label="Output aspect ratio">
+          <DropdownMenuTrigger asChild>
+            <PromptInputButton
+              aria-label={`Aspect ratio ${selectedAspect.id}`}
+              className={TOOL_BUTTON_CLASS}
+              disabled={isPending}
+              type="button"
+            >
+              <AspectRatioIcon active ratio={selectedAspect.ratio} />
+              <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+                {selectedAspect.id}
+              </span>
+              <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
+            </PromptInputButton>
+          </DropdownMenuTrigger>
+        </StudioInputActionTooltip>
         <DropdownMenuContent align="start" className="min-w-44 w-44">
           <DropdownMenuRadioGroup
             value={aspectRatio}
@@ -233,19 +255,21 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
       </DropdownMenu>
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <PromptInputButton
-            aria-label={`Duration ${duration} seconds`}
-            className={TOOL_BUTTON_CLASS}
-            disabled={isPending}
-            type="button"
-          >
-            <span className="text-xs font-medium leading-none tracking-[-0.015em] tabular-nums">
-              {duration}s
-            </span>
-            <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
-          </PromptInputButton>
-        </DropdownMenuTrigger>
+        <StudioInputActionTooltip label="Clip duration">
+          <DropdownMenuTrigger asChild>
+            <PromptInputButton
+              aria-label={`Duration ${duration} seconds`}
+              className={TOOL_BUTTON_CLASS}
+              disabled={isPending}
+              type="button"
+            >
+              <span className="text-xs font-medium leading-none tracking-[-0.015em] tabular-nums">
+                {duration}s
+              </span>
+              <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
+            </PromptInputButton>
+          </DropdownMenuTrigger>
+        </StudioInputActionTooltip>
         <DropdownMenuContent align="start" className="min-w-36 w-36">
           <DropdownMenuRadioGroup
             value={String(duration)}
@@ -272,6 +296,11 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
         className={TOOL_BUTTON_CLASS}
         disabled={isPending}
         onClick={() => setGenerateAudio((current) => !current)}
+        tooltip={
+          generateAudio
+            ? "Audio on — generate sound with the clip"
+            : "Muted — video only, no generated audio"
+        }
         type="button"
       >
         {generateAudio ? (
@@ -342,7 +371,13 @@ function VideoPromptComposer({ models }: { models: Model[] }) {
   );
 }
 
-const VideoGenerationPromptInput = ({ models }: { models: Model[] }) => {
+const VideoGenerationPromptInput = ({
+  models,
+  initialAttachmentUrl,
+}: {
+  models: Model[];
+  initialAttachmentUrl?: string;
+}) => {
   if (models.length === 0) {
     return (
       <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-background/75 px-6 py-14 text-center backdrop-blur-xl backdrop-saturate-150">
@@ -362,7 +397,10 @@ const VideoGenerationPromptInput = ({ models }: { models: Model[] }) => {
 
   return (
     <PromptInputProvider>
-      <VideoPromptComposer models={models} />
+      <VideoPromptComposer
+        initialAttachmentUrl={initialAttachmentUrl}
+        models={models}
+      />
     </PromptInputProvider>
   );
 };

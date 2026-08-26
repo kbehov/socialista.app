@@ -18,7 +18,9 @@ import {
   type ISkill,
 } from '@socialista/db'
 import {
+  countWords,
   PROMPT_KEY_VALUES,
+  SKILL_CONTENT_MAX_WORDS,
   type CreateSkillPayload,
   type PromptKey,
   type Skill,
@@ -67,6 +69,14 @@ function isPromptKey(value: unknown): value is PromptKey {
   return typeof value === 'string' && (PROMPT_KEY_VALUES as readonly string[]).includes(value)
 }
 
+function assertSkillContentWordLimit(content: string) {
+  if (countWords(content) <= SKILL_CONTENT_MAX_WORDS) return
+  throw new HttpError(
+    400,
+    `Skill content must be ${SKILL_CONTENT_MAX_WORDS.toLocaleString('en-US')} words or less`,
+  )
+}
+
 function parseCreateSkillInput(body: Record<string, unknown>): CreateSkillPayload {
   const workspaceId = parseParamId(
     typeof body.workspaceId === 'string' ? body.workspaceId : undefined,
@@ -74,6 +84,7 @@ function parseCreateSkillInput(body: Record<string, unknown>): CreateSkillPayloa
   )
   const name = requireTrimmedString(body.name, 'Skill name')
   const content = requireTrimmedString(body.content, 'Skill content')
+  assertSkillContentWordLimit(content)
   if (!isPromptKey(body.target)) {
     throw new HttpError(400, 'Invalid skill target')
   }
@@ -115,6 +126,7 @@ function parseUpdateSkillInput(body: Record<string, unknown>): UpdateSkillPayloa
   const content = optionalTrimmedString(body.content)
   if (body.content !== undefined) {
     if (!content) throw new HttpError(400, 'Skill content cannot be empty')
+    assertSkillContentWordLimit(content)
     updates.content = content
   }
   assertHasUpdates(updates)

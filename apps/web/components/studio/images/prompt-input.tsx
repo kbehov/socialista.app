@@ -9,6 +9,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
 import { useImageStudio } from "@/components/studio/images/image-studio-provider";
+import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
 import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
@@ -53,6 +54,13 @@ const MAX_REFERENCE_IMAGES = 3;
 
 const DEFAULT_PLACEHOLDER = "Describe the scene, mood, and style…";
 
+function getSubmitShortcutLabel() {
+  if (typeof navigator === "undefined") return "⌘↵";
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent)
+    ? "⌘↵"
+    : "Ctrl↵";
+}
+
 type AspectRatioId = "1:1" | "16:9" | "9:16" | "4:3";
 
 const ASPECT_RATIOS = [
@@ -67,6 +75,7 @@ const ASPECT_RATIOS = [
 }>;
 
 function ImagePromptComposer({ models }: { models: Model[] }) {
+  const [submitShortcut] = useState(getSubmitShortcutLabel);
   const router = useRouter();
   const { composerRef, registerPromptHandlers } = useImageStudio();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
@@ -173,13 +182,15 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 
   const aspectTools = (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <PromptInputButton
-          aria-label={`Aspect ratio ${selectedAspect.id}`}
+      <StudioInputActionTooltip label="Output aspect ratio">
+        <DropdownMenuTrigger asChild>
+          <PromptInputButton
+            aria-label={`Aspect ratio ${selectedAspect.id}`}
           className={cn(
-            "h-7 gap-1.5 rounded-xl border px-1.5 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
-            "border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150",
-            "hover:border-border/65 hover:bg-background",
+            "h-7 gap-1.5 rounded-lg border px-1.5 pr-1.5",
+            "border-black/10 bg-black/[0.02] transition-[border-color,background-color] duration-150",
+            "hover:border-black/18 hover:bg-black/[0.04]",
+            "dark:border-white/12 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
             "active:scale-[0.97]",
           )}
           disabled={isPending}
@@ -191,7 +202,8 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           </span>
           <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
         </PromptInputButton>
-      </DropdownMenuTrigger>
+        </DropdownMenuTrigger>
+      </StudioInputActionTooltip>
       <DropdownMenuContent align="start" className="min-w-44 w-44">
         <DropdownMenuRadioGroup
           value={aspectRatio}
@@ -247,15 +259,20 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               aria-label={enhance ? "Prompt enhancement on" : "Prompt enhancement off"}
               aria-pressed={enhance}
               className={cn(
-                "h-7 gap-1.5 rounded-xl border px-1.5 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
-                "transition-[border-color,background-color,box-shadow] duration-150",
+                "h-7 gap-1.5 rounded-lg border px-1.5 pr-1.5",
+                "transition-[border-color,background-color] duration-150",
                 "active:scale-[0.97]",
                 enhance
-                  ? "border-border/65 bg-background"
-                  : "border-border/40 bg-background/90 hover:border-border/65 hover:bg-background",
+                  ? "border-black/18 bg-black/[0.04] dark:border-white/20 dark:bg-white/[0.06]"
+                  : "border-black/10 bg-black/[0.02] hover:border-black/18 hover:bg-black/[0.04] dark:border-white/12 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
               )}
               disabled={isPending}
               onClick={() => setEnhance((value) => !value)}
+              tooltip={
+                enhance
+                  ? "Enhance on — AI refines your prompt before generating"
+                  : "Raw prompt — send exactly what you typed"
+              }
               type="button"
             >
               <WandSparklesIcon
@@ -292,16 +309,16 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
       <div className="mt-6 space-y-5">
         <ImagePromptAnatomy />
 
-        <p className="flex flex-wrap items-center justify-center gap-1.5 px-0.5 text-[11px] tracking-[-0.01em] text-muted-foreground/50">
-          <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
+        <p className="flex flex-wrap items-center gap-1.5 px-0.5 text-left text-[12px] tracking-[-0.01em] text-black/44 dark:text-white/44">
+          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
             /
           </Kbd>
           <span>to focus</span>
-          <span aria-hidden className="text-muted-foreground/20">
+          <span aria-hidden className="text-black/20 dark:text-white/20">
             ·
           </span>
-          <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
-            ⌘↵
+          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
+            {submitShortcut}
           </Kbd>
           <span>to generate</span>
         </p>
@@ -313,14 +330,14 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
   if (models.length === 0) {
     return (
-      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-background/75 px-6 py-14 text-center backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted/40 ring-1 ring-border/35">
-          <SparklesIcon className="size-4 text-muted-foreground/80" />
+      <div className="rounded-xl border border-dashed border-black/12 bg-black/[0.02] px-6 py-14 text-left dark:border-white/12 dark:bg-white/[0.02]">
+        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.04] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
+          <SparklesIcon className="size-4 text-black/56 dark:text-white/56" />
         </div>
-        <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
           No image models yet
         </p>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
+        <p className="mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/56 dark:text-white/56">
           Add a text-to-image model in the manager to start creating social
           visuals.
         </p>

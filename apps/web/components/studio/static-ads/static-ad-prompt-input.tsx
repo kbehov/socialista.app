@@ -14,7 +14,6 @@ import { STUDIO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
 import { StaticAdFormatPresets } from '@/components/studio/static-ads/static-ad-format-presets'
-import { StaticAdPromptAnatomy } from '@/components/studio/static-ads/static-ad-prompt-anatomy'
 import { useStaticAdStudio } from '@/components/studio/static-ads/static-ad-studio-provider'
 import {
   DropdownMenu,
@@ -29,7 +28,7 @@ import { LanguageSelector } from '@/components/ui/language-selector'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
-import { resolveStaticAdProductImage } from '@/lib/studio/static-ads/resolve-product-image'
+import { collectStaticAdImages } from '@/lib/studio/static-ads/collect-references'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getProjectId, useProjectStore } from '@/store/project.store'
@@ -40,6 +39,7 @@ import {
   IMAGE_GENERATION_COUNT_MAX,
   IMAGE_GENERATION_COUNT_MIN,
   PROMPT_KEYS,
+  STATIC_AD_MODEL,
   type Model,
 } from '@socialista/types'
 import { ChevronDownIcon, SparklesIcon, XIcon } from 'lucide-react'
@@ -48,7 +48,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-const MAX_STATIC_AD_REFERENCES = 3
+const MAX_STATIC_AD_REFERENCES = 8
 
 const ASPECT_RATIOS = [
   { id: '1:1', label: 'Square', ratio: 1 },
@@ -71,10 +71,10 @@ function getSubmitShortcutLabel() {
 
 type StaticAdPromptComposerProps = {
   workspaceId: string
-  model: Model | null
+  models: Model[]
 }
 
-function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerProps) {
+function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerProps) {
   const router = useRouter()
   const [submitShortcut] = useState(getSubmitShortcutLabel)
   const { textInput } = usePromptInputController()
@@ -95,6 +95,10 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
 
   const [isPending, startTransition] = useTransition()
   const [attachments, setAttachments] = useState<AttachedMedia[]>([])
+  const [selectedModelId, setSelectedModelId] = useState(() => {
+    const preferred = models.find(model => model.value === STATIC_AD_MODEL)
+    return preferred?._id ?? models[0]?._id ?? ''
+  })
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT)
   const [skillId, setSkillId] = useState<string | undefined>()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -104,20 +108,27 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
     textInputRef.current = textInput
   })
 
-  const productImage = resolveStaticAdProductImage(attachments)
-  const hasProductImage = Boolean(productImage)
-  const billedCost = model ? model.cost * numImages : 0
-  const hasEnoughCredits = !model || credits >= billedCost
+  const referenceImages = collectStaticAdImages(attachments, templateReference)
+  const hasReferences = referenceImages.length > 0
+  const selectedModel = models.find(model => model._id === selectedModelId) ?? models[0]
+  const billedCost = selectedModel ? selectedModel.cost * numImages : 0
+  const hasEnoughCredits = !selectedModel || credits >= billedCost
 
   const placeholder = useMemo(() => {
+    if (templateReference && attachments.length >= 2) {
+      return 'recreate the template with the creator from @image1 holding the product from @image2…'
+    }
     if (attachments.length >= 2) {
       return 'the creator from @image1 holding the product from @image2, bold headline, clean CTA…'
     }
     if (attachments.length === 1) {
       return 'UGC selfie with @image1, punchy hook and product-forward framing…'
     }
+    if (templateReference) {
+      return 'Optional brief — recreate this template with your product and creator.'
+    }
     return DEFAULT_PLACEHOLDER
-  }, [attachments.length])
+  }, [attachments.length, templateReference])
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -170,10 +181,10 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim()
-    const imageUrl = productImage?.url
+    const images = collectStaticAdImages(attachments, templateReference)
 
-    if (!imageUrl) {
-      toast.error('Add a product photo to generate.')
+    if (images.length === 0) {
+      toast.error('Add a product, creator, template, or other reference to generate.')
       return
     }
 
@@ -182,7 +193,12 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
       return
     }
 
-    if (model && credits < billedCost) {
+    if (!selectedModel) {
+      toast.error('Select a model to continue.')
+      return
+    }
+
+    if (credits < billedCost) {
       toast.error('Insufficient AI credits.', {
         action: {
           label: 'Upgrade',
@@ -196,9 +212,9 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
       const result = await startStaticAdGeneration({
         ...(prompt ? { prompt } : {}),
         workspaceId: currentWorkspace._id,
+        model: selectedModel.value,
         aspectRatio,
-        productImage: imageUrl,
-        ...(templateReference?.imageUrl ? { referenceImage: templateReference.imageUrl } : {}),
+        images,
         language,
         numImages,
         ...(skillId ? { skillId } : {}),
@@ -225,17 +241,17 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
     })
   }
 
-  if (!model) {
+  if (!selectedModel) {
     return (
-      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-background/75 px-6 py-14 text-center backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted/40 ring-1 ring-border/35">
-          <SparklesIcon className="size-4 text-muted-foreground/80" />
+      <div className="rounded-xl border border-dashed border-black/18 bg-background px-6 py-14 text-left dark:border-white/18">
+        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
+          <SparklesIcon className="size-4 text-black/56 dark:text-white/56" strokeWidth={2} />
         </div>
-        <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
-          Static ad model not configured
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
+          No image-input models yet
         </p>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
-          Add GPT Image 2 in the model manager to start generating product ads.
+        <p className="mt-2 max-w-sm text-[14px] leading-[1.55] tracking-[-0.01em] text-black/64 dark:text-white/64">
+          Add a text-to-image model with image input support in the manager to start generating product ads.
         </p>
       </div>
     )
@@ -285,16 +301,15 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
   return (
     <div>
       <StudioPromptComposer
-        models={[model]}
-        selectedModelId={model._id}
-        onSelectedModelChange={() => {}}
+        models={models}
+        selectedModelId={selectedModel._id}
+        onSelectedModelChange={setSelectedModelId}
         attachments={attachments}
         onAttachmentsChange={handleAttachmentsChange}
         attachSources={['upload', 'library', 'product', 'influencer']}
         maxAttachments={MAX_STATIC_AD_REFERENCES}
         minAttachments={1}
         requirePrompt={false}
-        hideModelSelector
         workspaceId={workspaceId}
         count={{
           value: numImages,
@@ -307,8 +322,8 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? 'Generate' : `Generate ${numImages}`}
-        canSubmit={hasEnoughCredits && hasProductImage}
-        submitTitle={!hasProductImage ? 'Add a product photo first' : undefined}
+        canSubmit={hasEnoughCredits && hasReferences}
+        submitTitle={!hasReferences ? 'Add a product, creator, or other reference first' : undefined}
         tools={
           <>
             {aspectTools}
@@ -337,8 +352,8 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         composerHeader={
           <div className="flex flex-col gap-3">
             {templateReference ? (
-              <div className="flex items-center gap-2.5 rounded-2xl bg-muted/35 px-2 py-1.5 ring-1 ring-border/40">
-                <div className="relative size-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-border/50">
+              <div className="flex items-center gap-2.5 rounded-[10px] bg-black/[0.03] px-2 py-1.5 ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
+                <div className="relative size-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-black/10 dark:ring-white/12">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={templateReference.imageUrl}
@@ -346,11 +361,11 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
                     className="size-full object-cover"
                   />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold tracking-[-0.02em] text-foreground">
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="text-[12px] font-medium tracking-[-0.015em] text-foreground">
                     Template reference
                   </p>
-                  <p className="truncate text-[11px] text-muted-foreground">
+                  <p className="truncate text-[12px] text-black/56 dark:text-white/56">
                     {templateReference.name ?? 'Recreate this ad with your product'}
                   </p>
                 </div>
@@ -358,10 +373,10 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
                   type="button"
                   aria-label="Remove template reference"
                   disabled={isPending}
-                  className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100"
+                  className="flex size-7 items-center justify-center rounded-full text-black/44 transition-colors hover:bg-black/[0.05] hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100 dark:text-white/44 dark:hover:bg-white/[0.08]"
                   onClick={clearTemplateReference}
                 >
-                  <XIcon className="size-3.5" strokeWidth={2.25} />
+                  <XIcon className="size-3.5" strokeWidth={2} />
                 </button>
               </div>
             ) : null}
@@ -374,58 +389,59 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         composerRef={composerRef}
         onPromptChange={clearActivePreset}
         surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
-        emptyTitle="Static ad model not configured"
-        emptyDescription="Add GPT Image 2 in the model manager to start generating product ads."
+        emptyTitle="No image-input models yet"
+        emptyDescription="Add a text-to-image model with image input support in the manager to start generating product ads."
       />
 
       <div className="mt-3 px-0.5">
         <StudioReferenceTagHint attachmentCount={attachments.length} variant="static-ad" />
       </div>
 
-      {!hasProductImage ? (
+      {templateReference && attachments.length === 0 ? (
         <p
-          className="mt-3 px-0.5 text-[12px] leading-[1.5] tracking-[-0.01em] text-muted-foreground/70"
+          className="mt-3 px-0.5 text-left text-[13px] leading-[1.5] tracking-[-0.01em] text-black/56 dark:text-white/56"
           role="status"
         >
-          {templateReference
-            ? 'Add a product photo to recreate this template with your product.'
-            : 'Start with a product photo — add an avatar or style reference for richer briefs.'}
+          Add your product and/or creator — we will map them onto this template.
+        </p>
+      ) : !hasReferences ? (
+        <p
+          className="mt-3 px-0.5 text-left text-[13px] leading-[1.5] tracking-[-0.01em] text-black/56 dark:text-white/56"
+          role="status"
+        >
+          Add a product, creator, template, or mix — tag them with @image1, @image2…
         </p>
       ) : null}
 
-      <div className="mt-6 space-y-5">
-        <StaticAdPromptAnatomy />
-
-        {hasProductImage ? (
-          <p className="flex flex-wrap items-center justify-center gap-1.5 px-0.5 text-[11px] tracking-[-0.01em] text-muted-foreground/50">
-            <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
-              /
-            </Kbd>
-            <span>to focus</span>
-            <span aria-hidden className="text-muted-foreground/20">
-              ·
-            </span>
-            <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
-              {submitShortcut}
-            </Kbd>
-            <span>to generate</span>
-          </p>
-        ) : null}
-      </div>
+      {hasReferences ? (
+        <p className="mt-4 flex flex-wrap items-center gap-1.5 px-0.5 text-left text-[12px] tracking-[-0.01em] text-black/44 dark:text-white/44">
+          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
+            /
+          </Kbd>
+          <span>to focus</span>
+          <span aria-hidden className="text-black/20 dark:text-white/20">
+            ·
+          </span>
+          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
+            {submitShortcut}
+          </Kbd>
+          <span>to generate</span>
+        </p>
+      ) : null}
     </div>
   )
 }
 
 export function StaticAdPromptInput({
   workspaceId,
-  model,
+  models,
 }: {
   workspaceId: string
-  model: Model | null
+  models: Model[]
 }) {
   return (
     <PromptInputProvider>
-      <StaticAdPromptComposer model={model} workspaceId={workspaceId} />
+      <StaticAdPromptComposer models={models} workspaceId={workspaceId} />
     </PromptInputProvider>
   )
 }

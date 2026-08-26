@@ -16,6 +16,7 @@ type VideoStudioWorkspaceProps = {
   workspaceName: string
   initialVideos: VideoSummaryResponse[]
   initialError?: string | null
+  initialAttachmentUrl?: string
 }
 
 export function VideoStudioWorkspace({
@@ -24,6 +25,7 @@ export function VideoStudioWorkspace({
   workspaceName,
   initialVideos,
   initialError = null,
+  initialAttachmentUrl,
 }: VideoStudioWorkspaceProps) {
   return (
     <VideoStudioProvider>
@@ -38,7 +40,7 @@ export function VideoStudioWorkspace({
             <Button
               asChild
               size="sm"
-              className="h-8 gap-1.5 rounded-full border-white/15 bg-black/35 px-3.5 text-[12px] font-medium text-white shadow-none backdrop-blur-md backdrop-saturate-150 hover:bg-black/50 hover:text-white"
+              className="h-8 gap-1.5 rounded-lg border border-white/20 bg-black/40 px-3.5 text-[12px] font-medium text-white shadow-none backdrop-blur-sm hover:bg-black/55 hover:text-white"
             >
               <Link href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}>
                 <PlusIcon className="size-3.5" strokeWidth={1.75} />
@@ -51,17 +53,9 @@ export function VideoStudioWorkspace({
         <section
           id="video-studio-composer"
           aria-label="Create a video"
-          className="relative z-10 mx-auto flex w-full max-w-3xl flex-col px-4 pb-10 sm:px-6 lg:px-8"
+          className="relative z-10 mx-auto flex w-full max-w-5xl flex-col px-4 pt-5 pb-10 sm:px-6 sm:pt-6 lg:px-8"
         >
-          <div className="image-studio-composer relative -mt-[3.25rem] sm:-mt-[4.25rem] lg:-mt-[4.5rem]">
-            <div
-              aria-hidden
-              className="image-studio-composer-lift pointer-events-none absolute -inset-x-3 -top-5 bottom-6 sm:-inset-x-5 motion-reduce:hidden"
-            />
-            <div className="relative">
-              <VideoGenerationPromptInput models={models} />
-            </div>
-          </div>
+          <VideoGenerationPromptInput initialAttachmentUrl={initialAttachmentUrl} models={models} />
         </section>
 
         <RecentVideosList

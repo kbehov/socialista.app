@@ -3,13 +3,13 @@
 import { auth } from '@/auth'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceBalance } from '@/services/workspace.service'
-import { staticAdPayloadObjectSchema } from '@socialista/trigger/schemas/static-ad'
+import { resolveStaticAdImages, staticAdPayloadObjectSchema } from '@socialista/trigger/schemas/static-ad'
 import type { RealtimeStaticAdGenerationTask } from '@socialista/trigger/task-types'
-import { clampImageGenerationCount, STATIC_AD_MODEL, TASK_IDS } from '@socialista/types'
+import { clampImageGenerationCount, ContextSupport, TASK_IDS } from '@socialista/types'
 import { tasks, auth as triggerAuth } from '@trigger.dev/sdk/v3'
 import { z } from 'zod'
 
-const startStaticAdGenerationSchema = staticAdPayloadObjectSchema.omit({ userId: true, model: true })
+const startStaticAdGenerationSchema = staticAdPayloadObjectSchema.omit({ userId: true })
 
 export type StartStaticAdGenerationInput = z.infer<typeof startStaticAdGenerationSchema>
 
@@ -31,15 +31,19 @@ export async function startStaticAdGeneration(
   }
 
   try {
-    const balanceRes = await getWorkspaceBalance(parsed.data.workspaceId)
+    const [balanceRes, modelsRes] = await Promise.all([
+      getWorkspaceBalance(parsed.data.workspaceId),
+      getModels(
+        `limit=1&modelType=text-to-image&contextSupports=image&value=${encodeURIComponent(parsed.data.model)}`,
+      ),
+    ])
     const credits = balanceRes.data?.aiCreditsBalance ?? 0
 
-    const modelsRes = await getModels(`limit=1&modelType=text-to-image&value=${encodeURIComponent(STATIC_AD_MODEL)}`)
     const model = modelsRes.data?.models[0]
-    if (!model) {
+    if (!model?.contextSupports?.includes(ContextSupport.IMAGE)) {
       return {
         success: false,
-        error: 'GPT Image 2 is not configured. Add openai/gpt-image-2 in the manager.',
+        error: 'Select a text-to-image model that supports image inputs.',
       }
     }
     const numImages = clampImageGenerationCount(parsed.data.numImages)
@@ -47,17 +51,25 @@ export async function startStaticAdGeneration(
       return { success: false, error: 'Insufficient AI credits.' }
     }
 
+    const images = resolveStaticAdImages(parsed.data)
+    if (images.length === 0) {
+      return { success: false, error: 'Add at least one reference image.' }
+    }
+    const productImage = images.find(image => image.role === 'product') ?? images[0]
+    const templateImage = images.find(image => image.role === 'template')
+
     const handle = await tasks.trigger<RealtimeStaticAdGenerationTask>(TASK_IDS.staticAdGeneration, {
       prompt: parsed.data.prompt,
       workspaceId: parsed.data.workspaceId,
       userId: session.user.id,
       aspectRatio: parsed.data.aspectRatio,
-      productImage: parsed.data.productImage,
-      ...(parsed.data.referenceImage ? { referenceImage: parsed.data.referenceImage } : {}),
+      images,
+      ...(productImage ? { productImage: productImage.url } : {}),
+      ...(templateImage ? { referenceImage: templateImage.url } : {}),
       adCopy: parsed.data.adCopy,
       language: parsed.data.language,
       numImages,
-      model: STATIC_AD_MODEL,
+      model: model.value,
       ...(parsed.data.skillId ? { skillId: parsed.data.skillId } : {}),
       ...(parsed.data.projectId ? { projectId: parsed.data.projectId } : {}),
     })

@@ -44,19 +44,19 @@ export type PostStatusSummaryItem = {
 
 /** Ordered status chips for count summaries (grid date headings, etc.). */
 export const POST_STATUS_SUMMARY: PostStatusSummaryItem[] = [
-  { status: 'scheduled', label: 'scheduled', className: 'text-sky-600 dark:text-sky-400' },
-  { status: 'publishing', label: 'publishing', className: 'text-amber-600 dark:text-amber-400' },
-  { status: 'published', label: 'published', className: 'text-emerald-600 dark:text-emerald-400' },
-  { status: 'draft', label: 'drafts', className: 'text-muted-foreground' },
-  { status: 'failed', label: 'failed', className: 'text-destructive' },
-  { status: 'canceled', label: 'canceled', className: 'text-muted-foreground' },
+  { status: 'scheduled', label: 'Scheduled', className: 'text-sky-600 dark:text-sky-400' },
+  { status: 'publishing', label: 'Publishing', className: 'text-amber-600 dark:text-amber-400' },
+  { status: 'published', label: 'Published', className: 'text-emerald-600 dark:text-emerald-400' },
+  { status: 'draft', label: 'Drafts', className: 'text-muted-foreground' },
+  { status: 'failed', label: 'Failed', className: 'text-destructive' },
+  { status: 'canceled', label: 'Canceled', className: 'text-muted-foreground' },
 ]
 
 /** Compact month strip on the calendar (high-signal statuses only). */
 export const CALENDAR_MONTH_STATUS_SUMMARY: PostStatusSummaryItem[] = [
-  { status: 'scheduled', label: 'scheduled', className: 'text-sky-600 dark:text-sky-400' },
-  { status: 'published', label: 'published', className: 'text-emerald-600 dark:text-emerald-400' },
-  { status: 'draft', label: 'drafts', className: 'text-amber-600 dark:text-amber-400' },
+  { status: 'scheduled', label: 'Scheduled', className: 'text-sky-600 dark:text-sky-400' },
+  { status: 'published', label: 'Published', className: 'text-emerald-600 dark:text-emerald-400' },
+  { status: 'draft', label: 'Drafts', className: 'text-muted-foreground' },
 ]
 
 export function getActiveStatusSummary(

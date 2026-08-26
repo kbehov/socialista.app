@@ -22,12 +22,12 @@ export function GenerationProgressHeader({
   progressWidth,
 }: GenerationProgressHeaderProps) {
   return (
-    <header className="sticky top-0 z-10 border-b border-border/50 bg-background/90 backdrop-blur-md">
+    <header className="sticky top-0 z-10 border-b border-black/10 bg-background/95 backdrop-blur-sm dark:border-white/12">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Button asChild className="h-8 gap-1.5 px-2 text-muted-foreground" size="sm" variant="ghost">
+        <Button asChild className="h-8 gap-1.5 px-2 text-black/56 dark:text-white/56" size="sm" variant="ghost">
           <Link href={backHref}>
             <ArrowLeftIcon className="size-3.5" />
-            <span className="text-[13px]">Back</span>
+            <span className="text-[13px] font-medium tracking-[-0.01em]">Back</span>
           </Link>
         </Button>
 
@@ -39,7 +39,7 @@ export function GenerationProgressHeader({
         />
       </div>
 
-      <div className="h-0.5 w-full bg-muted/60">
+      <div className="h-px w-full bg-black/10 dark:bg-white/12">
         <div
           className={cn(
             'h-full transition-[width] duration-500 ease-[var(--ease-out)] motion-reduce:transition-none',

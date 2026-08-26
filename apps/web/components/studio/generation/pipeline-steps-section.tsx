@@ -20,11 +20,11 @@ export function PipelineStepsSection({
 }: PipelineStepsSectionProps) {
   return (
     <section aria-labelledby={headingId} className="space-y-3">
-      <h3 id={headingId} className="label-caps">
+      <h3 id={headingId} className="text-[12px] font-medium tracking-[-0.015em] text-black/56 dark:text-white/56">
         Progress
       </h3>
 
-      <div className="rounded-xl border border-border/50 bg-background p-3.5">
+      <div className="rounded-xl border border-black/10 bg-black/[0.02] p-3.5 dark:border-white/12 dark:bg-white/[0.02]">
         {PIPELINE_STEPS.map((step, index) => {
           const nextThreshold = PIPELINE_STEPS[index + 1]?.threshold
           const state = pipelineStepState(progress, step.threshold, nextThreshold, false)

@@ -12,7 +12,12 @@ export type StaticAdGenerationInput = {
   prompt?: string
   workspaceId: string
   aspectRatio: StaticAdAspectRatio
-  productImage: string
+  images?: Array<{
+    url: string
+    role?: 'product' | 'influencer' | 'template' | 'upload' | 'library'
+    label?: string
+  }>
+  productImage?: string
   referenceImage?: string
   language: string
 }

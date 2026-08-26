@@ -42,12 +42,7 @@ export function PostsGrid({
 
   return (
     <div
-      className={cn(
-        'px-3 pt-1 pb-6 sm:px-4',
-        'transition-[gap] duration-200 ease-out motion-reduce:transition-none',
-        compact ? 'space-y-7' : 'space-y-10',
-        className,
-      )}
+      className={cn('px-3 pt-1 pb-6 sm:px-4', compact ? 'space-y-7' : 'space-y-10', className)}
     >
       {dateKeys.map(dateKey => {
         const groupPosts = postsByDate.get(dateKey) ?? []
@@ -65,8 +60,7 @@ export function PostsGrid({
             <div
               className={cn(
                 MASONRY_COLUMNS_CLASS,
-                'transition-[margin] duration-200 ease-out motion-reduce:transition-none',
-                compact ? 'mt-2.5' : 'mt-4',
+                compact ? 'mt-3' : 'mt-4',
               )}
               role="list"
               aria-label={`Posts for ${sectionLabel}`}

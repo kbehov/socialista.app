@@ -1,6 +1,7 @@
 'use client'
 
 import { dashboardSurface } from '@/components/dashboard/surface'
+import { GenerateSkillDialog } from '@/components/skills/generate-skill-dialog'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,10 +13,10 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { parseSkillMarkdown } from '@/lib/skills/parse-skill-markdown'
 import { storeImportedSkillDraft } from '@/lib/skills/skill-import-storage'
 import { cn } from '@/lib/utils'
-import { ChevronDownIcon, FileTextIcon, PenLineIcon, PlusIcon } from 'lucide-react'
+import { ChevronDownIcon, FileTextIcon, PenLineIcon, PlusIcon, SparklesIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useRef, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 
 type CreateSkillMenuProps = {
@@ -31,6 +32,7 @@ export function CreateSkillMenu({
 }: CreateSkillMenuProps) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
+  const [generateOpen, setGenerateOpen] = useState(false)
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -78,6 +80,10 @@ export function CreateSkillMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem onSelect={() => setGenerateOpen(true)}>
+            <SparklesIcon />
+            Generate with AI
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={DASHBOARD_ROUTES.createSkill}>
               <PenLineIcon />
@@ -94,6 +100,7 @@ export function CreateSkillMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <GenerateSkillDialog open={generateOpen} onOpenChange={setGenerateOpen} />
     </>
   )
 }

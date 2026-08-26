@@ -20,7 +20,7 @@ export function PipelineStep({ label, state, detail, isLast, stepRef }: Pipeline
             'flex size-4 items-center justify-center rounded-full border transition-colors duration-150',
             state === 'complete' && 'border-foreground bg-foreground text-background',
             state === 'active' && 'border-foreground bg-background',
-            state === 'pending' && 'border-border/70 bg-muted/30',
+            state === 'pending' && 'border-black/14 bg-black/[0.02] dark:border-white/14 dark:bg-white/[0.02]',
           )}
         >
           {state === 'complete' ? (
@@ -33,7 +33,7 @@ export function PipelineStep({ label, state, detail, isLast, stepRef }: Pipeline
         </div>
         {!isLast ? (
           <div
-            className={cn('mt-0.5 min-h-5 w-px flex-1', state === 'complete' ? 'bg-foreground/40' : 'bg-border/70')}
+            className={cn('mt-0.5 min-h-5 w-px flex-1', state === 'complete' ? 'bg-foreground/30' : 'bg-black/10 dark:bg-white/12')}
           />
         ) : null}
       </div>
@@ -44,7 +44,7 @@ export function PipelineStep({ label, state, detail, isLast, stepRef }: Pipeline
             'text-[13px] leading-snug',
             state === 'active' && 'font-medium text-foreground',
             state === 'complete' && 'text-muted-foreground',
-            state === 'pending' && 'text-muted-foreground/45',
+            state === 'pending' && 'text-black/44 dark:text-white/44',
           )}
         >
           {state === 'active' && detail ? (

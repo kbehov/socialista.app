@@ -10,6 +10,7 @@ import {
 } from '@/components/studio/generation/generation-failure-alert'
 import { GenerationProgressHeader } from '@/components/studio/generation/generation-progress-header'
 import { PipelineStepsSection } from '@/components/studio/generation/pipeline-steps-section'
+import { RemixPromptInput } from '@/components/studio/generation/remix-prompt-input'
 import { Button } from '@/components/ui/button'
 import { getLanguageLabel } from '@/components/ui/language-selector'
 import { ASPECT_RATIO_LABELS, COMPLETED_STATUSES, FAILED_STATUSES } from '@/constants/generation.const'
@@ -69,25 +70,25 @@ function ImagePromptMetaStrip({
   const showEnhanced = Boolean(enhancedPrompt && enhancedPrompt !== payload.prompt)
 
   return (
-    <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
+    <div className="space-y-2.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 dark:border-white/12 dark:bg-white/[0.02]">
       <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
       {showEnhanced ? (
-        <p className="line-clamp-4 text-[12px] leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground/70">Enhanced · </span>
+        <p className="line-clamp-4 text-[12px] leading-relaxed text-black/56 dark:text-white/56">
+          <span className="font-medium text-foreground/72">Enhanced · </span>
           {enhancedPrompt}
         </p>
       ) : null}
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
           {aspectLabel} · {payload.aspectRatio}
         </span>
         {numImages > 1 ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
             {numImages} images
           </span>
         ) : null}
         {model ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
             {model.name}
           </span>
         ) : null}
@@ -96,7 +97,7 @@ function ImagePromptMetaStrip({
             {referenceUrls.slice(0, 3).map(url => (
               <div
                 key={url}
-                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
+                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-black/10 bg-black/[0.03] -ml-1 first:ml-0 dark:border-white/12 dark:bg-white/[0.03]"
               >
                 <Image
                   alt="Reference"
@@ -115,16 +116,29 @@ function ImagePromptMetaStrip({
   )
 }
 
+function collectStaticAdReferenceUrls(payload: StaticAdGenerationPayload): string[] {
+  if (payload.images && payload.images.length > 0) {
+    return payload.images.map(image => image.url)
+  }
+  const urls: string[] = []
+  if (payload.productImage) urls.push(payload.productImage)
+  if (payload.referenceImage && !urls.includes(payload.referenceImage)) {
+    urls.push(payload.referenceImage)
+  }
+  return urls
+}
+
 function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPayload }) {
   const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
   const languageLabel =
     payload.language && payload.language !== 'en' ? getLanguageLabel(payload.language) : undefined
   const numImages = payload.numImages ?? 1
+  const referenceUrls = collectStaticAdReferenceUrls(payload)
 
   return (
     <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
       <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">
-        {payload.prompt?.trim() || 'No brief notes — inventing from product image'}
+        {payload.prompt?.trim() || 'No brief notes — inventing from references'}
       </p>
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
@@ -140,21 +154,28 @@ function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPaylo
             {languageLabel}
           </span>
         ) : null}
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-          GPT Image 2
-        </span>
-        {payload.productImage ? (
-          <div className="ml-auto flex">
-            <div className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30">
-              <Image
-                alt="Product reference"
-                className="object-cover"
-                fill
-                sizes="32px"
-                src={resolveGeneratedImagePreviewUrl(payload.productImage)}
-                unoptimized
-              />
-            </div>
+        {referenceUrls.length > 0 ? (
+          <div className="ml-auto flex items-center">
+            {referenceUrls.slice(0, 4).map(url => (
+              <div
+                key={url}
+                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
+              >
+                <Image
+                  alt="Reference"
+                  className="object-cover"
+                  fill
+                  sizes="32px"
+                  src={resolveGeneratedImagePreviewUrl(url)}
+                  unoptimized
+                />
+              </div>
+            ))}
+            {referenceUrls.length > 4 ? (
+              <span className="ml-1 text-[11px] font-medium text-muted-foreground">
+                +{referenceUrls.length - 4}
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -226,6 +247,7 @@ export function GenerationRunView({
   models,
 }: GenerationRunViewProps) {
   const [accessToken] = useState(() => readGenerationAccessToken(runId))
+  const [remixImageUrl, setRemixImageUrl] = useState<string | undefined>()
   const activeStepRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLDivElement>(null)
   const lastScrolledStepRef = useRef<number | null>(null)
@@ -255,13 +277,14 @@ export function GenerationRunView({
     contentKind === 'video' ? (run?.payload as VideoGenerationPayload | undefined) : undefined
 
   const model = useMemo(
-    () => findModel(models, imagePayload?.model ?? videoPayload?.model),
-    [models, imagePayload?.model, videoPayload?.model],
+    () => findModel(models, imagePayload?.model ?? adPayload?.model ?? videoPayload?.model),
+    [models, imagePayload?.model, adPayload?.model, videoPayload?.model],
   )
   const languageLabel =
     adPayload?.language && adPayload.language !== 'en'
       ? getLanguageLabel(adPayload.language)
       : undefined
+  const adReferenceUrls = adPayload ? collectStaticAdReferenceUrls(adPayload) : []
 
   const enhancedPrompt =
     typeof run?.metadata?.enhancedPrompt === 'string' ? run.metadata.enhancedPrompt : undefined
@@ -274,6 +297,9 @@ export function GenerationRunView({
   const progressWidth = isComplete || isFailed ? 100 : Math.min(status.progress, 100)
   const aspectRatio = imagePayload?.aspectRatio ?? adPayload?.aspectRatio ?? videoPayload?.aspectRatio
   const hasCompleteOutput = Boolean(imageOutput?.imageUrl || videoOutput?.videoUrl)
+  const remixModel = imagePayload?.model ?? adPayload?.model
+  const remixWorkspaceId = imagePayload?.workspaceId ?? adPayload?.workspaceId
+  const remixProjectId = imagePayload?.projectId ?? adPayload?.projectId
 
   useEffect(() => {
     const reduceMotion =
@@ -397,23 +423,37 @@ export function GenerationRunView({
           ) : null}
 
           {isComplete && imageOutput?.imageUrl ? (
-            <GeneratedImage
-              aspectRatio={aspectRatio}
-              contentKind={contentKind === 'ad' ? 'ad' : 'image'}
-              cost={imageOutput.cost}
-              durationMs={run?.durationMs}
-              imageRef={imageRef}
-              languageLabel={languageLabel}
-              modelName={contentKind === 'ad' ? 'GPT Image 2' : model?.name}
-              newGenerationHref={backHref}
-              output={imageOutput}
-              productImageUrl={
-                adPayload?.productImage
-                  ? resolveGeneratedImagePreviewUrl(adPayload.productImage)
-                  : undefined
-              }
-              prompt={enhancedPrompt ?? imagePayload?.prompt ?? adPayload?.prompt}
-            />
+            <>
+              <GeneratedImage
+                aspectRatio={aspectRatio}
+                contentKind={contentKind === 'ad' ? 'ad' : 'image'}
+                cost={imageOutput.cost}
+                durationMs={run?.durationMs}
+                imageRef={imageRef}
+                languageLabel={languageLabel}
+                modelName={model?.name ?? (contentKind === 'ad' ? 'GPT Image 2' : undefined)}
+                newGenerationHref={backHref}
+                onSelectedUrlChange={setRemixImageUrl}
+                output={imageOutput}
+                productImageUrl={
+                  adReferenceUrls[0]
+                    ? resolveGeneratedImagePreviewUrl(adReferenceUrls[0])
+                    : undefined
+                }
+                prompt={enhancedPrompt ?? imagePayload?.prompt ?? adPayload?.prompt}
+              />
+              {remixModel && remixWorkspaceId ? (
+                <RemixPromptInput
+                  aspectRatio={aspectRatio}
+                  contentKind={contentKind === 'ad' ? 'ad' : 'image'}
+                  imageUrl={remixImageUrl ?? imageOutput.imageUrl}
+                  language={adPayload?.language}
+                  model={remixModel}
+                  projectId={remixProjectId}
+                  workspaceId={remixWorkspaceId}
+                />
+              ) : null}
+            </>
           ) : null}
 
           {isComplete && videoOutput?.videoUrl ? (

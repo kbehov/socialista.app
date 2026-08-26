@@ -14,8 +14,6 @@ type PromptHandlers = {
   focusPrompt: () => void
 }
 
-export type StaticAdStudioView = 'compose' | 'templates'
-
 export type StaticAdTemplateReference = {
   imageUrl: string
   name?: string
@@ -32,8 +30,6 @@ type StaticAdStudioContextValue = {
   applyFormatPreset: (preset: StaticAdFormatPreset) => void
   insertSnippet: (snippet: string) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
-  studioView: StaticAdStudioView
-  setStudioView: (view: StaticAdStudioView) => void
   templateReference: StaticAdTemplateReference | null
   applyTemplate: (template: StaticAdTemplateReference) => void
   clearTemplateReference: () => void
@@ -45,7 +41,6 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
   const [aspectRatio, setAspectRatio] = useState<StaticAdAspectRatio>('1:1')
   const [language, setLanguage] = useState(DEFAULT_AD_LANGUAGE)
   const [activePresetId, setActivePresetId] = useState<string | null>(null)
-  const [studioView, setStudioView] = useState<StaticAdStudioView>('compose')
   const [templateReference, setTemplateReference] = useState<StaticAdTemplateReference | null>(null)
   const composerRef = useRef<HTMLDivElement>(null)
   const handlersRef = useRef<PromptHandlers | null>(null)
@@ -77,7 +72,6 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
       handlersRef.current?.focusPrompt()
       setAspectRatio(preset.aspectRatio)
       setActivePresetId(preset.id)
-      setStudioView('compose')
       scrollComposerIntoView('nearest')
     },
     [scrollComposerIntoView],
@@ -88,7 +82,6 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
       handlersRef.current?.insertAtCursor(snippet)
       handlersRef.current?.focusPrompt()
       setActivePresetId(null)
-      setStudioView('compose')
       scrollComposerIntoView('nearest')
     },
     [scrollComposerIntoView],
@@ -102,7 +95,6 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
         handlersRef.current?.setPrompt(STATIC_AD_RECREATE_PROMPT)
       }
       handlersRef.current?.focusPrompt()
-      setStudioView('compose')
       scrollComposerIntoView('start')
     },
     [scrollComposerIntoView],
@@ -120,8 +112,6 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
       applyFormatPreset,
       insertSnippet,
       registerPromptHandlers,
-      studioView,
-      setStudioView,
       templateReference,
       applyTemplate,
       clearTemplateReference,
@@ -134,7 +124,6 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
       applyFormatPreset,
       insertSnippet,
       registerPromptHandlers,
-      studioView,
       templateReference,
       applyTemplate,
       clearTemplateReference,

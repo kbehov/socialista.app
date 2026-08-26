@@ -1,6 +1,4 @@
 import { proxiedImageUrl } from '@/lib/carousel/image-url'
-import { uploadToWorkspace } from '@/services/files.service'
-import type { ImageResponse } from '@socialista/types'
 
 function extensionFromMime(mime: string): string {
   if (mime.includes('jpeg') || mime.includes('jpg')) return 'jpg'
@@ -37,24 +35,4 @@ export async function downloadGeneratedImage(imageUrl: string, prompt?: string):
   anchor.download = filename
   anchor.click()
   URL.revokeObjectURL(objectUrl)
-}
-
-export async function saveGeneratedImageToWorkspace(
-  workspaceId: string,
-  imageUrl: string,
-  prompt?: string,
-): Promise<ImageResponse> {
-  const blob = await fetchProxiedImageBlob(imageUrl)
-  const ext = extensionFromMime(blob.type)
-  const filename = `${buildGeneratedFilename(prompt)}.${ext}`
-  const file = new File([blob], filename, { type: blob.type || 'image/png' })
-  const formData = new FormData()
-  formData.append('file', file)
-
-  const response = await uploadToWorkspace(workspaceId, formData)
-  if (!response.success || !response.data) {
-    throw new Error(response.message ?? 'Failed to save to files')
-  }
-
-  return response.data
 }

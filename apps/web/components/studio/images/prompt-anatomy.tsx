@@ -71,7 +71,7 @@ export function PromptAnatomy({
         </p>
       ) : null}
 
-      <div className="rounded-2xl bg-muted/12 px-3.5 py-3 text-[13px] font-normal leading-[1.7] tracking-[-0.015em] ring-1 ring-border/30">
+      <div className="rounded-xl bg-black/[0.03] px-3.5 py-3 text-[13px] font-normal leading-[1.7] tracking-[-0.015em] ring-1 ring-black/10 dark:bg-white/[0.03] dark:ring-white/12">
         {segments.map((segment, index) => {
           const isActive = activeSegment === segment.id
           const styles = segment.styles
@@ -124,11 +124,11 @@ export function PromptAnatomy({
               onClick={() => onInsertSnippet(segment.snippet)}
               className={cn(
                 'rounded-lg border px-2.5 py-1 text-[11px] font-medium tracking-[-0.015em]',
-                'transition-[background-color,border-color,color,transform,box-shadow] duration-150',
+                'transition-[background-color,border-color,color,transform] duration-150',
                 'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
                 isActive
-                  ? cn(styles.chip, 'shadow-sm')
-                  : cn('border-border/40 bg-background/70 text-muted-foreground', styles.chipIdle),
+                  ? cn(styles.chip)
+                  : cn('border-black/10 bg-black/[0.02] text-black/56 dark:border-white/12 dark:bg-white/[0.03] dark:text-white/56', styles.chipIdle),
               )}
             >
               {segment.label}
@@ -147,12 +147,13 @@ export function PromptAnatomy({
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger
         className={cn(
-          'group flex w-full items-center justify-between gap-3 rounded-2xl px-3.5 py-3 text-left',
-          'bg-muted/12 ring-1 ring-border/30 transition-[background-color,box-shadow,ring-color] duration-150',
-          'hover:bg-muted/18 hover:ring-border/45',
+          'group flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left',
+          'bg-black/[0.03] ring-1 ring-black/10 transition-[background-color,ring-color] duration-150',
+          'hover:bg-black/[0.04] hover:ring-black/14',
+          'dark:bg-white/[0.03] dark:ring-white/12 dark:hover:bg-white/[0.04] dark:hover:ring-white/16',
           'active:scale-[0.995]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-          open && 'bg-muted/16 ring-border/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
+          open && 'bg-black/[0.04] ring-black/14 dark:bg-white/[0.04] dark:ring-white/16',
         )}
       >
         <span className="text-[13px] font-medium tracking-[-0.015em] text-foreground/90">
@@ -174,42 +175,39 @@ export function PromptAnatomy({
 
 const IMAGE_SEGMENT_STYLES = {
   subject: {
-    text: 'text-sky-700 dark:text-sky-300',
-    surface: 'bg-sky-500/10',
-    chip: 'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-    chipIdle: 'hover:border-sky-500/20 hover:bg-sky-500/8 hover:text-sky-700 dark:hover:text-sky-300',
-    decoration: 'decoration-sky-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle: 'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   scene: {
-    text: 'text-violet-700 dark:text-violet-300',
-    surface: 'bg-violet-500/10',
-    chip: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300',
-    chipIdle:
-      'hover:border-violet-500/20 hover:bg-violet-500/8 hover:text-violet-700 dark:hover:text-violet-300',
-    decoration: 'decoration-violet-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle: 'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   camera: {
-    text: 'text-rose-700 dark:text-rose-300',
-    surface: 'bg-rose-500/10',
-    chip: 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300',
-    chipIdle: 'hover:border-rose-500/20 hover:bg-rose-500/8 hover:text-rose-700 dark:hover:text-rose-300',
-    decoration: 'decoration-rose-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle: 'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   lighting: {
-    text: 'text-amber-800 dark:text-amber-300',
-    surface: 'bg-amber-500/10',
-    chip: 'border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-300',
-    chipIdle:
-      'hover:border-amber-500/20 hover:bg-amber-500/8 hover:text-amber-800 dark:hover:text-amber-300',
-    decoration: 'decoration-amber-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle: 'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   style: {
-    text: 'text-emerald-700 dark:text-emerald-300',
-    surface: 'bg-emerald-500/10',
-    chip: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    chipIdle:
-      'hover:border-emerald-500/20 hover:bg-emerald-500/8 hover:text-emerald-700 dark:hover:text-emerald-300',
-    decoration: 'decoration-emerald-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle: 'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
 } as const satisfies Record<string, PromptAnatomySegmentStyles>
 

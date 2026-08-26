@@ -12,4 +12,4 @@ export function getAspectRatioClass(aspectRatio?: string): string {
 }
 
 export const GENERATION_PREVIEW_FRAME_CLASS =
-  'relative mx-auto w-full max-w-lg overflow-hidden rounded-xl border border-border/60 bg-muted/20 shadow-sm'
+  'relative mx-auto w-full max-w-lg overflow-hidden rounded-xl border border-black/10 bg-black/[0.02] dark:border-white/12 dark:bg-white/[0.02]'

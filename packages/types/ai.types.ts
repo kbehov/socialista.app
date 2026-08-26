@@ -1,4 +1,5 @@
 import { AspectRatio } from './image-generation.types.js'
+import type { PromptKey } from './skill.types.js'
 import type { VideoAspectRatio } from './video-generation.types.js'
 
 export const SLIDESHOW_CONTENT_TYPES = ['story', 'guide', 'list', 'routine', 'comparison', 'myth'] as const
@@ -39,6 +40,20 @@ export type GenerateVideoScriptInput = {
 export type GenerateVideoScriptResult = {
   title: string
   segments: VideoScriptSegment[]
+}
+
+export type GenerateSkillInput = {
+  description: string
+  target?: PromptKey
+  model?: string
+}
+
+export type GenerateSkillResult = {
+  name: string
+  description: string
+  target: PromptKey
+  icon: string
+  content: string
 }
 
 export type SanitizedMedia = {

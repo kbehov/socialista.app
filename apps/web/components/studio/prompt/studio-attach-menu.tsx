@@ -7,6 +7,7 @@ import {
   PromptInputActionMenuTrigger,
   PromptInputButton,
 } from "@/components/ai-elements/prompt-input";
+import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
   AttachImagesDialog,
   type AttachedMedia,
@@ -206,19 +207,24 @@ export function StudioAttachMenu({
     attachments.length > 0 && "border-border/65 bg-background shadow-sm",
   );
 
+  const attachTooltip = disabled
+    ? (disabledReason ?? "Attach references")
+    : "Attach reference images";
+
   const trigger = (
-    <PromptInputActionMenuTrigger
-      aria-label="Attach references"
-      className={attachButtonClass}
-      disabled={disabled}
-      title={disabled ? disabledReason : undefined}
-      type="button"
-    >
-      <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
-      <span className="text-xs font-medium leading-none tracking-[-0.015em]">
-        {attachments.length > 0 ? attachments.length : "Attach"}
-      </span>
-    </PromptInputActionMenuTrigger>
+    <StudioInputActionTooltip label={attachTooltip}>
+      <PromptInputActionMenuTrigger
+        aria-label="Attach references"
+        className={attachButtonClass}
+        disabled={disabled}
+        type="button"
+      >
+        <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+        <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+          {attachments.length > 0 ? attachments.length : "Attach"}
+        </span>
+      </PromptInputActionMenuTrigger>
+    </StudioInputActionTooltip>
   );
 
   if (sources.length === 0) {

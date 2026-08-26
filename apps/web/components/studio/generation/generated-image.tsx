@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { ASPECT_RATIO_LABELS } from '@/constants/generation.const'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { downloadGeneratedImage, saveGeneratedImageToWorkspace } from '@/lib/image-generation/image-actions'
+import { downloadGeneratedImage } from '@/lib/image-generation/image-actions'
 import { dataImageUrlToBlobUrl, isDataImageUrl, resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
 import { cn } from '@/lib/utils'
-import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { ImageGenerationOutput } from '@socialista/types'
-import { AlertCircleIcon, CheckIcon, DownloadIcon, FolderInputIcon, PlusIcon, SendIcon } from 'lucide-react'
+import { AlertCircleIcon, CheckIcon, DownloadIcon, PlusIcon, SendIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { RefObject } from 'react'
@@ -30,6 +29,7 @@ type GeneratedImageProps = {
   contentKind?: 'image' | 'ad'
   productImageUrl?: string
   languageLabel?: string
+  onSelectedUrlChange?: (url: string) => void
 }
 
 export function GeneratedImage({
@@ -44,11 +44,9 @@ export function GeneratedImage({
   contentKind = 'image',
   productImageUrl,
   languageLabel,
+  onSelectedUrlChange,
 }: GeneratedImageProps) {
-  const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const [isDownloading, setIsDownloading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [previewError, setPreviewError] = useState(false)
@@ -120,72 +118,56 @@ export function GeneratedImage({
     }
   }
 
-  const handleSave = async () => {
-    if (!currentWorkspace?._id) {
-      toast.error('No workspace selected')
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      await saveGeneratedImageToWorkspace(currentWorkspace._id, selectedUrl, prompt)
-      setSaved(true)
-      toast.success('Saved to your files')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not save to files')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const isBusy = isDownloading || isSaving
   const aspectLabel = aspectRatio ? (ASPECT_RATIO_LABELS[aspectRatio] ?? aspectRatio) : undefined
 
   const isAd = contentKind === 'ad'
   const resultTitle = isAd ? 'Your ad' : isMultiple ? 'Your images' : 'Your image'
   const resultDescription = isAd
-    ? 'Ready to download, save to files, or create another variation.'
+    ? 'Ready to download, post, or create another variation.'
     : isMultiple
-      ? 'Select an image to download or save to your workspace.'
-      : 'Ready to download or save to your workspace.'
+      ? 'Select an image to download, remix, or turn into a video.'
+      : 'Ready to download, remix, or turn into a video.'
   const newGenerationLabel = isAd ? 'Create another ad' : 'New generation'
   const previewAlt = isAd ? 'Generated ad' : isMultiple ? `Generated image ${activeIndex + 1}` : 'Generated image'
+  const createVideoHref = output.generationId
+    ? DASHBOARD_ROUTES.STUDIO.createVideo({ generationId: output.generationId })
+    : undefined
 
   return (
     <div ref={imageRef} className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{resultTitle}</h2>
-        <p className="text-sm text-muted-foreground">{resultDescription}</p>
+        <h2 className="text-[15px] font-medium tracking-[-0.015em] text-foreground">{resultTitle}</h2>
+        <p className="text-[13px] leading-[1.5] text-black/56 dark:text-white/56">{resultDescription}</p>
       </div>
 
       {(prompt || aspectLabel || modelName || productImageUrl || languageLabel) ? (
-        <div className="space-y-2 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
+        <div className="space-y-2 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 dark:border-white/12 dark:bg-white/[0.02]">
           {prompt ? (
             <p className="line-clamp-3 text-[13px] leading-relaxed text-foreground/90">{prompt}</p>
           ) : isAd ? (
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
+            <p className="text-[13px] leading-relaxed text-black/56 dark:text-white/56">
               No brief notes — generated from your product image.
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-1.5">
             {aspectLabel ? (
-              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
                 {aspectLabel} · {aspectRatio}
               </span>
             ) : null}
             {languageLabel ? (
-              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
                 {languageLabel}
               </span>
             ) : null}
             {modelName ? (
-              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
+              <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
                 {modelName}
               </span>
             ) : null}
             {productImageUrl ? (
               <div className="ml-auto flex">
-                <div className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30">
+                <div className="relative size-8 shrink-0 overflow-hidden rounded-md border border-black/10 bg-black/[0.03] dark:border-white/12 dark:bg-white/[0.03]">
                   <Image
                     alt="Product reference"
                     className="object-cover"
@@ -202,13 +184,21 @@ export function GeneratedImage({
       ) : null}
 
       {output.generationId ? (
-        <div className="flex justify-start">
+        <div className="flex justify-start gap-2">
           <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button">
             <Link href={DASHBOARD_ROUTES.createPost({ generationId: output.generationId })}>
               <SendIcon className="size-3.5" />
               Post now
             </Link>
           </Button>
+          {createVideoHref ? (
+            <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button" variant="outline">
+              <Link href={createVideoHref}>
+                <VideoIcon className="size-3.5" />
+                Create video
+              </Link>
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -248,7 +238,7 @@ export function GeneratedImage({
 
       {isMultiple ? (
         <div
-          className="flex flex-wrap items-center justify-center gap-2"
+          className="flex flex-wrap items-center gap-2"
           role="listbox"
           aria-label="Generated images"
         >
@@ -263,14 +253,14 @@ export function GeneratedImage({
                 aria-label={`Image ${index + 1}`}
                 onClick={() => {
                   setSelectedIndex(index)
-                  setSaved(false)
+                  onSelectedUrlChange?.(url)
                 }}
                 className={cn(
-                  'relative size-14 overflow-hidden rounded-xl ring-1 transition-[box-shadow,transform,ring-color] duration-150',
+                  'relative size-14 overflow-hidden rounded-lg ring-1 transition-[transform,ring-color] duration-150',
                   'active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
                   isSelected
-                    ? 'ring-2 ring-foreground/40 shadow-sm'
-                    : 'ring-border/50 hover:ring-border',
+                    ? 'ring-2 ring-foreground/35'
+                    : 'ring-black/10 hover:ring-black/18 dark:ring-white/12 dark:hover:ring-white/20',
                 )}
               >
                 <Image
@@ -287,37 +277,20 @@ export function GeneratedImage({
         </div>
       ) : null}
 
-      <p className="text-center text-[12px] tabular-nums text-muted-foreground">
+      <p className="text-left text-[12px] tabular-nums text-black/44 dark:text-white/44">
         {formatDuration(durationMs)} · {formatCost(cost)}
       </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           className="h-9 gap-1.5 px-4 text-[13px]"
-          disabled={isBusy}
+          disabled={isDownloading}
           onClick={() => void handleDownload()}
           size="sm"
           type="button"
         >
           {isDownloading ? <Spinner className="size-3.5" /> : <DownloadIcon className="size-3.5" />}
           Download
-        </Button>
-        <Button
-          className="h-9 gap-1.5 px-3.5 text-[13px]"
-          disabled={isBusy || saved}
-          onClick={() => void handleSave()}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {isSaving ? (
-            <Spinner className="size-3.5" />
-          ) : saved ? (
-            <CheckIcon className="size-3.5" />
-          ) : (
-            <FolderInputIcon className="size-3.5" />
-          )}
-          {saved ? 'Saved' : 'Save to files'}
         </Button>
         <Button asChild className="h-9 gap-1.5 px-3.5 text-[13px] text-muted-foreground" size="sm" type="button" variant="ghost">
           <Link href={newGenerationHref}>
@@ -326,6 +299,16 @@ export function GeneratedImage({
           </Link>
         </Button>
       </div>
+
+      <p className="flex items-center gap-1.5 text-[12px] text-black/44 dark:text-white/44">
+        <CheckIcon className="size-3.5" />
+        <span>
+          Automatically saved to{' '}
+          <Link className="underline decoration-black/20 underline-offset-2 hover:text-foreground dark:decoration-white/20" href={DASHBOARD_ROUTES.FILES}>
+            your files
+          </Link>
+        </span>
+      </p>
     </div>
   )
 }

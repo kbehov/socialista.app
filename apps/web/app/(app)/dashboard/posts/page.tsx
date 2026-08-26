@@ -86,13 +86,13 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         <ErrorState
           title={accountsResponse.message ?? 'Failed to load accounts'}
           description="Refresh the page to try again."
-          className="flex-1 rounded-xl"
+          className="flex-1 rounded-lg"
         />
       ) : !postsResponse.success ? (
         <ErrorState
           title={postsResponse.message ?? 'Failed to load posts'}
           description="Refresh the page to try again."
-          className="flex-1 rounded-xl"
+          className="flex-1 rounded-lg"
         />
       ) : accounts.length === 0 ? (
         <EmptyState
