@@ -15,14 +15,26 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { getWorkspaceBrands } from '@/services/brand.service'
 import { getModels } from '@/services/models.service'
-import { ModelType, PROMPT_KEY_LABELS, PROMPT_KEY_VALUES, type Model, type PromptKey } from '@socialista/types'
+import { getProjectId, useProjectStore } from '@/store/project.store'
+import { getWorkspaceId, useWorkspaceStore } from '@/store/workspace.store'
+import {
+  ModelType,
+  PROMPT_KEY_LABELS,
+  PROMPT_KEY_VALUES,
+  type Brand,
+  type Model,
+  type PromptKey,
+} from '@socialista/types'
 import { Loader2Icon, SparklesIcon } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 const AUTO_TARGET = 'auto'
+const NONE_BRAND = 'none'
 const TEXT_MODELS_QUERY = `limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`
 
 type GenerateSkillDialogProps = {
@@ -32,11 +44,16 @@ type GenerateSkillDialogProps = {
 
 export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogProps) {
   const router = useRouter()
+  const workspaceId = useWorkspaceStore(s => getWorkspaceId(s.currentWorkspace))
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [description, setDescription] = useState('')
   const [target, setTarget] = useState<string>(AUTO_TARGET)
+  const [brandId, setBrandId] = useState(NONE_BRAND)
+  const [brands, setBrands] = useState<Brand[]>([])
   const [models, setModels] = useState<Model[]>([])
   const [selectedModelId, setSelectedModelId] = useState('')
   const [hasLoadedModels, setHasLoadedModels] = useState(false)
+  const [hasLoadedBrands, setHasLoadedBrands] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -63,38 +80,71 @@ export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogP
         if (!cancelled) setHasLoadedModels(true)
       })
 
+    if (!workspaceId) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    void getWorkspaceBrands(workspaceId, { projectId, limit: 50 })
+      .then(response => {
+        if (cancelled) return
+        const next = response.data?.brands ?? []
+        setBrands(next)
+        setBrandId(current =>
+          current === NONE_BRAND || next.some(brand => brand._id === current) ? current : NONE_BRAND,
+        )
+      })
+      .catch(() => {
+        if (cancelled) return
+        setBrands([])
+        toast.error('Could not load brands.')
+      })
+      .finally(() => {
+        if (!cancelled) setHasLoadedBrands(true)
+      })
+
     return () => {
       cancelled = true
     }
-  }, [open])
+  }, [open, workspaceId, projectId])
+
+  const resetForm = () => {
+    setDescription('')
+    setTarget(AUTO_TARGET)
+    setBrandId(NONE_BRAND)
+  }
 
   const handleOpenChange = (next: boolean) => {
     if (isPending) return
-    if (!next) {
-      setDescription('')
-      setTarget(AUTO_TARGET)
-    }
+    if (!next) resetForm()
     onOpenChange(next)
   }
 
   const selectedModel = models.find(model => model._id === selectedModelId) ?? models[0]
+  const hasBrands = brands.length > 0
 
   const handleGenerate = () => {
     const trimmed = description.trim()
     if (!trimmed || isPending || !selectedModel) return
 
     const pinnedTarget = target !== AUTO_TARGET ? (target as PromptKey) : undefined
+    const selectedBrandId = brandId !== NONE_BRAND ? brandId : undefined
 
     startTransition(async () => {
-      const result = await generateSkillAction(trimmed, pinnedTarget, selectedModel.value)
+      const result = await generateSkillAction({
+        description: trimmed,
+        target: pinnedTarget,
+        model: selectedModel.value,
+        brandId: selectedBrandId,
+      })
       if (!result.success) {
         toast.error(result.error)
         return
       }
 
       toast.success('Skill created')
-      setDescription('')
-      setTarget(AUTO_TARGET)
+      resetForm()
       onOpenChange(false)
       router.push(DASHBOARD_ROUTES.editSkill(result.skill._id))
       router.refresh()
@@ -128,6 +178,44 @@ export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogP
               disabled={isPending}
               className="min-h-28 resize-none"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="generate-skill-brand" className="text-xs font-medium">
+              Brand
+            </Label>
+            <Select
+              value={brandId}
+              onValueChange={setBrandId}
+              disabled={isPending || !hasBrands}
+            >
+              <SelectTrigger id="generate-skill-brand" className="w-full">
+                <SelectValue placeholder={hasLoadedBrands ? 'None' : 'Loading brands…'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_BRAND}>None</SelectItem>
+                {brands.map(brand => (
+                  <SelectItem key={brand._id} value={brand._id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              {!hasLoadedBrands ? (
+                'Optional. Attach a brand so the generator can lock its identity into the skill.'
+              ) : hasBrands ? (
+                'Optional. The generator will lock this brand identity into the skill.'
+              ) : (
+                <>
+                  Add a brand in{' '}
+                  <Link href={DASHBOARD_ROUTES.BRANDS} className="underline underline-offset-2">
+                    Context → Brands
+                  </Link>{' '}
+                  to use it here.
+                </>
+              )}
+            </p>
           </div>
 
           <div className="space-y-1.5">

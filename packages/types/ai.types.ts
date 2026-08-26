@@ -42,10 +42,19 @@ export type GenerateVideoScriptResult = {
   segments: VideoScriptSegment[]
 }
 
+export type SkillBrandContext = {
+  name: string
+  description?: string
+  industry?: string
+  website?: string
+  colors?: string[]
+}
+
 export type GenerateSkillInput = {
   description: string
   target?: PromptKey
   model?: string
+  brand?: SkillBrandContext
 }
 
 export type GenerateSkillResult = {

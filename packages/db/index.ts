@@ -62,7 +62,7 @@ export {
   type ModelDocument,
 } from './types/models.types.js'
 export type { BrandDocument, IBrand } from './types/brand.types.js'
-export type { Iproduct, ProductDocument } from './types/product.types.js'
+export { ProductKind, type Iproduct, type ProductDocument } from './types/product.types.js'
 export {
   ProjectStatus,
   type CreateProjectInput,

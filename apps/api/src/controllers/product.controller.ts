@@ -1,19 +1,34 @@
-import type { AppContext } from '@/middlewares/auth.middleware.js'
-import { withQueryParam, parseParamId, parseOptionalId, applyProjectQueryAlias } from '@/utils/common.utils.js'
-import { extractProductFromUrl } from '@/utils/extract-product.js'
-import { HttpError, successResponse } from '@/utils/http-response.js'
-import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
+import type { AppContext } from "@/middlewares/auth.middleware.js";
+import {
+  withQueryParam,
+  parseParamId,
+  parseOptionalId,
+  applyProjectQueryAlias,
+} from "@/utils/common.utils.js";
+import { extractProductFromUrl } from "@/utils/extract-product.js";
+import { HttpError, successResponse } from "@/utils/http-response.js";
+import {
+  getWorkspaceAsMember,
+  resolveProjectForWorkspace,
+} from "@/utils/workspace.utils.js";
 import {
   createProduct as createProductInDb,
   deleteProduct as deleteProductInDb,
   getProductById,
   getProducts,
+  ProductKind as ProductKindEnum,
   toObjectId,
   updateProduct as updateProductInDb,
   type Iproduct,
-} from '@socialista/db'
-import type { CreateProductPayload, Product, UpdateProductPayload } from '@socialista/types'
-import type { Context } from 'hono'
+} from "@socialista/db";
+import {
+  PRODUCT_KINDS,
+  type CreateProductPayload,
+  type Product,
+  type ProductKind,
+  type UpdateProductPayload,
+} from "@socialista/types";
+import type { Context } from "hono";
 
 function serializeProduct(product: Iproduct): Product {
   return {
@@ -23,176 +38,234 @@ function serializeProduct(product: Iproduct): Product {
     name: product.name,
     images: product.images,
     description: product.description,
-    url: product.url,
+    url: product.url ?? "",
     price: product.price,
+    kind: product.kind ?? ProductKindEnum.PHYSICAL,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
-  }
+  };
 }
 
 function parsePrice(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return value;
   }
-  if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ''))
-    if (Number.isFinite(parsed)) {
-      return parsed
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
     }
   }
-  throw new HttpError(400, 'Valid price is required')
+  throw new HttpError(400, "Valid price is required");
 }
 
-function parseCreateProductInput(body: Record<string, unknown>): CreateProductPayload {
-  const workspaceId = parseParamId(typeof body.workspaceId === 'string' ? body.workspaceId : undefined, 'workspace ID')
-  const name = typeof body.name === 'string' ? body.name.trim() : ''
-  const url = typeof body.url === 'string' ? body.url.trim() : ''
+function parseProductKind(value: unknown): ProductKind {
+  if (value === undefined || value === null || value === "") {
+    return "physical";
+  }
+  if (
+    typeof value === "string" &&
+    (PRODUCT_KINDS as readonly string[]).includes(value)
+  ) {
+    return value as ProductKind;
+  }
+  throw new HttpError(400, "Product kind must be physical or digital");
+}
+
+function parseCreateProductInput(
+  body: Record<string, unknown>,
+): CreateProductPayload {
+  const workspaceId = parseParamId(
+    typeof body.workspaceId === "string" ? body.workspaceId : undefined,
+    "workspace ID",
+  );
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const url = typeof body.url === "string" ? body.url.trim() : "";
 
   if (!name) {
-    throw new HttpError(400, 'Product name is required')
-  }
-  if (!url) {
-    throw new HttpError(400, 'Product URL is required')
+    throw new HttpError(400, "Product name is required");
   }
 
   return {
     workspaceId,
-    projectId: parseOptionalId(body.projectId, 'project ID'),
+    projectId: parseOptionalId(body.projectId, "project ID"),
     name,
     url,
     price: parsePrice(body.price),
-    description: typeof body.description === 'string' ? body.description.trim() : '',
-    images: Array.isArray(body.images) ? body.images.filter((image): image is string => typeof image === 'string') : [],
-  }
+    description:
+      typeof body.description === "string" ? body.description.trim() : "",
+    images: Array.isArray(body.images)
+      ? body.images.filter(
+          (image): image is string => typeof image === "string",
+        )
+      : [],
+    kind: parseProductKind(body.kind),
+  };
 }
 
-function parseUpdateProductInput(body: Record<string, unknown>): UpdateProductPayload {
-  const updates: UpdateProductPayload = {}
+function parseUpdateProductInput(
+  body: Record<string, unknown>,
+): UpdateProductPayload {
+  const updates: UpdateProductPayload = {};
 
-  if (typeof body.name === 'string') {
-    const name = body.name.trim()
+  if (typeof body.name === "string") {
+    const name = body.name.trim();
     if (!name) {
-      throw new HttpError(400, 'Product name cannot be empty')
+      throw new HttpError(400, "Product name cannot be empty");
     }
-    updates.name = name
+    updates.name = name;
   }
 
-  if (typeof body.description === 'string') {
-    updates.description = body.description.trim()
+  if (typeof body.description === "string") {
+    updates.description = body.description.trim();
   }
 
-  if (typeof body.url === 'string') {
-    const url = body.url.trim()
-    if (!url) {
-      throw new HttpError(400, 'Product URL cannot be empty')
-    }
-    updates.url = url
+  if (typeof body.url === "string") {
+    updates.url = body.url.trim();
   }
 
   if (body.price !== undefined) {
-    updates.price = parsePrice(body.price)
+    updates.price = parsePrice(body.price);
   }
 
   if (Array.isArray(body.images)) {
-    updates.images = body.images.filter((image): image is string => typeof image === 'string')
+    updates.images = body.images.filter(
+      (image): image is string => typeof image === "string",
+    );
+  }
+
+  if (body.kind !== undefined) {
+    updates.kind = parseProductKind(body.kind);
   }
 
   if (Object.keys(updates).length === 0) {
-    throw new HttpError(400, 'No valid fields to update')
+    throw new HttpError(400, "No valid fields to update");
   }
 
-  return updates
+  return updates;
 }
 
 async function getProductForMember(id: string, userId: string) {
-  const product = await getProductById(id)
+  const product = await getProductById(id);
   if (!product) {
-    throw new HttpError(404, 'Product not found')
+    throw new HttpError(404, "Product not found");
   }
-  await getWorkspaceAsMember(product.workspaceId.toString(), userId)
-  return product
+  await getWorkspaceAsMember(product.workspaceId.toString(), userId);
+  return product;
 }
 
 export const extractProduct = async (c: Context<AppContext>) => {
-  const body = (await c.req.json()) as Record<string, unknown>
-  const url = typeof body.url === 'string' ? body.url.trim() : ''
+  const body = (await c.req.json()) as Record<string, unknown>;
+  const url = typeof body.url === "string" ? body.url.trim() : "";
   if (!url) {
-    throw new HttpError(400, 'URL is required')
+    throw new HttpError(400, "URL is required");
   }
 
-  const product = await extractProductFromUrl(url)
+  const product = await extractProductFromUrl(url);
   if (!product) {
-    throw new HttpError(404, 'Could not extract product data from URL')
+    throw new HttpError(404, "Could not extract product data from URL");
   }
 
-  return successResponse(c, 200, product)
-}
+  return successResponse(c, 200, product);
+};
 
 export const createProduct = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
-  const input = parseCreateProductInput((await c.req.json()) as Record<string, unknown>)
-  await getWorkspaceAsMember(input.workspaceId, userId)
-  const project = await resolveProjectForWorkspace(input.workspaceId, input.projectId)
+  const userId = c.get("userId");
+  const input = parseCreateProductInput(
+    (await c.req.json()) as Record<string, unknown>,
+  );
+  await getWorkspaceAsMember(input.workspaceId, userId);
+  const project = await resolveProjectForWorkspace(
+    input.workspaceId,
+    input.projectId,
+  );
 
   const product = await createProductInDb({
     workspaceId: toObjectId(input.workspaceId),
     project: toObjectId(project._id.toString()),
     name: input.name,
-    description: input.description ?? '',
-    url: input.url,
+    description: input.description ?? "",
+    url: input.url ?? "",
     price: input.price,
     images: input.images ?? [],
-  })
+    kind:
+      input.kind === "digital"
+        ? ProductKindEnum.DIGITAL
+        : ProductKindEnum.PHYSICAL,
+  });
 
-  return successResponse(c, 201, { product: serializeProduct(product.toObject()) })
-}
+  return successResponse(c, 201, {
+    product: serializeProduct(product.toObject()),
+  });
+};
 
 export const getWorkspaceProducts = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
-  const workspaceId = parseParamId(c.req.param('workspaceId'), 'workspace ID')
-  await getWorkspaceAsMember(workspaceId, userId)
+  const userId = c.get("userId");
+  const workspaceId = parseParamId(c.req.param("workspaceId"), "workspace ID");
+  await getWorkspaceAsMember(workspaceId, userId);
 
   const data = await getProducts(
-    applyProjectQueryAlias(withQueryParam(c.req.url, 'workspaceId', workspaceId)),
-  )
+    applyProjectQueryAlias(
+      withQueryParam(c.req.url, "workspaceId", workspaceId),
+    ),
+  );
   return successResponse(
     c,
     200,
-    { products: data.products.map(product => serializeProduct(product as Iproduct)) },
+    {
+      products: data.products.map((product) =>
+        serializeProduct(product as Iproduct),
+      ),
+    },
     data.meta,
-  )
-}
+  );
+};
 
 export const getProduct = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
-  const id = parseParamId(c.req.param('id'), 'product ID')
-  const product = await getProductForMember(id, userId)
-  return successResponse(c, 200, { product: serializeProduct(product) })
-}
+  const userId = c.get("userId");
+  const id = parseParamId(c.req.param("id"), "product ID");
+  const product = await getProductForMember(id, userId);
+  return successResponse(c, 200, { product: serializeProduct(product) });
+};
 
 export const updateProduct = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
-  const id = parseParamId(c.req.param('id'), 'product ID')
-  const input = parseUpdateProductInput((await c.req.json()) as Record<string, unknown>)
-  await getProductForMember(id, userId)
+  const userId = c.get("userId");
+  const id = parseParamId(c.req.param("id"), "product ID");
+  const input = parseUpdateProductInput(
+    (await c.req.json()) as Record<string, unknown>,
+  );
+  await getProductForMember(id, userId);
 
-  const product = await updateProductInDb(id, input)
+  const { kind, ...rest } = input;
+  const product = await updateProductInDb(id, {
+    ...rest,
+    ...(kind
+      ? {
+          kind:
+            kind === "digital"
+              ? ProductKindEnum.DIGITAL
+              : ProductKindEnum.PHYSICAL,
+        }
+      : {}),
+  });
   if (!product) {
-    throw new HttpError(404, 'Product not found')
+    throw new HttpError(404, "Product not found");
   }
 
-  return successResponse(c, 200, { product: serializeProduct(product.toObject()) })
-}
+  return successResponse(c, 200, {
+    product: serializeProduct(product.toObject()),
+  });
+};
 
 export const deleteProduct = async (c: Context<AppContext>) => {
-  const userId = c.get('userId')
-  const id = parseParamId(c.req.param('id'), 'product ID')
-  await getProductForMember(id, userId)
+  const userId = c.get("userId");
+  const id = parseParamId(c.req.param("id"), "product ID");
+  await getProductForMember(id, userId);
 
-  const deleted = await deleteProductInDb(id)
+  const deleted = await deleteProductInDb(id);
   if (!deleted) {
-    throw new HttpError(404, 'Product not found')
+    throw new HttpError(404, "Product not found");
   }
 
-  return successResponse(c, 200, { id })
-}
+  return successResponse(c, 200, { id });
+};

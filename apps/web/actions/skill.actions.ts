@@ -1,12 +1,28 @@
 'use server'
 
 import { auth } from '@/auth'
+import { ApiError } from '@/lib/api'
+import { getBrand } from '@/services/brand.service'
 import { getModels } from '@/services/models.service'
 import { createSkill } from '@/services/skill.service'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSkill } from '@socialista/ai'
-import { ModelType, PROMPT_KEY_VALUES, type PromptKey, type Skill } from '@socialista/types'
+import {
+  ModelType,
+  PROMPT_KEY_VALUES,
+  type Brand,
+  type PromptKey,
+  type Skill,
+  type SkillBrandContext,
+} from '@socialista/types'
+
+export type GenerateSkillActionInput = {
+  description: string
+  target?: PromptKey
+  model?: string
+  brandId?: string
+}
 
 export type GenerateSkillActionResult =
   | { success: true; skill: Skill }
@@ -16,11 +32,40 @@ function isPromptKey(value: string): value is PromptKey {
   return (PROMPT_KEY_VALUES as readonly string[]).includes(value)
 }
 
-export async function generateSkillAction(
-  description: string,
-  target?: PromptKey,
-  model?: string,
-): Promise<GenerateSkillActionResult> {
+function toSkillBrandContext(brand: Brand): SkillBrandContext | undefined {
+  const name = brand.name.trim()
+  if (!name) return undefined
+
+  return {
+    name,
+    ...(brand.description?.trim() ? { description: brand.description.trim() } : {}),
+    ...(brand.industry?.trim() ? { industry: brand.industry.trim() } : {}),
+    ...(brand.website?.trim() ? { website: brand.website.trim() } : {}),
+    ...(brand.colors.length > 0 ? { colors: brand.colors } : {}),
+  }
+}
+
+async function loadBrandForWorkspace(brandId: string, workspace: { id: string; _id: string }) {
+  try {
+    const response = await getBrand(brandId)
+    const brand = response.data?.brand
+    if (!response.success || !brand) return null
+    if (brand.workspaceId !== workspace.id && brand.workspaceId !== workspace._id) return null
+    return brand
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) {
+      return null
+    }
+    throw error
+  }
+}
+
+export async function generateSkillAction({
+  description,
+  target,
+  model,
+  brandId,
+}: GenerateSkillActionInput): Promise<GenerateSkillActionResult> {
   const trimmed = description.trim()
   if (!trimmed) {
     return { success: false, error: 'Describe the skill you want to generate' }
@@ -32,6 +77,7 @@ export async function generateSkillAction(
   }
 
   const pinnedTarget = target && isPromptKey(target) ? target : undefined
+  const resolvedBrandId = brandId?.trim() || undefined
 
   try {
     const sessionPromise = auth()
@@ -39,13 +85,22 @@ export async function generateSkillAction(
     const modelsPromise = getModels(
       `limit=1&modelType=${ModelType.TEXT}&value=${encodeURIComponent(modelValue)}`,
     )
+    const brandPromise = resolvedBrandId
+      ? workspacePromise.then(workspace =>
+          workspace ? loadBrandForWorkspace(resolvedBrandId, workspace) : null,
+        )
+      : Promise.resolve(null)
 
     const session = await sessionPromise
     if (!session?.user?.id) {
       return { success: false, error: 'You must be signed in to generate a skill' }
     }
 
-    const [workspace, modelsRes] = await Promise.all([workspacePromise, modelsPromise])
+    const [workspace, modelsRes, loadedBrand] = await Promise.all([
+      workspacePromise,
+      modelsPromise,
+      brandPromise,
+    ])
     if (!workspace) {
       return { success: false, error: 'You must be in a workspace to generate a skill' }
     }
@@ -55,10 +110,16 @@ export async function generateSkillAction(
       return { success: false, error: 'Select a text model' }
     }
 
+    if (resolvedBrandId && !loadedBrand) {
+      return { success: false, error: 'Brand not found' }
+    }
+    const brand = loadedBrand ? toSkillBrandContext(loadedBrand) : undefined
+
     const result = await generateSkill({
       description: trimmed,
       target: pinnedTarget,
       model: catalogModel.value,
+      brand,
     })
     if (!result.content.trim()) {
       return { success: false, error: 'No skill was generated' }

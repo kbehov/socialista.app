@@ -36,6 +36,7 @@ export async function generateSkill({
   description,
   target,
   model,
+  brand,
 }: GenerateSkillInput): Promise<GenerateSkillResult> {
   const trimmed = description.trim()
   if (!trimmed) {
@@ -49,7 +50,7 @@ export async function generateSkill({
     schema: skillGeneratedSchema,
     system: SKILL_GENERATION_SYSTEM,
     temperature: 0.6,
-    prompt: buildSkillGenerationUserPrompt(trimmed, pinnedTarget),
+    prompt: buildSkillGenerationUserPrompt(trimmed, pinnedTarget, brand),
   })
 
   const content = stripFrontmatter(result.object.content)

@@ -59,6 +59,7 @@ This skill must read like an in-house prompt, not a template:
 - Specificity wins. "Warm tungsten on brushed brass, 50mm, three-quarter, one hero SKU" beats "make it look premium".
 - Honor every constraint in the brief: niche, voice, claims they must not invent, formats, always/never they stated.
 - Thin brief: still pick a sharp point of view. Invent craft direction, never invent facts about their brand or product.
+- When brand context is present: bake that identity (name, industry, positioning, palette) into the skill as locked facts. Do not invent extra brand claims.
 - Ban generic filler: "be creative", "high quality", "engaging", "professional", "scroll-stopping" with no mechanism.
 - Ban AI-slop in the skill itself and in any example output: "game-changer", "unlock", "in today's fast-paced world", "as an AI", "delve", "tapestry".
 - The skill is complete. Do not tell the model to "follow the default prompt" or "see attached guidelines".
