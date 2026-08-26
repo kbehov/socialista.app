@@ -69,10 +69,4 @@ export {
   type CloneInfluencerPayload,
 } from './schemas/clone-influencer.schema.js'
 
-export {
-  buildStaticAdCreativeBrief,
-  buildStaticAdFinalPrompt,
-  sanitizeStaticAdModelPrompt,
-  type StaticAdPromptInput,
-} from './ai/static-ad-prompts.js'
 export * from './auth.js'

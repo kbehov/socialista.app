@@ -35,10 +35,10 @@ export function AccountActionsMenu({ account, onAction, onEdit, triggerClassName
           type="button"
           variant="ghost"
           size="icon-xs"
-          className={triggerClassName ?? 'size-8 rounded-lg'}
+          className={triggerClassName ?? 'size-8 rounded-lg text-muted-foreground'}
           aria-label={`Actions for ${account.accountName}`}
         >
-          <MoreHorizontalIcon className="size-4" />
+          <MoreHorizontalIcon className="size-4" strokeWidth={1.5} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">

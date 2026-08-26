@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { cn } from '@/lib/utils'
 
 export type AnalyticsEmptyProps = {
@@ -22,19 +21,18 @@ function AnalyticsEmpty({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 px-4 py-6 text-center',
-        dashboardSurface.insetDashed,
+        'flex flex-col justify-center gap-1 px-1 py-5',
         minHeightClassName,
         className,
       )}
     >
       {icon ? (
-        <span className="mb-1 flex size-8 items-center justify-center rounded-xl border border-border/50 bg-background text-muted-foreground shadow-xs">
-          {icon}
-        </span>
+        <span className="mb-1 flex size-7 items-center justify-center text-muted-foreground">{icon}</span>
       ) : null}
-      <p className="text-xs font-medium tracking-tight text-foreground">{title}</p>
-      {description ? <p className="max-w-56 text-[11px] leading-relaxed text-muted-foreground">{description}</p> : null}
+      <p className="text-xs font-medium text-foreground">{title}</p>
+      {description ? (
+        <p className="max-w-sm text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+      ) : null}
     </div>
   )
 }

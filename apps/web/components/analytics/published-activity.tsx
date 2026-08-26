@@ -1,7 +1,5 @@
 'use client'
 
-import { CalendarDaysIcon, FlameIcon, SendIcon, TimerIcon } from 'lucide-react'
-
 import type { PublishedPostActivityResponse } from '@socialista/types'
 
 import { formatCount } from '@/utils/format'
@@ -31,39 +29,19 @@ function bestDayCount(activity: PublishedPostActivityResponse['activity']): numb
   return best
 }
 
-function formatTimeSaved(posts: number): { value: string; label: string; description: string } | null {
+function formatTimeSaved(posts: number): string | null {
   const minutes = posts * MINUTES_PER_POST
   if (minutes <= 0) return null
 
   if (minutes < 60) {
-    return {
-      value: `~${minutes}m`,
-      label: 'Time saved',
-      description: 'vs. posting by hand',
-    }
+    return `~${minutes}m saved vs. posting by hand`
   }
 
   const hours = minutes / 60
   const rounded = hours >= 10 ? Math.round(hours) : Math.round(hours * 10) / 10
   const display = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
 
-  return {
-    value: `~${display}h`,
-    label: 'Time saved',
-    description: 'vs. posting by hand',
-  }
-}
-
-function TimeSavedBadge({ value }: { value: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/30 px-2.5 py-1 text-[11px] text-muted-foreground">
-      <TimerIcon className="size-3 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} aria-hidden />
-      <span>
-        <span className="font-medium tabular-nums tracking-tight text-foreground">{value}</span>
-        <span className="ml-1">saved</span>
-      </span>
-    </span>
-  )
+  return `~${display}h saved vs. posting by hand`
 }
 
 function PublishedActivity({ data, className }: PublishedActivityProps) {
@@ -76,30 +54,30 @@ function PublishedActivity({ data, className }: PublishedActivityProps) {
       className={className}
       compact
       title="Publishing activity"
-      action={timeSaved ? <TimeSavedBadge value={timeSaved.value} /> : null}
+      action={
+        timeSaved ? (
+          <span className="text-[11px] text-muted-foreground">{timeSaved}</span>
+        ) : null
+      }
       metrics={[
         {
           label: 'Published',
           value: formatCount(data.total),
-          icon: <SendIcon />,
         },
         {
           label: 'Active days',
           value: formatCount(activeDays),
-          icon: <CalendarDaysIcon />,
         },
         {
           label: 'Best day',
           value: formatCount(peak),
-          icon: <FlameIcon />,
-          iconClassName: 'text-orange-500',
         },
       ]}
       heatmap={{
         data: data.activity,
         days: data.days,
         endDate: data.end,
-        colorScheme: 'green',
+        colorScheme: 'neutral',
         size: 'sm',
         weekStartsOn: 1,
         hideTotal: true,

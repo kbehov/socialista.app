@@ -36,31 +36,24 @@ function UpgradeTeaser({ className }: UpgradeTeaserProps) {
       title="Unlock full analytics"
       description="Growth charts, platform comparisons, and anomaly alerts on Pro."
       action={
-        <Button
-          asChild
-          size="sm"
-          className="h-8 rounded-full px-3.5 text-xs font-medium shadow-xs active:scale-[0.98]"
-        >
+        <Button asChild size="sm" variant="outline" className="h-8 px-3.5 text-xs font-medium">
           <Link href={DASHBOARD_ROUTES.UPGRADE}>Upgrade</Link>
         </Button>
       }
     >
-      <div className="grid gap-2.5 sm:grid-cols-3">
+      <ul className="flex flex-col gap-4">
         {PREMIUM_FEATURES.map(feature => (
-          <div
-            key={feature.title}
-            className="flex flex-col gap-2.5 rounded-xl border border-border/50 bg-muted/10 p-3.5 dark:bg-muted/5"
-          >
-            <span className="flex size-8 items-center justify-center rounded-xl border border-border/50 bg-background text-muted-foreground shadow-xs">
-              <feature.icon className="size-3.5" strokeWidth={1.75} />
+          <li key={feature.title} className="flex gap-3">
+            <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center text-muted-foreground">
+              <feature.icon className="size-4" strokeWidth={1.75} />
             </span>
-            <div className="min-w-0 space-y-1">
-              <p className="text-xs font-semibold tracking-tight text-foreground">{feature.title}</p>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs font-medium text-foreground">{feature.title}</p>
               <p className="text-[11px] leading-relaxed text-muted-foreground">{feature.description}</p>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </AnalyticsSection>
   )
 }

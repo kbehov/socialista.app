@@ -62,7 +62,7 @@ function AccountFilter({
         size="sm"
         aria-label="Filter by account"
         className={cn(
-          'h-8 min-w-40 max-w-56 shrink-0 rounded-full border-border/60 bg-background px-3 shadow-xs',
+          'h-8 min-w-40 max-w-56 shrink-0 rounded-full border-border/60 bg-background px-3 shadow-xs dark:border-border/70',
           'dark:bg-background dark:hover:bg-muted/40',
           className,
         )}

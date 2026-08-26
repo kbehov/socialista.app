@@ -10,7 +10,7 @@ export function AccountIdentity({ account }: { account: AccountSummary }) {
     <div className="flex min-w-0 items-center gap-3">
       <AccountAvatar account={account} size="lg" showBadge={false} />
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-1 text-sm font-medium tracking-tight text-foreground">{account.accountName}</p>
+        <p className="line-clamp-1 text-sm font-medium text-foreground">{account.accountName}</p>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{handle ?? platformLabel}</p>
       </div>
     </div>

@@ -97,7 +97,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
-        description={`${project?.name ?? workspace.name} · overview`}
+        description={project?.name ?? workspace.name}
         actions={
           <AnalyticsRangeToggle range={range} params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined} />
         }

@@ -34,34 +34,31 @@ function PlatformSummary({ overview, growth, provider = 'all', className }: Plat
       {providers.length === 0 ? (
         <AnalyticsEmpty title="No platforms connected" description="Connect a social account to see audience share." />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-4">
           {providers.map(row => {
             const followers = growthByProvider.get(row.provider) ?? row.followers
             const pct = Math.min(100, Math.round(((followers ?? 0) / maxFollowers) * 100))
 
             return (
-              <li
-                key={row.provider}
-                className="flex flex-col gap-2.5 rounded-xl border border-border/50 bg-muted/10 px-3 py-2.5 dark:bg-muted/5"
-              >
+              <li key={row.provider} className="flex flex-col gap-2">
                 <div className="flex items-center gap-2.5">
-                  <SocialPlatformIcon provider={row.provider} size={14} className="size-7 shrink-0 shadow-xs" />
+                  <SocialPlatformIcon provider={row.provider} size={14} className="size-6 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium tracking-tight text-foreground">
+                    <p className="truncate text-xs font-medium text-foreground">
                       {getSocialPlatformLabel(row.provider)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       {row.accounts} account{row.accounts === 1 ? '' : 's'}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold tabular-nums tracking-[-0.02em] text-foreground">
+                  <p className="text-sm font-medium tabular-nums tracking-[-0.02em] text-foreground">
                     {formatCount(followers)}
                   </p>
                 </div>
                 <Progress
                   value={pct}
-                  className="h-1 rounded-full bg-muted"
-                  indicatorClassName="rounded-full bg-foreground/30"
+                  className="h-0.5 rounded-full bg-muted"
+                  indicatorClassName="rounded-full bg-foreground/40"
                   aria-label={`${getSocialPlatformLabel(row.provider)} share of audience`}
                 />
               </li>

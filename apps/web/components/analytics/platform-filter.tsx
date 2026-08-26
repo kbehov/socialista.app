@@ -65,9 +65,9 @@ function PlatformFilter({
       <Link
         href={DASHBOARD_ROUTES.ACCOUNTS}
         className={cn(
-          'inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border/60',
-          'bg-background text-muted-foreground shadow-xs',
-          'transition-colors hover:bg-muted/40 hover:text-foreground',
+          'inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/55 dark:border-border/70',
+          'bg-background text-muted-foreground',
+          'transition-colors hover:bg-muted/30 hover:text-foreground',
           'active:scale-[0.97]',
         )}
         aria-label="Connect another platform"

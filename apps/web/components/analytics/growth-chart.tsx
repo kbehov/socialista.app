@@ -21,18 +21,20 @@ const METRIC_TABS: { id: ChartMetric; label: string }[] = [
   { id: 'views', label: 'Views' },
 ]
 
+const NEUTRAL_CHART_COLOR = 'var(--chart-1)'
+
 const METRIC_CHART_CONFIG: Record<ChartMetric, ChartConfig> = {
   engagement: {
-    value: { label: 'Engagement', color: 'var(--chart-2)' },
+    value: { label: 'Engagement', color: NEUTRAL_CHART_COLOR },
   },
   followers: {
-    value: { label: 'Followers', color: 'var(--chart-4)' },
+    value: { label: 'Followers', color: NEUTRAL_CHART_COLOR },
   },
   reach: {
-    value: { label: 'Reach', color: 'var(--chart-5)' },
+    value: { label: 'Reach', color: NEUTRAL_CHART_COLOR },
   },
   views: {
-    value: { label: 'Views', color: 'var(--chart-3)' },
+    value: { label: 'Views', color: NEUTRAL_CHART_COLOR },
   },
 }
 

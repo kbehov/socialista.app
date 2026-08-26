@@ -13,7 +13,7 @@ export type AccountAnalyticsViewProps = {
 
 function AccountAnalyticsView({ workspaceId, data, hideExport = false }: AccountAnalyticsViewProps) {
   return (
-    <div className="flex w-full flex-col gap-4 pb-8">
+    <div className="flex w-full flex-col gap-6 pb-8">
       {hideExport ? null : (
         <div className="flex justify-end">
           <AnalyticsExportCsvButton workspaceId={workspaceId} accountId={data.account.id} range={data.range} />

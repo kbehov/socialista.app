@@ -5,6 +5,7 @@ import { clampImageGenerationCount, PROMPT_KEYS, TASK_IDS } from '@socialista/ty
 import { schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import {
+  assembleStaticAdImagePrompt,
   buildStaticAdCreativeBrief,
   sanitizeStaticAdModelPrompt,
 } from '../../ai/static-ad-prompts.js'
@@ -54,6 +55,7 @@ export const realtimeStaticAdGeneration = schemaTask({
         inputs: {
           aspectRatio: payload.aspectRatio,
           productImageUrl: payload.productImage,
+          ...(payload.referenceImage ? { referenceImageUrl: payload.referenceImage } : {}),
           language: payload.language,
           numImages,
           ...(payload.adCopy ? { adCopy: payload.adCopy } : {}),
@@ -62,13 +64,18 @@ export const realtimeStaticAdGeneration = schemaTask({
       startedAt = started.startedAt
       generationId = started.generationId
 
-      setGenerationStatus(10, 'Art-directing from product photo')
+      const hasReferenceImage = Boolean(payload.referenceImage)
+      setGenerationStatus(
+        10,
+        hasReferenceImage ? 'Art-directing from product and template' : 'Art-directing from product photo',
+      )
 
       const creativeBrief = buildStaticAdCreativeBrief({
         prompt: payload.prompt,
         language: payload.language,
         aspectRatio: payload.aspectRatio,
         adCopy: payload.adCopy,
+        hasReferenceImage,
       })
 
       const systemOverride = await loadSkillOverride({
@@ -87,19 +94,14 @@ export const realtimeStaticAdGeneration = schemaTask({
             content: [
               { type: 'text', text: creativeBrief },
               { type: 'image', image: payload.productImage },
+              ...(payload.referenceImage ? [{ type: 'image' as const, image: payload.referenceImage }] : []),
             ],
           },
         ],
       })
 
       const plannedPrompt = sanitizeStaticAdModelPrompt(planned.text)
-      console.log('plannedPrompt', plannedPrompt)
-      const enhancedPrompt = [
-        'Edit Image 1 into a scroll-stopping Meta static ad that does NOT look like a default ChatGPT/Gemini product ad.',
-        'Preserve the  product from Image 1. Follow the plan below exactly.',
-        '',
-        plannedPrompt,
-      ].join('\n')
+      const enhancedPrompt = assembleStaticAdImagePrompt(plannedPrompt, hasReferenceImage)
       await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
 
       setGenerationStatus(
@@ -114,7 +116,9 @@ export const realtimeStaticAdGeneration = schemaTask({
         aspectRatio: payload.aspectRatio,
         workspaceId: payload.workspaceId,
         userId: payload.userId,
-        imageUrls: [payload.productImage],
+        imageUrls: payload.referenceImage
+          ? [payload.productImage, payload.referenceImage]
+          : [payload.productImage],
         numImages,
         onProgress: setGenerationStatus,
       })

@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "import:templates": "tsx --env-file=.env scripts/import-static-ad-templates.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1072.0",

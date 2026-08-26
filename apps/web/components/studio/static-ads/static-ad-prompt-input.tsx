@@ -42,7 +42,7 @@ import {
   PROMPT_KEYS,
   type Model,
 } from '@socialista/types'
-import { ChevronDownIcon, SparklesIcon } from 'lucide-react'
+import { ChevronDownIcon, SparklesIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
@@ -89,6 +89,8 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
     setLanguage,
     registerPromptHandlers,
     clearActivePreset,
+    templateReference,
+    clearTemplateReference,
   } = useStaticAdStudio()
 
   const [isPending, startTransition] = useTransition()
@@ -96,6 +98,11 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT)
   const [skillId, setSkillId] = useState<string | undefined>()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textInputRef = useRef(textInput)
+
+  useEffect(() => {
+    textInputRef.current = textInput
+  })
 
   const productImage = resolveStaticAdProductImage(attachments)
   const hasProductImage = Boolean(productImage)
@@ -145,12 +152,13 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
 
   useEffect(() => {
     registerPromptHandlers({
-      setPrompt: textInput.setInput,
+      setPrompt: value => textInputRef.current.setInput(value),
+      getPrompt: () => textInputRef.current.value,
       setAspectRatio,
       insertAtCursor,
       focusPrompt,
     })
-  }, [focusPrompt, insertAtCursor, registerPromptHandlers, setAspectRatio, textInput.setInput])
+  }, [focusPrompt, insertAtCursor, registerPromptHandlers, setAspectRatio])
 
   const handleAttachmentsChange = useCallback(
     (next: AttachedMedia[]) => {
@@ -190,6 +198,7 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
         workspaceId: currentWorkspace._id,
         aspectRatio,
         productImage: imageUrl,
+        ...(templateReference?.imageUrl ? { referenceImage: templateReference.imageUrl } : {}),
         language,
         numImages,
         ...(skillId ? { skillId } : {}),
@@ -325,7 +334,40 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
             ) : null}
           </>
         }
-        composerHeader={<StaticAdFormatPresets />}
+        composerHeader={
+          <div className="flex flex-col gap-3">
+            {templateReference ? (
+              <div className="flex items-center gap-2.5 rounded-2xl bg-muted/35 px-2 py-1.5 ring-1 ring-border/40">
+                <div className="relative size-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-border/50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={templateReference.imageUrl}
+                    alt={templateReference.name ?? 'Template reference'}
+                    className="size-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold tracking-[-0.02em] text-foreground">
+                    Template reference
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {templateReference.name ?? 'Recreate this ad with your product'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Remove template reference"
+                  disabled={isPending}
+                  className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100"
+                  onClick={clearTemplateReference}
+                >
+                  <XIcon className="size-3.5" strokeWidth={2.25} />
+                </button>
+              </div>
+            ) : null}
+            <StaticAdFormatPresets />
+          </div>
+        }
         textareaRef={node => {
           textareaRef.current = node
         }}
@@ -345,7 +387,9 @@ function StaticAdPromptComposer({ workspaceId, model }: StaticAdPromptComposerPr
           className="mt-3 px-0.5 text-[12px] leading-[1.5] tracking-[-0.01em] text-muted-foreground/70"
           role="status"
         >
-          Start with a product photo — add an avatar or style reference for richer briefs.
+          {templateReference
+            ? 'Add a product photo to recreate this template with your product.'
+            : 'Start with a product photo — add an avatar or style reference for richer briefs.'}
         </p>
       ) : null}
 

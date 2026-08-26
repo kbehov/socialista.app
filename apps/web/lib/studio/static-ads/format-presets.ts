@@ -59,7 +59,7 @@ export const STATIC_AD_FORMAT_PRESETS = [
     trending: false,
     aspectRatio: '9:16' as const,
     prompt:
-      'Talking-head UGC: creator facing iPhone camera with product in frame, bright real room, phone-video-still energy (slight motion blur on hands OK), natural expression mid-sentence, desire headline without invented claims, clear CTA — not a studio interview set, not a podcast-mic setup.',
+      'Talking-head UGC: creator facing iPhone camera with product in frame, bright real room, phone-video-still energy (slight motion blur on hands OK), natural expression mid-sentence, punchy caption-style hook + clear CTA — not a studio interview set, not a podcast-mic setup.',
   },
   {
     id: 'grwm',
@@ -135,7 +135,7 @@ export const STATIC_AD_FORMAT_PRESETS = [
     trending: false,
     aspectRatio: '1:1' as const,
     prompt:
-      'Problem→solution Meta ad: visual tension suggests everyday friction without fake medical before/after or body claims, product is the clear solution hero, tight social crop, conversion headline + CTA, claim-safe — no measuring tape body tropes, no clinical split-screen.',
+      'Problem→solution Meta ad: visual tension of everyday friction, then the product as the clear solution hero, tight social crop, punchy hook + CTA — no measuring tape body tropes unless the product is actually about that.',
   },
   {
     id: 'before-after',
@@ -144,7 +144,7 @@ export const STATIC_AD_FORMAT_PRESETS = [
     trending: true,
     aspectRatio: '1:1' as const,
     prompt:
-      'Before/after split static ad: clean vertical or horizontal divide with small legible "Before" and "After" labels, same camera angle and environment on both sides for believability. BEFORE side shows everyday friction (messy counter, dull flat color, clutter, worn surface, stale look — category-true to this product). AFTER side shows the improved result with the exact product visible as the transformation hero (clean, organized, vibrant, refreshed — photoreal, not exaggerated). Bold conversion headline + Shop now CTA in open negative space. Classic Meta performance split creative. CLAIM-SAFE: no human bodies, no skin close-ups, no weight-loss or medical transformation, no measuring tape, no clinical patient imagery, no invented timelines or results.',
+      'Before/after split static ad: clean vertical or horizontal divide with small legible "Before" and "After" labels, same camera angle and environment on both sides. BEFORE side shows the problem; AFTER side shows the result with the exact product as the transformation hero. Bold scroll-stopping hook + Shop now CTA in open negative space. Classic Meta performance split — go as specific and dramatic as the product category supports.',
   },
   {
     id: 'statistic-callout',
@@ -153,7 +153,7 @@ export const STATIC_AD_FORMAT_PRESETS = [
     trending: true,
     aspectRatio: '1:1' as const,
     prompt:
-      'Statistic-hook static ad: one oversized bold number or short data-point ("9 out of 10", "73% faster") as the dominant visual element, product placed clearly beside or below it, clean 2-color background matching brand palette, small supporting line only if needed, strong CTA — feels like a scroll-stopping infographic card, not a corporate slide, no invented or unverifiable stats.',
+      'Statistic-hook static ad: one oversized bold number or short data-point as the dominant visual element, product placed clearly beside or below it, clean 2-color background matching the product palette, small supporting line only if needed, punchy CTA — scroll-stopping infographic card, not a corporate slide.',
   },
   {
     id: 'spec-callout',

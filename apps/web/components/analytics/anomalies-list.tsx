@@ -33,7 +33,7 @@ function AnomaliesList({ anomalies, className, limit = 8, error }: AnomaliesList
           description={error ? 'Could not load anomaly detection for this range.' : 'No unusual spikes or drops in this range.'}
         />
       ) : (
-        <ul className="flex flex-col gap-1.5">
+        <ul className="flex flex-col gap-2">
           {visible.map((anomaly, index) => (
             <AnomalyRow
               key={`${anomaly.metric}-${anomaly.provider ?? 'all'}-${anomaly.date}-${index}`}
@@ -52,18 +52,14 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
   return (
     <li
       className={cn(
-        'flex items-center gap-3 rounded-xl border px-3 py-2.5',
-        isCritical
-          ? 'border-red-500/20 bg-red-500/5 dark:bg-red-500/10'
-          : 'border-border/50 bg-background',
+        'flex items-center gap-3 rounded-lg px-1 py-2 -mx-1',
+        isCritical ? 'bg-red-500/5 dark:bg-red-500/10' : 'hover:bg-muted/20',
       )}
     >
       <span
         className={cn(
-          'flex size-7 shrink-0 items-center justify-center rounded-lg',
-          isCritical
-            ? 'bg-red-500/10 text-red-700 dark:text-red-400'
-            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+          'flex size-6 shrink-0 items-center justify-center',
+          isCritical ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400',
         )}
       >
         <TriangleAlertIcon className="size-3.5" strokeWidth={1.75} />
@@ -71,7 +67,7 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <p className="text-xs font-medium tracking-tight text-foreground">
+          <p className="text-xs font-medium text-foreground">
             {anomaly.direction === 'spike' ? 'Spike' : 'Drop'} in {anomaly.metric}
           </p>
           {anomaly.provider ? (
@@ -91,10 +87,8 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
 
       <span
         className={cn(
-          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize tracking-tight',
-          isCritical
-            ? 'bg-red-500/10 text-red-700 dark:text-red-400'
-            : 'bg-muted/80 text-muted-foreground',
+          'shrink-0 text-[11px] font-medium capitalize',
+          isCritical ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground',
         )}
       >
         {anomaly.severity}

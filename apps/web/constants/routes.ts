@@ -124,6 +124,11 @@ export const SKILL_ROUTES = {
   GET_WORKSPACE_SKILLS: (workspaceId: string) => `/skills/workspace/${workspaceId}`,
 } as const
 
+export const STATIC_AD_TEMPLATE_ROUTES = {
+  LIST: '/static-ad-templates',
+  CATEGORIES: '/static-ad-templates/categories',
+} as const
+
 export const PROJECT_ROUTES = {
   GET_WORKSPACE_PROJECTS: (workspaceId: string) => `/projects/workspace/${workspaceId}`,
   CREATE: '/projects',

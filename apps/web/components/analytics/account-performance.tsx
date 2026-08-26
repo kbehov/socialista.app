@@ -43,12 +43,12 @@ const TONE_STYLES: Record<
 > = {
   up: {
     icon: TrendingUpIcon,
-    iconClassName: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    iconClassName: 'text-emerald-700 dark:text-emerald-400',
     scoreClassName: 'text-emerald-700 dark:text-emerald-400',
   },
   down: {
     icon: TrendingDownIcon,
-    iconClassName: 'bg-red-500/10 text-red-700 dark:text-red-400',
+    iconClassName: 'text-red-700 dark:text-red-400',
     scoreClassName: 'text-red-700 dark:text-red-400',
   },
 }
@@ -140,7 +140,7 @@ function AccountPerformance({
         <AccountPerformanceMetricToggle rankBy={data.rankBy} range={range} provider={provider} />
       }
     >
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-8 sm:grid-cols-2">
         <PerformanceColumn tone="up" title="Winning" rows={winners} rankBy={data.rankBy} />
         <PerformanceColumn tone="down" title="Losing" rows={losers} rankBy={data.rankBy} />
       </div>
@@ -164,14 +164,10 @@ function PerformanceColumn({
 
   return (
     <div className="min-w-0">
-      <div className="mb-3 flex items-center gap-2 px-0.5">
-        <span className={cn('flex size-6 items-center justify-center rounded-lg', styles.iconClassName)}>
-          <Icon className="size-3.5" strokeWidth={1.75} />
-        </span>
-        <p className="text-xs font-semibold tracking-tight text-foreground">{title}</p>
-        <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-          {rows.length}
-        </span>
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className={cn('size-3.5 shrink-0', styles.iconClassName)} strokeWidth={1.75} />
+        <p className="text-xs font-medium text-foreground">{title}</p>
+        <span className="text-[11px] tabular-nums text-muted-foreground">{rows.length}</span>
       </div>
 
       {rows.length === 0 ? (
@@ -182,7 +178,7 @@ function PerformanceColumn({
           }
         />
       ) : (
-        <ol className="flex flex-col gap-1.5">
+        <ol className="flex flex-col gap-3">
           {rows.map((row, index) => (
             <PerformanceRow
               key={`${tone}-${row.account.id}`}
@@ -217,12 +213,11 @@ function PerformanceRow({
       <Link
         href={DASHBOARD_ROUTES.accountAnalytics(row.account.id)}
         className={cn(
-          'flex items-center gap-2.5 rounded-xl border border-border/50 bg-background px-3 py-2.5',
+          'flex items-center gap-3 rounded-lg px-1 py-1.5 -mx-1',
           'transition-colors hover:bg-muted/30 dark:hover:bg-muted/15',
-          'active:scale-[0.995]',
         )}
       >
-        <span className="w-4 shrink-0 text-center text-[10px] font-medium tabular-nums text-muted-foreground/70">
+        <span className="w-5 shrink-0 text-[11px] tabular-nums text-muted-foreground">
           {String(rank).padStart(2, '0')}
         </span>
 
@@ -239,14 +234,14 @@ function PerformanceRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium tracking-tight text-foreground">{row.account.accountName}</p>
+          <p className="truncate text-xs font-medium text-foreground">{row.account.accountName}</p>
           <p className="truncate text-[11px] text-muted-foreground">
             {handle ?? meta}
             {handle && meta ? ` · ${meta}` : null}
           </p>
         </div>
 
-        <p className={cn('shrink-0 text-sm font-semibold tabular-nums tracking-[-0.02em]', scoreClassName)}>
+        <p className={cn('shrink-0 text-sm font-medium tabular-nums tracking-[-0.02em]', scoreClassName)}>
           {primaryScore(row, rankBy)}
         </p>
       </Link>

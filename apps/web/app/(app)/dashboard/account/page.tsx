@@ -29,7 +29,7 @@ export default async function AccountPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader title="Account" description="Manage your profile and sign-in details." />
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 pb-12">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 pb-12">
         <AccountSettings user={user} />
       </div>
     </div>

@@ -53,6 +53,7 @@ export async function startStaticAdGeneration(
       userId: session.user.id,
       aspectRatio: parsed.data.aspectRatio,
       productImage: parsed.data.productImage,
+      ...(parsed.data.referenceImage ? { referenceImage: parsed.data.referenceImage } : {}),
       adCopy: parsed.data.adCopy,
       language: parsed.data.language,
       numImages,

@@ -10,15 +10,8 @@ export type DashboardGreetingProps = {
   className?: string
 }
 
-const ICON_STYLES: Record<GreetingPeriod, string> = {
-  morning: 'text-amber-500 dark:text-amber-400',
-  afternoon: 'text-orange-500 dark:text-orange-400',
-  evening: 'text-violet-500 dark:text-violet-400',
-  night: 'text-indigo-400 dark:text-indigo-300',
-}
-
 function GreetingIcon({ period, className }: { period: GreetingPeriod; className?: string }) {
-  const iconClassName = cn('size-5 shrink-0', ICON_STYLES[period], className)
+  const iconClassName = cn('size-4 shrink-0 text-muted-foreground', className)
 
   if (period === 'night') {
     return <MoonIcon className={iconClassName} strokeWidth={1.75} aria-hidden />
@@ -33,7 +26,7 @@ function GreetingIcon({ period, className }: { period: GreetingPeriod; className
 
 function DashboardGreeting({ greeting, name, period, className }: DashboardGreetingProps) {
   return (
-    <span className={cn('inline-flex min-w-0 items-center gap-2.5', className)}>
+    <span className={cn('inline-flex min-w-0 items-center gap-2', className)}>
       <GreetingIcon period={period} />
       <span className="truncate">
         {greeting}, {name}

@@ -14,6 +14,8 @@ import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
+const ICON_STROKE = 1.5
+
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google',
   github: 'GitHub',
@@ -44,7 +46,7 @@ function PasswordField({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground">
         {label}
       </Label>
       <div className="relative">
@@ -65,7 +67,11 @@ function PasswordField({
           aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
           disabled={disabled}
         >
-          {visible ? <EyeOffIcon className="size-3.5" strokeWidth={1.75} /> : <EyeIcon className="size-3.5" strokeWidth={1.75} />}
+          {visible ? (
+            <EyeOffIcon className="size-3.5" strokeWidth={ICON_STROKE} />
+          ) : (
+            <EyeIcon className="size-3.5" strokeWidth={ICON_STROKE} />
+          )}
         </button>
       </div>
     </div>
@@ -219,8 +225,8 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
   const providerLabels = connectedProviders.map(provider => PROVIDER_LABELS[provider] ?? provider)
 
   return (
-    <div className="flex flex-col gap-5">
-      <DashboardSection title="Profile" description="How you appear across Socialista.">
+    <div className="flex flex-col gap-8">
+      <DashboardSection title="Profile" description="How you appear across Socialista." className="shadow-none">
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-4">
             <button
@@ -228,9 +234,10 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading || isPending}
               className={cn(
-                'relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted/40',
+                'relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full',
+                'border border-border bg-muted/30',
                 'transition-transform duration-150 ease-out active:scale-[0.97]',
-                'hover:border-border focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
+                'hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
                 'motion-reduce:active:scale-100',
               )}
               aria-label="Change profile photo"
@@ -239,15 +246,15 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatar} alt="" className="size-full object-cover" />
               ) : (
-                <span className="text-lg font-semibold tracking-tight text-muted-foreground">
+                <span className="text-lg font-medium tracking-tight text-muted-foreground">
                   {getInitials(trimmedName || user.name)}
                 </span>
               )}
-              <span className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity hover:opacity-100">
+              <span className="absolute inset-0 flex items-center justify-center bg-foreground/40 opacity-0 transition-opacity hover:opacity-100">
                 {isUploading ? (
-                  <Loader2Icon className="size-4 animate-spin text-white" />
+                  <Loader2Icon className="size-4 animate-spin text-background" />
                 ) : (
-                  <CameraIcon className="size-4 text-white" strokeWidth={1.75} />
+                  <CameraIcon className="size-4 text-background" strokeWidth={ICON_STROKE} />
                 )}
               </span>
             </button>
@@ -281,7 +288,7 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="account-name" className="text-xs text-muted-foreground">
+            <Label htmlFor="account-name" className="text-xs font-medium text-muted-foreground">
               Name
             </Label>
             <Input
@@ -295,7 +302,7 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="account-email" className="text-xs text-muted-foreground">
+            <Label htmlFor="account-email" className="text-xs font-medium text-muted-foreground">
               Email
             </Label>
             <Input
@@ -308,11 +315,11 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end border-t border-border/60 pt-4">
             <Button
               type="button"
               size="sm"
-              className="h-8 rounded-full px-4"
+              className="h-8 rounded-lg px-4"
               onClick={handleSaveProfile}
               disabled={!profileDirty || trimmedName.length < 2 || !trimmedEmail || isPending}
             >
@@ -324,6 +331,7 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
       </DashboardSection>
 
       <DashboardSection
+        className="shadow-none"
         title="Password"
         description={
           user.hasPassword
@@ -359,11 +367,11 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
             autoComplete="new-password"
             disabled={isSavingPassword}
           />
-          <div className="flex justify-end">
+          <div className="flex justify-end border-t border-border/60 pt-4">
             <Button
               type="button"
               size="sm"
-              className="h-8 rounded-full px-4"
+              className="h-8 rounded-lg px-4"
               onClick={handleSavePassword}
               disabled={!password || !confirmPassword || isSavingPassword}
             >
@@ -375,13 +383,10 @@ export function AccountSettings({ user: initialUser }: AccountSettingsProps) {
       </DashboardSection>
 
       {providerLabels.length > 0 ? (
-        <DashboardSection title="Connected accounts" description="You can also sign in with these providers.">
-          <ul className="flex flex-col gap-2">
+        <DashboardSection className="shadow-none" title="Connected accounts" description="You can also sign in with these providers.">
+          <ul className="divide-y divide-border/60">
             {providerLabels.map(label => (
-              <li
-                key={label}
-                className="flex h-9 items-center rounded-lg border border-border/60 bg-muted/20 px-3 text-[13px] font-medium"
-              >
+              <li key={label} className="flex h-10 items-center text-[13px] font-medium text-foreground first:pt-0">
                 {label}
               </li>
             ))}

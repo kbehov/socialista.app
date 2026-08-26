@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+const TABLE_HEAD_CLASS = 'h-10 px-4 text-xs font-medium text-muted-foreground'
+
 type AccountsTableProps = {
   accounts: AccountSummary[]
   className?: string
@@ -61,22 +63,12 @@ export function AccountsTable({ accounts, className }: AccountsTableProps) {
         <DashboardTableShell className="hidden sm:block">
           <Table>
             <TableHeader>
-              <TableRow className={cn(dashboardSurface.tableHead, 'hover:bg-muted/20')}>
-                <TableHead className="h-10 px-4 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
-                  Account
-                </TableHead>
-                <TableHead className="hidden h-10 px-4 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground uppercase md:table-cell">
-                  Platform
-                </TableHead>
-                <TableHead className="h-10 px-4 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
-                  Status
-                </TableHead>
-                <TableHead className="hidden h-10 px-4 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground uppercase lg:table-cell">
-                  Timezone
-                </TableHead>
-                <TableHead className="hidden h-10 px-4 text-[10px] font-semibold tracking-[0.06em] text-muted-foreground uppercase xl:table-cell">
-                  Connected
-                </TableHead>
+              <TableRow className={cn(dashboardSurface.tableHead, 'hover:bg-transparent')}>
+                <TableHead className={TABLE_HEAD_CLASS}>Account</TableHead>
+                <TableHead className={cn(TABLE_HEAD_CLASS, 'hidden md:table-cell')}>Platform</TableHead>
+                <TableHead className={TABLE_HEAD_CLASS}>Status</TableHead>
+                <TableHead className={cn(TABLE_HEAD_CLASS, 'hidden lg:table-cell')}>Timezone</TableHead>
+                <TableHead className={cn(TABLE_HEAD_CLASS, 'hidden xl:table-cell')}>Connected</TableHead>
                 <TableHead className="h-10 w-13 px-2" />
               </TableRow>
             </TableHeader>

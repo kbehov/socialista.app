@@ -56,7 +56,7 @@ function AnalyticsExportCsvButton({ workspaceId, range, accountId, projectId }: 
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 shrink-0 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98]"
+          className="h-8 shrink-0 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98] dark:border-border/70"
           disabled={isPending}
           onClick={handleExport}
         >

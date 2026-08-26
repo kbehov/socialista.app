@@ -27,9 +27,9 @@ export type StatMetricsProps = {
 }
 
 const TREND_STYLES: Record<TrendDirection, string> = {
-  up: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  down: 'bg-red-500/10 text-red-700 dark:text-red-400',
-  neutral: 'bg-muted/80 text-muted-foreground',
+  up: 'text-emerald-700 dark:text-emerald-400',
+  down: 'text-red-700 dark:text-red-400',
+  neutral: 'text-muted-foreground',
 }
 
 const COLUMN_STYLES = {
@@ -44,47 +44,29 @@ function StatMetrics({ children, className, size = 'default', columns = 4 }: Sta
     <div
       data-slot="stat-metrics"
       data-size={size}
-      className={cn(
-        'group/metrics',
-        dashboardSurface.dividerGrid,
-        'w-full grid-cols-1 shadow-xs',
-        COLUMN_STYLES[columns],
-        className,
-      )}
+      className={cn('group/metrics', dashboardSurface.dividerGrid, 'w-full grid-cols-1', COLUMN_STYLES[columns], className)}
     >
       {children}
     </div>
   )
 }
 
-function StatMetric({ value, label, description, icon, iconClassName, trend, className }: StatMetricProps) {
+function StatMetric({ value, label, description, trend, className }: StatMetricProps) {
   const direction = trend?.direction ?? 'neutral'
 
   return (
     <div
       data-slot="stat-metric"
       className={cn(
-        'flex min-w-0 flex-col gap-2 px-4 py-4',
+        'flex min-w-0 flex-col gap-1.5 px-4 py-4',
         dashboardSurface.dividerCell,
-        'group-data-[size=sm]/metrics:gap-1.5 group-data-[size=sm]/metrics:px-3.5 group-data-[size=sm]/metrics:py-3.5',
+        'group-data-[size=sm]/metrics:gap-1 group-data-[size=sm]/metrics:px-3.5 group-data-[size=sm]/metrics:py-3.5',
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className={cn(dashboardSurface.metricLabel, 'truncate')}>{label}</p>
-        {icon ? (
-          <span
-            className={cn(
-              'flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/55 [&_svg]:size-3.5',
-              iconClassName,
-            )}
-          >
-            {icon}
-          </span>
-        ) : null}
-      </div>
+      <p className={cn(dashboardSurface.metricLabel, 'truncate')}>{label}</p>
 
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <p
           className={cn(
             dashboardSurface.metricValue,
@@ -96,7 +78,7 @@ function StatMetric({ value, label, description, icon, iconClassName, trend, cla
         {trend ? (
           <span
             className={cn(
-              'inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums tracking-tight',
+              'inline-flex shrink-0 items-center text-[11px] font-medium tabular-nums',
               TREND_STYLES[direction],
             )}
           >

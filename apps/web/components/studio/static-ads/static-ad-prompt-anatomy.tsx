@@ -77,8 +77,8 @@ export const STATIC_AD_ANATOMY_SEGMENTS = [
     id: 'copy',
     label: 'Copy',
     snippet:
-      'headline "Your daily glow" with "Shop now" CTA, simple bold social type designed into the frame, no invented results or ingredients, ',
-    exampleText: 'headline "Your daily glow" + Shop now',
+      'headline "I stopped buying the expensive one" with "Shop now" CTA, simple bold social type designed into the frame, ',
+    exampleText: 'headline "I stopped buying the expensive one" + Shop now',
     styles: STATIC_AD_SEGMENT_STYLES.copy,
   },
   {

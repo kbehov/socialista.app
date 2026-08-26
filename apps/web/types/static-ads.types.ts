@@ -13,5 +13,6 @@ export type StaticAdGenerationInput = {
   workspaceId: string
   aspectRatio: StaticAdAspectRatio
   productImage: string
+  referenceImage?: string
   language: string
 }
