@@ -16,6 +16,7 @@ export { InfluencerCloneRequestModel } from './models/influencer-clone-request.m
 export { ModelModel } from './models/model.js'
 export { NotificationModel } from './models/notification.model.js'
 export { PolarWebhookEventModel } from './models/polar-webhook-event.model.js'
+export * from './models/brand.model.js'
 export * from './models/product.model.js'
 export { ProjectModel } from './models/project.model.js'
 export { SkillModel } from './models/skill.model.js'
@@ -35,6 +36,7 @@ export * from './repo/invitation.repo.js'
 export * from './repo/model.repo.js'
 export * from './repo/notification.repo.js'
 export * from './repo/polar-webhook-event.repo.js'
+export * from './repo/brand.repo.js'
 export * from './repo/product.repo.js'
 export * from './repo/project.repo.js'
 export * from './repo/skill.repo.js'
@@ -59,6 +61,7 @@ export {
   type IModel,
   type ModelDocument,
 } from './types/models.types.js'
+export type { BrandDocument, IBrand } from './types/brand.types.js'
 export type { Iproduct, ProductDocument } from './types/product.types.js'
 export {
   ProjectStatus,

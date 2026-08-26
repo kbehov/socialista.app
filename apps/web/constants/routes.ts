@@ -107,6 +107,14 @@ export const MODEL_ROUTES = {
   DELETE_MODEL: (id: string) => `/models/${id}`,
 } as const
 
+export const BRAND_ROUTES = {
+  CREATE: '/brands',
+  GET_BY_ID: (id: string) => `/brands/${id}`,
+  UPDATE: (id: string) => `/brands/${id}`,
+  DELETE: (id: string) => `/brands/${id}`,
+  GET_WORKSPACE_BRANDS: (workspaceId: string) => `/brands/workspace/${workspaceId}`,
+} as const
+
 export const PRODUCT_ROUTES = {
   EXTRACT_PRODUCT: `/products/extract`,
   CREATE: '/products',

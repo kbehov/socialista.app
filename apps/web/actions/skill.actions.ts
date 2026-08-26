@@ -2,13 +2,14 @@
 
 import { auth } from '@/auth'
 import { getModels } from '@/services/models.service'
+import { createSkill } from '@/services/skill.service'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSkill } from '@socialista/ai'
-import { ModelType, PROMPT_KEY_VALUES, type GenerateSkillResult, type PromptKey } from '@socialista/types'
+import { ModelType, PROMPT_KEY_VALUES, type PromptKey, type Skill } from '@socialista/types'
 
 export type GenerateSkillActionResult =
-  | ({ success: true } & GenerateSkillResult)
+  | { success: true; skill: Skill }
   | { success: false; error: string }
 
 function isPromptKey(value: string): value is PromptKey {
@@ -63,8 +64,25 @@ export async function generateSkillAction(
       return { success: false, error: 'No skill was generated' }
     }
 
-    await deductWorkspaceAiCredits(workspace._id, 0.02)
-    return { success: true, ...result }
+    const created = await createSkill({
+      workspaceId: workspace.id,
+      name: result.name,
+      description: result.description,
+      target: result.target,
+      icon: result.icon || undefined,
+      content: result.content,
+    })
+    if (!created.success || !created.data?.skill) {
+      return { success: false, error: created.message ?? 'Generated the skill but failed to save it' }
+    }
+
+    try {
+      await deductWorkspaceAiCredits(workspace._id, 0.02)
+    } catch (error) {
+      console.error('[generateSkillAction] credits', error)
+    }
+
+    return { success: true, skill: created.data.skill }
   } catch (error) {
     console.error('[generateSkillAction]', error)
     return { success: false, error: 'Failed to generate skill. Please try again.' }

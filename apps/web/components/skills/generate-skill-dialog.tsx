@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { storeImportedSkillDraft } from '@/lib/skills/skill-import-storage'
 import { getModels } from '@/services/models.service'
 import { ModelType, PROMPT_KEY_LABELS, PROMPT_KEY_VALUES, type Model, type PromptKey } from '@socialista/types'
 import { Loader2Icon, SparklesIcon } from 'lucide-react'
@@ -93,17 +92,12 @@ export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogP
         return
       }
 
-      storeImportedSkillDraft({
-        name: result.name,
-        description: result.description,
-        target: result.target,
-        icon: result.icon,
-        content: result.content,
-      })
+      toast.success('Skill created')
       setDescription('')
       setTarget(AUTO_TARGET)
       onOpenChange(false)
-      router.push(DASHBOARD_ROUTES.createSkill)
+      router.push(DASHBOARD_ROUTES.editSkill(result.skill._id))
+      router.refresh()
     })
   }
 
@@ -116,7 +110,7 @@ export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogP
             Generate skill with AI
           </DialogTitle>
           <DialogDescription>
-            Describe the skill you want. We will write a full system prompt you can edit before saving.
+            Describe the skill you want. It is saved to your library, then opened so you can edit.
           </DialogDescription>
         </DialogHeader>
 

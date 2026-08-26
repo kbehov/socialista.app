@@ -5,6 +5,7 @@ export const DASHBOARD_ROUTES = {
   FILES: '/dashboard/files',
   folder: (id: string) => `/dashboard/files/${id}`,
   CONTEXT: '/dashboard/context',
+  BRANDS: '/dashboard/context/brands',
   PRODUCTS: '/dashboard/context/products',
   SKILLS: '/dashboard/context/skills',
   createSkill: '/dashboard/context/skills/create',
@@ -60,6 +61,10 @@ export function isDashboardFilesPath(pathname: string) {
 
 export function isDashboardContextPath(pathname: string) {
   return pathname === DASHBOARD_ROUTES.CONTEXT || pathname.startsWith(`${DASHBOARD_ROUTES.CONTEXT}/`)
+}
+
+export function isDashboardBrandsPath(pathname: string) {
+  return pathname === DASHBOARD_ROUTES.BRANDS || pathname.startsWith(`${DASHBOARD_ROUTES.BRANDS}/`)
 }
 
 export function isDashboardProductsPath(pathname: string) {

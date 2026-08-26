@@ -12,6 +12,7 @@ import { influencerRoutes } from '@/routes/influencer.routes.js'
 import { ugcProjectRoutes } from '@/routes/ugc-project.routes.js'
 import modelRoutes from '@/routes/model.routes.js'
 import notificationRoutes from '@/routes/notification.routes.js'
+import brandRoutes from '@/routes/brand.routes.js'
 import productRoutes from '@/routes/product.routes.js'
 import projectRoutes from '@/routes/project.routes.js'
 import skillRoutes from '@/routes/skill.routes.js'
@@ -60,6 +61,7 @@ app.route('/slideshows', slideshowRoutes)
 app.route('/videos', videoRoutes)
 app.route('/models', modelRoutes)
 app.route('/notifications', notificationRoutes)
+app.route('/brands', brandRoutes)
 app.route('/products', productRoutes)
 app.route('/projects', projectRoutes)
 app.route('/skills', skillRoutes)

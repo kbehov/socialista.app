@@ -1,9 +1,15 @@
 'use client'
 
+import { AddBrandTrigger } from '@/components/brands/add-brand-trigger'
 import { AddProductTrigger } from '@/components/products/add-product-trigger'
-import { DASHBOARD_ROUTES, isDashboardProductsPath, isDashboardSkillsPath } from '@/constants/app-routes'
+import {
+  DASHBOARD_ROUTES,
+  isDashboardBrandsPath,
+  isDashboardProductsPath,
+  isDashboardSkillsPath,
+} from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
-import { PackageIcon, SparklesIcon, type LucideIcon } from 'lucide-react'
+import { PackageIcon, PaletteIcon, SparklesIcon, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { CreateSkillMenu } from '@/components/skills/create-skill-menu'
@@ -32,6 +38,12 @@ const hubTabs: HubTab[] = [
     icon: SparklesIcon,
     isActive: isDashboardSkillsPath,
   },
+  {
+    href: DASHBOARD_ROUTES.BRANDS,
+    label: 'Brands',
+    icon: PaletteIcon,
+    isActive: isDashboardBrandsPath,
+  },
 ]
 
 const pageMeta = {
@@ -43,13 +55,18 @@ const pageMeta = {
     title: 'Skills',
     description: 'Every skill across workspace, brand, and products.',
   },
+  brands: {
+    title: 'Brands',
+    description: 'Identity, colors, and positioning used as context for posts and AI tools.',
+  },
 } as const
 
 export function ContextHubHeader({ workspaceId }: ContextHubHeaderProps) {
   const pathname = usePathname()
   const onProducts = isDashboardProductsPath(pathname)
   const onSkills = isDashboardSkillsPath(pathname)
-  const meta = onSkills ? pageMeta.skills : onProducts ? pageMeta.products : null
+  const onBrands = isDashboardBrandsPath(pathname)
+  const meta = onSkills ? pageMeta.skills : onProducts ? pageMeta.products : onBrands ? pageMeta.brands : null
 
   return (
     <header className="sticky top-0 z-20 -mx-(--spacing-dashboard-x) shrink-0 bg-background/95 px-(--spacing-dashboard-x) backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -96,6 +113,7 @@ export function ContextHubHeader({ workspaceId }: ContextHubHeaderProps) {
           <div className="flex shrink-0 items-center gap-2">
             {onProducts ? <AddProductTrigger workspaceId={workspaceId} /> : null}
             {onSkills ? <CreateSkillMenu /> : null}
+            {onBrands ? <AddBrandTrigger workspaceId={workspaceId} /> : null}
           </div>
         </div>
       ) : null}
