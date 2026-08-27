@@ -23,7 +23,7 @@ import type { SlideshowSummaryResponse } from '@socialista/types'
 import { CopyIcon, ImagesIcon, LayersIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 function SlideshowCard({
@@ -132,6 +132,7 @@ type SlideshowListProps = {
   workspaceName: string
   initialSlideshows: SlideshowSummaryResponse[]
   initialError?: string | null
+  composer?: ReactNode
 }
 
 export function SlideshowList({
@@ -139,6 +140,7 @@ export function SlideshowList({
   workspaceName,
   initialSlideshows,
   initialError = null,
+  composer,
 }: SlideshowListProps) {
   const router = useRouter()
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
@@ -224,6 +226,8 @@ export function SlideshowList({
         }
         actions={createAction}
       />
+
+      {composer ? <div className="shrink-0 pb-5">{composer}</div> : null}
 
       {isLoading ? (
         <LoadingState message="Loading slideshows…" className="flex-1" />

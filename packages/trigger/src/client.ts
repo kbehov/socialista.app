@@ -32,6 +32,11 @@ export {
 } from './schemas/video-generation.schema.js'
 
 export {
+  slideshowGenerationPayloadSchema,
+  type SlideshowGenerationPayload,
+} from './schemas/slideshow-generation.schema.js'
+
+export {
   refreshAccountTokenPayloadSchema,
   type RefreshAccountTokenPayload,
 } from './schemas/refresh-account-token.schema.js'

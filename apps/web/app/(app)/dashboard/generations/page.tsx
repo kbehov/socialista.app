@@ -1,13 +1,12 @@
-import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { GenerationsView } from '@/components/generations/generations-view'
 import { PageHeader } from '@/components/headers/page-header'
+import { Button } from '@/components/ui/button'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getWorkspaceGenerations, type GetWorkspaceGenerationsQuery } from '@/services/generation.service'
-import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { GenerationKind, GenerationStatus, MetaResponse } from '@socialista/types'
-import { SparklesIcon } from 'lucide-react'
+import Link from 'next/link'
 import { Suspense } from 'react'
 import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
@@ -17,7 +16,7 @@ type GenerationsPageProps = {
 
 const DEFAULT_LIMIT = 20
 
-const KIND_VALUES = new Set<GenerationKind>(['image', 'static-ad', 'video'])
+const KIND_VALUES = new Set<GenerationKind>(['image', 'static-ad', 'video', 'slideshow'])
 const STATUS_VALUES = new Set<GenerationStatus>(['running', 'completed', 'failed'])
 
 const defaultMeta: MetaResponse = {
@@ -92,24 +91,32 @@ export default async function GenerationsPage({ searchParams }: GenerationsPageP
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <PageHeader title="Generations" description={`${formatItemCount(meta.total)} in ${workspace.name}`} />
+      <PageHeader
+        title="Generations"
+        description={`${meta.total} ${meta.total === 1 ? 'generation' : 'generations'} in ${workspace.name}`}
+      />
 
       {!response.success ? (
         <ErrorState
           title={response.message ?? 'Failed to load generations'}
           description="Refresh the page to try again."
-          className="flex-1 rounded-xl"
+          className="flex-1"
         />
       ) : generations.length === 0 ? (
-        <EmptyState
-          icon={SparklesIcon}
-          title="No generations yet"
-          description="Create images or static ads in the studio. Finished runs will show up here with cost, runtime, and results."
-          minHeight="lg"
-          variant="hero"
-          className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
-        />
+        <section className="flex min-h-0 flex-1 flex-col justify-center py-10 sm:py-14">
+          <h2 className="text-lg font-medium tracking-[-0.02em] text-foreground">
+            No generations yet
+          </h2>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-foreground/64">
+            Create images or static ads in the studio. Finished runs will show up here with
+            cost, runtime, and results.
+          </p>
+          <div className="mt-6">
+            <Button size="sm" className="rounded-md px-3.5 font-medium" asChild>
+              <Link href={DASHBOARD_ROUTES.STUDIO.IMAGES}>Open studio</Link>
+            </Button>
+          </div>
+        </section>
       ) : (
         <Suspense fallback={null}>
           <GenerationsView generations={generations} meta={meta} />

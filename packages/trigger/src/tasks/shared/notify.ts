@@ -14,24 +14,27 @@ export async function notifyUser(input: CreateNotificationInput): Promise<void> 
   }
 }
 
-type GenerationKind = 'image' | 'static-ad' | 'video'
+type GenerationKind = 'image' | 'static-ad' | 'video' | 'slideshow'
 
 const GENERATION_COMPLETED_TYPE: Record<GenerationKind, NotificationType> = {
   image: NotificationType.GENERATION_IMAGE_COMPLETED,
   'static-ad': NotificationType.GENERATION_STATIC_AD_COMPLETED,
   video: NotificationType.GENERATION_VIDEO_COMPLETED,
+  slideshow: NotificationType.GENERATION_SLIDESHOW_COMPLETED,
 }
 
 const GENERATION_FAILED_TYPE: Record<GenerationKind, NotificationType> = {
   image: NotificationType.GENERATION_IMAGE_FAILED,
   'static-ad': NotificationType.GENERATION_STATIC_AD_FAILED,
   video: NotificationType.GENERATION_VIDEO_FAILED,
+  slideshow: NotificationType.GENERATION_SLIDESHOW_FAILED,
 }
 
 const GENERATION_COMPLETED_COPY: Record<GenerationKind, { title: string; body: string }> = {
   image: { title: 'Image ready', body: 'Your image generation finished successfully.' },
   'static-ad': { title: 'Static ad ready', body: 'Your static ad generation finished successfully.' },
   video: { title: 'Video ready', body: 'Your video generation finished successfully.' },
+  slideshow: { title: 'Slideshow ready', body: 'Your slideshow was generated successfully.' },
 }
 
 const GENERATION_FAILED_COPY: Record<GenerationKind, { title: string; body: string }> = {
@@ -41,6 +44,10 @@ const GENERATION_FAILED_COPY: Record<GenerationKind, { title: string; body: stri
     body: 'We could not finish generating your static ad.',
   },
   video: { title: 'Video generation failed', body: 'We could not finish generating your video.' },
+  slideshow: {
+    title: 'Slideshow generation failed',
+    body: 'We could not finish generating your slideshow.',
+  },
 }
 
 export async function notifyGenerationComplete(input: {

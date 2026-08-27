@@ -16,6 +16,40 @@ export type GenerateSlideshowResult = {
   texts: string[]
 }
 
+export const SLIDESHOW_LAYOUTS = ['full-bleed', 'split', 'minimal'] as const
+
+export type SlideshowLayout = (typeof SLIDESHOW_LAYOUTS)[number]
+
+export const SLIDESHOW_GENERATION_SLIDE_COUNT_MIN = 3
+export const SLIDESHOW_GENERATION_SLIDE_COUNT_MAX = 10
+export const SLIDESHOW_GENERATION_SLIDE_COUNT_DEFAULT = 5
+export const SLIDESHOW_PLAN_CREDIT_COST = 0.02
+
+export type PlanSlideshowInput = {
+  hook: string
+  slideCount: number
+}
+
+export type SlideshowPlanTheme = {
+  backgroundColor: string
+  textColor: string
+  accentColor: string
+  fontFamily: string
+}
+
+export type SlideshowPlanSlide = {
+  text: string
+  imageQuery: string
+  layout: SlideshowLayout
+}
+
+export type SlideshowPlan = {
+  contentType: SlideshowContentType
+  name: string
+  theme: SlideshowPlanTheme
+  slides: SlideshowPlanSlide[]
+}
+
 export const VIDEO_SCRIPT_SEGMENT_ROLES = ['hook', 'body', 'cta'] as const
 
 export type VideoScriptSegmentRole = (typeof VIDEO_SCRIPT_SEGMENT_ROLES)[number]

@@ -5,7 +5,8 @@ import {
   type AddProductTab,
 } from "@/components/products/add-product-dialog";
 import { Button } from "@/components/ui/button";
-import { Link2Icon, PackageIcon, PlusIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -26,11 +27,6 @@ export function AddProductTrigger({
 }: AddProductTriggerProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const Icon = showPlusIcon
-    ? PlusIcon
-    : defaultTab === "manual"
-      ? PackageIcon
-      : Link2Icon;
 
   return (
     <>
@@ -38,10 +34,14 @@ export function AddProductTrigger({
         type="button"
         size="sm"
         variant={variant}
-        className="h-9 rounded-full px-4"
+        className={cn(
+          "rounded-md px-3.5 font-medium",
+          variant === "default" &&
+            "transition-colors duration-150 active:scale-[0.98] motion-reduce:active:scale-100",
+        )}
         onClick={() => setOpen(true)}
       >
-        <Icon className="size-3.5" />
+        {showPlusIcon ? <PlusIcon className="size-3.5" /> : null}
         {label}
       </Button>
 

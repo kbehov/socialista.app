@@ -49,7 +49,7 @@ const hubTabs: HubTab[] = [
 const pageMeta = {
   products: {
     title: 'Products',
-    description: 'Product catalog for ads, slideshows, and studio workflows in this workspace.',
+    description: 'Catalog for ads, slideshows, and studio.',
   },
   skills: {
     title: 'Skills',
@@ -102,12 +102,12 @@ export function ContextHubHeader({ workspaceId }: ContextHubHeaderProps) {
       </div>
 
       {meta ? (
-        <div className="flex flex-col gap-4 pt-6 pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 pt-4 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-[-0.025em] text-foreground sm:text-[1.75rem] sm:leading-tight">
+            <h1 className="text-xl font-medium tracking-[-0.02em] text-foreground sm:text-[1.375rem] sm:leading-tight">
               {meta.title}
             </h1>
-            <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">{meta.description}</p>
+            <p className="mt-1 max-w-xl text-sm leading-5 text-foreground/56">{meta.description}</p>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">

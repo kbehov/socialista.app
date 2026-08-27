@@ -61,7 +61,21 @@ export type SlideshowImageLayer = {
   filters: SlideshowBackgroundImageFilter[]
 }
 
-export type SlideshowSlideLayer = SlideshowTextLayer | SlideshowImageLayer
+export type SlideshowOverlayLayer = {
+  id: string
+  type: 'overlay'
+  color: string
+  opacity: number
+  x: number
+  y: number
+  width: number
+  height: number
+  rotation: number
+  zIndex: number
+  borderRadius?: number
+}
+
+export type SlideshowSlideLayer = SlideshowTextLayer | SlideshowImageLayer | SlideshowOverlayLayer
 
 export type SlideshowCropArea = {
   x: number

@@ -16,6 +16,7 @@ export function notificationHref(notification: Notification): string {
       const kind = metadataString(notification.metadata, 'generationKind')
       if (kind === 'video' && runId) return DASHBOARD_ROUTES.STUDIO.videoRun(runId)
       if (kind === 'static-ad' && runId) return DASHBOARD_ROUTES.STUDIO.staticAdRun(runId)
+      if (kind === 'slideshow' && runId) return DASHBOARD_ROUTES.STUDIO.slideshowRun(runId)
       if (runId) return DASHBOARD_ROUTES.STUDIO.imageRun(runId)
       return DASHBOARD_ROUTES.GENERATIONS
     }

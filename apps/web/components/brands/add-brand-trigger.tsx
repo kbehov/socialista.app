@@ -2,6 +2,7 @@
 
 import { BrandDialog } from '@/components/brands/brand-dialog'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { PlusIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -28,7 +29,11 @@ export function AddBrandTrigger({
         type="button"
         size="sm"
         variant={variant}
-        className="h-9 rounded-full px-4"
+        className={cn(
+          'h-9 rounded-md px-4 font-medium',
+          variant === 'default' &&
+            'transition-colors duration-150 active:scale-[0.98] motion-reduce:active:scale-100',
+        )}
         onClick={() => setOpen(true)}
       >
         {showPlusIcon ? <PlusIcon className="size-3.5" /> : null}

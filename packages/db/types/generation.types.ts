@@ -4,6 +4,7 @@ export enum GenerationKind {
   IMAGE = 'image',
   STATIC_AD = 'static-ad',
   VIDEO = 'video',
+  SLIDESHOW = 'slideshow',
 }
 
 export enum GenerationStatus {
@@ -50,6 +51,7 @@ export type GenerationResult = {
   mimeType?: string
   imageId?: string
   videoId?: string
+  slideshowId?: string
 }
 
 export interface IGeneration {

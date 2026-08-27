@@ -2,8 +2,6 @@
 
 import { BrandDialog } from '@/components/brands/brand-dialog'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
-import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { deleteBrand } from '@/services/brand.service'
@@ -50,14 +47,14 @@ function getWebsiteLabel(url: string) {
 function BrandLogo({ logo, name }: { logo?: string; name: string }) {
   if (!logo) {
     return (
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold tracking-tight text-muted-foreground ring-1 ring-border/60">
+      <div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.04] text-sm font-medium tracking-[-0.01em] text-foreground/56 sm:size-16">
         {getInitials(name)}
       </div>
     )
   }
 
   return (
-    <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/60">
+    <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-foreground/[0.04] sm:size-16">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={logo} alt="" className="size-full object-cover" />
       <span className="sr-only">{name}</span>
@@ -67,23 +64,23 @@ function BrandLogo({ logo, name }: { logo?: string; name: string }) {
 
 function ColorSwatches({ colors }: { colors: string[] }) {
   if (colors.length === 0) {
-    return <span className="text-xs text-muted-foreground">—</span>
+    return <span className="text-sm text-foreground/44">—</span>
   }
 
   const visible = colors.slice(0, 5)
   const extra = colors.length - visible.length
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       {visible.map(color => (
         <span
           key={color}
-          className="size-4 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+          className="size-4 rounded-full ring-1 ring-foreground/10"
           style={{ backgroundColor: color }}
           title={color}
         />
       ))}
-      {extra > 0 ? <span className="pl-0.5 text-[10px] text-muted-foreground">+{extra}</span> : null}
+      {extra > 0 ? <span className="text-xs text-foreground/44">+{extra}</span> : null}
     </div>
   )
 }
@@ -112,114 +109,121 @@ export function BrandsList({ brands, workspaceId, className }: BrandsListProps) 
 
   return (
     <>
-      <DashboardTableShell className={className}>
-        <Table>
-          <TableHeader>
-            <TableRow className={cn(dashboardSurface.tableHead, 'hover:bg-muted/30')}>
-              <TableHead className="h-11 px-4 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                Brand
-              </TableHead>
-              <TableHead className="hidden h-11 px-4 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase md:table-cell">
-                Industry
-              </TableHead>
-              <TableHead className="hidden h-11 px-4 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase sm:table-cell">
-                Colors
-              </TableHead>
-              <TableHead className="hidden h-11 px-4 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell">
-                Added
-              </TableHead>
-              <TableHead className="h-11 w-[52px] px-2" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {brands.map(brand => {
-              const websiteLabel = brand.website ? getWebsiteLabel(brand.website) : null
+      <div className={cn('min-w-0', className)}>
+        <div
+          className="hidden border-b border-foreground/10 pb-3 sm:grid sm:grid-cols-[minmax(0,1fr)_6rem_5rem_5rem_2.5rem] sm:items-end sm:gap-4"
+          aria-hidden
+        >
+          <span className="text-xs font-medium text-foreground/56">Brand</span>
+          <span className="text-xs font-medium text-foreground/56">Industry</span>
+          <span className="text-xs font-medium text-foreground/56">Colors</span>
+          <span className="text-xs font-medium text-foreground/56">Added</span>
+          <span className="sr-only">Actions</span>
+        </div>
 
-              return (
-                <TableRow key={brand._id} className="group border-border/50 hover:bg-muted/25">
-                  <TableCell className="px-4 py-3.5 whitespace-normal">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <BrandLogo logo={brand.logo} name={brand.name} />
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-1 text-sm font-medium tracking-tight text-foreground">{brand.name}</p>
-                        {brand.description ? (
-                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{brand.description}</p>
-                        ) : websiteLabel ? (
-                          <p className="mt-0.5 text-xs text-muted-foreground">{websiteLabel}</p>
-                        ) : brand.industry ? (
-                          <p className="mt-0.5 text-xs text-muted-foreground md:hidden">{brand.industry}</p>
-                        ) : null}
-                      </div>
+        <ul className="divide-y divide-foreground/10">
+          {brands.map((brand, index) => {
+            const websiteLabel = brand.website ? getWebsiteLabel(brand.website) : null
+
+            return (
+              <li
+                key={brand._id}
+                className={cn('group', index % 2 === 1 && 'bg-foreground/[0.03]')}
+              >
+                <div className="flex items-center gap-4 py-5 sm:grid sm:grid-cols-[minmax(0,1fr)_6rem_5rem_5rem_2.5rem] sm:items-center sm:gap-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-4">
+                    <BrandLogo logo={brand.logo} name={brand.name} />
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-sm font-medium tracking-[-0.01em] text-foreground">
+                        {brand.name}
+                      </p>
+                      {brand.description ? (
+                        <p className="mt-1 line-clamp-1 text-sm text-foreground/56">
+                          {brand.description}
+                        </p>
+                      ) : websiteLabel ? (
+                        <p className="mt-1 line-clamp-1 text-sm text-foreground/56 sm:hidden">
+                          {websiteLabel}
+                        </p>
+                      ) : brand.industry ? (
+                        <p className="mt-1 text-sm text-foreground/56 md:hidden">
+                          {brand.industry}
+                        </p>
+                      ) : null}
+                      {websiteLabel && !brand.description ? (
+                        <p className="mt-1 hidden text-sm text-foreground/44 sm:block md:hidden">
+                          {websiteLabel}
+                        </p>
+                      ) : null}
                     </div>
-                  </TableCell>
+                  </div>
 
-                  <TableCell className="hidden px-4 py-3.5 md:table-cell">
+                  <div className="hidden min-w-0 md:block">
                     {brand.industry ? (
-                      <Badge variant="outline" className="max-w-[180px] truncate font-normal">
-                        {brand.industry}
-                      </Badge>
+                      <p className="truncate text-sm text-foreground/56">{brand.industry}</p>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-sm text-foreground/44">—</span>
                     )}
-                  </TableCell>
+                  </div>
 
-                  <TableCell className="hidden px-4 py-3.5 sm:table-cell">
+                  <div className="hidden sm:block">
                     <ColorSwatches colors={brand.colors} />
-                  </TableCell>
+                  </div>
 
-                  <TableCell className="hidden px-4 py-3.5 lg:table-cell">
+                  <div className="hidden lg:block">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="cursor-default text-xs text-muted-foreground">
+                        <span className="cursor-default text-sm text-foreground/56">
                           {formatRelativeTime(brand.createdAt)}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="top">{formatDate(brand.createdAt)}</TooltipContent>
                     </Tooltip>
-                  </TableCell>
+                  </div>
 
-                  <TableCell className="px-2 py-3.5">
-                    <div className="flex justify-end opacity-70 transition-opacity group-hover:opacity-100">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            className="size-8 rounded-lg"
-                            aria-label={`Actions for ${brand.name}`}
-                          >
-                            <MoreHorizontalIcon className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem onClick={() => setEditTarget(brand)}>
-                            <PencilIcon />
-                            Edit
-                          </DropdownMenuItem>
-                          {brand.website ? (
-                            <DropdownMenuItem asChild>
-                              <Link href={brand.website} target="_blank" rel="noopener noreferrer">
-                                <ExternalLinkIcon />
-                                Visit website
-                              </Link>
-                            </DropdownMenuItem>
-                          ) : null}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(brand)}>
-                            <Trash2Icon />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                  <div className="flex shrink-0 items-center gap-3 sm:justify-end">
+                    <div className="sm:hidden">
+                      <ColorSwatches colors={brand.colors} />
                     </div>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </DashboardTableShell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          className="size-8 rounded-md text-foreground/56 hover:text-foreground"
+                          aria-label={`Actions for ${brand.name}`}
+                        >
+                          <MoreHorizontalIcon className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem onClick={() => setEditTarget(brand)}>
+                          <PencilIcon />
+                          Edit
+                        </DropdownMenuItem>
+                        {brand.website ? (
+                          <DropdownMenuItem asChild>
+                            <Link href={brand.website} target="_blank" rel="noopener noreferrer">
+                              <ExternalLinkIcon />
+                              Visit website
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(brand)}>
+                          <Trash2Icon />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
 
       <BrandDialog
         open={editTarget !== null}

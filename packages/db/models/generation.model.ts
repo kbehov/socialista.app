@@ -47,6 +47,7 @@ const generationResultSchema = new Schema(
     mimeType: { type: String },
     imageId: { type: String },
     videoId: { type: String },
+    slideshowId: { type: String },
   },
   { _id: false },
 )

@@ -66,11 +66,11 @@ export function BrandDialog({ open, onOpenChange, workspaceId, brand, onSaved }:
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="shrink-0 gap-1 border-b border-border/50 px-5 py-4 pr-12 text-left">
-          <DialogTitle className="text-base font-semibold tracking-tight">
+        <DialogHeader className="shrink-0 gap-1 border-b border-foreground/10 px-6 py-5 pr-12 text-left">
+          <DialogTitle className="text-base font-medium tracking-[-0.02em]">
             {isEdit ? 'Edit brand' : 'New brand'}
           </DialogTitle>
-          <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
+          <DialogDescription className="text-sm text-foreground/56">
             {isEdit
               ? 'Update the identity used as context for posts, skills, and studio tools.'
               : 'Name, logo, colors, and positioning used as context for AI tools.'}
@@ -244,16 +244,16 @@ function BrandForm({
 
   return (
     <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isPending}
             className={cn(
-              'relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted/40',
-              'transition-transform duration-150 ease-out active:scale-[0.97]',
-              'hover:border-border focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
+              'relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-foreground/[0.04]',
+              'transition-transform duration-150 ease-out active:scale-[0.98]',
+              'hover:bg-foreground/[0.06] focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
               'motion-reduce:active:scale-100',
             )}
             aria-label="Choose brand logo"
@@ -262,12 +262,12 @@ function BrandForm({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={displayedLogo} alt="" className="size-full object-cover" />
             ) : (
-              <span className="text-lg font-semibold tracking-tight text-muted-foreground">
+              <span className="text-base font-medium tracking-[-0.01em] text-foreground/56">
                 {getInitials(trimmedName || 'Brand')}
               </span>
             )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity hover:opacity-100">
-              <CameraIcon className="size-4 text-white" strokeWidth={1.75} />
+            <span className="absolute inset-0 flex items-center justify-center bg-foreground/44 opacity-0 transition-opacity hover:opacity-100">
+              <CameraIcon className="size-4 text-background" strokeWidth={1.75} />
             </span>
           </button>
           <input
@@ -282,14 +282,14 @@ function BrandForm({
             }}
           />
           <div className="min-w-0">
-            <p className="text-[13px] font-medium tracking-tight">Logo</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Optional. A square image works best.</p>
+            <p className="text-sm font-medium tracking-[-0.01em]">Logo</p>
+            <p className="mt-0.5 text-sm text-foreground/56">Optional. A square image works best.</p>
             {displayedLogo || logoFile ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="mt-1 h-7 px-2 text-xs text-muted-foreground"
+                className="mt-1 h-7 px-0 text-sm text-foreground/56 hover:text-foreground"
                 onClick={clearLogo}
                 disabled={isPending}
               >
@@ -299,8 +299,8 @@ function BrandForm({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="brand-name" className="text-xs text-muted-foreground">
+        <div className="space-y-2">
+          <Label htmlFor="brand-name" className="text-xs font-medium text-foreground/56">
             Name
           </Label>
           <Input
@@ -312,12 +312,12 @@ function BrandForm({
             autoComplete="off"
             autoFocus
             disabled={isPending}
-            className="h-9 rounded-lg"
+            className="h-10 rounded-md"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="brand-description" className="text-xs text-muted-foreground">
+        <div className="space-y-2">
+          <Label htmlFor="brand-description" className="text-xs font-medium text-foreground/56">
             Description
           </Label>
           <Textarea
@@ -327,13 +327,13 @@ function BrandForm({
             maxLength={480}
             placeholder="Voice, audience, and what this brand stands for"
             disabled={isPending}
-            className="min-h-20 rounded-lg"
+            className="min-h-20 rounded-md"
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="brand-industry" className="text-xs text-muted-foreground">
+          <div className="space-y-2">
+            <Label htmlFor="brand-industry" className="text-xs font-medium text-foreground/56">
               Industry
             </Label>
             <Input
@@ -344,11 +344,11 @@ function BrandForm({
               placeholder="Fashion, SaaS…"
               autoComplete="off"
               disabled={isPending}
-              className="h-9 rounded-lg"
+              className="h-10 rounded-md"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="brand-website" className="text-xs text-muted-foreground">
+          <div className="space-y-2">
+            <Label htmlFor="brand-website" className="text-xs font-medium text-foreground/56">
               Website
             </Label>
             <Input
@@ -360,13 +360,13 @@ function BrandForm({
               placeholder="https://acme.com"
               autoComplete="off"
               disabled={isPending}
-              className="h-9 rounded-lg"
+              className="h-10 rounded-md"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Colors</Label>
+          <Label className="text-xs font-medium text-foreground/56">Colors</Label>
           <div className="flex flex-wrap items-center gap-2">
             {colors.map(color => (
               <button
@@ -375,8 +375,8 @@ function BrandForm({
                 onClick={() => setColors(current => current.filter(item => item !== color))}
                 disabled={isPending}
                 className={cn(
-                  'group relative size-8 overflow-hidden rounded-lg ring-1 ring-border/60',
-                  'transition-transform duration-150 ease-out active:scale-[0.97]',
+                  'group relative size-8 overflow-hidden rounded-md ring-1 ring-foreground/10',
+                  'transition-transform duration-150 ease-out active:scale-[0.98]',
                   'focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
                   'motion-reduce:active:scale-100',
                 )}
@@ -384,17 +384,17 @@ function BrandForm({
                 aria-label={`Remove ${color}`}
                 title={color}
               >
-                <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                  <XIcon className="size-3 text-white" strokeWidth={2} />
+                <span className="absolute inset-0 flex items-center justify-center bg-foreground/44 opacity-0 transition-opacity group-hover:opacity-100">
+                  <XIcon className="size-3 text-background" strokeWidth={2} />
                 </span>
               </button>
             ))}
 
             {colors.length < MAX_BRAND_COLORS ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <label
                   className={cn(
-                    'relative size-8 overflow-hidden rounded-lg ring-1 ring-border/60',
+                    'relative size-8 overflow-hidden rounded-md ring-1 ring-foreground/10',
                     isPending ? 'pointer-events-none opacity-50' : 'cursor-pointer',
                   )}
                   style={{ backgroundColor: draftColor }}
@@ -412,7 +412,7 @@ function BrandForm({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-lg px-2.5 text-xs"
+                  className="h-8 rounded-md px-3 text-sm"
                   onClick={addColor}
                   disabled={isPending}
                 >
@@ -425,12 +425,18 @@ function BrandForm({
         </div>
       </div>
 
-      <DialogFooter className="shrink-0 border-t border-border/50 bg-muted/10 px-5 py-3">
-        <Button type="button" variant="outline" size="sm" className="rounded-lg" onClick={onClose} disabled={isPending}>
+      <DialogFooter className="shrink-0 border-t border-foreground/10 px-6 py-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-md"
+          onClick={onClose}
+          disabled={isPending}
+        >
           Cancel
         </Button>
-        <Button type="submit" size="sm" className="rounded-lg shadow-xs" disabled={!trimmedName || isPending}>
-          {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+        <Button type="submit" className="rounded-md" disabled={!trimmedName || isPending}>
+          {isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
           {isEdit ? 'Save' : 'Create brand'}
         </Button>
       </DialogFooter>

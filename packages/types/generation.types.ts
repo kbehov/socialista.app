@@ -1,4 +1,4 @@
-export type GenerationKind = 'image' | 'static-ad' | 'video'
+export type GenerationKind = 'image' | 'static-ad' | 'video' | 'slideshow'
 
 export type GenerationStatus = 'running' | 'completed' | 'failed'
 
@@ -34,6 +34,7 @@ export type GenerationResult = {
   mimeType?: string
   imageId?: string
   videoId?: string
+  slideshowId?: string
 }
 
 export type Generation = {

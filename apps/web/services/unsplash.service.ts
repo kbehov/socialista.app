@@ -120,6 +120,7 @@ export async function searchUnsplashPhotos(input: {
   query: string
   page?: number
   perPage?: number
+  orientation?: 'landscape' | 'portrait' | 'squarish'
 }): Promise<UnsplashSearchPhotosResponse> {
   const query = input.query.trim()
   if (!query) {
@@ -133,6 +134,7 @@ export async function searchUnsplashPhotos(input: {
     query,
     page: String(page),
     per_page: String(perPage),
+    ...(input.orientation ? { orientation: input.orientation } : {}),
   })
 
   const items = (data.results ?? []).map(normalizePhoto).filter((photo): photo is UnsplashPhotoResult => photo != null)

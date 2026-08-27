@@ -22,3 +22,17 @@ Density guidance: ${densityHint}
 
 Generate exactly ${slideCount} slides total.`
 }
+
+export function buildSlideshowPlanUserPrompt(hook: string, slideCount: number): string {
+  return `${buildSlideshowUserPrompt(hook, slideCount)}
+
+Put every slide in the \`slides\` array — first item is the hook, last item is the CTA. Target ${slideCount} items in that array (not ${slideCount} plus a separate hook/CTA).
+
+Also plan a production-ready visual system for this deck:
+- Pick one coherent theme (background, text, accent, typeface) that reads well on mobile.
+- Prefer dark backgrounds with light text, or a high-contrast editorial palette.
+- For each slide, write a 2–4 word Unsplash-style image query: concrete nouns, real-world scenes, no abstract concepts, no people looking at cameras unless the topic requires it.
+- Vary layouts. Typical mix: hook = full-bleed, middle slides mix split + full-bleed, CTA = minimal.
+- Do not put the same imageQuery on two slides.
+- Image queries must stay visual (what the camera sees), not the slide copy restated.`
+}

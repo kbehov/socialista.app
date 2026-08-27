@@ -89,38 +89,41 @@ export function SmartPagination({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between',
+        'flex flex-row items-center justify-between gap-2 py-1',
         className,
       )}
     >
       {hideSummary ? null : (
-        <p className="text-xs tabular-nums text-muted-foreground">
-          Showing {start}–{end} of {meta.total}
+        <p className="shrink-0 text-[11px] tabular-nums text-foreground/56">
+          {start}–{end} of {meta.total}
         </p>
       )}
 
       {totalPages > 1 ? (
         <Pagination className="mx-0 w-auto justify-end">
-          <PaginationContent className="gap-0.5">
+          <PaginationContent className="gap-0">
             <PaginationItem>
               <PaginationPrevious
                 href={buildPageHref(pathname, params, currentPage - 1, pageParam)}
                 aria-disabled={!hasPreviousPage}
-                className={!hasPreviousPage ? 'pointer-events-none opacity-40' : undefined}
+                className={cn(
+                  'h-7 gap-1 px-2 text-xs',
+                  !hasPreviousPage && 'pointer-events-none opacity-40',
+                )}
               />
             </PaginationItem>
 
             {pages.map((page, index) =>
               page === 'ellipsis' ? (
                 <PaginationItem key={`ellipsis-${index}`}>
-                  <PaginationEllipsis />
+                  <PaginationEllipsis className="size-7" />
                 </PaginationItem>
               ) : (
                 <PaginationItem key={page}>
                   <PaginationLink
                     href={buildPageHref(pathname, params, page, pageParam)}
                     isActive={page === currentPage}
-                    className="size-8 rounded-lg"
+                    className="size-7 min-w-7 rounded-md text-xs"
                   >
                     {page}
                   </PaginationLink>
@@ -132,7 +135,10 @@ export function SmartPagination({
               <PaginationNext
                 href={buildPageHref(pathname, params, currentPage + 1, pageParam)}
                 aria-disabled={!hasNextPage}
-                className={!hasNextPage ? 'pointer-events-none opacity-40' : undefined}
+                className={cn(
+                  'h-7 gap-1 px-2 text-xs',
+                  !hasNextPage && 'pointer-events-none opacity-40',
+                )}
               />
             </PaginationItem>
           </PaginationContent>

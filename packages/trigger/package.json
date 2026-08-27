@@ -49,6 +49,10 @@
       "types": "./dist/schemas/video-generation.schema.d.ts",
       "import": "./dist/schemas/video-generation.schema.js"
     },
+    "./schemas/slideshow-generation": {
+      "types": "./dist/schemas/slideshow-generation.schema.d.ts",
+      "import": "./dist/schemas/slideshow-generation.schema.js"
+    },
     "./schemas/video-export": {
       "types": "./dist/schemas/video-export.schema.d.ts",
       "import": "./dist/schemas/video-export.schema.js"

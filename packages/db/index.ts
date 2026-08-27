@@ -232,6 +232,7 @@ export {
   type SlideshowCanvas,
   type SlideshowDocument,
   type SlideshowSlide,
+  type SlideshowSlideLayer,
   type SlideshowTextLayer,
 } from './types/slideshow.types.js'
 

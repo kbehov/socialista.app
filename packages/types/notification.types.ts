@@ -5,6 +5,8 @@ export const NotificationType = {
   GENERATION_VIDEO_FAILED: 'generation.video.failed',
   GENERATION_STATIC_AD_COMPLETED: 'generation.static_ad.completed',
   GENERATION_STATIC_AD_FAILED: 'generation.static_ad.failed',
+  GENERATION_SLIDESHOW_COMPLETED: 'generation.slideshow.completed',
+  GENERATION_SLIDESHOW_FAILED: 'generation.slideshow.failed',
   POST_PUBLISHED: 'post.published',
   POST_FAILED: 'post.failed',
   BILLING_SUBSCRIPTION_CREATED: 'billing.subscription.created',

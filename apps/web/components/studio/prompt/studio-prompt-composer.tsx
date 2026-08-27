@@ -326,6 +326,7 @@ export type StudioPromptComposerProps = {
   canSubmit?: boolean;
   requirePrompt?: boolean;
   hideModelSelector?: boolean;
+  allowEmptyModels?: boolean;
   highlighted?: boolean;
   textareaRef?: (node: HTMLTextAreaElement | null) => void;
   onPromptChange?: () => void;
@@ -358,6 +359,7 @@ export function StudioPromptComposer({
   canSubmit: canSubmitProp,
   requirePrompt = true,
   hideModelSelector = false,
+  allowEmptyModels = false,
   highlighted,
   textareaRef: textareaRefProp,
   onPromptChange,
@@ -410,7 +412,7 @@ export function StudioPromptComposer({
     canSubmitProp === undefined
       ? meetsPromptRequirement && meetsAttachmentRequirement
       : canSubmitProp || (meetsPromptRequirement && meetsAttachmentRequirement);
-  const canSubmit = ready && !!selectedModel && !disabled && !pending;
+  const canSubmit = ready && (hideModelSelector || allowEmptyModels || !!selectedModel) && !disabled && !pending;
   const attachDisabled =
     disabled ||
     pending ||
@@ -565,7 +567,7 @@ export function StudioPromptComposer({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [focusPrompt]);
 
-  if (models.length === 0) {
+  if (models.length === 0 && !allowEmptyModels) {
     return (
       <div className="rounded-xl border border-dashed border-black/12 bg-black/[0.02] px-6 py-14 text-left dark:border-white/12 dark:bg-white/[0.02]">
         <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.04] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
@@ -869,26 +871,30 @@ export function StudioPromptComposer({
           )}
         >
           <PromptInputTools className="min-w-0 flex-wrap gap-2">
-            <StudioAttachMenu
-              sources={attachSources}
-              attachments={attachments}
-              onAttachmentsChange={onAttachmentsChange}
-              maxAttachments={maxAttachments}
-              workspaceId={workspaceId}
-              disabled={attachDisabled}
-              disabledReason={
-                selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
-                  ? "Attach references"
-                  : "This model does not support image references"
-              }
-            />
+            {attachSources.length > 0 ? (
+              <StudioAttachMenu
+                sources={attachSources}
+                attachments={attachments}
+                onAttachmentsChange={onAttachmentsChange}
+                maxAttachments={maxAttachments}
+                workspaceId={workspaceId}
+                disabled={attachDisabled}
+                disabledReason={
+                  selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
+                    ? "Attach references"
+                    : "This model does not support image references"
+                }
+              />
+            ) : null}
 
             {count ? (
               <>
-                <Separator
-                  className="hidden h-5 bg-border/50 sm:block"
-                  orientation="vertical"
-                />
+                {attachSources.length > 0 ? (
+                  <Separator
+                    className="hidden h-5 bg-border/50 sm:block"
+                    orientation="vertical"
+                  />
+                ) : null}
                 <StudioInputActionTooltip label={count.label ?? "Number of images to generate"}>
                   <StudioCountStepper
                     value={count.value}

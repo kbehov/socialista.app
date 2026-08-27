@@ -31,6 +31,14 @@ export type ImageGenerationOutput = {
   generationId: string
 }
 
+export type SlideshowGenerationOutput = {
+  slideshowId: string
+  imageUrl: string
+  imageUrls?: string[]
+  cost: number
+  generationId: string
+}
+
 export type ImageGenerator = (options: {
   model: string
   prompt: string
@@ -58,6 +66,7 @@ export const TASK_IDS = {
   generateUgcImageAd: 'generate-ugc-image-ad',
   assembleUgcProject: 'assemble-ugc-project',
   videoGeneration: 'realtime-video-generation',
+  slideshowGeneration: 'realtime-slideshow-generation',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

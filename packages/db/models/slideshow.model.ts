@@ -85,9 +85,26 @@ const imageLayerSchema = new Schema<SlideshowImageLayer>(
   { _id: false },
 )
 
+const overlayLayerSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    color: { type: String, required: true },
+    opacity: { type: Number, required: true },
+    x: { type: Number, required: true },
+    y: { type: Number, required: true },
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    rotation: { type: Number, required: true },
+    zIndex: { type: Number, required: true },
+    borderRadius: { type: Number },
+  },
+  { _id: false },
+)
+
 const layerSchema = new Schema({}, { discriminatorKey: 'type', _id: false })
 layerSchema.discriminator('text', textLayerSchema)
 layerSchema.discriminator('image', imageLayerSchema)
+layerSchema.discriminator('overlay', overlayLayerSchema)
 
 const backgroundImageAdjustmentSchema = new Schema<SlideshowBackgroundImageAdjustment>(
   {

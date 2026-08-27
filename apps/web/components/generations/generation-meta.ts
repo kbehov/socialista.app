@@ -4,6 +4,7 @@ export const GENERATION_KIND_LABELS: Record<GenerationKind, string> = {
   image: 'Image',
   'static-ad': 'Static ad',
   video: 'Video',
+  slideshow: 'Slideshow',
 }
 
 export const GENERATION_STATUS_META: Record<
@@ -12,17 +13,17 @@ export const GENERATION_STATUS_META: Record<
 > = {
   running: {
     label: 'Running',
-    className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    dotClassName: 'bg-amber-500',
+    className: 'text-amber-700 dark:text-amber-400',
+    dotClassName: 'bg-amber-500 motion-safe:animate-pulse',
   },
   completed: {
     label: 'Completed',
-    className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    className: 'text-emerald-700 dark:text-emerald-400',
     dotClassName: 'bg-emerald-500',
   },
   failed: {
     label: 'Failed',
-    className: 'border-destructive/20 bg-destructive/10 text-destructive',
+    className: 'text-destructive',
     dotClassName: 'bg-destructive',
   },
 }
