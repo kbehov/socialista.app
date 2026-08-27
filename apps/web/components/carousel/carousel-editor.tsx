@@ -9,6 +9,7 @@ import { SlidePagesStrip } from '@/components/carousel/slide-pages-strip'
 import { SlideshowPreviewDialog } from '@/components/carousel/slideshow-preview-dialog'
 import { SlideshowSaveBar } from '@/components/carousel/slideshow-save-bar'
 import { SlideshowStudioMobileSheet } from '@/components/carousel/slideshow-studio-sidebar'
+import { TikTokIcon } from '@/components/icons/tiktok-icon'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -25,7 +26,6 @@ import type { SidebarTab } from '@/hooks/carousel/use-sidebar-tab'
 import { isBlankSlide } from '@/lib/carousel/defaults'
 import { exportSlidesAsZip } from '@/lib/carousel/export'
 import { useEditorStore } from '@/lib/carousel/store'
-import { cn } from '@/lib/utils'
 import {
   ChevronLeftIcon,
   DownloadIcon,
@@ -65,6 +65,7 @@ function CarouselEditorMain() {
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const activeLayerId = useEditorStore(s => s.activeLayerId)
+  const slideshowId = useEditorStore(s => s.slideshowId)
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
   const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
@@ -117,6 +118,16 @@ function CarouselEditorMain() {
     setMobileSheetOpen(true)
     setStudioPanelTab(tab)
   }, [setStudioPanelTab])
+
+  const openCreateSource = useCallback(
+    (source: 'ai' | 'tiktok') => {
+      setHintDismissed(true)
+      openMobileSheet('create')
+      setStudioPanelTab('create')
+      window.dispatchEvent(new CustomEvent('slideshow:create-source', { detail: source }))
+    },
+    [openMobileSheet, setStudioPanelTab],
+  )
 
   const handleExport = useCallback(async () => {
     if (exporting || slides.length === 0) return
@@ -183,8 +194,8 @@ function CarouselEditorMain() {
 
   return (
     <main className="slideshow-editor-main flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
-      <div className="slideshow-editor-canvas-bar video-editor-canvas-bar flex h-10 min-w-0 shrink-0 items-center gap-1 overflow-x-auto border-b px-1.5 sm:gap-1.5 sm:px-2">
-        <div className="flex min-w-0 items-center gap-1">
+      <div className="slideshow-editor-canvas-bar video-editor-canvas-bar flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border/40 px-2 py-1.5 sm:gap-2 sm:px-3">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -195,199 +206,202 @@ function CarouselEditorMain() {
                 aria-label="Back to slideshows"
               >
                 <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOWS}>
-                  <ChevronLeftIcon className="size-3.5" />
+                  <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
                 </Link>
               </Button>
             </TooltipTrigger>
             <TooltipContent>All slideshows</TooltipContent>
           </Tooltip>
-          <SlideshowSaveBar showLabel={false} compact className="min-w-0 max-w-50 sm:max-w-60" />
+          <SlideshowSaveBar showLabel={false} compact className="min-w-0 max-w-52 sm:max-w-64" />
+
+          <div className="mx-0.5 hidden h-4 w-px shrink-0 bg-border sm:block" aria-hidden />
+
+          <div className="hidden h-7 items-center sm:flex">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="size-7"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label={canUndo ? 'Undo' : 'Nothing to undo'}
+                >
+                  <Undo2Icon className="size-3.5" strokeWidth={1.75} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Undo <Kbd className="ml-1">⌘Z</Kbd>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="size-7"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label={canRedo ? 'Redo' : 'Nothing to redo'}
+                >
+                  <Redo2Icon className="size-3.5" strokeWidth={1.75} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
-        <div className="flex h-7 items-center gap-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="size-7"
-                onClick={undo}
-                disabled={!canUndo}
-                aria-label={canUndo ? 'Undo' : 'Nothing to undo'}
-              >
-                <Undo2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Undo <Kbd className="ml-1">⌘Z</Kbd>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="size-7"
-                onClick={redo}
-                disabled={!canRedo}
-                aria-label={canRedo ? 'Redo' : 'Nothing to redo'}
-              >
-                <Redo2Icon className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Redo <Kbd className="ml-1">⌘⇧Z</Kbd>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        <div className="flex h-7 items-center gap-0.5 lg:hidden">
+        <div className="flex h-7 items-center gap-1 lg:hidden">
           <Button
             type="button"
             size="sm"
-            variant="outline"
-            className="h-7 gap-1 px-2"
+            variant="ghost"
+            className="h-7 gap-1 px-2 text-[12px] font-medium"
             onClick={() => openMobileSheet('create')}
             aria-label="Open create panel"
           >
-            <SparklesIcon className="size-3.5" />
-            <span className="text-[11px]">Create</span>
+            <SparklesIcon className="size-3.5" strokeWidth={1.75} />
+            Create
           </Button>
           <Button
             type="button"
             size="sm"
-            variant="outline"
-            className="h-7 gap-1 px-2"
+            variant="ghost"
+            className="h-7 gap-1 px-2 text-[12px] font-medium"
             onClick={() => openMobileSheet('design')}
             aria-label="Open design panel"
           >
-            <PaletteIcon className="size-3.5" />
-            <span className="text-[11px]">Design</span>
+            <PaletteIcon className="size-3.5" strokeWidth={1.75} />
+            Design
           </Button>
           {activeLayerId ? (
             <Button
               type="button"
               size="sm"
               variant="secondary"
-              className="h-7 gap-1 px-2"
+              className="h-7 gap-1 px-2 text-[12px] font-medium"
               onClick={() => setMobileInspectorOpen(true)}
               aria-label="Open inspector"
             >
-              <LayersIcon className="size-3.5" />
-              <span className="text-[11px]">Edit</span>
+              <LayersIcon className="size-3.5" strokeWidth={1.75} />
+              Edit
             </Button>
           ) : null}
         </div>
 
-        <div className="min-w-0 flex-1" />
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <FormatSelector
+            showLabel={false}
+            className="hidden h-7 w-[min(100%,148px)] shrink-0 justify-end md:flex lg:w-40"
+          />
 
-        <FormatSelector
-          showLabel={false}
-          className="hidden h-7 w-[min(100%,140px)] shrink-0 justify-end sm:flex lg:w-40"
-        />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="hidden h-7 gap-1.5 px-2 text-[12px] font-medium sm:flex"
+                onClick={() => setPreviewOpen(true)}
+                disabled={slides.length === 0}
+                aria-label="Preview slideshow"
+              >
+                <PlayIcon className="size-3.5" strokeWidth={1.75} />
+                <span className="hidden lg:inline">Preview</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Preview <Kbd className="ml-1">⌘⇧P</Kbd>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="hidden h-7 gap-1 px-2 sm:flex"
-              onClick={() => setPreviewOpen(true)}
-              disabled={slides.length === 0}
-              aria-label="Preview slideshow"
-            >
-              <PlayIcon className="size-3.5" />
-              <span className="hidden text-[11px] lg:inline">Preview</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            Preview <Kbd className="ml-1">⌘⇧P</Kbd>
-          </TooltipContent>
-        </Tooltip>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                className="size-7 shrink-0 md:hidden"
+                aria-label="Project menu"
+              >
+                <MoreHorizontalIcon className="size-3.5" strokeWidth={1.75} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-2">
+                <FormatSelector showLabel className="w-full" />
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setPreviewOpen(true)} disabled={slides.length === 0}>
+                <PlayIcon className="size-3.5" />
+                Preview
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openMobileSheet('text')}>
+                <TypeIcon className="size-3.5" />
+                Add text
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openMobileSheet('media')}>
+                <ImageIcon className="size-3.5" />
+                Add media
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openMobileSheet('design')}>
+                <PaletteIcon className="size-3.5" />
+                Design slide
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
+                <SendIcon className="size-3.5" />
+                Post now
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleCreateVideo}>
+                <VideoIcon className="size-3.5" />
+                Create video
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="size-7 shrink-0 sm:hidden"
-              aria-label="Project menu"
-            >
-              <MoreHorizontalIcon className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <div className="px-2 py-2">
-              <FormatSelector showLabel className="w-full" />
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => setPreviewOpen(true)} disabled={slides.length === 0}>
-              <PlayIcon className="size-3.5" />
-              Preview
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openMobileSheet('text')}>
-              <TypeIcon className="size-3.5" />
-              Add text
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openMobileSheet('media')}>
-              <ImageIcon className="size-3.5" />
-              Add media
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openMobileSheet('design')}>
-              <PaletteIcon className="size-3.5" />
-              Design slide
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
-              <SendIcon className="size-3.5" />
-              Post now
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={handleCreateVideo}>
-              <VideoIcon className="size-3.5" />
-              Create video
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="sm"
-              className={cn('h-7 gap-1 px-2.5', slides.length > 0 && 'bg-primary hover:bg-primary/90')}
-              disabled={exporting || slides.length === 0}
-              aria-label={exporting ? `Exporting ${exportProgress.current} of ${exportProgress.total}` : 'Export'}
-              aria-busy={exporting}
-            >
-              {exporting ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
-              ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant={slideshowId && slides.length > 0 ? 'default' : 'outline'}
+                className="h-7 gap-1.5 px-2.5 text-[12px] font-medium"
+                disabled={exporting || slides.length === 0}
+                aria-label={exporting ? `Exporting ${exportProgress.current} of ${exportProgress.total}` : 'Export'}
+                aria-busy={exporting}
+              >
+                {exporting ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <DownloadIcon className="size-3.5" strokeWidth={1.75} />
+                )}
+                <span className="hidden sm:inline">
+                  {exporting ? `${exportProgress.current} of ${exportProgress.total}` : 'Export'}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                disabled={exporting || slides.length === 0}
+                onSelect={() => void handleExport()}
+              >
                 <DownloadIcon className="size-3.5" />
-              )}
-              <span className="hidden text-[11px] sm:inline">
-                {exporting ? `${exportProgress.current}/${exportProgress.total}` : 'Export'}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              disabled={exporting || slides.length === 0}
-              onSelect={() => void handleExport()}
-            >
-              <DownloadIcon className="size-3.5" />
-              Download images
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
-              <SendIcon className="size-3.5" />
-              Post now
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={handleCreateVideo}>
-              <VideoIcon className="size-3.5" />
-              Create video
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                Download images
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
+                <SendIcon className="size-3.5" />
+                Post now
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleCreateVideo}>
+                <VideoIcon className="size-3.5" />
+                Create video
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -405,11 +419,8 @@ function CarouselEditorMain() {
                   emptyState={
                     showStarterHint ? (
                       <EmptyCanvasState
-                        onGenerate={() => {
-                          setHintDismissed(true)
-                          openMobileSheet('create')
-                          setStudioPanelTab('create')
-                        }}
+                        onGenerate={() => openCreateSource('ai')}
+                        onImport={() => openCreateSource('tiktok')}
                         onDesign={() => {
                           setHintDismissed(true)
                           openMobileSheet('design')
@@ -421,10 +432,9 @@ function CarouselEditorMain() {
                   }
                 />
               ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-                  <ImageIcon className="size-8 text-muted-foreground/50" />
-                  <p className="text-sm font-medium text-muted-foreground">No slides yet</p>
-                  <p className="max-w-xs text-xs text-muted-foreground/80">
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6">
+                  <p className="text-sm font-medium text-foreground">No slides yet</p>
+                  <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
                     Use Create to generate carousels with AI, import from TikTok, or add a blank slide.
                   </p>
                   <Button
@@ -474,40 +484,52 @@ function CarouselEditorMain() {
 
 function EmptyCanvasState({
   onGenerate,
+  onImport,
   onDesign,
   onDismiss,
 }: {
   onGenerate: () => void
+  onImport: () => void
   onDesign: () => void
   onDismiss: () => void
 }) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
-      <div className="pointer-events-auto flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg backdrop-blur-sm">
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-4 sm:bottom-5">
+      <div className="pointer-events-auto w-full max-w-sm rounded-xl border border-border/50 bg-background p-3.5">
         <div>
-          <p className="text-sm font-medium tracking-tight text-foreground">Start your carousel</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            Generate copy with AI, import from TikTok, or design a blank slide.
+          <p className="text-[13px] font-medium tracking-tight text-foreground">Start this carousel</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+            Generate copy with AI, import a TikTok slideshow, or design a blank slide.
           </p>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Button size="sm" className="w-full justify-start" onClick={onGenerate}>
-            <SparklesIcon className="size-3.5" />
+        <div className="mt-3 flex flex-col gap-1">
+          <Button size="sm" className="h-8 w-full justify-start text-[12px] font-medium" onClick={onGenerate}>
+            <SparklesIcon className="size-3.5" strokeWidth={1.75} />
             Generate with AI
           </Button>
-          <Button size="sm" variant="outline" className="w-full justify-start" onClick={onGenerate}>
-            <ImageIcon className="size-3.5" />
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-full justify-start text-[12px] font-medium"
+            onClick={onImport}
+          >
+            <TikTokIcon size={14} />
             Import from TikTok
           </Button>
-          <Button size="sm" variant="ghost" className="w-full justify-start" onClick={onDesign}>
-            <PaletteIcon className="size-3.5" />
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-full justify-start text-[12px] font-medium"
+            onClick={onDesign}
+          >
+            <PaletteIcon className="size-3.5" strokeWidth={1.75} />
             Start blank
           </Button>
         </div>
         <button
           type="button"
           onClick={onDismiss}
-          className="self-center text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+          className="mt-2 text-left text-[12px] text-muted-foreground transition-colors hover:text-foreground"
         >
           Dismiss
         </button>

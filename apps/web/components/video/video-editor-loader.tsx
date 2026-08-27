@@ -1,11 +1,14 @@
 'use client'
 
 import { ErrorState } from '@/components/common/error-state'
-import { LoadingState } from '@/components/common/loading-state'
 import { VideoStudio } from '@/components/video/video-studio'
+import { Button } from '@/components/ui/button'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { hydrateVideoAssets } from '@/lib/video/hydrate-video-assets'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { getVideo } from '@/services/video.service'
+import { Loader2Icon } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 type VideoEditorLoaderProps = {
@@ -68,11 +71,29 @@ export function VideoEditorLoader({ videoId }: VideoEditorLoaderProps) {
   }, [clearProject, hydrateRuntimeAssets, loadProject, videoId])
 
   if (isLoading) {
-    return <LoadingState message="Loading video…" className="flex-1" />
+    return (
+      <div className="video-studio flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-background px-6">
+        <div className="flex items-center gap-2" role="status" aria-live="polite" aria-busy="true">
+          <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
+          <p className="text-[13px] font-medium tracking-tight text-foreground">Loading video…</p>
+        </div>
+      </div>
+    )
   }
 
   if (error) {
-    return <ErrorState title={error} description="This video may have been deleted." className="flex-1" />
+    return (
+      <ErrorState
+        title={error}
+        description="This video may have been deleted."
+        className="flex-1"
+        action={
+          <Button asChild size="sm" variant="outline" className="h-8 text-[12px] font-medium">
+            <Link href={DASHBOARD_ROUTES.STUDIO.VIDEOS}>Back to videos</Link>
+          </Button>
+        }
+      />
+    )
   }
 
   return <VideoStudio />

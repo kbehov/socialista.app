@@ -32,7 +32,7 @@ export function ImageLayerToolbar() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
+      <div className="px-0.5 py-5 text-[12px] text-muted-foreground">
         Select a slide to add an image layer.
       </div>
     )
@@ -43,7 +43,7 @@ export function ImageLayerToolbar() {
   if (!layer || layer.type !== 'image') {
     return (
       <div className="flex flex-col gap-2.5">
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-[12px] leading-relaxed text-muted-foreground">
           Add an image layer on top of text and other elements.
         </p>
         <ImageSourcePicker
@@ -68,7 +68,7 @@ export function ImageLayerToolbar() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
+      <p className="text-[12px] leading-relaxed text-muted-foreground">
         Drag to move, use corner handles to resize, and the top handle to rotate.
       </p>
 
@@ -144,10 +144,10 @@ export function ImageLayerToolbar() {
                   type="button"
                   size="sm"
                   variant={imageLayer.objectFit === fit ? 'secondary' : 'outline'}
-                  className="h-7 flex-1 text-xs capitalize"
+                  className="h-7 flex-1 text-xs"
                   onClick={() => updateLayer(slide.id, imageLayer.id, { objectFit: fit })}
                 >
-                  {fit}
+                  {fit === 'contain' ? 'Contain' : 'Cover'}
                 </Button>
               ))}
             </div>

@@ -244,7 +244,7 @@ function SlideshowPromptComposerInner({ models }: { models: Model[] }) {
           </>
         }
       />
-      <p className="mt-2 px-0.5 text-[11px] tracking-tight text-muted-foreground/80">
+      <p className="mt-2 px-0.5 text-[12px] tracking-tight text-muted-foreground">
         ≈ ${estimatedCost.toFixed(2)} per generation
       </p>
     </div>

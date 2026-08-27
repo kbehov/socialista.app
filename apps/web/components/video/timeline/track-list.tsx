@@ -32,7 +32,7 @@ export function TrackList({
   return (
     <div>
       {tracks.map((track, index) => (
-        <div key={track.id} className="flex border-b">
+        <div key={track.id} className="flex border-b border-border/40">
           <TrackHeader track={track} width={headerWidth} height={rowHeight} />
           <TrackRow
             track={track}
@@ -47,20 +47,20 @@ export function TrackList({
           />
         </div>
       ))}
-      <div className="flex items-center gap-2 p-3">
+      <div className="flex items-center gap-1.5 p-2.5">
         <button
           type="button"
           onClick={() => addTrack('video')}
-          className="video-studio-press flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
+          className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <PlusIcon className="h-3 w-3" /> Video track
+          <PlusIcon className="size-3" strokeWidth={1.75} /> Video track
         </button>
         <button
           type="button"
           onClick={() => addTrack('audio')}
-          className="video-studio-press flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
+          className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <PlusIcon className="h-3 w-3" /> Audio track
+          <PlusIcon className="size-3" strokeWidth={1.75} /> Audio track
         </button>
       </div>
     </div>

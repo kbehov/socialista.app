@@ -72,24 +72,24 @@ function RailButton({
           onClick={onClick}
           aria-label={label}
           aria-pressed={active}
-          className="group flex w-full flex-col items-center gap-1 rounded-lg py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="group flex w-full flex-col items-center gap-1 rounded-md py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <span
             className={cn(
-              'flex size-8 items-center justify-center rounded-[9px] transition-all duration-200',
+              'flex size-8 items-center justify-center rounded-lg transition-colors duration-150',
               active
                 ? 'bg-foreground/[0.07] text-foreground'
-                : 'text-muted-foreground/80 group-hover:bg-foreground/[0.04] group-hover:text-foreground/70',
+                : 'text-muted-foreground group-hover:bg-foreground/[0.04] group-hover:text-foreground',
             )}
           >
-            <Icon className="size-[15px]" strokeWidth={active ? 2.1 : 1.6} />
+            <Icon className="size-4" strokeWidth={active ? 1.9 : 1.6} />
           </span>
           <span
             className={cn(
-              'text-[10px] leading-none tracking-tight transition-colors duration-200',
+              'text-[10px] leading-none tracking-tight transition-colors duration-150',
               active
                 ? 'font-medium text-foreground'
-                : 'font-normal text-muted-foreground/60 group-hover:text-muted-foreground',
+                : 'font-medium text-muted-foreground group-hover:text-foreground',
             )}
           >
             {label}
@@ -107,7 +107,7 @@ function StudioLayersPanel({ embedded = false, showPanelHeader }: { embedded?: b
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {panelHeaderVisible ? (
-        <div className="shrink-0 border-b border-border/40 px-3.5 py-3">
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
           <StudioPanelHeader title="Layers" description="Reorder and manage slide layers" />
         </div>
       ) : null}
@@ -206,7 +206,7 @@ export function SlideshowStudioSidebar({ className }: { className?: string }) {
     <div className={cn('relative flex h-full min-h-0 min-w-0 shrink-0 bg-background', className)}>
       <nav
         aria-label="Slideshow editor panels"
-        className="flex h-full w-12 shrink-0 flex-col gap-1 border-r border-border/40 px-1.5 py-2"
+        className="flex h-full w-12 shrink-0 flex-col gap-0.5 border-r border-border/40 px-1 py-2"
       >
         {SIDEBAR_TABS.map(item => (
           <RailButton
@@ -241,7 +241,7 @@ export function SlideshowStudioSidebar({ className }: { className?: string }) {
               onClick={togglePanel}
               aria-expanded={panelOpen}
               aria-label={panelOpen ? 'Collapse panel' : 'Expand panel'}
-              className="slideshow-editor-panel-toggle absolute top-1/2 -right-2.5 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background/90 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all duration-150 hover:border-border hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+              className="slideshow-editor-panel-toggle absolute top-1/2 -right-2.5 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background transition-colors duration-150 hover:border-border hover:bg-muted"
             >
               {panelOpen ? (
                 <ChevronLeftIcon className="size-3 text-muted-foreground" />
@@ -262,7 +262,7 @@ export function SlideshowStudioSidebar({ className }: { className?: string }) {
               onClick={togglePanel}
               aria-expanded={false}
               aria-label="Expand panel"
-              className="slideshow-editor-panel-toggle absolute top-1/2 left-12 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background/90 shadow-[0_1px_3px_rgba(0,0,0,0.06)] backdrop-blur-sm transition-all duration-150 hover:border-border hover:shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
+              className="slideshow-editor-panel-toggle absolute top-1/2 left-12 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background transition-colors duration-150 hover:border-border hover:bg-muted"
             >
               <ChevronRightIcon className="size-3 text-muted-foreground" />
             </button>
@@ -298,7 +298,7 @@ export function SlideshowStudioMobileSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="flex h-[min(72vh,680px)] max-h-[min(72vh,680px)] gap-0 rounded-t-[20px] p-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
+        className="flex h-[min(72vh,680px)] max-h-[min(72vh,680px)] gap-0 rounded-t-2xl p-0 shadow-none"
       >
         <div className="flex shrink-0 justify-center pt-2.5 pb-1">
           <div className="h-1 w-9 rounded-full bg-muted-foreground/25" />
@@ -324,7 +324,7 @@ export function SlideshowStudioMobileSheet({
             </Button>
           </div>
           {!showInspector ? (
-            <div className="flex gap-0.5 rounded-xl bg-foreground/[0.04] p-1" role="tablist" aria-label="Studio panels">
+            <div className="flex gap-0.5 rounded-lg bg-foreground/[0.04] p-0.5" role="tablist" aria-label="Studio panels">
               {SIDEBAR_TABS.map(item => {
                 const Icon = item.icon
                 const active = tab === item.id
@@ -337,13 +337,13 @@ export function SlideshowStudioMobileSheet({
                     aria-label={item.label}
                     onClick={() => setTab(item.id)}
                     className={cn(
-                      'flex h-9 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] transition-all duration-200',
+                      'flex h-9 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-[10px] font-medium transition-colors duration-150',
                       active
-                        ? 'bg-background font-medium text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                        : 'font-normal text-muted-foreground/70 hover:text-foreground',
+                        ? 'bg-background text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    <Icon className="size-[15px]" strokeWidth={active ? 2.1 : 1.6} />
+                    <Icon className="size-3.5" strokeWidth={active ? 1.9 : 1.6} />
                     <span className="leading-none">{item.label}</span>
                   </button>
                 )

@@ -150,7 +150,7 @@ export function PreviewControls({
             onClick={playback.toggle}
             disabled={!hasContent}
             className={cn(
-              'video-studio-press flex size-9 shrink-0 items-center justify-center rounded-full transition-all',
+              'video-studio-press flex size-8 shrink-0 items-center justify-center rounded-full transition-all',
               'bg-foreground text-background hover:opacity-90',
               'disabled:cursor-not-allowed disabled:opacity-40',
             )}

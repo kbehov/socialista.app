@@ -31,7 +31,7 @@ export function TextToolbar() {
 
   if (!slide) {
     return (
-      <div className="rounded-xl border border-dashed border-border/50 bg-muted/10 px-3 py-8 text-center text-xs text-muted-foreground">
+      <div className="px-0.5 py-5 text-[12px] text-muted-foreground">
         Select a page to edit text.
       </div>
     )
@@ -39,11 +39,11 @@ export function TextToolbar() {
 
   if (!layer || layer.type !== 'text') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/50 bg-muted/10 px-3 py-8 text-center">
-        <p className="text-xs text-muted-foreground">
+      <div className="flex flex-col gap-3 px-0.5 py-5">
+        <p className="text-[12px] text-muted-foreground">
           Select a text box on the canvas, or add one below.
         </p>
-        <Button size="sm" variant="outline" onClick={() => addTextLayer(slide.id)}>
+        <Button size="sm" variant="outline" className="w-fit" onClick={() => addTextLayer(slide.id)}>
           <PlusIcon />
           Add text box
         </Button>
@@ -110,7 +110,7 @@ export function TextToolbar() {
         />
       </Field>
 
-      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+      <div className="space-y-3">
         <Field label="Font">
           <FontPicker
             value={style.fontFamily}
@@ -130,7 +130,7 @@ export function TextToolbar() {
         />
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65">
+          <span className="text-[11px] font-medium leading-none text-muted-foreground">
             Weight
           </span>
           <Button
@@ -172,7 +172,7 @@ export function TextToolbar() {
         </Field>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+      <div className="space-y-3">
         <StyleSlider
           label="Letter spacing"
           value={style.letterSpacing ?? 0}
@@ -222,7 +222,7 @@ function Field({ label, children, htmlFor }: { label: string; children: React.Re
     <div className={cn('flex flex-col gap-1.5')}>
       <label
         htmlFor={htmlFor}
-        className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65"
+        className="text-[11px] font-medium leading-none text-muted-foreground"
       >
         {label}
       </label>

@@ -101,22 +101,19 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
       }
     >
       {!embedded ? (
-        <div className="border-b bg-muted/20 px-4 py-3.5">
-          <div className="flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
-              TT
-            </span>
-            <div>
-              <h2 className="text-sm font-semibold leading-none">TikTok import</h2>
-              <p className="mt-1 text-[11px] text-muted-foreground">Pull slides from an existing post</p>
-            </div>
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
+          <div className="min-w-0">
+            <h2 className="text-[13px] font-medium tracking-tight text-foreground">TikTok import</h2>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+              Pull slides from an existing post
+            </p>
           </div>
         </div>
       ) : null}
 
-      <StudioPanelScrollArea contentClassName="gap-4 p-4">
+      <StudioPanelScrollArea contentClassName="gap-4 p-3.5">
         <div className="space-y-1.5">
-          <Label htmlFor="tiktok-url" className="text-xs font-medium">
+          <Label htmlFor="tiktok-url" className="text-[11px] font-medium text-muted-foreground">
             TikTok slideshow URL
           </Label>
           <Input
@@ -128,7 +125,7 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
             disabled={isPending}
             className="text-sm"
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
             Photo carousel links work best. Each image becomes a slide background you can edit on the canvas.
           </p>
         </div>
@@ -140,8 +137,8 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
 
         {preview ? (
           <div className="space-y-3">
-            <div className="flex justify-center rounded-lg border bg-muted/20 p-3">
-              <TikTokPostCard post={preview} className="max-w-50 shadow-md" />
+            <div className="rounded-lg bg-muted/20 p-3">
+              <TikTokPostCard post={preview} className="max-w-50" />
             </div>
 
             <Button className="w-full" onClick={handleImport} disabled={!canImport}>
@@ -150,12 +147,12 @@ export function SlideshowTikTokImportPanel({ embedded = false }: { embedded?: bo
           </div>
         ) : null}
 
-        <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-2.5">
-          <p className="text-[11px] font-medium">After importing</p>
-          <ul className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
-            <li>· Canvas switches to TikTok 9:16 format</li>
-            <li>· Add text layers or replace backgrounds per page</li>
-            <li>· Export as ZIP when ready</li>
+        <div>
+          <p className="text-[11px] font-medium text-muted-foreground">After importing</p>
+          <ul className="mt-1.5 space-y-1 text-[12px] leading-relaxed text-muted-foreground">
+            <li>Canvas switches to TikTok 9:16 format</li>
+            <li>Add text layers or replace backgrounds per page</li>
+            <li>Export as ZIP when ready</li>
           </ul>
         </div>
       </StudioPanelScrollArea>

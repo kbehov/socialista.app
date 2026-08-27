@@ -1,12 +1,14 @@
 'use client'
 
 import { ErrorState } from '@/components/common/error-state'
-import { LoadingState } from '@/components/common/loading-state'
 import { VideoStudio } from '@/components/video/video-studio'
+import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { importSlideshowToTimeline, type SlideshowImportProgress } from '@/lib/video/slideshow-import'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { fetchSlideshow } from '@/services/slideshow.client'
+import { Loader2Icon } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -106,16 +108,22 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
         : null
 
     return (
-      <LoadingState message={formatImportMessage(importProgress)} className="flex-1 px-4 py-8">
-        {progressPercent !== null ? (
-          <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-200"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        ) : null}
-      </LoadingState>
+      <div className="video-studio flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-background px-6">
+        <div className="flex w-full max-w-xs flex-col items-center gap-3" role="status" aria-live="polite" aria-busy="true">
+          <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+          <p className="text-[13px] font-medium tracking-tight text-foreground">
+            {formatImportMessage(importProgress)}
+          </p>
+          {progressPercent !== null ? (
+            <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-foreground/80 transition-[width] duration-200"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
     )
   }
 
@@ -125,6 +133,11 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
         title={error}
         description="This slideshow may have been deleted or could not be rendered."
         className="flex-1"
+        action={
+          <Button asChild size="sm" variant="outline" className="h-8 text-[12px] font-medium">
+            <Link href={DASHBOARD_ROUTES.STUDIO.VIDEOS}>Back to videos</Link>
+          </Button>
+        }
       />
     )
   }

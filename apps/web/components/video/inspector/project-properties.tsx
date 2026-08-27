@@ -3,7 +3,7 @@
 import { useVideoEditorStore } from '@/lib/video/store'
 import { getVideoFormatPreset } from '@/lib/video/format-presets'
 import { focusVideoFormatSelector } from '@/lib/video/editor-events'
-import { Label } from '@/components/ui/label'
+import { EditorPanelSection } from '@/components/editor/panel-shell'
 import {
   Select,
   SelectContent,
@@ -40,36 +40,30 @@ export function ProjectProperties() {
   const guideValue = durationGuide == null ? 'none' : String(durationGuide)
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Project</div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="project-name" className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">
-          Name
-        </Label>
+    <div className="flex flex-col gap-5">
+      <EditorPanelSection title="Name">
         <Input
           id="project-name"
           value={name}
           onChange={e => setProjectName(e.target.value)}
           className="h-7 text-xs font-medium"
         />
-      </div>
+      </EditorPanelSection>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Format</Label>
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/15 px-2.5 py-2">
+      <EditorPanelSection title="Format">
+        <div className="flex items-center gap-2.5 rounded-lg bg-muted/20 px-2.5 py-2">
           {formatPreset ? (
             <>
-              <PlatformIcon platform={formatPreset.platform} size={16} />
+              <PlatformIcon platform={formatPreset.platform} size={14} />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">{formatPreset.label}</p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="truncate text-[12px] font-medium tracking-tight">{formatPreset.label}</p>
+                <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
                   {resolution.width}×{resolution.height}
                 </p>
               </div>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[12px] tabular-nums text-muted-foreground">
               {resolution.width}×{resolution.height}
             </p>
           )}
@@ -78,17 +72,16 @@ export function ProjectProperties() {
           type="button"
           variant="outline"
           size="sm"
-          className="video-studio-press h-7 w-full text-xs"
+          className="h-7 w-full text-[12px] font-medium"
           onClick={() => focusVideoFormatSelector()}
         >
           Change format
         </Button>
-      </div>
+      </EditorPanelSection>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">FPS</Label>
+      <EditorPanelSection title="Frame rate">
         <Select value={String(fps)} onValueChange={v => setFps(parseInt(v, 10))}>
-          <SelectTrigger className="h-8 w-full">
+          <SelectTrigger className="h-7 w-full text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -99,15 +92,17 @@ export function ProjectProperties() {
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </EditorPanelSection>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Target length</Label>
+      <EditorPanelSection
+        title="Target length"
+        description="Shows a marker on the timeline ruler. Visual only."
+      >
         <Select
           value={guideValue}
           onValueChange={v => setDurationGuide(v === 'none' ? null : parseInt(v, 10))}
         >
-          <SelectTrigger className="h-8 w-full">
+          <SelectTrigger className="h-7 w-full text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -118,12 +113,12 @@ export function ProjectProperties() {
             ))}
           </SelectContent>
         </Select>
-        <p className="text-[10px] text-muted-foreground">Shows a marker on the timeline ruler (visual only).</p>
-      </div>
+      </EditorPanelSection>
 
-      <div className="text-xs text-muted-foreground">
-        Duration: <span className="font-mono text-foreground">{duration.toFixed(2)}s</span>
-      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Duration{' '}
+        <span className="font-medium tabular-nums text-foreground">{duration.toFixed(2)}s</span>
+      </p>
     </div>
   )
 }

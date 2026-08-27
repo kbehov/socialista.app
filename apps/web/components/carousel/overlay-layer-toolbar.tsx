@@ -25,7 +25,7 @@ export function OverlayLayerToolbar() {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
+      <div className="px-0.5 py-5 text-[12px] text-muted-foreground">
         Select a slide to edit overlays.
       </div>
     )
@@ -33,11 +33,11 @@ export function OverlayLayerToolbar() {
 
   if (!layer || layer.type !== 'overlay') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center">
-        <p className="text-xs text-muted-foreground">
+      <div className="flex flex-col gap-3 px-0.5 py-5">
+        <p className="text-[12px] text-muted-foreground">
           Select an overlay on the canvas, or add one below.
         </p>
-        <Button size="sm" variant="outline" onClick={() => addOverlayLayer(slide.id)}>
+        <Button size="sm" variant="outline" className="w-fit" onClick={() => addOverlayLayer(slide.id)}>
           <PlusIcon className="size-3.5" />
           Add overlay
         </Button>
@@ -89,12 +89,12 @@ export function OverlayLayerToolbar() {
         </div>
       </div>
 
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
+      <p className="text-[12px] leading-relaxed text-muted-foreground">
         Drag to move, resize with handles, or cover the full slide.
       </p>
 
       <div
-        className="mx-auto h-16 w-full max-w-50 rounded-md border shadow-xs"
+        className="h-12 w-full rounded-md ring-1 ring-border/50"
         style={{ backgroundColor: previewColor }}
       />
 
@@ -105,7 +105,7 @@ export function OverlayLayerToolbar() {
             type="button"
             size="sm"
             variant="outline"
-            className="h-7 flex-1 text-[10px]"
+            className="h-7 flex-1 text-[11px]"
             onClick={() =>
               updateLayer(slide.id, overlay.id, { color: preset.color, opacity: preset.opacity })
             }

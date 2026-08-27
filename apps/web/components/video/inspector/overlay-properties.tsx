@@ -65,9 +65,7 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-normal leading-none tracking-[0.02em] text-muted-foreground/65">
-          Text overlay
-        </p>
+        <p className="text-[11px] font-medium text-muted-foreground">Text overlay</p>
         <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
@@ -131,7 +129,7 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
         />
       </Field>
 
-      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+      <div className="space-y-3 rounded-xl border border-border/40 bg-muted/15 p-3">
         <Field label="Font">
           <FontPicker
             value={overlay.style.fontFamily}
@@ -150,9 +148,7 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
         />
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65">
-            Weight
-          </span>
+          <span className="text-[11px] font-medium text-muted-foreground">Weight</span>
           <Button
             type="button"
             variant={overlay.style.fontWeight === 'bold' ? 'default' : 'outline'}
@@ -193,7 +189,7 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
         </Field>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+      <div className="space-y-3 rounded-xl border border-border/40 bg-muted/15 p-3">
         <StyleSlider
           label="Letter spacing"
           min={-2}
@@ -301,7 +297,7 @@ function Field({
     <div className="flex min-w-0 flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="text-[11px] font-normal leading-none tracking-[0.01em] text-muted-foreground/65"
+        className="text-[11px] font-medium text-muted-foreground"
       >
         {label}
       </label>

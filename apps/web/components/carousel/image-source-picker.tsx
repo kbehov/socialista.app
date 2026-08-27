@@ -181,14 +181,14 @@ export function ImageSourcePicker({
                 disabled={disabled}
                 onClick={onClick}
                 className={cn(
-                  'group flex w-full items-center gap-2.5 rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5 text-left',
-                  'transition-[background-color,border-color,box-shadow,transform] duration-150',
-                  'hover:border-border/70 hover:bg-muted/30 hover:shadow-xs active:scale-[0.99]',
+                  'group flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left',
+                  'transition-colors duration-150',
+                  'hover:bg-foreground/[0.04] active:scale-[0.99]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                   'disabled:pointer-events-none disabled:opacity-50',
                 )}
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-background shadow-xs ring-1 ring-border/40 transition-colors group-hover:ring-border/70">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
                   <Icon className="size-3.5 text-foreground/75" strokeWidth={1.75} />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -202,7 +202,7 @@ export function ImageSourcePicker({
           })}
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" disabled={disabled} onChange={handleUpload} />
-        {hint ? <p className="text-[10px] leading-[1.45] tracking-[0.01em] text-muted-foreground/80">{hint}</p> : null}
+        {hint ? <p className="px-2 text-[12px] leading-[1.45] text-muted-foreground">{hint}</p> : null}
         {sourceDialogs}
       </div>
     )

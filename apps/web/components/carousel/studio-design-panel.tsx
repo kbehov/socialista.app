@@ -33,7 +33,7 @@ export function StudioDesignPanel({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {panelHeaderVisible ? (
-        <div className="shrink-0 border-b border-border/50 px-3.5 py-3">
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
           <StudioPanelHeader title="Design" description="Background color, photo, and overlays" />
         </div>
       ) : null}
@@ -62,17 +62,17 @@ export function StudioDesignPanel({
                       addOverlayLayer(activeSlideId, { color: preset.color, opacity: preset.opacity })
                     }
                     className={cn(
-                      'group flex flex-col items-center gap-2 rounded-xl border border-border/40 bg-muted/10 px-1.5 py-2.5',
-                      'transition-[background-color,border-color,box-shadow,transform] duration-150',
-                      'hover:border-border/70 hover:bg-muted/30 hover:shadow-xs active:scale-[0.98]',
+                      'group flex flex-col items-center gap-2 rounded-lg px-1.5 py-2',
+                      'transition-colors duration-150',
+                      'hover:bg-foreground/[0.04] active:scale-[0.98]',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                     )}
                   >
                     <span
-                      className="relative size-9 overflow-hidden rounded-lg ring-1 ring-border/50 shadow-xs"
+                      className="relative size-9 overflow-hidden rounded-md ring-1 ring-border/60"
                       aria-hidden
                     >
-                      <span className="absolute inset-0 bg-[linear-gradient(135deg,#94a3b8_0%,#475569_50%,#1e293b_100%)]" />
+                      <span className="absolute inset-0 bg-[linear-gradient(135deg,#c4c4c4_0%,#525252_50%,#171717_100%)]" />
                       <span
                         className="absolute inset-0"
                         style={{ backgroundColor: overlayFillColor(preset.color, preset.opacity) }}
@@ -91,7 +91,7 @@ export function StudioDesignPanel({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 w-full gap-1.5 rounded-lg border-border/50 text-[12px] font-medium tracking-tight"
+                className="h-8 w-full gap-1.5 rounded-lg text-[12px] font-medium tracking-tight"
                 onClick={() => addOverlayLayer(activeSlideId)}
               >
                 <PlusIcon className="size-3.5" strokeWidth={2} />

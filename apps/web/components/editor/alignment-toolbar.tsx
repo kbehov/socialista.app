@@ -69,7 +69,7 @@ export function AlignmentToolbar({
       className={cn(
         'pointer-events-auto flex items-center gap-0.5',
         variant === 'floating'
-          ? 'rounded-full border border-border/60 bg-background/95 p-0.5 shadow-sm backdrop-blur-md'
+          ? 'rounded-full border border-border/50 bg-background/95 p-0.5 shadow-sm backdrop-blur-sm'
           : 'w-full flex-wrap justify-center gap-0.5 rounded-lg border border-border/50 bg-muted/20 p-1',
         className,
       )}

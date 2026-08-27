@@ -10,20 +10,25 @@ import { useVideoEditorStore } from '@/lib/video/store'
 import {
   importMediaAsset,
   importMediaFromLibrary,
+  importMediaFromUrl,
   MediaImportError,
 } from '@/lib/video/media-import'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import { HARD_IMPORT_LIMIT, MAX_IMPORT_BYTES_WARN } from '@/lib/video/defaults'
 import { ASSET_DRAG_MIME } from '@/lib/video/timeline-placement'
-import { placeAssetAtPlayhead } from '@/lib/video/import-placement'
+import { placeAssetAtPlayhead, registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
 import { VideoUrlImportForm } from '@/components/video/video-url-import-panel'
+import { PixabayVideoSearchDialog } from '@/components/video/pixabay-video-search-dialog'
+import type { PixabayVideoResult } from '@/services/pixabay.service'
 import {
   FilmIcon,
   FolderOpenIcon,
   ImageIcon,
+  LinkIcon,
   Loader2Icon,
   MusicIcon,
   PlusIcon,
+  SearchIcon,
   Trash2Icon,
   UploadIcon,
 } from 'lucide-react'
@@ -34,7 +39,7 @@ import { cn } from '@/lib/utils'
 const ACCEPT = 'video/*,audio/*,image/*'
 const LIBRARY_MAX_SELECT = 20
 
-export function MediaPool({ embedded = false }: { embedded?: boolean }) {
+export function MediaPool() {
   const inputRef = useRef<HTMLInputElement>(null)
   const urlInputRef = useRef<HTMLInputElement>(null)
   const project = useVideoEditorStore(s => s.project)
@@ -44,6 +49,7 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
   const relinkAsset = useVideoEditorStore(s => s.relinkAsset)
   const [isImporting, setIsImporting] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
+  const [pixabayOpen, setPixabayOpen] = useState(false)
   const [draggingAssetId, setDraggingAssetId] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
@@ -138,6 +144,25 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
     [project.assets, registerAsset],
   )
 
+  const handlePixabaySelect = useCallback(async (video: PixabayVideoResult) => {
+    try {
+      const asset = await importMediaFromUrl(video.videoUrl, video.name)
+      if (asset.file.size > MAX_IMPORT_BYTES_WARN) {
+        toast.message(
+          `${video.name} is large (${(asset.file.size / 1024 / 1024).toFixed(0)} MB) — import may take a moment`,
+        )
+      }
+      registerAndPlaceAtPlayhead(asset)
+    } catch (err) {
+      if (err instanceof MediaImportError) {
+        toast.error(err.message)
+      } else {
+        toast.error('Failed to import Pixabay video')
+      }
+      throw err
+    }
+  }, [])
+
   const handleAddAtPlayhead = useCallback((assetId: string, name: string) => {
     placeAssetAtPlayhead(assetId, name)
   }, [])
@@ -157,7 +182,10 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div
-      className={cn('flex h-full min-h-0 flex-col gap-2', embedded ? 'p-3' : 'p-3')}
+      className={cn(
+        'flex h-full min-h-0 flex-col gap-2.5 p-3.5',
+        isDragOver && 'rounded-none bg-primary/[0.03]',
+      )}
       onDragOver={e => {
         e.preventDefault()
         setIsDragOver(true)
@@ -166,90 +194,149 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
       onDrop={onDropFiles}
     >
       {isEmpty ? (
-        <div
-          className={cn(
-            'flex shrink-0 flex-col items-center rounded-xl border border-dashed px-4 py-6 text-center transition-colors',
-            isDragOver ? 'border-primary bg-primary/5' : 'border-border/60 bg-muted/15',
-          )}
-        >
-          <UploadIcon className="size-6 text-muted-foreground" />
-          <p className="mt-2 text-[12px] font-medium tracking-tight text-foreground/90">
-            Drop files here or browse
-          </p>
-          <p className="mt-1 max-w-[16rem] text-[11px] leading-[1.45] text-muted-foreground">
-            Video, audio, or images — added at the playhead
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            className="video-studio-press mt-4 h-8 gap-1.5"
-            onClick={() => inputRef.current?.click()}
-            disabled={isImporting}
-          >
-            {isImporting ? (
-              <Loader2Icon className="size-3.5 animate-spin" />
-            ) : (
-              <UploadIcon className="size-3.5" />
-            )}
-            Browse files
-          </Button>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <Button
+        <div className="flex shrink-0 flex-col gap-2.5">
+          <div className="flex flex-col gap-1.5">
+            <button
               type="button"
-              size="sm"
-              variant="ghost"
-              className="video-studio-press h-7 gap-1 px-2 text-[11px]"
-              onClick={() => setLibraryOpen(true)}
               disabled={isImporting}
+              onClick={() => inputRef.current?.click()}
+              className={cn(
+                'group flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left',
+                'transition-colors duration-150',
+                'hover:bg-foreground/[0.04] active:scale-[0.99]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                'disabled:pointer-events-none disabled:opacity-50',
+              )}
             >
-              <FolderOpenIcon className="size-3" />
-              Library
-            </Button>
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
+                {isImporting ? (
+                  <Loader2Icon className="size-3.5 animate-spin text-foreground/75" />
+                ) : (
+                  <UploadIcon className="size-3.5 text-foreground/75" strokeWidth={1.75} />
+                )}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-medium tracking-tight text-foreground">Upload</span>
+                <span className="mt-0.5 block text-[11px] leading-[1.35] text-muted-foreground">
+                  Video, audio, or images from your device
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              disabled={isImporting}
+              onClick={() => setLibraryOpen(true)}
+              className={cn(
+                'group flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left',
+                'transition-colors duration-150',
+                'hover:bg-foreground/[0.04] active:scale-[0.99]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                'disabled:pointer-events-none disabled:opacity-50',
+              )}
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
+                <FolderOpenIcon className="size-3.5 text-foreground/75" strokeWidth={1.75} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-medium tracking-tight text-foreground">Files</span>
+                <span className="mt-0.5 block text-[11px] leading-[1.35] text-muted-foreground">
+                  Workspace library
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              disabled={isImporting}
+              onClick={() => setPixabayOpen(true)}
+              className={cn(
+                'group flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left',
+                'transition-colors duration-150',
+                'hover:bg-foreground/[0.04] active:scale-[0.99]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                'disabled:pointer-events-none disabled:opacity-50',
+              )}
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
+                <SearchIcon className="size-3.5 text-foreground/75" strokeWidth={1.75} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-medium tracking-tight text-foreground">Pixabay</span>
+                <span className="mt-0.5 block text-[11px] leading-[1.35] text-muted-foreground">
+                  Search stock videos
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              disabled={isImporting}
+              onClick={() => urlInputRef.current?.focus()}
+              className={cn(
+                'group flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left',
+                'transition-colors duration-150',
+                'hover:bg-foreground/[0.04] active:scale-[0.99]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                'disabled:pointer-events-none disabled:opacity-50',
+              )}
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40">
+                <LinkIcon className="size-3.5 text-foreground/75" strokeWidth={1.75} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-medium tracking-tight text-foreground">URL</span>
+                <span className="mt-0.5 block text-[11px] leading-[1.35] text-muted-foreground">
+                  Paste a direct media link
+                </span>
+              </span>
+            </button>
           </div>
-          <div className="mt-4 w-full max-w-sm text-left">
-            <VideoUrlImportForm inputRef={urlInputRef} compact />
-          </div>
+          <VideoUrlImportForm inputRef={urlInputRef} compact />
+          <p className="px-2 text-[12px] leading-[1.45] text-muted-foreground">
+            Files land on the timeline at the playhead. You can also drop them here.
+          </p>
         </div>
       ) : (
         <>
-          <div className="flex shrink-0 items-center justify-end gap-1">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
             <Button
               type="button"
               size="sm"
               variant="ghost"
-              className="video-studio-press h-7 gap-1 px-2 text-[11px]"
-              onClick={() => setLibraryOpen(true)}
+              className="h-7 gap-1 px-2 text-[12px] font-medium"
+              onClick={() => setPixabayOpen(true)}
               disabled={isImporting}
             >
-              <FolderOpenIcon className="size-3" />
-              Library
+              <SearchIcon className="size-3.5" strokeWidth={1.75} />
+              Pixabay
             </Button>
             <Button
               type="button"
               size="sm"
-              className="video-studio-press h-7 gap-1 px-2 text-[11px]"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-[12px] font-medium"
+              onClick={() => setLibraryOpen(true)}
+              disabled={isImporting}
+            >
+              <FolderOpenIcon className="size-3.5" strokeWidth={1.75} />
+              Files
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1 px-2 text-[12px] font-medium"
               onClick={() => inputRef.current?.click()}
               disabled={isImporting}
             >
               {isImporting ? (
-                <Loader2Icon className="size-3 animate-spin" />
+                <Loader2Icon className="size-3.5 animate-spin" />
               ) : (
-                <PlusIcon className="size-3" />
+                <PlusIcon className="size-3.5" strokeWidth={1.75} />
               )}
               Import
             </Button>
           </div>
 
-          <VideoUrlImportForm inputRef={urlInputRef} />
-
-          <div
-            className={cn(
-              'shrink-0 rounded-xl border border-dashed px-2 py-2 text-center transition-colors',
-              isDragOver ? 'border-primary bg-primary/5' : 'border-border/60 bg-muted/15',
-            )}
-          >
-            <p className="text-[10px] text-muted-foreground">Drop more files</p>
-          </div>
+          <VideoUrlImportForm inputRef={urlInputRef} compact />
         </>
       )}
 
@@ -267,10 +354,10 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
         className="hidden"
       />
 
-      <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 content-start gap-2 overflow-y-auto sidebar-scrollbar">
+      <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 content-start gap-1.5 overflow-y-auto sidebar-scrollbar">
         {isImporting && project.assets.length === 0 ? (
-          <div className="col-span-2 flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-            <Loader2Icon className="size-4 animate-spin" />
+          <div className="col-span-2 flex items-center justify-center gap-2 py-8 text-[12px] text-muted-foreground">
+            <Loader2Icon className="size-3.5 animate-spin" />
             Processing media…
           </div>
         ) : null}
@@ -301,9 +388,9 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
                 handleAddAtPlayhead(serialized.id, serialized.name)
               }}
               className={cn(
-                'group relative w-full cursor-grab self-start overflow-hidden rounded-md border bg-muted/30 transition-opacity active:cursor-grabbing',
+                'group relative w-full cursor-grab self-start overflow-hidden rounded-lg border border-border/50 bg-muted/20 transition-opacity active:cursor-grabbing',
                 isDragging && 'opacity-50',
-                available && 'hover:border-primary/40 hover:bg-muted/50',
+                available && 'hover:border-border hover:bg-muted/35',
               )}
               title={
                 available
@@ -325,16 +412,16 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
                   />
                 ) : available && asset && asset.type === 'audio' ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-emerald-950/40 text-emerald-400">
-                    <MusicIcon className="size-5" />
+                    <MusicIcon className="size-5" strokeWidth={1.5} />
                   </div>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-yellow-950/20 text-yellow-500">
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/40 text-muted-foreground">
                     {serialized.type === 'audio' ? (
-                      <MusicIcon className="size-5" />
+                      <MusicIcon className="size-5" strokeWidth={1.5} />
                     ) : serialized.type === 'image' ? (
-                      <ImageIcon className="size-5" />
+                      <ImageIcon className="size-5" strokeWidth={1.5} />
                     ) : (
-                      <FilmIcon className="size-5" />
+                      <FilmIcon className="size-5" strokeWidth={1.5} />
                     )}
                   </div>
                 )}
@@ -349,14 +436,14 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
                 <button
                   type="button"
                   onClick={() => removeAsset(serialized.id)}
-                  className="absolute right-1 top-1 hidden rounded bg-black/70 p-1 text-white hover:bg-red-500 group-hover:block"
+                  className="absolute right-1 top-1 hidden rounded-md bg-black/70 p-1 text-white transition-colors hover:bg-red-500 group-hover:block"
                   aria-label="Remove asset"
                 >
                   <Trash2Icon className="size-3" />
                 </button>
               </div>
               <div className="space-y-1 px-1.5 py-1.5">
-                <p className="truncate text-[10px] leading-tight font-medium" title={serialized.name}>
+                <p className="truncate text-[11px] leading-tight font-medium" title={serialized.name}>
                   {serialized.name}
                 </p>
                 {!available ? (
@@ -383,7 +470,7 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
                       }
                       input.click()
                     }}
-                    className="w-full rounded bg-yellow-500/15 px-1 py-0.5 text-[9px] font-medium text-yellow-700 dark:text-yellow-300"
+                    className="w-full rounded-md bg-yellow-500/15 px-1 py-0.5 text-[10px] font-medium text-yellow-700 dark:text-yellow-300"
                   >
                     Locate file
                   </button>
@@ -392,7 +479,6 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
             </div>
           )
         })}
-
       </div>
 
       <AttachImagesDialog
@@ -407,6 +493,11 @@ export function MediaPool({ embedded = false }: { embedded?: boolean }) {
         onSelect={files => {
           void handleLibrarySelect(files)
         }}
+      />
+      <PixabayVideoSearchDialog
+        open={pixabayOpen}
+        onOpenChange={setPixabayOpen}
+        onSelect={handlePixabaySelect}
       />
     </div>
   )

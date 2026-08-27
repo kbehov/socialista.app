@@ -60,14 +60,14 @@ export function SlidePagesStrip({ className }: { className?: string }) {
     <div
       data-pages-strip
       className={cn(
-        'slideshow-editor-filmstrip-section flex min-w-0 shrink-0 items-center gap-3 border-t px-3 py-2.5',
+        'slideshow-editor-filmstrip-section flex min-w-0 shrink-0 items-center gap-3 border-t border-border/40 px-3 py-2',
         className,
       )}
     >
-      <div className="hidden shrink-0 items-center gap-1.5 text-xs tabular-nums text-muted-foreground sm:flex">
+      <div className="hidden shrink-0 items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground sm:flex">
         <span className="font-medium text-foreground">Pages</span>
         <span>
-          {currentPage} / {slides.length}
+          {currentPage} of {slides.length}
         </span>
       </div>
 
@@ -173,23 +173,22 @@ function PageThumb({
             }}
             style={{ width: THUMB_WIDTH, height: thumbHeight }}
             className={cn(
-              'group relative shrink-0 cursor-grab overflow-hidden rounded-lg border-2 bg-background outline-none transition-[opacity,box-shadow,transform,border-color] duration-150 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing',
-              'motion-safe:hover:-translate-y-0.5',
+              'group relative shrink-0 cursor-grab overflow-hidden rounded-md bg-background outline-none transition-[opacity,box-shadow,transform] duration-150 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing',
               active
-                ? 'border-primary opacity-100 shadow-sm ring-2 ring-primary/20'
-                : 'border-transparent opacity-70 hover:border-muted-foreground/25 hover:opacity-100 hover:shadow-sm',
-              isDragging && 'z-20 scale-[1.03] border-primary/50 opacity-80 shadow-lg',
-              isDropTarget && !isDragging && 'border-primary/40 opacity-100',
+                ? 'opacity-100 ring-2 ring-foreground'
+                : 'opacity-70 ring-1 ring-border/70 hover:opacity-100 hover:ring-border',
+              isDragging && 'z-20 scale-[1.02] opacity-80 ring-2 ring-foreground/50',
+              isDropTarget && !isDragging && 'ring-2 ring-foreground/40',
             )}
           >
             <SlideCanvas slide={slide} interactive={false} forceWidth={THUMB_WIDTH} className="size-full" />
-            <span className="pointer-events-none absolute left-1 top-1 flex size-5 items-center justify-center rounded-md bg-background/95 text-[10px] font-semibold tabular-nums text-foreground shadow-sm">
+            <span className="pointer-events-none absolute top-1 left-1 flex size-4 items-center justify-center rounded bg-background/90 text-[9px] font-medium tabular-nums text-foreground">
               {index + 1}
             </span>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex translate-y-1 justify-end gap-0.5 bg-linear-to-t from-black/50 to-transparent p-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-0.5 bg-black/40 p-0.5 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
               <button
                 type="button"
-                className="flex size-6 items-center justify-center rounded-md bg-background/95 text-foreground shadow-sm transition-colors hover:bg-background"
+                className="flex size-5 items-center justify-center rounded-sm bg-background text-foreground transition-colors hover:bg-muted"
                 aria-label={`Duplicate page ${index + 1}`}
                 onClick={event => {
                   event.stopPropagation()
@@ -200,7 +199,7 @@ function PageThumb({
               </button>
               <button
                 type="button"
-                className="flex size-6 items-center justify-center rounded-md bg-background/95 text-destructive shadow-sm transition-colors hover:bg-destructive/10 disabled:opacity-40"
+                className="flex size-5 items-center justify-center rounded-sm bg-background text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-40"
                 aria-label={`Delete page ${index + 1}`}
                 disabled={slideCount <= 1}
                 onClick={event => {

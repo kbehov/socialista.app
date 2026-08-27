@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useTransition, type RefObject } from 'react'
-import { DownloadIcon, Loader2Icon } from 'lucide-react'
+import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { importMediaFromUrl, MediaImportError } from '@/lib/video/media-import'
 import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
 import { MAX_IMPORT_BYTES_WARN } from '@/lib/video/defaults'
@@ -53,46 +51,42 @@ export function VideoUrlImportForm({ className, inputRef, compact = false }: Vid
   }
 
   return (
-    <div className={cn('space-y-2', className)}>
-      <div className="space-y-1.5">
-        {!compact ? (
-          <Label htmlFor="video-url" className="text-xs font-medium">
-            Import from URL
-          </Label>
-        ) : (
-          <p className="text-[11px] font-medium text-muted-foreground">Or paste a link</p>
-        )}
-        <div className="flex gap-2">
-          <Input
-            ref={inputRef}
-            id="video-url"
-            type="url"
-            placeholder="https://example.com/video.mp4"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            disabled={isPending}
-            className="min-w-0 flex-1 text-sm"
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleImport()
-            }}
-          />
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 shrink-0 px-2.5"
-            onClick={handleImport}
-            disabled={isPending || !url.trim()}
-            aria-label={isPending ? 'Importing' : 'Import from URL'}
-          >
-            {isPending ? <Loader2Icon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
-          </Button>
-        </div>
-        {!compact ? (
-          <p className="text-[10px] leading-relaxed text-muted-foreground">
-            Direct links to video, audio, or image files · added at playhead
-          </p>
-        ) : null}
-      </div>
+    <div className={cn('flex flex-col gap-1.5', className)}>
+      {compact ? null : (
+        <p className="text-[11px] font-medium text-muted-foreground">Import from URL</p>
+      )}
+      <form
+        className="flex gap-1"
+        onSubmit={e => {
+          e.preventDefault()
+          handleImport()
+        }}
+      >
+        <input
+          ref={inputRef}
+          id="video-url"
+          type="url"
+          placeholder="https://…"
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          disabled={isPending}
+          aria-label="Media URL"
+          className="min-w-0 flex-1 rounded-md border border-input bg-background/60 px-2 py-1 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50"
+        />
+        <Button
+          size="icon-xs"
+          type="submit"
+          disabled={isPending || !url.trim()}
+          aria-label={isPending ? 'Importing' : 'Import from URL'}
+        >
+          {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : <CheckIcon className="size-3.5" />}
+        </Button>
+      </form>
+      {compact ? null : (
+        <p className="text-[11px] leading-[1.45] text-muted-foreground">
+          Direct links to video, audio, or image files · added at playhead
+        </p>
+      )}
     </div>
   )
 }
@@ -108,15 +102,6 @@ export function VideoUrlImportPanel({ embedded = false }: { embedded?: boolean }
     >
       <div data-studio-scroll="source" className="sidebar-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3.5">
         <VideoUrlImportForm />
-
-        <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-2.5">
-          <p className="text-[11px] font-medium">Supported formats</p>
-          <ul className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
-            <li>· MP4, WebM, MOV for video</li>
-            <li>· MP3, WAV, AAC for audio</li>
-            <li>· JPG, PNG, WebP for images (5s default)</li>
-          </ul>
-        </div>
       </div>
     </aside>
   )

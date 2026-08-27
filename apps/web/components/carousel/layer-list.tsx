@@ -90,8 +90,8 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
 
   if (!slide) {
     return (
-      <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center text-xs text-muted-foreground">
-        Select a slide to view its layers.
+      <div className="rounded-lg bg-muted/15 px-3 py-6">
+        <p className="text-[12px] text-muted-foreground">Select a slide to view its layers.</p>
       </div>
     )
   }
@@ -106,11 +106,8 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
   return (
     <LayerListDragContext.Provider value={suppressSelectRef}>
       <DragDropProvider onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           <LayerListActions slideId={slide.id} />
-          <p className="px-1 text-[10px] leading-relaxed text-muted-foreground">
-            Drag the grip to reorder · Top = front · Click row to select
-          </p>
           {layers.map((layer, index) => (
             <SortableLayerRow key={layer.id} slideId={slide.id} layer={layer} index={index} />
           ))}
@@ -176,8 +173,8 @@ function LayerListActions({ slideId }: { slideId: SlideId }) {
 
 function LayerListEmpty({ slideId }: { slideId: SlideId }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 px-3 py-6 text-center">
-      <p className="text-xs text-muted-foreground">No layers on this slide yet.</p>
+    <div className="flex flex-col gap-3 px-0.5 py-2">
+      <p className="text-[12px] text-muted-foreground">No layers on this slide yet.</p>
       <LayerListActions slideId={slideId} />
     </div>
   )
@@ -249,12 +246,12 @@ function SortableLayerRow({
     <div
       ref={ref}
       className={cn(
-        'flex items-center gap-1 rounded-md border transition-[opacity,box-shadow,background-color,border-color]',
+        'flex items-center gap-1 rounded-md transition-colors',
         active
-          ? 'border-primary/30 bg-primary/10 text-foreground'
-          : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted/60',
-        isDragging && 'z-10 opacity-60 shadow-md',
-        isDropTarget && !isDragging && 'border-primary/40 ring-2 ring-primary/15',
+          ? 'bg-foreground/[0.06] text-foreground'
+          : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
+        isDragging && 'z-10 bg-background opacity-70 ring-1 ring-border',
+        isDropTarget && !isDragging && 'bg-foreground/[0.04] ring-1 ring-foreground/20',
       )}
     >
       <button

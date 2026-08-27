@@ -94,7 +94,7 @@ function TextOverlayBlock({
       data-overlay-id={overlay.id}
       onDoubleClick={onDoubleClick}
       className={cn(
-        'absolute top-0.5 flex h-[26px] touch-none select-none items-center overflow-hidden rounded-md border transition-[box-shadow,border-color]',
+        'absolute top-0.5 flex h-[26px] touch-none select-none items-center overflow-hidden rounded-lg border transition-[box-shadow,border-color]',
         selected
           ? 'z-10 border-primary bg-violet-500/85 ring-2 ring-primary/20'
           : 'border-violet-400/40 bg-violet-500/65 hover:bg-violet-500/80',

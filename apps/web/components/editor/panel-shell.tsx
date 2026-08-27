@@ -15,11 +15,11 @@ type EditorSegmentedTab<T extends string> = {
 export function EditorPanelHeader({ title, description }: { title: string; description?: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[13px] font-semibold leading-snug tracking-[-0.015em] text-foreground">
+      <p className="text-[13px] font-medium leading-snug tracking-[-0.015em] text-foreground">
         {title}
       </p>
       {description ? (
-        <p className="mt-0.5 text-[11px] leading-[1.4] tracking-[0.005em] text-muted-foreground/85">
+        <p className="mt-0.5 text-[11px] leading-[1.45] text-muted-foreground">
           {description}
         </p>
       ) : null}
@@ -49,7 +49,7 @@ export function EditorPanelSection({
         <div className="flex items-end justify-between gap-2">
           <div className="min-w-0">
             {title ? (
-              <h3 className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">{title}</h3>
+              <h3 className="text-[11px] font-medium text-muted-foreground">{title}</h3>
             ) : null}
             {description ? (
               <p className="mt-0.5 text-[11px] leading-[1.45] text-muted-foreground/80">{description}</p>
@@ -71,23 +71,21 @@ export const StudioPanelSection = EditorPanelSection
 export function EditorEmptyState({
   title,
   description,
+  children,
   className,
 }: {
   title: string
   description?: string
+  children?: ReactNode
   className?: string
 }) {
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/15 px-4 py-8 text-center',
-        className,
-      )}
-    >
-      <p className="text-[12px] font-medium tracking-tight text-foreground/80">{title}</p>
+    <div className={cn('px-0.5 py-5', className)}>
+      <p className="text-[13px] font-medium tracking-tight text-foreground">{title}</p>
       {description ? (
-        <p className="mt-1 max-w-[18rem] text-[11px] leading-[1.45] text-muted-foreground">{description}</p>
+        <p className="mt-1 max-w-[18rem] text-[12px] leading-[1.45] text-muted-foreground">{description}</p>
       ) : null}
+      {children}
     </div>
   )
 }
@@ -149,7 +147,9 @@ export function EditorSegmentedTabs<T extends string>({
             className={cn(
               'flex min-w-0 flex-1 items-center justify-center rounded-md font-medium transition-colors duration-150',
               isXs ? 'h-7 gap-1 px-1 text-[11px]' : 'h-8 gap-1.5 px-2 text-xs',
-              active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              active
+                ? 'bg-background text-foreground shadow-[0_1px_1px_rgb(0_0_0/0.04)]'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {Icon ? (

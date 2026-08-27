@@ -40,7 +40,7 @@ export function CanvasZoomControls({
     <div
       data-canvas-controls
       className={cn(
-        'pointer-events-auto flex items-center gap-0.5 rounded-full border bg-background/95 p-0.5 shadow-sm backdrop-blur-sm',
+        'pointer-events-auto flex items-center gap-0.5 rounded-full border border-border/50 bg-background/95 p-0.5 backdrop-blur-sm',
         className,
       )}
     >

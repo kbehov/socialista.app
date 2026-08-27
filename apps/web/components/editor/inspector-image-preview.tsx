@@ -37,7 +37,7 @@ export function InspectorImagePreview({
     return (
       <div
         className={cn(
-          'mx-auto flex w-full max-w-[200px] items-center justify-center rounded-md border border-dashed bg-muted/30',
+          'flex w-full items-center justify-center rounded-md border border-dashed bg-muted/30',
           className,
         )}
         style={frameStyle}
@@ -51,7 +51,7 @@ export function InspectorImagePreview({
     return (
       <div
         className={cn(
-          'relative mx-auto w-full max-w-[200px] overflow-hidden rounded-md border bg-muted shadow-xs',
+          'relative w-full overflow-hidden rounded-md bg-muted ring-1 ring-border/50',
           className,
         )}
         style={frameStyle}
@@ -70,7 +70,7 @@ export function InspectorImagePreview({
   return (
     <div
       className={cn(
-        'relative mx-auto w-full max-w-[200px] overflow-hidden rounded-md border bg-muted shadow-xs',
+          'relative w-full overflow-hidden rounded-md bg-muted ring-1 ring-border/50',
         className,
       )}
       style={frameStyle}

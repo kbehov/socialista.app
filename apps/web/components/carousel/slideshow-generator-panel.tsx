@@ -136,7 +136,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
               <SparklesIcon className="size-3.5" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-              <h2 className="text-[13px] font-semibold tracking-[-0.01em] text-foreground">AI generator</h2>
+              <h2 className="text-[13px] font-medium tracking-[-0.01em] text-foreground">AI generator</h2>
               <p className="mt-0.5 text-[11px] leading-[1.45] text-muted-foreground">
                 Optional — skip anytime and design manually
               </p>
@@ -216,7 +216,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         </StudioPanelSection>
 
         <StudioPanelSection title="Pages">
-          <div className="rounded-xl border border-border/40 bg-muted/10 p-2.5">
+          <div className="bg-muted/20 p-2.5">
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
@@ -224,17 +224,17 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
                 disabled={isPending || slideCount <= SLIDE_COUNT_MIN}
                 onClick={() => setSlideCount(n => Math.max(SLIDE_COUNT_MIN, n - 1))}
                 className={cn(
-                  'flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground shadow-xs',
-                  'transition-all duration-150 hover:border-border hover:text-foreground',
+                  'flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground',
+                  'transition-colors duration-150 hover:border-border hover:text-foreground',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                   'active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40',
                 )}
               >
-                <MinusIcon className="size-3.5" strokeWidth={2.25} />
+                <MinusIcon className="size-3.5" strokeWidth={2} />
               </button>
 
-              <div className="min-w-0 flex-1 text-center" aria-live="polite">
-                <p className="text-[22px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-foreground">
+              <div className="min-w-0 flex-1" aria-live="polite">
+                <p className="text-[22px] leading-none font-medium tracking-[-0.03em] tabular-nums text-foreground">
                   {slideCount}
                 </p>
                 <p className="mt-1 text-[11px] tracking-tight text-muted-foreground">
@@ -248,13 +248,13 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
                 disabled={isPending || slideCount >= SLIDE_COUNT_MAX}
                 onClick={() => setSlideCount(n => Math.min(SLIDE_COUNT_MAX, n + 1))}
                 className={cn(
-                  'flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground shadow-xs',
-                  'transition-all duration-150 hover:border-border hover:text-foreground',
+                  'flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground',
+                  'transition-colors duration-150 hover:border-border hover:text-foreground',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                   'active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40',
                 )}
               >
-                <PlusIcon className="size-3.5" strokeWidth={2.25} />
+                <PlusIcon className="size-3.5" strokeWidth={2} />
               </button>
             </div>
 
@@ -278,7 +278,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                       'disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]',
                       selected
-                        ? 'bg-foreground/8 font-semibold text-foreground'
+                        ? 'bg-foreground/8 font-medium text-foreground'
                         : 'font-medium text-muted-foreground hover:bg-foreground/4 hover:text-foreground',
                     )}
                   >
@@ -291,7 +291,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         </StudioPanelSection>
       </StudioPanelScrollArea>
 
-      <div className="shrink-0 space-y-2 border-t border-border/40 bg-background/80 p-3.5 backdrop-blur-sm">
+      <div className="shrink-0 space-y-2 border-t border-border/40 bg-background p-3.5">
         <StudioSkillPicker
           target={PROMPT_KEYS.slideshow}
           value={skillId}
@@ -299,7 +299,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           disabled={isPending}
         />
         <Button
-          className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium tracking-tight shadow-xs"
+          className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium tracking-tight"
           onClick={handleGenerate}
           disabled={!canGenerate}
         >
@@ -310,7 +310,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           )}
           {isPending ? 'Generating…' : `Generate ${slideCount} pages`}
         </Button>
-        <div className="flex items-center justify-between gap-2 px-0.5 text-[10px] tracking-wide text-muted-foreground/75">
+        <div className="flex items-center justify-between gap-2 px-0.5 text-[11px] text-muted-foreground">
           <p>
             ≈ ${GENERATION_COST_USD.toFixed(2)} per generation
           </p>

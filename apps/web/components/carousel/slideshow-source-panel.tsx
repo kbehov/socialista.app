@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SparklesIcon } from 'lucide-react'
 import { TikTokIcon } from '@/components/icons/tiktok-icon'
 import { SlideshowGeneratorPanel } from '@/components/carousel/slideshow-generator-panel'
@@ -28,9 +28,18 @@ export function SlideshowSourcePanel({
   const [mode, setMode] = useState<SourceMode>('ai')
   const panelHeaderVisible = showPanelHeader ?? embedded
 
+  useEffect(() => {
+    const onOpenSource = (event: Event) => {
+      const source = (event as CustomEvent<SourceMode>).detail
+      if (source === 'ai' || source === 'tiktok') setMode(source)
+    }
+    window.addEventListener('slideshow:create-source', onOpenSource)
+    return () => window.removeEventListener('slideshow:create-source', onOpenSource)
+  }, [])
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="shrink-0 space-y-2.5 border-b border-border/60 px-3 py-2.5">
+      <div className="shrink-0 space-y-2.5 border-b border-border/40 px-3.5 py-2.5">
         {panelHeaderVisible ? (
           <StudioPanelHeader
             title="Create"

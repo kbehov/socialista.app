@@ -1,9 +1,7 @@
 'use client'
 
-import { PlatformIcon } from '@/components/carousel/format-selector'
 import {
   SlideshowCardPreview,
-  SlideshowCardSlideBadge,
   SlideshowCardStoryBars,
 } from '@/components/carousel/slideshow-card-preview'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
@@ -20,7 +18,7 @@ import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/s
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import { formatRelativeTime } from '@/utils/format'
 import type { SlideshowSummaryResponse } from '@socialista/types'
-import { CopyIcon, ImagesIcon, LayersIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { CopyIcon, ImagesIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
@@ -42,54 +40,30 @@ function SlideshowCard({
   const aspectRatio = slideshow.canvas.width / slideshow.canvas.height
 
   return (
-    <article className="group/card relative">
-      <Link href={href} className="block focus-visible:outline-none">
-        <div
-          className={cn(
-            'relative w-full overflow-hidden rounded-xl bg-black ring-1 ring-border/60',
-            'transition-[box-shadow,ring-color] duration-200',
-            'group-hover/card:ring-border group-hover/card:shadow-md',
-            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-          )}
-          style={{ aspectRatio }}
-        >
-          <SlideshowCardPreview slide={slideshow.previewSlide} canvas={slideshow.canvas} />
-
-          <SlideshowCardStoryBars slideCount={slideshow.slideCount} />
-          <SlideshowCardSlideBadge slideCount={slideshow.slideCount} />
-
-          <span className="pointer-events-none absolute top-2 left-2 z-20 inline-flex items-center gap-1 rounded-full bg-black/45 py-1 pr-2 pl-1 text-[10px] font-medium text-white backdrop-blur-sm">
-            <PlatformIcon platform={preset.platform} size={12} className="size-4 rounded-full" />
-            {preset.platform}
-          </span>
-        </div>
-      </Link>
-
-      <div className="mt-2.5 space-y-1.5 px-0.5">
-        <Link href={href} className="block min-w-0 focus-visible:underline focus-visible:outline-none">
-          <h2 className="truncate text-sm font-medium leading-snug tracking-tight">{slideshow.name}</h2>
+    <article className="group/card">
+      <div className="relative">
+        <Link href={href} className="block focus-visible:outline-none">
+          <div
+            className={cn(
+              'relative w-full overflow-hidden rounded-lg bg-black ring-1 ring-border/50',
+              'group-hover/card:ring-border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            )}
+            style={{ aspectRatio }}
+          >
+            <SlideshowCardPreview slide={slideshow.previewSlide} canvas={slideshow.canvas} />
+            <SlideshowCardStoryBars slideCount={slideshow.slideCount} />
+          </div>
         </Link>
 
-        <div className="flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <LayersIcon className="size-3" strokeWidth={1.75} />
-            {slideshow.slideCount}
-          </span>
-          <span className="text-border">·</span>
-          <span className="truncate">{preset.label}</span>
-          <span className="text-border">·</span>
-          <span className="shrink-0">{formatRelativeTime(slideshow.updatedAt)}</span>
-        </div>
-      </div>
-
-      <div className="absolute top-2 right-2 z-30 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+        <div className="absolute right-2 bottom-2 z-30 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               type="button"
               size="icon-xs"
               variant="ghost"
-              className="size-8 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/55 hover:text-white"
+              className="size-8 rounded-full bg-black/50 text-white hover:bg-black/65 hover:text-white"
               aria-label={`Duplicate ${slideshow.name}`}
               disabled={isDuplicating}
               onClick={event => {
@@ -109,7 +83,7 @@ function SlideshowCard({
               type="button"
               size="icon-xs"
               variant="ghost"
-              className="size-8 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/55 hover:text-white"
+              className="size-8 rounded-full bg-black/50 text-white hover:bg-black/65 hover:text-white"
               aria-label={`Delete ${slideshow.name}`}
               onClick={event => {
                 event.preventDefault()
@@ -122,6 +96,25 @@ function SlideshowCard({
           </TooltipTrigger>
           <TooltipContent side="bottom">Delete</TooltipContent>
         </Tooltip>
+        </div>
+      </div>
+
+      <div className="mt-2 space-y-1 px-0.5">
+        <Link href={href} className="block min-w-0 focus-visible:underline focus-visible:outline-none">
+          <h2 className="truncate text-sm font-medium leading-snug tracking-tight">{slideshow.name}</h2>
+        </Link>
+
+        <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-muted-foreground">
+          <span>{slideshow.slideCount === 1 ? '1 page' : `${slideshow.slideCount} pages`}</span>
+          <span aria-hidden className="text-border">
+            ·
+          </span>
+          <span className="truncate">{preset.label}</span>
+          <span aria-hidden className="text-border">
+            ·
+          </span>
+          <span className="shrink-0">{formatRelativeTime(slideshow.updatedAt)}</span>
+        </div>
       </div>
     </article>
   )
@@ -243,15 +236,17 @@ export function SlideshowList({
           }
         />
       ) : slideshows.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
-          <span className={cn('mb-4 flex items-center justify-center', dashboardSurface.emptyIcon)}>
-            <ImagesIcon className="text-muted-foreground" strokeWidth={1.5} />
-          </span>
-          <p className="text-sm font-semibold tracking-tight">Start your first slideshow</p>
-          <p className="mt-1.5 max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
-            Build carousel posts for Instagram, TikTok, and more — then save drafts here.
-          </p>
-          <div className="mt-5">{createAction}</div>
+        <div className="flex flex-1 items-center justify-center px-6 py-16">
+          <div className="w-full max-w-sm">
+            <span className={cn('flex items-center justify-center', dashboardSurface.emptyIcon)}>
+              <ImagesIcon className="text-muted-foreground" strokeWidth={1.5} />
+            </span>
+            <p className="mt-4 text-sm font-medium tracking-tight">Start your first slideshow</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              Build carousel posts for Instagram, TikTok, and more — then save drafts here.
+            </p>
+            <div className="mt-5">{createAction}</div>
+          </div>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">

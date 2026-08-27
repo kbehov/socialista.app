@@ -131,10 +131,10 @@ export function SlideshowGenerationRunView({ runId }: SlideshowGenerationRunView
       >
         <div className={cn(isComplete ? 'space-y-4' : 'space-y-5')}>
           {!isComplete && payload?.prompt ? (
-            <div className="space-y-2.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 dark:border-white/12 dark:bg-white/[0.02]">
-              <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
+            <div className="space-y-2.5 rounded-xl bg-black/[0.03] px-3.5 py-3 dark:bg-white/[0.04]">
+              <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground">{payload.prompt}</p>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
+                <span className="text-[12px] text-muted-foreground">
                   {payload.slideCount} slides
                 </span>
               </div>
@@ -174,7 +174,7 @@ export function SlideshowGenerationRunView({ runId }: SlideshowGenerationRunView
 
           {isComplete && output?.slideshowId ? (
             <div ref={previewRef} className="space-y-4">
-              <div className="overflow-hidden rounded-xl border border-black/10 bg-black/[0.02] dark:border-white/12 dark:bg-white/[0.02]">
+              <div className="overflow-hidden rounded-xl bg-black/[0.03] dark:bg-white/[0.04]">
                 {previewUrl ? (
                   <div className="relative aspect-[4/5] w-full bg-black/4">
                     <Image

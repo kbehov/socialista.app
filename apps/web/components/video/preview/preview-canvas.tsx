@@ -7,18 +7,16 @@ import { CanvasRulers, CANVAS_RULER_SIZE } from '@/components/editor/canvas-rule
 import { CanvasZoomControls } from '@/components/editor/canvas-zoom-controls'
 import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { Button } from '@/components/ui/button'
-import { Kbd } from '@/components/ui/kbd'
 import { seekPreview } from '@/hooks/video/use-playback'
 import { fitVideoPreviewInWorkspace } from '@/lib/editor/canvas-viewport'
 import { pickActiveVideoClip } from '@/lib/video/active-clip'
 import { hitTestOverlayAt, pointerToCanvasPercent } from '@/lib/video/canvas-hit-test'
-import { browseVideoFiles, focusVideoUrlImport } from '@/lib/video/editor-events'
 import { measureOverlayHeightPct } from '@/lib/video/overlay-bounds'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import type { SnapGuide } from '@/lib/editor/snap-guides'
 import { cn } from '@/lib/utils'
-import { FilmIcon, FolderOpenIcon, LinkIcon, Loader2Icon, ScanIcon } from 'lucide-react'
+import { Loader2Icon, ScanIcon } from 'lucide-react'
 import { TextOverlayRenderer } from './text-overlay-renderer'
 import { ClipInteractionLayer } from './clip-interaction-layer'
 import {
@@ -36,48 +34,6 @@ type PreviewCanvasProps = {
   isBuffering?: boolean
 }
 
-function PreviewEmptyState() {
-  return (
-    <div className="flex h-full items-center justify-center p-6">
-      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg backdrop-blur-sm">
-        <div className="flex size-10 items-center justify-center rounded-xl border border-border/50 bg-muted/30">
-          <FilmIcon className="size-5 text-muted-foreground/70" strokeWidth={1.5} />
-        </div>
-        <div>
-          <p className="text-sm font-medium tracking-tight text-foreground">Drop media to start</p>
-          <p className="mt-1 text-[11px] leading-[1.45] text-muted-foreground">
-            Browse files from the Media panel, import a link, or drag clips onto the timeline.
-          </p>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Button
-            type="button"
-            size="sm"
-            className="video-studio-press w-full justify-start"
-            onClick={() => browseVideoFiles()}
-          >
-            <FolderOpenIcon className="size-3.5" />
-            Browse files
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="video-studio-press w-full justify-start"
-            onClick={() => focusVideoUrlImport()}
-          >
-            <LinkIcon className="size-3.5" />
-            Import from URL
-          </Button>
-        </div>
-        <p className="text-center text-[11px] leading-[1.45] text-muted-foreground">
-          Press <Kbd className="mx-0.5">?</Kbd> anytime for shortcuts
-        </p>
-      </div>
-    </div>
-  )
-}
-
 export function PreviewCanvas({
   canvasRef,
   previewZoom,
@@ -86,7 +42,6 @@ export function PreviewCanvas({
 }: PreviewCanvasProps) {
   const artboardRef = useRef<HTMLDivElement>(null)
   const resolution = useVideoEditorStore(s => s.project.resolution)
-  const duration = useVideoEditorStore(s => s.project.duration)
   const playhead = useVideoEditorStore(s => s.playhead)
   const isPlaying = useVideoEditorStore(s => s.isPlaying)
   const tracks = useVideoEditorStore(s => s.project.tracks)
@@ -113,7 +68,6 @@ export function PreviewCanvas({
 
   const activeEditOverlayId = editOverlayRequestId ?? pendingOverlayEditId
 
-  const isEmpty = duration <= 0
   const zoom = Math.max(previewZoom, 0.01)
 
   const activeClip = useMemo(
@@ -233,10 +187,6 @@ export function PreviewCanvas({
     canvas.height = resolution.height
     seekPreview(useVideoEditorStore.getState().playhead)
   }, [canvasRef, resolution.width, resolution.height])
-
-  if (isEmpty) {
-    return <PreviewEmptyState />
-  }
 
   return (
     <div className="relative h-full min-h-0 w-full">

@@ -54,7 +54,7 @@ export const AudioClipBlock = memo(function AudioClipBlock({
         beginDrag(clip.id, clip.startTime, clip.trackId, e, () => focusAtTime?.(clip.startTime))
       }}
       className={cn(
-        'group/clip absolute top-1 flex items-center overflow-hidden rounded-md border text-emerald-600/80 transition-[box-shadow,border-color] dark:text-emerald-300/80',
+        'group/clip absolute top-1 flex items-center overflow-hidden rounded-lg border text-emerald-600/80 transition-[box-shadow,border-color] dark:text-emerald-300/80',
         isDragging ? 'z-[3] cursor-grabbing shadow-md' : 'cursor-grab',
         selected
           ? 'z-[2] border-primary bg-emerald-500/20 ring-2 ring-primary/20'

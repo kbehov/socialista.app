@@ -301,7 +301,7 @@ function BackgroundEditToolbar({
   onRemove: () => void
 }) {
   return (
-    <div className="pointer-events-auto flex flex-col gap-0.5 rounded-xl border bg-background/95 p-0.5 shadow-md backdrop-blur-sm">
+    <div className="pointer-events-auto flex flex-col gap-0.5 rounded-lg border border-border/50 bg-background p-0.5">
       <ToolbarIconButton label="AI edit" onClick={onEditImage}>
         <SparklesIcon className="size-3" />
       </ToolbarIconButton>

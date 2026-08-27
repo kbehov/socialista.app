@@ -183,16 +183,11 @@ export function VideoScriptPanel({
       }
     >
       {showPanelHeader ? (
-        <div className="shrink-0 border-b border-border/50 px-3.5 py-3">
-          <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground/6 text-foreground">
-              <SparklesIcon className="size-3.5" strokeWidth={1.9} />
-            </span>
-            <EditorPanelHeader
-              title="Script writer"
-              description="Generate timed on-screen captions"
-            />
-          </div>
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
+          <EditorPanelHeader
+            title="Script"
+            description="Generate timed on-screen captions"
+          />
         </div>
       ) : null}
 

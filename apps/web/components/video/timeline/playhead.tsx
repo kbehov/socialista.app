@@ -70,7 +70,7 @@ export function Playhead({ pxPerSec, headerWidth, onSeekAtClientX }: PlayheadPro
       >
         <div
           className={cn(
-            'absolute top-0 left-1/2 h-3.5 w-3.5 -translate-x-1/2 rounded-full bg-red-500 shadow-sm transition-transform duration-100',
+            'absolute top-0 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-red-500 shadow-[0_0_0_1px_rgba(0,0,0,0.12)] transition-transform duration-100',
             isDragging && 'scale-110',
           )}
         />

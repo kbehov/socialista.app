@@ -42,7 +42,7 @@ export function PlatformIcon({ platform, className, size = 16 }: { platform: str
     return (
       <span
         className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[9px] font-bold',
+          'flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[9px] font-medium',
           className,
         )}
       >
@@ -96,10 +96,6 @@ function FormatTriggerLabel({ preset }: { preset: AspectRatioPreset }) {
       <span className="min-w-0 truncate text-xs font-medium leading-none">
         {preset.platform}
         <span className="font-normal text-muted-foreground"> · {preset.label}</span>
-        <span className="font-normal text-muted-foreground">
-          {' '}
-          · {preset.dimensions.width}×{preset.dimensions.height}
-        </span>
       </span>
     </div>
   )
@@ -120,7 +116,7 @@ export function FormatSelector({
   return (
     <div className={cn('flex min-w-0 flex-col gap-0.5', className)}>
       {showLabel ? (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Export format</span>
+        <span className="text-[11px] font-medium text-muted-foreground">Format</span>
       ) : null}
       <Select value={aspectRatioId} onValueChange={setAspectRatio}>
         <SelectTrigger

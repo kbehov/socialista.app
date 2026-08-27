@@ -238,6 +238,8 @@ export function SlideshowSaveBar({
             ? 'Saved'
             : 'Not saved yet'
 
+  const saveVariant = !slideshowId ? 'default' : isDirty ? 'outline' : 'ghost'
+
   return (
     <div className={cn('flex min-w-0 items-center gap-1', className)}>
       {showLabel && !compact ? (
@@ -249,8 +251,9 @@ export function SlideshowSaveBar({
           onChange={event => setSlideshowName(event.target.value)}
           placeholder="Untitled slideshow"
           className={cn(
-            'h-7 min-w-0 w-full border-transparent bg-muted/40 px-2 py-0 text-xs font-medium shadow-none transition-colors focus-visible:border-input focus-visible:bg-background',
-            compact && 'max-w-35 sm:max-w-none',
+            'h-7 min-w-0 w-full border-transparent bg-transparent px-1.5 py-0 text-xs font-medium tracking-tight shadow-none',
+            'transition-colors hover:bg-foreground/[0.04] focus-visible:border-input focus-visible:bg-background',
+            compact && 'max-w-40 sm:max-w-none',
           )}
           aria-label="Slideshow name"
         />
@@ -259,21 +262,27 @@ export function SlideshowSaveBar({
         </p>
       </div>
       {!compact ? (
-        <span
-          className={cn(
-            'hidden truncate text-[10px] leading-none sm:inline',
-            !workspaceId || isDirty ? 'text-muted-foreground' : 'text-muted-foreground/80',
-          )}
-        >
+        <span className="hidden truncate text-[11px] leading-none text-muted-foreground sm:inline">
           {statusText}
         </span>
-      ) : null}
+      ) : (
+        <span
+          className={cn(
+            'hidden size-1.5 shrink-0 rounded-full sm:block',
+            !workspaceId || isDirty || busyAction === 'save' || busyAction === 'autosave'
+              ? 'bg-foreground'
+              : 'bg-foreground/25',
+          )}
+          aria-hidden
+          title={statusText}
+        />
+      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            size="sm"
-            className="h-7 shrink-0 px-2"
-            variant={slideshowId && !isDirty ? 'outline' : 'default'}
+            size={compact ? 'icon-sm' : 'sm'}
+            className={cn('shrink-0', compact ? 'size-7' : 'h-7 px-2')}
+            variant={saveVariant}
             onClick={() => void handleSave()}
             disabled={isBusy || !workspaceId}
             aria-label={slideshowId ? 'Save' : 'Save draft'}
@@ -281,7 +290,7 @@ export function SlideshowSaveBar({
             {busyAction === 'save' ? (
               <Loader2Icon className="size-3.5 animate-spin" />
             ) : (
-              <SaveIcon className="size-3.5" />
+              <SaveIcon className="size-3.5" strokeWidth={1.75} />
             )}
             {showLabel && !compact ? (
               <span className="hidden sm:inline">

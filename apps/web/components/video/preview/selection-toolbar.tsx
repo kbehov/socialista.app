@@ -165,7 +165,7 @@ export function SelectionToolbar({ className, onEditOverlayText }: SelectionTool
           onPointerDown={e => e.stopPropagation()}
         >
           <div
-            className="video-studio-glass flex w-auto shrink-0 items-center gap-0.5 rounded-xl p-0.5 shadow-md"
+            className="video-studio-glass flex w-auto shrink-0 items-center gap-0.5 rounded-full p-0.5 shadow-sm"
             onPointerDown={e => e.stopPropagation()}
           >
             {selectedClipId ? <ClipToolbar clipId={selectedClipId} /> : null}

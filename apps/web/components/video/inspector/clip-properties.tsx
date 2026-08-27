@@ -64,14 +64,18 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Clip</div>
-        <div className="mt-1 truncate text-sm">{asset ? asset.name : 'Missing media'}</div>
+    <div className="flex flex-col gap-5">
+      <div className="min-w-0">
+        <p className="truncate text-[13px] font-medium tracking-tight text-foreground">
+          {asset ? asset.name : 'Missing media'}
+        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {clip.type === 'audio' ? 'Audio clip' : clip.type === 'image' ? 'Image clip' : 'Video clip'}
+        </p>
       </div>
 
       {clip.type !== 'audio' && clipAi && canUseAi ? (
-        <div className="rounded-lg border bg-muted/20 p-3">
+        <div className="rounded-lg bg-muted/20 p-3">
           <div className="flex items-start gap-2">
             <SparklesIcon className="mt-0.5 size-4 shrink-0 text-primary" />
             <div className="min-w-0 flex-1 space-y-2">
@@ -95,7 +99,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
       ) : null}
 
       {clip.type !== 'audio' ? (
-        <div className="rounded-lg border">
+        <div className="rounded-lg bg-muted/15">
           <button
             type="button"
             className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
@@ -132,7 +136,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
                       defaultValue={transform?.[field] ?? (field === 'width' ? 100 : 0)}
                       key={`${clipId}-${field}-${transform?.[field] ?? 'default'}`}
                       onBlur={e => setTransformField(field, e.target.value)}
-                      className="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-xs tabular-nums"
+                      className="h-7 rounded-md border border-input bg-transparent px-2 font-mono text-xs tabular-nums"
                     />
                   </label>
                 ))}
@@ -154,7 +158,7 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <div className="text-[11px] font-medium tracking-[0.02em] text-muted-foreground">Timing</div>
+        <div className="text-[11px] font-medium text-muted-foreground">Timing</div>
         <div className="grid grid-cols-2 gap-2">
           <NumberField
             label="Start"
@@ -264,7 +268,7 @@ function NumberField({
 }) {
   return (
     <label className="flex flex-col gap-1 text-xs">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       <input
         type={readOnly ? 'text' : 'number'}
         step={step}
@@ -272,7 +276,7 @@ function NumberField({
         readOnly={readOnly}
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
-        className="h-8 rounded-md border border-input bg-transparent px-2 font-mono text-xs tabular-nums"
+        className="h-7 rounded-md border border-input bg-transparent px-2 font-mono text-xs tabular-nums"
       />
       {format && typeof value === 'number' ? (
         <span className="font-mono text-[10px] text-muted-foreground">{format(value)}</span>

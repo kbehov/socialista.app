@@ -26,7 +26,7 @@ function AddPageButton({ onClick }: { onClick: () => void }) {
       type="button"
       data-add-page
       onClick={onClick}
-      className="slideshow-editor-stack-add-page flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border/70 bg-background/60 px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-background hover:text-foreground"
+      className="slideshow-editor-stack-add-page flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border/50 bg-transparent px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-background hover:text-foreground"
     >
       <PlusIcon className="size-3.5" />
       Add slide
@@ -180,7 +180,7 @@ function SlideStackItem({
         className={cn(
           'w-full overflow-hidden rounded-lg bg-background outline-none transition-[opacity,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-ring',
           isActive
-            ? 'cursor-default shadow-md ring-2 ring-primary/25'
+            ? 'cursor-default ring-2 ring-foreground'
             : 'cursor-pointer opacity-60 hover:opacity-90',
         )}
       >

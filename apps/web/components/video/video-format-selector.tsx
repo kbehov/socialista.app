@@ -70,10 +70,6 @@ function FormatTriggerLabel({ preset }: { preset: VideoFormatPreset }) {
       <span className="min-w-0 truncate text-xs font-medium leading-none">
         {preset.platform}
         <span className="font-normal text-muted-foreground"> · {preset.label}</span>
-        <span className="font-normal text-muted-foreground">
-          {' '}
-          · {preset.dimensions.width}×{preset.dimensions.height}
-        </span>
       </span>
     </div>
   )
@@ -105,9 +101,7 @@ export function VideoFormatSelector({
   return (
     <div className={cn('flex min-w-0 flex-col gap-0.5', className)}>
       {showLabel ? (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Format
-        </span>
+        <span className="text-[11px] font-medium text-muted-foreground">Format</span>
       ) : null}
       <Select
         value={formatPresetId}
@@ -122,7 +116,7 @@ export function VideoFormatSelector({
           data-video-format-selector
           size="sm"
           aria-label={`Format: ${activePreset.platform} ${activePreset.label}`}
-          className="h-8 w-full min-w-0 max-w-full gap-1 overflow-hidden py-0 pl-2 pr-1.5 data-[size=sm]:h-8"
+          className="h-7 w-full min-w-0 max-w-full gap-1 overflow-hidden py-0 pl-2 pr-1.5 text-xs data-[size=sm]:h-7"
         >
           <FormatTriggerLabel preset={activePreset} />
         </SelectTrigger>

@@ -25,12 +25,9 @@ function edgeToEdgeStudioHasUtilities(utility: string): string {
 }
 
 export const dashboardMainClassName = [
-  'mx-auto flex min-h-0 w-full min-w-0 max-w-(--container-dashboard) flex-1 flex-col gap-(--spacing-dashboard-gap)',
+  'flex min-h-0 w-full min-w-0 flex-1 flex-col gap-(--spacing-dashboard-gap)',
   'overflow-y-auto overflow-x-hidden overscroll-y-contain sidebar-scrollbar',
   'px-(--spacing-dashboard-x) pt-1 pb-(--spacing-dashboard-y) sm:px-6 lg:px-8 lg:pb-10',
-  edgeToEdgeStudioHasUtilities('mx-0'),
-  edgeToEdgeStudioHasUtilities('max-w-none'),
-  edgeToEdgeStudioHasUtilities('w-full'),
   edgeToEdgeStudioHasUtilities('gap-0'),
   lockedStudioHasUtilities('overflow-hidden'),
   edgeToEdgeStudioHasUtilities('!p-0'),

@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ColorPicker } from './primitives/color-picker'
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-medium tracking-[0.01em] text-muted-foreground/90">{children}</p>
+  return <p className="text-[11px] font-medium text-muted-foreground">{children}</p>
 }
 
 export function SlideBackgroundPanel({ compact = false }: { compact?: boolean }) {

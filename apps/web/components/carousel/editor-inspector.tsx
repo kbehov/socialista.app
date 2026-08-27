@@ -69,12 +69,12 @@ export function EditorInspector({
   return (
     <aside
       className={cn(
-        'flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l border-border/60 bg-background',
+        'flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l border-border/40 bg-background',
         className,
       )}
       aria-label="Inspector"
     >
-      <div className="shrink-0 border-b border-border/60 px-3 py-2.5">
+      <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
         {panelHeaderVisible ? (
           <StudioPanelHeader title={meta.title} description={meta.description} />
         ) : (

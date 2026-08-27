@@ -1,22 +1,29 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ChevronLeftIcon, ChevronRightIcon, FilmIcon, SettingsIcon, TypeIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, TypeIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  EditorEmptyState,
+  EditorPanelHeader,
+  EditorPanelScrollArea,
+} from '@/components/editor/panel-shell'
 import { ClipProperties } from '@/components/video/inspector/clip-properties'
 import { OverlayProperties } from '@/components/video/inspector/overlay-properties'
 import { ProjectProperties } from '@/components/video/inspector/project-properties'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { cn } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 const INSPECTOR_OPEN_KEY = 'video-inspector-open'
+const PANEL_EASE = 'cubic-bezier(0.32,0.72,0,1)'
 
 function readInspectorOpen(): boolean {
   if (typeof window === 'undefined') return true
@@ -28,39 +35,7 @@ function readInspectorOpen(): boolean {
   }
 }
 
-function EmptyTabState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: {
-  icon: typeof TypeIcon
-  title: string
-  description: string
-  action?: { label: string; onClick: () => void; icon?: typeof TypeIcon }
-}) {
-  const ActionIcon = action?.icon
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/15 px-4 py-8 text-center">
-      <Icon className="mx-auto size-5 text-muted-foreground/70" strokeWidth={1.5} />
-      <p className="mt-2 text-[12px] font-medium tracking-tight text-foreground/80">{title}</p>
-      <p className="mt-1 max-w-[18rem] text-[11px] leading-[1.45] text-muted-foreground">{description}</p>
-      {action ? (
-        <Button
-          type="button"
-          size="sm"
-          className="video-studio-press mt-4 h-8 gap-1.5"
-          onClick={action.onClick}
-        >
-          {ActionIcon ? <ActionIcon className="size-3.5" /> : null}
-          {action.label}
-        </Button>
-      ) : null}
-    </div>
-  )
-}
-
-function InspectorBody() {
+function InspectorBody({ showPanelHeader = true }: { showPanelHeader?: boolean }) {
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const playhead = useVideoEditorStore(s => s.playhead)
@@ -74,36 +49,46 @@ function InspectorBody() {
     addTextOverlay(playhead, Math.max(playhead + 0.5, end))
   }
 
-  const title =
-    mode === 'clip' ? 'Clip' : mode === 'overlay' ? 'Text' : 'Project'
-  const TitleIcon = mode === 'clip' ? FilmIcon : mode === 'overlay' ? TypeIcon : SettingsIcon
+  const meta =
+    mode === 'clip'
+      ? { title: 'Clip', description: 'Timing, volume, filters, and transform' }
+      : mode === 'overlay'
+        ? { title: 'Text', description: 'Style the selected overlay' }
+        : { title: 'Project', description: 'Format, frame rate, and duration' }
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-3 py-2.5">
-        <TitleIcon className="size-3.5 text-muted-foreground" />
-        <p className="text-[13px] font-semibold tracking-[-0.01em]">{title}</p>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto sidebar-scrollbar">
-        <div className="flex flex-col gap-3 p-3">
-          {mode === 'clip' && selectedClipId ? (
-            <ClipProperties key={selectedClipId} clipId={selectedClipId} />
-          ) : null}
-
-          {mode === 'overlay' && selectedOverlayId ? (
-            <OverlayProperties overlayId={selectedOverlayId} />
-          ) : mode === 'overlay' ? (
-            <EmptyTabState
-              icon={TypeIcon}
-              title="No text overlay selected"
-              description="Add a text layer at the playhead, or select one on the timeline or preview."
-              action={{ label: 'Add text', onClick: handleAddText, icon: TypeIcon }}
-            />
-          ) : null}
-
-          {mode === 'project' ? <ProjectProperties /> : null}
+      {showPanelHeader ? (
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
+          <EditorPanelHeader title={meta.title} description={meta.description} />
         </div>
-      </div>
+      ) : null}
+      <EditorPanelScrollArea key={mode} contentClassName="animate-in fade-in-0 duration-150">
+        {mode === 'clip' && selectedClipId ? (
+          <ClipProperties key={selectedClipId} clipId={selectedClipId} />
+        ) : null}
+
+        {mode === 'overlay' && selectedOverlayId ? (
+          <OverlayProperties overlayId={selectedOverlayId} />
+        ) : mode === 'overlay' ? (
+          <EditorEmptyState
+            title="No text overlay selected"
+            description="Add a text layer at the playhead, or select one on the canvas or timeline."
+          >
+            <Button
+              type="button"
+              size="sm"
+              className="mt-3 h-8 gap-1.5 text-[12px] font-medium"
+              onClick={handleAddText}
+            >
+              <TypeIcon className="size-3.5" strokeWidth={1.75} />
+              Add text
+            </Button>
+          </EditorEmptyState>
+        ) : null}
+
+        {mode === 'project' ? <ProjectProperties /> : null}
+      </EditorPanelScrollArea>
     </div>
   )
 }
@@ -113,7 +98,6 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
   const [open, setOpen] = useState(() => readInspectorOpen())
   const [mobileOpen, setMobileOpen] = useState(false)
-  const reduceMotion = useReducedMotion()
   const prevSelection = useRef<string | null>(null)
 
   const selectionKey = selectedClipId ?? selectedOverlayId
@@ -121,8 +105,6 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
   useEffect(() => {
     if (selectionKey && selectionKey !== prevSelection.current) {
       setOpen(true)
-      // Mobile sheet only — opening on desktop still mounts SheetOverlay and dims the UI
-      // even when SheetContent is `lg:hidden`.
       const isMobileViewport =
         typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
       if (isMobileViewport) setMobileOpen(true)
@@ -135,7 +117,6 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
     prevSelection.current = selectionKey
   }, [selectionKey])
 
-  // Close the mobile sheet if the viewport grows to desktop while it is open.
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)')
     const onChange = () => {
@@ -160,71 +141,75 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
 
   return (
     <>
-      {/* Desktop right rail */}
       <div className={cn('relative hidden h-full min-h-0 shrink-0 lg:flex', className)}>
-        <AnimatePresence initial={false}>
-          {open ? (
-            <motion.aside
-              key="inspector"
-              initial={reduceMotion ? { opacity: 0 } : { width: 0, opacity: 0 }}
-              animate={reduceMotion ? { opacity: 1 } : { width: 280, opacity: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { width: 0, opacity: 0 }}
-              transition={
-                reduceMotion
-                  ? { duration: 0.15 }
-                  : { type: 'spring', bounce: 0, duration: 0.35 }
-              }
-              className="video-editor-inspector flex h-full min-h-0 w-[280px] flex-col overflow-hidden border-l border-border/60 bg-background"
-            >
-              <div className="flex h-full w-[280px] min-w-[280px] flex-col">
-                <InspectorBody />
-              </div>
-            </motion.aside>
-          ) : null}
-        </AnimatePresence>
-
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={open}
-          aria-label={open ? 'Collapse inspector' : 'Expand inspector'}
+        <div
+          style={{ transitionTimingFunction: PANEL_EASE }}
           className={cn(
-            'video-studio-press absolute top-1/2 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background/90 shadow-sm backdrop-blur-sm transition-colors hover:bg-muted',
-            open ? '-left-3' : 'right-2',
+            'flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l border-border/40 bg-background transition-[width,opacity] duration-300',
+            open ? 'w-72 opacity-100 xl:w-80' : 'w-0 border-l-0 opacity-0',
           )}
+          aria-hidden={!open}
+          inert={!open ? true : undefined}
         >
-          {open ? (
-            <ChevronRightIcon className="size-3.5 text-muted-foreground" />
-          ) : (
-            <ChevronLeftIcon className="size-3.5 text-muted-foreground" />
-          )}
-        </button>
+          <div className={cn('flex h-full w-72 min-w-72 flex-col xl:w-80 xl:min-w-80', !open && 'invisible')}>
+            <InspectorBody />
+          </div>
+        </div>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={open}
+              aria-label={open ? 'Collapse inspector' : 'Expand inspector'}
+              className={cn(
+                'video-editor-panel-toggle absolute top-1/2 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background transition-colors duration-150 hover:border-border hover:bg-muted',
+                open ? '-left-2.5' : '-left-6',
+              )}
+            >
+              {open ? (
+                <ChevronRightIcon className="size-3 text-muted-foreground" />
+              ) : (
+                <ChevronLeftIcon className="size-3 text-muted-foreground" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">{open ? 'Collapse inspector' : 'Expand inspector'}</TooltipContent>
+        </Tooltip>
       </div>
 
-      {/* Mobile bottom sheet when something is selected */}
       <Sheet open={mobileOpen && Boolean(selectionKey)} onOpenChange={setMobileOpen}>
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="flex h-[min(70vh,560px)] flex-col gap-0 rounded-t-[20px] p-0 lg:hidden"
+          className="flex h-[min(72vh,680px)] max-h-[min(72vh,680px)] gap-0 rounded-t-2xl p-0 shadow-none lg:hidden"
         >
           <div className="flex shrink-0 justify-center pt-2.5 pb-1">
             <span className="h-1 w-9 rounded-full bg-muted-foreground/25" aria-hidden />
           </div>
-          <SheetHeader className="flex-row items-center justify-between border-b border-border/40 px-3 py-2">
-            <SheetTitle className="text-[13px] font-semibold tracking-[-0.01em]">Properties</SheetTitle>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="video-studio-press size-7"
-              onClick={() => setMobileOpen(false)}
-            >
-              <XIcon className="size-3.5" />
-            </Button>
+          <SheetHeader className="shrink-0 space-y-0 border-b border-border/40 px-4 pt-1 pb-3.5 text-left">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <SheetTitle className="text-[13px] font-medium tracking-tight">Properties</SheetTitle>
+                <SheetDescription className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/80">
+                  Edit the selected clip, overlay, or project.
+                </SheetDescription>
+              </div>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                className="size-8 shrink-0 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close inspector"
+              >
+                <XIcon className="size-4" />
+              </Button>
+            </div>
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-hidden">
-            <InspectorBody />
+            <InspectorBody showPanelHeader={false} />
           </div>
         </SheetContent>
       </Sheet>

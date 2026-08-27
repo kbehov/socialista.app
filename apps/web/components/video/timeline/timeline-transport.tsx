@@ -76,7 +76,7 @@ export function TimelineTransport({
   return (
     <div
       data-preview-playback
-      className="video-editor-transport flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain border-b border-border/40 bg-background px-2 py-1 [scrollbar-width:thin] sm:px-2.5"
+      className="video-editor-transport flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain border-b border-border/40 bg-background px-2 py-1.5 [scrollbar-width:thin] sm:px-2.5"
     >
       <div className="flex shrink-0 items-center gap-0.5">
         <Tooltip>
@@ -88,7 +88,7 @@ export function TimelineTransport({
               onClick={undo}
               disabled={!canUndo}
             >
-              <Undo2Icon className="size-3.5" />
+              <Undo2Icon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -104,7 +104,7 @@ export function TimelineTransport({
               onClick={redo}
               disabled={!canRedo}
             >
-              <Redo2Icon className="size-3.5" />
+              <Redo2Icon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -123,7 +123,7 @@ export function TimelineTransport({
               className="video-studio-press size-7"
               onClick={onAddText}
             >
-              <TypeIcon className="size-3.5" />
+              <TypeIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Add text at playhead</TooltipContent>
@@ -139,7 +139,7 @@ export function TimelineTransport({
               onClick={onSplit}
               disabled={!canSplit}
             >
-              <ScissorsIcon className="size-3.5" />
+              <ScissorsIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>{canSplit ? 'Split at playhead' : 'Select a clip to split'}</TooltipContent>
@@ -159,7 +159,7 @@ export function TimelineTransport({
               aria-pressed={snapEnabled}
               aria-label={snapEnabled ? 'Disable snapping' : 'Enable snapping'}
             >
-              <MagnetIcon className="size-3.5" />
+              <MagnetIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>{snapEnabled ? 'Magnet snapping on' : 'Magnet snapping off'}</TooltipContent>
@@ -173,10 +173,10 @@ export function TimelineTransport({
       {durationPillLabel ? (
         <span
           className={cn(
-            'hidden shrink-0 rounded-full border px-2 py-0.5 text-[10px] tabular-nums md:inline-flex',
+            'hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] tabular-nums md:inline-flex',
             guideExceeded
-              ? 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200'
-              : 'border-border bg-muted/40 text-muted-foreground',
+              ? 'bg-amber-500/10 text-amber-800 dark:text-amber-200'
+              : 'bg-muted/40 text-muted-foreground',
           )}
           title={
             guideExceeded
@@ -244,7 +244,7 @@ export function TimelineTransport({
               type="button"
               size="sm"
               variant="ghost"
-              className="video-studio-press h-7 px-2 text-[10px] text-muted-foreground"
+              className="h-7 px-2 text-[11px] font-medium text-muted-foreground"
               onClick={fitToProject}
             >
               Fit

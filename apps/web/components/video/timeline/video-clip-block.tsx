@@ -55,7 +55,7 @@ export function VideoClipBlock({ clip, left, width, height, pxPerSec, track }: P
         beginDrag(clip.id, clip.startTime, clip.trackId, e, () => focusAtTime?.(clip.startTime))
       }}
       className={cn(
-        'group/clip absolute top-1 overflow-hidden rounded-md border bg-neutral-800/90 transition-[box-shadow,border-color]',
+        'group/clip absolute top-1 overflow-hidden rounded-lg border bg-neutral-800/90 transition-[box-shadow,border-color]',
         isDragging ? 'z-[3] cursor-grabbing shadow-md' : 'cursor-grab',
         selected
           ? 'z-[2] border-primary ring-2 ring-primary/20'

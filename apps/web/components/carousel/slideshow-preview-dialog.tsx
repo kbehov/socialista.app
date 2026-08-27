@@ -32,7 +32,7 @@ export function SlideshowPreviewDialog({ open, onOpenChange, onExport }: Slidesh
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex h-[min(92vh,900px)] w-[min(96vw,720px)] max-w-none flex-col gap-0 overflow-hidden border-border/60 bg-neutral-950 p-0 text-white sm:rounded-2xl"
+        className="flex h-[min(92vh,900px)] w-[min(96vw,720px)] max-w-none flex-col gap-0 overflow-hidden border-white/10 bg-neutral-950 p-0 text-white sm:rounded-2xl"
       >
         {open ? (
           <PreviewBody
@@ -155,7 +155,7 @@ function PreviewBody({
         </Button>
 
         <div
-          className="relative w-full max-w-110 overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
+          className="relative w-full max-w-110 overflow-hidden rounded-lg ring-1 ring-white/10"
           style={{ aspectRatio: aspect }}
         >
           {slide ? (

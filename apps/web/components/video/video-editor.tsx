@@ -152,10 +152,10 @@ function VideoEditorContent() {
         role="separator"
         aria-orientation="horizontal"
         aria-label="Resize timeline"
-        className="video-studio-timeline-resize group relative z-10 flex h-2 shrink-0 cursor-ns-resize items-center justify-center border-t bg-background"
+        className="video-studio-timeline-resize group relative z-10 flex h-2.5 shrink-0 cursor-ns-resize items-center justify-center bg-background"
         onPointerDown={handleResizePointerDown}
       >
-        <span className="h-0.5 w-8 rounded-full bg-border transition-colors group-hover:bg-muted-foreground/50" />
+        <span className="h-0.5 w-8 rounded-full bg-border/80 transition-colors group-hover:bg-muted-foreground/45 group-active:bg-muted-foreground/70" />
       </div>
 
       <div className="video-editor-timeline-section flex min-w-0 shrink-0 flex-col overflow-hidden">

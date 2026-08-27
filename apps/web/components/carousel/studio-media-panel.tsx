@@ -8,7 +8,6 @@ import {
   StudioPanelSection,
 } from '@/components/carousel/studio-segmented-tabs'
 import { useEditorStore } from '@/lib/carousel/store'
-import { ImageIcon } from 'lucide-react'
 
 export function StudioMediaPanel({
   embedded = false,
@@ -24,7 +23,7 @@ export function StudioMediaPanel({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {panelHeaderVisible ? (
-        <div className="shrink-0 border-b border-border/50 px-3.5 py-3">
+        <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
           <StudioPanelHeader title="Media" description="Upload, files, Unsplash, or paste a URL" />
         </div>
       ) : null}
@@ -46,17 +45,9 @@ export function StudioMediaPanel({
                 onImageSelected={url => addImageLayer(activeSlideId, url)}
               />
             </StudioPanelSection>
-
-            <div className="rounded-xl border border-border/40 bg-muted/10 px-3 py-2.5">
-              <div className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-background shadow-xs ring-1 ring-border/40">
-                  <ImageIcon className="size-3.5 text-muted-foreground" strokeWidth={1.75} />
-                </span>
-                <p className="text-[11px] leading-[1.45] text-muted-foreground">
-                  Tip: select an image layer to crop, filter, and transform it in the inspector.
-                </p>
-              </div>
-            </div>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              Select an image layer to crop, filter, and transform it in the inspector.
+            </p>
           </>
         )}
       </StudioPanelScrollArea>

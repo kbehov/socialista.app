@@ -104,7 +104,7 @@ export function TrackRow({
         <div className="absolute inset-0 z-[1] flex items-center justify-center">
           <button
             type="button"
-            className="video-studio-press rounded-xl border border-dashed border-border/60 bg-muted/15 px-3 py-1.5 text-[11px] leading-[1.45] text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+            className="rounded-lg px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
             onClick={e => {
               e.stopPropagation()
               browseVideoFiles()
@@ -118,7 +118,7 @@ export function TrackRow({
         <div className="absolute inset-0 flex items-center justify-center">
           <button
             type="button"
-            className="video-studio-press text-[10px] text-muted-foreground/70 hover:text-muted-foreground"
+            className="text-[11px] text-muted-foreground/60 transition-colors hover:text-muted-foreground"
             onClick={e => {
               e.stopPropagation()
               browseVideoFiles()
