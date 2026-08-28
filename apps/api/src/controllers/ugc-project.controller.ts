@@ -73,8 +73,8 @@ import type { Context } from 'hono'
 
 async function resolveDefaultModels(): Promise<IUgcProjectModels> {
   const [image, video, text] = await Promise.all([
-    getModels('limit=1&modelType=text-to-image&contextSupports=image&sort=-usageCount'),
-    getModels('limit=1&modelType=image-to-video&sort=-usageCount'),
+    getModels('limit=1&modelType=image&contextSupports=image&sort=-usageCount'),
+    getModels('limit=1&modelType=video&contextSupports=image&sort=-usageCount'),
     getModels('limit=1&modelType=text&contextSupports=image&sort=-usageCount'),
   ])
 
@@ -83,7 +83,7 @@ async function resolveDefaultModels(): Promise<IUgcProjectModels> {
   const plannerModel = text.models[0]
 
   if (!imageModel || !videoModel) {
-    throw new HttpError(400, 'Add image-context and image-to-video models in the catalog first')
+    throw new HttpError(400, 'Add image-context and video models in the catalog first')
   }
 
   const scriptOnly = plannerModel

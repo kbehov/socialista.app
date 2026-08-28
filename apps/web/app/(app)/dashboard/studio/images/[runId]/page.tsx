@@ -8,7 +8,7 @@ type ImageGenerationRunPageProps = {
 export default async function ImageGenerationRunPage({ params }: ImageGenerationRunPageProps) {
   const [{ runId }, modelsRes] = await Promise.all([
     params,
-    getModels('limit=100&modelType=text-to-image'),
+    getModels('limit=100&modelType=image'),
   ])
 
   const models = modelsRes.success ? (modelsRes.data?.models ?? []) : []

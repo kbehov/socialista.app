@@ -31,6 +31,7 @@ import { getProjectId, useProjectStore } from "@/store/project.store";
 import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
+  ContextSupport,
   ModelType,
   PROMPT_KEYS,
   VIDEO_DURATION_DEFAULT,
@@ -105,12 +106,18 @@ function VideoPromptComposer({
   const { textInput } = usePromptInputController();
 
   const visibleModels = useMemo(() => {
+    const videoModels = models.filter((model) => model.modelType === ModelType.VIDEO);
+    const pool = videoModels.length > 0 ? videoModels : models;
     if (attachedImages.length === 0) {
-      const textToVideo = models.filter((model) => model.modelType === ModelType.TEXT_TO_VIDEO);
-      return textToVideo.length > 0 ? textToVideo : models;
+      const textToVideo = pool.filter(
+        (model) => !(model.contextSupports ?? []).includes(ContextSupport.IMAGE),
+      );
+      return textToVideo.length > 0 ? textToVideo : pool;
     }
-    const imageToVideo = models.filter((model) => model.modelType === ModelType.IMAGE_TO_VIDEO);
-    return imageToVideo.length > 0 ? imageToVideo : models;
+    const imageToVideo = pool.filter((model) =>
+      (model.contextSupports ?? []).includes(ContextSupport.IMAGE),
+    );
+    return imageToVideo.length > 0 ? imageToVideo : pool;
   }, [attachedImages.length, models]);
 
   const [selectedModelId, setSelectedModelId] = useState(visibleModels[0]?._id ?? "");

@@ -57,6 +57,10 @@
       "types": "./dist/schemas/video-export.schema.d.ts",
       "import": "./dist/schemas/video-export.schema.js"
     },
+    "./schemas/video-captions": {
+      "types": "./dist/schemas/video-captions.schema.d.ts",
+      "import": "./dist/schemas/video-captions.schema.js"
+    },
     "./schemas/generate-influencer": {
       "types": "./dist/schemas/generate-influencer.schema.d.ts",
       "import": "./dist/schemas/generate-influencer.schema.js"

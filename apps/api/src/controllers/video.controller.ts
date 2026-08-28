@@ -25,7 +25,7 @@ import {
   VideoStatus,
 } from '@socialista/db'
 import { createPublicAccessToken } from '@socialista/trigger'
-import type { ExportVideoTask } from '@socialista/trigger/task-types'
+import type { ExportVideoTask, GenerateVideoCaptionsTask } from '@socialista/trigger/task-types'
 import {
   TASK_IDS,
   type CreateVideoPayload,
@@ -235,6 +235,45 @@ export const exportVideo = async (c: Context<AppContext>) => {
     workspaceId: video.workspace.toString(),
     userId,
     settings,
+  })
+
+  const publicAccessToken = await createPublicAccessToken(handle.id)
+
+  return successResponse(c, 202, {
+    runId: handle.id,
+    publicAccessToken,
+  })
+}
+
+export const generateVideoCaptions = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'video ID')
+  const video = await getVideoForMember(id, userId)
+
+  const body = (await c.req.json()) as { clipId?: unknown }
+  if (typeof body.clipId !== 'string' || body.clipId.trim().length === 0) {
+    throw new HttpError(400, 'clipId is required')
+  }
+  const clipId = body.clipId.trim()
+
+  const clip = video.clips.find(item => item.id === clipId)
+  if (!clip) {
+    throw new HttpError(400, 'Clip not found on this video')
+  }
+  if (clip.type === 'image') {
+    throw new HttpError(400, 'Select a video or audio clip with speech')
+  }
+
+  const asset = video.assets.find(item => item.id === clip.assetId)
+  if (!asset?.url) {
+    throw new HttpError(400, 'Save your video before generating captions')
+  }
+
+  const handle = await tasks.trigger<GenerateVideoCaptionsTask>(TASK_IDS.videoCaptions, {
+    videoId: id,
+    workspaceId: video.workspace.toString(),
+    userId,
+    clipId,
   })
 
   const publicAccessToken = await createPublicAccessToken(handle.id)

@@ -1,6 +1,6 @@
 /** Custom events for cross-panel video editor UX (open media rail, browse files, shortcuts). */
 
-export type VideoStudioPanelTab = 'media' | 'text' | 'script'
+export type VideoStudioPanelTab = 'media' | 'text' | 'script' | 'captions'
 
 export const VIDEO_OPEN_MEDIA_EVENT = 'video-editor:open-media'
 export const VIDEO_BROWSE_FILES_EVENT = 'video-editor:browse-files'

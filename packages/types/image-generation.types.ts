@@ -67,6 +67,7 @@ export const TASK_IDS = {
   assembleUgcProject: 'assemble-ugc-project',
   videoGeneration: 'realtime-video-generation',
   slideshowGeneration: 'realtime-slideshow-generation',
+  videoCaptions: 'generate-video-captions',
 } as const
 
 export type TaskId = (typeof TASK_IDS)[keyof typeof TASK_IDS]

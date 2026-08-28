@@ -6,7 +6,7 @@ import { ContextSupport } from '@socialista/types'
 import { preload } from 'react-dom'
 
 const STATIC_AD_MODELS_QUERY =
-  'limit=50&modelType=text-to-image&contextSupports=image&sort=-usageCount'
+  'limit=50&modelType=image&contextSupports=image&sort=-usageCount'
 
 const StaticAdsPage = async () => {
   preload('/socialista-static-ads.webp', { as: 'image' })

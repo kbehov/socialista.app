@@ -30,7 +30,8 @@ function applyUsedStorage(
   }
 }
 
-export function useVideoSave() {
+export function useVideoSave(options?: { autosave?: boolean }) {
+  const enableAutosave = options?.autosave !== false
   const router = useRouter()
   const workspace = useWorkspaceStore(s => s.currentWorkspace)
   const { updateWorkspace } = useWorkspaceStoreActions()
@@ -195,7 +196,7 @@ export function useVideoSave() {
 
   // Autosave only after the video already exists (first save is explicit — user may just be testing)
   useEffect(() => {
-    if (!isPersistedProject || status !== 'unsaved' || !workspaceId) return
+    if (!enableAutosave || !isPersistedProject || status !== 'unsaved' || !workspaceId) return
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
     autosaveTimerRef.current = setTimeout(() => {
       void save({ silent: true })
@@ -203,7 +204,7 @@ export function useVideoSave() {
     return () => {
       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
     }
-  }, [isPersistedProject, past.length, save, status, workspaceId])
+  }, [enableAutosave, isPersistedProject, past.length, save, status, workspaceId])
 
   useEffect(() => {
     return () => {

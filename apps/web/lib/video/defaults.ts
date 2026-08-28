@@ -193,6 +193,19 @@ export const SCRIPT_ROLE_OVERLAY_PRESETS: Record<VideoScriptSegmentRole, ScriptR
   },
 }
 
+/** Bottom-centered overlay style used when applying transcribed captions. */
+export const CAPTION_OVERLAY_PRESET: ScriptRoleOverlayPreset = {
+  x: 10,
+  y: 78,
+  width: 80,
+  style: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    animation: 'slide-up',
+  },
+}
+
 export type AddTextOverlayInput = {
   content: string
   startTime: number

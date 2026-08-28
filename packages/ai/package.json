@@ -21,6 +21,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@ai-sdk/gateway": "^4.0.67",
     "@ai-sdk/react": "^4.0.39",
     "@fal-ai/client": "^1.10.1",
     "@socialista/types": "workspace:*",

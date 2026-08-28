@@ -34,7 +34,7 @@ export async function startStaticAdGeneration(
     const [balanceRes, modelsRes] = await Promise.all([
       getWorkspaceBalance(parsed.data.workspaceId),
       getModels(
-        `limit=1&modelType=text-to-image&contextSupports=image&value=${encodeURIComponent(parsed.data.model)}`,
+        `limit=1&modelType=image&contextSupports=image&value=${encodeURIComponent(parsed.data.model)}`,
       ),
     ])
     const credits = balanceRes.data?.aiCreditsBalance ?? 0
@@ -43,7 +43,7 @@ export async function startStaticAdGeneration(
     if (!model?.contextSupports?.includes(ContextSupport.IMAGE)) {
       return {
         success: false,
-        error: 'Select a text-to-image model that supports image inputs.',
+        error: 'Select an image model that supports image inputs.',
       }
     }
     const numImages = clampImageGenerationCount(parsed.data.numImages)

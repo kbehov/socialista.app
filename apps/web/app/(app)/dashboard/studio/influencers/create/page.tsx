@@ -5,7 +5,7 @@ import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { ContextSupport } from '@socialista/types'
 
 const INFLUENCER_MODELS_QUERY =
-  'limit=50&modelType=text-to-image&contextSupports=image&sort=-usageCount'
+  'limit=50&modelType=image&contextSupports=image&sort=-usageCount'
 
 export default async function CreateInfluencerPage() {
   const workspace = await getCurrentWorkspace()

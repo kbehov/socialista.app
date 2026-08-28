@@ -11,6 +11,7 @@ import type { generateUgcVideo } from './tasks/ugc/generate-ugc-video.js'
 import type { generateUgcImageAd } from './tasks/ugc/generate-ugc-image-ad.js'
 import type { assembleUgcProject } from './tasks/ugc/assemble-ugc-project.js'
 import type { exportVideo } from './tasks/video/export-video.js'
+import type { generateVideoCaptions } from './tasks/video/generate-video-captions.js'
 import type { realtimeVideoGeneration } from './tasks/video/generate-video-realtime.js'
 import type { realtimeSlideshowGeneration } from './tasks/slideshow/generate-slideshow-realtime.js'
 
@@ -27,5 +28,6 @@ export type PublishPostTask = typeof publishPost
 export type AnalyticsSweepTask = typeof analyticsSweep
 export type FetchAccountAnalyticsTask = typeof fetchAccountAnalyticsTask
 export type ExportVideoTask = typeof exportVideo
+export type GenerateVideoCaptionsTask = typeof generateVideoCaptions
 export type RealtimeVideoGenerationTask = typeof realtimeVideoGeneration
 export type RealtimeSlideshowGenerationTask = typeof realtimeSlideshowGeneration

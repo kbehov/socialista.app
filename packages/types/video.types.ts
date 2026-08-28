@@ -250,3 +250,29 @@ export type ExportVideoResponse = {
   runId: string
   publicAccessToken: string
 }
+
+export const VIDEO_CAPTIONS_CREDIT_COST = 0.02
+
+export type VideoCaptionSegment = {
+  text: string
+  startTime: number
+  endTime: number
+}
+
+export type GenerateVideoCaptionsPayload = {
+  videoId: string
+  workspaceId: string
+  userId: string
+  clipId: string
+}
+
+export type GenerateVideoCaptionsOutput = {
+  clipId: string
+  language: string
+  segments: VideoCaptionSegment[]
+}
+
+export type VideoCaptionsResponse = {
+  runId: string
+  publicAccessToken: string
+}

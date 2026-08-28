@@ -23,7 +23,7 @@ export async function startImageGeneration(input: GenerateImageOptions): Promise
     const balanceRes = await getWorkspaceBalance(input.workspaceId)
     const credits = balanceRes.data?.aiCreditsBalance ?? 0
 
-    const modelsRes = await getModels(`limit=100&modelType=text-to-image&value=${encodeURIComponent(input.model)}`)
+    const modelsRes = await getModels(`limit=100&modelType=image&value=${encodeURIComponent(input.model)}`)
     const model = modelsRes.data?.models[0]
 
     if (!model) {

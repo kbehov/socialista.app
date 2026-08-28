@@ -3,6 +3,7 @@ import {
   deleteVideo,
   duplicateVideo,
   exportVideo,
+  generateVideoCaptions,
   getVideo,
   getWorkspaceVideos,
   updateVideo,
@@ -19,6 +20,7 @@ videoRoutes.post('/', createVideo)
 videoRoutes.get('/workspace/:workspaceId', getWorkspaceVideos)
 videoRoutes.post('/:id/duplicate', duplicateVideo)
 videoRoutes.post('/:id/export', exportVideo)
+videoRoutes.post('/:id/captions', generateVideoCaptions)
 videoRoutes.get('/:id', getVideo)
 videoRoutes.patch('/:id', updateVideo)
 videoRoutes.delete('/:id', deleteVideo)

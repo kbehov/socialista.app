@@ -8,7 +8,7 @@ import { WorkspaceRequired } from '../../../../../components/dashboard/workspace
 export default async function SlideshowsPage() {
   const [{ workspace, project }, modelsRes] = await Promise.all([
     getCurrentWorkspaceContext(),
-    getModels('limit=20&modelType=text-to-image&sort=-usageCount'),
+    getModels('limit=20&modelType=image&sort=-usageCount'),
   ])
 
   if (!workspace) {

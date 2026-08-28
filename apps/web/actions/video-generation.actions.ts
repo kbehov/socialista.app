@@ -25,11 +25,8 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
     const credits = balanceRes.data?.aiCreditsBalance ?? 0
 
     const encoded = encodeURIComponent(input.model)
-    const [textToVideo, imageToVideo] = await Promise.all([
-      getModels(`limit=20&modelType=text-to-video&value=${encoded}`),
-      getModels(`limit=20&modelType=image-to-video&value=${encoded}`),
-    ])
-    const model = textToVideo.data?.models[0] ?? imageToVideo.data?.models[0]
+    const modelsRes = await getModels(`limit=20&modelType=video&value=${encoded}`)
+    const model = modelsRes.data?.models[0]
 
     if (!model) {
       return { success: false, error: 'Model not found.' }

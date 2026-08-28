@@ -4,7 +4,7 @@ import { preload } from 'react-dom'
 
 const ImagesPage = async () => {
   preload('/socialista-image.webp', { as: 'image' })
-  const { data, success } = await getModels('limit=20&modelType=text-to-image&sort=-usageCount')
+  const { data, success } = await getModels('limit=20&modelType=image&sort=-usageCount')
 
   if (!success) {
     throw new Error('Failed to load models')

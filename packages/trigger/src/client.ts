@@ -57,6 +57,11 @@ export {
 } from './schemas/video-export.schema.js'
 
 export {
+  videoCaptionsPayloadSchema,
+  type VideoCaptionsPayload,
+} from './schemas/video-captions.schema.js'
+
+export {
   generateInfluencerPayloadSchema,
   type GenerateInfluencerPayload,
 } from './schemas/generate-influencer.schema.js'

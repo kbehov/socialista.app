@@ -11,6 +11,7 @@ import type {
   ExportVideoResponse,
   GetVideosResponse,
   UpdateVideoPayload,
+  VideoCaptionsResponse,
   VideoResponse,
 } from '@socialista/types'
 import { revalidatePath } from 'next/cache'
@@ -78,4 +79,11 @@ export const exportVideo = async (
   settings: ExportSettings,
 ): Promise<ApiResponse<ExportVideoResponse>> => {
   return api.post<ExportVideoResponse>(VIDEO_ROUTES.EXPORT(id), { settings })
+}
+
+export const generateVideoCaptions = async (
+  id: string,
+  clipId: string,
+): Promise<ApiResponse<VideoCaptionsResponse>> => {
+  return api.post<VideoCaptionsResponse>(VIDEO_ROUTES.CAPTIONS(id), { clipId })
 }
