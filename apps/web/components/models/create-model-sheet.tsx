@@ -5,12 +5,13 @@ import { ContextSupportPicker } from '@/components/models/context-support-picker
 import { ModelTypePicker } from '@/components/models/model-type-picker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { COST_UNIT_OPTIONS, createModelSchema, type CreateModelFormValues } from '@/lib/zod/model.schema'
 import { createModel, updateModel } from '@/services/models.service'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ContextSupport, CostUnit, ModelType, type Model } from '@socialista/types'
+import { ContextSupport, CostUnit, ModelType, type AiCompany, type Model } from '@socialista/types'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -23,7 +24,6 @@ const selectClassName = cn(
 )
 
 const emptyFormValues: CreateModelFormValues = {
-  chef: '',
   value: '',
   name: '',
   cost: '',
@@ -31,6 +31,7 @@ const emptyFormValues: CreateModelFormValues = {
   modelType: ModelType.TEXT,
   contextSupports: [ContextSupport.TEXT],
   modelProvider: '',
+  company: '',
 }
 
 function toFormValues(model: Model): CreateModelFormValues {
@@ -41,8 +42,8 @@ function toFormValues(model: Model): CreateModelFormValues {
     modelType: model.modelType,
     contextSupports: model.contextSupports?.length ? model.contextSupports : [ContextSupport.TEXT],
     modelProvider: model.modelProvider,
-    chef: model.chef,
     value: model.value,
+    company: model.company?._id ?? '',
   }
 }
 
@@ -50,9 +51,10 @@ type CreateModelSheetProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   model?: Model | null
+  companies: AiCompany[]
 }
 
-export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheetProps) {
+export function CreateModelSheet({ open, onOpenChange, model, companies }: CreateModelSheetProps) {
   const router = useRouter()
   const isEditing = Boolean(model)
   const {
@@ -79,7 +81,6 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
 
   const onSubmit = handleSubmit(async values => {
     const payload = {
-      chef: values.chef,
       value: values.value,
       name: values.name,
       cost: Number(values.cost),
@@ -87,6 +88,7 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
       modelType: values.modelType,
       contextSupports: values.contextSupports,
       modelProvider: values.modelProvider,
+      company: values.company,
     }
 
     try {
@@ -123,24 +125,48 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
 
           <form id="model-form" onSubmit={onSubmit} className="flex flex-1 flex-col gap-4 px-4">
             <div className="space-y-2">
-              <FieldLabel htmlFor="model-chef">Chef</FieldLabel>
-              <Input
-                id="model-chef"
-                placeholder="e.g. GPT-4o"
-                aria-invalid={Boolean(errors.chef)}
-                {...register('chef')}
+              <FieldLabel htmlFor="model-company">Company / lab</FieldLabel>
+              <Controller
+                name="company"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value || undefined}
+                    onValueChange={field.onChange}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger
+                      id="model-company"
+                      className="h-9 w-full min-w-0"
+                      aria-invalid={Boolean(errors.company)}
+                    >
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map(company => (
+                        <SelectItem key={company._id} value={company._id}>
+                          <span className="flex items-center gap-2">
+                            <img
+                              alt=""
+                              className="size-4 object-contain"
+                              height={16}
+                              src={company.logo}
+                              width={16}
+                            />
+                            {company.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
-              <FieldError message={errors.chef?.message} />
-            </div>
-            <div className="space-y-2">
-              <FieldLabel htmlFor="model-value">Value</FieldLabel>
-              <Input
-                id="model-value"
-                placeholder="e.g. GPT-4o"
-                aria-invalid={Boolean(errors.value)}
-                {...register('value')}
-              />
-              <FieldError message={errors.value?.message} />
+              {companies.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Add companies under Models → Companies to attach a logo.
+                </p>
+              ) : null}
+              <FieldError message={errors.company?.message} />
             </div>
             <div className="space-y-2">
               <FieldLabel htmlFor="model-name">Name</FieldLabel>
@@ -151,6 +177,16 @@ export function CreateModelSheet({ open, onOpenChange, model }: CreateModelSheet
                 {...register('name')}
               />
               <FieldError message={errors.name?.message} />
+            </div>
+            <div className="space-y-2">
+              <FieldLabel htmlFor="model-value">Value</FieldLabel>
+              <Input
+                id="model-value"
+                placeholder="e.g. GPT-4o"
+                aria-invalid={Boolean(errors.value)}
+                {...register('value')}
+              />
+              <FieldError message={errors.value?.message} />
             </div>
 
             <div className="space-y-2">

@@ -30,6 +30,7 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
+          <TableHead>Company</TableHead>
           <TableHead>Provider</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Context</TableHead>
@@ -44,6 +45,22 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
         {models.map(model => (
           <TableRow key={model._id}>
             <TableCell className="font-medium">{model.name}</TableCell>
+            <TableCell>
+              {model.company ? (
+                <span className="flex items-center gap-2">
+                  <img
+                    alt=""
+                    className="size-4 object-contain"
+                    height={16}
+                    src={model.company.logo}
+                    width={16}
+                  />
+                  {model.company.name}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </TableCell>
             <TableCell>{model.modelProvider}</TableCell>
             <TableCell>
               <ModelTypeLabel type={model.modelType} />

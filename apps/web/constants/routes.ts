@@ -108,6 +108,15 @@ export const MODEL_ROUTES = {
   DELETE_MODEL: (id: string) => `/models/${id}`,
 } as const
 
+export const AI_COMPANY_ROUTES = {
+  GET_COMPANIES: `/ai-companies`,
+  GET_COMPANY: (id: string) => `/ai-companies/${id}`,
+  CREATE_COMPANY: `/ai-companies`,
+  UPDATE_COMPANY: (id: string) => `/ai-companies/${id}`,
+  DELETE_COMPANY: (id: string) => `/ai-companies/${id}`,
+  UPLOAD_LOGO: `/ai-companies/logo`,
+} as const
+
 export const BRAND_ROUTES = {
   CREATE: '/brands',
   GET_BY_ID: (id: string) => `/brands/${id}`,

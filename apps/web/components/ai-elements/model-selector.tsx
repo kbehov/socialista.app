@@ -200,7 +200,9 @@ export const ModelSelectorSeparator = ({ className, ...props }: ModelSelectorSep
 )
 
 export type ModelSelectorLogoProps = Omit<ComponentProps<'img'>, 'src' | 'alt'> & {
-  provider:
+  src?: string
+  alt?: string
+  provider?:
     | 'moonshotai-cn'
     | 'lucidquery'
     | 'moonshotai'
@@ -261,16 +263,27 @@ export type ModelSelectorLogoProps = Omit<ComponentProps<'img'>, 'src' | 'alt'> 
     | (string & {})
 }
 
-export const ModelSelectorLogo = ({ provider, className, ...props }: ModelSelectorLogoProps) => (
-  <img
-    {...props}
-    alt={`${provider} logo`}
-    className={cn('size-3 dark:invert', className)}
-    height={12}
-    src={`https://models.dev/logos/${provider}.svg`}
-    width={12}
-  />
-)
+export const ModelSelectorLogo = ({
+  provider,
+  src,
+  alt,
+  className,
+  ...props
+}: ModelSelectorLogoProps) => {
+  const logoSrc = src ?? (provider ? `https://models.dev/logos/${provider}.svg` : undefined)
+  if (!logoSrc) return null
+
+  return (
+    <img
+      {...props}
+      alt={alt ?? `${provider ?? 'company'} logo`}
+      className={cn('size-3', src ? 'object-contain' : 'dark:invert', className)}
+      height={12}
+      src={logoSrc}
+      width={12}
+    />
+  )
+}
 
 export type ModelSelectorLogoGroupProps = ComponentProps<'div'>
 

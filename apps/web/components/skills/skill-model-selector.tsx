@@ -14,9 +14,10 @@ import {
   ModelSelectorShortcut,
   ModelSelectorTrigger,
 } from '@/components/ai-elements/model-selector'
-import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
+import { ModelLogo } from '@/components/icons/model-logo'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { getModelCompanyName } from '@/lib/model-company'
 import { formatModelCost } from '@/utils/format'
 import type { Model } from '@socialista/types'
 import { CheckIcon, ChevronDownIcon, Loader2Icon } from 'lucide-react'
@@ -41,7 +42,10 @@ export function SkillModelSelector({
 }: SkillModelSelectorProps) {
   const [open, setOpen] = useState(false)
   const selectedModel = models.find(model => model._id === selectedModelId) ?? models[0]
-  const chefs = useMemo(() => [...new Set(models.map(model => model.chef))].sort(), [models])
+  const companyNames = useMemo(
+    () => [...new Set(models.map(model => getModelCompanyName(model)))].sort(),
+    [models],
+  )
 
   if (loading && models.length === 0) {
     return (
@@ -89,7 +93,7 @@ export function SkillModelSelector({
         >
           <span className="flex min-w-0 items-center gap-2">
             <span className="flex size-5 shrink-0 items-center justify-center rounded-[0.4375rem] bg-muted/50 ring-1 ring-border/30">
-              <ModelProviderIcon className="size-3" provider={selectedModel.modelProvider} />
+              <ModelLogo className="size-3" model={selectedModel} size={12} />
             </span>
             <ModelSelectorName className="text-[13px] font-medium leading-none tracking-[-0.015em]">
               {selectedModel.name}
@@ -110,17 +114,17 @@ export function SkillModelSelector({
           description={
             <>
               {models.length} available
-              {chefs.length > 1 ? ` · ${chefs.length} providers` : null}
+              {companyNames.length > 1 ? ` · ${companyNames.length} companies` : null}
             </>
           }
         />
         <ModelSelectorInput placeholder="Search by name or provider…" />
         <ModelSelectorList>
           <ModelSelectorEmpty>No models match your search.</ModelSelectorEmpty>
-          {chefs.map(chef => (
-            <ModelSelectorGroup heading={chef} key={chef}>
+          {companyNames.map(companyName => (
+            <ModelSelectorGroup heading={companyName} key={companyName}>
               {models
-                .filter(model => model.chef === chef)
+                .filter(model => getModelCompanyName(model) === companyName)
                 .map(model => {
                   const isSelected = selectedModelId === model._id
 
@@ -132,10 +136,10 @@ export function SkillModelSelector({
                         onSelectedModelChange(model._id)
                         setOpen(false)
                       }}
-                      value={`${model.name} ${model.modelProvider} ${model.chef}`}
+                      value={`${model.name} ${model.modelProvider} ${getModelCompanyName(model)}`}
                     >
                       <ModelSelectorLogoBadge>
-                        <ModelProviderIcon className="size-3.5" provider={model.modelProvider} />
+                        <ModelLogo className="size-3.5" model={model} size={14} />
                       </ModelSelectorLogoBadge>
 
                       <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">

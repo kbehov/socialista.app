@@ -13,6 +13,7 @@ export * from './models/inspiration.model.js'
 export { InvitationModel } from './models/invitation.model.js'
 export { InfluencerModel } from './models/influencer.model.js'
 export { InfluencerCloneRequestModel } from './models/influencer-clone-request.model.js'
+export { AiCompanyModel } from './models/ai-company.model.js'
 export { ModelModel } from './models/model.js'
 export { NotificationModel } from './models/notification.model.js'
 export { PolarWebhookEventModel } from './models/polar-webhook-event.model.js'
@@ -33,6 +34,7 @@ export * from './repo/influencer.repo.js'
 export * from './repo/influencer-clone-request.repo.js'
 export * from './repo/inspiration.repo.js'
 export * from './repo/invitation.repo.js'
+export * from './repo/ai-company.repo.js'
 export * from './repo/model.repo.js'
 export * from './repo/notification.repo.js'
 export * from './repo/polar-webhook-event.repo.js'
@@ -60,7 +62,14 @@ export {
   ModelType,
   type IModel,
   type ModelDocument,
+  type PopulatedAiCompany,
 } from './types/models.types.js'
+export type {
+  AiCompanyDocument,
+  CreateAiCompanyInput,
+  IAiCompany,
+  UpdateAiCompanyInput,
+} from './types/ai-company.types.js'
 export type { BrandDocument, IBrand } from './types/brand.types.js'
 export { ProductKind, type Iproduct, type ProductDocument } from './types/product.types.js'
 export {
@@ -100,6 +109,7 @@ export {
   floorToUtcDay,
   hashAccountRefreshSlot,
 } from './utils/analytics-slot.js'
+export { isDuplicateKeyError } from './utils/is-duplicate-key-error.js'
 export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 export {
   assertValidTimezone,

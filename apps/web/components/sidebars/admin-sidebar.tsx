@@ -47,6 +47,16 @@ const items = [
     title: 'Models',
     url: '/manager/models',
     icon: <BoxIcon />,
+    items: [
+      {
+        title: 'All models',
+        url: '/manager/models',
+      },
+      {
+        title: 'Companies',
+        url: '/manager/models/companies',
+      },
+    ],
   },
 ]
 

@@ -11,7 +11,6 @@ export const COST_UNIT_OPTIONS = [
 ] as const
 
 export const createModelSchema = z.object({
-  chef: z.string().trim().min(1, 'Chef is required').max(100, 'Chef must be 100 characters or less'),
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
   value: z.string().trim().min(1, 'Value is required').max(100, 'Value must be 100 characters or less'),
   cost: z
@@ -25,6 +24,7 @@ export const createModelSchema = z.object({
     .array(z.nativeEnum(ContextSupport))
     .min(1, 'Select at least one context support'),
   modelProvider: z.string().trim().min(1, 'Provider is required').max(100, 'Provider must be 100 characters or less'),
+  company: z.string().trim().min(1, 'Company is required'),
 })
 
 export type CreateModelFormValues = z.infer<typeof createModelSchema>

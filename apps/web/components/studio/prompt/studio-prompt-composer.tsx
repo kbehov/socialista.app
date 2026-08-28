@@ -29,7 +29,7 @@ import {
   AttachedMediaThumb,
   type AttachedMedia,
 } from "@/components/files/attach-images-dialog";
-import { ModelProviderIcon } from "@/components/icons/model-provider-icon";
+import { ModelLogo } from "@/components/icons/model-logo";
 import {
   StudioAttachMenu,
   attachmentChipLabel,
@@ -49,6 +49,7 @@ import {
   replaceMentionWithTag,
   taggedAttachmentIndices,
 } from "@/lib/studio/prompt/reference-tags";
+import { getModelCompanyName } from "@/lib/model-company";
 import { cn } from "@/lib/utils";
 import { formatModelCost } from "@/utils/format";
 import { ContextSupport, type Model } from "@socialista/types";
@@ -395,8 +396,8 @@ export function StudioPromptComposer({
     [models, selectedModelId],
   );
 
-  const chefs = useMemo(
-    () => [...new Set(models.map((model) => model.chef))].sort(),
+  const companyNames = useMemo(
+    () => [...new Set(models.map((model) => getModelCompanyName(model)))].sort(),
     [models],
   );
   const modelHighlights = useMemo(() => buildModelHighlights(models), [models]);
@@ -600,10 +601,7 @@ export function StudioPromptComposer({
           type="button"
         >
           <span className="flex size-5 shrink-0 items-center justify-center rounded-[0.4375rem] bg-muted/50 ring-1 ring-border/30">
-            <ModelProviderIcon
-              className="size-3"
-              provider={selectedModel.modelProvider}
-            />
+            <ModelLogo className="size-3" model={selectedModel} size={12} />
           </span>
           {selectedModelHighlights[0] ? (
             <span
@@ -635,17 +633,17 @@ export function StudioPromptComposer({
           description={
             <>
               {models.length} available
-              {chefs.length > 1 ? ` · ${chefs.length} providers` : null}
+              {companyNames.length > 1 ? ` · ${companyNames.length} companies` : null}
             </>
           }
         />
         <ModelSelectorInput placeholder="Search by name or provider…" />
         <ModelSelectorList>
           <ModelSelectorEmpty>No models match your search.</ModelSelectorEmpty>
-          {chefs.map((chef) => (
-            <ModelSelectorGroup heading={chef} key={chef}>
+          {companyNames.map((companyName) => (
+            <ModelSelectorGroup heading={companyName} key={companyName}>
               {models
-                .filter((model) => model.chef === chef)
+                .filter((model) => getModelCompanyName(model) === companyName)
                 .map((model) => {
                   const isSelected = selectedModelId === model._id;
                   const highlights = modelHighlights.get(model._id) ?? [];
@@ -659,13 +657,10 @@ export function StudioPromptComposer({
                         onSelectedModelChange(model._id);
                         setModelSelectorOpen(false);
                       }}
-                      value={`${model.name} ${model.modelProvider} ${model.chef}`}
+                      value={`${model.name} ${model.modelProvider} ${getModelCompanyName(model)}`}
                     >
                       <ModelSelectorLogoBadge>
-                        <ModelProviderIcon
-                          className="size-3.5"
-                          provider={model.modelProvider}
-                        />
+                        <ModelLogo className="size-3.5" model={model} size={14} />
                       </ModelSelectorLogoBadge>
 
                       <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">

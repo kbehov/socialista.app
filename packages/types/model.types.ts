@@ -1,3 +1,5 @@
+import type { ModelCompany } from './ai-company.types.js'
+
 export enum ModelType {
   TEXT = 'text',
   IMAGE = 'image',
@@ -22,7 +24,6 @@ export enum ContextSupport {
 
 export type Model = {
   _id: string
-  chef: string
   value: string
   name: string
   cost: number
@@ -30,6 +31,7 @@ export type Model = {
   modelType: ModelType
   contextSupports?: ContextSupport[]
   modelProvider: string
+  company?: ModelCompany
   createdAt: Date
   updatedAt: Date
 }
@@ -39,7 +41,6 @@ export type GetModelsResponse = {
 }
 
 export type CreateModelInput = {
-  chef: string
   value: string
   name: string
   cost: number
@@ -47,6 +48,7 @@ export type CreateModelInput = {
   modelType: ModelType
   contextSupports: ContextSupport[]
   modelProvider: string
+  company: string
 }
 
 export type UpdateModelInput = Partial<CreateModelInput>

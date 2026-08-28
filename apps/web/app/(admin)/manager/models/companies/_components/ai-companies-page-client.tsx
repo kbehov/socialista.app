@@ -3,42 +3,41 @@
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
 import { PageHeader } from '@/components/headers/page-header'
-import { CreateModelSheet } from '@/components/models/create-model-sheet'
-import { ModelsTable } from '@/components/tables/models.table'
+import { CreateAiCompanySheet } from '@/components/models/create-ai-company-sheet'
+import { AiCompaniesTable } from '@/components/tables/ai-companies.table'
 import { Button } from '@/components/ui/button'
-import { deleteModel } from '@/services/models.service'
-import type { AiCompany, Model } from '@socialista/types'
-import { BoxIcon, PlusIcon } from 'lucide-react'
+import { deleteAiCompany } from '@/services/ai-company.service'
+import type { AiCompany } from '@socialista/types'
+import { Building2Icon, PlusIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-type ModelsPageClientProps = {
-  models: Model[]
+type AiCompaniesPageClientProps = {
   companies: AiCompany[]
 }
 
-export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
+export function AiCompaniesPageClient({ companies }: AiCompaniesPageClientProps) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingModel, setEditingModel] = useState<Model | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Model | null>(null)
+  const [editingCompany, setEditingCompany] = useState<AiCompany | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AiCompany | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const openCreateSheet = () => {
-    setEditingModel(null)
+    setEditingCompany(null)
     setSheetOpen(true)
   }
 
-  const openEditSheet = (model: Model) => {
-    setEditingModel(model)
+  const openEditSheet = (company: AiCompany) => {
+    setEditingCompany(company)
     setSheetOpen(true)
   }
 
   const handleSheetOpenChange = (open: boolean) => {
     setSheetOpen(open)
     if (!open) {
-      setEditingModel(null)
+      setEditingCompany(null)
     }
   }
 
@@ -48,14 +47,14 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
     setIsDeleting(true)
 
     try {
-      const result = await deleteModel(deleteTarget._id)
+      const result = await deleteAiCompany(deleteTarget._id)
 
       if (!result.success) {
-        toast.error(result.message ?? 'Failed to delete model')
+        toast.error(result.message ?? 'Failed to delete company')
         return
       }
 
-      toast.success('Model deleted')
+      toast.success('Company deleted')
       setDeleteTarget(null)
       router.refresh()
     } catch (error) {
@@ -69,42 +68,41 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title="Models"
-        description="Manage AI models and their pricing."
-        breadcrumbs={[{ label: 'Manager', href: '/manager' }, { label: 'Models' }]}
+        title="Companies"
+        description="AI labs and companies used for model logos."
+        breadcrumbs={[
+          { label: 'Manager', href: '/manager' },
+          { label: 'Models', href: '/manager/models' },
+          { label: 'Companies' },
+        ]}
         actions={
           <Button size="sm" className="h-8 gap-1.5 rounded-lg" onClick={openCreateSheet}>
             <PlusIcon className="size-3.5" />
-            New model
+            New company
           </Button>
         }
       />
 
-      {models.length === 0 ? (
+      {companies.length === 0 ? (
         <EmptyState
           minHeight="lg"
-          icon={BoxIcon}
-          title="No models yet"
-          description="Add your first AI model to configure generation pricing."
+          icon={Building2Icon}
+          title="No companies yet"
+          description="Add OpenAI, Google, xAI, and other labs so their logos appear in the model selector."
           action={
             <Button size="sm" onClick={openCreateSheet}>
               <PlusIcon className="size-3.5" />
-              Add model
+              Add company
             </Button>
           }
         />
       ) : (
         <div className="rounded-xl border border-border">
-          <ModelsTable models={models} onEdit={openEditSheet} onDelete={setDeleteTarget} />
+          <AiCompaniesTable companies={companies} onEdit={openEditSheet} onDelete={setDeleteTarget} />
         </div>
       )}
 
-      <CreateModelSheet
-        open={sheetOpen}
-        onOpenChange={handleSheetOpenChange}
-        model={editingModel}
-        companies={companies}
-      />
+      <CreateAiCompanySheet open={sheetOpen} onOpenChange={handleSheetOpenChange} company={editingCompany} />
 
       <DeleteConfirmDialog
         open={deleteTarget !== null}
@@ -113,13 +111,13 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
             setDeleteTarget(null)
           }
         }}
-        title="Delete model?"
+        title="Delete company?"
         description={
           deleteTarget
-            ? `"${deleteTarget.name}" will be permanently removed. This action cannot be undone.`
-            : 'This model will be permanently removed. This action cannot be undone.'
+            ? `"${deleteTarget.name}" will be permanently removed. Models that still use it must be unassigned first.`
+            : 'This company will be permanently removed. This action cannot be undone.'
         }
-        confirmLabel="Delete model"
+        confirmLabel="Delete company"
         isDeleting={isDeleting}
         onConfirm={() => void handleConfirmDelete()}
       />
