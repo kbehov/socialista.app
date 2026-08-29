@@ -1,19 +1,21 @@
-import Link from 'next/link'
-
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
+import Link from 'next/link'
 
 type LogoProps = {
   className?: string
   href?: string
+  compact?: boolean
 }
 
-function Logo({ className, href = '/' }: LogoProps) {
+function Logo({ className, href = '/', compact = false }: LogoProps) {
   return (
     <Link
       href={href}
       aria-label="Socialista"
       className={cn(
-        'group inline-flex items-center gap-2.5 text-foreground outline-none select-none',
+        'group inline-flex items-center text-foreground outline-none select-none',
+        compact ? 'gap-1.5' : 'gap-2.5',
         'focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
@@ -21,19 +23,30 @@ function Logo({ className, href = '/' }: LogoProps) {
       <span
         aria-hidden
         className={cn(
-          'relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-[9px]',
-          'bg-foreground text-background',
-          'shadow-[inset_0_1px_0_0_color-mix(in_oklch,var(--background)_22%,transparent)]',
+          'relative flex shrink-0 items-center justify-center overflow-hidden bg-accent-orange',
+          compact ? 'size-5 rounded-[6px]' : 'size-8 rounded-[9px]',
+          !compact && 'shadow-[inset_0_1px_0_0_color-mix(in_oklch,var(--background)_22%,transparent)]',
           'transition-transform duration-150 ease-out',
           'group-hover:scale-[1.04] group-active:scale-[0.97]',
           'motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-active:scale-100',
         )}
       >
-        <svg viewBox="0 0 32 32" className="size-[22px]" fill="currentColor">
-          <path d="M16 2.5L18.05 11.06L21.94 10.06L20.94 13.95L29.5 16L20.94 18.05L21.94 21.94L18.05 20.94L16 29.5L13.95 20.94L10.06 21.94L11.06 18.05L2.5 16L11.06 13.95L10.06 10.06L13.95 11.06Z" />
-        </svg>
+        <Image
+          src="/socialista-logo.webp"
+          alt=""
+          width={compact ? 20 : 32}
+          height={compact ? 20 : 32}
+          className="size-full object-contain p-px dark:invert"
+        />
       </span>
-      <span className="text-[17px] font-bold leading-none tracking-[-0.032em]">Socialista</span>
+      <span
+        className={cn(
+          'leading-none',
+          compact ? 'text-[13px] font-medium tracking-tight' : 'text-[17px] font-bold tracking-[-0.032em]',
+        )}
+      >
+        Socialista
+      </span>
     </Link>
   )
 }

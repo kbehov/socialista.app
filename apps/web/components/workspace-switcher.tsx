@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { isWorkspaceAdmin } from '@/lib/workspace-role'
 import { getWorkspaceId, useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
 import { WorkspaceResponse } from '@socialista/types'
-import { CheckIcon, ChevronsUpDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
+import { CheckIcon, ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
@@ -24,33 +24,24 @@ import { useState } from 'react'
 
 const SWITCHER_ICON_STROKE = 1.5
 
-function formatPlanLabel(plan: string): string {
-  const normalized = plan.trim()
-  if (!normalized) return 'Plan'
-  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)} plan`
-}
-
 type WorkspaceAvatarProps = {
   workspace: WorkspaceResponse
-  size?: 'sm' | 'md'
   className?: string
 }
 
-function WorkspaceAvatar({ workspace, size = 'sm', className }: WorkspaceAvatarProps) {
+function WorkspaceAvatar({ workspace, className }: WorkspaceAvatarProps) {
   return (
-    <div className={cn('sidebar-switcher-avatar', size === 'md' && 'sidebar-switcher-avatar-md', className)}>
+    <div className={cn('sidebar-switcher-avatar', className)}>
       {workspace.logo ? (
         <Image
           src={workspace.logo}
           alt=""
-          width={size === 'md' ? 32 : 24}
-          height={size === 'md' ? 32 : 24}
+          width={20}
+          height={20}
           className="size-full object-cover"
         />
       ) : (
-        <span className={cn('font-medium', size === 'md' ? 'text-sm' : 'text-xs')}>
-          {workspace.name.charAt(0).toUpperCase()}
-        </span>
+        <span className="font-medium">{workspace.name.charAt(0).toUpperCase()}</span>
       )}
     </div>
   )
@@ -78,20 +69,16 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
               tooltip={currentWorkspace.name}
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+              className="h-7 gap-1.5 px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
-              <WorkspaceAvatar workspace={currentWorkspace} size="md" />
-              <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-[13px] font-medium tracking-tight">{currentWorkspace.name}</span>
-                <span className="sidebar-switcher-meta truncate">
-                  {formatPlanLabel(currentWorkspace.billing.plan)}
-                </span>
-              </div>
-              <ChevronsUpDownIcon
-                className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden"
-                strokeWidth={SWITCHER_ICON_STROKE}
+              <WorkspaceAvatar workspace={currentWorkspace} />
+              <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+                {currentWorkspace.name}
+              </span>
+              <ChevronDownIcon
+                className="ml-auto size-3! text-muted-foreground group-data-[collapsible=icon]:hidden"
+                strokeWidth={2}
               />
             </SidebarMenuButton>
           </DropdownMenuTrigger>

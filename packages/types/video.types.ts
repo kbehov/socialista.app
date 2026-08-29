@@ -251,7 +251,7 @@ export type ExportVideoResponse = {
   publicAccessToken: string
 }
 
-export const VIDEO_CAPTIONS_CREDIT_COST = 0.02
+export const VIDEO_CAPTIONS_CREDIT_COST = 2
 
 export type VideoCaptionSegment = {
   text: string

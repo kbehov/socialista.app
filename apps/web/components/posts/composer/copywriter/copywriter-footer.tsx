@@ -1,12 +1,13 @@
 'use client'
 
-import { COPYWRITER_GENERATION_PRICE_USD } from '@/components/posts/composer/copywriter/copywriter-constants'
+import { COPYWRITER_GENERATION_CREDITS } from '@/components/posts/composer/copywriter/copywriter-constants'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { SheetFooter } from '@/components/ui/sheet'
+import { formatCredits } from '@/utils/format'
 import { CheckIcon, PlusIcon, RefreshCwIcon, SparklesIcon, SquareIcon } from 'lucide-react'
 
-const priceLabel = `~$${COPYWRITER_GENERATION_PRICE_USD.toFixed(2)} per generation`
+const priceLabel = `~${formatCredits(COPYWRITER_GENERATION_CREDITS)} credits per generation`
 
 type CopywriterFooterProps = {
   isLoading: boolean

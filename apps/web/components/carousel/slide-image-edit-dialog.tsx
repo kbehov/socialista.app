@@ -12,11 +12,12 @@ import {
 import { Kbd } from '@/components/ui/kbd'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { formatCredits } from '@/utils/format'
 import { ImageIcon, Loader2Icon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 
 const PROMPT_MAX_LENGTH = 400
-const EDIT_COST_USD = 0.04
+const EDIT_CREDIT_COST = 4
 
 const PROMPT_SUGGESTIONS = [
   {
@@ -296,7 +297,7 @@ function SlideImageEditDialogBody({
             </Button>
           </div>
           <p className="flex items-center justify-between gap-2 text-[10px] tracking-wide text-muted-foreground/70 sm:justify-end sm:gap-3">
-            <span>≈ ${EDIT_COST_USD.toFixed(2)} per edit</span>
+            <span>≈ {formatCredits(EDIT_CREDIT_COST)} credits per edit</span>
             <span className="flex items-center gap-1">
               <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘</Kbd>
               <Kbd className="h-4 min-w-4 px-1 text-[10px]">↵</Kbd>

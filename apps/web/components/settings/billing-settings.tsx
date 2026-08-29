@@ -5,7 +5,7 @@ import { WorkspaceUsageStats } from '@/components/settings/workspace-usage-stats
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { getBillingPortalUrl } from '@/utils/billing-urls'
-import { formatDate } from '@/utils/format'
+import { formatCredits, formatDate } from '@/utils/format'
 import type { WorkspaceBalanceResponse, WorkspaceResponse } from '@socialista/types'
 import { ArrowUpRightIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -66,7 +66,7 @@ export function BillingSettings({ workspace, balance }: BillingSettingsProps) {
           </div>
           <div>
             <dt className={dashboardSurface.metricLabel}>AI credits</dt>
-            <dd className={dashboardSurface.metricValueSm}>{billing.aiCreditsBalance}</dd>
+            <dd className={dashboardSurface.metricValueSm}>{formatCredits(billing.aiCreditsBalance)}</dd>
           </div>
           <div>
             <dt className={dashboardSurface.metricLabel}>{isPaid ? 'Current period' : 'Next billing'}</dt>

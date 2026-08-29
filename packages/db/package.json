@@ -11,7 +11,8 @@
     "build": "tsc",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc -p tsconfig.check.json",
-    "migrate:projects": "tsx --env-file=.env scripts/migrate-projects.ts"
+    "migrate:projects": "tsx --env-file=.env scripts/migrate-projects.ts",
+    "migrate:credits": "tsx --env-file=.env scripts/migrate-usd-to-credits.ts"
   },
   "exports": {
     ".": {

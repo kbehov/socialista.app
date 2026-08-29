@@ -3,6 +3,7 @@
 import { ContextSupportLabels } from '@/components/models/context-support-label'
 import { ModelTypeLabel } from '@/components/models/model-type-label'
 import { COST_UNIT_OPTIONS } from '@/lib/zod/model.schema'
+import { formatCredits } from '@/utils/format'
 import type { Model } from '@socialista/types'
 import { PencilIcon, Trash2Icon } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -68,7 +69,7 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
             <TableCell>
               <ContextSupportLabels supports={model.contextSupports} />
             </TableCell>
-            <TableCell className="tabular-nums">{model.cost}</TableCell>
+            <TableCell className="tabular-nums">{formatCredits(model.cost)}</TableCell>
             <TableCell>{costUnitLabels[model.costUnit] ?? model.costUnit}</TableCell>
             <TableCell className="text-muted-foreground">{formatDate(model.createdAt)}</TableCell>
             <TableCell className="text-muted-foreground">{formatDate(model.updatedAt)}</TableCell>

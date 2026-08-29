@@ -3,6 +3,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
+import { formatCredits } from '@/utils/format'
 import type { Model } from '@socialista/types'
 import { CheckIcon, ChevronDownIcon, Loader2Icon } from 'lucide-react'
 import { useState } from 'react'
@@ -89,7 +90,7 @@ function ModelChip({
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{model.name}</span>
                       <span className="block text-[11px] text-muted-foreground">
-                        {model.cost} cr · {model.modelProvider}
+                        {formatCredits(model.cost)} cr · {model.modelProvider}
                       </span>
                     </span>
                     {selected ? <CheckIcon className="size-3.5 shrink-0" /> : null}

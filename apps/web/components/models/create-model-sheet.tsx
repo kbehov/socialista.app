@@ -11,13 +11,25 @@ import { cn } from '@/lib/utils'
 import { COST_UNIT_OPTIONS, createModelSchema, type CreateModelFormValues } from '@/lib/zod/model.schema'
 import { createModel, updateModel } from '@/services/models.service'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ContextSupport, CostUnit, ModelType, type AiCompany, type Model } from '@socialista/types'
+import { CREDITS_PER_USD, ContextSupport, CostUnit, ModelType, type AiCompany, type Model } from '@socialista/types'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { ScrollArea } from '../ui/scroll-area'
+
+const usdFromCreditsFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+})
+const creditCountFormatter = new Intl.NumberFormat('en-US')
+
+function formatUsdFromCredits(credits: number): string {
+  return usdFromCreditsFormatter.format(credits / CREDITS_PER_USD)
+}
 
 const selectClassName = cn(
   'h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30',
@@ -63,6 +75,7 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
     reset,
     setError,
     control,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateModelFormValues>({
     resolver: zodResolver(createModelSchema),
@@ -78,6 +91,10 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
 
     reset(model ? toFormValues(model) : emptyFormValues)
   }, [open, model, reset])
+
+  const costInput = watch('cost') ?? ''
+  const parsedCost = Number(costInput)
+  const hasCostPreview = costInput.trim() !== '' && Number.isFinite(parsedCost) && parsedCost > 0
 
   const onSubmit = handleSubmit(async values => {
     const payload = {
@@ -255,16 +272,28 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
             </div>
 
             <div className="space-y-2">
-              <FieldLabel htmlFor="model-cost">Cost</FieldLabel>
+              <FieldLabel htmlFor="model-cost">Cost (credits)</FieldLabel>
               <Input
                 id="model-cost"
                 type="number"
                 min={0}
                 step="any"
-                placeholder="0.00"
+                placeholder="2"
                 aria-invalid={Boolean(errors.cost)}
                 {...register('cost')}
               />
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p>
+                  1 credit = {formatUsdFromCredits(1)} ($10 ={' '}
+                  {creditCountFormatter.format(CREDITS_PER_USD * 10)} credits). Enter credits, not dollars — a{' '}
+                  {formatUsdFromCredits(2)} generation is 2 credits, not 0.02.
+                </p>
+                {hasCostPreview ? (
+                  <p className="font-medium tabular-nums text-foreground">
+                    {parsedCost} credits ≈ {formatUsdFromCredits(parsedCost)}
+                  </p>
+                ) : null}
+              </div>
               <FieldError message={errors.cost?.message} />
             </div>
 

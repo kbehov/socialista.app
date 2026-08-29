@@ -6,18 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { formatCredits } from '@/utils/format'
 
-const LOW_BALANCE_THRESHOLD = 5
-const CRITICAL_BALANCE_THRESHOLD = 1
-
-function formatCredits(amount: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
+const LOW_BALANCE_THRESHOLD = 500
+const CRITICAL_BALANCE_THRESHOLD = 100
 
 function getBalanceTone(balance: number) {
   if (balance <= CRITICAL_BALANCE_THRESHOLD) {
@@ -58,17 +50,17 @@ export function WorkspaceBalanceHeader({
         <button
           type="button"
           aria-label={`Wallet balance ${formatCredits(balance)}. Open to top up.`}
-          className="rounded-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="rounded-[6px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <Badge
             variant="ghost"
             className={cn(
-              'h-8 cursor-pointer gap-1.5 rounded-[10px] px-2.5 font-medium tabular-nums transition-colors hover:bg-muted/60',
+              'h-7 cursor-pointer gap-1.5 rounded-[6px] px-2 font-medium tabular-nums transition-colors hover:bg-muted/60',
               className,
             )}
           >
             <WalletIcon className={cn('size-3.5', tone.icon)} strokeWidth={1.5} />
-            <span className={cn('text-xs', tone.text)}>{formatCredits(balance)}</span>
+            <span className={cn('text-[13px] font-medium tracking-tight', tone.text)}>{formatCredits(balance)}</span>
           </Badge>
         </button>
       </PopoverTrigger>

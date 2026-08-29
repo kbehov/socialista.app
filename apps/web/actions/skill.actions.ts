@@ -9,6 +9,7 @@ import { deductWorkspaceAiCredits } from '@/services/workspace.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSkill } from '@socialista/ai'
 import {
+  DEFAULT_GENERATION_CREDIT_COST,
   ModelType,
   PROMPT_KEY_VALUES,
   type Brand,
@@ -138,7 +139,7 @@ export async function generateSkillAction({
     }
 
     try {
-      await deductWorkspaceAiCredits(workspace._id, 0.02)
+      await deductWorkspaceAiCredits(workspace._id, DEFAULT_GENERATION_CREDIT_COST)
     } catch (error) {
       console.error('[generateSkillAction] credits', error)
     }

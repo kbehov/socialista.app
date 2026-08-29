@@ -23,7 +23,7 @@ export type SlideshowLayout = (typeof SLIDESHOW_LAYOUTS)[number]
 export const SLIDESHOW_GENERATION_SLIDE_COUNT_MIN = 3
 export const SLIDESHOW_GENERATION_SLIDE_COUNT_MAX = 10
 export const SLIDESHOW_GENERATION_SLIDE_COUNT_DEFAULT = 5
-export const SLIDESHOW_PLAN_CREDIT_COST = 0.02
+export const SLIDESHOW_PLAN_CREDIT_COST = 2
 
 export type PlanSlideshowInput = {
   hook: string

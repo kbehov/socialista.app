@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { isBlankSlide } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import { formatCredits } from '@/utils/format'
 import { PROMPT_KEYS } from '@socialista/types'
 import { Loader2Icon, MinusIcon, PlusIcon, SparklesIcon } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
@@ -16,7 +17,7 @@ import { toast } from 'sonner'
 
 const SLIDE_COUNT_MIN = 3
 const SLIDE_COUNT_MAX = 10
-const GENERATION_COST_USD = 0.02
+const GENERATION_CREDIT_COST = 2
 const PROMPT_MAX_LENGTH = 800
 
 const PROMPT_EXAMPLES = [
@@ -312,7 +313,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         </Button>
         <div className="flex items-center justify-between gap-2 px-0.5 text-[11px] text-muted-foreground">
           <p>
-            ≈ ${GENERATION_COST_USD.toFixed(2)} per generation
+            ≈ {formatCredits(GENERATION_CREDIT_COST)} credits per generation
           </p>
           <p className="flex items-center gap-1">
             <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘</Kbd>

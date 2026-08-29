@@ -21,7 +21,7 @@ import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { getInitials } from '@/utils/user'
 
-export function UserDropdown() {
+export function UserDropdown({ className }: { className?: string }) {
   const { data: session, status } = useSession()
   const currentWorkspace = useWorkspaceStore(state => state.currentWorkspace)
 
@@ -34,7 +34,7 @@ export function UserDropdown() {
   const billingHref = plan !== 'free' && workspaceId ? getBillingPortalUrl(workspaceId) : DASHBOARD_ROUTES.UPGRADE
 
   if (status === 'loading') {
-    return <Skeleton className="size-8 shrink-0 rounded-[10px]" />
+    return <Skeleton className="size-7 shrink-0 rounded-[6px]" />
   }
 
   return (
@@ -46,12 +46,13 @@ export function UserDropdown() {
           className={cn(
             'p-0 text-muted-foreground transition-colors',
             'hover:bg-muted/60 hover:text-foreground aria-expanded:bg-muted/60',
+            className,
           )}
           aria-label="Open account menu"
         >
-          <Avatar className="size-6 rounded-md">
+          <Avatar className="size-5 rounded-full after:rounded-full">
             <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback className="rounded-md text-[10px] font-medium">{getInitials(user?.name)}</AvatarFallback>
+            <AvatarFallback className="rounded-full text-[9px] font-medium">{getInitials(user?.name)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

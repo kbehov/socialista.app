@@ -27,6 +27,7 @@ import { ASPECT_RATIO_PRESETS, DEFAULT_ASPECT_RATIO_ID } from '@/lib/carousel/as
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import { formatCredits } from '@/utils/format'
 import { commitHaptic } from '@/utils/haptics'
 import {
   PROMPT_KEYS,
@@ -245,7 +246,7 @@ function SlideshowPromptComposerInner({ models }: { models: Model[] }) {
         }
       />
       <p className="mt-2 px-0.5 text-[12px] tracking-tight text-muted-foreground">
-        ≈ ${estimatedCost.toFixed(2)} per generation
+        ≈ {formatCredits(estimatedCost)} credits per generation
       </p>
     </div>
   )

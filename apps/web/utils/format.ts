@@ -65,14 +65,18 @@ export function formatRelativeTime(date: Date | string | number): string {
   return formatter.format(0, 'second')
 }
 
+const creditsFormatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+})
+
+export function formatCredits(amount: number | undefined): string {
+  if (typeof amount !== 'number' || Number.isNaN(amount)) return '—'
+  return creditsFormatter.format(amount)
+}
+
 export function formatCost(cost: number | undefined): string {
-  if (typeof cost !== 'number' || Number.isNaN(cost)) return '—'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cost)
+  return formatCredits(cost)
 }
 
 export function formatDuration(ms: number | undefined): string {
@@ -86,7 +90,7 @@ export function formatDuration(ms: number | undefined): string {
 }
 
 export function formatModelCost(cost: number, costUnit: string): string {
-  const credits = `${Number(cost).toFixed(2)}$`
+  const credits = formatCredits(cost)
   if (costUnit === 'generation') {
     return credits
   }

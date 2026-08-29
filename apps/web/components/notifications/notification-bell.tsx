@@ -15,11 +15,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-function unreadLabel(count: number) {
-  if (count > 99) return '99+'
-  return String(count)
-}
-
 export function NotificationBell({ className }: { className?: string }) {
   const router = useRouter()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
@@ -52,9 +47,7 @@ export function NotificationBell({ className }: { className?: string }) {
         >
           <BellIcon strokeWidth={1.5} />
           {unreadCount > 0 ? (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums">
-              {unreadLabel(unreadCount)}
-            </span>
+            <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary" />
           ) : null}
         </Button>
       </PopoverTrigger>

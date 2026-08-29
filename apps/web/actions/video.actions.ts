@@ -5,7 +5,7 @@ import { deductWorkspaceAiCredits } from '@/services/workspace.service'
 import { loadSkillOverride } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateVideoScript } from '@socialista/ai'
-import { PROMPT_KEYS, type VideoScriptSegment, type VideoScriptTone } from '@socialista/types'
+import { DEFAULT_GENERATION_CREDIT_COST, PROMPT_KEYS, type VideoScriptSegment, type VideoScriptTone } from '@socialista/types'
 
 export type GenerateVideoScriptActionResult =
   | { success: true; title: string; segments: VideoScriptSegment[] }
@@ -54,7 +54,7 @@ export async function generateVideoScriptAction(
       return { success: false, error: 'No script segments were generated' }
     }
 
-    await deductWorkspaceAiCredits(workspaceId._id, 0.02)
+    await deductWorkspaceAiCredits(workspaceId._id, DEFAULT_GENERATION_CREDIT_COST)
     return { success: true, title: result.title, segments: result.segments }
   } catch (error) {
     console.error('[generateVideoScriptAction]', error)

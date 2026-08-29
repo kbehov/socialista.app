@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceStore } from '@/store/workspace.store'
+import { formatCredits } from '@/utils/format'
 import { ChevronLeftIcon, LayersIcon, Loader2Icon, PencilIcon } from 'lucide-react'
 import Link from 'next/link'
 
@@ -55,7 +56,7 @@ export function UgcStudioTopbar({
 
       <div className="flex shrink-0 items-center gap-1.5">
         <span className="hidden text-[11px] tabular-nums text-muted-foreground sm:inline">
-          {credits} credits
+          {formatCredits(credits)} credits
         </span>
         {assembledVideoUrl ? (
           <Button

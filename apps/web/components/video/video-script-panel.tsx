@@ -17,6 +17,7 @@ import { SCRIPT_ROLE_OVERLAY_PRESETS } from '@/lib/video/defaults'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
+import { formatCredits } from '@/utils/format'
 import type { VideoScriptSegment, VideoScriptTone } from '@socialista/types'
 import { PROMPT_KEYS, VIDEO_SCRIPT_TONES } from '@socialista/types'
 import {
@@ -27,7 +28,7 @@ import {
 import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-const GENERATION_COST_USD = 0.02
+const GENERATION_CREDIT_COST = 2
 const PROMPT_MAX_LENGTH = 800
 const MIN_DURATION = 5
 const MAX_DURATION = 600
@@ -346,7 +347,7 @@ export function VideoScriptPanel({
               {isPending ? 'Generating…' : 'Generate script'}
             </Button>
             <div className="flex items-center justify-between gap-2 px-0.5 text-[10px] tracking-wide text-muted-foreground/75">
-              <p>≈ ${GENERATION_COST_USD.toFixed(2)} per generation</p>
+              <p>≈ {formatCredits(GENERATION_CREDIT_COST)} credits per generation</p>
               <p className="flex items-center gap-1">
                 <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘</Kbd>
                 <Kbd className="h-4 min-w-4 px-1 text-[10px]">↵</Kbd>

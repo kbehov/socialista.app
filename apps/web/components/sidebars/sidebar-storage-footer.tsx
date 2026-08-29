@@ -38,7 +38,7 @@ function statusClassName(isFull: boolean, isNearFull: boolean) {
 
 function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
-    <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
+    <div className="px-1.5 py-1.5 group-data-[collapsible=icon]:hidden">
       <div className="flex items-center gap-2">
         <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <div className="min-w-0 flex-1">
@@ -57,7 +57,7 @@ function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFul
 
 function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull }: WorkspaceStorageStats) {
   return (
-    <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
+    <div className="px-1.5 py-1.5 group-data-[collapsible=icon]:hidden">
       <div className="flex items-center gap-2">
         <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <div className="min-w-0 flex-1">

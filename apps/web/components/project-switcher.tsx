@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import { formatTimezoneLocation } from '@/utils/timezone'
 import { ProjectResponse } from '@socialista/types'
-import { CheckIcon, ChevronsUpDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
+import { CheckIcon, ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -32,37 +32,27 @@ function projectTimezoneLabel(project: ProjectResponse): string | null {
   return project.timezone ? formatTimezoneLocation(project.timezone) : null
 }
 
-function projectSubtitle(project: ProjectResponse): string {
-  const timezone = projectTimezoneLabel(project)
-  if (timezone) return timezone
-  if (project.isDefault) return 'Default project'
-  return 'Project'
-}
-
 type SwitcherAvatarProps = {
   project: ProjectResponse
-  size?: 'sm' | 'md'
   className?: string
 }
 
-function ProjectAvatar({ project, size = 'sm', className }: SwitcherAvatarProps) {
+function ProjectAvatar({ project, className }: SwitcherAvatarProps) {
   return (
     <div
-      className={cn('sidebar-switcher-avatar', size === 'md' && 'sidebar-switcher-avatar-md', className)}
+      className={cn('sidebar-switcher-avatar', className)}
       style={!project.icon && project.color ? { backgroundColor: project.color } : undefined}
     >
       {project.icon ? (
         <Image
           src={project.icon}
           alt=""
-          width={size === 'md' ? 32 : 24}
-          height={size === 'md' ? 32 : 24}
+          width={20}
+          height={20}
           className="size-full object-cover"
         />
       ) : (
-        <span className={cn('font-medium', size === 'md' ? 'text-sm' : 'text-xs')}>
-          {project.name.charAt(0).toUpperCase()}
-        </span>
+        <span className="font-medium">{project.name.charAt(0).toUpperCase()}</span>
       )}
     </div>
   )
@@ -105,18 +95,16 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton
-            size="lg"
             tooltip="Add project"
-            className="group-data-[collapsible=icon]:justify-center"
+            className="h-7 gap-1.5 px-1.5 group-data-[collapsible=icon]:justify-center"
             onClick={() => setCreateOpen(true)}
           >
-            <div className="sidebar-switcher-avatar sidebar-switcher-avatar-md">
-              <PlusIcon className="size-4" strokeWidth={SWITCHER_ICON_STROKE} />
+            <div className="sidebar-switcher-avatar">
+              <PlusIcon className="size-3!" strokeWidth={SWITCHER_ICON_STROKE} />
             </div>
-            <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate text-[13px] font-medium tracking-tight">Add project</span>
-              <span className="sidebar-switcher-meta truncate">Create your first project</span>
-            </div>
+            <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+              Add project
+            </span>
           </SidebarMenuButton>
           <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
         </SidebarMenuItem>
@@ -130,18 +118,16 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
               tooltip={currentProject.name}
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+              className="h-7 gap-1.5 px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
-              <ProjectAvatar project={currentProject} size="md" />
-              <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-[13px] font-medium tracking-tight">{currentProject.name}</span>
-                <span className="sidebar-switcher-meta truncate">{projectSubtitle(currentProject)}</span>
-              </div>
-              <ChevronsUpDownIcon
-                className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden"
-                strokeWidth={SWITCHER_ICON_STROKE}
+              <ProjectAvatar project={currentProject} />
+              <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+                {currentProject.name}
+              </span>
+              <ChevronDownIcon
+                className="ml-auto size-3! text-muted-foreground group-data-[collapsible=icon]:hidden"
+                strokeWidth={2}
               />
             </SidebarMenuButton>
           </DropdownMenuTrigger>

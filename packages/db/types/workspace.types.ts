@@ -36,8 +36,8 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   [Plan.FREE]: { members: 1, posts: 30, storage: 500, accounts: 3, aiCredits: 0, price: 0 },
-  [Plan.PRO]: { members: 5, posts: 400, storage: 5000, accounts: 10, aiCredits: 8, price: 25 },
-  [Plan.ENTERPRISE]: { members: 50, posts: 2000, storage: 10000, accounts: 50, aiCredits: 50, price: 0 },
+  [Plan.PRO]: { members: 5, posts: 400, storage: 5000, accounts: 10, aiCredits: 800, price: 25 },
+  [Plan.ENTERPRISE]: { members: 50, posts: 2000, storage: 10000, accounts: 50, aiCredits: 5000, price: 0 },
 }
 
 export type WorkspaceMember = {

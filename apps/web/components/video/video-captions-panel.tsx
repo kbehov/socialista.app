@@ -23,6 +23,7 @@ import { CAPTION_OVERLAY_PRESET } from '@/lib/video/defaults'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
 import { generateVideoCaptions } from '@/services/video.service'
+import { formatCredits } from '@/utils/format'
 import type { Clip, GenerateVideoCaptionsOutput, VideoCaptionSegment } from '@socialista/types'
 import { VIDEO_CAPTIONS_CREDIT_COST } from '@socialista/types'
 import { ArrowLeftIcon, CaptionsIcon, Loader2Icon } from 'lucide-react'
@@ -353,7 +354,7 @@ export function VideoCaptionsPanel({
               </Button>
             )}
             <p className="px-0.5 text-[10px] tracking-wide text-muted-foreground/75">
-              ≈ ${VIDEO_CAPTIONS_CREDIT_COST.toFixed(2)} per generation
+              ≈ {formatCredits(VIDEO_CAPTIONS_CREDIT_COST)} credits per generation
             </p>
           </div>
         </>

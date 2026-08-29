@@ -5,7 +5,7 @@ import { deductWorkspaceAiCredits } from '@/services/workspace.service'
 import { loadSkillOverride } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSlideshow } from '@socialista/ai'
-import { PROMPT_KEYS, type SlideshowContentType } from '@socialista/types'
+import { PROMPT_KEYS, SLIDESHOW_PLAN_CREDIT_COST, type SlideshowContentType } from '@socialista/types'
 export type GenerateSlideshowActionResult =
   | { success: true; texts: string[]; contentType: SlideshowContentType }
   | { success: false; error: string }
@@ -44,7 +44,7 @@ export async function generateSlideshowSlides(
       return { success: false, error: 'No slides were generated' }
     }
 
-    await deductWorkspaceAiCredits(workspaceId._id, 0.02)
+    await deductWorkspaceAiCredits(workspaceId._id, SLIDESHOW_PLAN_CREDIT_COST)
     return { success: true, texts: result.texts, contentType: result.contentType }
   } catch (error) {
     console.error('[generateSlideshowSlides]', error)
