@@ -19,7 +19,7 @@ export function PostStatusCountsText({
   if (activeStatuses.length === 0) return null
 
   return (
-    <span className={cn('text-[12px] tracking-tight text-muted-foreground', className)}>
+    <span className={cn('text-[12px] tracking-tight text-foreground/56', className)}>
       {activeStatuses.map(({ status, label, className: statusClassName, value }, index) => (
         <span key={status}>
           {index > 0 ? <span aria-hidden> · </span> : null}

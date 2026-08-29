@@ -45,7 +45,7 @@ function GithubStats({
       {hasMetrics ? (
         <StatMetrics
           className={cn(
-            compact && 'rounded-none border-0 border-b border-border/45 dark:border-border/55',
+            compact && 'rounded-none border-0 border-b border-border',
             'w-full',
             metricsClassName,
           )}

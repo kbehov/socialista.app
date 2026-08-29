@@ -5,6 +5,8 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { dashboardSurface } from '@/components/dashboard/surface'
+import { cn } from '@/lib/utils'
 import { exportAccountAnalyticsCsv, exportWorkspaceAnalyticsSummaryCsv } from '@/services/analytics.service'
 import type { AnalyticsRange } from '@socialista/types'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
@@ -56,7 +58,7 @@ function AnalyticsExportCsvButton({ workspaceId, range, accountId, projectId }: 
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 shrink-0 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98] dark:border-border/70"
+          className={cn(dashboardSurface.toolbarControl, 'shrink-0 gap-1.5 px-2.5')}
           disabled={isPending}
           onClick={handleExport}
         >

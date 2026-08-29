@@ -13,7 +13,7 @@ export type AnalyticsSkeletonProps = {
 function AnalyticsSkeleton({ title, description, className, heightClassName = 'h-48' }: AnalyticsSkeletonProps) {
   return (
     <AnalyticsSection title={title} description={description} className={className}>
-      <Skeleton className={cn('w-full rounded-lg', heightClassName)} />
+      <Skeleton className={cn('w-full rounded-md', heightClassName)} />
     </AnalyticsSection>
   )
 }

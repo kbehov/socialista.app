@@ -39,12 +39,12 @@ type FinalizeResponse = {
 
 function MetaAccountSkeleton() {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-background px-3 py-3">
-      <Skeleton className="size-5 shrink-0 rounded-md" />
-      <Skeleton className="size-9 shrink-0 rounded-lg" />
+    <div className="flex items-center gap-3 px-2.5 py-2">
+      <Skeleton className="size-4 shrink-0 rounded" />
+      <Skeleton className="size-8 shrink-0 rounded-md" />
       <div className="min-w-0 flex-1 space-y-1.5">
-        <Skeleton className="h-3.5 w-3/5" />
-        <Skeleton className="h-3 w-2/5" />
+        <Skeleton className="h-3 w-3/5" />
+        <Skeleton className="h-2.5 w-2/5" />
       </div>
     </div>
   )
@@ -192,28 +192,28 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[min(88vh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        <div className="border-b border-border/50 px-6 py-5">
-          <DialogHeader className="gap-1.5 text-left">
-            <DialogTitle className="text-base font-semibold tracking-tight">
+        <div className="border-b border-border/50 px-5 py-4">
+          <DialogHeader className="gap-1 text-left">
+            <DialogTitle className="text-[15px] font-medium tracking-tight">
               Select Meta accounts
             </DialogTitle>
             <DialogDescription className="text-[13px] leading-relaxed">
-              Choose Facebook Pages and/or Instagram accounts. Already connected accounts can be
-              selected again to refresh tokens and permissions.
+              Choose Facebook Pages and Instagram accounts. Re-select connected ones to refresh
+              permissions.
             </DialogDescription>
           </DialogHeader>
         </div>
 
         {selectableCount > 0 && !isLoading && !loadError && accounts.length > 0 ? (
-          <div className="flex items-center justify-between border-b border-border/40 px-6 py-2.5">
-            <p className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-between border-b border-border/40 px-5 py-2">
+            <p className="text-[12px] tabular-nums text-foreground/56">
               {selected.size} of {selectableCount} selected
             </p>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 px-2 text-[12px] text-muted-foreground hover:text-foreground"
               onClick={toggleAll}
               disabled={isSaving}
             >
@@ -222,26 +222,26 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
           </div>
         ) : null}
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1.5">
           {isLoading && accounts.length === 0 && !loadError ? (
-            <div className="grid gap-2">
+            <div className="grid gap-0.5">
               {Array.from({ length: 4 }).map((_, i) => (
                 <MetaAccountSkeleton key={i} />
               ))}
             </div>
           ) : loadError ? (
             <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <p className="text-sm text-muted-foreground">{loadError}</p>
-              <Button type="button" size="sm" variant="outline" onClick={loadAccounts}>
+              <p className="text-[13px] text-muted-foreground">{loadError}</p>
+              <Button type="button" size="sm" variant="outline" className="h-7 rounded-md shadow-none" onClick={loadAccounts}>
                 Try again
               </Button>
             </div>
           ) : accounts.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">
+            <p className="py-12 text-center text-[13px] text-muted-foreground">
               No Facebook Pages or Instagram accounts were found for this login.
             </p>
           ) : (
-            <ul className="grid gap-1.5">
+            <ul className="grid gap-0.5">
               {accounts.map(account => {
                 const checked = selected.has(account.id)
 
@@ -252,43 +252,43 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
                       disabled={isSaving}
                       onClick={() => toggle(account.id)}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-150',
-                        'border-border/60 bg-background hover:-translate-y-px hover:border-border hover:shadow-sm active:scale-[0.99]',
-                        checked && 'border-foreground/15 bg-muted/30 shadow-xs',
+                        'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors duration-150',
+                        'hover:bg-foreground/[0.04] active:bg-foreground/[0.06]',
+                        checked && 'bg-foreground/[0.04]',
                       )}
                     >
                       <span
                         className={cn(
-                          'flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors duration-150',
+                          'flex size-4 shrink-0 items-center justify-center rounded border transition-colors duration-150',
                           checked
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border/80 bg-background',
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border bg-background',
                         )}
                         aria-hidden
                       >
-                        {checked ? <CheckIcon className="size-3" strokeWidth={2.5} /> : null}
+                        {checked ? <CheckIcon className="size-2.5" strokeWidth={2.5} /> : null}
                       </span>
                       {account.accountAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element -- provider CDN avatars
                         <img
                           src={account.accountAvatar}
                           alt=""
-                          width={36}
-                          height={36}
-                          className="size-9 rounded-lg object-cover ring-1 ring-border/50"
+                          width={32}
+                          height={32}
+                          className="size-8 rounded-md object-cover ring-1 ring-border/50"
                         />
                       ) : (
                         <SocialPlatformIcon
                           provider={account.provider}
-                          size={16}
-                          className="size-9 rounded-lg"
+                          size={14}
+                          className="size-8 rounded-md"
                         />
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium tracking-tight text-foreground">
+                        <span className="block truncate text-[13px] font-medium tracking-tight text-foreground">
                           {account.accountName}
                         </span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                        <span className="mt-0.5 block truncate text-[11px] text-foreground/56">
                           {getSocialPlatformLabel(account.provider)}
                           {account.username ? ` · @${account.username}` : ''}
                           {account.alreadyConnected ? ' · Update permissions' : ''}
@@ -302,15 +302,16 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
           )}
         </div>
 
-        <DialogFooter className="border-t border-border/50 bg-muted/10 px-6 py-4 sm:justify-between">
-          <p className="text-xs text-muted-foreground">
+        <DialogFooter className="border-t border-border/50 px-5 py-3 sm:justify-between">
+          <p className="text-[12px] text-foreground/56">
             {selected.size === 0 ? 'Select accounts to continue' : `${selected.size} selected`}
           </p>
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
-              className="rounded-lg"
+              size="sm"
+              className="h-8 rounded-md shadow-none"
               onClick={() => handleOpenChange(false)}
               disabled={isSaving}
             >
@@ -318,11 +319,12 @@ export function MetaAccountsDialog({ open, onOpenChange, onConnected }: MetaAcco
             </Button>
             <Button
               type="button"
-              className="rounded-lg shadow-xs"
+              size="sm"
+              className="h-8 rounded-md shadow-none"
               onClick={handleConnect}
               disabled={isLoading || isSaving || selected.size === 0}
             >
-              {isSaving ? <Loader2Icon className="size-4 animate-spin" /> : null}
+              {isSaving ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
               {accounts.some(a => a.alreadyConnected && selected.has(a.id))
                 ? 'Connect / Update'
                 : 'Connect'}

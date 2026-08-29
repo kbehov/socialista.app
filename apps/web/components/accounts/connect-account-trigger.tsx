@@ -31,7 +31,11 @@ export function ConnectAccountTrigger({
         className={cn(dashboardSurface.createCta, className)}
         onClick={() => setOpen(true)}
       >
-        {showPlusIcon ? <PlusIcon className="size-3.5" /> : <Link2Icon className="size-3.5" />}
+        {showPlusIcon ? (
+          <PlusIcon className="size-3.5" strokeWidth={1.75} />
+        ) : (
+          <Link2Icon className="size-3.5" strokeWidth={1.75} />
+        )}
         {label}
       </Button>
 

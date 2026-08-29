@@ -1,21 +1,16 @@
 'use client'
 
-import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
-import { AccountRow } from '@/components/accounts/account-row'
-import { AccountTableRow } from '@/components/accounts/account-table-row'
-import { AccountsSummary } from '@/components/accounts/accounts-summary'
+import { AccountRow, ACCOUNT_ROW_GRID } from '@/components/accounts/account-row'
 import { EditAccountDialog } from '@/components/accounts/edit-account-dialog'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { deleteAccount, disconnectAccount } from '@/services/account.service'
 import type { ConfirmAction } from '@/types/account.types'
+import { buildDuplicateNameKeys } from '@/utils/account-display.utils'
 import type { AccountSummary } from '@socialista/types'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-
-const TABLE_HEAD_CLASS = 'h-10 px-4 text-xs font-medium text-muted-foreground'
 
 type AccountsTableProps = {
   accounts: AccountSummary[]
@@ -27,6 +22,7 @@ export function AccountsTable({ accounts, className }: AccountsTableProps) {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
   const [editAccount, setEditAccount] = useState<AccountSummary | null>(null)
   const [isPending, setIsPending] = useState(false)
+  const duplicateNameKeys = useMemo(() => buildDuplicateNameKeys(accounts), [accounts])
 
   const handleConfirm = async () => {
     if (!confirmAction || isPending) return
@@ -51,39 +47,27 @@ export function AccountsTable({ accounts, className }: AccountsTableProps) {
 
   return (
     <>
-      <div className={cn('flex flex-col gap-3', className)}>
-        <AccountsSummary accounts={accounts} />
-
-        <div className="grid gap-2.5 sm:hidden">
-          {accounts.map(account => (
-            <AccountRow key={account._id} account={account} onAction={setConfirmAction} onEdit={setEditAccount} />
-          ))}
+      <div className={cn('min-w-0', className)}>
+        <div className={cn('hidden border-b border-foreground/10 py-2', ACCOUNT_ROW_GRID)} aria-hidden>
+          <span className="text-[11px] font-medium text-foreground/56">Account</span>
+          <span className="hidden text-[11px] font-medium text-foreground/56 sm:block">Platform</span>
+          <span className="hidden text-[11px] font-medium text-foreground/56 sm:block">Status</span>
+          <span className="hidden text-[11px] font-medium text-foreground/56 lg:block">Timezone</span>
+          <span className="hidden text-[11px] font-medium text-foreground/56 xl:block">Connected</span>
+          <span aria-hidden />
         </div>
 
-        <DashboardTableShell className="hidden sm:block">
-          <Table>
-            <TableHeader>
-              <TableRow className={cn(dashboardSurface.tableHead, 'hover:bg-transparent')}>
-                <TableHead className={TABLE_HEAD_CLASS}>Account</TableHead>
-                <TableHead className={cn(TABLE_HEAD_CLASS, 'hidden md:table-cell')}>Platform</TableHead>
-                <TableHead className={TABLE_HEAD_CLASS}>Status</TableHead>
-                <TableHead className={cn(TABLE_HEAD_CLASS, 'hidden lg:table-cell')}>Timezone</TableHead>
-                <TableHead className={cn(TABLE_HEAD_CLASS, 'hidden xl:table-cell')}>Connected</TableHead>
-                <TableHead className="h-10 w-13 px-2" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {accounts.map(account => (
-                <AccountTableRow
-                  key={account._id}
-                  account={account}
-                  onAction={setConfirmAction}
-                  onEdit={setEditAccount}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </DashboardTableShell>
+        <ul className="divide-y divide-foreground/10">
+          {accounts.map(account => (
+            <AccountRow
+              key={account._id}
+              account={account}
+              duplicateNameKeys={duplicateNameKeys}
+              onAction={setConfirmAction}
+              onEdit={setEditAccount}
+            />
+          ))}
+        </ul>
       </div>
 
       <EditAccountDialog

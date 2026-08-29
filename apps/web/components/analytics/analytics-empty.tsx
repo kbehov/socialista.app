@@ -21,7 +21,7 @@ function AnalyticsEmpty({
   return (
     <div
       className={cn(
-        'flex flex-col justify-center gap-1 px-1 py-5',
+        'flex flex-col justify-center gap-0.5 px-0 py-4',
         minHeightClassName,
         className,
       )}
@@ -29,7 +29,7 @@ function AnalyticsEmpty({
       {icon ? (
         <span className="mb-1 flex size-7 items-center justify-center text-muted-foreground">{icon}</span>
       ) : null}
-      <p className="text-xs font-medium text-foreground">{title}</p>
+      <p className="text-[13px] font-medium text-foreground">{title}</p>
       {description ? (
         <p className="max-w-sm text-[11px] leading-relaxed text-muted-foreground">{description}</p>
       ) : null}

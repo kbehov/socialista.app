@@ -11,7 +11,6 @@ import {
   parseAccountFiltersFromSearchParams,
 } from '@/lib/accounts/account-filters'
 import { getWorkspaceAccounts } from '@/services/account.service'
-import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { MetaResponse } from '@socialista/types'
 import { Link2Icon } from 'lucide-react'
@@ -28,6 +27,11 @@ const defaultMeta: MetaResponse = {
   limit: 50,
   hasNextPage: false,
   hasPreviousPage: false,
+}
+
+function formatAccountsDescription(total: number, workspaceName: string) {
+  const count = total === 1 ? '1 account' : `${total.toLocaleString()} accounts`
+  return `${count} in ${workspaceName}`
 }
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
@@ -63,7 +67,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
       <PageHeader
         title="Accounts"
-        description={`${formatItemCount(metaData.total)} connected in ${workspace.name}`}
+        description={formatAccountsDescription(metaData.total, workspace.name)}
         actions={<ConnectAccountTrigger />}
       />
 
@@ -71,13 +75,13 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         <ErrorState
           title={message ?? 'Failed to load accounts'}
           description="Refresh the page to try again."
-          className="flex-1 rounded-xl"
+          className="flex-1 rounded-lg"
         />
       ) : metaData.total === 0 && !query.query && !hasFilters ? (
         <EmptyState
           icon={Link2Icon}
-          title="Connect your social accounts"
-          description="Link your profiles to schedule and publish content from one workspace."
+          title="Connect an account"
+          description="Link Instagram, TikTok, LinkedIn, and more — then schedule everything from one place."
           minHeight="lg"
           variant="hero"
           className="flex-1"

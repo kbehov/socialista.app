@@ -28,12 +28,12 @@ function AnomaliesList({ anomalies, className, limit = 8, error }: AnomaliesList
 
       {visible.length === 0 ? (
         <AnalyticsEmpty
-          icon={<CheckCircle2Icon className="size-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.75} />}
+          icon={<CheckCircle2Icon className="size-3.5 text-success" strokeWidth={1.75} />}
           title={error ? 'Anomalies unavailable' : 'All clear'}
           description={error ? 'Could not load anomaly detection for this range.' : 'No unusual spikes or drops in this range.'}
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col">
           {visible.map((anomaly, index) => (
             <AnomalyRow
               key={`${anomaly.metric}-${anomaly.provider ?? 'all'}-${anomaly.date}-${index}`}
@@ -50,16 +50,11 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
   const isCritical = anomaly.severity === 'critical'
 
   return (
-    <li
-      className={cn(
-        'flex items-center gap-3 rounded-lg px-1 py-2 -mx-1',
-        isCritical ? 'bg-red-500/5 dark:bg-red-500/10' : 'hover:bg-muted/20',
-      )}
-    >
+    <li className="flex items-center gap-2.5 rounded-md px-1 py-1.5 -mx-1">
       <span
         className={cn(
-          'flex size-6 shrink-0 items-center justify-center',
-          isCritical ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400',
+          'flex size-5 shrink-0 items-center justify-center',
+          isCritical ? 'text-destructive' : 'text-warning',
         )}
       >
         <TriangleAlertIcon className="size-3.5" strokeWidth={1.75} />
@@ -67,7 +62,7 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <p className="text-xs font-medium text-foreground">
+          <p className="text-[13px] font-medium text-foreground">
             {anomaly.direction === 'spike' ? 'Spike' : 'Drop'} in {anomaly.metric}
           </p>
           {anomaly.provider ? (
@@ -88,7 +83,7 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
       <span
         className={cn(
           'shrink-0 text-[11px] font-medium capitalize',
-          isCritical ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground',
+          isCritical ? 'text-destructive' : 'text-muted-foreground',
         )}
       >
         {anomaly.severity}

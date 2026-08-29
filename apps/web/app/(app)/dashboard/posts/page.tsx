@@ -68,7 +68,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const createAction = (
     <Button asChild size="sm" className={dashboardSurface.createCta}>
       <Link href={`${DASHBOARD_ROUTES.POSTS}/create`}>
-        <PlusIcon className="size-4" strokeWidth={1.75} />
+        <PlusIcon className="size-3.5" strokeWidth={1.75} />
         Create post
       </Link>
     </Button>
@@ -105,7 +105,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
         />
-      ) : meta.total === 0 && !hasFilters ? (
+      ) : meta.total === 0 && !hasFilters && query.view !== 'calendar' ? (
         <EmptyState
           icon={PenLineIcon}
           title="Your calendar is clear"

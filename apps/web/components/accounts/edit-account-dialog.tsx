@@ -1,7 +1,7 @@
 'use client'
 
-import { getSocialPlatformLabel, SocialPlatformIcon } from '@/components/icons/social-platform-icon'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/accounts/account-avatar'
+import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -18,13 +18,6 @@ type EditAccountDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdated?: () => void
-}
-
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
-  return `${parts[0]!.charAt(0)}${parts[1]!.charAt(0)}`.toUpperCase()
 }
 
 function EditAccountForm({
@@ -64,21 +57,11 @@ function EditAccountForm({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-4">
-        <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border/50 bg-muted/15 px-2.5 py-2">
-          <div className="relative shrink-0">
-            <Avatar className="size-8 ring-1 ring-border/40">
-              {account.accountAvatar ? <AvatarImage src={account.accountAvatar} alt="" /> : null}
-              <AvatarFallback className="bg-muted/80 text-[10px] font-semibold">
-                {getInitials(account.accountName)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="absolute -right-0.5 -bottom-0.5 flex size-3.5 items-center justify-center rounded-[4px] bg-background ring-1 ring-border/60">
-              <SocialPlatformIcon provider={account.provider} size={7} framed={false} />
-            </span>
-          </div>
+        <div className="flex min-w-0 items-center gap-2.5 px-0.5 py-1">
+          <AccountAvatar account={account} size="default" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium leading-tight tracking-tight">{account.accountName}</p>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            <p className="truncate text-[13px] font-medium leading-tight tracking-[-0.01em]">{account.accountName}</p>
+            <p className="mt-0.5 truncate text-[11px] text-foreground/56">
               {getSocialPlatformLabel(account.provider)}
               {account.username ? ` · @${account.username.replace(/^@/, '')}` : ''}
             </p>
@@ -101,18 +84,25 @@ function EditAccountForm({
         </div>
       </div>
 
-      <DialogFooter className="shrink-0 border-t border-border/50 bg-muted/10 px-5 py-3">
-        <Button type="button" variant="outline" size="sm" className="rounded-lg" onClick={onClose} disabled={isPending}>
+      <DialogFooter className="shrink-0 border-t border-border/50 px-5 py-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-md shadow-none"
+          onClick={onClose}
+          disabled={isPending}
+        >
           Cancel
         </Button>
         <Button
           type="button"
           size="sm"
-          className="rounded-lg shadow-xs"
+          className="h-8 rounded-md shadow-none"
           onClick={handleSave}
           disabled={isPending || !timezone}
         >
-          {isPending ? <Loader2Icon className="size-4 animate-spin" /> : null}
+          {isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
           Save changes
         </Button>
       </DialogFooter>
@@ -129,8 +119,8 @@ export function EditAccountDialog({ account, open, onOpenChange, onUpdated }: Ed
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[min(90vh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="shrink-0 gap-1 border-b border-border/50 px-5 py-4 text-left">
-          <DialogTitle className="text-base font-semibold tracking-tight">Edit account</DialogTitle>
-          <p className="text-xs text-muted-foreground">Update the timezone used for scheduling.</p>
+          <DialogTitle className="text-[15px] font-medium tracking-tight">Edit account</DialogTitle>
+          <p className="text-[13px] text-muted-foreground">Timezone used for scheduling.</p>
         </DialogHeader>
 
         {account ? (

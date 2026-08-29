@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 
 import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Select,
@@ -62,8 +63,8 @@ function AccountFilter({
         size="sm"
         aria-label="Filter by account"
         className={cn(
-          'h-8 min-w-40 max-w-56 shrink-0 rounded-full border-border/60 bg-background px-3 shadow-xs dark:border-border/70',
-          'dark:bg-background dark:hover:bg-muted/40',
+          dashboardSurface.toolbarControl,
+          'min-w-40 max-w-56 shrink-0 shadow-none data-[size=sm]:h-7 dark:bg-background',
           className,
         )}
       >

@@ -23,12 +23,12 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
     return (
       <div
         className={cn(
-          'flex flex-wrap items-center gap-3 px-3.5 py-2.5',
+          'flex flex-wrap items-center gap-3 px-3 py-2.5',
           dashboardSurface.inset,
           className,
         )}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+        <span className="flex size-6 shrink-0 items-center justify-center text-warning">
           <Link2OffIcon className="size-3.5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0 flex-1">
@@ -38,7 +38,7 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
             {lastFetchedAt ? ` Last synced ${formatRelativeTime(lastFetchedAt)}.` : null}
           </p>
         </div>
-        <Button asChild size="sm" variant="outline" className="h-7 shrink-0 px-2.5 text-xs">
+        <Button asChild size="sm" variant="outline" className={cn(dashboardSurface.toolbarControl, 'shrink-0 px-2.5')}>
           <Link href={DASHBOARD_ROUTES.ACCOUNTS}>Accounts</Link>
         </Button>
       </div>
@@ -47,8 +47,8 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
 
   if (status === 'unsupported') {
     return (
-      <div className={cn('flex items-start gap-3 px-3.5 py-2.5', dashboardSurface.inset, className)}>
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+      <div className={cn('flex items-start gap-2.5 px-3 py-2.5', dashboardSurface.inset, className)}>
+        <span className="flex size-6 shrink-0 items-center justify-center text-muted-foreground">
           <InfoIcon className="size-3.5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0">
@@ -63,8 +63,8 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
 
   if (status === 'error' || hasMissing) {
     return (
-      <div className={cn('flex items-start gap-3 px-3.5 py-2.5', dashboardSurface.inset, className)}>
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-600 dark:text-red-400">
+      <div className={cn('flex items-start gap-2.5 px-3 py-2.5', dashboardSurface.inset, className)}>
+        <span className="flex size-6 shrink-0 items-center justify-center text-destructive">
           <AlertTriangleIcon className="size-3.5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0">

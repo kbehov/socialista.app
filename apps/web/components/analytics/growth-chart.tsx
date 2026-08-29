@@ -38,7 +38,7 @@ const METRIC_CHART_CONFIG: Record<ChartMetric, ChartConfig> = {
   },
 }
 
-const CHART_MARGIN = { top: 8, right: 12, left: 0, bottom: 0 } as const
+const CHART_MARGIN = { top: 4, right: 8, left: 0, bottom: 0 } as const
 
 /** Lean series payload used by per-account analytics (no byProvider). */
 export type GrowthChartSeriesData = {
@@ -136,7 +136,7 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
   const chartConfig = METRIC_CHART_CONFIG[metric]
   const activeLabel = METRIC_TABS.find(tab => tab.id === metric)?.label ?? 'Engagement'
   const domain = yDomain(chartData.map(point => point.value))
-  const barSize = chartData.length <= 8 ? 36 : chartData.length <= 14 ? 28 : 20
+  const barSize = chartData.length <= 8 ? 28 : chartData.length <= 14 ? 20 : 14
   const minTickGap = range === 'daily' ? 20 : range === 'weekly' ? 24 : 28
 
   return (
@@ -161,16 +161,16 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
         <AnalyticsEmpty
           title="No growth data"
           description="Publish and sync accounts to see trends for this range."
-          minHeightClassName="min-h-[220px]"
+          minHeightClassName="min-h-[200px]"
         />
       ) : useLine ? (
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[220px] w-full"
-          initialDimension={{ width: 600, height: 220 }}
+          className="aspect-auto h-[200px] w-full"
+          initialDimension={{ width: 600, height: 200 }}
         >
           <LineChart data={chartData} margin={CHART_MARGIN}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+            <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.8} />
             <XAxis
               dataKey="label"
               tickLine={false}
@@ -215,17 +215,12 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
               type="monotone"
               dataKey="value"
               stroke="var(--color-value)"
-              strokeWidth={2}
+              strokeWidth={1.5}
               isAnimationActive={false}
-              dot={{
-                r: 3.5,
-                strokeWidth: 2,
-                stroke: 'var(--background)',
-                fill: 'var(--color-value)',
-              }}
+              dot={false}
               activeDot={{
-                r: 5,
-                strokeWidth: 2,
+                r: 3,
+                strokeWidth: 1.5,
                 stroke: 'var(--background)',
                 fill: 'var(--color-value)',
               }}
@@ -235,11 +230,11 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
       ) : (
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[220px] w-full"
-          initialDimension={{ width: 600, height: 220 }}
+          className="aspect-auto h-[200px] w-full"
+          initialDimension={{ width: 600, height: 200 }}
         >
           <BarChart data={chartData} margin={CHART_MARGIN} barCategoryGap="18%">
-            <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+            <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.8} />
             <XAxis
               dataKey="label"
               tickLine={false}
@@ -283,7 +278,7 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
             <Bar
               dataKey="value"
               fill="var(--color-value)"
-              radius={[4, 4, 0, 0]}
+              radius={[2, 2, 0, 0]}
               maxBarSize={barSize}
               isAnimationActive={false}
             />

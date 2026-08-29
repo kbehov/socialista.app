@@ -1,6 +1,7 @@
 import { BarChart3Icon, SparklesIcon, TrendingUpIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
@@ -36,19 +37,19 @@ function UpgradeTeaser({ className }: UpgradeTeaserProps) {
       title="Unlock full analytics"
       description="Growth charts, platform comparisons, and anomaly alerts on Pro."
       action={
-        <Button asChild size="sm" variant="outline" className="h-8 px-3.5 text-xs font-medium">
+        <Button asChild size="sm" variant="outline" className={cn(dashboardSurface.toolbarControl, 'px-2.5')}>
           <Link href={DASHBOARD_ROUTES.UPGRADE}>Upgrade</Link>
         </Button>
       }
     >
-      <ul className="flex flex-col gap-4">
+      <ul className="flex flex-col divide-y divide-border">
         {PREMIUM_FEATURES.map(feature => (
-          <li key={feature.title} className="flex gap-3">
-            <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center text-muted-foreground">
-              <feature.icon className="size-4" strokeWidth={1.75} />
+          <li key={feature.title} className="flex gap-2.5 py-2.5 first:pt-0 last:pb-0">
+            <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+              <feature.icon className="size-3.5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 space-y-0.5">
-              <p className="text-xs font-medium text-foreground">{feature.title}</p>
+              <p className="text-[13px] font-medium text-foreground">{feature.title}</p>
               <p className="text-[11px] leading-relaxed text-muted-foreground">{feature.description}</p>
             </div>
           </li>

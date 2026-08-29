@@ -27,8 +27,8 @@ export type StatMetricsProps = {
 }
 
 const TREND_STYLES: Record<TrendDirection, string> = {
-  up: 'text-emerald-700 dark:text-emerald-400',
-  down: 'text-red-700 dark:text-red-400',
+  up: dashboardSurface.trendUp,
+  down: dashboardSurface.trendDown,
   neutral: 'text-muted-foreground',
 }
 
@@ -58,9 +58,9 @@ function StatMetric({ value, label, description, trend, className }: StatMetricP
     <div
       data-slot="stat-metric"
       className={cn(
-        'flex min-w-0 flex-col gap-1.5 px-4 py-4',
+        'flex min-w-0 flex-col gap-1 px-3.5 py-3.5',
         dashboardSurface.dividerCell,
-        'group-data-[size=sm]/metrics:gap-1 group-data-[size=sm]/metrics:px-3.5 group-data-[size=sm]/metrics:py-3.5',
+        'group-data-[size=sm]/metrics:gap-0.5 group-data-[size=sm]/metrics:px-3 group-data-[size=sm]/metrics:py-3',
         className,
       )}
     >
@@ -70,7 +70,7 @@ function StatMetric({ value, label, description, trend, className }: StatMetricP
         <p
           className={cn(
             dashboardSurface.metricValue,
-            'leading-none whitespace-nowrap group-data-[size=sm]/metrics:text-lg',
+            'leading-none whitespace-nowrap group-data-[size=sm]/metrics:text-base',
           )}
         >
           {value}

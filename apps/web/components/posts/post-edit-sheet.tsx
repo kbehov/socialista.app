@@ -1,23 +1,21 @@
 'use client'
 
 import { updateExistingPost } from '@/actions/post.actions'
-import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { AccountIdentity } from '@/components/accounts/account-identity'
 import { ComposerEditor } from '@/components/posts/composer/composer-editor'
 import { PlatformRequirementsBanner } from '@/components/posts/composer/platform-requirements-banner'
 import { PlatformVariantsPanel } from '@/components/posts/composer/platform-variants-panel'
 import { PostPreviewBar } from '@/components/posts/composer/post-preview-bar'
 import { SchedulePanel } from '@/components/posts/composer/schedule-panel'
-import { POST_STATUS_META } from '@/components/posts/post-meta'
-import { Badge } from '@/components/ui/badge'
+import { PostStatusBadge } from '@/components/posts/post-status-badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { createFallbackAccount } from '@/lib/posts/post-display'
-import { cn } from '@/lib/utils'
 import type { ComposerData, ComposerMediaItem, ComposerSchedule, ComposerVariant } from '@/types/composer-types'
 import { createEmptyVariant, postToComposerState, validateComposer } from '@/utils/composer.utils'
 import type { AccountSummary, Post } from '@socialista/types'
-import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, FileTextIcon, SendIcon } from 'lucide-react'
+import { CalendarClockIcon, FileTextIcon, SendIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -30,17 +28,7 @@ type PostEditSheetProps = {
 }
 
 function PostEditAccountChip({ account }: { account: AccountSummary }) {
-  const label = account.accountName || account.username || 'Account'
-
-  return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5">
-      <SocialPlatformIcon provider={account.provider} size={12} className="size-8 shrink-0" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{label}</p>
-        <p className="truncate text-[11px] text-muted-foreground">{getSocialPlatformLabel(account.provider)}</p>
-      </div>
-    </div>
-  )
+  return <AccountIdentity account={account} />
 }
 
 export function PostEditSheet({ post, account, open, onOpenChange }: PostEditSheetProps) {
@@ -170,7 +158,6 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
     })
   }
 
-  const statusMeta = post ? POST_STATUS_META[post.status] : null
   const accounts = resolvedAccount ? [resolvedAccount] : []
 
   return (
@@ -180,32 +167,18 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
         showCloseButton={!isPending}
         className="flex w-full flex-col gap-0 p-0 data-[side=right]:w-full sm:max-w-lg lg:max-w-xl"
       >
-        <SheetHeader className="shrink-0 space-y-2 border-b border-border/60 px-5 py-4 pr-12 text-left">
-          <div className="flex flex-wrap items-center gap-2">
-            <SheetTitle className="text-[15px] font-semibold tracking-[-0.01em]">Edit post</SheetTitle>
-            {statusMeta ? (
-              <Badge
-                variant="outline"
-                className={cn('h-5 rounded-full px-2 text-[10px] font-medium', statusMeta.className)}
-              >
-                {statusMeta.label}
-              </Badge>
-            ) : null}
+        <SheetHeader className="shrink-0 space-y-0 border-b border-foreground/10 px-6 py-3.5 pr-12 text-left">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <SheetTitle className="text-[15px] font-medium tracking-[-0.02em]">Edit post</SheetTitle>
+            {post ? <PostStatusBadge status={post.status} /> : null}
           </div>
-          <SheetDescription className="flex items-center gap-1.5 text-xs leading-relaxed">
-            {isReady ? (
-              <CheckCircle2Icon className="size-3 text-emerald-500" strokeWidth={2} />
-            ) : (
-              <CircleDashedIcon className="size-3" strokeWidth={1.75} />
-            )}
-            <span>{statusMessage}</span>
-          </SheetDescription>
+          <SheetDescription className="mt-1.5 text-[13px] text-foreground/56">{statusMessage}</SheetDescription>
         </SheetHeader>
 
         {post && resolvedAccount && composerState ? (
           <>
             <ScrollArea className="min-h-0 flex-1" scrollFade scrollbarGutter>
-              <div className="flex flex-col gap-3 px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
+              <div className="flex flex-col gap-4 px-6 py-5">
                 <PostEditAccountChip account={resolvedAccount} />
 
                 <PlatformRequirementsBanner
@@ -275,12 +248,12 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
               </div>
             </ScrollArea>
 
-            <SheetFooter className="shrink-0 flex-col gap-2 border-t border-border/60 bg-muted/10 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <SheetFooter className="shrink-0 flex-col gap-2 border-t border-foreground/10 px-6 py-3 sm:flex-row sm:items-center sm:justify-between sm:space-x-0">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-9 w-full rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none sm:w-auto"
+                className="h-8 w-full rounded-md px-3.5 text-[13px] font-medium shadow-none sm:w-auto"
                 disabled={!canSubmit || isPending}
                 onClick={() => handleSubmit('draft')}
               >
@@ -291,7 +264,7 @@ export function PostEditSheet({ post, account, open, onOpenChange }: PostEditShe
               <Button
                 type="button"
                 size="sm"
-                className="h-9 w-full rounded-full px-4 text-xs font-medium shadow-xs sm:w-auto"
+                className="h-8 w-full rounded-md px-3.5 text-[13px] font-medium sm:w-auto"
                 disabled={!isReady || isPending}
                 onClick={() => handleSubmit(scheduleMode === 'schedule' ? 'schedule' : 'publish')}
               >

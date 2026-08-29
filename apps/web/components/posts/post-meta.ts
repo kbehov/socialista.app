@@ -6,33 +6,33 @@ export const POST_STATUS_META: Record<
 > = {
   draft: {
     label: 'Draft',
-    className: 'border-border/70 bg-muted/50 text-muted-foreground',
-    dotClassName: 'bg-muted-foreground/70',
+    className: 'text-foreground/56',
+    dotClassName: 'bg-foreground/30',
   },
   scheduled: {
     label: 'Scheduled',
-    className: 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-400',
+    className: 'text-sky-700 dark:text-sky-400',
     dotClassName: 'bg-sky-500',
   },
   publishing: {
     label: 'Publishing',
-    className: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    dotClassName: 'bg-amber-500',
+    className: 'text-amber-700 dark:text-amber-400',
+    dotClassName: 'bg-amber-500 motion-safe:animate-pulse',
   },
   published: {
     label: 'Published',
-    className: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    className: 'text-emerald-700 dark:text-emerald-400',
     dotClassName: 'bg-emerald-500',
   },
   failed: {
     label: 'Failed',
-    className: 'border-destructive/20 bg-destructive/10 text-destructive',
+    className: 'text-destructive',
     dotClassName: 'bg-destructive',
   },
   canceled: {
     label: 'Canceled',
-    className: 'border-border/70 bg-muted/40 text-muted-foreground',
-    dotClassName: 'bg-muted-foreground/50',
+    className: 'text-foreground/56',
+    dotClassName: 'bg-foreground/30',
   },
 }
 
@@ -42,21 +42,21 @@ export type PostStatusSummaryItem = {
   className: string
 }
 
-/** Ordered status chips for count summaries (grid date headings, etc.). */
+/** Ordered status chips for count summaries (calendar month strip, etc.). */
 export const POST_STATUS_SUMMARY: PostStatusSummaryItem[] = [
-  { status: 'scheduled', label: 'Scheduled', className: 'text-sky-600 dark:text-sky-400' },
-  { status: 'publishing', label: 'Publishing', className: 'text-amber-600 dark:text-amber-400' },
-  { status: 'published', label: 'Published', className: 'text-emerald-600 dark:text-emerald-400' },
-  { status: 'draft', label: 'Drafts', className: 'text-muted-foreground' },
+  { status: 'scheduled', label: 'Scheduled', className: 'text-sky-700 dark:text-sky-400' },
+  { status: 'publishing', label: 'Publishing', className: 'text-amber-700 dark:text-amber-400' },
+  { status: 'published', label: 'Published', className: 'text-emerald-700 dark:text-emerald-400' },
+  { status: 'draft', label: 'Drafts', className: 'text-foreground/56' },
   { status: 'failed', label: 'Failed', className: 'text-destructive' },
-  { status: 'canceled', label: 'Canceled', className: 'text-muted-foreground' },
+  { status: 'canceled', label: 'Canceled', className: 'text-foreground/56' },
 ]
 
 /** Compact month strip on the calendar (high-signal statuses only). */
 export const CALENDAR_MONTH_STATUS_SUMMARY: PostStatusSummaryItem[] = [
-  { status: 'scheduled', label: 'Scheduled', className: 'text-sky-600 dark:text-sky-400' },
-  { status: 'published', label: 'Published', className: 'text-emerald-600 dark:text-emerald-400' },
-  { status: 'draft', label: 'Drafts', className: 'text-muted-foreground' },
+  { status: 'scheduled', label: 'Scheduled', className: 'text-sky-700 dark:text-sky-400' },
+  { status: 'published', label: 'Published', className: 'text-emerald-700 dark:text-emerald-400' },
+  { status: 'draft', label: 'Drafts', className: 'text-foreground/56' },
 ]
 
 export function getActiveStatusSummary(

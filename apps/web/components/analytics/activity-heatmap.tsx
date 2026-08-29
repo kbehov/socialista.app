@@ -242,8 +242,8 @@ function ActivityHeatmap({
   const cellClassName = cn('aspect-square w-full', sizeStyles.radius)
 
   return (
-    <TooltipProvider delayDuration={120}>
-      <div data-slot="activity-heatmap" className={cn('flex w-full flex-col gap-2.5', className)}>
+    <TooltipProvider delayDuration={80}>
+      <div data-slot="activity-heatmap" className={cn('flex w-full flex-col gap-2', className)}>
         {!hideTotal ? <p className="text-xs text-muted-foreground">{resolvedTotal}</p> : null}
 
         <div className="flex w-full min-w-0">
@@ -316,9 +316,9 @@ function ActivityHeatmap({
                               className={cn(
                                 cellClassName,
                                 colors[cell.level],
-                                'outline-none transition-transform duration-100 ease-out',
-                                'hover:z-10 hover:scale-110',
-                                'focus-visible:z-10 focus-visible:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                                'outline-none transition-colors duration-75',
+                                'hover:z-10 hover:ring-1 hover:ring-foreground/25',
+                                'focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-ring',
                               )}
                             />
                           </TooltipTrigger>

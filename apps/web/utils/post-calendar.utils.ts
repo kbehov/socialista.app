@@ -1,45 +1,13 @@
 import { getPostDisplayDate, isSameCalendarDay, toDateKey } from '@/lib/posts/post-display'
 import type { Post, PostStatus } from '@socialista/types'
 
-export type DayPostTone = {
-  cellClass: string
-  badgeClass: string
-}
-
-const FAILED_TONE: DayPostTone = {
-  cellClass: 'bg-destructive/10 text-destructive',
-  badgeClass: 'bg-destructive text-destructive-foreground',
-}
-
-const SCHEDULED_TONE: DayPostTone = {
-  cellClass: 'bg-sky-500/10 text-sky-950 dark:text-sky-50',
-  badgeClass: 'bg-sky-600 text-white dark:bg-sky-500',
-}
-
-const DRAFT_TONE: DayPostTone = {
-  cellClass: 'bg-muted text-foreground',
-  badgeClass: 'bg-muted-foreground text-background',
-}
-
-const PUBLISHED_TONE: DayPostTone = {
-  cellClass: 'bg-emerald-500/10 text-emerald-950 dark:text-emerald-50',
-  badgeClass: 'bg-emerald-600 text-white dark:bg-emerald-500',
-}
-
-const DEFAULT_TONE: DayPostTone = {
-  cellClass: 'bg-primary/8 text-foreground',
-  badgeClass: 'bg-primary text-primary-foreground',
-}
-
-/** Priority-based day coloring for the posts calendar. */
-export function getDayPostTone(posts: Post[]): DayPostTone {
+export function getDayPostDotClass(posts: Post[]): string {
   const statuses = new Set(posts.map(post => post.status))
 
-  if (statuses.has('failed')) return FAILED_TONE
-  if (statuses.has('scheduled') || statuses.has('publishing')) return SCHEDULED_TONE
-  if (statuses.has('draft')) return DRAFT_TONE
-  if (statuses.has('published')) return PUBLISHED_TONE
-  return DEFAULT_TONE
+  if (statuses.has('failed')) return 'bg-destructive'
+  if (statuses.has('scheduled') || statuses.has('publishing')) return 'bg-sky-500'
+  if (statuses.has('published')) return 'bg-emerald-500'
+  return 'bg-foreground/40'
 }
 
 export function isSameCalendarMonth(a: Date, b: Date): boolean {
@@ -90,6 +58,6 @@ export function getPostsForCalendarDay(posts: Post[], day: Date): Post[] {
     .toSorted((a, b) => getPostDisplayDate(a).getTime() - getPostDisplayDate(b).getTime())
 }
 
-export function formatDayBadgeCount(count: number): string {
-  return count > 9 ? '9+' : String(count)
+export function formatDayDotCount(count: number): number {
+  return Math.min(count, 3)
 }

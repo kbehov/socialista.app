@@ -46,7 +46,7 @@ function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsPro
       </StatMetrics>
 
       {showEngagementBreakdown ? (
-        <StatMetrics columns={4} size="sm" className="mt-3">
+        <StatMetrics columns={4} size="sm" className="mt-2">
           <StatMetric label="Likes" value={formatCount(current.likes)} trend={trendFromPercent(changePercent.likes)} />
           <StatMetric
             label="Comments"
@@ -63,7 +63,7 @@ function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsPro
       ) : null}
 
       {showClickMetrics ? (
-        <StatMetrics columns={2} size="sm" className="mt-3">
+        <StatMetrics columns={2} size="sm" className="mt-2">
           <StatMetric
             label="Profile visits"
             value={formatCount(current.profileViews)}

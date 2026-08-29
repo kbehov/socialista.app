@@ -1,6 +1,7 @@
 'use client'
 
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import {
   Dialog,
   DialogContent,
@@ -56,19 +57,6 @@ export const CONNECTABLE_PLATFORMS: ConnectablePlatform[] = [
   },
 ]
 
-const PLATFORM_ROW_CLASS: Record<ConnectablePlatform['provider'], string> = {
-  facebook:
-    'hover:border-[#1877F2]/40 hover:bg-[#1877F2]/[0.06] dark:hover:border-[#1877F2]/45 dark:hover:bg-[#1877F2]/[0.12] dark:focus-visible:ring-[#1877F2]/25',
-  instagram:
-    'hover:border-pink-500/40 hover:bg-pink-500/[0.06] dark:hover:border-pink-400/45 dark:hover:bg-pink-500/[0.12] dark:focus-visible:ring-pink-400/25',
-  tiktok:
-    'hover:border-border-strong hover:bg-accent dark:hover:bg-surface-3',
-  threads:
-    'hover:border-border-strong hover:bg-accent dark:hover:bg-surface-3',
-  linkedin:
-    'hover:border-[#0A66C2]/40 hover:bg-[#0A66C2]/[0.06] dark:hover:border-[#0A66C2]/45 dark:hover:bg-[#0A66C2]/[0.12] dark:focus-visible:ring-[#0A66C2]/25',
-}
-
 type ConnectAccountDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -78,60 +66,53 @@ export function ConnectAccountDialog({ open, onOpenChange }: ConnectAccountDialo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <div className="border-b border-border px-6 py-5 pr-14">
+        <div className={cn(dashboardSurface.sectionHeader, 'px-5 py-4 pr-12')}>
           <DialogHeader className="gap-1 text-left">
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Connect an account
-            </DialogTitle>
+            <DialogTitle className="text-[15px] font-medium tracking-tight">Connect an account</DialogTitle>
             <DialogDescription className="text-[13px] leading-relaxed text-muted-foreground">
-              Choose a platform to authorize. You&apos;ll sign in securely, then return here.
+              Authorize a platform, then you&apos;ll return here.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <div className="p-3">
-          <ul className="grid gap-1" role="list">
-            {CONNECTABLE_PLATFORMS.map(platform => (
-              <li key={platform.provider}>
-                <a
-                  href={platform.href}
-                  className={cn(
-                    'group/platform flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-3 py-2.5 text-left',
-                    'transition-colors duration-150 ease-out',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
-                    'active:bg-accent',
-                    PLATFORM_ROW_CLASS[platform.provider],
-                  )}
-                >
-                  <SocialPlatformIcon
-                    provider={platform.provider}
-                    size={18}
-                    className="size-9 shrink-0 rounded-lg shadow-none ring-0"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium tracking-tight text-foreground">
-                      {getSocialPlatformLabel(platform.provider)}
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                      {platform.description}
-                    </span>
+        <ul className="grid gap-0.5 p-1.5" role="list">
+          {CONNECTABLE_PLATFORMS.map(platform => (
+            <li key={platform.provider}>
+              <a
+                href={platform.href}
+                className={cn(
+                  'group/platform flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left',
+                  'transition-colors duration-150 ease-out',
+                  'hover:bg-foreground/[0.04] active:bg-foreground/[0.06]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                )}
+              >
+                <SocialPlatformIcon
+                  provider={platform.provider}
+                  size={16}
+                  className="size-8 shrink-0 rounded-md shadow-none ring-1 ring-border/50"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-medium tracking-tight text-foreground">
+                    {getSocialPlatformLabel(platform.provider)}
                   </span>
-                  <ArrowUpRightIcon
-                    className="size-3.5 shrink-0 text-muted-foreground/60 transition-[transform,color] duration-150 group-hover/platform:-translate-y-px group-hover/platform:translate-x-px group-hover/platform:text-foreground"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-foreground/56">
+                    {platform.description}
+                  </span>
+                </span>
+                <ArrowUpRightIcon
+                  className="size-3.5 shrink-0 text-foreground/40 transition-colors duration-150 group-hover/platform:text-foreground"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
 
-        <div className="flex items-start gap-2.5 border-t border-border bg-muted px-6 py-3.5">
-          <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border bg-card">
-            <ShieldCheckIcon className="size-3 text-muted-foreground" strokeWidth={2} />
-          </span>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <div className="flex items-start gap-2 border-t border-border/50 px-5 py-3">
+          <ShieldCheckIcon className="mt-0.5 size-3.5 shrink-0 text-foreground/40" strokeWidth={1.75} />
+          <p className="text-[11px] leading-relaxed text-foreground/56">
             Credentials are encrypted at rest and never shared with third parties.
           </p>
         </div>

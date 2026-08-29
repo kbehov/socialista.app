@@ -1,5 +1,6 @@
 'use client'
 
+import { dashboardSurface } from '@/components/dashboard'
 import { DashboardSegment, DashboardSegmentButton } from '@/components/dashboard/dashboard-segment'
 import { usePageScrollCompact } from '@/components/headers/page-scroll-compact'
 import { Filters, type Filter } from '@/components/reui/filters'
@@ -8,16 +9,16 @@ import { usePostFilters } from '@/hooks/use-post-filters'
 import { buildPostFilterFields, hasActivePostFilters, type PostViewMode } from '@/lib/posts/post-filters'
 import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
-import { CalendarDaysIcon, LayoutGridIcon, ListFilterIcon, Loader2Icon } from 'lucide-react'
+import { CalendarDaysIcon, ListIcon, ListFilterIcon, Loader2Icon } from 'lucide-react'
 import { useMemo } from 'react'
 
 const VIEW_OPTIONS: Array<{
   value: PostViewMode
   label: string
   shortLabel: string
-  Icon: typeof LayoutGridIcon
+  Icon: typeof ListIcon
 }> = [
-  { value: 'list', label: 'Grid', shortLabel: 'Grid', Icon: LayoutGridIcon },
+  { value: 'list', label: 'List', shortLabel: 'List', Icon: ListIcon },
   { value: 'calendar', label: 'Calendar', shortLabel: 'Cal', Icon: CalendarDaysIcon },
 ]
 
@@ -33,7 +34,7 @@ export function PostsToolbar({ accounts, filters, total, view }: PostsToolbarPro
   const { isPending, applyFilters, clearFilters, setView } = usePostFilters()
   const fields = useMemo(() => buildPostFilterFields(accounts), [accounts])
   const hasFilters = hasActivePostFilters(filters)
-  const filterCount = filters.length
+  const filterCount = filters.filter(filter => filter.values.length > 0).length
   const postWord = total === 1 ? 'post' : 'posts'
 
   return (
@@ -57,11 +58,7 @@ export function PostsToolbar({ accounts, filters, total, view }: PostsToolbarPro
             <Button
               variant="outline"
               size="sm"
-              className={cn(
-                'shrink-0 gap-1.5 rounded-lg shadow-none',
-                compact ? 'h-7' : 'h-8',
-                hasFilters && 'text-foreground',
-              )}
+              className={cn(dashboardSurface.toolbarControl, 'shrink-0 gap-1.5', hasFilters && 'text-foreground')}
             >
               <ListFilterIcon className="size-3.5" strokeWidth={1.75} />
               <span className={cn(compact && 'sr-only')}>Filters</span>
@@ -89,11 +86,10 @@ export function PostsToolbar({ accounts, filters, total, view }: PostsToolbarPro
                 active={selected}
                 onClick={() => setView(option.value)}
                 aria-label={option.label}
-                className={cn(compact && 'h-6 px-2')}
               >
                 <Icon className="size-3.5" strokeWidth={1.75} />
-                <span className={cn(compact ? 'hidden' : 'hidden sm:inline')}>{option.label}</span>
-                <span className={cn(compact ? 'hidden' : 'sm:hidden')}>{option.shortLabel}</span>
+                <span className="hidden sm:inline">{option.label}</span>
+                <span className="sm:hidden">{option.shortLabel}</span>
               </DashboardSegmentButton>
             )
           })}
@@ -104,7 +100,7 @@ export function PostsToolbar({ accounts, filters, total, view }: PostsToolbarPro
         {isPending ? <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" aria-hidden /> : null}
         <span className="tabular-nums tracking-tight">
           <span className="font-medium text-foreground">{total.toLocaleString()}</span>
-          <span className={cn(compact && 'hidden sm:inline')}>{` ${postWord}`}</span>
+          {` ${postWord}`}
         </span>
         {hasFilters ? (
           <>
@@ -116,7 +112,7 @@ export function PostsToolbar({ accounts, filters, total, view }: PostsToolbarPro
               onClick={clearFilters}
               className="font-medium text-foreground/80 underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Clear filters
+              Clear
             </button>
           </>
         ) : null}

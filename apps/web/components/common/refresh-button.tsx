@@ -3,6 +3,8 @@ import { Loader2Icon, RefreshCcwIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { Button } from '../ui/button'
+import { dashboardSurface } from '@/components/dashboard/surface'
+import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 const RefreshButton = () => {
   const router = useRouter()
@@ -18,8 +20,9 @@ const RefreshButton = () => {
       <TooltipTrigger asChild>
         <Button
           variant="outline"
-          size="icon"
-          className="h-8 shrink-0 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98]"
+          size="icon-sm"
+          aria-label="Refresh data"
+          className={cn(dashboardSurface.toolbarControl, 'size-7 shrink-0 px-0')}
           onClick={handleRefresh}
         >
           {isPending ? (

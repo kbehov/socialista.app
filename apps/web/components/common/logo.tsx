@@ -36,7 +36,7 @@ function Logo({ className, href = '/', compact = false }: LogoProps) {
           alt=""
           width={compact ? 20 : 32}
           height={compact ? 20 : 32}
-          className="size-full object-contain p-px dark:invert"
+          className="size-full object-contain p-px invert"
         />
       </span>
       <span

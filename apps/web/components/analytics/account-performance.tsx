@@ -1,6 +1,7 @@
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
@@ -43,13 +44,13 @@ const TONE_STYLES: Record<
 > = {
   up: {
     icon: TrendingUpIcon,
-    iconClassName: 'text-emerald-700 dark:text-emerald-400',
-    scoreClassName: 'text-emerald-700 dark:text-emerald-400',
+    iconClassName: dashboardSurface.trendUp,
+    scoreClassName: dashboardSurface.trendUp,
   },
   down: {
     icon: TrendingDownIcon,
-    iconClassName: 'text-red-700 dark:text-red-400',
-    scoreClassName: 'text-red-700 dark:text-red-400',
+    iconClassName: dashboardSurface.trendDown,
+    scoreClassName: dashboardSurface.trendDown,
   },
 }
 
@@ -140,9 +141,9 @@ function AccountPerformance({
         <AccountPerformanceMetricToggle rankBy={data.rankBy} range={range} provider={provider} />
       }
     >
-      <div className="grid gap-8 sm:grid-cols-2">
-        <PerformanceColumn tone="up" title="Winning" rows={winners} rankBy={data.rankBy} />
-        <PerformanceColumn tone="down" title="Losing" rows={losers} rankBy={data.rankBy} />
+      <div className="grid sm:grid-cols-2 sm:divide-x sm:divide-border">
+        <PerformanceColumn tone="up" title="Winning" rows={winners} rankBy={data.rankBy} className="sm:pr-6" />
+        <PerformanceColumn tone="down" title="Losing" rows={losers} rankBy={data.rankBy} className="max-sm:mt-5 sm:pl-6" />
       </div>
     </AnalyticsSection>
   )
@@ -153,20 +154,22 @@ function PerformanceColumn({
   title,
   rows,
   rankBy,
+  className,
 }: {
   tone: ColumnTone
   title: string
   rows: AnalyticsAccountPerformanceRow[]
   rankBy: AnalyticsAccountPerformanceRankBy
+  className?: string
 }) {
   const styles = TONE_STYLES[tone]
   const Icon = styles.icon
 
   return (
-    <div className="min-w-0">
-      <div className="mb-4 flex items-center gap-2">
+    <div className={cn('min-w-0', className)}>
+      <div className="mb-3 flex items-center gap-1.5">
         <Icon className={cn('size-3.5 shrink-0', styles.iconClassName)} strokeWidth={1.75} />
-        <p className="text-xs font-medium text-foreground">{title}</p>
+        <p className="text-[13px] font-medium text-foreground">{title}</p>
         <span className="text-[11px] tabular-nums text-muted-foreground">{rows.length}</span>
       </div>
 
@@ -178,7 +181,7 @@ function PerformanceColumn({
           }
         />
       ) : (
-        <ol className="flex flex-col gap-3">
+        <ol className="flex flex-col">
           {rows.map((row, index) => (
             <PerformanceRow
               key={`${tone}-${row.account.id}`}
@@ -213,8 +216,8 @@ function PerformanceRow({
       <Link
         href={DASHBOARD_ROUTES.accountAnalytics(row.account.id)}
         className={cn(
-          'flex items-center gap-3 rounded-lg px-1 py-1.5 -mx-1',
-          'transition-colors hover:bg-muted/30 dark:hover:bg-muted/15',
+          'flex items-center gap-2.5 rounded-md px-1 py-1.5 -mx-1',
+          'transition-colors hover:bg-highlight',
         )}
       >
         <span className="w-5 shrink-0 text-[11px] tabular-nums text-muted-foreground">

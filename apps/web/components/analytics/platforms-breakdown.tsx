@@ -82,7 +82,7 @@ function resolvePlatforms(
 
 function changeTone(value: number | null) {
   if (value === null || !Number.isFinite(value) || value === 0) return 'text-muted-foreground'
-  return value > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
+  return value > 0 ? dashboardSurface.trendUp : dashboardSurface.trendDown
 }
 
 function PlatformsBreakdown({ data, overview, provider = 'all', error, className }: PlatformsBreakdownProps) {
@@ -99,7 +99,7 @@ function PlatformsBreakdown({ data, overview, provider = 'all', error, className
       {platforms.length === 0 ? (
         <AnalyticsEmpty title="No platform data yet" description="Metrics appear after accounts sync." />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="-mx-4 -mb-4 grid gap-px border-t border-border bg-border/30 sm:grid-cols-2 xl:grid-cols-3 dark:bg-border/40">
           {platforms.map(row => (
             <PlatformCard key={row.provider} row={row} />
           ))}
@@ -118,22 +118,22 @@ function PlatformCard({ row }: { row: AnalyticsPlatformRow }) {
   ] as const
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2.5">
-        <SocialPlatformIcon provider={row.provider} size={14} className="size-6 shrink-0" />
+    <div className={cn(dashboardSurface.dividerCell, 'flex flex-col gap-3 px-3.5 py-3.5')}>
+      <div className="flex items-center gap-2">
+        <SocialPlatformIcon provider={row.provider} size={14} className="size-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-foreground">{getSocialPlatformLabel(row.provider)}</p>
+          <p className="truncate text-[13px] font-medium text-foreground">{getSocialPlatformLabel(row.provider)}</p>
           <p className={dashboardSurface.metricMeta}>
             {row.accounts} account{row.accounts === 1 ? '' : 's'}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
         {metrics.map(metric => (
           <div key={metric.label}>
             <p className={dashboardSurface.metricLabel}>{metric.label}</p>
-            <p className="mt-0.5 text-sm font-medium tabular-nums tracking-[-0.02em] text-foreground">
+            <p className="mt-0.5 text-[13px] font-medium tabular-nums tracking-[-0.02em] text-foreground">
               {formatCount(metric.value)}
             </p>
             <p className={cn('mt-0.5 text-[11px] font-medium tabular-nums', changeTone(metric.change))}>

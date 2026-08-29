@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { cn } from '@/lib/utils'
 import type { ConfirmAction } from '@/types/account.types'
 import type { AccountSummary } from '@socialista/types'
 import { BarChart3Icon, MoreHorizontalIcon, PencilIcon, PlugIcon, Trash2Icon, UnplugIcon } from 'lucide-react'
@@ -35,7 +36,10 @@ export function AccountActionsMenu({ account, onAction, onEdit, triggerClassName
           type="button"
           variant="ghost"
           size="icon-xs"
-          className={triggerClassName ?? 'size-8 rounded-lg text-muted-foreground'}
+          className={cn(
+            'size-8 rounded-md text-foreground/56 hover:text-foreground',
+            triggerClassName,
+          )}
           aria-label={`Actions for ${account.accountName}`}
         >
           <MoreHorizontalIcon className="size-4" strokeWidth={1.5} />

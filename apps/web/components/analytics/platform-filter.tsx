@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { DashboardSegment, dashboardSegmentLinkClass } from '@/components/dashboard/dashboard-segment'
+import { dashboardSurface } from '@/components/dashboard/surface'
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
@@ -39,7 +40,7 @@ function PlatformFilter({
     <div
       data-slot="platform-filter"
       className={cn(
-        'flex items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
+        'flex items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
         className,
       )}
       role="tablist"
@@ -65,10 +66,8 @@ function PlatformFilter({
       <Link
         href={DASHBOARD_ROUTES.ACCOUNTS}
         className={cn(
-          'inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/55 dark:border-border/70',
-          'bg-background text-muted-foreground',
-          'transition-colors hover:bg-muted/30 hover:text-foreground',
-          'active:scale-[0.97]',
+          dashboardSurface.toolbarControl,
+          'inline-flex size-7 shrink-0 items-center justify-center px-0 text-muted-foreground',
         )}
         aria-label="Connect another platform"
       >
