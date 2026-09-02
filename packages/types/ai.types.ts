@@ -8,7 +8,10 @@ export type SlideshowContentType = (typeof SLIDESHOW_CONTENT_TYPES)[number]
 
 export type GenerateSlideshowInput = {
   hook: string
-  slideCount: number
+  /** Omit or `undefined` to let the model choose a length. */
+  slideCount?: number
+  /** Catalog `Model.value`. Falls back to the slideshow registry default. */
+  model?: string
 }
 
 export type GenerateSlideshowResult = {
@@ -27,7 +30,10 @@ export const SLIDESHOW_PLAN_CREDIT_COST = 2
 
 export type PlanSlideshowInput = {
   hook: string
-  slideCount: number
+  /** Omit or `undefined` to let the model choose a length. */
+  slideCount?: number
+  /** Catalog `Model.value`. Falls back to the slideshow registry default. */
+  model?: string
 }
 
 export type SlideshowPlanTheme = {

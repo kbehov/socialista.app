@@ -13,7 +13,7 @@ import {
   toObjectId,
 } from '@socialista/db'
 import type { SlideshowGenerationOutput } from '@socialista/types'
-import { PROMPT_KEYS, SLIDESHOW_PLAN_CREDIT_COST, TASK_IDS } from '@socialista/types'
+import { PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 
 import { slideshowGenerationPayloadSchema } from '../../schemas/slideshow-generation.schema.js'
@@ -31,6 +31,7 @@ import { loadSkillOverride } from '../shared/skills.js'
 import {
   assertSufficientCredits,
   finalizeGeneration,
+  loadModel,
   loadModelAndWorkspace,
 } from '../shared/workspace.js'
 
@@ -47,8 +48,10 @@ export const realtimeSlideshowGeneration = schemaTask({
       await connectDb()
 
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
-      const billedCost = SLIDESHOW_PLAN_CREDIT_COST + model.cost * payload.slideCount
-      assertSufficientCredits(workspace, billedCost)
+      const textModel = payload.textModel ? await loadModel(payload.textModel, 'Text model not found.') : null
+      const planCost = textModel?.cost ?? SLIDESHOW_PLAN_CREDIT_COST
+      const estimatedImageCount = payload.slideCount ?? SLIDESHOW_GENERATION_SLIDE_COUNT_MIN
+      assertSufficientCredits(workspace, planCost + model.cost * estimatedImageCount)
 
       const started = await startGenerationRecord({
         kind: GenerationKind.SLIDESHOW,
@@ -61,8 +64,9 @@ export const realtimeSlideshowGeneration = schemaTask({
         model,
         inputs: {
           aspectRatio: payload.aspectRatioId,
-          numImages: payload.slideCount,
-          slideCount: payload.slideCount,
+          ...(payload.slideCount != null
+            ? { numImages: payload.slideCount, slideCount: payload.slideCount }
+            : {}),
         },
       })
       startedAt = started.startedAt
@@ -77,9 +81,12 @@ export const realtimeSlideshowGeneration = schemaTask({
       })
       const plan = await planSlideshow({
         hook: payload.prompt,
-        slideCount: payload.slideCount,
         systemOverride,
+        ...(payload.slideCount != null ? { slideCount: payload.slideCount } : {}),
+        ...(payload.textModel ? { model: payload.textModel } : {}),
       })
+      const billedCost = planCost + model.cost * plan.slides.length
+      assertSufficientCredits(workspace, billedCost)
       await setGenerationEnhancedPrompt(
         ctx.run.id,
         plan.slides.map(slide => slide.text).join('\n\n---\n\n'),

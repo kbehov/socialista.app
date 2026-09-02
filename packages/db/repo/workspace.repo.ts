@@ -10,7 +10,7 @@ import {
   type WorkspaceBillingUpdate,
   type WorkspaceUsage,
 } from '../types/workspace.types.js'
-import { assertValidTimezone } from '../utils/timezone.js'
+import { DEFAULT_TIMEZONE, assertValidTimezone } from '../utils/timezone.js'
 
 type UsageField = keyof WorkspaceUsage
 
@@ -38,7 +38,7 @@ const defaultFreePlanDefaults = () => {
   const limits = PLAN_LIMITS[Plan.FREE]
 
   return {
-    settings: { timezone: 'Europe/Sofia', language: 'en' },
+    settings: { timezone: DEFAULT_TIMEZONE, language: 'en' },
     limits: {
       members: limits.members,
       storage: limits.storage,

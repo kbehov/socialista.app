@@ -25,36 +25,35 @@ const slideTextSchema = z.object({
     .describe('Plain slide copy only — no markdown, emojis, or hashtags. Renders directly on canvas.'),
 })
 
-export function createSlideshowGeneratedSchema(slideCount: number) {
-  const middleCount = Math.max(0, slideCount - 2)
+export function createSlideshowGeneratedSchema(slideCount?: number) {
+  const auto = slideCount == null
+  const slidesField = auto
+    ? z
+        .array(slideTextSchema)
+        .min(SLIDESHOW_GENERATION_SLIDE_COUNT_MIN)
+        .max(SLIDESHOW_GENERATION_SLIDE_COUNT_MAX)
+        .describe(
+          `The full ordered deck. First item is the hook. Choose ${SLIDESHOW_GENERATION_SLIDE_COUNT_MIN}–${SLIDESHOW_GENERATION_SLIDE_COUNT_MAX} slides. Do not add a CTA slide unless the prompt asks for one or it earns the ending. Pack requested items instead of padding with a CTA.`,
+        )
+    : z
+        .array(slideTextSchema)
+        .length(slideCount)
+        .describe(
+          `The full ordered deck. First item is the hook. Exactly ${slideCount} slides. Do not force the last slide to be a CTA. Pack requested items when they would not fit one-per-slide.`,
+        )
 
   return z.object({
     contentType: slideshowContentTypeSchema.describe(
       'Best-fit format for this hook: story (personal journey), guide (how-to), list (fast tips), routine (habit flow), comparison (X vs Y), myth (debunking a belief)',
     ),
-    hook: z
-      .string()
-      .describe(
-        'Slide 1 — scroll-stopping hook. Max 12–14 words. No trailing period. Rewrite user input to be punchier.',
-      ),
-    slides: z
-      .array(slideTextSchema)
-      .length(middleCount)
-      .describe(
-        middleCount === 0
-          ? 'No middle slides — hook flows straight to CTA'
-          : `Exactly ${middleCount} middle slide(s) between hook and CTA`,
-      ),
-    cta: z
-      .string()
-      .describe('Final slide — one clear action tied back to the hook promise (follow, save, comment keyword, share)'),
+    slides: slidesField,
   })
 }
 
 export type SlideshowGenerated = z.infer<ReturnType<typeof createSlideshowGeneratedSchema>>
 
 export function slideshowToSlideTexts(result: SlideshowGenerated): string[] {
-  return [result.hook, ...result.slides.map(slide => slide.text), result.cta]
+  return result.slides.map(slide => slide.text)
 }
 
 const hexColor = z.string().regex(HEX_COLOR_REGEX).describe('6-digit hex color like #0f0f0f')
@@ -69,11 +68,27 @@ const plannedSlideSchema = z.object({
       '2–4 word stock-photo search phrase for this slide (concrete nouns, no quotes). Example: empty coffee shop',
     ),
   layout: z.enum(SLIDESHOW_LAYOUTS).describe(
-    'full-bleed: photo background + overlay + white text. split: color panel + photo. minimal: solid color, text only.',
+    'full-bleed: photo fills the slide behind the copy. split and minimal are unused — always pick full-bleed.',
   ),
 })
 
-export function createSlideshowPlanSchema(slideCount: number) {
+export function createSlideshowPlanSchema(slideCount?: number) {
+  const slidesField =
+    slideCount == null
+      ? z
+          .array(plannedSlideSchema)
+          .min(SLIDESHOW_GENERATION_SLIDE_COUNT_MIN)
+          .max(SLIDESHOW_GENERATION_SLIDE_COUNT_MAX)
+          .describe(
+            `The full ordered deck. First item is the hook. Choose ${SLIDESHOW_GENERATION_SLIDE_COUNT_MIN}–${SLIDESHOW_GENERATION_SLIDE_COUNT_MAX} slides. Do not add a CTA slide unless it belongs. Pack requested items when they outnumber the remaining slides. Every slide is full-bleed with its own photo background.`,
+          )
+      : z
+          .array(plannedSlideSchema)
+          .length(slideCount)
+          .describe(
+            `The full ordered deck. First item is the hook. Exactly ${slideCount} slides. Do not force the last slide to be a CTA. Pack requested items onto content slides when they would not fit one-per-slide. Every slide is full-bleed with its own photo background.`,
+          )
+
   return z.object({
     contentType: slideshowContentTypeSchema.describe(
       'Best-fit format for this hook: story (personal journey), guide (how-to), list (fast tips), routine (habit flow), comparison (X vs Y), myth (debunking a belief)',
@@ -87,13 +102,7 @@ export function createSlideshowPlanSchema(slideCount: number) {
       accentColor: hexColor.describe('Accent used sparingly for emphasis'),
       fontFamily: z.enum(PLAN_FONT_FAMILIES).describe('One typeface for the whole deck'),
     }),
-    slides: z
-      .array(plannedSlideSchema)
-      .min(SLIDESHOW_GENERATION_SLIDE_COUNT_MIN)
-      .max(SLIDESHOW_GENERATION_SLIDE_COUNT_MAX)
-      .describe(
-        `The full ordered deck. First item is the hook, last item is the CTA. Aim for ${slideCount} slides. Vary layout across the deck.`,
-      ),
+    slides: slidesField,
   })
 }
 
@@ -101,13 +110,14 @@ export type SlideshowPlanGenerated = z.infer<ReturnType<typeof createSlideshowPl
 
 export function slideshowPlanFromGenerated(
   result: SlideshowPlanGenerated,
-  slideCount: number,
+  slideCount?: number,
 ): SlideshowPlan {
-  const slides = result.slides.slice(0, slideCount)
+  const limit = slideCount ?? SLIDESHOW_GENERATION_SLIDE_COUNT_MAX
+  const slides = result.slides.slice(0, limit)
   return {
     contentType: result.contentType,
     name: result.name.trim() || 'Untitled slideshow',
     theme: result.theme,
-    slides,
+    slides: slides.map(slide => ({ ...slide, layout: 'full-bleed' as const })),
   }
 }

@@ -19,7 +19,7 @@ import { uploadToWorkspace } from '@/services/files.service'
 import { createProject, deleteProject, updateProject } from '@/services/project.service'
 import { getProjectId, useProjectStoreActions } from '@/store/project.store'
 import { getWorkspaceId, useWorkspaceStore } from '@/store/workspace.store'
-import { isValidIanaTimezone } from '@/utils/timezone'
+import { DEFAULT_TIMEZONE, isValidIanaTimezone } from '@/utils/timezone'
 import { getInitials } from '@/utils/user'
 import type { ProjectResponse } from '@socialista/types'
 import { CameraIcon, Loader2Icon, Trash2Icon } from 'lucide-react'
@@ -27,15 +27,13 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
-const FALLBACK_TIMEZONE = 'Europe/Sofia'
-
 function resolveDefaultTimezone(fallback?: string) {
+  if (fallback && isValidIanaTimezone(fallback)) return fallback
   if (typeof Intl !== 'undefined') {
     const browser = Intl.DateTimeFormat().resolvedOptions().timeZone
     if (browser && isValidIanaTimezone(browser)) return browser
   }
-  if (fallback && isValidIanaTimezone(fallback)) return fallback
-  return FALLBACK_TIMEZONE
+  return DEFAULT_TIMEZONE
 }
 
 type ProjectFormDialogProps = {

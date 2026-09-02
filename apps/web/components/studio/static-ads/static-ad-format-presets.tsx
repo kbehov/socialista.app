@@ -81,35 +81,35 @@ function PresetCarouselNav() {
     <div className="flex shrink-0 items-center gap-0.5">
       <button
         type="button"
-        aria-label="Scroll presets left"
+        aria-label="Scroll formats left"
         disabled={!canScrollPrev}
         onClick={scrollPrev}
         className={cn(
-          'inline-flex size-6 items-center justify-center rounded-full',
-          'text-muted-foreground ring-1 ring-border/40',
-          'transition-[color,background-color,opacity] duration-150',
-          'hover:bg-muted/50 hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          'inline-flex size-6 items-center justify-center rounded-md',
+          'text-black/44 dark:text-white/44',
+          'transition-colors duration-150',
+          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
           'disabled:pointer-events-none disabled:opacity-30',
         )}
       >
-        <ChevronLeftIcon className="size-3.5" strokeWidth={2} />
+        <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
       </button>
       <button
         type="button"
-        aria-label="Scroll presets right"
+        aria-label="Scroll formats right"
         disabled={!canScrollNext}
         onClick={scrollNext}
         className={cn(
-          'inline-flex size-6 items-center justify-center rounded-full',
-          'text-muted-foreground ring-1 ring-border/40',
-          'transition-[color,background-color,opacity] duration-150',
-          'hover:bg-muted/50 hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          'inline-flex size-6 items-center justify-center rounded-md',
+          'text-black/44 dark:text-white/44',
+          'transition-colors duration-150',
+          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
           'disabled:pointer-events-none disabled:opacity-30',
         )}
       >
-        <ChevronRightIcon className="size-3.5" strokeWidth={2} />
+        <ChevronRightIcon className="size-3.5" strokeWidth={1.75} />
       </button>
     </div>
   )
@@ -120,40 +120,29 @@ export function StaticAdFormatPresets() {
 
   return (
     <Carousel
-      className="w-full min-w-0 self-stretch"
+      className="w-full min-w-0"
       opts={{
         align: 'start',
         dragFree: true,
         containScroll: 'trimSnaps',
       }}
     >
-      <div className="mb-1.5 flex items-center justify-between gap-3 px-3 sm:px-3.5">
-        <p className="text-[11px] font-medium tracking-[-0.01em] text-muted-foreground">
-          Format starters
-        </p>
-        <div className="flex items-center gap-2">
-          <p className="hidden text-[10px] text-muted-foreground/65 sm:block">
-            Tap to apply — edit anytime
-          </p>
-          <PresetCarouselNav />
-        </div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-[12px] font-medium tracking-[-0.015em] text-foreground/80">Formats</p>
+        <PresetCarouselNav />
       </div>
 
       <div className="relative w-full min-w-0">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-linear-to-r from-background/95 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-linear-to-r from-background to-transparent"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background/95 to-transparent"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
         />
 
-        <CarouselContent
-          className="ml-0 px-3 sm:px-3.5"
-          role="listbox"
-          aria-label="Format starters"
-        >
+        <CarouselContent className="ml-0" role="listbox" aria-label="Format starters">
           {STATIC_AD_FORMAT_PRESETS.map((preset, index) => {
             const Icon = PRESET_ICONS[preset.id] ?? SparklesIcon
             const isActive = activePresetId === preset.id
@@ -161,11 +150,7 @@ export function StaticAdFormatPresets() {
             return (
               <CarouselItem
                 key={preset.id}
-                className={cn(
-                  'basis-auto self-stretch pl-0',
-                  index > 0 && 'pl-1.5',
-                  index === 0 && 'pl-0.5',
-                )}
+                className={cn('basis-auto self-stretch pl-0', index > 0 && 'pl-1.5')}
               >
                 <button
                   type="button"
@@ -177,17 +162,17 @@ export function StaticAdFormatPresets() {
                     commitHaptic({ vibrateDuration: 8 })
                   }}
                   className={cn(
-                    'inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5',
-                    'text-[11px] font-medium leading-none tracking-[-0.01em]',
-                    'transition-[background-color,border-color,color,box-shadow,transform] duration-150',
-                    'active:scale-[0.97]',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                    'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2.5',
+                    'text-[11px] font-medium leading-none tracking-[-0.015em]',
+                    'transition-[background-color,border-color,color,transform] duration-150',
+                    'active:scale-[0.97] motion-reduce:active:scale-100',
+                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
                     isActive
-                      ? 'border-foreground/20 bg-foreground text-background shadow-sm'
-                      : 'border-border/40 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground',
+                      ? 'border-black/18 bg-black/[0.06] text-foreground dark:border-white/18 dark:bg-white/[0.08]'
+                      : 'border-black/10 bg-black/[0.02] text-black/56 hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:border-white/12 dark:bg-white/[0.03] dark:text-white/56 dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
                   )}
                 >
-                  <Icon className="size-3 shrink-0 opacity-75" strokeWidth={2} aria-hidden />
+                  <Icon className="size-3 shrink-0 opacity-70" strokeWidth={1.75} aria-hidden />
                   <span className="whitespace-nowrap">{preset.label}</span>
                 </button>
               </CarouselItem>

@@ -21,6 +21,7 @@ import type {
   ComposerValidationIssue,
   ComposerVariant,
 } from '../types/composer-types'
+import { DEFAULT_TIMEZONE } from './timezone'
 
 export function createEmptyVariant(accountId: string): ComposerVariant {
   return {
@@ -120,20 +121,43 @@ export function buildPostContent(media: ComposerMediaItem[], caption: string, al
   }
 }
 
-export function resolveScheduleDate(schedule: ComposerSchedule): Date | null {
-  if (schedule.mode !== 'schedule' || !schedule.date || !schedule.time) return null
+function buildScheduleLocalIso(schedule: ComposerSchedule): string | null {
+  if (!schedule.date || !schedule.time) return null
 
   const year = schedule.date.getFullYear()
   const month = String(schedule.date.getMonth() + 1).padStart(2, '0')
   const day = String(schedule.date.getDate()).padStart(2, '0')
   const time = schedule.time.length === 5 ? schedule.time : '09:00'
-  const localIso = `${year}-${month}-${day}T${time}:00`
+  return `${year}-${month}-${day}T${time}:00`
+}
+
+export function resolveScheduleTimezone(
+  schedule: ComposerSchedule,
+  account?: Pick<AccountSummary, 'timezone'>,
+): string {
+  if (schedule.timezoneMode === 'account' && account?.timezone) {
+    return account.timezone
+  }
+  return schedule.timezone
+}
+
+export function resolveScheduleDate(schedule: ComposerSchedule, timezone = schedule.timezone): Date | null {
+  if (schedule.mode !== 'schedule') return null
+  const localIso = buildScheduleLocalIso(schedule)
+  if (!localIso) return null
 
   try {
-    return fromZonedTime(localIso, schedule.timezone)
+    return fromZonedTime(localIso, timezone)
   } catch {
     return null
   }
+}
+
+export function resolveScheduleDateForAccount(
+  schedule: ComposerSchedule,
+  account: Pick<AccountSummary, 'timezone'>,
+): Date | null {
+  return resolveScheduleDate(schedule, resolveScheduleTimezone(schedule, account))
 }
 
 export function formatTimeInput(date: Date = new Date()): string {
@@ -246,20 +270,46 @@ export function validateComposer(state: ComposerData, accounts: AccountSummary[]
     if (!state.schedule.time) {
       issues.push({ field: 'schedule', code: 'schedule', message: 'Pick a schedule time' })
     }
-    const scheduledAt = resolveScheduleDate(state.schedule)
-    if (scheduledAt && scheduledAt.getTime() <= Date.now()) {
-      issues.push({
-        field: 'schedule',
-        code: 'schedule',
-        message: 'Schedule time must be in the future',
-      })
-    }
-    if (!scheduledAt && state.schedule.date && state.schedule.time) {
-      issues.push({
-        field: 'schedule',
-        code: 'schedule',
-        message: 'Invalid schedule date or timezone',
-      })
+
+    const hasDateAndTime = Boolean(state.schedule.date && state.schedule.time)
+
+    if (state.schedule.timezoneMode === 'account') {
+      for (const accountId of state.selectedAccountIds) {
+        const account = accountById.get(accountId)
+        const scheduledAt = account ? resolveScheduleDateForAccount(state.schedule, account) : null
+        if (scheduledAt && scheduledAt.getTime() <= Date.now()) {
+          issues.push({
+            accountId,
+            field: 'schedule',
+            code: 'schedule',
+            message: `Schedule time must be in the future for ${account?.accountName ?? 'this account'}`,
+          })
+        }
+        if (!scheduledAt && hasDateAndTime) {
+          issues.push({
+            accountId,
+            field: 'schedule',
+            code: 'schedule',
+            message: 'Invalid schedule date or timezone',
+          })
+        }
+      }
+    } else {
+      const scheduledAt = resolveScheduleDate(state.schedule)
+      if (scheduledAt && scheduledAt.getTime() <= Date.now()) {
+        issues.push({
+          field: 'schedule',
+          code: 'schedule',
+          message: 'Schedule time must be in the future',
+        })
+      }
+      if (!scheduledAt && hasDateAndTime) {
+        issues.push({
+          field: 'schedule',
+          code: 'schedule',
+          message: 'Invalid schedule date or timezone',
+        })
+      }
     }
   }
 
@@ -331,7 +381,7 @@ export function buildCreatePayload(params: {
     provider: account.provider,
     type,
     content,
-    timezone: state.schedule.timezone,
+    timezone: resolveScheduleTimezone(state.schedule, account),
     status,
     caption: caption.trim() || undefined,
     description,
@@ -346,14 +396,14 @@ export function getDefaultTimezone(
   selectedIds: string[],
   fallback?: string,
 ): string {
+  if (fallback) return fallback
   const firstSelected = accounts.find(account => selectedIds.includes(account._id))
   if (firstSelected?.timezone) return firstSelected.timezone
   if (accounts[0]?.timezone) return accounts[0].timezone
-  if (fallback) return fallback
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIMEZONE
   } catch {
-    return 'UTC'
+    return DEFAULT_TIMEZONE
   }
 }
 
@@ -437,6 +487,6 @@ export function buildUpdatePayload(params: { account: AccountSummary; state: Com
     description: description ?? null,
     location: limits.supportsLocation ? (variant?.location ?? null) : null,
     firstComment: limits.supportsFirstComment ? variant?.firstComment.trim() || null : null,
-    timezone: state.schedule.timezone,
+    timezone: resolveScheduleTimezone(state.schedule, account),
   }
 }

@@ -13,6 +13,7 @@ import {
   getUserById,
   getUserByOAuthAccount,
   isValidEmail,
+  isValidIanaTimezone,
   isValidPassword,
   setPasswordResetToken,
   updateUser,
@@ -21,7 +22,7 @@ import {
 } from '@socialista/db'
 import { createHash, randomBytes } from 'node:crypto'
 
-type SignUpBody = { email?: string; password?: string; name?: string }
+type SignUpBody = { email?: string; password?: string; name?: string; timezone?: string }
 type SignInBody = { email?: string; password?: string }
 type RefreshTokenBody = { refreshToken?: string }
 type SocialLoginBody = {
@@ -30,6 +31,7 @@ type SocialLoginBody = {
   email?: string
   name?: string
   avatar?: string
+  timezone?: string
 }
 
 export type ParsedSocialLoginInput = {
@@ -38,6 +40,14 @@ export type ParsedSocialLoginInput = {
   email: string
   name: string
   avatar?: string
+  timezone?: string
+}
+
+const parseOptionalTimezone = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  if (!trimmed || !isValidIanaTimezone(trimmed)) return undefined
+  return trimmed
 }
 
 export const parseSignUpInput = (body: SignUpBody) => {
@@ -53,7 +63,7 @@ export const parseSignUpInput = (body: SignUpBody) => {
     throw new HttpError(400, 'Password must be at least 8 characters')
   }
 
-  return { email, password, name }
+  return { email, password, name, timezone: parseOptionalTimezone(body.timezone) }
 }
 
 export const parseSignInInput = (body: SignInBody) => {
@@ -92,6 +102,7 @@ export const parseSocialLoginInput = (body: SocialLoginBody): ParsedSocialLoginI
     email: email.toLowerCase(),
     name: name.trim(),
     avatar,
+    timezone: parseOptionalTimezone(body.timezone),
   }
 }
 
@@ -163,7 +174,7 @@ export const authenticateOrRegisterSocialUser = async (input: ParsedSocialLoginI
     avatar,
     oauthAccounts: [{ provider, providerAccountId }],
   })
-  await setupWorkspaceUnlessInvited(user, name)
+  await setupWorkspaceUnlessInvited(user, name, input.timezone)
 
   const updatedUser = await updateUser(user._id.toString(), { lastLoginAt: new Date() })
   if (!updatedUser) {
@@ -181,23 +192,34 @@ export const authenticateActiveUser = async (email: string, password: string) =>
   return user
 }
 
-export const setupDefaultWorkspace = async (user: UserDocument, name: string): Promise<void> => {
+export const setupDefaultWorkspace = async (
+  user: UserDocument,
+  name: string,
+  timezone?: string,
+): Promise<void> => {
+  const defaults = defaultWorkspaceSettings()
+  const settings = timezone ? { ...defaults.settings, timezone } : defaults.settings
   await createWorkspace(
-    { name: `${name.split(' ')[0]}'s Workspace`, billing: defaultWorkspaceBilling(), ...defaultWorkspaceSettings() },
+    {
+      name: `${name.split(' ')[0]}'s Workspace`,
+      billing: defaultWorkspaceBilling(),
+      ...defaults,
+      settings,
+    },
     user._id,
   )
 }
 
-const setupWorkspaceUnlessInvited = async (user: UserDocument, name: string) => {
+const setupWorkspaceUnlessInvited = async (user: UserDocument, name: string, timezone?: string) => {
   const pendingInvite = await getPendingInvitationByEmail(user.email)
   if (pendingInvite) return
-  await setupDefaultWorkspace(user, name)
+  await setupDefaultWorkspace(user, name, timezone)
 }
 
-export const registerUser = async (email: string, password: string, name: string) => {
+export const registerUser = async (email: string, password: string, name: string, timezone?: string) => {
   await assertEmailUnique(email)
   const user = await createUser({ email, password, name })
-  await setupWorkspaceUnlessInvited(user, name)
+  await setupWorkspaceUnlessInvited(user, name, timezone)
   return user
 }
 

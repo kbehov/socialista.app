@@ -10,7 +10,7 @@ import {
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
 import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
-import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
+import { STUDIO_HOME_COMPOSER_SURFACE_CLASS, STUDIO_TOOL_BUTTON_ACTIVE_CLASS, STUDIO_TOOL_BUTTON_CLASS, STUDIO_TOOL_CHEVRON_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
 import { useVideoStudio } from "@/components/studio/videos/video-studio-provider";
@@ -51,9 +51,18 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { VideoPromptAnatomy } from "./video-prompt-anatomy";
+import { VideoStudioStarters } from "./video-studio-starters";
 
 const MAX_REFERENCE_IMAGES = 3;
-const DEFAULT_PLACEHOLDER = "Describe the scene, motion, and mood…";
+const DEFAULT_PLACEHOLDER =
+  "Slow push-in on a matte serum, hard side light, steam in the beam…";
+
+function getSubmitShortcutLabel() {
+  if (typeof navigator === "undefined") return "⌘↵";
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent)
+    ? "⌘↵"
+    : "Ctrl↵";
+}
 
 const ASPECT_RATIOS = [
   { id: "9:16", label: "Portrait", ratio: 9 / 16 },
@@ -65,13 +74,6 @@ const ASPECT_RATIOS = [
   ratio: number;
 }>;
 
-const TOOL_BUTTON_CLASS = cn(
-  "h-7 gap-1.5 rounded-xl border px-1.5 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
-  "border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150",
-  "hover:border-border/65 hover:bg-background",
-  "active:scale-[0.97]",
-);
-
 function VideoPromptComposer({
   models,
   initialAttachmentUrl,
@@ -80,6 +82,7 @@ function VideoPromptComposer({
   initialAttachmentUrl?: string;
 }) {
   const router = useRouter();
+  const [submitShortcut] = useState(getSubmitShortcutLabel);
   const { composerRef, registerPromptHandlers } = useVideoStudio();
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
@@ -161,6 +164,19 @@ function VideoPromptComposer({
     [textInput],
   );
 
+  const setPrompt = useCallback(
+    (text: string) => {
+      textInput.setInput(text);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(text.length, text.length);
+      });
+    },
+    [textInput],
+  );
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
@@ -168,9 +184,16 @@ function VideoPromptComposer({
   useEffect(() => {
     registerPromptHandlers({
       insertAtCursor,
+      setPrompt,
       focusPrompt,
     });
-  }, [registerPromptHandlers, insertAtCursor, focusPrompt]);
+  }, [registerPromptHandlers, insertAtCursor, setPrompt, focusPrompt]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+    textareaRef.current?.focus();
+  }, []);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim();
@@ -224,15 +247,16 @@ function VideoPromptComposer({
           <DropdownMenuTrigger asChild>
             <PromptInputButton
               aria-label={`Aspect ratio ${selectedAspect.id}`}
-              className={TOOL_BUTTON_CLASS}
+              className={STUDIO_TOOL_BUTTON_CLASS}
               disabled={isPending}
+              size="xs"
               type="button"
             >
               <AspectRatioIcon active ratio={selectedAspect.ratio} />
-              <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+              <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
                 {selectedAspect.id}
               </span>
-              <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
+              <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
             </PromptInputButton>
           </DropdownMenuTrigger>
         </StudioInputActionTooltip>
@@ -266,14 +290,15 @@ function VideoPromptComposer({
           <DropdownMenuTrigger asChild>
             <PromptInputButton
               aria-label={`Duration ${duration} seconds`}
-              className={TOOL_BUTTON_CLASS}
+              className={STUDIO_TOOL_BUTTON_CLASS}
               disabled={isPending}
+              size="xs"
               type="button"
             >
-              <span className="text-xs font-medium leading-none tracking-[-0.015em] tabular-nums">
+              <span className="text-[12px] font-medium leading-none tracking-[-0.015em] tabular-nums">
                 {duration}s
               </span>
-              <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
+              <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
             </PromptInputButton>
           </DropdownMenuTrigger>
         </StudioInputActionTooltip>
@@ -300,9 +325,13 @@ function VideoPromptComposer({
       <PromptInputButton
         aria-label={generateAudio ? "Audio on" : "Audio off"}
         aria-pressed={generateAudio}
-        className={TOOL_BUTTON_CLASS}
+        className={cn(
+          STUDIO_TOOL_BUTTON_CLASS,
+          generateAudio && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+        )}
         disabled={isPending}
         onClick={() => setGenerateAudio((current) => !current)}
+        size="xs"
         tooltip={
           generateAudio
             ? "Audio on — generate sound with the clip"
@@ -313,9 +342,9 @@ function VideoPromptComposer({
         {generateAudio ? (
           <Volume2Icon className="size-3.5" />
         ) : (
-          <VolumeXIcon className="size-3.5 text-muted-foreground/70" />
+          <VolumeXIcon className="size-3.5" />
         )}
-        <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
           {generateAudio ? "Audio" : "Muted"}
         </span>
       </PromptInputButton>
@@ -329,7 +358,7 @@ function VideoPromptComposer({
   );
 
   return (
-    <div>
+    <div className="video-studio-prompt">
       <StudioPromptComposer
         models={visibleModels}
         selectedModelId={selectedModelId}
@@ -343,6 +372,9 @@ function VideoPromptComposer({
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel="Generate"
+        submitTitle="Generate"
+        submitAppearance="send"
+        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         tools={tools}
         textareaRef={(node) => {
           textareaRef.current = node;
@@ -350,29 +382,35 @@ function VideoPromptComposer({
         composerRef={composerRef}
         emptyTitle="No video models yet"
         emptyDescription="Add a text-to-video or image-to-video model in the manager to start creating clips."
-        surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
       />
 
-      <div className="mt-3 px-0.5">
-        <StudioReferenceTagHint attachmentCount={attachedImages.length} />
-      </div>
+      {attachedImages.length > 0 ? (
+        <div className="mt-2.5 px-0.5">
+          <StudioReferenceTagHint attachmentCount={attachedImages.length} />
+        </div>
+      ) : null}
 
-      <div className="mt-6 space-y-5">
-        <VideoPromptAnatomy />
+      <div className="mt-4 flex flex-col items-center gap-4">
+        <VideoStudioStarters disabled={isPending} />
 
-        <p className="flex flex-wrap items-center justify-center gap-1.5 px-0.5 text-[11px] tracking-[-0.01em] text-muted-foreground/50">
-          <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
+        <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
             /
           </Kbd>
           <span>to focus</span>
-          <span aria-hidden className="text-muted-foreground/20">
+          <span aria-hidden className="text-black/16 dark:text-white/16">
             ·
           </span>
-          <Kbd className="h-4 min-w-4 border-border/35 bg-muted/25 px-1 text-[10px] text-muted-foreground/65">
-            ⌘↵
+          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+            {submitShortcut}
           </Kbd>
           <span>to generate</span>
         </p>
+
+        <div className="w-full">
+          <VideoPromptAnatomy />
+        </div>
       </div>
     </div>
   );
@@ -387,14 +425,14 @@ const VideoGenerationPromptInput = ({
 }) => {
   if (models.length === 0) {
     return (
-      <div className="rounded-[1.375rem] border border-dashed border-border/50 bg-background/75 px-6 py-14 text-center backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-2xl bg-muted/40 ring-1 ring-border/35">
-          <SparklesIcon className="size-4 text-muted-foreground/80" />
+      <div className="rounded-xl border border-dashed border-black/[0.08] bg-black/[0.015] px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.015]">
+        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/8 dark:bg-white/[0.03] dark:ring-white/10">
+          <SparklesIcon className="size-3.5 text-black/48 dark:text-white/48" />
         </div>
-        <p className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
           No video models yet
         </p>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/48 dark:text-white/48">
           Add a text-to-video or image-to-video model in the manager to start
           creating social clips.
         </p>

@@ -20,7 +20,7 @@ export function VideoGenerationProgress({ runId, models }: VideoGenerationProgre
       progressHeadingId="video-generation-progress-heading"
       retryLabel="Try another prompt"
       runId={runId}
-      studioLabel="video studio"
+      studioLabel="Video studio"
     />
   )
 }

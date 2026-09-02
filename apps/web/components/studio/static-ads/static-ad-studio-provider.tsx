@@ -4,6 +4,7 @@ import { DEFAULT_AD_LANGUAGE } from '@/components/ui/language-selector'
 import type { StaticAdFormatPreset } from '@/lib/studio/static-ads/format-presets'
 import { STATIC_AD_RECREATE_PROMPT } from '@/lib/studio/static-ads/recreate-prompt'
 import { type StaticAdAspectRatio } from '@/types/static-ads.types'
+import { commitHaptic } from '@/utils/haptics'
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 
 type PromptHandlers = {
@@ -95,6 +96,7 @@ export function StaticAdStudioProvider({ children }: { children: ReactNode }) {
         handlersRef.current?.setPrompt(STATIC_AD_RECREATE_PROMPT)
       }
       handlersRef.current?.focusPrompt()
+      commitHaptic({ vibrateDuration: 8 })
       scrollComposerIntoView('start')
     },
     [scrollComposerIntoView],

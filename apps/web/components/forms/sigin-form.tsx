@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { signInSchema, type SignInSchemaType } from '@/lib/zod/auth.schema'
 import { cn } from '@/lib/utils'
+import { persistBrowserTimezoneCookie } from '@/utils/timezone'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react'
 import Link from 'next/link'
@@ -75,6 +76,7 @@ export function SignInForm({ className }: SignInFormProps) {
   const handleGoogleSignIn = async () => {
     try {
       setIsGoogleLoading(true)
+      persistBrowserTimezoneCookie()
       await signIn('google', { callbackUrl })
     } catch {
       toast.error(AUTH_ERROR_MESSAGES.default)

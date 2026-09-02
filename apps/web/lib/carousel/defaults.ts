@@ -267,7 +267,23 @@ export function normalizeLayer(layer: SlideLayer): SlideLayer {
 export function normalizeSlideBackgroundAdjustment(
   adjustment: BackgroundImageAdjustment | undefined | null,
 ): BackgroundImageAdjustment {
-  if (!adjustment) return DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT
+  if (!adjustment || !('type' in adjustment) || adjustment.type === 'cover') {
+    return {
+      type: 'frame',
+      scale:
+        adjustment && 'scale' in adjustment && typeof adjustment.scale === 'number'
+          ? adjustment.scale
+          : DEFAULT_BACKGROUND_TRANSFORM.scale,
+      offsetX:
+        adjustment && 'offsetX' in adjustment && typeof adjustment.offsetX === 'number'
+          ? adjustment.offsetX
+          : DEFAULT_BACKGROUND_TRANSFORM.offsetX,
+      offsetY:
+        adjustment && 'offsetY' in adjustment && typeof adjustment.offsetY === 'number'
+          ? adjustment.offsetY
+          : DEFAULT_BACKGROUND_TRANSFORM.offsetY,
+    }
+  }
 
   if (adjustment.type === 'frame') {
     return {

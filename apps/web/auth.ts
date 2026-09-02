@@ -30,6 +30,20 @@ class SocialLoginError extends CredentialsSignin {
   code = 'social_login_failed'
 }
 
+const SOCIAL_TIMEZONE_COOKIE = 'socialista_tz'
+
+async function readSocialTimezoneCookie(): Promise<string | undefined> {
+  try {
+    const { cookies } = await import('next/headers')
+    const value = (await cookies()).get(SOCIAL_TIMEZONE_COOKIE)?.value
+    if (!value) return undefined
+    const decoded = decodeURIComponent(value).trim()
+    return decoded || undefined
+  } catch {
+    return undefined
+  }
+}
+
 const optionalSocialProviders = [
   process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
     ? GitHub({
@@ -58,12 +72,15 @@ async function authenticateWithSocialProvider(
     throw new SocialLoginError('Social provider did not return required profile fields')
   }
 
+  const timezone = await readSocialTimezoneCookie()
+
   const response = await socialLoginService({
     provider: account.provider,
     providerAccountId: account.providerAccountId,
     email,
     name,
     avatar,
+    timezone,
   })
 
   if (!response.success || !response.data) {

@@ -166,14 +166,6 @@ export function PostComposer({
     }
   }, [addMedia, router, slideshowId, workspaceId])
 
-  useEffect(() => {
-    if (selectedAccountIds.length !== 1) return
-    const timezone = getDefaultTimezone(connectedAccounts, selectedAccountIds, projectTimezone)
-    if (timezone && timezone !== schedule.timezone) {
-      setSchedule({ timezone })
-    }
-  }, [selectedAccountIds, connectedAccounts, projectTimezone, schedule.timezone, setSchedule])
-
   const selectedProviders = useMemo(
     () =>
       connectedAccounts
@@ -291,7 +283,12 @@ export function PostComposer({
             />
 
             <div className="flex flex-col gap-3.5 sm:gap-4">
-              <SchedulePanel schedule={schedule} onChange={setSchedule} />
+              <SchedulePanel
+                schedule={schedule}
+                onChange={setSchedule}
+                accounts={connectedAccounts}
+                selectedAccountIds={selectedAccountIds}
+              />
 
               <PlatformVariantsPanel
                 accounts={connectedAccounts}

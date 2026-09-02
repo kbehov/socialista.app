@@ -10,7 +10,7 @@ function TagChip({ index }: { index: number }) {
   const tone = referenceTagTone(index);
 
   return (
-    <span className={cn("font-medium", tone.hint)}>
+    <span className={cn("tabular-nums tracking-[-0.015em]", tone.hint)}>
       {referenceTag(index)}
     </span>
   );
@@ -24,37 +24,40 @@ export function StudioReferenceTagHint({
   variant?: "image" | "static-ad";
 }) {
   const isStaticAd = variant === "static-ad";
+  const hasAttachments = attachmentCount > 0;
 
   return (
-    <p className="px-0.5 text-[12px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
-      {attachmentCount > 0 ? (
+    <p className="px-0.5 text-[12px] leading-[1.55] tracking-[-0.01em] text-black/56 dark:text-white/56">
+      {hasAttachments ? (
         <>
-          Type <span className="font-medium text-foreground/80">@</span> or tap
-          a reference.
+          Type <span className="font-medium text-foreground/70">@</span> or tap
+          a thumbnail.
           {isStaticAd ? (
             <>
               {" "}
-              Example: recreate the template with the creator from <TagChip index={0} />{" "}
-              holding the product from <TagChip index={1} />.
+              Example: recreate the template with the creator from{" "}
+              <TagChip index={0} /> holding the product from{" "}
+              <TagChip index={1} />.
             </>
           ) : (
             <>
               {" "}
-              Example: the person from <TagChip index={0} /> is holding the
+              Example: the creator from <TagChip index={0} /> holding the
               product from <TagChip index={1} />.
             </>
           )}
         </>
       ) : isStaticAd ? (
         <>
-          Attach a product, creator, style shot, or mix — then tag them with{" "}
-          <TagChip index={0} /> and <TagChip index={1} />. Apply a template to
-          recreate its layout.
+          Attach a product, creator, or mix, then tag with{" "}
+          <TagChip index={0} /> and <TagChip index={1} />. Type{" "}
+          <span className="font-medium text-foreground/70">@</span> to insert.
         </>
       ) : (
         <>
-          Attach references, then tag them with <TagChip index={0} /> and{" "}
-          <TagChip index={1} />.
+          Attach a reference, then tag it with <TagChip index={0} /> or{" "}
+          <TagChip index={1} />. Type{" "}
+          <span className="font-medium text-foreground/70">@</span> to insert.
         </>
       )}
     </p>

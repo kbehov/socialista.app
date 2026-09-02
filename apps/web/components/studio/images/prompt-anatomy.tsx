@@ -71,7 +71,7 @@ export function PromptAnatomy({
         </p>
       ) : null}
 
-      <div className="rounded-xl bg-black/[0.03] px-3.5 py-3 text-[13px] font-normal leading-[1.7] tracking-[-0.015em] ring-1 ring-black/10 dark:bg-white/[0.03] dark:ring-white/12">
+      <div className="rounded-xl bg-black/[0.025] px-3.5 py-3 text-[13px] font-normal leading-[1.7] tracking-[-0.015em] ring-1 ring-black/[0.07] dark:bg-white/[0.025] dark:ring-white/[0.08]">
         {segments.map((segment, index) => {
           const isActive = activeSegment === segment.id
           const styles = segment.styles
@@ -147,26 +147,25 @@ export function PromptAnatomy({
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger
         className={cn(
-          'group flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left',
-          'bg-black/[0.03] ring-1 ring-black/10 transition-[background-color,ring-color] duration-150',
-          'hover:bg-black/[0.04] hover:ring-black/14',
-          'dark:bg-white/[0.03] dark:ring-white/12 dark:hover:bg-white/[0.04] dark:hover:ring-white/16',
-          'active:scale-[0.995]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-          open && 'bg-black/[0.04] ring-black/14 dark:bg-white/[0.04] dark:ring-white/16',
+          'group mx-auto flex items-center justify-center gap-1 py-1 text-left',
+          'text-black/40 transition-colors duration-150 dark:text-white/40',
+          'hover:text-foreground/70',
+          'active:scale-[0.99] motion-reduce:active:scale-100',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
+          open && 'text-foreground/70',
         )}
       >
-        <span className="text-[13px] font-medium tracking-[-0.015em] text-foreground/90">
+        <span className="text-[12px] font-medium tracking-[-0.015em]">
           {triggerLabel}
         </span>
         <ChevronDownIcon
           className={cn(
-            'size-3.5 shrink-0 text-muted-foreground/60 transition-transform duration-200 ease-out',
+            'size-3 shrink-0 text-current opacity-60 transition-transform duration-200 ease-out',
             open && 'rotate-180',
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden pt-3.5 data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200">
+      <CollapsibleContent className="overflow-hidden pt-3 data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200">
         {content}
       </CollapsibleContent>
     </Collapsible>
@@ -214,37 +213,37 @@ const IMAGE_SEGMENT_STYLES = {
 export const IMAGE_PROMPT_ANATOMY_SEGMENTS = [
   {
     id: 'subject',
-    label: 'Subject',
-    snippet: 'A young woman in a linen shirt, relaxed natural expression, ',
-    exampleText: 'A young woman in a linen shirt',
+    label: 'Product',
+    snippet: 'A matte glass serum bottle, label square to camera, ',
+    exampleText: 'A matte glass serum bottle',
     styles: IMAGE_SEGMENT_STYLES.subject,
   },
   {
     id: 'scene',
-    label: 'Scene',
-    snippet: 'standing at a sunlit kitchen counter, casual in-the-moment lifestyle scene, ',
-    exampleText: 'standing at a sunlit kitchen counter',
+    label: 'Set',
+    snippet: 'on honed travertine, styled as a luxury PDP hero, ',
+    exampleText: 'on honed travertine for a PDP hero',
     styles: IMAGE_SEGMENT_STYLES.scene,
   },
   {
     id: 'camera',
     label: 'Camera',
-    snippet: 'medium shot, 35mm lens, eye-level, shallow depth of field, ',
-    exampleText: 'medium shot on 35mm',
+    snippet: '50mm, slight overhead, product filling the frame, ',
+    exampleText: '50mm, slight overhead',
     styles: IMAGE_SEGMENT_STYLES.camera,
   },
   {
     id: 'lighting',
     label: 'Light',
-    snippet: 'soft morning window light from the left, gentle falloff, ',
-    exampleText: 'soft morning window light',
+    snippet: 'hard side light, controlled speculars, no fill, ',
+    exampleText: 'hard side light, clean speculars',
     styles: IMAGE_SEGMENT_STYLES.lighting,
   },
   {
     id: 'style',
-    label: 'Style',
-    snippet: 'photorealistic editorial lifestyle photography, natural color, sharp detail',
-    exampleText: 'photorealistic editorial photography',
+    label: 'Finish',
+    snippet: 'luxury ecommerce photography, true color, feed-ready',
+    exampleText: 'luxury ecommerce, feed-ready',
     styles: IMAGE_SEGMENT_STYLES.style,
   },
 ] as const satisfies readonly PromptAnatomySegment[]
@@ -259,7 +258,7 @@ export function ImagePromptAnatomy() {
       collapsible
       defaultOpen={false}
       triggerLabel="Prompt structure"
-      tip="Subject, scene, camera, light, then style — tap a phrase to add it."
+      tip="Product, set, camera, light, then finish — tap a phrase to add it."
     />
   )
 }

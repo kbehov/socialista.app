@@ -22,7 +22,7 @@ export const dashboardSurface = {
     'inline-flex items-center gap-0.5 rounded-lg border border-border/55 bg-muted/20 p-0.5 dark:border-border/70 dark:bg-muted/15',
   segmentItem:
     'rounded-md text-[11px] font-medium transition-colors duration-150 active:scale-[0.97] motion-reduce:active:scale-100',
-  segmentItemActive: 'bg-background text-foreground ring-1 ring-border/45 dark:ring-border/60',
+  segmentItemActive: 'bg-foreground text-background',
   segmentItemInactive: 'text-muted-foreground hover:text-foreground',
 
   dividerGrid:

@@ -105,7 +105,7 @@ Never: spoken narration, hashtags, emojis, markdown in caption text.
 
 ### slideshow — Slideshow
 Job: turn a hook/topic into swipe-through slide copy.
-Output: classified content type (story | guide | list | routine | comparison | myth) plus one short line per slide, hook first, CTA last.
+Output: classified content type (story | guide | list | routine | comparison | myth) plus one short line per slide, hook first. CTA last only when it belongs — skip for lists, quotes, and "no CTA."
 Never: hashtags, emojis, markdown in slide text. Max ~12–14 words on the hook.
 
 ### post-copy — Post copy

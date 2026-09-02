@@ -7,7 +7,7 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
-import { STUDIO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio-composer-surface'
+import { STUDIO_COMPOSER_SURFACE_CLASS, STUDIO_TOOL_BUTTON_CLASS, STUDIO_TOOL_CHEVRON_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
 import { Button } from '@/components/ui/button'
@@ -25,12 +25,6 @@ import { ASPECT_RATIOS, ugcClipSceneCount, ugcResolvedClipModels } from '@social
 import { ChevronDownIcon, Loader2Icon, RefreshCwIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
-
-const TOOL_BUTTON_CLASS = cn(
-  'h-7 gap-1.5 rounded-xl border px-1.5 pr-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
-  'border-border/40 bg-background/90 hover:border-border/65',
-  'active:scale-[0.97]',
-)
 
 const ASPECT_OPTIONS = [
   { id: '9:16' as const, label: 'Portrait', ratio: 9 / 16 },
@@ -188,13 +182,14 @@ export function UgcPhotosComposer({
               <DropdownMenuTrigger asChild>
                 <PromptInputButton
                   aria-label={`Aspect ratio ${selectedAspect.id}`}
-                  className={TOOL_BUTTON_CLASS}
+                  className={STUDIO_TOOL_BUTTON_CLASS}
                   disabled={generating}
+                  size="xs"
                   type="button"
                 >
                   <AspectRatioIcon active ratio={selectedAspect.ratio} />
-                  <span className="text-xs font-medium">{selectedAspect.id}</span>
-                  <ChevronDownIcon className="size-3 text-muted-foreground/60" />
+                  <span className="text-[12px] font-medium">{selectedAspect.id}</span>
+                  <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
                 </PromptInputButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">

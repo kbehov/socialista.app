@@ -2,27 +2,23 @@
 
 import { VideoCard } from '@/components/cards/video-card'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
-import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useVideosList } from '@/hooks/use-videos-list'
 import { cn } from '@/lib/utils'
 import type { VideoSummaryResponse } from '@socialista/types'
-import { Loader2Icon, PlusIcon, VideoIcon } from 'lucide-react'
+import { ArrowRightIcon, Loader2Icon } from 'lucide-react'
 import Link from 'next/link'
 
 type RecentVideosListProps = {
   workspaceId: string
-  workspaceName: string
   initialVideos: VideoSummaryResponse[]
   initialError?: string | null
 }
 
 export function RecentVideosList({
   workspaceId,
-  workspaceName,
   initialVideos,
   initialError = null,
 }: RecentVideosListProps) {
@@ -39,30 +35,32 @@ export function RecentVideosList({
     handleDuplicate,
   } = useVideosList({ workspaceId, initialVideos, initialError })
 
-  const createAction = (
-    <Button asChild size="sm" className={dashboardSurface.createCta}>
-      <Link href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}>
-        <PlusIcon className="size-4" strokeWidth={1.75} />
-        Create now
-      </Link>
-    </Button>
-  )
-
-  const countLabel =
-    videos.length === 1 ? `1 video in ${workspaceName}` : `${videos.length.toLocaleString()} videos in ${workspaceName}`
+  if (!error && videos.length === 0 && !isLoading) {
+    return null
+  }
 
   return (
-    <section className="mx-auto w-full max-w-screen-7xl px-4 pb-16 sm:px-6 lg:px-8" aria-labelledby="recent-videos-heading">
-      <div className="mb-5 flex items-end justify-between gap-3">
-        <div>
-          <h2 id="recent-videos-heading" className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
-            Recent videos
-          </h2>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">
-            {isLoading ? 'Loading drafts…' : countLabel}
-          </p>
+    <section
+      className="mx-auto w-full max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8"
+      aria-labelledby="recent-videos-heading"
+    >
+      <div className="mb-3.5 flex items-end justify-between gap-3">
+        <h2
+          id="recent-videos-heading"
+          className="text-[13px] font-medium tracking-[-0.015em] text-foreground/80"
+        >
+          Recent clips
+        </h2>
+        <div className="flex items-center gap-3">
+          {isLoading ? <Loader2Icon className="size-3.5 animate-spin text-black/36 dark:text-white/36" /> : null}
+          <Link
+            href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}
+            className="inline-flex items-center gap-1 text-[12px] font-medium tracking-[-0.01em] text-black/44 transition-colors hover:text-foreground dark:text-white/44"
+          >
+            Open editor
+            <ArrowRightIcon className="size-3" strokeWidth={1.75} />
+          </Link>
         </div>
-        {isLoading ? <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" /> : null}
       </div>
 
       {error ? (
@@ -76,18 +74,13 @@ export function RecentVideosList({
             </Button>
           }
         />
-      ) : videos.length === 0 ? (
-        <EmptyState
-          icon={VideoIcon}
-          title="No editor drafts yet"
-          description="Generate a clip above, or open the timeline editor to build one by hand."
-          minHeight="lg"
-          variant="hero"
-          iconClassName={dashboardSurface.emptyIcon}
-          action={createAction}
-        />
       ) : (
-        <div className={cn('grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6', isLoading && 'opacity-60')}>
+        <div
+          className={cn(
+            'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
+            isLoading && 'opacity-60',
+          )}
+        >
           {videos.map(video => (
             <VideoCard
               key={video.id}

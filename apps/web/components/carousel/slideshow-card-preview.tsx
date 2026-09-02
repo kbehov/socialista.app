@@ -4,6 +4,7 @@ import type { CanvasDimensions, Slide } from '@socialista/types'
 import { ImagesIcon, LayersIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { normalizeSlide } from '@/lib/carousel/defaults'
 import { SlideCanvas } from './slide-canvas'
 
 type SlideshowCardPreviewProps = {
@@ -38,12 +39,12 @@ export function SlideshowCardPreview({ slide, canvas, className }: SlideshowCard
       <div
         ref={containerRef}
         className={cn(
-          'flex size-full flex-col items-center justify-center gap-2 bg-neutral-950 text-white/50',
+          'flex size-full flex-col items-center justify-center gap-1.5 bg-neutral-950 text-white/40',
           className,
         )}
       >
-        <ImagesIcon className="size-5 opacity-60" strokeWidth={1.5} />
-        <span className="text-[11px] font-medium">No preview</span>
+        <ImagesIcon className="size-4 opacity-70" strokeWidth={1.5} />
+        <span className="text-[10px] font-medium tracking-[-0.01em]">No preview</span>
       </div>
     )
   }
@@ -52,7 +53,7 @@ export function SlideshowCardPreview({ slide, canvas, className }: SlideshowCard
     <div ref={containerRef} className={cn('relative size-full bg-black', className)}>
       {containerWidth > 0 ? (
         <SlideCanvas
-          slide={slide}
+          slide={normalizeSlide(slide)}
           interactive={false}
           canvasDimensions={canvas}
           forceWidth={forceWidth}
@@ -69,11 +70,20 @@ export function SlideshowCardStoryBars({ slideCount, className }: { slideCount: 
   const segments = Math.min(slideCount, 12)
 
   return (
-    <div className={cn('pointer-events-none absolute inset-x-2 top-2 z-20 flex gap-0.5', className)}>
+    <div
+      className={cn(
+        'pointer-events-none absolute inset-x-2.5 top-2 z-20 flex gap-[3px]',
+        'drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]',
+        className,
+      )}
+    >
       {Array.from({ length: segments }, (_, index) => (
         <div
           key={index}
-          className={cn('h-0.5 flex-1 rounded-full transition-colors', index === 0 ? 'bg-white' : 'bg-white/35')}
+          className={cn(
+            'h-[2px] flex-1 rounded-full',
+            index === 0 ? 'bg-white' : 'bg-white/35',
+          )}
         />
       ))}
     </div>

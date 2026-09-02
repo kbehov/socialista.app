@@ -10,15 +10,16 @@ const STATIC_AD_MODELS_QUERY =
 
 const StaticAdsPage = async () => {
   preload('/socialista-static-ads.webp', { as: 'image' })
-  const workspacePromise = getCurrentWorkspace()
-  const modelsPromise = getModels(STATIC_AD_MODELS_QUERY)
-  const workspace = await workspacePromise
+
+  const [workspace, modelsRes] = await Promise.all([
+    getCurrentWorkspace(),
+    getModels(STATIC_AD_MODELS_QUERY),
+  ])
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to create static ads." />
   }
 
-  const modelsRes = await modelsPromise
   const models = (modelsRes.success ? (modelsRes.data?.models ?? []) : []).filter(model =>
     model.contextSupports?.includes(ContextSupport.IMAGE),
   )

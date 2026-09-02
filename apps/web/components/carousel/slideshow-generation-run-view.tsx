@@ -135,7 +135,7 @@ export function SlideshowGenerationRunView({ runId }: SlideshowGenerationRunView
               <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground">{payload.prompt}</p>
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[12px] text-muted-foreground">
-                  {payload.slideCount} slides
+                  {payload.slideCount != null ? `${payload.slideCount} slides` : 'Auto length'}
                 </span>
               </div>
             </div>

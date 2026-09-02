@@ -183,25 +183,6 @@ export function GeneratedImage({
         </div>
       ) : null}
 
-      {output.generationId ? (
-        <div className="flex justify-start gap-2">
-          <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button">
-            <Link href={DASHBOARD_ROUTES.createPost({ generationId: output.generationId })}>
-              <SendIcon className="size-3.5" />
-              Post now
-            </Link>
-          </Button>
-          {createVideoHref ? (
-            <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button" variant="outline">
-              <Link href={createVideoHref}>
-                <VideoIcon className="size-3.5" />
-                Create video
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
       <GenerationPreviewFrame
         aspectRatio={aspectRatio}
         isLoading={isPreviewLoading}
@@ -282,16 +263,33 @@ export function GeneratedImage({
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
+        {output.generationId ? (
+          <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button">
+            <Link href={DASHBOARD_ROUTES.createPost({ generationId: output.generationId })}>
+              <SendIcon className="size-3.5" />
+              Post now
+            </Link>
+          </Button>
+        ) : null}
         <Button
           className="h-9 gap-1.5 px-4 text-[13px]"
           disabled={isDownloading}
           onClick={() => void handleDownload()}
           size="sm"
           type="button"
+          variant={output.generationId ? 'outline' : 'default'}
         >
           {isDownloading ? <Spinner className="size-3.5" /> : <DownloadIcon className="size-3.5" />}
           Download
         </Button>
+        {createVideoHref ? (
+          <Button asChild className="h-9 gap-1.5 px-4 text-[13px]" size="sm" type="button" variant="outline">
+            <Link href={createVideoHref}>
+              <VideoIcon className="size-3.5" />
+              Create video
+            </Link>
+          </Button>
+        ) : null}
         <Button asChild className="h-9 gap-1.5 px-3.5 text-[13px] text-muted-foreground" size="sm" type="button" variant="ghost">
           <Link href={newGenerationHref}>
             <PlusIcon className="size-3.5" />

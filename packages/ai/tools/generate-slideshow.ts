@@ -1,5 +1,9 @@
 import type { GenerateSlideshowInput, GenerateSlideshowResult } from '@socialista/types'
-import { PROMPT_KEYS } from '@socialista/types'
+import {
+  PROMPT_KEYS,
+  SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
+  SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
+} from '@socialista/types'
 import { generateObject } from 'ai'
 
 import { resolvePrompt } from '../registry.js'
@@ -9,12 +13,10 @@ import {
   slideshowToSlideTexts,
 } from '../schemas/slideshow-generation.js'
 
-const MIN_SLIDE_COUNT = 2
-const MAX_SLIDE_COUNT = 10
-
 export async function generateSlideshow({
   hook,
   slideCount,
+  model: modelOverride,
   systemOverride,
 }: GenerateSlideshowInput & {
   systemOverride?: string
@@ -24,16 +26,23 @@ export async function generateSlideshow({
     throw new Error('Topic or directions are required')
   }
 
-  const clampedCount = Math.min(Math.max(slideCount, MIN_SLIDE_COUNT), MAX_SLIDE_COUNT)
-  const schema = createSlideshowGeneratedSchema(clampedCount)
-  const { model, system } = resolvePrompt(PROMPT_KEYS.slideshow, systemOverride)
+  const resolvedCount =
+    typeof slideCount === 'number' && Number.isFinite(slideCount)
+      ? Math.min(
+          Math.max(Math.round(slideCount), SLIDESHOW_GENERATION_SLIDE_COUNT_MIN),
+          SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
+        )
+      : undefined
+  const schema = createSlideshowGeneratedSchema(resolvedCount)
+  const { model: defaultModel, system } = resolvePrompt(PROMPT_KEYS.slideshow, systemOverride)
+  const model = modelOverride?.trim() || defaultModel
 
   const result = await generateObject({
     model,
     schema,
     system,
     temperature: 0.85,
-    prompt: buildSlideshowUserPrompt(trimmedHook, clampedCount),
+    prompt: buildSlideshowUserPrompt(trimmedHook, resolvedCount),
   })
 
   return {

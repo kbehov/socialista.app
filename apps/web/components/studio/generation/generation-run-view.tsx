@@ -366,6 +366,7 @@ export function GenerationRunView({
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <GenerationProgressHeader
         backHref={backHref}
+        backLabel={studioLabel}
         isComplete={isComplete}
         isFailed={isFailed}
         isRunning={isRunning}

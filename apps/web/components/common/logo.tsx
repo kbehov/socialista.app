@@ -14,38 +14,38 @@ function Logo({ className, href = '/', compact = false }: LogoProps) {
       href={href}
       aria-label="Socialista"
       className={cn(
-        'group inline-flex items-center text-foreground outline-none select-none',
+        'group inline-flex items-center select-none text-foreground',
+        'rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         compact ? 'gap-1.5' : 'gap-2.5',
-        'focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >
       <span
-        aria-hidden
         className={cn(
-          'relative flex shrink-0 items-center justify-center overflow-hidden bg-accent-orange',
-          compact ? 'size-5 rounded-[6px]' : 'size-8 rounded-[9px]',
-          !compact && 'shadow-[inset_0_1px_0_0_color-mix(in_oklch,var(--background)_22%,transparent)]',
-          'transition-transform duration-150 ease-out',
-          'group-hover:scale-[1.04] group-active:scale-[0.97]',
-          'motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-active:scale-100',
+          'flex size-6 shrink-0 items-center justify-center rounded-md bg-foreground',
+          'shadow-[inset_0_1px_0_0_color-mix(in_oklch,var(--background)_22%,transparent)]',
+          'transition-transform duration-150 ease-out group-hover:scale-105 group-active:scale-95',
         )}
       >
-        <Image
-          src="/socialista-logo.webp"
-          alt=""
-          width={compact ? 20 : 32}
-          height={compact ? 20 : 32}
-          className="size-full object-contain p-px invert"
-        />
+        <div className="relative size-4">
+          <Image
+            src="/socialista-logo.webp"
+            alt=""
+            fill
+            sizes="16px"
+            priority
+            className="object-contain invert dark:invert-0"
+          />
+        </div>
       </span>
+
       <span
         className={cn(
-          'leading-none',
-          compact ? 'text-[13px] font-medium tracking-tight' : 'text-[17px] font-bold tracking-[-0.032em]',
+          'flex items-center gap-px leading-none text-foreground/90 transition-colors group-hover:text-foreground',
+          compact ? 'text-[14px] font-medium tracking-tight' : 'text-[17px] font-bold tracking-[-0.032em]',
         )}
       >
-        Socialista
+        <span>Socialista</span>
       </span>
     </Link>
   )

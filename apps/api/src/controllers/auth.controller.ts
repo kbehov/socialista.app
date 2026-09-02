@@ -22,7 +22,7 @@ import type { Context } from 'hono'
 
 export const signUp = async (c: Context) => {
   const input = parseSignUpInput(await c.req.json())
-  const user = await registerUser(input.email, input.password, input.name)
+  const user = await registerUser(input.email, input.password, input.name, input.timezone)
   const tokens = await issueTokens(user._id)
   await dispatchEmail('welcome', () => sendWelcomeEmail({ to: user.email, name: user.name }))
   return successResponse(c, 201, { user: serializeUser(user), ...tokens })

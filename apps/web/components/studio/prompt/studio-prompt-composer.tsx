@@ -36,10 +36,14 @@ import {
   type StudioAttachSource,
 } from "@/components/studio/prompt/studio-attach-menu";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
+import {
+  STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+  STUDIO_TOOL_BUTTON_CLASS,
+  STUDIO_TOOL_CHEVRON_CLASS,
+} from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptHighlight, PROMPT_FIELD_STYLE } from "@/components/studio/prompt/studio-prompt-highlight";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
-import { Separator } from "@/components/ui/separator";
 import {
   getActiveMention,
   insertTagAtCursor,
@@ -54,6 +58,7 @@ import { cn } from "@/lib/utils";
 import { formatModelCost } from "@/utils/format";
 import { ContextSupport, type Model } from "@socialista/types";
 import {
+  ArrowUpIcon,
   CheckIcon,
   ChevronDownIcon,
   FileIcon,
@@ -111,13 +116,6 @@ const SUPPORT_LABELS: Record<
   [ContextSupport.FILE]: { label: "File", icon: FileIcon },
 };
 
-const TOOL_BUTTON_CLASS = cn(
-  "h-7 gap-1.5 rounded-lg border px-1.5 pr-2",
-  "border-black/10 bg-black/[0.02] transition-[border-color,background-color] duration-150",
-  "hover:border-black/18 hover:bg-black/[0.04]",
-  "dark:border-white/12 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
-  "active:scale-[0.97]",
-);
 
 function getModelUsageCount(model: Model): number {
   if ("usageCount" in model && typeof model.usageCount === "number") {
@@ -176,6 +174,8 @@ function StudioCountStepper({
   onChange,
   disabled,
   label,
+  auto = false,
+  onAutoChange,
 }: {
   value: number;
   min: number;
@@ -183,35 +183,61 @@ function StudioCountStepper({
   onChange: (value: number) => void;
   disabled?: boolean;
   label?: string;
+  auto?: boolean;
+  onAutoChange?: () => void;
 }) {
+  const allowAuto = Boolean(onAutoChange);
+  const atMin = !auto && value <= min;
+  const decreaseDisabled = disabled || (auto ? true : !allowAuto && value <= min);
+  const increaseDisabled = disabled || (!auto && value >= max);
+
   return (
     <div
-      className="flex h-7 items-center gap-0.5 rounded-xl bg-muted/30 p-0.5 ring-1 ring-border/30"
+      className="flex h-6 items-center"
       role="group"
       aria-label={label ?? "Number of images"}
     >
       <PromptInputButton
-        aria-label="Decrease"
-        className="size-6 rounded-lg text-muted-foreground hover:text-foreground"
-        disabled={disabled || value <= min}
-        onClick={() => onChange(Math.max(min, value - 1))}
-        tooltip="Generate fewer images"
+        aria-label={allowAuto && atMin ? "Auto" : "Decrease"}
+        className={cn(STUDIO_TOOL_BUTTON_CLASS, "size-6 px-0")}
+        disabled={decreaseDisabled}
+        onClick={() => {
+          if (allowAuto && atMin) {
+            onAutoChange?.();
+            return;
+          }
+          onChange(Math.max(min, value - 1));
+        }}
+        size="icon-xs"
+        tooltip={
+          allowAuto && atMin
+            ? "Auto — match the prompt"
+            : allowAuto
+              ? "Fewer slides"
+              : "Generate fewer images"
+        }
         type="button"
       >
-        <MinusIcon className="size-3" strokeWidth={2.25} />
+        <MinusIcon className="size-3" strokeWidth={1.75} />
       </PromptInputButton>
-      <span className="min-w-5 text-center text-xs font-medium tabular-nums tracking-[-0.015em]">
-        {value}
+      <span
+        className={cn(
+          "text-center text-[12px] font-medium tracking-[-0.015em] text-foreground/80",
+          auto ? "min-w-8" : "min-w-4 tabular-nums",
+        )}
+      >
+        {auto ? "Auto" : value}
       </span>
       <PromptInputButton
         aria-label="Increase"
-        className="size-6 rounded-lg text-muted-foreground hover:text-foreground"
-        disabled={disabled || value >= max}
-        onClick={() => onChange(Math.min(max, value + 1))}
-        tooltip="Generate more images"
+        className={cn(STUDIO_TOOL_BUTTON_CLASS, "size-6 px-0")}
+        disabled={increaseDisabled}
+        onClick={() => onChange(auto ? min : Math.min(max, value + 1))}
+        size="icon-xs"
+        tooltip={auto ? "Set a slide count" : allowAuto ? "More slides" : "Generate more images"}
         type="button"
       >
-        <PlusIcon className="size-3" strokeWidth={2.25} />
+        <PlusIcon className="size-3" strokeWidth={1.75} />
       </PromptInputButton>
     </div>
   );
@@ -304,6 +330,8 @@ export type StudioPromptComposerCount = {
   max: number;
   onChange: (value: number) => void;
   label?: string;
+  auto?: boolean;
+  onAutoChange?: () => void;
 };
 
 export type StudioPromptComposerProps = {
@@ -316,6 +344,7 @@ export type StudioPromptComposerProps = {
   maxAttachments?: number;
   minAttachments?: number;
   workspaceId?: string;
+  attachClassName?: string;
   count?: StudioPromptComposerCount;
   placeholder?: string;
   disabled?: boolean;
@@ -323,6 +352,7 @@ export type StudioPromptComposerProps = {
   onSubmit: (message: PromptInputMessage) => void;
   tools?: ReactNode;
   composerHeader?: ReactNode;
+  composerHeaderClassName?: string;
   submitLabel?: string;
   canSubmit?: boolean;
   requirePrompt?: boolean;
@@ -337,6 +367,8 @@ export type StudioPromptComposerProps = {
   emptyTitle?: string;
   emptyDescription?: string;
   submitTitle?: string;
+  footerClassName?: string;
+  submitAppearance?: "labeled" | "send";
 };
 
 export function StudioPromptComposer({
@@ -349,6 +381,7 @@ export function StudioPromptComposer({
   maxAttachments = 3,
   minAttachments = 0,
   workspaceId,
+  attachClassName,
   count,
   placeholder = "Describe what to generate…",
   disabled,
@@ -356,6 +389,7 @@ export function StudioPromptComposer({
   onSubmit,
   tools,
   composerHeader,
+  composerHeaderClassName,
   submitLabel = "Generate",
   canSubmit: canSubmitProp,
   requirePrompt = true,
@@ -370,6 +404,8 @@ export function StudioPromptComposer({
   emptyTitle = "No image models yet",
   emptyDescription = "Add a text-to-image model in the manager to start creating.",
   submitTitle,
+  footerClassName,
+  submitAppearance = "labeled",
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController();
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
@@ -401,10 +437,6 @@ export function StudioPromptComposer({
     [models],
   );
   const modelHighlights = useMemo(() => buildModelHighlights(models), [models]);
-  const selectedModelHighlights = useMemo(
-    () => (selectedModel ? (modelHighlights.get(selectedModel._id) ?? []) : []),
-    [modelHighlights, selectedModel],
-  );
 
   const hasPrompt = textInput.value.trim().length > 0;
   const meetsAttachmentRequirement = attachments.length >= minAttachments;
@@ -593,33 +625,22 @@ export function StudioPromptComposer({
           aria-expanded={modelSelectorOpen}
           aria-haspopup="dialog"
           className={cn(
-            TOOL_BUTTON_CLASS,
-            "max-w-[min(100%,14rem)]",
-            modelSelectorOpen && "border-black/18 bg-black/[0.04] dark:border-white/20 dark:bg-white/[0.06]",
+            STUDIO_TOOL_BUTTON_CLASS,
+            "max-w-[min(100%,12rem)] min-w-0 [&_svg]:text-foreground/70",
+            modelSelectorOpen && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
           )}
           disabled={disabled || pending}
+          size="xs"
           type="button"
         >
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-[0.4375rem] bg-muted/50 ring-1 ring-border/30">
-            <ModelLogo className="size-3" model={selectedModel} size={12} />
-          </span>
-          {selectedModelHighlights[0] ? (
-            <span
-              aria-hidden
-              className={cn(
-                "size-1.5 shrink-0 rounded-full",
-                selectedModelHighlights[0] === "cheapest" && "bg-success",
-                selectedModelHighlights[0] === "newest" && "bg-info",
-                selectedModelHighlights[0] === "mostUsed" && "bg-warning",
-              )}
-            />
-          ) : null}
-          <ModelSelectorName className="text-xs font-medium leading-none tracking-[-0.015em]">
+          <ModelLogo className="size-3.5 shrink-0" model={selectedModel} size={14} />
+          <ModelSelectorName className="min-w-0 text-[12px] font-medium leading-none tracking-[-0.015em]">
             {selectedModel.name}
           </ModelSelectorName>
           <ChevronDownIcon
             className={cn(
-              "size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 ease-out",
+              STUDIO_TOOL_CHEVRON_CLASS,
+              "transition-transform duration-150",
               modelSelectorOpen && "rotate-180",
             )}
           />
@@ -748,7 +769,12 @@ export function StudioPromptComposer({
         onSubmit={onSubmit}
       >
         {composerHeader ? (
-          <div className="w-full min-w-0 self-stretch overflow-hidden border-b border-border/35 bg-muted/8 py-2">
+          <div
+            className={cn(
+              "w-full min-w-0 self-stretch overflow-hidden border-b border-border/35 bg-muted/8 py-2",
+              composerHeaderClassName,
+            )}
+          >
             {composerHeader}
           </div>
         ) : null}
@@ -861,11 +887,12 @@ export function StudioPromptComposer({
 
         <PromptInputFooter
           className={cn(
-            "border-t border-border/35 bg-muted/12 px-3 py-2.5 sm:px-3.5",
+            "border-t border-border/35 bg-muted/12 px-2.5 py-2 sm:px-3",
             attachments.length > 0 && "border-t-0 pt-2",
+            footerClassName,
           )}
         >
-          <PromptInputTools className="min-w-0 flex-wrap gap-2">
+          <PromptInputTools className="min-w-0 flex-wrap gap-1.5">
             {attachSources.length > 0 ? (
               <StudioAttachMenu
                 sources={attachSources}
@@ -874,6 +901,7 @@ export function StudioPromptComposer({
                 maxAttachments={maxAttachments}
                 workspaceId={workspaceId}
                 disabled={attachDisabled}
+                className={attachClassName}
                 disabledReason={
                   selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
                     ? "Attach references"
@@ -883,50 +911,34 @@ export function StudioPromptComposer({
             ) : null}
 
             {count ? (
-              <>
-                {attachSources.length > 0 ? (
-                  <Separator
-                    className="hidden h-5 bg-border/50 sm:block"
-                    orientation="vertical"
-                  />
-                ) : null}
-                <StudioInputActionTooltip label={count.label ?? "Number of images to generate"}>
-                  <StudioCountStepper
-                    value={count.value}
-                    min={count.min}
-                    max={count.max}
-                    onChange={count.onChange}
-                    disabled={disabled || pending}
-                    label={count.label}
-                  />
-                </StudioInputActionTooltip>
-              </>
+              <StudioInputActionTooltip
+                label={
+                  count.auto
+                    ? "Auto — matches how many slides the prompt needs"
+                    : (count.label ?? "Number of images to generate")
+                }
+              >
+                <StudioCountStepper
+                  value={count.value}
+                  min={count.min}
+                  max={count.max}
+                  onChange={count.onChange}
+                  disabled={disabled || pending}
+                  label={count.label}
+                  auto={count.auto}
+                  onAutoChange={count.onAutoChange}
+                />
+              </StudioInputActionTooltip>
             ) : null}
 
-            {tools ? (
-              <>
-                <Separator
-                  className="hidden h-5 bg-border/50 sm:block"
-                  orientation="vertical"
-                />
-                {tools}
-              </>
-            ) : null}
+            {tools}
 
-            {modelSelector ? (
-              <>
-                <Separator
-                  className="hidden h-5 bg-border/50 sm:block"
-                  orientation="vertical"
-                />
-                {modelSelector}
-              </>
-            ) : null}
+            {modelSelector}
           </PromptInputTools>
 
-          <div className="flex shrink-0 items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-2">
             {costLabel ? (
-              <span className="hidden text-[11px] tabular-nums tracking-[-0.015em] text-muted-foreground/65 md:inline">
+              <span className="hidden text-[11px] tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40 md:inline">
                 {costLabel}
               </span>
             ) : null}
@@ -935,19 +947,30 @@ export function StudioPromptComposer({
               shortcut={canSubmit ? "⌘↵" : undefined}
             >
               <PromptInputSubmit
+                aria-label={submitTitle ?? submitLabel}
                 className={cn(
-                  "h-8 gap-1.5 rounded-lg px-3.5 text-[13px] font-medium tracking-[-0.015em]",
-                  "transition-[transform,opacity] duration-150 active:scale-[0.98]",
-                  !canSubmit && "opacity-45",
+                  "transition-[transform,opacity] duration-150 active:scale-[0.98] motion-reduce:active:scale-100",
+                  submitAppearance === "send"
+                    ? "rounded-md"
+                    : "rounded-md px-2 text-[12px] font-medium tracking-[-0.015em]",
+                  !canSubmit && "opacity-40",
                 )}
                 disabled={!canSubmit}
-                size="sm"
+                size={submitAppearance === "send" ? "icon-xs" : "xs"}
                 status={pending ? "submitted" : undefined}
               >
-                <span className="hidden sm:inline">{submitLabel}</span>
-                <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
-                  ⌘↵
-                </Kbd>
+                {submitAppearance === "send" ? (
+                  pending ? null : (
+                    <ArrowUpIcon className="size-3.5" strokeWidth={2.25} />
+                  )
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">{submitLabel}</span>
+                    <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
+                      ⌘↵
+                    </Kbd>
+                  </>
+                )}
               </PromptInputSubmit>
             </StudioInputActionTooltip>
           </div>

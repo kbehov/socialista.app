@@ -27,6 +27,7 @@ export type SocialLoginInput = {
   email: string
   name: string
   avatar?: string
+  timezone?: string
 }
 
 export type ForgotPasswordPayload = {

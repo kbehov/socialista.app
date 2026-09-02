@@ -1,5 +1,4 @@
 import {
-  SLIDESHOW_GENERATION_SLIDE_COUNT_DEFAULT,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
 } from '@socialista/types'
@@ -18,12 +17,13 @@ export const slideshowGenerationPayloadSchema = z.object({
     .int()
     .min(SLIDESHOW_GENERATION_SLIDE_COUNT_MIN)
     .max(SLIDESHOW_GENERATION_SLIDE_COUNT_MAX)
-    .default(SLIDESHOW_GENERATION_SLIDE_COUNT_DEFAULT),
+    .optional(),
   aspectRatioId: z.string().min(1),
   canvas: z.object({
     width: z.number().int().positive(),
     height: z.number().int().positive(),
   }),
+  textModel: z.string().min(1).optional(),
   ...skillPayloadFields,
 })
 

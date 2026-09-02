@@ -2,7 +2,6 @@
 
 import { auth } from '@/auth'
 import { getAspectRatioPreset } from '@/lib/carousel/aspect-ratios'
-import { proxiedImageUrl } from '@/lib/carousel/image-url'
 import { getModels } from '@/services/models.service'
 import { createSlideshow } from '@/services/slideshow.service'
 import { searchUnsplashPhotos, trackUnsplashDownload } from '@/services/unsplash.service'
@@ -14,11 +13,12 @@ import type { RealtimeSlideshowGenerationTask } from '@socialista/trigger/task-t
 import { buildSlideshowSlides, planSlideshow } from '@socialista/ai'
 import {
   PROMPT_KEYS,
-  SLIDESHOW_GENERATION_SLIDE_COUNT_DEFAULT,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
   SLIDESHOW_PLAN_CREDIT_COST,
   TASK_IDS,
+  ModelType,
+  type Model,
 } from '@socialista/types'
 import { tasks } from '@trigger.dev/sdk/v3'
 
@@ -29,6 +29,7 @@ export type GenerateSlideshowFromPromptInput = {
   slideCount?: number
   aspectRatioId?: string
   skillId?: string
+  textModel?: string
 }
 
 export type GenerateSlideshowFromPromptResult =
@@ -44,11 +45,11 @@ export type StartSlideshowGenerationResult =
   | { success: true; runId: string; publicAccessToken: string }
   | { success: false; error: string }
 
-function clampSlideCount(value: number | undefined): number {
-  const n = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : SLIDESHOW_GENERATION_SLIDE_COUNT_DEFAULT
+function normalizeSlideCount(value: number | undefined): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
   return Math.min(
     SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
-    Math.max(SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, n),
+    Math.max(SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, Math.round(value)),
   )
 }
 
@@ -63,6 +64,65 @@ function unsplashOrientation(width: number, height: number): 'landscape' | 'port
   return 'squarish'
 }
 
+function readImageQuery(slide: { imageQuery?: unknown; text?: string }, fallback: string): string {
+  const raw = slide.imageQuery
+  if (typeof raw === 'string') {
+    const cleaned = raw.trim().replace(/^["']+|["']+$/g, '')
+    if (cleaned) return cleaned
+  }
+  const fromText = (slide.text ?? '')
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 3)
+    .slice(0, 3)
+    .join(' ')
+  return fromText || simplifyQuery(fallback) || fallback
+}
+
+async function searchPhotosForQuery(
+  query: string,
+  orientation: 'landscape' | 'portrait' | 'squarish',
+): Promise<Awaited<ReturnType<typeof searchUnsplashPhotos>>['items']> {
+  const trimmed = query.trim()
+  if (!trimmed) return []
+
+  const queries = [trimmed]
+  const simplified = simplifyQuery(trimmed)
+  if (simplified && simplified !== trimmed) queries.push(simplified)
+
+  for (const q of queries) {
+    for (const orient of [orientation, undefined] as const) {
+      try {
+        const result = await searchUnsplashPhotos({
+          query: q,
+          perPage: 10,
+          ...(orient ? { orientation: orient } : {}),
+        })
+        if (result.items.length > 0) return result.items
+      } catch (error) {
+        console.error('[searchPhotosForQuery]', q, error)
+      }
+    }
+  }
+  return []
+}
+
+async function resolveTextModel(
+  value?: string,
+): Promise<{ ok: true; model?: Model; cost: number } | { ok: false; error: string }> {
+  const trimmed = value?.trim()
+  if (!trimmed) return { ok: true, cost: 0 }
+
+  const modelsRes = await getModels(
+    `limit=1&modelType=${ModelType.TEXT}&value=${encodeURIComponent(trimmed)}`,
+  )
+  const model = modelsRes.data?.models[0]
+  if (!model || model.modelType !== ModelType.TEXT) {
+    return { ok: false, error: 'Select a text model to write the slides.' }
+  }
+  return { ok: true, model, cost: model.cost }
+}
+
 export async function generateSlideshowFromPrompt(
   input: GenerateSlideshowFromPromptInput,
 ): Promise<GenerateSlideshowFromPromptResult> {
@@ -71,7 +131,7 @@ export async function generateSlideshowFromPrompt(
     return { success: false, error: 'Enter a topic or directions first' }
   }
 
-  const slideCount = clampSlideCount(input.slideCount)
+  const slideCount = normalizeSlideCount(input.slideCount)
 
   try {
     const session = await auth()
@@ -85,43 +145,54 @@ export async function generateSlideshowFromPrompt(
     }
 
     const preset = getAspectRatioPreset(input.aspectRatioId ?? 'instagram-portrait')
+    const textModelRes = await resolveTextModel(input.textModel)
+    if (!textModelRes.ok) {
+      return { success: false, error: textModelRes.error }
+    }
+
+    const billedCost = textModelRes.model ? textModelRes.cost : SLIDESHOW_PLAN_CREDIT_COST
+    const balanceRes = await getWorkspaceBalance(workspace.id)
+    const credits = balanceRes.data?.aiCreditsBalance ?? 0
+    if (credits < billedCost) {
+      return { success: false, error: 'Insufficient AI credits.' }
+    }
+
     const systemOverride = await loadSkillOverride(workspace.id, PROMPT_KEYS.slideshow, input.skillId)
     const plan = await planSlideshow({
       hook: trimmed,
-      slideCount,
       systemOverride,
+      ...(slideCount != null ? { slideCount } : {}),
+      ...(textModelRes.model ? { model: textModelRes.model.value } : {}),
     })
 
     const orientation = unsplashOrientation(preset.dimensions.width, preset.dimensions.height)
     const searchResults = await Promise.all(
-      plan.slides.map(async slide => {
-        try {
-          const primary = await searchUnsplashPhotos({
-            query: slide.imageQuery,
-            perPage: 10,
-            orientation,
-          })
-          if (primary.items.length > 0) return primary.items
-          const simplified = simplifyQuery(slide.imageQuery)
-          if (!simplified || simplified === slide.imageQuery) return []
-          const retry = await searchUnsplashPhotos({ query: simplified, perPage: 10, orientation })
-          return retry.items
-        } catch {
-          return []
-        }
-      }),
+      plan.slides.map(slide => searchPhotosForQuery(readImageQuery(slide, trimmed), orientation)),
     )
+
+    const allFound = searchResults.flat()
+    const fallbackItems =
+      allFound.length > 0
+        ? allFound
+        : await searchPhotosForQuery(readImageQuery({ text: trimmed }, 'editorial photography'), orientation)
 
     const usedIds = new Set<string>()
     const imageUrls = searchResults.map(items => {
-      const unused = items.filter(photo => !usedIds.has(photo.id))
-      const pool = (unused.length > 0 ? unused : items).slice(0, PICK_POOL_SIZE)
+      const poolSource = items.length > 0 ? items : fallbackItems
+      const unused = poolSource.filter(photo => !usedIds.has(photo.id))
+      const pool = (unused.length > 0 ? unused : poolSource).slice(0, PICK_POOL_SIZE)
       const photo = pool[Math.floor(Math.random() * pool.length)]
       if (!photo) return undefined
       usedIds.add(photo.id)
       void trackUnsplashDownload(photo.downloadLocation)
-      return proxiedImageUrl(photo.imageUrl)
+      return photo.imageUrl
     })
+
+    if (imageUrls.every(url => !url)) {
+      console.error('[generateSlideshowFromPrompt] Unsplash returned no photos', {
+        queries: plan.slides.map(slide => readImageQuery(slide, trimmed)),
+      })
+    }
 
     const slides = buildSlideshowSlides(plan, imageUrls, preset.dimensions)
     const created = await createSlideshow({
@@ -137,7 +208,7 @@ export async function generateSlideshowFromPrompt(
       return { success: false, error: created.message ?? 'Failed to save the slideshow' }
     }
 
-    await deductWorkspaceAiCredits(workspace.id, SLIDESHOW_PLAN_CREDIT_COST)
+    await deductWorkspaceAiCredits(workspace.id, billedCost)
     return { success: true, slideshowId: created.data.slideshow.id }
   } catch (error) {
     console.error('[generateSlideshowFromPrompt]', error)
@@ -158,7 +229,7 @@ export async function startSlideshowGeneration(
     return { success: false, error: 'You must be signed in to generate a slideshow.' }
   }
 
-  const slideCount = clampSlideCount(input.slideCount)
+  const slideCount = normalizeSlideCount(input.slideCount)
   const preset = getAspectRatioPreset(input.aspectRatioId ?? 'instagram-portrait')
 
   try {
@@ -171,7 +242,14 @@ export async function startSlideshowGeneration(
       return { success: false, error: 'Model not found.' }
     }
 
-    const billedCost = SLIDESHOW_PLAN_CREDIT_COST + model.cost * slideCount
+    const textModelRes = await resolveTextModel(input.textModel)
+    if (!textModelRes.ok) {
+      return { success: false, error: textModelRes.error }
+    }
+
+    const imageCountForEstimate = slideCount ?? SLIDESHOW_GENERATION_SLIDE_COUNT_MIN
+    const billedCost =
+      (textModelRes.model ? textModelRes.cost : SLIDESHOW_PLAN_CREDIT_COST) + model.cost * imageCountForEstimate
     if (credits < billedCost) {
       return { success: false, error: 'Insufficient AI credits.' }
     }
@@ -183,11 +261,12 @@ export async function startSlideshowGeneration(
       workspaceId: input.workspaceId,
       userId: session.user.id,
       prompt: trimmed,
-      slideCount,
       aspectRatioId: preset.id,
       canvas: preset.dimensions,
+      ...(slideCount != null ? { slideCount } : {}),
       ...(project?.id ? { projectId: project.id } : {}),
       ...(input.skillId ? { skillId: input.skillId } : {}),
+      ...(textModelRes.model ? { textModel: textModelRes.model.value } : {}),
     })
 
     const publicAccessToken = await createPublicAccessToken(handle.id)

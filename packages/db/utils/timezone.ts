@@ -1,9 +1,12 @@
 /**
  * IANA timezone helpers for account/workspace scheduling.
- * Prefer names like `Europe/Sofia` — never fixed offsets (`GMT+2`, `EST`, `+02:00`).
+ * Prefer names like `America/Los_Angeles` — never fixed offsets (`GMT+2`, `EST`, `+02:00`).
  */
 import { isValid as isValidDate } from 'date-fns'
 import { formatInTimeZone, getTimezoneOffset, toZonedTime } from 'date-fns-tz'
+
+/** Fallback when the user's timezone cannot be detected. */
+export const DEFAULT_TIMEZONE = 'America/Los_Angeles'
 
 /** Fixed-offset / abbreviation strings that are not IANA zones. */
 const FIXED_OFFSET_PATTERN = /^(?:GMT|UTC)?[+-]\d{1,2}(?::?\d{2})?$/i

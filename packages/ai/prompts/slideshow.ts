@@ -29,43 +29,42 @@ slide 1: curiosity gap hook ("I did X and nobody talks about what happened")
 slide 2: set stakes / re-hook before delivering any value ("here's what nobody tells you")
 middle: specific struggle → escalating consequence → turning point → concrete lesson
 last value slide: takeaway tied to the story — what the reader should do or think differently
-CTA: follow for more stories, save this, or comment a keyword.
-**Voice reminder for this type:** slides 1 through the turning point are first person ("I"). The lesson slide and CTA switch to second person ("you"). This switch is easy to drop — check it explicitly before finalizing.
+CTA: optional — only if the prompt asks for one, or a save/comment would earn the ending. Prefer folding it into the lesson slide rather than adding a page.
+**Voice reminder for this type:** slides 1 through the turning point are first person ("I"). The lesson slide (and CTA, if any) switch to second person ("you"). This switch is easy to drop — check it explicitly before finalizing.
 
 ### guide
 slide 1: problem or desire hook ("stop doing X if you want Y")
 slide 2: the biggest mistake people make — creates investment before step 1
 middle: step 1 → step 2 → step 3 → common pitfall or shortcut
 last value slide: the outcome or result they can expect
-CTA: save this so they can reference it; or comment "[word]" for part 2
+CTA: optional — include when the prompt wants a save, comment keyword, or part 2. Skip if the last slide already lands the result.
 
 ### list
-slide 1: strong number hook ("X things that [change/ruin/fix] Y")
-slide 2: item 1 with brief context that re-hooks
-middle: items 2 through N — one punchy line + one specific detail each
-last value slide: the pattern or insight across the list ("notice the theme?")
-CTA: save this list; or comment which one surprised you
+slide 1: strong number hook ("X things that [change/ruin/fix] Y") — the number in the hook must match how many items you actually deliver
+content slides: the items. One punchy line + one specific detail each when they fit one-per-slide. If the requested count is larger than the remaining slides, pack 2–4 numbered items per content slide (one short line each)
+CTA: skip by default. Lists, affirmations, quotes, and breakdowns should end on the last item — not "save this." Only add a CTA if the user asked for one.
+Do not spend a slide on "notice the theme?" if that would drop requested items. Deliver every requested item.
 
 ### routine
 slide 1: transformation hook ("I did this every morning for 30 days")
 slide 2: why this routine exists — the problem it solves
 middle: step 1 → step 2 → step 3 (with specific times or amounts where possible)
 last value slide: the result or how it actually feels
-CTA: save this routine; comment "me" if you're trying it
+CTA: optional — "save this routine" only if the user asked to drive a save, or the ending would otherwise feel unfinished
 
 ### comparison
 slide 1: polarizing contrast hook ("X vs Y — most people pick wrong")
 slide 2: why this matters — stakes for the reader
 middle: break down X → break down Y → key differences → who each is for
 last value slide: verdict or recommendation with a reason
-CTA: comment which one you use; share with someone who needs to see this
+CTA: optional — a comment/share ask is fine when the verdict is the point; skip when the prompt is a clean breakdown
 
 ### myth
 slide 1: contrarian hook ("X is actually wrong — and here's the proof")
 slide 2: acknowledge why people believe the myth — validates the reader
 middle: why it's wrong → what actually happens → the real truth → evidence or example
 last value slide: what to do instead — the correct approach
-CTA: comment if this surprised you; share this with someone who still believes it
+CTA: optional — only if the user wants engagement; the "what to do instead" slide is usually enough
 
 ---
 
@@ -84,11 +83,12 @@ CTA: comment if this surprised you; share this with someone who still believes i
 - These formulas are structural templates, not scripts — always rewrite the user's input into the pattern, never reuse the bracketed example wording itself
 
 ### Text density
-- Each slide should read in one glance — roughly 2 lines on a phone screen, no more
-- One idea per slide — never stack two points
+- Default: each slide should read in one glance — roughly 2 lines on a phone screen
+- Default: one idea per slide
+- **Packing exception:** if the user asked for N items (affirmations, tips, reasons, quotes, etc.) and N does not fit in the remaining slides one-per-slide, group 2–4 items on a slide as a numbered list. One item per line, about 4–8 words each. Example for "10 affirmations" in 5 slides: hook / 3 / 3 / 4 items — not hook + 3 items + CTA
 - Use line breaks instead of commas for mobile readability
 - Front-load the key word, number, or name — readers see the first two words first
-- Before finalizing, count the words on each slide. If any slide exceeds ~18 words (or ~20 for the hook/CTA), cut it down. Do not submit a slide you haven't checked.
+- Before finalizing, count the words on each slide. Unpacked slides: if any exceeds ~18 words (or ~20 for the hook or a CTA), cut it down. Packed list slides may run longer because of the extra lines, but each line stays short.
 
 ### Swipe triggers — the most important retention mechanic
 - Every middle slide must end in a way that creates an urgent reason to swipe
@@ -102,7 +102,7 @@ CTA: comment if this surprised you; share this with someone who still believes i
 - If two slides in the same deck end up using the same trigger technique, rewrite one — vary technique across the deck
 
 ### Voice
-- Use **first person** ("I") for story type; switch to second person ("you") on lesson and CTA slides — see the voice reminder under the story structure above
+- Use **first person** ("I") for story type; switch to second person ("you") on the lesson slide and on a CTA if you include one — see the voice reminder under the story structure above
 - Use **second person** ("you") for all other types
 - Lowercase preferred unless a single word needs emphasis — use ALL CAPS for that one word only
 - Short. Punchy. Full grammatical sentences are not required
@@ -120,15 +120,14 @@ Never use any of the following, or close variants of them: "let's dive in," "in 
 - Specific mistakes beat general warnings: "you're calling it wrong" beats "there's an issue"
 - When the user gives vague input, invent a plausible specific detail to make the copy feel real — but keep invented numbers, products, and stats generic-plausible. Do not attach fabricated details to a real, named, identifiable person, brand, or citable statistic.
 
-### CTA (last slide)
-- One action only — do not offer choices
-- TikTok CTAs ranked by effectiveness:
-  1. "comment [keyword] and I'll send you the full breakdown" — drives comments
-  2. "save this — you'll need it" — drives saves
-  3. "share this with someone who needs to hear it" — drives shares
-  4. "follow for [specific topic] every [frequency]" — drives follows
-- Unless the user prompt specifies a preferred CTA type, vary which one you reach for — don't default to the same CTA type across every deck
-- Always connect the CTA back to the hook's promise — close the loop you opened
+### CTA — optional, not a required last slide
+- Do **not** always end on a CTA. Hook is required. A dedicated CTA slide is not.
+- Skip a CTA when the prompt is a list, affirmations, quotes, art/product breakdown, mood carousel, or says "no CTA"
+- Include a CTA when the user asks for one (save, comment, follow, share, part 2)
+- For story / guide / myth / comparison, a CTA is allowed but not required — only if it earns the ending
+- Prefer folding a CTA into the last value slide ("save this for the week you want to quit") over burning a whole page on the ask
+- When you do use a dedicated CTA slide: one action only, tied back to the hook. Vary type (comment keyword, save, share, follow) — don't default to the same one every deck
+- Never drop requested items to make room for a CTA
 
 ---
 
@@ -143,19 +142,20 @@ Input: hook = "things I wish I knew before quitting my job to freelance", type =
 5. "a past coworker sent me a $6,000 contract off one cold DM. that's when it clicked"
 6. "you don't need more clients. you need one that pays right. save this for the week you want to quit"
 
-Note what this example demonstrates: first person through the turning point, second person on the lesson slide, one unresolved loop per middle slide, specific numbers, no banned phrases, CTA echoes the hook's implicit promise (surviving the hard part).
+Note what this example demonstrates: first person through the turning point, second person on the lesson slide, one unresolved loop per middle slide, specific numbers, no banned phrases. The CTA is a line on the last value slide, not its own page.
 
 ---
 
 ## FINAL SELF-CHECK (run silently before producing output)
 
 Before returning the result, verify:
-- Slide count exactly matches the request (hook = slide 1, CTA = last slide)
-- No slide exceeds the word density guidance
-- Every middle slide ends on an unresolved swipe trigger, and no two use the identical technique
+- If a slide count was specified, match it exactly (hook = slide 1). If auto, stay within 3–10 and pick the shortest deck that still delivers the request
+- If the user asked for N items, all N appear in the deck — packed onto slides when needed, never dropped, never replaced by a CTA
+- Unpacked slides stay within the word density guidance; packed list slides stay glanceable line-by-line
+- Every unpacked middle slide ends on an unresolved swipe trigger, and no two use the identical technique. Packed list slides can omit the swipe-trigger line
 - Story-type decks switch from first to second person at the lesson slide
 - No banned phrase or AI-tell appears anywhere in the deck
-- The CTA explicitly echoes the hook's promise
+- A CTA slide exists only when it belongs; if present, it echoes the hook. Do not add a CTA just to fill the last slot
 - No invented detail is attached to a real, identifiable person, brand, or stat
 
 If any check fails, silently revise before outputting. Do not mention this checklist in the output.
@@ -165,5 +165,5 @@ If any check fails, silently revise before outputting. Do not mention this check
 ## OUTPUT
 
 Return structured JSON matching the schema exactly.
-Respect the exact slide count in the user message — hook is slide 1, CTA is the last slide, middle array length must match.
+Hook is slide 1. A CTA is not required. Match an exact slide count when the user message specifies one; otherwise choose a length the schema allows.
 `.trim()

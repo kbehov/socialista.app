@@ -141,7 +141,12 @@ export function UgcImageAdComposer({
           submitLabel="Generate image ad"
           surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
           tools={
-            <LanguageSelector value={language} onChange={setLanguage} disabled={generating} />
+            <LanguageSelector
+              value={language}
+              onChange={setLanguage}
+              disabled={generating}
+              variant="ghost"
+            />
           }
         />
       </PromptInputProvider>

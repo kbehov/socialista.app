@@ -6,7 +6,7 @@ import {
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
-import { STUDIO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio-composer-surface'
+import { STUDIO_COMPOSER_SURFACE_CLASS, STUDIO_TOOL_BUTTON_ACTIVE_CLASS, STUDIO_TOOL_BUTTON_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +22,6 @@ import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { UgcClip, UgcProject } from '@socialista/types'
 import { VIDEO_DURATIONS, ugcResolvedClipModels } from '@socialista/types'
 import {
-  ChevronDownIcon,
   DownloadIcon,
   Loader2Icon,
   PencilIcon,
@@ -32,12 +31,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-
-const TOOL_BUTTON_CLASS = cn(
-  'h-7 gap-1.5 rounded-xl border px-1.5 pr-2',
-  'border-border/40 bg-background/90 hover:border-border/65',
-  'active:scale-[0.97]',
-)
 
 type UgcVideoComposerProps = {
   workspaceId: string
@@ -150,9 +143,8 @@ export function UgcVideoComposer({
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <PromptInputButton className={TOOL_BUTTON_CLASS} disabled={generating} type="button">
+                  <PromptInputButton className={STUDIO_TOOL_BUTTON_CLASS} disabled={generating} size="xs" type="button">
                     {duration}s
-                    <ChevronDownIcon className="size-3 text-muted-foreground/60" />
                   </PromptInputButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
@@ -172,13 +164,17 @@ export function UgcVideoComposer({
               </DropdownMenu>
               <PromptInputButton
                 type="button"
-                className={TOOL_BUTTON_CLASS}
+                className={cn(
+                  STUDIO_TOOL_BUTTON_CLASS,
+                  generateAudio && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+                )}
                 disabled={generating}
                 onClick={() => setGenerateAudio(value => !value)}
+                size="xs"
                 aria-label={generateAudio ? 'Audio on' : 'Muted'}
               >
                 {generateAudio ? <Volume2Icon className="size-3.5" /> : <VolumeXIcon className="size-3.5" />}
-                <span className="text-xs">{generateAudio ? 'Audio' : 'Muted'}</span>
+                <span className="text-[12px]">{generateAudio ? 'Audio' : 'Muted'}</span>
               </PromptInputButton>
             </>
           }

@@ -28,6 +28,8 @@ export type ComposerVariant = {
 
 export type ComposerScheduleMode = 'now' | 'schedule' | 'draft'
 
+export type ComposerTimezoneMode = 'single' | 'account'
+
 export type ComposerSchedule = {
   mode: ComposerScheduleMode
   /** Local calendar date in the selected timezone. */
@@ -35,6 +37,8 @@ export type ComposerSchedule = {
   /** HH:mm in the selected timezone. */
   time?: string
   timezone: string
+  /** When `account`, each post uses that account's timezone for the same wall-clock time. */
+  timezoneMode?: ComposerTimezoneMode
 }
 
 export type ComposerData = {

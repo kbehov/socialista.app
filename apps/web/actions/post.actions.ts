@@ -8,7 +8,8 @@ import {
   buildCreatePayload,
   buildUpdatePayload,
   isPostEditable,
-  resolveScheduleDate,
+  resolveScheduleDateForAccount,
+  resolveScheduleTimezone,
   validateComposer,
 } from '@/utils/composer.utils'
 import type { AccountSummary, ImageResponse, Post } from '@socialista/types'
@@ -45,8 +46,6 @@ export async function publishOrSchedulePosts(input: PublishOrScheduleInput): Pro
   const { accounts, state, asDraft } = input
   const accountById = new Map(accounts.map(account => [account._id, account]))
   const results: ComposerSubmitResult[] = []
-
-  const scheduledAt = !asDraft && state.schedule.mode === 'schedule' ? resolveScheduleDate(state.schedule) : undefined
 
   for (const accountId of state.selectedAccountIds) {
     const account = accountById.get(accountId)
@@ -89,6 +88,7 @@ export async function publishOrSchedulePosts(input: PublishOrScheduleInput): Pro
       }
 
       if (state.schedule.mode === 'schedule') {
+        const scheduledAt = resolveScheduleDateForAccount(state.schedule, account)
         if (!scheduledAt) {
           results.push({
             accountId,
@@ -101,7 +101,7 @@ export async function publishOrSchedulePosts(input: PublishOrScheduleInput): Pro
 
         const scheduleResponse = await schedulePost(post._id, {
           scheduledAt,
-          timezone: state.schedule.timezone,
+          timezone: resolveScheduleTimezone(state.schedule, account),
         })
 
         if (!scheduleResponse.success) {
@@ -225,14 +225,14 @@ export async function updateExistingPost(
     }
 
     if (intent === 'schedule') {
-      const scheduledAt = resolveScheduleDate(state.schedule)
+      const scheduledAt = resolveScheduleDateForAccount(state.schedule, account)
       if (!scheduledAt) {
         return { success: false, message: 'Invalid schedule time' }
       }
 
       const scheduleResponse = await schedulePost(post._id, {
         scheduledAt,
-        timezone: state.schedule.timezone,
+        timezone: resolveScheduleTimezone(state.schedule, account),
       })
 
       if (!scheduleResponse.success) {

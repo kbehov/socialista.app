@@ -14,8 +14,13 @@ export const signIn = async (email: string, password: string): Promise<ApiRespon
   return publicApi.post<AuthResponse>(AUTH_ROUTES.SIGN_IN, { email, password })
 }
 
-export const signUp = async (email: string, password: string, name: string): Promise<ApiResponse<AuthResponse>> => {
-  return publicApi.post<AuthResponse>(AUTH_ROUTES.SIGN_UP, { email, password, name })
+export const signUp = async (
+  email: string,
+  password: string,
+  name: string,
+  timezone?: string,
+): Promise<ApiResponse<AuthResponse>> => {
+  return publicApi.post<AuthResponse>(AUTH_ROUTES.SIGN_UP, { email, password, name, timezone })
 }
 
 export const refreshTokens = async (refreshToken: string): Promise<ApiResponse<RefreshTokenResponse>> => {

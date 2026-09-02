@@ -16,14 +16,12 @@ import { cn } from '@/lib/utils'
 import { uploadToWorkspace } from '@/services/files.service'
 import { createWorkspace, updateWorkspace } from '@/services/workspace.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
-import { isValidIanaTimezone } from '@/utils/timezone'
+import { DEFAULT_TIMEZONE, isValidIanaTimezone } from '@/utils/timezone'
 import { getInitials } from '@/utils/user'
 import { CameraIcon, Loader2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
 import { toast } from 'sonner'
-
-const FALLBACK_TIMEZONE = 'Europe/Sofia'
 
 function resolveDefaultTimezone(fallback?: string) {
   if (typeof Intl !== 'undefined') {
@@ -31,7 +29,7 @@ function resolveDefaultTimezone(fallback?: string) {
     if (browser && isValidIanaTimezone(browser)) return browser
   }
   if (fallback && isValidIanaTimezone(fallback)) return fallback
-  return FALLBACK_TIMEZONE
+  return DEFAULT_TIMEZONE
 }
 
 type CreateWorkspaceDialogProps = {

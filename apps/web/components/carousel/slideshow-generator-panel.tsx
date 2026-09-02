@@ -2,6 +2,7 @@
 
 import { generateSlideshowSlides } from '@/actions/slideshow.actions'
 import { StudioPanelScrollArea, StudioPanelSection } from '@/components/carousel/studio-segmented-tabs'
+import { SkillModelSelector } from '@/components/skills/skill-model-selector'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
@@ -9,16 +10,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { isBlankSlide } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
+import { getModels } from '@/services/models.service'
 import { formatCredits } from '@/utils/format'
-import { PROMPT_KEYS } from '@socialista/types'
+import { ModelType, PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, type Model } from '@socialista/types'
 import { Loader2Icon, MinusIcon, PlusIcon, SparklesIcon } from 'lucide-react'
-import { useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-const SLIDE_COUNT_MIN = 3
-const SLIDE_COUNT_MAX = 10
-const GENERATION_CREDIT_COST = 2
 const PROMPT_MAX_LENGTH = 800
+const TEXT_MODELS_QUERY = `limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`
 
 const PROMPT_EXAMPLES = [
   {
@@ -70,9 +70,27 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const [prompt, setPrompt] = useState('')
-  const [slideCount, setSlideCount] = useState<number>(5)
+  const [slideCount, setSlideCount] = useState<number | 'auto'>('auto')
   const [skillId, setSkillId] = useState<string | undefined>()
+  const [textModels, setTextModels] = useState<Model[]>([])
+  const [selectedTextModelId, setSelectedTextModelId] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  const selectedTextModel = textModels.find(model => model._id === selectedTextModelId) ?? textModels[0]
+  const estimatedCost = selectedTextModel?.cost ?? SLIDESHOW_PLAN_CREDIT_COST
+
+  useEffect(() => {
+    let cancelled = false
+    void getModels(TEXT_MODELS_QUERY).then(res => {
+      if (cancelled) return
+      const next = res.success ? (res.data?.models ?? []) : []
+      setTextModels(next)
+      setSelectedTextModelId(current => current || next[0]?._id || '')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const trimmed = prompt.trim()
   const canGenerate = trimmed.length > 0 && !isPending
@@ -86,7 +104,12 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
     }
 
     startTransition(async () => {
-      const result = await generateSlideshowSlides(trimmed, slideCount, skillId)
+      const result = await generateSlideshowSlides(
+        trimmed,
+        slideCount === 'auto' ? undefined : slideCount,
+        skillId,
+        selectedTextModel?.value,
+      )
       if (!result.success) {
         toast.error(result.error)
         return
@@ -222,8 +245,14 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
               <button
                 type="button"
                 aria-label="Fewer pages"
-                disabled={isPending || slideCount <= SLIDE_COUNT_MIN}
-                onClick={() => setSlideCount(n => Math.max(SLIDE_COUNT_MIN, n - 1))}
+                disabled={isPending || slideCount === 'auto'}
+                onClick={() =>
+                  setSlideCount(n =>
+                    n === 'auto' || n <= SLIDESHOW_GENERATION_SLIDE_COUNT_MIN
+                      ? 'auto'
+                      : n - 1,
+                  )
+                }
                 className={cn(
                   'flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground',
                   'transition-colors duration-150 hover:border-border hover:text-foreground',
@@ -235,19 +264,37 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
               </button>
 
               <div className="min-w-0 flex-1" aria-live="polite">
-                <p className="text-[22px] leading-none font-medium tracking-[-0.03em] tabular-nums text-foreground">
-                  {slideCount}
+                <p
+                  className={cn(
+                    'leading-none font-medium tracking-[-0.03em] text-foreground',
+                    slideCount === 'auto' ? 'text-[22px]' : 'text-[22px] tabular-nums',
+                  )}
+                >
+                  {slideCount === 'auto' ? 'Auto' : slideCount}
                 </p>
                 <p className="mt-1 text-[11px] tracking-tight text-muted-foreground">
-                  {slideCount === 1 ? 'page' : 'pages'}
+                  {slideCount === 'auto'
+                    ? 'matches the prompt'
+                    : slideCount === 1
+                      ? 'page'
+                      : 'pages'}
                 </p>
               </div>
 
               <button
                 type="button"
                 aria-label="More pages"
-                disabled={isPending || slideCount >= SLIDE_COUNT_MAX}
-                onClick={() => setSlideCount(n => Math.min(SLIDE_COUNT_MAX, n + 1))}
+                disabled={
+                  isPending ||
+                  (slideCount !== 'auto' && slideCount >= SLIDESHOW_GENERATION_SLIDE_COUNT_MAX)
+                }
+                onClick={() =>
+                  setSlideCount(n =>
+                    n === 'auto'
+                      ? SLIDESHOW_GENERATION_SLIDE_COUNT_MIN
+                      : Math.min(SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, n + 1),
+                  )
+                }
                 className={cn(
                   'flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground',
                   'transition-colors duration-150 hover:border-border hover:text-foreground',
@@ -264,7 +311,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
               role="radiogroup"
               aria-label="Quick page count"
             >
-              {[3, 5, 7, 10].map(n => {
+              {(['auto', 3, 5, 7, 10] as const).map(n => {
                 const selected = slideCount === n
                 return (
                   <button
@@ -275,7 +322,8 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
                     disabled={isPending}
                     onClick={() => setSlideCount(n)}
                     className={cn(
-                      'h-7 flex-1 rounded-md text-[11px] tabular-nums transition-all duration-150',
+                      'h-7 flex-1 rounded-md text-[11px] transition-all duration-150',
+                      n === 'auto' ? 'tracking-tight' : 'tabular-nums',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                       'disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]',
                       selected
@@ -283,7 +331,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
                         : 'font-medium text-muted-foreground hover:bg-foreground/4 hover:text-foreground',
                     )}
                   >
-                    {n}
+                    {n === 'auto' ? 'Auto' : n}
                   </button>
                 )
               })}
@@ -299,6 +347,14 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           onChange={setSkillId}
           disabled={isPending}
         />
+        {textModels.length > 0 ? (
+          <SkillModelSelector
+            models={textModels}
+            selectedModelId={selectedTextModel?._id ?? selectedTextModelId}
+            onSelectedModelChange={setSelectedTextModelId}
+            disabled={isPending}
+          />
+        ) : null}
         <Button
           className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium tracking-tight"
           onClick={handleGenerate}
@@ -309,11 +365,11 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           ) : (
             <SparklesIcon className="size-3.5" strokeWidth={2} />
           )}
-          {isPending ? 'Generating…' : `Generate ${slideCount} pages`}
+          {isPending ? 'Generating…' : slideCount === 'auto' ? 'Generate pages' : `Generate ${slideCount} pages`}
         </Button>
         <div className="flex items-center justify-between gap-2 px-0.5 text-[11px] text-muted-foreground">
           <p>
-            ≈ {formatCredits(GENERATION_CREDIT_COST)} credits per generation
+            ≈ {formatCredits(estimatedCost)} credits per generation
           </p>
           <p className="flex items-center gap-1">
             <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘</Kbd>

@@ -2,6 +2,12 @@ import { formatInTimeZone, getTimezoneOffset } from 'date-fns-tz'
 
 import { TIMEZONE_COUNTRY_CODES } from './timezone-country-codes'
 
+/** Fallback when the user's timezone cannot be detected. */
+export const DEFAULT_TIMEZONE = 'America/Los_Angeles'
+
+/** Cookie used to pass the browser timezone through OAuth redirects. */
+export const SOCIAL_TIMEZONE_COOKIE = 'socialista_tz'
+
 /** Frequently used IANA zones — shown first in the selector. */
 export const COMMON_TIMEZONE_VALUES = [
   'UTC',
@@ -39,6 +45,36 @@ export function isValidIanaTimezone(timezone: string): boolean {
     return false
   }
   return Number.isFinite(getTimezoneOffset(trimmed))
+}
+
+export function getBrowserTimezone(): string | undefined {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (timezone && isValidIanaTimezone(timezone)) return timezone
+  } catch {
+    return undefined
+  }
+  return undefined
+}
+
+export function persistBrowserTimezoneCookie(): void {
+  if (typeof document === 'undefined') return
+  const timezone = getBrowserTimezone()
+  if (!timezone) return
+  const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+  document.cookie = `${SOCIAL_TIMEZONE_COOKIE}=${encodeURIComponent(timezone)}; path=/api/auth; max-age=600; SameSite=Lax${secure}`
+}
+
+export function parseTimezoneCookieValue(value: string | undefined | null): string | undefined {
+  if (!value) return undefined
+  try {
+    const decoded = decodeURIComponent(value).trim()
+    if (decoded && isValidIanaTimezone(decoded)) return decoded
+  } catch {
+    const trimmed = value.trim()
+    if (trimmed && isValidIanaTimezone(trimmed)) return trimmed
+  }
+  return undefined
 }
 
 function getIanaTimezones(): string[] {

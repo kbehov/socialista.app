@@ -101,7 +101,7 @@ const overlayLayerSchema = new Schema(
   { _id: false },
 )
 
-const layerSchema = new Schema({}, { discriminatorKey: 'type', _id: false })
+const layerSchema = new Schema({}, { discriminatorKey: 'type', _id: false, strict: false })
 layerSchema.discriminator('text', textLayerSchema)
 layerSchema.discriminator('image', imageLayerSchema)
 layerSchema.discriminator('overlay', overlayLayerSchema)

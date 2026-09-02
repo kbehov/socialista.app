@@ -1,15 +1,18 @@
 'use client'
 
+import { commitHaptic } from '@/utils/haptics'
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
 
 type PromptHandlers = {
   insertAtCursor: (snippet: string) => void
+  setPrompt: (text: string) => void
   focusPrompt: () => void
 }
 
 type VideoStudioContextValue = {
   composerRef: React.RefObject<HTMLDivElement | null>
   insertSnippet: (snippet: string) => void
+  setPrompt: (text: string) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -23,19 +26,37 @@ export function VideoStudioProvider({ children }: { children: ReactNode }) {
     handlersRef.current = handlers
   }, [])
 
-  const insertSnippet = useCallback((snippet: string) => {
-    handlersRef.current?.insertAtCursor(snippet)
+  const focusComposer = useCallback(() => {
     handlersRef.current?.focusPrompt()
     composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [])
+
+  const insertSnippet = useCallback(
+    (snippet: string) => {
+      handlersRef.current?.insertAtCursor(snippet)
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
+  const setPrompt = useCallback(
+    (text: string) => {
+      handlersRef.current?.setPrompt(text)
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
 
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
+      setPrompt,
       registerPromptHandlers,
     }),
-    [insertSnippet, registerPromptHandlers],
+    [insertSnippet, setPrompt, registerPromptHandlers],
   )
 
   return <VideoStudioContext.Provider value={value}>{children}</VideoStudioContext.Provider>

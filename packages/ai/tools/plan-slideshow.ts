@@ -16,6 +16,7 @@ import {
 export async function planSlideshow({
   hook,
   slideCount,
+  model: modelOverride,
   systemOverride,
 }: PlanSlideshowInput & {
   systemOverride?: string
@@ -25,22 +26,26 @@ export async function planSlideshow({
     throw new Error('Topic or directions are required')
   }
 
-  const clampedCount = Math.min(
-    Math.max(slideCount, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN),
-    SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
-  )
-  const schema = createSlideshowPlanSchema(clampedCount)
-  const { model, system } = resolvePrompt(PROMPT_KEYS.slideshow, systemOverride)
+  const resolvedCount =
+    typeof slideCount === 'number' && Number.isFinite(slideCount)
+      ? Math.min(
+          Math.max(Math.round(slideCount), SLIDESHOW_GENERATION_SLIDE_COUNT_MIN),
+          SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
+        )
+      : undefined
+  const schema = createSlideshowPlanSchema(resolvedCount)
+  const { model: defaultModel, system } = resolvePrompt(PROMPT_KEYS.slideshow, systemOverride)
+  const model = modelOverride?.trim() || defaultModel
 
   const result = await generateObject({
     model,
     schema,
     system,
     temperature: 0.85,
-    prompt: buildSlideshowPlanUserPrompt(trimmedHook, clampedCount),
+    prompt: buildSlideshowPlanUserPrompt(trimmedHook, resolvedCount),
   })
 
-  const plan = slideshowPlanFromGenerated(result.object, clampedCount)
+  const plan = slideshowPlanFromGenerated(result.object, resolvedCount)
   if (plan.slides.length === 0) {
     throw new Error('No slides were planned')
   }

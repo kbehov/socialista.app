@@ -40,6 +40,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
+    "dither-plugin": "^1.1.1",
     "embla-carousel-react": "^8.6.0",
     "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",

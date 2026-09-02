@@ -15,6 +15,10 @@ import {
 import { ProductPickerDialog } from "@/components/studio/static-ads/product-picker-dialog";
 import { InfluencerPickerDialog } from "@/components/studio/influencers/influencer-picker-dialog";
 import { cn } from "@/lib/utils";
+import {
+  STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+  STUDIO_TOOL_BUTTON_CLASS,
+} from "@/components/studio/prompt/studio-composer-surface";
 import { getWorkspaceProducts } from "@/services/product.service";
 import { getProjectId, useProjectStore } from "@/store/project.store";
 import { useWorkspaceStore } from "@/store/workspace.store";
@@ -94,6 +98,7 @@ type StudioAttachMenuProps = {
   workspaceId?: string;
   disabled?: boolean;
   disabledReason?: string;
+  className?: string;
 };
 
 export function StudioAttachMenu({
@@ -104,6 +109,7 @@ export function StudioAttachMenu({
   workspaceId: workspaceIdProp,
   disabled,
   disabledReason,
+  className,
 }: StudioAttachMenuProps) {
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
@@ -200,11 +206,9 @@ export function StudioAttachMenu({
     }));
 
   const attachButtonClass = cn(
-    "h-7 gap-1.5 rounded-xl border px-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
-    "border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150",
-    "hover:border-border/65 hover:bg-background",
-    "active:scale-[0.97]",
-    attachments.length > 0 && "border-border/65 bg-background shadow-sm",
+    STUDIO_TOOL_BUTTON_CLASS,
+    attachments.length > 0 && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+    className,
   );
 
   const attachTooltip = disabled
@@ -217,10 +221,11 @@ export function StudioAttachMenu({
         aria-label="Attach references"
         className={attachButtonClass}
         disabled={disabled}
+        size="xs"
         type="button"
       >
         <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
-        <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
           {attachments.length > 0 ? attachments.length : "Attach"}
         </span>
       </PromptInputActionMenuTrigger>
@@ -233,11 +238,12 @@ export function StudioAttachMenu({
         aria-label="Attach references"
         className={attachButtonClass}
         disabled
+        size="xs"
         tooltip="No attach sources"
         type="button"
       >
         <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
-        <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
           Attach
         </span>
       </PromptInputButton>

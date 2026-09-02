@@ -20,7 +20,7 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
       progressHeadingId="generation-progress-heading"
       retryLabel="Try another prompt"
       runId={runId}
-      studioLabel="studio"
+      studioLabel="Image studio"
     />
   )
 }

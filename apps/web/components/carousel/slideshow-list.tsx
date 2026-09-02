@@ -6,9 +6,6 @@ import {
 } from '@/components/carousel/slideshow-card-preview'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ErrorState } from '@/components/common/error-state'
-import { LoadingState } from '@/components/common/loading-state'
-import { dashboardSurface } from '@/components/dashboard'
-import { PageHeader } from '@/components/headers/page-header'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
@@ -18,10 +15,10 @@ import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/s
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import { formatRelativeTime } from '@/utils/format'
 import type { SlideshowSummaryResponse } from '@socialista/types'
-import { CopyIcon, ImagesIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { ArrowRightIcon, CopyIcon, Loader2Icon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 function SlideshowCard({
@@ -38,79 +35,98 @@ function SlideshowCard({
   const preset = getAspectRatioPreset(slideshow.aspectRatioId)
   const href = DASHBOARD_ROUTES.STUDIO.slideshow(slideshow.id)
   const aspectRatio = slideshow.canvas.width / slideshow.canvas.height
+  const stacked = slideshow.slideCount > 1
 
   return (
-    <article className="group/card">
-      <div className="relative">
-        <Link href={href} className="block focus-visible:outline-none">
-          <div
-            className={cn(
-              'relative w-full overflow-hidden rounded-lg bg-black ring-1 ring-border/50',
-              'group-hover/card:ring-border',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-            )}
-            style={{ aspectRatio }}
-          >
-            <SlideshowCardPreview slide={slideshow.previewSlide} canvas={slideshow.canvas} />
-            <SlideshowCardStoryBars slideCount={slideshow.slideCount} />
-          </div>
-        </Link>
+    <article className="group/card relative">
+      <div className={cn('relative', stacked && 'pr-1.5 pb-1.5')}>
+        {stacked ? (
+          <span
+            aria-hidden
+            className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-xl bg-black/[0.04] ring-1 ring-black/8 dark:bg-white/[0.05] dark:ring-white/10"
+          />
+        ) : null}
 
-        <div className="absolute right-2 bottom-2 z-30 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="size-8 rounded-full bg-black/50 text-white hover:bg-black/65 hover:text-white"
-              aria-label={`Duplicate ${slideshow.name}`}
-              disabled={isDuplicating}
-              onClick={event => {
-                event.preventDefault()
-                event.stopPropagation()
-                onDuplicate(slideshow)
-              }}
+        <div className="relative z-10">
+          <Link
+            href={href}
+            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <div
+              className={cn(
+                'relative w-full overflow-hidden rounded-xl bg-black ring-1 ring-black/10',
+                'transition-[box-shadow,ring-color] duration-200',
+                'group-hover/card:ring-black/18 group-hover/card:shadow-[0_10px_24px_-16px_rgba(0,0,0,0.45)]',
+                'dark:ring-white/12 dark:group-hover/card:ring-white/20',
+              )}
+              style={{ aspectRatio }}
             >
-              {isDuplicating ? <Loader2Icon className="size-3.5 animate-spin" /> : <CopyIcon className="size-3.5" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Duplicate</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="size-8 rounded-full bg-black/50 text-white hover:bg-black/65 hover:text-white"
-              aria-label={`Delete ${slideshow.name}`}
-              onClick={event => {
-                event.preventDefault()
-                event.stopPropagation()
-                onDelete(slideshow)
-              }}
-            >
-              <Trash2Icon className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Delete</TooltipContent>
-        </Tooltip>
+              <SlideshowCardPreview slide={slideshow.previewSlide} canvas={slideshow.canvas} />
+              <SlideshowCardStoryBars slideCount={slideshow.slideCount} />
+            </div>
+          </Link>
+
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="size-7 rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60 hover:text-white"
+                  aria-label={`Duplicate ${slideshow.name}`}
+                  disabled={isDuplicating}
+                  onClick={event => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onDuplicate(slideshow)
+                  }}
+                >
+                  {isDuplicating ? (
+                    <Loader2Icon className="size-3.5 animate-spin" />
+                  ) : (
+                    <CopyIcon className="size-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Duplicate</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="size-7 rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60 hover:text-white"
+                  aria-label={`Delete ${slideshow.name}`}
+                  onClick={event => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onDelete(slideshow)
+                  }}
+                >
+                  <Trash2Icon className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Delete</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
 
-      <div className="mt-2 space-y-1 px-0.5">
+      <div className="mt-2.5 space-y-1 px-0.5">
         <Link href={href} className="block min-w-0 focus-visible:underline focus-visible:outline-none">
-          <h2 className="truncate text-sm font-medium leading-snug tracking-tight">{slideshow.name}</h2>
+          <h3 className="truncate text-[13px] font-medium leading-snug tracking-[-0.015em] text-foreground">
+            {slideshow.name}
+          </h3>
         </Link>
-
-        <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[11px] tabular-nums tracking-[-0.01em] text-black/44 dark:text-white/44">
           <span>{slideshow.slideCount === 1 ? '1 page' : `${slideshow.slideCount} pages`}</span>
-          <span aria-hidden className="text-border">
+          <span aria-hidden className="text-black/16 dark:text-white/16">
             ·
           </span>
           <span className="truncate">{preset.label}</span>
-          <span aria-hidden className="text-border">
+          <span aria-hidden className="text-black/16 dark:text-white/16">
             ·
           </span>
           <span className="shrink-0">{formatRelativeTime(slideshow.updatedAt)}</span>
@@ -120,20 +136,28 @@ function SlideshowCard({
   )
 }
 
+function SlideshowCardSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="aspect-[4/5] w-full rounded-xl bg-black/[0.04] ring-1 ring-black/8 dark:bg-white/[0.04] dark:ring-white/10" />
+      <div className="mt-2.5 space-y-1.5 px-0.5">
+        <div className="h-3.5 w-3/4 rounded-md bg-black/[0.06] dark:bg-white/[0.06]" />
+        <div className="h-2.5 w-1/2 rounded-md bg-black/[0.04] dark:bg-white/[0.04]" />
+      </div>
+    </div>
+  )
+}
+
 type SlideshowListProps = {
   workspaceId: string
-  workspaceName: string
   initialSlideshows: SlideshowSummaryResponse[]
   initialError?: string | null
-  composer?: ReactNode
 }
 
 export function SlideshowList({
   workspaceId,
-  workspaceName,
   initialSlideshows,
   initialError = null,
-  composer,
 }: SlideshowListProps) {
   const router = useRouter()
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
@@ -143,8 +167,13 @@ export function SlideshowList({
   const [deleteTarget, setDeleteTarget] = useState<SlideshowSummaryResponse | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
+  const skipInitialSync = useRef(true)
 
   useEffect(() => {
+    if (skipInitialSync.current) {
+      skipInitialSync.current = false
+      return
+    }
     setSlideshows(initialSlideshows)
     setError(initialError)
   }, [initialSlideshows, initialError])
@@ -198,69 +227,69 @@ export function SlideshowList({
     router.refresh()
   }
 
-  const draftCount = slideshows.length
-  const createAction = (
-    <Button asChild size="sm" className={dashboardSurface.createCta}>
-      <Link href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}>
-        <PlusIcon className="size-4" strokeWidth={1.75} />
-        Create slideshow
-      </Link>
-    </Button>
-  )
+  if (!error && slideshows.length === 0 && !isLoading) {
+    return null
+  }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <PageHeader
-        title="Slideshows"
-        description={
-          isLoading
-            ? 'Loading drafts…'
-            : `${draftCount === 1 ? '1 slideshow' : `${draftCount.toLocaleString()} slideshows`} in ${workspaceName}`
-        }
-        actions={createAction}
-      />
+    <section
+      className="mx-auto w-full max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8"
+      aria-labelledby="recent-slideshows-heading"
+    >
+      <div className="mb-3.5 flex items-end justify-between gap-3">
+        <h2
+          id="recent-slideshows-heading"
+          className="text-[13px] font-medium tracking-[-0.015em] text-foreground/80"
+        >
+          Recent carousels
+        </h2>
+        <div className="flex items-center gap-3">
+          {isLoading ? (
+            <Loader2Icon className="size-3.5 animate-spin text-black/36 dark:text-white/36" />
+          ) : null}
+          <Link
+            href={DASHBOARD_ROUTES.STUDIO.SLIDESHOW_CREATE}
+            className="inline-flex items-center gap-1 text-[12px] font-medium tracking-[-0.01em] text-black/44 transition-colors hover:text-foreground dark:text-white/44"
+          >
+            Open editor
+            <ArrowRightIcon className="size-3" strokeWidth={1.75} />
+          </Link>
+        </div>
+      </div>
 
-      {composer ? <div className="shrink-0 pb-5">{composer}</div> : null}
-
-      {isLoading ? (
-        <LoadingState message="Loading slideshows…" className="flex-1" />
-      ) : error ? (
+      {error ? (
         <ErrorState
           title={error}
           description="Try again or refresh the page."
-          className="flex-1 rounded-xl"
+          className="rounded-xl"
           action={
             <Button size="sm" variant="outline" onClick={() => void loadSlideshows()}>
               Retry
             </Button>
           }
         />
-      ) : slideshows.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center px-6 py-16">
-          <div className="w-full max-w-sm">
-            <span className={cn('flex items-center justify-center', dashboardSurface.emptyIcon)}>
-              <ImagesIcon className="text-muted-foreground" strokeWidth={1.5} />
-            </span>
-            <p className="mt-4 text-sm font-medium tracking-tight">Start your first slideshow</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Build carousel posts for Instagram, TikTok, and more — then save drafts here.
-            </p>
-            <div className="mt-5">{createAction}</div>
-          </div>
+      ) : isLoading && slideshows.length === 0 ? (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <SlideshowCardSkeleton key={index} />
+          ))}
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {slideshows.map(slideshow => (
-              <SlideshowCard
-                key={slideshow.id}
-                slideshow={slideshow}
-                onDelete={setDeleteTarget}
-                onDuplicate={slideshow => void handleDuplicate(slideshow)}
-                isDuplicating={duplicatingId === slideshow.id}
-              />
-            ))}
-          </div>
+        <div
+          className={cn(
+            'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
+            isLoading && 'opacity-60',
+          )}
+        >
+          {slideshows.map(slideshow => (
+            <SlideshowCard
+              key={slideshow.id}
+              slideshow={slideshow}
+              onDelete={setDeleteTarget}
+              onDuplicate={item => void handleDuplicate(item)}
+              isDuplicating={duplicatingId === slideshow.id}
+            />
+          ))}
         </div>
       )}
 
@@ -277,6 +306,6 @@ export function SlideshowList({
         isDeleting={isDeleting}
         onConfirm={() => void handleDelete()}
       />
-    </div>
+    </section>
   )
 }

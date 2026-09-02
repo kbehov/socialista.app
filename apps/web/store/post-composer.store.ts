@@ -4,6 +4,7 @@ import { create } from 'zustand'
 
 import type { ComposerData, ComposerMediaItem, ComposerSchedule, ComposerVariant } from '@/types/composer-types'
 import { createEmptyVariant, getDefaultScheduleFields, withScheduleDefaults } from '@/utils/composer.utils'
+import { DEFAULT_TIMEZONE } from '@/utils/timezone'
 
 type ComposerActions = {
   hydrate: (workspaceId: string, timezone: string, media?: ComposerMediaItem[]) => void
@@ -28,7 +29,7 @@ type ComposerState = ComposerData & ComposerActions
 
 const initialSchedule = (): ComposerSchedule => ({
   mode: 'schedule',
-  timezone: 'UTC',
+  timezone: DEFAULT_TIMEZONE,
   ...getDefaultScheduleFields(),
 })
 

@@ -17,7 +17,7 @@ export function StaticAdGenerationProgress({ runId }: StaticAdGenerationProgress
       progressHeadingId="static-ad-progress-heading"
       retryLabel="Create another ad"
       runId={runId}
-      studioLabel="static ads"
+      studioLabel="Static ads"
     />
   )
 }

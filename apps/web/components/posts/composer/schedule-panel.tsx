@@ -2,10 +2,12 @@
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { TimezoneSelector } from '@/components/ui/timezone-selector'
 import { cn } from '@/lib/utils'
 import type { ComposerLayout } from '@/types/composer-types'
-import { formatTimezoneDetail } from '@/utils/timezone'
+import { formatTimezoneCity, formatTimezoneDetail } from '@/utils/timezone'
+import type { AccountSummary } from '@socialista/types'
 import { CalendarClockIcon, SendIcon } from 'lucide-react'
 import { useId, useMemo } from 'react'
 
@@ -16,6 +18,8 @@ import { ComposerSection } from './composer-section'
 type SchedulePanelProps = {
   schedule: ComposerSchedule
   onChange: (patch: Partial<ComposerSchedule>) => void
+  accounts?: AccountSummary[]
+  selectedAccountIds?: string[]
   className?: string
   layout?: ComposerLayout
 }
@@ -43,7 +47,24 @@ const MODE_OPTIONS: Array<{
 const dateTimeInputClassName =
   'h-9 w-full min-w-0 rounded-xl border-border/50 bg-background text-sm shadow-none [&::-webkit-calendar-picker-indicator]:ml-auto [&::-webkit-datetime-edit]:min-w-0'
 
-export function SchedulePanel({ schedule, onChange, className, layout = 'default' }: SchedulePanelProps) {
+function formatWallClockTime(time: string): string {
+  const [hoursRaw, minutesRaw] = time.split(':')
+  const hours = Number(hoursRaw)
+  const minutes = Number(minutesRaw)
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return time
+  const date = new Date()
+  date.setHours(hours, minutes, 0, 0)
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+}
+
+export function SchedulePanel({
+  schedule,
+  onChange,
+  accounts = [],
+  selectedAccountIds = [],
+  className,
+  layout = 'default',
+}: SchedulePanelProps) {
   const fieldId = useId()
   const isSheet = layout === 'sheet'
   const now = useMemo(() => new Date(), [])
@@ -52,11 +73,22 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
   const scheduleDate: Date = schedule.date ?? defaultSchedule.date
   const scheduleTime: string = schedule.time ?? defaultSchedule.time
 
+  const selectedAccounts = useMemo(
+    () => accounts.filter(account => selectedAccountIds.includes(account._id)),
+    [accounts, selectedAccountIds],
+  )
+  const showAccountTimezoneToggle = selectedAccounts.length > 1
+  const useAccountTimezones = schedule.timezoneMode === 'account'
+
   return (
     <ComposerSection
       title="When to post"
       description={
-        mode === 'now' ? 'Your post will be queued for immediate publishing.' : 'Pick a date, time, and timezone.'
+        mode === 'now'
+          ? 'Your post will be queued for immediate publishing.'
+          : useAccountTimezones
+            ? 'Pick a date and time. Each account posts in its own timezone.'
+            : 'Pick a date, time, and timezone.'
       }
       compact
       className={className}
@@ -162,13 +194,45 @@ export function SchedulePanel({ schedule, onChange, className, layout = 'default
               <TimezoneSelector
                 value={schedule.timezone}
                 onChange={timezone => onChange({ timezone })}
+                disabled={useAccountTimezones}
                 mode="popover"
                 popoverWidth={isSheet ? 'trigger' : 'default'}
               />
             </div>
           </div>
 
-          {schedule.timezone ? (
+          {showAccountTimezoneToggle ? (
+            <div className="flex items-center justify-between gap-3">
+              <Label
+                htmlFor={`${fieldId}-account-tz`}
+                className="text-[11px] leading-snug font-medium text-muted-foreground"
+              >
+                Use each account’s timezone
+              </Label>
+              <Switch
+                id={`${fieldId}-account-tz`}
+                size="sm"
+                checked={useAccountTimezones}
+                onCheckedChange={checked => onChange({ timezoneMode: checked ? 'account' : 'single' })}
+              />
+            </div>
+          ) : null}
+
+          {useAccountTimezones && showAccountTimezoneToggle ? (
+            <div className="space-y-1.5">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Each post goes out at {formatWallClockTime(scheduleTime)} in that account’s timezone.
+              </p>
+              <ul className="space-y-0.5">
+                {selectedAccounts.map(account => (
+                  <li key={account._id} className="truncate text-[11px] text-muted-foreground">
+                    {account.accountName}
+                    {account.timezone ? ` · ${formatTimezoneCity(account.timezone)}` : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : schedule.timezone ? (
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               {formatTimezoneDetail(schedule.timezone, now)}
             </p>

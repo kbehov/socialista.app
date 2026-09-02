@@ -10,8 +10,16 @@ import {
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
 import { useImageStudio } from "@/components/studio/images/image-studio-provider";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
-import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
-import { STUDIO_COMPOSER_SURFACE_CLASS } from "@/components/studio/prompt/studio-composer-surface";
+import {
+  StudioAttachedSkill,
+  StudioSkillPicker,
+} from "@/components/skills/studio-skill-picker";
+import {
+  STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+  STUDIO_TOOL_BUTTON_CLASS,
+  STUDIO_TOOL_CHEVRON_CLASS,
+} from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
 import {
@@ -36,6 +44,7 @@ import {
   IMAGE_GENERATION_COUNT_MIN,
   PROMPT_KEYS,
   type Model,
+  type Skill,
 } from "@socialista/types";
 import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -48,11 +57,13 @@ import {
   useTransition,
 } from "react";
 import { toast } from "sonner";
+import { ImageStudioStarters } from "./image-studio-starters";
 import { ImagePromptAnatomy } from "./prompt-anatomy";
 
 const MAX_REFERENCE_IMAGES = 3;
 
-const DEFAULT_PLACEHOLDER = "Describe the scene, mood, and style…";
+const DEFAULT_PLACEHOLDER =
+  "Matte serum on travertine, hard side light, luxury PDP still…";
 
 function getSubmitShortcutLabel() {
   if (typeof navigator === "undefined") return "⌘↵";
@@ -85,17 +96,17 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? "");
   const [aspectRatio, setAspectRatio] = useState<AspectRatioId>("1:1");
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT);
-  const [skillId, setSkillId] = useState<string | undefined>();
+  const [attachedSkill, setAttachedSkill] = useState<Skill | undefined>();
   const [enhance, setEnhance] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
 
   const placeholder = useMemo(() => {
     if (attachedImages.length >= 2) {
-      return "the person from @image1 is holding the product from @image2…";
+      return "the creator from @image1 holding the product from @image2, native UGC for Reels…";
     }
     if (attachedImages.length === 1) {
-      return "the person from @image1, standing in a sunlit kitchen…";
+      return "the product from @image1 on marble, ecommerce hero, clean studio light…";
     }
     return DEFAULT_PLACEHOLDER;
   }, [attachedImages.length]);
@@ -124,6 +135,19 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
     [textInput],
   );
 
+  const setPrompt = useCallback(
+    (text: string) => {
+      textInput.setInput(text);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(text.length, text.length);
+      });
+    },
+    [textInput],
+  );
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
@@ -131,9 +155,16 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   useEffect(() => {
     registerPromptHandlers({
       insertAtCursor,
+      setPrompt,
       focusPrompt,
     });
-  }, [registerPromptHandlers, insertAtCursor, focusPrompt]);
+  }, [registerPromptHandlers, insertAtCursor, setPrompt, focusPrompt]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+    textareaRef.current?.focus();
+  }, []);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim();
@@ -161,7 +192,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         userId: "",
         numImages,
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
-        ...(skillId ? { skillId } : {}),
+        ...(attachedSkill ? { skillId: attachedSkill._id } : {}),
         ...(enhance ? {} : { enhance: false }),
         ...(projectId ? { projectId } : {}),
       });
@@ -186,22 +217,17 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         <DropdownMenuTrigger asChild>
           <PromptInputButton
             aria-label={`Aspect ratio ${selectedAspect.id}`}
-          className={cn(
-            "h-7 gap-1.5 rounded-lg border px-1.5 pr-1.5",
-            "border-black/10 bg-black/[0.02] transition-[border-color,background-color] duration-150",
-            "hover:border-black/18 hover:bg-black/[0.04]",
-            "dark:border-white/12 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
-            "active:scale-[0.97]",
-          )}
-          disabled={isPending}
-          type="button"
-        >
-          <AspectRatioIcon active ratio={selectedAspect.ratio} />
-          <span className="text-xs font-medium leading-none tracking-[-0.015em]">
-            {selectedAspect.id}
-          </span>
-          <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
-        </PromptInputButton>
+            className={STUDIO_TOOL_BUTTON_CLASS}
+            disabled={isPending}
+            size="xs"
+            type="button"
+          >
+            <AspectRatioIcon active ratio={selectedAspect.ratio} />
+            <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+              {selectedAspect.id}
+            </span>
+            <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+          </PromptInputButton>
         </DropdownMenuTrigger>
       </StudioInputActionTooltip>
       <DropdownMenuContent align="start" className="min-w-44 w-44">
@@ -231,7 +257,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   );
 
   return (
-    <div>
+    <div className="image-studio-prompt">
       <StudioPromptComposer
         models={models}
         selectedModelId={selectedModelId}
@@ -252,6 +278,19 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? "Generate" : `Generate ${numImages}`}
+        submitTitle={numImages === 1 ? "Generate" : `Generate ${numImages}`}
+        submitAppearance="send"
+        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+        composerHeader={
+          attachedSkill ? (
+            <StudioAttachedSkill
+              skill={attachedSkill}
+              disabled={isPending}
+              onRemove={() => setAttachedSkill(undefined)}
+            />
+          ) : null
+        }
+        composerHeaderClassName="border-black/[0.06] bg-transparent py-1.5 dark:border-white/[0.08]"
         tools={
           <>
             {aspectTools}
@@ -259,15 +298,12 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               aria-label={enhance ? "Prompt enhancement on" : "Prompt enhancement off"}
               aria-pressed={enhance}
               className={cn(
-                "h-7 gap-1.5 rounded-lg border px-1.5 pr-1.5",
-                "transition-[border-color,background-color] duration-150",
-                "active:scale-[0.97]",
-                enhance
-                  ? "border-black/18 bg-black/[0.04] dark:border-white/20 dark:bg-white/[0.06]"
-                  : "border-black/10 bg-black/[0.02] hover:border-black/18 hover:bg-black/[0.04] dark:border-white/12 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
+                STUDIO_TOOL_BUTTON_CLASS,
+                enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
               )}
               disabled={isPending}
               onClick={() => setEnhance((value) => !value)}
+              size="xs"
               tooltip={
                 enhance
                   ? "Enhance on — AI refines your prompt before generating"
@@ -275,20 +311,18 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
               }
               type="button"
             >
-              <WandSparklesIcon
-                className={cn(
-                  "size-3.5 shrink-0",
-                  enhance ? "text-foreground/80" : "text-muted-foreground/60",
-                )}
-              />
-              <span className="text-xs font-medium leading-none tracking-[-0.015em]">
+              <WandSparklesIcon className="size-3.5 shrink-0" />
+              <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
                 {enhance ? "Enhance" : "Raw"}
               </span>
             </PromptInputButton>
             <StudioSkillPicker
               target={PROMPT_KEYS.imagePrompt}
-              value={skillId}
-              onChange={setSkillId}
+              value={attachedSkill?._id}
+              onChange={(skillId) => {
+                if (!skillId) setAttachedSkill(undefined);
+              }}
+              onSelect={setAttachedSkill}
               disabled={isPending || !enhance}
             />
           </>
@@ -298,30 +332,36 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         }}
         composerRef={composerRef}
         emptyTitle="No image models yet"
-        emptyDescription="Add a text-to-image model in the manager to start creating social visuals."
-        surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
+        emptyDescription="Add a text-to-image model in the manager to start making campaign stills."
+        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
       />
 
-      <div className="mt-3 px-0.5">
-        <StudioReferenceTagHint attachmentCount={attachedImages.length} />
-      </div>
+      {attachedImages.length > 0 ? (
+        <div className="mt-2.5 px-0.5">
+          <StudioReferenceTagHint attachmentCount={attachedImages.length} />
+        </div>
+      ) : null}
 
-      <div className="mt-6 space-y-5">
-        <ImagePromptAnatomy />
+      <div className="mt-4 flex flex-col items-center gap-4">
+        <ImageStudioStarters disabled={isPending} />
 
-        <p className="flex flex-wrap items-center gap-1.5 px-0.5 text-left text-[12px] tracking-[-0.01em] text-black/44 dark:text-white/44">
-          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
+        <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
             /
           </Kbd>
           <span>to focus</span>
-          <span aria-hidden className="text-black/20 dark:text-white/20">
+          <span aria-hidden className="text-black/16 dark:text-white/16">
             ·
           </span>
-          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
+          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
             {submitShortcut}
           </Kbd>
           <span>to generate</span>
         </p>
+
+        <div className="w-full">
+          <ImagePromptAnatomy />
+        </div>
       </div>
     </div>
   );
@@ -330,16 +370,16 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
   if (models.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-black/12 bg-black/[0.02] px-6 py-14 text-left dark:border-white/12 dark:bg-white/[0.02]">
-        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.04] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
-          <SparklesIcon className="size-4 text-black/56 dark:text-white/56" />
+      <div className="rounded-xl border border-dashed border-black/[0.08] bg-black/[0.015] px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.015]">
+        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/8 dark:bg-white/[0.03] dark:ring-white/10">
+          <SparklesIcon className="size-3.5 text-black/48 dark:text-white/48" />
         </div>
         <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
           No image models yet
         </p>
-        <p className="mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/56 dark:text-white/56">
-          Add a text-to-image model in the manager to start creating social
-          visuals.
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/48 dark:text-white/48">
+          Add a text-to-image model in the manager to start making campaign
+          stills.
         </p>
       </div>
     );

@@ -5,6 +5,7 @@ import { serializeUser } from '@/utils/user.utils.js'
 import {
   ADDITIONAL_WORKSPACE_LIMITS,
   BillingStatus,
+  DEFAULT_TIMEZONE,
   PLAN_LIMITS,
   Plan,
   WorkspaceMemberRole,
@@ -32,7 +33,7 @@ export const defaultWorkspaceSettings = () => {
   const limits = PLAN_LIMITS[Plan.FREE]
 
   return {
-    settings: { timezone: 'Europe/Sofia', language: 'en' },
+    settings: { timezone: DEFAULT_TIMEZONE, language: 'en' },
     limits: {
       members: limits.members,
       storage: limits.storage,

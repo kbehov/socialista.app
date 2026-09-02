@@ -112,6 +112,7 @@ export {
 export { isDuplicateKeyError } from './utils/is-duplicate-key-error.js'
 export { isValidEmail, isValidId, isValidPassword, toObjectId } from './utils/isValid.js'
 export {
+  DEFAULT_TIMEZONE,
   assertValidTimezone,
   formatInTimezone,
   isValidIanaTimezone,

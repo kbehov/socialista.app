@@ -5,42 +5,44 @@ import { useVideoStudio } from '@/components/studio/videos/video-studio-provider
 
 const VIDEO_SEGMENT_STYLES = {
   subject: {
-    text: 'text-sky-800 dark:text-sky-300',
-    surface: 'bg-sky-500/10',
-    chip: 'border-sky-500/25 bg-sky-500/10 text-sky-800 dark:text-sky-300',
-    chipIdle: 'hover:border-sky-500/20 hover:bg-sky-500/8 hover:text-sky-700 dark:hover:text-sky-300',
-    decoration: 'decoration-sky-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle:
+      'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   motion: {
-    text: 'text-violet-700 dark:text-violet-300',
-    surface: 'bg-violet-500/10',
-    chip: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
     chipIdle:
-      'hover:border-violet-500/20 hover:bg-violet-500/8 hover:text-violet-700 dark:hover:text-violet-300',
-    decoration: 'decoration-violet-500/55',
+      'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   camera: {
-    text: 'text-rose-700 dark:text-rose-300',
-    surface: 'bg-rose-500/10',
-    chip: 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300',
-    chipIdle: 'hover:border-rose-500/20 hover:bg-rose-500/8 hover:text-rose-700 dark:hover:text-rose-300',
-    decoration: 'decoration-rose-500/55',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
+    chipIdle:
+      'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   lighting: {
-    text: 'text-amber-800 dark:text-amber-300',
-    surface: 'bg-amber-500/10',
-    chip: 'border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-300',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
     chipIdle:
-      'hover:border-amber-500/20 hover:bg-amber-500/8 hover:text-amber-800 dark:hover:text-amber-300',
-    decoration: 'decoration-amber-500/55',
+      'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
   sound: {
-    text: 'text-emerald-700 dark:text-emerald-300',
-    surface: 'bg-emerald-500/10',
-    chip: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    text: 'text-foreground/90',
+    surface: 'bg-black/[0.05] dark:bg-white/[0.06]',
+    chip: 'border-black/14 bg-black/[0.04] text-foreground/80 dark:border-white/14 dark:bg-white/[0.05]',
     chipIdle:
-      'hover:border-emerald-500/20 hover:bg-emerald-500/8 hover:text-emerald-700 dark:hover:text-emerald-300',
-    decoration: 'decoration-emerald-500/55',
+      'hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
+    decoration: 'decoration-foreground/25',
   },
 } as const
 

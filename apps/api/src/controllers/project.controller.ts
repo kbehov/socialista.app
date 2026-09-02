@@ -138,7 +138,7 @@ export const createProject = async (c: Context<AppContext>) => {
     workspace: input.workspaceId,
     name: input.name,
     createdBy: userId,
-    timezone: input.timezone,
+    timezone: input.timezone ?? workspace.settings.timezone,
     description: input.description,
     color: input.color,
     icon: input.icon,

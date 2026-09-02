@@ -10,10 +10,16 @@ import {
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
-import { STUDIO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio-composer-surface'
+import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
+import {
+  STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_TOOL_BUTTON_CLASS,
+  STUDIO_TOOL_CHEVRON_CLASS,
+} from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
 import { StaticAdFormatPresets } from '@/components/studio/static-ads/static-ad-format-presets'
+import { StaticAdPromptAnatomy } from '@/components/studio/static-ads/static-ad-prompt-anatomy'
 import { useStaticAdStudio } from '@/components/studio/static-ads/static-ad-studio-provider'
 import {
   DropdownMenu,
@@ -29,7 +35,6 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
 import { collectStaticAdImages } from '@/lib/studio/static-ads/collect-references'
-import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { StaticAdAspectRatio } from '@/types/static-ads.types'
@@ -157,19 +162,38 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
     [clearActivePreset, textInput],
   )
 
+  const setPrompt = useCallback(
+    (text: string) => {
+      textInput.setInput(text)
+      requestAnimationFrame(() => {
+        const el = textareaRef.current
+        if (!el) return
+        el.focus()
+        el.setSelectionRange(text.length, text.length)
+      })
+    },
+    [textInput],
+  )
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus()
   }, [])
 
   useEffect(() => {
     registerPromptHandlers({
-      setPrompt: value => textInputRef.current.setInput(value),
+      setPrompt,
       getPrompt: () => textInputRef.current.value,
       setAspectRatio,
       insertAtCursor,
       focusPrompt,
     })
-  }, [focusPrompt, insertAtCursor, registerPromptHandlers, setAspectRatio])
+  }, [focusPrompt, insertAtCursor, registerPromptHandlers, setAspectRatio, setPrompt])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!window.matchMedia('(pointer: fine)').matches) return
+    textareaRef.current?.focus()
+  }, [])
 
   const handleAttachmentsChange = useCallback(
     (next: AttachedMedia[]) => {
@@ -243,44 +267,39 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
 
   if (!selectedModel) {
     return (
-      <div className="rounded-xl border border-dashed border-black/18 bg-background px-6 py-14 text-left dark:border-white/18">
-        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
-          <SparklesIcon className="size-4 text-black/56 dark:text-white/56" strokeWidth={2} />
+      <div className="rounded-xl border border-dashed border-black/[0.08] bg-black/[0.015] px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.015]">
+        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/8 dark:bg-white/[0.03] dark:ring-white/10">
+          <SparklesIcon className="size-3.5 text-black/48 dark:text-white/48" />
         </div>
-        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
-          No image-input models yet
-        </p>
-        <p className="mt-2 max-w-sm text-[14px] leading-[1.55] tracking-[-0.01em] text-black/64 dark:text-white/64">
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">No image-input models yet</p>
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/48 dark:text-white/48">
           Add a text-to-image model with image input support in the manager to start generating product ads.
         </p>
       </div>
     )
   }
 
-  const selectedAspect =
-    ASPECT_RATIOS.find(option => option.id === aspectRatio) ?? ASPECT_RATIOS[0]
+  const selectedAspect = ASPECT_RATIOS.find(option => option.id === aspectRatio) ?? ASPECT_RATIOS[0]
 
   const aspectTools = (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <PromptInputButton
-          aria-label={`Aspect ratio ${selectedAspect.id}`}
-          className={cn(
-            'h-7 gap-1.5 rounded-xl border px-1.5 pr-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]',
-            'border-border/40 bg-background/90 transition-[border-color,background-color,box-shadow] duration-150',
-            'hover:border-border/65 hover:bg-background',
-            'active:scale-[0.97]',
-          )}
-          disabled={isPending}
-          type="button"
-        >
-          <AspectRatioIcon active ratio={selectedAspect.ratio} />
-          <span className="text-xs font-medium leading-none tracking-[-0.015em]">
-            {selectedAspect.id}
-          </span>
-          <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/60" />
-        </PromptInputButton>
-      </DropdownMenuTrigger>
+      <StudioInputActionTooltip label="Output aspect ratio">
+        <DropdownMenuTrigger asChild>
+          <PromptInputButton
+            aria-label={`Aspect ratio ${selectedAspect.id}`}
+            className={STUDIO_TOOL_BUTTON_CLASS}
+            disabled={isPending}
+            size="xs"
+            type="button"
+          >
+            <AspectRatioIcon active ratio={selectedAspect.ratio} />
+            <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+              {selectedAspect.id}
+            </span>
+            <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+          </PromptInputButton>
+        </DropdownMenuTrigger>
+      </StudioInputActionTooltip>
       <DropdownMenuContent align="start" className="min-w-44 w-44">
         <DropdownMenuRadioGroup
           value={aspectRatio}
@@ -299,7 +318,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
   )
 
   return (
-    <div>
+    <div className="static-ad-studio-prompt">
       <StudioPromptComposer
         models={models}
         selectedModelId={selectedModel._id}
@@ -322,8 +341,16 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? 'Generate' : `Generate ${numImages}`}
+        submitTitle={
+          !hasReferences
+            ? 'Add a product, creator, or other reference first'
+            : numImages === 1
+              ? 'Generate'
+              : `Generate ${numImages}`
+        }
+        submitAppearance="send"
         canSubmit={hasEnoughCredits && hasReferences}
-        submitTitle={!hasReferences ? 'Add a product, creator, or other reference first' : undefined}
+        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         tools={
           <>
             {aspectTools}
@@ -333,16 +360,11 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
               onChange={setSkillId}
               disabled={isPending}
             />
-            <LanguageSelector
-              value={language}
-              onChange={setLanguage}
-              disabled={isPending}
-              className="h-7"
-            />
+            <LanguageSelector value={language} onChange={setLanguage} disabled={isPending} variant="ghost" />
             {!hasEnoughCredits ? (
               <Link
                 href={DASHBOARD_ROUTES.UPGRADE}
-                className="text-[11px] font-medium text-destructive hover:underline"
+                className="px-1.5 text-[11px] font-medium tracking-[-0.01em] text-destructive hover:underline"
               >
                 Upgrade
               </Link>
@@ -350,84 +372,82 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
           </>
         }
         composerHeader={
-          <div className="flex flex-col gap-3">
-            {templateReference ? (
-              <div className="flex items-center gap-2.5 rounded-[10px] bg-black/[0.03] px-2 py-1.5 ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
-                <div className="relative size-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-black/10 dark:ring-white/12">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={templateReference.imageUrl}
-                    alt={templateReference.name ?? 'Template reference'}
-                    className="size-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="text-[12px] font-medium tracking-[-0.015em] text-foreground">
-                    Template reference
-                  </p>
-                  <p className="truncate text-[12px] text-black/56 dark:text-white/56">
-                    {templateReference.name ?? 'Recreate this ad with your product'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  aria-label="Remove template reference"
-                  disabled={isPending}
-                  className="flex size-7 items-center justify-center rounded-full text-black/44 transition-colors hover:bg-black/[0.05] hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100 dark:text-white/44 dark:hover:bg-white/[0.08]"
-                  onClick={clearTemplateReference}
-                >
-                  <XIcon className="size-3.5" strokeWidth={2} />
-                </button>
+          templateReference ? (
+            <div className="flex items-center gap-2 px-3 sm:px-3.5">
+              <div className="relative size-8 shrink-0 overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/12">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={templateReference.imageUrl}
+                  alt={templateReference.name ?? 'Template reference'}
+                  className="size-full object-cover"
+                />
               </div>
-            ) : null}
-            <StaticAdFormatPresets />
-          </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[12px] font-medium tracking-[-0.015em] text-foreground">
+                  {templateReference.name ?? 'Template reference'}
+                </p>
+                <p className="truncate text-[11px] text-black/44 dark:text-white/44">
+                  Recreate this ad with your product
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Remove template reference"
+                disabled={isPending}
+                className="flex size-6 items-center justify-center rounded-md text-black/40 transition-colors hover:bg-black/[0.05] hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100 dark:text-white/40 dark:hover:bg-white/[0.08]"
+                onClick={clearTemplateReference}
+              >
+                <XIcon className="size-3.5" strokeWidth={1.75} />
+              </button>
+            </div>
+          ) : null
         }
+        composerHeaderClassName="border-black/[0.06] bg-transparent py-1.5 dark:border-white/[0.08]"
         textareaRef={node => {
           textareaRef.current = node
         }}
         composerRef={composerRef}
         onPromptChange={clearActivePreset}
-        surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
         emptyTitle="No image-input models yet"
         emptyDescription="Add a text-to-image model with image input support in the manager to start generating product ads."
       />
 
-      <div className="mt-3 px-0.5">
-        <StudioReferenceTagHint attachmentCount={attachments.length} variant="static-ad" />
+      {attachments.length > 0 ? (
+        <div className="mt-2.5 px-0.5">
+          <StudioReferenceTagHint attachmentCount={attachments.length} variant="static-ad" />
+        </div>
+      ) : null}
+
+      <div className="mt-4 flex flex-col items-center gap-4">
+        <StaticAdFormatPresets />
+
+        {!hasReferences ? (
+          <p className="text-center text-[12px] leading-[1.5] tracking-[-0.01em] text-black/40 dark:text-white/40">
+            {templateReference
+              ? 'Add your product or creator to map onto this template.'
+              : 'Add a product, creator, or template to generate.'}
+          </p>
+        ) : (
+          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              /
+            </Kbd>
+            <span>to focus</span>
+            <span aria-hidden className="text-black/16 dark:text-white/16">
+              ·
+            </span>
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              {submitShortcut}
+            </Kbd>
+            <span>to generate</span>
+          </p>
+        )}
+
+        <div className="w-full">
+          <StaticAdPromptAnatomy />
+        </div>
       </div>
-
-      {templateReference && attachments.length === 0 ? (
-        <p
-          className="mt-3 px-0.5 text-left text-[13px] leading-[1.5] tracking-[-0.01em] text-black/56 dark:text-white/56"
-          role="status"
-        >
-          Add your product and/or creator — we will map them onto this template.
-        </p>
-      ) : !hasReferences ? (
-        <p
-          className="mt-3 px-0.5 text-left text-[13px] leading-[1.5] tracking-[-0.01em] text-black/56 dark:text-white/56"
-          role="status"
-        >
-          Add a product, creator, template, or mix — tag them with @image1, @image2…
-        </p>
-      ) : null}
-
-      {hasReferences ? (
-        <p className="mt-4 flex flex-wrap items-center gap-1.5 px-0.5 text-left text-[12px] tracking-[-0.01em] text-black/44 dark:text-white/44">
-          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
-            /
-          </Kbd>
-          <span>to focus</span>
-          <span aria-hidden className="text-black/20 dark:text-white/20">
-            ·
-          </span>
-          <Kbd className="h-4 min-w-4 border-black/10 bg-black/[0.03] px-1 text-[10px] text-black/56 dark:border-white/12 dark:bg-white/[0.04] dark:text-white/56">
-            {submitShortcut}
-          </Kbd>
-          <span>to generate</span>
-        </p>
-      ) : null}
     </div>
   )
 }

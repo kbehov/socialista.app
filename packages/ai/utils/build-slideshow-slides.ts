@@ -1,6 +1,7 @@
 import type {
   BackgroundImageAdjustment,
   CanvasDimensions,
+  ImageLayer,
   OverlayLayer,
   Slide,
   SlideLayer,
@@ -36,10 +37,6 @@ const DEFAULT_LAYER_STYLE: TextLayerStyle = {
 
 function createId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`
-}
-
-function isTallCanvas(canvas: CanvasDimensions): boolean {
-  return canvas.height / canvas.width >= 1.2
 }
 
 function textStyle(theme: SlideshowPlanTheme, color: string, extra?: Partial<TextLayerStyle>): TextLayerStyle {
@@ -80,6 +77,23 @@ function createOverlayLayer(partial: Partial<OverlayLayer> & { zIndex: number })
   }
 }
 
+function createFullBleedImageLayer(imageUrl: string, zIndex: number): ImageLayer {
+  return {
+    id: createId('layer'),
+    type: 'image',
+    imageUrl,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    rotation: 0,
+    zIndex,
+    objectFit: 'cover',
+    opacity: 1,
+    filters: [],
+  }
+}
+
 function buildFullBleedSlide(
   planned: SlideshowPlanSlide,
   theme: SlideshowPlanTheme,
@@ -91,9 +105,10 @@ function buildFullBleedSlide(
   }
 
   const layers: SlideLayer[] = [
-    createOverlayLayer({ zIndex: 0 }),
+    createFullBleedImageLayer(imageUrl, 0),
+    createOverlayLayer({ zIndex: 1 }),
     createTextLayer({
-      zIndex: 1,
+      zIndex: 2,
       content: planned.text,
       x: 7,
       y: 36,
@@ -112,74 +127,8 @@ function buildFullBleedSlide(
     backgroundColor: theme.backgroundColor,
     backgroundImageUrl: imageUrl,
     backgroundImageAdjustment: DEFAULT_BACKGROUND_ADJUSTMENT,
-    backgroundImageFilters: [{ type: 'brightness', value: 0.82 }],
-    layers,
-    order,
-  }
-}
-
-function buildSplitSlide(
-  planned: SlideshowPlanSlide,
-  theme: SlideshowPlanTheme,
-  imageUrl: string | undefined,
-  canvas: CanvasDimensions,
-  order: number,
-): Slide {
-  if (!imageUrl) {
-    return buildMinimalSlide(planned, theme, order)
-  }
-
-  const tall = isTallCanvas(canvas)
-  const imageLayer: SlideLayer = tall
-    ? {
-        id: createId('layer'),
-        type: 'image',
-        imageUrl,
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 48,
-        rotation: 0,
-        zIndex: 0,
-        objectFit: 'cover',
-        opacity: 1,
-        filters: [],
-      }
-    : {
-        id: createId('layer'),
-        type: 'image',
-        imageUrl,
-        x: 50,
-        y: 0,
-        width: 50,
-        height: 100,
-        rotation: 0,
-        zIndex: 0,
-        objectFit: 'cover',
-        opacity: 1,
-        filters: [],
-      }
-
-  const textLayer = createTextLayer({
-    zIndex: 1,
-    content: planned.text,
-    x: tall ? 8 : 5,
-    y: tall ? 56 : 28,
-    width: tall ? 84 : 42,
-    height: tall ? 36 : 44,
-    style: textStyle(theme, theme.textColor, {
-      textAlign: tall ? 'center' : 'left',
-      fontSize: 44,
-    }),
-  })
-
-  return {
-    id: createId('slide'),
-    backgroundColor: theme.backgroundColor,
-    backgroundImageUrl: '',
-    backgroundImageAdjustment: DEFAULT_BACKGROUND_ADJUSTMENT,
     backgroundImageFilters: [],
-    layers: [imageLayer, textLayer],
+    layers,
     order,
   }
 }
@@ -212,16 +161,11 @@ function buildMinimalSlide(planned: SlideshowPlanSlide, theme: SlideshowPlanThem
 export function buildSlideshowSlides(
   plan: SlideshowPlan,
   imageUrlsBySlide: Array<string | undefined>,
-  canvas: CanvasDimensions,
+  _canvas: CanvasDimensions,
 ): Slide[] {
   return plan.slides.map((planned, order) => {
     const imageUrl = imageUrlsBySlide[order]
-    const layout = imageUrl ? planned.layout : 'minimal'
-
-    if (layout === 'split') {
-      return buildSplitSlide(planned, plan.theme, imageUrl, canvas, order)
-    }
-    if (layout === 'full-bleed') {
+    if (imageUrl) {
       return buildFullBleedSlide(planned, plan.theme, imageUrl, order)
     }
     return buildMinimalSlide(planned, plan.theme, order)

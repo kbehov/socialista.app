@@ -51,6 +51,7 @@ type LanguageSelectorProps = {
   disabled?: boolean
   className?: string
   size?: 'sm' | 'default'
+  variant?: 'field' | 'ghost'
   languages?: LanguageOption[]
 }
 
@@ -60,6 +61,7 @@ export function LanguageSelector({
   disabled,
   className,
   size = 'sm',
+  variant = 'field',
   languages = DEFAULT_AD_LANGUAGES,
 }: LanguageSelectorProps) {
   const selected = languages.find(lang => lang.code === value)
@@ -69,8 +71,15 @@ export function LanguageSelector({
       <SelectTrigger
         size={size}
         className={cn(
-          'h-7 gap-1 rounded-lg border-border/50 bg-background/90 px-2 shadow-xs',
-          'hover:border-border hover:bg-background',
+          variant === 'ghost'
+            ? cn(
+                'h-6 w-auto gap-1 rounded-md border-0 bg-transparent py-0 pl-1.5 pr-1 shadow-none',
+                'data-[size=sm]:h-6 data-[size=default]:h-6',
+                'text-[12px] font-medium tracking-[-0.015em] text-foreground/80',
+                'hover:bg-black/[0.04] hover:text-foreground dark:bg-transparent dark:hover:bg-white/[0.06]',
+                '[&_svg:last-child]:size-3 [&_svg:last-child]:text-foreground/45',
+              )
+            : 'h-7 gap-1 rounded-lg border-border/50 bg-background/90 px-2 shadow-xs hover:border-border hover:bg-background',
           className,
         )}
         aria-label="Ad copy language"
@@ -82,7 +91,7 @@ export function LanguageSelector({
                 {selected.flag}
               </span>
             ) : null}
-            <span className="truncate text-xs font-medium">{selected?.label ?? value}</span>
+            <span className="truncate text-[12px] font-medium">{selected?.label ?? value}</span>
           </span>
         </SelectValue>
       </SelectTrigger>
