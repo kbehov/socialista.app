@@ -15,10 +15,8 @@ import {
 import type { UgcClip, UgcClipVoice, UgcProject, UgcProjectSummary, UgcSceneStill } from '@socialista/types'
 import {
   clampUgcDuration,
-  clampUgcSceneCount,
   clampUgcScript,
   resizeUgcStills,
-  UGC_CLIP_DEFAULT_SCENE_COUNT,
   UGC_CLIP_TYPE_LABELS,
   UGC_CLIP_TYPES,
   UGC_DEFAULT_CLIP_TYPE,
@@ -61,14 +59,14 @@ export function migrateLegacyClips(project: IUgcProject): IUgcClip[] {
     name: `${UGC_CLIP_TYPE_LABELS['product-hold']} · ${UGC_DEFAULT_DURATION}s`,
     status: variant.status,
     durationSec: UGC_DEFAULT_DURATION,
-    sceneCount: UGC_CLIP_DEFAULT_SCENE_COUNT['product-hold'],
+    sceneCount: 1,
     influencerId: variant.influencerId,
     script: {
       text: scriptText,
       source: project.script?.source ?? UgcScriptSource.USER,
     },
     directions: project.directions,
-    stills: variant.stills ?? emptyStills(UGC_CLIP_DEFAULT_SCENE_COUNT['product-hold']),
+    stills: variant.stills?.slice(0, 1) ?? emptyStills(1),
     plannedPrompt: variant.plannedPrompt,
     negativePrompt: variant.negativePrompt,
     videoUrl: variant.videoUrl,
@@ -150,9 +148,7 @@ export function serializeClip(clip: IUgcClip): UgcClip {
     composedVideoId: clip.composedVideoId?.toString(),
     stillsRunId: clip.stillsRunId,
     videoRunId: clip.videoRunId,
-    imageAdUrl: clip.imageAdUrl,
-    imageAdGenerationId: clip.imageAdGenerationId,
-    imageAdRunId: clip.imageAdRunId,
+    approved: clip.approved,
     error: clip.error,
   }
 }
@@ -171,6 +167,9 @@ export function serializeUgcProject(project: IUgcProject): UgcProject {
     productId: project.productId?.toString(),
     productImageUrls: project.productImageUrls ?? [],
     productName: project.productName,
+    productDescription: project.productDescription,
+    productUrl: project.productUrl,
+    productKind: project.productKind,
     influencerId: campaignInfluencerId,
     aspectRatio: project.aspectRatio,
     models: {
@@ -179,6 +178,7 @@ export function serializeUgcProject(project: IUgcProject): UgcProject {
       ...(project.models.script ? { script: project.models.script } : {}),
       ...(project.models.planner ? { planner: project.models.planner } : {}),
     },
+    flowStep: project.flowStep,
     clips: clips.map(serializeClip),
     assembledVideoUrl: project.assembledVideoUrl,
     assembledGenerationId: project.assembledGenerationId,
@@ -247,27 +247,21 @@ export function assertCanGenerateVideo(project: IUgcProject, clip: IUgcClip) {
     throw new HttpError(400, 'Choose a video model')
   }
   if (!clip.stills.some(still => still.imageUrl)) {
-    throw new HttpError(400, 'Generate scenes before video')
+    throw new HttpError(400, 'Generate a photo first')
   }
 }
 
 export function assertCanGenerateScript(clip: IUgcClip) {
   const type = clipTypeValue(clip.type)
   if (type === 'b-roll') {
-    throw new HttpError(400, 'B-roll clips do not use a spoken script')
+    throw new HttpError(400, 'This scene has no talking')
   }
 }
 
 export function assertCanAssemble(project: IUgcProject) {
   const ready = (project.clips ?? []).filter(clip => Boolean(clip.videoUrl))
-  if (ready.length < 2) {
-    throw new HttpError(400, 'Generate at least two clip videos to assemble')
-  }
-}
-
-export function assertCanGenerateImageAd(project: IUgcProject) {
-  if (project.productImageUrls.length === 0) {
-    throw new HttpError(400, 'Add a product photo first')
+  if (ready.length < 1) {
+    throw new HttpError(400, 'Generate at least one scene video first')
   }
 }
 
@@ -287,15 +281,16 @@ export function buildNewClip(input: {
   const resolvedType = input.type ?? parseClipType(UGC_DEFAULT_CLIP_TYPE)
   const type = clipTypeValue(resolvedType)
   const durationSec = clampUgcDuration(input.durationSec ?? UGC_DEFAULT_DURATION)
-  const sceneCount = clampUgcSceneCount(input.sceneCount, UGC_CLIP_DEFAULT_SCENE_COUNT[type])
+  const sceneCount = 1
+  const skipInfluencer = type === 'b-roll'
   return {
     id: randomUUID(),
     type: resolvedType,
-    name: input.name?.trim() || `${UGC_CLIP_TYPE_LABELS[type]} · ${durationSec}s`,
+    name: input.name?.trim() || UGC_CLIP_TYPE_LABELS[type],
     status: UgcClipStatus.IDLE,
     durationSec,
     sceneCount,
-    ...(input.influencerId ? { influencerId: toObjectId(input.influencerId) } : {}),
+    ...(input.influencerId && !skipInfluencer ? { influencerId: toObjectId(input.influencerId) } : {}),
     script: { text: '', source: UgcScriptSource.USER },
     stills: emptyStills(sceneCount),
     referenceImageUrls: [],

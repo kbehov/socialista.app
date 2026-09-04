@@ -8,6 +8,7 @@ import type {
   InfluencerMakeupStyle,
   InfluencerPhotoStyle,
   InfluencerScene,
+  InfluencerVibe,
 } from "@socialista/types";
 import {
   INFLUENCER_ACCESSORIES,
@@ -27,6 +28,8 @@ import {
   INFLUENCER_GENERATION_SHOT_MAX,
   INFLUENCER_GENERATION_SHOT_MIN,
   INFLUENCER_MAX_USER_REFERENCE_IMAGES,
+  INFLUENCER_VIBES,
+  INFLUENCER_VIBES_MAX,
 } from "@socialista/types";
 
 export type SwatchOption = {
@@ -261,6 +264,16 @@ const SCENE_META: Record<
   "pointing-reveal": { label: "Pointing reveal", group: "Hooks" },
   "sitting-testimonial": { label: "Sitting testimonial", group: "Hooks" },
   "pregnant-bump": { label: "Pregnant", group: "Hooks" },
+  library: { label: "Library", group: "Education & Work" },
+  classroom: { label: "Classroom", group: "Education & Work" },
+  "study-desk": { label: "Study desk", group: "Education & Work" },
+  "home-office": { label: "Home office", group: "Education & Work" },
+  "grocery-store": { label: "Grocery store", group: "Retail" },
+  park: { label: "Park", group: "Outdoor" },
+  balcony: { label: "Balcony", group: "Everyday" },
+  "unboxing-desk": { label: "Unboxing desk", group: "Creator" },
+  grwm: { label: "GRWM", group: "Creator", description: "Get ready with me" },
+  playground: { label: "Playground", group: "Everyday" },
 };
 
 export const SCENE_OPTIONS: ReadonlyArray<ChoiceOption> = INFLUENCER_SCENES.map(
@@ -295,6 +308,9 @@ const ACCESSORY_META: Record<
   "skincare-bottle": { label: "Skincare bottle", group: "Props" },
   pet: { label: "Pet", group: "Props" },
   "shopping-bag": { label: "Shopping bag", group: "Props" },
+  books: { label: "Books", group: "Props" },
+  notebook: { label: "Notebook", group: "Props" },
+  backpack: { label: "Backpack", group: "Wear" },
 };
 
 export const ACCESSORY_OPTIONS: ReadonlyArray<ChoiceOption> =
@@ -303,6 +319,24 @@ export const ACCESSORY_OPTIONS: ReadonlyArray<ChoiceOption> =
     label: ACCESSORY_META[id].label,
     group: ACCESSORY_META[id].group,
   }));
+
+const VIBE_LABELS: Record<InfluencerVibe, string> = {
+  energetic: "Energetic",
+  calm: "Calm",
+  confident: "Confident",
+  playful: "Playful",
+  warm: "Warm",
+  authoritative: "Authoritative",
+  quirky: "Quirky",
+  aspirational: "Aspirational",
+};
+
+export const VIBE_OPTIONS: ReadonlyArray<ChoiceOption> = INFLUENCER_VIBES.map(
+  (id) => ({
+    id,
+    label: VIBE_LABELS[id],
+  }),
+);
 
 export const FEATURE_SUGGESTIONS = [
   "freckles",
@@ -315,8 +349,7 @@ export const FEATURE_SUGGESTIONS = [
 
 export const DIRECTIONS_MAX = 1000;
 
-export const DIRECTIONS_PLACEHOLDER =
-  "Optional: mood, outfit, or energy — e.g. soft morning light, linen shirt, warm approachable vibe";
+export const DIRECTIONS_PLACEHOLDER = "Mood, outfit, energy…";
 
 export const INFLUENCER_PROMPT_PLACEHOLDER =
   "A 26-year-old beauty creator with warm skin, natural makeup, filming in a bright bathroom…";
@@ -343,6 +376,7 @@ export const DEFAULT_CREATE_FORM = {
     accessories: [] as string[],
   },
   aestheticTags: [] as string[],
+  vibeTags: [] as string[],
   photoStyle: "ugc-phone" as InfluencerPhotoStyle,
 };
 
@@ -368,6 +402,7 @@ export {
   INFLUENCER_MAKEUP_STYLES,
   INFLUENCER_PHOTO_STYLES,
   INFLUENCER_SCENES_MAX,
+  INFLUENCER_VIBES_MAX,
   INFLUENCER_GENERATION_BILLED,
   INFLUENCER_GENERATION_SHOT_COUNT,
   INFLUENCER_GENERATION_SHOT_MAX,

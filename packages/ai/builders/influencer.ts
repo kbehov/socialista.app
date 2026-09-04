@@ -230,6 +230,66 @@ export const INFLUENCER_SCENE_PROMPTS: Record<string, InfluencerScenePrompt> = {
     wardrobeHint: "comfortable maternity-friendly clothes",
     actionCue: "natural hand-on-bump moment, soft smile",
   },
+  library: {
+    environment:
+      "quiet public library nook with warm reading-lamp light and tall bookshelf bokeh",
+    wardrobeHint: "approachable smart-casual, cardigan or knit",
+    actionCue: "mid-explanation, book or notes in hand",
+  },
+  classroom: {
+    environment:
+      "bright classroom with a whiteboard softly behind, daylight from high windows, teaching-desk depth",
+    wardrobeHint: "approachable teacher-casual layers",
+    actionCue: "mid-lesson energy, talking to camera as if to students",
+  },
+  "study-desk": {
+    environment:
+      "study desk with open books, a notebook, warm desk-lamp key light, and a mug softly out of focus",
+    wardrobeHint: "comfortable study-casual layers",
+    actionCue: "leaning in to explain a note, study-with-me energy",
+  },
+  "home-office": {
+    environment:
+      "tidy home office with a laptop, notebook, and soft daylight on a clean desk, bookshelf bokeh behind",
+    wardrobeHint: "smart-casual work-from-home layers",
+    actionCue: "mid-explainer at the desk, laptop open",
+  },
+  "grocery-store": {
+    environment:
+      "grocery aisle with product shelves in shallow bokeh, cool overhead light, real supermarket atmosphere",
+    wardrobeHint: "everyday errand casual",
+    actionCue: "product discovery / haul energy in the aisle",
+  },
+  park: {
+    environment:
+      "neighborhood park path with soft green bokeh, natural daylight, trees and a bench softly behind",
+    wardrobeHint: "casual outdoor layers",
+    actionCue: "mid-walk pause, talking to camera outdoors",
+  },
+  balcony: {
+    environment:
+      "sunlit apartment balcony with plants, city haze beyond, and warm morning light",
+    wardrobeHint: "elevated casual lounge layers",
+    actionCue: "relaxed coffee-on-the-balcony energy",
+  },
+  "unboxing-desk": {
+    environment:
+      "lived-in desk with an open cardboard box, packing paper, and a plain unbranded product ready to reveal",
+    wardrobeHint: "clean on-camera casual",
+    actionCue: "mid-unbox, lifting the product toward camera",
+  },
+  grwm: {
+    environment:
+      "bright bathroom vanity or bedroom dresser with mirror glow, makeup and skincare bottles softly blurred",
+    wardrobeHint: "simple top that frames the face, get-ready layers",
+    actionCue: "get-ready-with-me energy, mid-routine talking to camera",
+  },
+  playground: {
+    environment:
+      "neighborhood playground with play equipment softly behind, natural daylight, candid parent-on-the-go vibe",
+    wardrobeHint: "comfortable everyday parent clothes",
+    actionCue: "candid outdoor pause, talking to camera between moments",
+  },
 };
 
 /** Accessory prompt phrases locked into identity when selected. */
@@ -253,6 +313,25 @@ export const INFLUENCER_ACCESSORY_PROMPTS: Record<string, string> = {
   "skincare-bottle": "plain unbranded skincare bottle in hand",
   pet: "friendly pet nearby (soft focus when not the subject)",
   "shopping-bag": "paper shopping bag in hand",
+  books: "open book or a small stack of books in hand or nearby",
+  notebook: "notebook or journal nearby, maybe a pen in hand",
+  backpack: "everyday backpack worn or resting nearby",
+};
+
+/** On-camera energy / demeanor — independent of visual aesthetic. */
+export const INFLUENCER_VIBE_PROMPTS: Record<string, string> = {
+  energetic:
+    "high-energy talking-to-camera presence, animated eyebrows, big genuine smile",
+  calm: "grounded, unhurried presence, soft smile, steady eye contact",
+  confident:
+    "assured talking-head energy, relaxed posture, direct eye contact without stiffness",
+  playful: "light teasing energy, easy laugh, slightly raised brows, candid grin",
+  warm: "approachable kindness, genuine smile that reaches the eyes, inviting eye contact",
+  authoritative:
+    "calm authority, measured expression, slight lean-in as if explaining a tip",
+  quirky: "offbeat charm, mischievous half-smile, expressive micro-expressions",
+  aspirational:
+    "polished-but-real creator glow, composed smile, quietly magnetic presence",
 };
 
 function expandAccessories(accessories: string[] | undefined): string[] {
@@ -656,6 +735,8 @@ export type BuildInfluencerShotPromptContext = {
   scenes?: string[];
   accessories?: string[];
   aestheticTags?: string[];
+  /** On-camera energy / demeanor (max 2). */
+  vibeTags?: string[];
   characterSheet?: InfluencerCharacterSheet;
   photoStyle?: InfluencerPhotoStyle;
   /** Free-text creative direction — optional mood/outfit refine. */
@@ -690,6 +771,7 @@ export type InfluencerPromptDoc = {
   accessories?: string[];
   photoStyle?: string;
   aesthetics?: string[];
+  vibes?: string[];
   directions?: string;
   /** Hybrid user-ref guidance (cover shots with attached references). */
   referenceGuidance?: string;
@@ -849,6 +931,13 @@ export function buildInfluencerPromptDoc(
   const aesthetics = coverRefMode
     ? undefined
     : ctx?.aestheticTags?.filter(Boolean).slice(0, 2);
+  const vibes = coverRefMode
+    ? undefined
+    : ctx?.vibeTags
+        ?.filter(Boolean)
+        .slice(0, 2)
+        .map((id) => INFLUENCER_VIBE_PROMPTS[id] ?? id.replace(/-/g, " "))
+        .filter(Boolean);
   const photoStyle = coverRefMode
     ? undefined
     : ctx?.photoStyle
@@ -872,6 +961,7 @@ export function buildInfluencerPromptDoc(
         : undefined,
     photoStyle,
     aesthetics: aesthetics && aesthetics.length > 0 ? aesthetics : undefined,
+    vibes: vibes && vibes.length > 0 ? vibes : undefined,
     directions,
     referenceGuidance: refMode
       ? buildLookalikeRefInstructions(userReferenceCount, {
@@ -926,6 +1016,10 @@ export function renderInfluencerPrompt(doc: InfluencerPromptDoc): string {
   ].filter(Boolean);
   if (styleBits.length > 0) {
     sections.push(`Style: ${styleBits.join(" ")}`);
+  }
+
+  if (doc.vibes && doc.vibes.length > 0) {
+    sections.push(`Vibe: ${doc.vibes.join("; ")}.`);
   }
 
   if (doc.directions) {

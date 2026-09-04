@@ -35,6 +35,8 @@ import {
   INFLUENCER_SCENES,
   INFLUENCER_SCENES_MAX,
   INFLUENCER_SHOT_PACKS,
+  INFLUENCER_VIBES,
+  INFLUENCER_VIBES_MAX,
 } from '@socialista/types'
 
 export function serializeInfluencer(doc: IInfluencer): Influencer {
@@ -50,6 +52,7 @@ export function serializeInfluencer(doc: IInfluencer): Influencer {
     directions: doc.directions,
     niche: doc.niche,
     scenes: doc.scenes ?? [],
+    vibeTags: doc.vibeTags ?? [],
     gender: doc.gender,
     ageRange: doc.ageRange,
     ethnicity: doc.ethnicity,
@@ -244,6 +247,11 @@ function parseCatalogStringArray(
 export function parseScenes(value: unknown): string[] {
   if (value === undefined || value === null) return []
   return parseCatalogStringArray(value, INFLUENCER_SCENES, 'scene', INFLUENCER_SCENES_MAX)
+}
+
+export function parseVibeTags(value: unknown): string[] {
+  if (value === undefined || value === null) return []
+  return parseCatalogStringArray(value, INFLUENCER_VIBES, 'vibe', INFLUENCER_VIBES_MAX)
 }
 
 export function parseAccessories(value: unknown): string[] {

@@ -115,6 +115,8 @@ export interface IInfluencer {
   niche: string[]
   /** Structured UGC situations (max 3); rotates across shot pack. */
   scenes?: string[]
+  /** On-camera energy / demeanor (max 2). */
+  vibeTags?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   ethnicity?: string
@@ -145,6 +147,7 @@ export type CreateInfluencerInput = {
   directions?: string
   niche: string[]
   scenes?: string[]
+  vibeTags?: string[]
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
   ethnicity?: string
@@ -164,6 +167,7 @@ export type UpdateInfluencerInput = {
   directions?: string | null
   niche?: string[]
   scenes?: string[]
+  vibeTags?: string[]
   aestheticTags?: string[]
   photoStyle?: InfluencerPhotoStyle | null
   status?: InfluencerStatus

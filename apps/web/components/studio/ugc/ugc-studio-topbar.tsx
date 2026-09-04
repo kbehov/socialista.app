@@ -86,12 +86,12 @@ export function UgcStudioTopbar({
                 onClick={onAssemble}
               >
                 {assembling ? <Loader2Icon className="size-3.5 animate-spin" /> : <LayersIcon className="size-3.5" />}
-                Assemble
+                Stitch
               </Button>
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            {canAssemble ? 'Stitch ready clips into one ad' : 'Generate at least two clip videos first'}
+        {canAssemble ? 'Stitch ready scenes into one ad' : 'Render at least one scene first'}
           </TooltipContent>
         </Tooltip>
       </div>

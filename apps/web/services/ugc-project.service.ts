@@ -7,7 +7,6 @@ import type {
   ApiResponse,
   CreateUgcClipPayload,
   CreateUgcProjectPayload,
-  GenerateUgcImageAdPayload,
   GenerateUgcScriptPayload,
   GenerateUgcStillsPayload,
   GenerateUgcVideosPayload,
@@ -98,22 +97,35 @@ export const generateUgcStills = async (
   id: string,
   payload: GenerateUgcStillsPayload,
 ): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_STILLS(id, payload.clipId), payload)
+  if (payload.clipId) {
+    return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_STILLS(id, payload.clipId), payload)
+  }
+  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_PROJECT_STILLS(id), payload)
 }
 
 export const generateUgcScript = async (
   id: string,
+  payload?: GenerateUgcScriptPayload,
+): Promise<ApiResponse<{ project: UgcProject }>> => {
+  return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.GENERATE_SCRIPT(id), payload ?? {})
+}
+
+export const generateUgcClipScript = async (
+  id: string,
   clipId: string,
   payload?: GenerateUgcScriptPayload,
 ): Promise<ApiResponse<{ project: UgcProject }>> => {
-  return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.GENERATE_SCRIPT(id, clipId), payload ?? {})
+  return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.GENERATE_CLIP_SCRIPT(id, clipId), payload ?? {})
 }
 
 export const generateUgcVideos = async (
   id: string,
   payload: GenerateUgcVideosPayload,
 ): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_VIDEOS(id, payload.clipId), payload)
+  if (payload.clipId) {
+    return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_VIDEOS(id, payload.clipId), payload)
+  }
+  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_PROJECT_VIDEOS(id), payload)
 }
 
 export const regenerateUgcStill = async (
@@ -138,13 +150,6 @@ export const openUgcClipEditor = async (
   clipId: string,
 ): Promise<ApiResponse<OpenUgcEditorResponse>> => {
   return api.post<OpenUgcEditorResponse>(UGC_PROJECT_ROUTES.OPEN_EDITOR(id, clipId), {})
-}
-
-export const generateUgcImageAd = async (
-  id: string,
-  payload: GenerateUgcImageAdPayload,
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_IMAGE_AD(id, payload.clipId), payload)
 }
 
 export const assembleUgcProject = async (

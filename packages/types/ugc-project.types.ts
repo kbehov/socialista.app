@@ -21,13 +21,27 @@ export const UGC_CLIP_TYPES = [
 ] as const
 export type UgcClipType = (typeof UGC_CLIP_TYPES)[number]
 
+export const UGC_PRODUCT_KINDS = ['physical', 'app', 'website'] as const
+export type UgcProductKind = (typeof UGC_PRODUCT_KINDS)[number]
+
+export const UGC_FLOW_STEPS = [
+  'product',
+  'scenes',
+  'avatar',
+  'script',
+  'stills',
+  'review',
+  'video',
+] as const
+export type UgcFlowStep = (typeof UGC_FLOW_STEPS)[number]
+
 export const UGC_SCENE_COUNTS = [1, 2, 3] as const
 export type UgcSceneCount = (typeof UGC_SCENE_COUNTS)[number]
 
 export const UGC_MAX_VARIANTS = 3
 export const UGC_MAX_SCENES = 3
 export const UGC_MAX_CLIPS = 12
-export const UGC_DEFAULT_SCENE_COUNT: UgcSceneCount = 2
+export const UGC_DEFAULT_SCENE_COUNT: UgcSceneCount = 1
 export const UGC_DEFAULT_ASPECT_RATIO = '9:16' as const
 export const UGC_DURATION_MIN = 5
 export const UGC_DURATION_MAX = 15
@@ -37,30 +51,49 @@ export const UGC_SCRIPT_MAX_CHARS = 150
 export const UGC_CLIP_DEFAULT_SCENE_COUNT: Record<UgcClipType, UgcSceneCount> = {
   talking: 1,
   'b-roll': 1,
-  unboxing: 2,
+  unboxing: 1,
   'try-on': 1,
-  'product-hold': 2,
+  'product-hold': 1,
   'app-showcase': 1,
 }
 
-export const UGC_DEFAULT_CLIP_TYPE: UgcClipType = 'product-hold'
+export const UGC_DEFAULT_CLIP_TYPE: UgcClipType = 'talking'
+
+export const UGC_STARTER_SCENE_TYPES: UgcClipType[] = ['talking', 'product-hold', 'b-roll']
+export const UGC_PRIMARY_SCENE_TYPES: UgcClipType[] = ['talking', 'product-hold', 'b-roll']
 
 export const UGC_CLIP_TYPE_LABELS: Record<UgcClipType, string> = {
-  talking: 'Talking to camera',
-  'b-roll': 'Product b-roll',
-  unboxing: 'Unboxing',
-  'try-on': 'Try-on',
-  'product-hold': 'Holding the product',
-  'app-showcase': 'App on screen',
+  talking: 'Talk to camera',
+  'b-roll': 'Show the product',
+  unboxing: 'Open the box',
+  'try-on': 'Wear / use it',
+  'product-hold': 'Hold the product',
+  'app-showcase': 'Show it on a phone',
 }
 
 export const UGC_CLIP_TYPE_DESCRIPTIONS: Record<UgcClipType, string> = {
-  talking: 'Hook or CTA — they speak to the phone',
-  'b-roll': 'Beauty shots of the product, no talking',
-  unboxing: 'Open the box on camera',
-  'try-on': 'Wear or use the product',
-  'product-hold': 'Hold the SKU and talk to camera',
-  'app-showcase': 'Show the app on a phone',
+  talking: 'They look at the camera and talk',
+  'b-roll': 'Just the product — no person talking',
+  unboxing: 'They open the package on camera',
+  'try-on': 'They wear or use it',
+  'product-hold': 'They hold it up and talk about it',
+  'app-showcase': 'They show the app on a phone',
+}
+
+export const UGC_FLOW_STEP_LABELS: Record<UgcFlowStep, string> = {
+  product: 'Product',
+  scenes: 'Scenes',
+  avatar: 'Creator',
+  script: 'Script',
+  stills: 'Photos',
+  review: 'Review',
+  video: 'Render',
+}
+
+export const UGC_PRODUCT_KIND_LABELS: Record<UgcProductKind, string> = {
+  physical: 'Physical product',
+  app: 'App',
+  website: 'Website',
 }
 
 export const UGC_VOICE_PROVIDERS = ['elevenlabs'] as const
@@ -135,12 +168,42 @@ export function ugcResolvedInfluencerId(
   return clip?.influencerId ?? project.influencerId
 }
 
-export function ugcClipSceneCount(clip: {
+export function parseUgcProductKind(value: unknown): UgcProductKind | undefined {
+  if (typeof value === 'string' && (UGC_PRODUCT_KINDS as readonly string[]).includes(value)) {
+    return value as UgcProductKind
+  }
+  return undefined
+}
+
+export function parseUgcFlowStep(value: unknown): UgcFlowStep | undefined {
+  if (typeof value === 'string' && (UGC_FLOW_STEPS as readonly string[]).includes(value)) {
+    return value as UgcFlowStep
+  }
+  return undefined
+}
+
+export function inferUgcProductKind(input: { url?: string; description?: string }): UgcProductKind {
+  const url = input.url?.toLowerCase() ?? ''
+  const text = `${url} ${input.description ?? ''}`.toLowerCase()
+  if (
+    url.includes('apps.apple.com') ||
+    url.includes('play.google.com') ||
+    text.includes(' mobile app') ||
+    text.includes('ios app') ||
+    text.includes('android app')
+  ) {
+    return 'app'
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) return 'website'
+  return 'physical'
+}
+
+export function ugcClipSceneCount(_clip?: {
   type: UgcClipType
   stills: { index: number }[]
   sceneCount?: number
 }): UgcSceneCount {
-  return clampUgcSceneCount(clip.sceneCount ?? clip.stills.length, UGC_CLIP_DEFAULT_SCENE_COUNT[clip.type])
+  return 1
 }
 
 export function resizeUgcStills(stills: UgcSceneStill[], sceneCount: UgcSceneCount): UgcSceneStill[] {
@@ -249,9 +312,7 @@ export type UgcClip = {
   composedVideoId?: string
   stillsRunId?: string
   videoRunId?: string
-  imageAdUrl?: string
-  imageAdGenerationId?: string
-  imageAdRunId?: string
+  approved?: boolean
   error?: string
 }
 
@@ -280,9 +341,13 @@ export type UgcProject = {
   productId?: string
   productImageUrls: string[]
   productName?: string
+  productDescription?: string
+  productUrl?: string
+  productKind?: UgcProductKind
   influencerId?: string
   aspectRatio: string
   models: UgcProjectModels
+  flowStep?: UgcFlowStep
   clips: UgcClip[]
   assembledVideoUrl?: string
   assembledGenerationId?: string
@@ -309,9 +374,13 @@ export type CreateUgcProjectPayload = {
   productId?: string
   productImageUrls?: string[]
   productName?: string
+  productDescription?: string
+  productUrl?: string
+  productKind?: UgcProductKind
   influencerId?: string
   aspectRatio?: string
   models?: Partial<UgcProjectModels>
+  flowStep?: UgcFlowStep
 }
 
 export type UpdateUgcProjectPayload = {
@@ -319,10 +388,14 @@ export type UpdateUgcProjectPayload = {
   productId?: string | null
   productImageUrls?: string[]
   productName?: string
+  productDescription?: string | null
+  productUrl?: string | null
+  productKind?: UgcProductKind | null
   influencerId?: string | null
   aspectRatio?: string
   models?: Partial<UgcProjectModels>
   clipOrder?: string[]
+  flowStep?: UgcFlowStep
 }
 
 export type CreateUgcClipPayload = {
@@ -347,16 +420,17 @@ export type UpdateUgcClipPayload = {
   referenceImageUrls?: string[]
   plannedPrompt?: string | null
   models?: Partial<UgcClipModels>
+  approved?: boolean
 }
 
 export type GenerateUgcStillsPayload = {
-  clipId: string
+  clipId?: string
   stillIndex?: number
   skipEnhance?: boolean
 }
 
 export type GenerateUgcVideosPayload = {
-  clipId: string
+  clipId?: string
   plannedPrompt?: string
   skipPlanner?: boolean
 }
@@ -369,12 +443,9 @@ export type GenerateUgcScriptPayload = {
   model?: string
 }
 
-export type GenerateUgcImageAdPayload = {
+export type UgcScriptSegment = {
   clipId: string
-  prompt?: string
-  language?: string
-  aspectRatio?: string
-  productImage?: string
+  text: string
 }
 
 export type AssembleUgcProjectResponse = UgcGenerationHandle

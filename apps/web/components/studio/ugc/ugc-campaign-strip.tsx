@@ -28,7 +28,7 @@ export function UgcCampaignStrip({
         <div className="px-1">
           <p className="text-lg font-semibold tracking-tight">Set up this campaign</p>
           <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Lock the product and creator first. Every clip in this ad uses the same pair.
+            Lock the product and creator first. Every scene in this ad uses the same pair.
           </p>
         </div>
       ) : null}

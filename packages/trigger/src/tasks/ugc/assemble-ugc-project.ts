@@ -48,8 +48,8 @@ export const assembleUgcProject = schemaTask({
       if (!project) throw new Error('UGC project not found')
 
       const readyClips = (project.clips ?? []).filter(clip => Boolean(clip.videoUrl))
-      if (readyClips.length < 2) {
-        throw new Error('Generate at least two clip videos to assemble')
+      if (readyClips.length < 1) {
+        throw new Error('Generate at least one scene video first')
       }
 
       const videoModelValue = project.models.video

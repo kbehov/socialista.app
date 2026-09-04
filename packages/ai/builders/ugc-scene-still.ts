@@ -83,7 +83,7 @@ export function buildUgcStillRefUrls(input: {
 }): string[] {
   const urls: string[] = []
 
-  if (input.sceneIndex > 0 && input.previousStillUrl) {
+  if (input.previousStillUrl) {
     urls.push(input.previousStillUrl)
   }
 

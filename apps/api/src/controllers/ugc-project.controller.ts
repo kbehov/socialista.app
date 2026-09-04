@@ -3,7 +3,6 @@ import { parseParamId, withQueryParam, applyProjectQueryAlias } from '@/utils/co
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   assertCanAssemble,
-  assertCanGenerateImageAd,
   assertCanGenerateScript,
   assertCanGenerateStills,
   assertCanGenerateVideo,
@@ -22,7 +21,7 @@ import {
 } from '@/utils/ugc-project.utils.js'
 import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import { DEFAULT_VIDEO_FPS, DEFAULT_VIDEO_RESOLUTION } from '@/utils/video.utils.js'
-import { generateUgcAdScript } from '@socialista/ai'
+import { generateUgcAdScript, generateUgcAdScriptSegments } from '@socialista/ai'
 import {
   addUgcClip,
   createUgcProject as createUgcProjectInDb,
@@ -39,6 +38,8 @@ import {
   updateUgcClip,
   updateUgcProject as updateUgcProjectInDb,
   UgcClipStatus,
+  UgcFlowStep,
+  UgcProductKind,
   UgcProjectStatus,
   UgcScriptSource,
   UgcVoiceProvider,
@@ -48,25 +49,21 @@ import {
   type IUgcProjectModels,
 } from '@socialista/db'
 import { createPublicAccessToken } from '@socialista/trigger'
-import type { GenerateUgcStillsTask, GenerateUgcVideoTask, GenerateUgcImageAdTask, AssembleUgcProjectTask } from '@socialista/trigger/task-types'
+import type { GenerateUgcStillsTask, GenerateUgcVideoTask, AssembleUgcProjectTask } from '@socialista/trigger/task-types'
 import {
   clampUgcDuration,
-  clampUgcSceneCount,
+  parseUgcFlowStep,
+  parseUgcProductKind,
   PROMPT_KEYS,
-  moveUgcStillToStart,
-  resizeUgcStills,
   TASK_IDS,
-  UGC_CLIP_DEFAULT_SCENE_COUNT,
   UGC_CLIP_TYPE_LABELS,
   UGC_DEFAULT_ASPECT_RATIO,
   UGC_DEFAULT_DURATION,
-  ugcClipSceneCount,
+  ugcClipShowsScript,
   type CreateUgcClipPayload,
   type CreateUgcProjectPayload,
-  type GenerateUgcImageAdPayload,
   type UpdateUgcClipPayload,
   type UpdateUgcProjectPayload,
-  type UgcClipType,
 } from '@socialista/types'
 import { tasks } from '@trigger.dev/sdk/v3'
 import type { Context } from 'hono'
@@ -137,8 +134,14 @@ export const createUgcProject = async (c: Context<AppContext>) => {
     ...(productId ? { productId: toObjectId(productId) } : {}),
     productImageUrls,
     productName,
+    ...(typeof input.productDescription === 'string' ? { productDescription: input.productDescription.trim() } : {}),
+    ...(typeof input.productUrl === 'string' ? { productUrl: input.productUrl.trim() } : {}),
+    ...(parseUgcProductKind(input.productKind)
+      ? { productKind: parseUgcProductKind(input.productKind) as UgcProductKind }
+      : {}),
     aspectRatio: input.aspectRatio || UGC_DEFAULT_ASPECT_RATIO,
     models,
+    flowStep: UgcFlowStep.PRODUCT,
     clips: [],
   })
 
@@ -180,6 +183,15 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
     updates.productImageUrls = input.productImageUrls.filter(url => typeof url === 'string')
   }
   if (typeof input.productName === 'string') updates.productName = input.productName.trim()
+  if (typeof input.productDescription === 'string') updates.productDescription = input.productDescription.trim()
+  if (input.productDescription === null) updates.productDescription = undefined
+  if (typeof input.productUrl === 'string') updates.productUrl = input.productUrl.trim()
+  if (input.productUrl === null) updates.productUrl = undefined
+  const productKind = parseUgcProductKind(input.productKind)
+  if (productKind) updates.productKind = productKind as UgcProductKind
+  if (input.productKind === null) updates.productKind = undefined
+  const flowStep = parseUgcFlowStep(input.flowStep)
+  if (flowStep) updates.flowStep = flowStep as UgcFlowStep
   if (input.productId === null) {
     updates.productId = undefined
   } else if (typeof input.productId === 'string' && input.productId) {
@@ -192,6 +204,7 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
     updates.influencerId = nextId
     const previousId = project.influencerId?.toString()
     updates.clips = (project.clips ?? []).map(clip => {
+      if (clipTypeValue(clip.type) === 'b-roll') return clip
       const currentId = clip.influencerId?.toString()
       if (!currentId || currentId === previousId) {
         return { ...clip, influencerId: nextId }
@@ -283,26 +296,22 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
     clipUpdates.type = nextType
     const hasImages = (clip.stills ?? []).some(still => still.imageUrl)
     if (!hasImages) {
-      const sceneCount = UGC_CLIP_DEFAULT_SCENE_COUNT[nextTypeValue]
-      clipUpdates.sceneCount = sceneCount
-      clipUpdates.stills = emptyStills(sceneCount)
+      clipUpdates.sceneCount = 1
+      clipUpdates.stills = emptyStills(1)
+    }
+    if (nextTypeValue === 'b-roll') {
+      clipUpdates.influencerId = undefined
     }
     const previousLabel = UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)]
     if (!input.name && (!clip.name || clip.name.startsWith(previousLabel))) {
-      clipUpdates.name = `${UGC_CLIP_TYPE_LABELS[nextTypeValue]} · ${clip.durationSec ?? UGC_DEFAULT_DURATION}s`
+      clipUpdates.name = UGC_CLIP_TYPE_LABELS[nextTypeValue]
     }
   }
   if (input.durationSec !== undefined) {
     clipUpdates.durationSec = clampUgcDuration(input.durationSec)
   }
-  if (input.sceneCount !== undefined) {
-    const sceneCount = clampUgcSceneCount(input.sceneCount)
-    clipUpdates.sceneCount = sceneCount
-    clipUpdates.stills = resizeUgcStills(clip.stills ?? [], sceneCount)
-  }
-  if (typeof input.startFrameIndex === 'number') {
-    const stills = clipUpdates.stills ?? clip.stills ?? []
-    clipUpdates.stills = moveUgcStillToStart(stills, input.startFrameIndex)
+  if (typeof input.approved === 'boolean') {
+    clipUpdates.approved = input.approved
   }
   if (input.influencerId === null) {
     clipUpdates.influencerId = undefined
@@ -375,24 +384,18 @@ export const duplicateUgcClip = async (c: Context<AppContext>) => {
   const clip = requireClip(project, clipId)
   assertClipLimit(project)
 
-  const type = clip.type as UgcClipType
   const copy = buildNewClip({
     type: clip.type,
     durationSec: clip.durationSec,
-    sceneCount: ugcClipSceneCount({
-      type,
-      stills: clip.stills ?? [],
-      sceneCount: clip.sceneCount,
-    }),
     influencerId: clip.influencerId?.toString() ?? project.influencerId?.toString(),
-    name: clip.name ? `${clip.name} copy` : `${UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)]} · ${clip.durationSec}s`,
+    name: clip.name ? `${clip.name} copy` : UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)],
   })
   copy.script = clip.script ? { ...clip.script } : copy.script
   copy.scenePrompt = clip.scenePrompt
   copy.directions = clip.directions
   copy.voice = clip.voice ? { ...clip.voice } : copy.voice
   copy.referenceImageUrls = [...(clip.referenceImageUrls ?? [])]
-  copy.stills = emptyStills(copy.sceneCount ?? UGC_CLIP_DEFAULT_SCENE_COUNT[type])
+  copy.stills = emptyStills(1)
 
   const updated = await addUgcClip(id, copy)
   if (!updated) throw new HttpError(404, 'UGC project not found')
@@ -451,33 +454,123 @@ export const generateUgcClipScript = async (c: Context<AppContext>) => {
   return successResponse(c, 200, { project: serializeUgcProject(updated) })
 }
 
+export const generateUgcProjectScript = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const body = (await c.req.json().catch(() => ({}))) as { model?: string; skillId?: string }
+  const project = await getUgcProjectForMember(id, userId)
+  const clips = project.clips ?? []
+  if (clips.length === 0) {
+    throw new HttpError(400, 'Add a scene first')
+  }
+  for (const clip of clips) {
+    assertClipNotGenerating(clip)
+  }
+
+  const modelValue = body.model || project.models.script
+  if (!modelValue) {
+    throw new HttpError(400, 'Choose a script model')
+  }
+
+  const influencerId = project.influencerId?.toString()
+  const influencer = influencerId ? await getInfluencerById(influencerId) : null
+  const workspaceId = project.workspace.toString()
+  let systemOverride: string | undefined
+  if (body.skillId) {
+    try {
+      const skill = await getSkillById(body.skillId)
+      if (
+        skill &&
+        skill.workspaceId.toString() === workspaceId &&
+        skill.target === PROMPT_KEYS.ugcAdScript
+      ) {
+        systemOverride = skill.content
+        await incrementSkillUsage(skill._id.toString()).catch(() => undefined)
+      }
+    } catch {
+      // Invalid or missing skill — use the registry default.
+    }
+  }
+
+  const segments = await generateUgcAdScriptSegments({
+    productName: project.productName,
+    productDescription: project.productDescription,
+    productKind: project.productKind,
+    influencerName: influencer?.name,
+    directions: project.clips?.find(clip => clip.directions || clip.scenePrompt)?.directions,
+    scenes: clips.map(clip => ({
+      id: clip.id,
+      type: clipTypeValue(clip.type),
+      durationSec: clip.durationSec,
+    })),
+    systemOverride,
+  })
+
+  let latest = project
+  for (const segment of segments) {
+    const clip = clips.find(item => item.id === segment.clipId)
+    if (!clip) continue
+    if (!ugcClipShowsScript(clipTypeValue(clip.type))) {
+      const updated = await updateUgcClip(id, clip.id, {
+        script: { text: '', source: UgcScriptSource.AI },
+      })
+      if (updated) latest = updated
+      continue
+    }
+    const updated = await updateUgcClip(id, clip.id, {
+      script: { text: segment.text, source: UgcScriptSource.AI },
+    })
+    if (updated) latest = updated
+  }
+
+  return successResponse(c, 200, { project: serializeUgcProject(latest) })
+}
+
 async function triggerStills(
   project: IUgcProject,
-  clip: IUgcClip,
   userId: string,
-  options?: { stillIndex?: number; skipEnhance?: boolean },
+  options?: { clipId?: string; skipEnhance?: boolean },
 ) {
-  assertClipNotGenerating(clip)
-  assertCanGenerateStills(project, clip)
+  if (options?.clipId) {
+    const clip = requireClip(project, options.clipId)
+    assertClipNotGenerating(clip)
+    assertCanGenerateStills(project, clip)
+  } else {
+    if ((project.clips ?? []).length === 0) {
+      throw new HttpError(400, 'Add a scene first')
+    }
+    for (const clip of project.clips ?? []) {
+      assertClipNotGenerating(clip)
+      assertCanGenerateStills(project, clip)
+    }
+  }
 
   const handle = await tasks.trigger<GenerateUgcStillsTask>(TASK_IDS.generateUgcStills, {
     projectId: project._id.toString(),
     workspaceId: project.workspace.toString(),
     userId,
-    clipId: clip.id,
-    stillIndex: options?.stillIndex,
-    skipEnhance: options?.skipEnhance,
+    ...(options?.clipId ? { clipId: options.clipId } : {}),
+    ...(options?.skipEnhance ? { skipEnhance: true } : {}),
   })
   const publicAccessToken = await createPublicAccessToken(handle.id)
-  const updated = await updateUgcClip(
-    project._id.toString(),
-    clip.id,
-    { status: UgcClipStatus.GENERATING, stillsRunId: handle.id, error: undefined },
-    { status: UgcProjectStatus.GENERATING, stillsRunId: handle.id, error: undefined },
-  )
+  const targets = options?.clipId
+    ? [requireClip(project, options.clipId)]
+    : (project.clips ?? [])
+  if (targets.length === 0) throw new HttpError(400, 'Add a scene first')
+
+  let latest = project
+  for (const clip of targets) {
+    const updated = await updateUgcClip(
+      project._id.toString(),
+      clip.id,
+      { status: UgcClipStatus.GENERATING, stillsRunId: handle.id, error: undefined },
+      { status: UgcProjectStatus.GENERATING, stillsRunId: handle.id, error: undefined },
+    )
+    if (updated) latest = updated
+  }
 
   return {
-    project: serializeUgcProject(updated ?? project),
+    project: serializeUgcProject(latest),
     runId: handle.id,
     publicAccessToken,
   }
@@ -522,8 +615,19 @@ export const generateUgcClipStills = async (c: Context<AppContext>) => {
   const body = (await c.req.json().catch(() => ({}))) as { stillIndex?: number; skipEnhance?: boolean }
   const project = await getUgcProjectForMember(id, userId)
   const clip = requireClip(project, clipId)
-  const result = await triggerStills(project, clip, userId, {
-    stillIndex: typeof body.stillIndex === 'number' ? body.stillIndex : undefined,
+  const result = await triggerStills(project, userId, {
+    clipId: clip.id,
+    skipEnhance: body.skipEnhance === true,
+  })
+  return successResponse(c, 202, result)
+}
+
+export const generateUgcProjectStills = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const body = (await c.req.json().catch(() => ({}))) as { skipEnhance?: boolean }
+  const project = await getUgcProjectForMember(id, userId)
+  const result = await triggerStills(project, userId, {
     skipEnhance: body.skipEnhance === true,
   })
   return successResponse(c, 202, result)
@@ -548,14 +652,14 @@ export const regenerateUgcClipStill = async (c: Context<AppContext>) => {
   const id = parseParamId(c.req.param('id'), 'project ID')
   const clipId = c.req.param('clipId')
   const index = Number(c.req.param('index'))
-  if (!Number.isInteger(index) || index < 0 || index > 2) {
-    throw new HttpError(400, 'Invalid scene index')
+  if (!Number.isInteger(index) || index !== 0) {
+    throw new HttpError(400, 'Invalid photo index')
   }
   const body = (await c.req.json().catch(() => ({}))) as { skipEnhance?: boolean }
   const project = await getUgcProjectForMember(id, userId)
   const clip = requireClip(project, clipId)
-  const result = await triggerStills(project, clip, userId, {
-    stillIndex: index,
+  const result = await triggerStills(project, userId, {
+    clipId: clip.id,
     skipEnhance: body.skipEnhance === true,
   })
   return successResponse(c, 202, result)
@@ -637,39 +741,33 @@ export const openUgcClipEditor = async (c: Context<AppContext>) => {
   return successResponse(c, 201, { videoId: video._id.toString() })
 }
 
-export const generateUgcClipImageAd = async (c: Context<AppContext>) => {
+export const generateUgcProjectVideos = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'project ID')
-  const clipId = c.req.param('clipId')
-  const body = (await c.req.json().catch(() => ({}))) as GenerateUgcImageAdPayload
+  const body = (await c.req.json().catch(() => ({}))) as { plannedPrompt?: string; skipPlanner?: boolean }
   const project = await getUgcProjectForMember(id, userId)
-  const clip = requireClip(project, clipId)
-  assertClipNotGenerating(clip)
-  assertCanGenerateImageAd(project)
-
-  const handle = await tasks.trigger<GenerateUgcImageAdTask>(TASK_IDS.generateUgcImageAd, {
-    projectId: project._id.toString(),
-    workspaceId: project.workspace.toString(),
-    userId,
-    clipId: clip.id,
-    prompt: typeof body.prompt === 'string' ? body.prompt : undefined,
-    language: typeof body.language === 'string' ? body.language : undefined,
-    aspectRatio: typeof body.aspectRatio === 'string' ? body.aspectRatio : undefined,
-    productImage: typeof body.productImage === 'string' ? body.productImage : undefined,
-  })
-  const publicAccessToken = await createPublicAccessToken(handle.id)
-  const updated = await updateUgcClip(
-    project._id.toString(),
-    clip.id,
-    { status: UgcClipStatus.GENERATING, imageAdRunId: handle.id, error: undefined },
-    { status: UgcProjectStatus.GENERATING, error: undefined },
+  const targets = (project.clips ?? []).filter(
+    clip => clip.approved && clip.stills.some(still => Boolean(still.imageUrl)),
   )
+  if (targets.length === 0) {
+    throw new HttpError(400, 'Approve at least one photo first')
+  }
 
-  return successResponse(c, 202, {
-    project: serializeUgcProject(updated ?? project),
-    runId: handle.id,
-    publicAccessToken,
-  })
+  let live = project
+  let last = {
+    project: serializeUgcProject(project),
+    runId: '',
+    publicAccessToken: '',
+  }
+  for (const clip of targets) {
+    const current = requireClip(live, clip.id)
+    last = await triggerVideo(live, current, userId, {
+      plannedPrompt: typeof body.plannedPrompt === 'string' ? body.plannedPrompt : undefined,
+      skipPlanner: body.skipPlanner === true,
+    })
+    live = (await getUgcProjectForMember(id, userId)) ?? live
+  }
+  return successResponse(c, 202, last)
 }
 
 export const assembleUgcProject = async (c: Context<AppContext>) => {

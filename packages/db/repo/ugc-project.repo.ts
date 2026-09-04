@@ -30,7 +30,9 @@ export const updateUgcClip = async (
   projectId: string,
   clipId: string,
   clipUpdates: Partial<IUgcClip>,
-  projectUpdates?: Partial<Pick<IUgcProject, 'status' | 'error' | 'stillsRunId' | 'videoRunId'>>,
+  projectUpdates?: Partial<
+    Pick<IUgcProject, 'status' | 'error' | 'stillsRunId' | 'videoRunId' | 'assembledVideoUrl' | 'assembledRunId'>
+  >,
 ) => {
   const $set: Record<string, unknown> = {}
   const $unset: Record<string, 1> = {}

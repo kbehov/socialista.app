@@ -37,6 +37,22 @@ export enum UgcVoiceProvider {
   ELEVENLABS = 'elevenlabs',
 }
 
+export enum UgcProductKind {
+  PHYSICAL = 'physical',
+  APP = 'app',
+  WEBSITE = 'website',
+}
+
+export enum UgcFlowStep {
+  PRODUCT = 'product',
+  SCENES = 'scenes',
+  AVATAR = 'avatar',
+  SCRIPT = 'script',
+  STILLS = 'stills',
+  REVIEW = 'review',
+  VIDEO = 'video',
+}
+
 export type UgcSceneCount = 1 | 2 | 3
 
 export interface IUgcProjectModels {
@@ -97,9 +113,7 @@ export interface IUgcClip {
   composedVideoId?: Types.ObjectId
   stillsRunId?: string
   videoRunId?: string
-  imageAdUrl?: string
-  imageAdGenerationId?: string
-  imageAdRunId?: string
+  approved?: boolean
   error?: string
 }
 
@@ -128,9 +142,13 @@ export interface IUgcProject {
   productId?: Types.ObjectId
   productImageUrls: string[]
   productName?: string
+  productDescription?: string
+  productUrl?: string
+  productKind?: UgcProductKind
   influencerId?: Types.ObjectId
   aspectRatio: string
   models: IUgcProjectModels
+  flowStep?: UgcFlowStep
   clips: IUgcClip[]
   assembledVideoUrl?: string
   assembledGenerationId?: string

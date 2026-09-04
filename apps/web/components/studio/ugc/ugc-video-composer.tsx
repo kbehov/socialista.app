@@ -6,7 +6,7 @@ import {
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
-import { STUDIO_COMPOSER_SURFACE_CLASS, STUDIO_TOOL_BUTTON_ACTIVE_CLASS, STUDIO_TOOL_BUTTON_CLASS } from '@/components/studio/prompt/studio-composer-surface'
+import { STUDIO_COMPOSER_SURFACE_CLASS, STUDIO_TOOL_BUTTON_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { cn } from '@/lib/utils'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { UgcClip, UgcProject } from '@socialista/types'
 import { VIDEO_DURATIONS, ugcResolvedClipModels } from '@socialista/types'
@@ -26,8 +25,6 @@ import {
   Loader2Icon,
   PencilIcon,
   SendIcon,
-  Volume2Icon,
-  VolumeXIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
@@ -63,7 +60,6 @@ export function UgcVideoComposer({
   const videoModels = useUgcProjectStore(s => s.videoModels)
   const resolved = ugcResolvedClipModels(project, clip)
   const [duration, setDuration] = useState(clip.durationSec)
-  const [generateAudio, setGenerateAudio] = useState(true)
   const [selectedModelId, setSelectedModelId] = useState(
     () => videoModels.find(model => model.value === resolved.video)?._id ?? videoModels[0]?._id ?? '',
   )
@@ -162,30 +158,10 @@ export function UgcVideoComposer({
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <PromptInputButton
-                type="button"
-                className={cn(
-                  STUDIO_TOOL_BUTTON_CLASS,
-                  generateAudio && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-                )}
-                disabled={generating}
-                onClick={() => setGenerateAudio(value => !value)}
-                size="xs"
-                aria-label={generateAudio ? 'Audio on' : 'Muted'}
-              >
-                {generateAudio ? <Volume2Icon className="size-3.5" /> : <VolumeXIcon className="size-3.5" />}
-                <span className="text-[12px]">{generateAudio ? 'Audio' : 'Muted'}</span>
-              </PromptInputButton>
             </>
           }
         />
       </PromptInputProvider>
-
-      {clip.voice?.enabled ? (
-        <p className="text-[11px] text-muted-foreground">
-          Voiceover coming soon — {clip.voice.voiceName ?? 'selected voice'} is saved on this clip.
-        </p>
-      ) : null}
 
       {clip.videoUrl ? (
         <div className="flex flex-wrap gap-2">

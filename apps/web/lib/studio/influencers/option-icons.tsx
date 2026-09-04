@@ -7,6 +7,8 @@ import {
   ArrowUp,
   Baby,
   Briefcase,
+  BookOpen,
+  Building2,
   Camera,
   Car,
   CircleDot,
@@ -41,6 +43,7 @@ import {
   Mountain,
   Newspaper,
   Palette,
+  Package,
   PawPrint,
   PenLine,
   PersonStanding,
@@ -97,6 +100,17 @@ export const AESTHETIC_ICONS: Record<string, LucideIcon> = {
   casual: User,
   sporty: Zap,
   vintage: Camera,
+}
+
+export const VIBE_ICONS: Record<string, LucideIcon> = {
+  energetic: Zap,
+  calm: Heart,
+  confident: Target,
+  playful: Laugh,
+  warm: Sun,
+  authoritative: Briefcase,
+  quirky: Sparkles,
+  aspirational: Sparkles,
 }
 
 export const HAIR_STYLE_ICONS: Record<string, LucideIcon> = {
@@ -183,6 +197,16 @@ export const SCENE_ICONS: Record<string, LucideIcon> = {
   'pointing-reveal': Pointer,
   'sitting-testimonial': MessageSquare,
   'pregnant-bump': Baby,
+  library: BookOpen,
+  classroom: GraduationCap,
+  'study-desk': BookOpen,
+  'home-office': Building2,
+  'grocery-store': Store,
+  park: Mountain,
+  balcony: Sun,
+  'unboxing-desk': Package,
+  grwm: Sparkles,
+  playground: Baby,
 }
 
 export const ACCESSORY_ICONS: Record<string, LucideIcon> = {
@@ -205,6 +229,9 @@ export const ACCESSORY_ICONS: Record<string, LucideIcon> = {
   'skincare-bottle': Sparkles,
   pet: PawPrint,
   'shopping-bag': ShoppingBag,
+  books: BookOpen,
+  notebook: PenLine,
+  backpack: ShoppingBag,
 }
 
 export const GENDER_ICONS: Record<string, LucideIcon> = {
@@ -240,6 +267,7 @@ export const FIELD_ICONS = {
   photoStyle: Camera,
   shotPack: Images,
   aesthetic: Sparkles,
+  vibe: Sparkles,
   scenes: MapPin,
   accessories: ShoppingBag,
   directions: FileText,
@@ -250,6 +278,7 @@ export const FIELD_ICONS = {
 export type OptionIconGroup =
   | 'niche'
   | 'aesthetic'
+  | 'vibe'
   | 'hairStyle'
   | 'bodyShape'
   | 'photoStyle'
@@ -265,6 +294,7 @@ export type OptionIconGroup =
 const ICON_MAPS: Record<OptionIconGroup, Record<string, LucideIcon>> = {
   niche: NICHE_ICONS,
   aesthetic: AESTHETIC_ICONS,
+  vibe: VIBE_ICONS,
   hairStyle: HAIR_STYLE_ICONS,
   bodyShape: BODY_SHAPE_ICONS,
   photoStyle: PHOTO_STYLE_ICONS,

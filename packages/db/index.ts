@@ -250,6 +250,8 @@ export {
 export {
   UgcClipStatus,
   UgcClipType,
+  UgcFlowStep,
+  UgcProductKind,
   UgcProjectStatus,
   UgcScriptSource,
   UgcVariantStatus,

@@ -12,7 +12,7 @@ export type InfluencerAvatarSilhouetteProps = {
   eyeColor: string
   hairStyle?: string
   facialHair?: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'preview' | 'md' | 'lg'
   className?: string
 }
 
@@ -22,6 +22,12 @@ const SIZE = {
     eye: 'size-1.5',
     eyeGap: 'gap-1.5',
     eyeTop: 'top-[42%]',
+  },
+  preview: {
+    face: 'size-28',
+    eye: 'size-2',
+    eyeGap: 'gap-2.5',
+    eyeTop: 'top-[40%]',
   },
   md: {
     face: 'size-[7.5rem] sm:size-36',
@@ -209,7 +215,13 @@ export function InfluencerAvatarSilhouette({
   return (
     <div className={cn('relative', className)}>
       <motion.div
-        className={cn('relative mx-auto rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.14)] ring-[3px] ring-background/80', s.face)}
+        className={cn(
+          'relative mx-auto rounded-full',
+          size === 'sm' || size === 'preview'
+            ? 'shadow-none ring-1 ring-black/8 dark:ring-white/12'
+            : 'shadow-[0_12px_40px_rgba(0,0,0,0.14)] ring-[3px] ring-background/80',
+          s.face,
+        )}
         animate={{
           background: `linear-gradient(165deg, ${skin} 0%, ${skin}dd 48%, color-mix(in srgb, ${skin} 68%, ${hair}) 100%)`,
         }}
@@ -242,13 +254,15 @@ export function InfluencerAvatarSilhouette({
         <FacialHairLayer facialHair={facialHair} hair={hair} reduceMotion={reduceMotion} />
       </motion.div>
 
-      <div
-        aria-hidden
-        className={cn(
-          'absolute left-1/2 -translate-x-1/2 rounded-b-[3rem] bg-linear-to-b from-transparent to-background/15',
-          size === 'sm' ? 'top-[72%] h-10 w-20' : size === 'md' ? 'top-[72%] h-16 w-28 sm:h-20 sm:w-32' : 'top-[74%] h-20 w-36',
-        )}
-      />
+      {size === 'sm' || size === 'preview' ? null : (
+        <div
+          aria-hidden
+          className={cn(
+            'absolute left-1/2 -translate-x-1/2 rounded-b-[3rem] bg-linear-to-b from-transparent to-background/15',
+            size === 'md' ? 'top-[72%] h-16 w-28 sm:h-20 sm:w-32' : 'top-[74%] h-20 w-36',
+          )}
+        />
+      )}
     </div>
   )
 }

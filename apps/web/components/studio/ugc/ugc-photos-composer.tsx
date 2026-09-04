@@ -18,10 +18,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
-import type { AspectRatio, Model, UgcClip, UgcProject, UgcSceneCount } from '@socialista/types'
-import { ASPECT_RATIOS, ugcClipSceneCount, ugcResolvedClipModels } from '@socialista/types'
+import type { AspectRatio, Model, UgcClip, UgcProject } from '@socialista/types'
+import { ASPECT_RATIOS, ugcResolvedClipModels } from '@socialista/types'
 import { ChevronDownIcon, Loader2Icon, RefreshCwIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
@@ -43,13 +42,11 @@ type UgcPhotosComposerProps = {
   progressLabel?: string
   onGenerate: (input: {
     prompt: string
-    sceneCount: UgcSceneCount
     imageUrls: string[]
     modelValue: string
     aspectRatio: AspectRatio
   }) => void
   onRegenerateStill: (index: number) => void
-  onUseAsStartFrame: (index: number) => void
 }
 
 export function UgcPhotosComposer({
@@ -61,7 +58,6 @@ export function UgcPhotosComposer({
   progressLabel,
   onGenerate,
   onRegenerateStill,
-  onUseAsStartFrame,
 }: UgcPhotosComposerProps) {
   const imageModels = useUgcProjectStore(s => s.imageModels)
   const influencersById = useUgcProjectStore(s => s.influencersById)
@@ -71,7 +67,6 @@ export function UgcPhotosComposer({
       ? (project.aspectRatio as AspectRatio)
       : '9:16',
   )
-  const [sceneCount, setSceneCount] = useState<UgcSceneCount>(ugcClipSceneCount(clip))
   const [selectedModelId, setSelectedModelId] = useState(
     () => imageModels.find(model => model.value === resolved.image)?._id ?? imageModels[0]?._id ?? '',
   )
@@ -132,10 +127,8 @@ export function UgcPhotosComposer({
 
   const handleSubmit = (message: PromptInputMessage) => {
     if (!selectedModel) return
-    const count = sceneCount
     onGenerate({
       prompt: message.text.trim(),
-      sceneCount: count,
       imageUrls: attachments.map(item => item.url),
       modelValue: selectedModel.value,
       aspectRatio,
@@ -164,18 +157,11 @@ export function UgcPhotosComposer({
           attachSources={['upload', 'library', 'influencer', 'product']}
           maxAttachments={5}
           workspaceId={workspaceId}
-          count={{
-            value: sceneCount,
-            min: 1,
-            max: 3,
-            onChange: value => setSceneCount(value as UgcSceneCount),
-            label: 'Photo count',
-          }}
           placeholder="Describe the scene, lighting, and framing…"
           pending={generating}
           disabled={generating}
           onSubmit={handleSubmit}
-          submitLabel={sceneCount === 1 ? 'Generate photo' : `Generate ${sceneCount} photos`}
+          submitLabel="Generate photo"
           surfaceClassName={STUDIO_COMPOSER_SURFACE_CLASS}
           tools={
             <DropdownMenu>
@@ -216,8 +202,8 @@ export function UgcPhotosComposer({
         </p>
       ) : null}
 
-      <div className={cn('grid gap-2', stills.length === 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-3')}>
-        {stills.map((still, index) => (
+      <div className="grid grid-cols-1 gap-2 sm:max-w-[220px]">
+        {stills.slice(0, 1).map((still, index) => (
           <div key={`${clip.id}-still-${index}`} className="space-y-1">
             <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted/40 ring-1 ring-border/50">
               {still.imageUrl ? (
@@ -235,41 +221,22 @@ export function UgcPhotosComposer({
                 </span>
               ) : (
                 <span className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground">
-                  Photo {index + 1}
+                  Photo
                 </span>
               )}
-              {index === 0 ? (
-                <span className="absolute top-1.5 left-1.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                  Start frame
-                </span>
-              ) : null}
             </div>
             {still.imageUrl ? (
-              <div className="flex gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 flex-1 text-[11px]"
-                  disabled={generating}
-                  onClick={() => onRegenerateStill(index)}
-                >
-                  <RefreshCwIcon className="size-3" />
-                  Redo
-                </Button>
-                {index > 0 ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-[11px]"
-                    disabled={generating}
-                    onClick={() => onUseAsStartFrame(index)}
-                  >
-                    Start
-                  </Button>
-                ) : null}
-              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 w-full text-[11px]"
+                disabled={generating}
+                onClick={() => onRegenerateStill(index)}
+              >
+                <RefreshCwIcon className="size-3" />
+                Redo
+              </Button>
             ) : null}
           </div>
         ))}

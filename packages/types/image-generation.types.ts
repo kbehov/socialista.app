@@ -63,7 +63,6 @@ export const TASK_IDS = {
   cloneInfluencer: 'clone-influencer',
   generateUgcStills: 'generate-ugc-stills',
   generateUgcVideo: 'generate-ugc-video',
-  generateUgcImageAd: 'generate-ugc-image-ad',
   assembleUgcProject: 'assemble-ugc-project',
   videoGeneration: 'realtime-video-generation',
   slideshowGeneration: 'realtime-slideshow-generation',

@@ -5,7 +5,10 @@ import {
   EYE_COLOR_OPTIONS,
   GENDER_OPTIONS,
   HAIR_COLOR_OPTIONS,
+  HAIR_STYLE_OPTIONS,
   NICHE_OPTIONS,
+  PHOTO_STYLE_OPTIONS,
+  SCENE_OPTIONS,
   SKIN_TONE_OPTIONS,
 } from '@/lib/studio/influencers/options'
 import type { ExploreInfluencersQuery } from '@socialista/types'
@@ -25,11 +28,14 @@ const STATUS_LABELS: Record<InfluencerStatus, string> = {
 const FILTER_FIELDS = [
   'gender',
   'niche',
+  'scene',
   'ageRange',
   'hairColor',
+  'hairStyle',
   'eyeColor',
   'skinTone',
   'bodyShape',
+  'photoStyle',
   'status',
 ] as const
 
@@ -59,6 +65,14 @@ export function buildInfluencerFilterFields(options?: {
       options: toOptions(NICHE_OPTIONS),
     },
     {
+      key: 'scene',
+      label: 'Scene',
+      type: 'multiselect',
+      defaultOperator: 'is_any_of',
+      searchable: true,
+      options: toOptions(SCENE_OPTIONS),
+    },
+    {
       key: 'ageRange',
       label: 'Age',
       type: 'multiselect',
@@ -72,6 +86,14 @@ export function buildInfluencerFilterFields(options?: {
       defaultOperator: 'is_any_of',
       searchable: true,
       options: toOptions(HAIR_COLOR_OPTIONS),
+    },
+    {
+      key: 'hairStyle',
+      label: 'Hair style',
+      type: 'multiselect',
+      defaultOperator: 'is_any_of',
+      searchable: true,
+      options: toOptions(HAIR_STYLE_OPTIONS),
     },
     {
       key: 'eyeColor',
@@ -93,6 +115,13 @@ export function buildInfluencerFilterFields(options?: {
       type: 'multiselect',
       defaultOperator: 'is_any_of',
       options: toOptions(BODY_SHAPE_OPTIONS),
+    },
+    {
+      key: 'photoStyle',
+      label: 'Photo style',
+      type: 'multiselect',
+      defaultOperator: 'is_any_of',
+      options: toOptions(PHOTO_STYLE_OPTIONS),
     },
   ]
 
@@ -131,11 +160,14 @@ export function filtersToInfluencerQuery(
   ExploreInfluencersQuery,
   | 'gender'
   | 'niche'
+  | 'scenes'
   | 'ageRange'
   | 'hairColor'
+  | 'hairStyle'
   | 'eyeColor'
   | 'skinTone'
   | 'bodyShape'
+  | 'photoStyle'
   | 'status'
 > {
   const query: ReturnType<typeof filtersToInfluencerQuery> = {}
@@ -152,11 +184,17 @@ export function filtersToInfluencerQuery(
       case 'niche':
         query.niche = filter.values
         break
+      case 'scene':
+        query.scenes = filter.values
+        break
       case 'ageRange':
         query.ageRange = joined
         break
       case 'hairColor':
         query.hairColor = joined
+        break
+      case 'hairStyle':
+        query.hairStyle = joined
         break
       case 'eyeColor':
         query.eyeColor = joined
@@ -166,6 +204,9 @@ export function filtersToInfluencerQuery(
         break
       case 'bodyShape':
         query.bodyShape = joined
+        break
+      case 'photoStyle':
+        query.photoStyle = joined
         break
       case 'status':
         query.status = joined

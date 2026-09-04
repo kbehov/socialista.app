@@ -40,7 +40,9 @@ const characterSheetSchema = z.object({
     .array(z.string())
     .min(2)
     .max(4)
-    .describe('Natural expressions this person commonly shows on camera.'),
+    .describe(
+      'Natural expressions this person commonly shows on camera. When vibe tags are provided, expressionRange must reflect that energy.',
+    ),
 })
 
 export type BuildCharacterSheetInput = {
@@ -64,6 +66,7 @@ export type BuildCharacterSheetInput = {
   niche?: string[]
   scenes?: string[]
   aestheticTags?: string[]
+  vibeTags?: string[]
   directions?: string
   bio?: string
   photoStyle?: InfluencerPhotoStyle
@@ -82,7 +85,8 @@ const SYSTEM_INSTRUCTIONS =
   '(7) identityLock must be reusable byte-for-byte across many image prompts; ' +
   '(8) when scenes are provided, the 3 environments MUST be concrete variations of those situations (same place family, different angles/light/props); ' +
   '(9) when accessories are provided, weave wearable/holdable ones into wardrobe and onCamera descriptions naturally; ' +
-  '(10) prefer scroll-stopping creator photography over sterile headshots; keep it photoreal, not fashion-editorial extremes.'
+  '(10) prefer scroll-stopping creator photography over sterile headshots; keep it photoreal, not fashion-editorial extremes; ' +
+  '(11) when vibe tags are provided, expressionRange must match that on-camera energy.'
 
 const LOOKALIKE_REF_SYSTEM_ADDENDUM =
   ' STYLE REFERENCE MODE: reference photos are the creative template for scene, colors, and photographic world — NOT identity. ' +
@@ -144,6 +148,7 @@ function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): st
     input.niche?.length ? `Niche: ${input.niche.join(', ')}` : null,
     formatSceneHints(input.scenes),
     input.aestheticTags?.length ? `Aesthetic: ${input.aestheticTags.join(', ')}` : null,
+    input.vibeTags?.length ? `On-camera vibe: ${input.vibeTags.join(', ')}` : null,
     input.photoStyle ? `Photo style preference: ${input.photoStyle}` : null,
     input.directions?.trim()
       ? `Creative brief (HIGHEST PRIORITY — follow this for vibe, scenes, and mood): ${input.directions.trim()}`

@@ -15,8 +15,9 @@ import { exploreInfluencers, getWorkspaceInfluencers } from '@/services/influenc
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { Influencer } from '@socialista/types'
-import { CheckIcon, CompassIcon, Loader2Icon, PlusIcon, SearchIcon, UserRoundIcon, XIcon } from 'lucide-react'
+import { CheckIcon, CompassIcon, Loader2Icon, PlusIcon, SearchIcon, SparklesIcon, UserRoundIcon, XIcon } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -75,6 +76,11 @@ type UgcInfluencerPickerProps = {
   selectedIds: string[]
   disabled?: boolean
   max?: number
+  embedded?: boolean
+  dialogOnly?: boolean
+  createHref?: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onChange: (ids: string[]) => void
 }
 
@@ -83,13 +89,23 @@ export function UgcInfluencerPicker({
   selectedIds,
   disabled,
   max = 1,
+  embedded,
+  dialogOnly,
+  createHref,
+  open: openProp,
+  onOpenChange,
   onChange,
 }: UgcInfluencerPickerProps) {
   const influencersById = useUgcProjectStore(s => s.influencersById)
   const cacheInfluencers = useUgcProjectStore(s => s.cacheInfluencers)
   const ensureInfluencer = useUgcProjectStore(s => s.ensureInfluencer)
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = openProp ?? uncontrolledOpen
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next)
+    if (openProp === undefined) setUncontrolledOpen(next)
+  }
   const [tab, setTab] = useState<Tab>('mine')
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<Influencer[]>([])
@@ -150,13 +166,160 @@ export function UgcInfluencerPicker({
     onChange([...selectedIds, influencer._id])
   }
 
+  const pickerDialog = (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Pick a creator</DialogTitle>
+          <DialogDescription>They appear in every scene that needs a person. Keep them the same.</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <DashboardSegment label="Creator library">
+              <DashboardSegmentButton active={tab === 'mine'} onClick={() => setTab('mine')}>
+                Mine
+              </DashboardSegmentButton>
+              <DashboardSegmentButton active={tab === 'explore'} onClick={() => setTab('explore')}>
+                <CompassIcon className="size-3" />
+                Explore
+              </DashboardSegmentButton>
+            </DashboardSegment>
+            <div className="relative min-w-0 flex-1">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder="Search"
+                className="h-8 pl-8"
+              />
+            </div>
+          </div>
+          {createHref ? (
+            <Button asChild size="sm" variant="outline" className="w-fit">
+              <Link href={createHref}>
+                <SparklesIcon className="size-3.5" />
+                Create new
+              </Link>
+            </Button>
+          ) : null}
+          <div className="max-h-[50vh] overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2Icon className="size-5 animate-spin" />
+              </div>
+            ) : items.length === 0 ? (
+              <div className="space-y-3 py-10 text-center">
+                <p className="text-sm text-muted-foreground">No ready creators yet.</p>
+                {createHref ? (
+                  <Button asChild size="sm">
+                    <Link href={createHref}>
+                      <SparklesIcon className="size-3.5" />
+                      Create new
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {items.map(influencer => (
+                  <InfluencerPickCard
+                    key={influencer._id}
+                    influencer={influencer}
+                    selected={selectedIds.includes(influencer._id)}
+                    disabled={max > 1 && selectedIds.length >= max && !selectedIds.includes(influencer._id)}
+                    onToggle={() => toggle(influencer)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+
+  const selectedRow = (
+    <div className="flex flex-wrap items-start gap-3">
+      {selected.length === 0 ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setOpen(true)}
+          className={cn(
+            dashboardSurface.insetDashed,
+            'flex h-36 w-24 shrink-0 flex-col items-center justify-center gap-1',
+          )}
+        >
+          <UserRoundIcon className="size-5 text-muted-foreground" strokeWidth={1.5} />
+          <span className="text-[11px] text-muted-foreground">Pick</span>
+        </button>
+      ) : (
+        selected.map(influencer => {
+          const src = coverUrl(influencer)
+          return (
+            <div key={influencer._id} className="relative w-24 shrink-0">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted ring-1 ring-border/60">
+                {src ? (
+                  <Image alt={influencer.name} className="object-cover" fill sizes="96px" src={src} unoptimized />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <UserRoundIcon className="size-5 text-muted-foreground" />
+                  </span>
+                )}
+              </div>
+              <p className="mt-1.5 truncate text-[12px] font-medium">{influencer.name}</p>
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                disabled={disabled}
+                className="absolute -top-1 -right-1 size-6 rounded-full bg-background shadow-xs ring-1 ring-border/60"
+                aria-label={`Remove ${influencer.name}`}
+                onClick={() => toggle(influencer)}
+              >
+                <XIcon className="size-3" />
+              </Button>
+            </div>
+          )
+        })
+      )}
+      <div className="flex flex-col gap-2 pt-1">
+        <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
+          <PlusIcon className="size-3.5" />
+          {selected.length > 0 ? 'Change' : 'Browse'}
+        </Button>
+        {createHref ? (
+          <Button asChild size="sm" variant="ghost">
+            <Link href={createHref}>
+              <SparklesIcon className="size-3.5" />
+              Create new
+            </Link>
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  )
+
+  if (dialogOnly) {
+    return pickerDialog
+  }
+
+  if (embedded) {
+    return (
+      <>
+        {selectedRow}
+        {pickerDialog}
+      </>
+    )
+  }
+
   return (
     <section className={dashboardSurface.section}>
       <div className={cn(dashboardSurface.sectionHeader, 'flex items-center justify-between px-4 py-3')}>
         <div>
           <h2 className={dashboardSurface.sectionTitle}>Creator</h2>
           <p className={dashboardSurface.sectionDescription}>
-            Same creator on every clip in this campaign.
+            They appear in every scene that needs a person.
           </p>
         </div>
         <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
@@ -164,101 +327,8 @@ export function UgcInfluencerPicker({
           Pick
         </Button>
       </div>
-
-      <div className="flex gap-2 overflow-x-auto p-4">
-        {selected.length === 0 ? (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => setOpen(true)}
-            className={cn(dashboardSurface.insetDashed, 'flex h-28 w-20 shrink-0 flex-col items-center justify-center gap-1')}
-          >
-            <UserRoundIcon className="size-5 text-muted-foreground" strokeWidth={1.5} />
-            <span className="text-[11px] text-muted-foreground">Add</span>
-          </button>
-        ) : (
-          selected.map(influencer => {
-            const src = coverUrl(influencer)
-            return (
-              <div key={influencer._id} className="relative w-20 shrink-0">
-                <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted ring-1 ring-border/60">
-                  {src ? (
-                    <Image alt={influencer.name} className="object-cover" fill sizes="80px" src={src} unoptimized />
-                  ) : (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <UserRoundIcon className="size-5 text-muted-foreground" />
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 truncate text-[11px] font-medium">{influencer.name}</p>
-                <Button
-                  type="button"
-                  size="icon-xs"
-                  variant="ghost"
-                  disabled={disabled}
-                  className="absolute -top-1 -right-1 size-6 rounded-full bg-background shadow-xs ring-1 ring-border/60"
-                  aria-label={`Remove ${influencer.name}`}
-                  onClick={() => toggle(influencer)}
-                >
-                  <XIcon className="size-3" />
-                </Button>
-              </div>
-            )
-          })
-        )}
-      </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Pick a creator</DialogTitle>
-            <DialogDescription>This person appears in every clip. Keep them consistent.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <DashboardSegment label="Creator library">
-                <DashboardSegmentButton active={tab === 'mine'} onClick={() => setTab('mine')}>
-                  Mine
-                </DashboardSegmentButton>
-                <DashboardSegmentButton active={tab === 'explore'} onClick={() => setTab('explore')}>
-                  <CompassIcon className="size-3" />
-                  Explore
-                </DashboardSegmentButton>
-              </DashboardSegment>
-              <div className="relative min-w-0 flex-1">
-                <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={event => setQuery(event.target.value)}
-                  placeholder="Search"
-                  className="h-8 pl-8"
-                />
-              </div>
-            </div>
-            <div className="max-h-[50vh] overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <Loader2Icon className="size-5 animate-spin" />
-                </div>
-              ) : items.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">No ready creators yet.</p>
-              ) : (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {items.map(influencer => (
-                    <InfluencerPickCard
-                      key={influencer._id}
-                      influencer={influencer}
-                      selected={selectedIds.includes(influencer._id)}
-                      disabled={max > 1 && selectedIds.length >= max && !selectedIds.includes(influencer._id)}
-                      onToggle={() => toggle(influencer)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <div className="p-4">{selectedRow}</div>
+      {pickerDialog}
     </section>
   )
 }

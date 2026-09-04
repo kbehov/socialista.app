@@ -1,7 +1,6 @@
 import type {
   BackgroundImageAdjustment,
   CanvasDimensions,
-  ImageLayer,
   OverlayLayer,
   Slide,
   SlideLayer,
@@ -77,23 +76,6 @@ function createOverlayLayer(partial: Partial<OverlayLayer> & { zIndex: number })
   }
 }
 
-function createFullBleedImageLayer(imageUrl: string, zIndex: number): ImageLayer {
-  return {
-    id: createId('layer'),
-    type: 'image',
-    imageUrl,
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-    rotation: 0,
-    zIndex,
-    objectFit: 'cover',
-    opacity: 1,
-    filters: [],
-  }
-}
-
 function buildFullBleedSlide(
   planned: SlideshowPlanSlide,
   theme: SlideshowPlanTheme,
@@ -105,10 +87,9 @@ function buildFullBleedSlide(
   }
 
   const layers: SlideLayer[] = [
-    createFullBleedImageLayer(imageUrl, 0),
-    createOverlayLayer({ zIndex: 1 }),
+    createOverlayLayer({ zIndex: 0 }),
     createTextLayer({
-      zIndex: 2,
+      zIndex: 1,
       content: planned.text,
       x: 7,
       y: 36,

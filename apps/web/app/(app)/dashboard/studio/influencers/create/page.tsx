@@ -7,8 +7,20 @@ import { ContextSupport } from '@socialista/types'
 const INFLUENCER_MODELS_QUERY =
   'limit=50&modelType=image&contextSupports=image&sort=-usageCount'
 
-export default async function CreateInfluencerPage() {
+function safeStudioReturnTo(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  if (!value.startsWith('/dashboard/studio/')) return undefined
+  if (value.includes('://') || value.startsWith('//')) return undefined
+  return value
+}
+
+export default async function CreateInfluencerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>
+}) {
   const workspace = await getCurrentWorkspace()
+  const params = await searchParams
 
   if (!workspace) {
     return <WorkspaceRequired message="Select a workspace to create an AI influencer." />
@@ -19,5 +31,11 @@ export default async function CreateInfluencerPage() {
     model.contextSupports?.includes(ContextSupport.IMAGE),
   )
 
-  return <InfluencerCreateWorkspace workspaceId={workspace.id} models={models} />
+  return (
+    <InfluencerCreateWorkspace
+      workspaceId={workspace.id}
+      models={models}
+      returnTo={safeStudioReturnTo(params.returnTo)}
+    />
+  )
 }

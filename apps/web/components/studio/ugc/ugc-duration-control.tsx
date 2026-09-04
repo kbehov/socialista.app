@@ -18,7 +18,7 @@ export function UgcDurationControl({ value, disabled, onChange }: UgcDurationCon
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <DashboardSegment label="Clip duration">
+      <DashboardSegment label="Scene length">
         {PRESETS.map(preset => (
           <DashboardSegmentButton
             key={preset}

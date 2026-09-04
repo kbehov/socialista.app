@@ -20,6 +20,7 @@ import {
   parseOptionalAppearance,
   parsePhotoStyle,
   parseScenes,
+  parseVibeTags,
   parseStringArray,
   serializeCloneRequest,
   serializeInfluencer,
@@ -213,6 +214,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
   const appearance = parseAppearance(body.appearance);
   const niche = parseStringArray(body.niche);
   const scenes = parseScenes(body.scenes);
+  const vibeTags = parseVibeTags(body.vibeTags);
   const aestheticTags = parseStringArray(body.aestheticTags);
   const bio = optionalTrimmedString(body.bio);
   const directions = parseDirections(body.directions);
@@ -248,6 +250,7 @@ export const createInfluencer = async (c: Context<AppContext>) => {
     directions,
     niche,
     scenes,
+    vibeTags,
     gender,
     ageRange,
     ethnicity,
@@ -380,6 +383,7 @@ export const updateInfluencer = async (c: Context<AppContext>) => {
     directions?: string | null;
     niche?: string[];
     scenes?: string[];
+    vibeTags?: string[];
     aestheticTags?: string[];
     photoStyle?: ReturnType<typeof parsePhotoStyle> | null;
   } = {};
@@ -398,6 +402,9 @@ export const updateInfluencer = async (c: Context<AppContext>) => {
   }
   if (body.scenes !== undefined) {
     updates.scenes = parseScenes(body.scenes);
+  }
+  if (body.vibeTags !== undefined) {
+    updates.vibeTags = parseVibeTags(body.vibeTags);
   }
   if (body.aestheticTags !== undefined) {
     updates.aestheticTags = parseStringArray(body.aestheticTags);

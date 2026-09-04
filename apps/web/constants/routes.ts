@@ -202,14 +202,16 @@ export const UGC_PROJECT_ROUTES = {
   UPDATE_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}`,
   DELETE_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}`,
   DUPLICATE_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/duplicate`,
-  GENERATE_SCRIPT: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/script`,
+  GENERATE_SCRIPT: (id: string) => `/ugc-projects/${id}/script`,
+  GENERATE_CLIP_SCRIPT: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/script`,
   GENERATE_STILLS: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/stills`,
+  GENERATE_PROJECT_STILLS: (id: string) => `/ugc-projects/${id}/stills`,
   GENERATE_VIDEOS: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/videos`,
+  GENERATE_PROJECT_VIDEOS: (id: string) => `/ugc-projects/${id}/videos`,
   REGENERATE_STILL: (id: string, clipId: string, index: number) =>
     `/ugc-projects/${id}/clips/${clipId}/stills/${index}/regenerate`,
   REGENERATE_VIDEO: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/video/regenerate`,
   OPEN_EDITOR: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/open-editor`,
-  GENERATE_IMAGE_AD: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/image-ad`,
   ASSEMBLE: (id: string) => `/ugc-projects/${id}/assemble`,
   OPEN_PROJECT_EDITOR: (id: string) => `/ugc-projects/${id}/open-editor`,
 } as const

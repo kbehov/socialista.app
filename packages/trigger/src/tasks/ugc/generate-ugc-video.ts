@@ -62,7 +62,7 @@ export const generateUgcVideo = schemaTask({
 
       const startFrame = clip.stills[0]?.imageUrl
       if (!startFrame) {
-        throw new Error('Generate scenes before video')
+        throw new Error('Generate photos before video')
       }
 
       const videoModelValue = clip.models?.video || project.models.video

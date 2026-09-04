@@ -113,7 +113,7 @@ export function UgcClipRail({
         ) : (
           clips.map((clip, index) => {
             const preview =
-              clip.thumbnailUrl ?? clip.stills.find(still => still.imageUrl)?.imageUrl ?? clip.imageAdUrl
+              clip.thumbnailUrl ?? clip.stills.find(still => still.imageUrl)?.imageUrl
             const selected = clip.id === selectedId
             const status = ugcClipStoryboardStatus(project, clip)
             const run = runsByClipId?.[clip.id]

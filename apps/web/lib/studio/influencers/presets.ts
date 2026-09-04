@@ -20,6 +20,7 @@ import {
   MAKEUP_OPTIONS,
   NICHE_OPTIONS,
   PHOTO_STYLE_OPTIONS,
+  VIBE_OPTIONS,
 } from './options'
 
 export type InfluencerCreateFormState = {
@@ -44,6 +45,7 @@ export type InfluencerCreateFormState = {
     accessories: string[]
   }
   aestheticTags: string[]
+  vibeTags: string[]
   photoStyle: InfluencerPhotoStyle
 }
 
@@ -87,6 +89,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['glasses', 'phone', 'skincare-bottle'],
       },
       aestheticTags: ['minimalist', 'casual'],
+      vibeTags: ['confident', 'warm'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -118,6 +121,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['skincare-bottle', 'jewelry', 'phone'],
       },
       aestheticTags: ['glam', 'editorial'],
+      vibeTags: ['warm', 'aspirational'],
       photoStyle: 'creator-camera',
     },
   },
@@ -149,6 +153,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['water-bottle', 'dumbbell', 'headphones'],
       },
       aestheticTags: ['sporty', 'casual'],
+      vibeTags: ['energetic', 'confident'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -180,6 +185,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['bag', 'sunglasses', 'phone'],
       },
       aestheticTags: ['streetwear', 'editorial'],
+      vibeTags: ['confident', 'aspirational'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -211,6 +217,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['coffee-cup', 'phone'],
       },
       aestheticTags: ['casual', 'vintage'],
+      vibeTags: ['warm', 'calm'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -242,6 +249,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['headphones', 'laptop', 'phone'],
       },
       aestheticTags: ['minimalist', 'editorial'],
+      vibeTags: ['confident', 'authoritative'],
       photoStyle: 'creator-camera',
     },
   },
@@ -273,6 +281,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['phone', 'sunglasses', 'coffee-cup'],
       },
       aestheticTags: ['casual', 'streetwear'],
+      vibeTags: ['playful', 'energetic'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -304,6 +313,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['mic', 'jewelry', 'watch'],
       },
       aestheticTags: ['editorial', 'minimalist'],
+      vibeTags: ['authoritative', 'warm'],
       photoStyle: 'creator-camera',
     },
   },
@@ -335,6 +345,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['bag', 'phone', 'sunglasses'],
       },
       aestheticTags: ['outdoorsy', 'editorial'],
+      vibeTags: ['energetic', 'aspirational'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -366,6 +377,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['candle', 'coffee-cup', 'skincare-bottle'],
       },
       aestheticTags: ['minimalist', 'casual'],
+      vibeTags: ['calm', 'warm'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -397,6 +409,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['shopping-bag', 'phone', 'jewelry'],
       },
       aestheticTags: ['casual', 'streetwear'],
+      vibeTags: ['playful', 'energetic'],
       photoStyle: 'ugc-phone',
     },
   },
@@ -428,7 +441,40 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
         accessories: ['watch', 'laptop', 'phone'],
       },
       aestheticTags: ['minimalist', 'editorial'],
+      vibeTags: ['authoritative', 'calm'],
       photoStyle: 'creator-camera',
+    },
+  },
+  {
+    id: 'educator',
+    title: 'Educator',
+    description: 'Library and study-desk explainers for lessons, courses, and how-tos.',
+    useCase: 'Education & how-to UGC',
+    avatar: { skin: '#D4A574', hair: '#3B2314' },
+    form: {
+      name: 'Priya Sharma',
+      bio: 'Clear lessons, study tips, and how-tos that feel like a real classroom.',
+      directions: 'Calm authority, mid-explanation with notes in hand, warm library and study-desk light.',
+      gender: 'female',
+      ageRange: '25-34',
+      niche: ['education'],
+      scenes: ['library', 'study-desk', 'classroom'],
+      ethnicity: 'south-asian',
+      appearance: {
+        hairColor: 'dark-brown',
+        hairStyle: 'wavy',
+        eyeColor: 'brown',
+        skinTone: 'light',
+        bodyShape: 'slim',
+        height: 'average',
+        distinguishingFeatures: [],
+        facialHair: 'none',
+        makeup: 'natural',
+        accessories: ['books', 'notebook', 'glasses'],
+      },
+      aestheticTags: ['minimalist', 'casual'],
+      vibeTags: ['calm', 'authoritative'],
+      photoStyle: 'ugc-phone',
     },
   },
 ]
@@ -485,6 +531,7 @@ type Archetype = {
   makeup: InfluencerMakeupStyle
   accessories: string[]
   aestheticTags: string[]
+  vibeTags: string[]
   photoStyle: InfluencerPhotoStyle
 }
 
@@ -506,6 +553,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'natural',
     accessories: ['candle', 'coffee-cup', 'skincare-bottle'],
     aestheticTags: ['minimalist', 'casual'],
+    vibeTags: ['calm', 'warm'],
     photoStyle: 'ugc-phone',
   },
   {
@@ -524,6 +572,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'no-makeup',
     accessories: ['glasses', 'headphones', 'phone'],
     aestheticTags: ['minimalist', 'editorial'],
+    vibeTags: ['confident', 'authoritative'],
     photoStyle: 'creator-camera',
   },
   {
@@ -542,6 +591,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'glam',
     accessories: ['skincare-bottle', 'jewelry', 'phone'],
     aestheticTags: ['glam', 'editorial'],
+    vibeTags: ['warm', 'aspirational'],
     photoStyle: 'creator-camera',
   },
   {
@@ -560,6 +610,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'no-makeup',
     accessories: ['water-bottle', 'dumbbell', 'headphones'],
     aestheticTags: ['sporty', 'outdoorsy'],
+    vibeTags: ['energetic', 'confident'],
     photoStyle: 'ugc-phone',
   },
   {
@@ -578,6 +629,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'natural',
     accessories: ['coffee-cup', 'phone'],
     aestheticTags: ['casual', 'vintage'],
+    vibeTags: ['warm', 'calm'],
     photoStyle: 'ugc-phone',
   },
   {
@@ -596,6 +648,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'bold',
     accessories: ['sunglasses', 'bag', 'phone'],
     aestheticTags: ['streetwear', 'editorial'],
+    vibeTags: ['confident', 'playful'],
     photoStyle: 'ugc-phone',
   },
   {
@@ -614,6 +667,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'no-makeup',
     accessories: ['phone', 'sunglasses', 'coffee-cup'],
     aestheticTags: ['casual', 'streetwear'],
+    vibeTags: ['playful', 'energetic'],
     photoStyle: 'ugc-phone',
   },
   {
@@ -632,6 +686,26 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     makeup: 'natural',
     accessories: ['bag', 'phone', 'sunglasses'],
     aestheticTags: ['outdoorsy', 'editorial'],
+    vibeTags: ['energetic', 'aspirational'],
+    photoStyle: 'ugc-phone',
+  },
+  {
+    gender: 'female',
+    ageRange: '25-34',
+    niche: ['education'],
+    scenes: ['library', 'study-desk', 'classroom'],
+    ethnicity: 'south-asian',
+    hairColor: 'dark-brown',
+    hairStyle: 'wavy',
+    eyeColor: 'brown',
+    skinTone: 'light',
+    bodyShape: 'slim',
+    height: 'average',
+    facialHair: 'none',
+    makeup: 'natural',
+    accessories: ['books', 'notebook', 'glasses'],
+    aestheticTags: ['minimalist', 'casual'],
+    vibeTags: ['calm', 'authoritative'],
     photoStyle: 'ugc-phone',
   },
 ]
@@ -682,6 +756,7 @@ export function randomizeInfluencerForm(): InfluencerCreateFormState {
     },
     aestheticTags:
       Math.random() > 0.7 ? pickRandomSubset(AESTHETIC_OPTIONS, 2) : [...base.aestheticTags],
+    vibeTags: Math.random() > 0.7 ? pickRandomSubset(VIBE_OPTIONS, 2) : [...base.vibeTags],
     photoStyle: Math.random() > 0.8 ? pickRandom(PHOTO_STYLE_OPTIONS).id : base.photoStyle,
   }
 }
@@ -692,6 +767,7 @@ export function cloneDefaultForm(): InfluencerCreateFormState {
     niche: [...DEFAULT_CREATE_FORM.niche],
     scenes: [...DEFAULT_CREATE_FORM.scenes],
     aestheticTags: [...DEFAULT_CREATE_FORM.aestheticTags],
+    vibeTags: [...DEFAULT_CREATE_FORM.vibeTags],
     appearance: {
       ...DEFAULT_CREATE_FORM.appearance,
       distinguishingFeatures: [...DEFAULT_CREATE_FORM.appearance.distinguishingFeatures],
@@ -706,6 +782,7 @@ export function clonePresetForm(preset: InfluencerPreset): InfluencerCreateFormS
     niche: [...preset.form.niche],
     scenes: [...preset.form.scenes],
     aestheticTags: [...preset.form.aestheticTags],
+    vibeTags: [...preset.form.vibeTags],
     appearance: {
       ...preset.form.appearance,
       distinguishingFeatures: [...preset.form.appearance.distinguishingFeatures],

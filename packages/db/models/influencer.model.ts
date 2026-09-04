@@ -104,6 +104,7 @@ const influencerSchema = new Schema<IInfluencer>(
     directions: { type: String },
     niche: { type: [String], default: [], index: true },
     scenes: { type: [String], default: undefined },
+    vibeTags: { type: [String], default: undefined },
     gender: {
       type: String,
       enum: enumValues(InfluencerGender),

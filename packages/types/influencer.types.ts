@@ -103,6 +103,8 @@ export const INFLUENCER_SCENES = [
   "kitchen-cooking",
   "bedroom-morning",
   "bathroom-vanity",
+  "balcony",
+  "playground",
   "coffee-shop",
   "restaurant",
   "podcast-setup",
@@ -117,11 +119,19 @@ export const INFLUENCER_SCENES = [
   "street",
   "snow",
   "winter-city",
+  "park",
   "store",
   "farmers-market",
+  "grocery-store",
   "streaming-desk",
   "asmr-desk",
   "mirror-ootd",
+  "unboxing-desk",
+  "grwm",
+  "library",
+  "classroom",
+  "study-desk",
+  "home-office",
   "product-hook",
   "pointing-reveal",
   "sitting-testimonial",
@@ -140,6 +150,7 @@ export const INFLUENCER_ACCESSORIES = [
   "jewelry",
   "watch",
   "scarf",
+  "backpack",
   "candle",
   "mic",
   "phone",
@@ -150,11 +161,27 @@ export const INFLUENCER_ACCESSORIES = [
   "skincare-bottle",
   "pet",
   "shopping-bag",
+  "books",
+  "notebook",
 ] as const;
 export type InfluencerAccessory = (typeof INFLUENCER_ACCESSORIES)[number];
 
+/** On-camera energy / demeanor, independent of visual aesthetic. */
+export const INFLUENCER_VIBES = [
+  "energetic",
+  "calm",
+  "confident",
+  "playful",
+  "warm",
+  "authoritative",
+  "quirky",
+  "aspirational",
+] as const;
+export type InfluencerVibe = (typeof INFLUENCER_VIBES)[number];
+
 export const INFLUENCER_SCENES_MAX = 3;
 export const INFLUENCER_ACCESSORIES_MAX = 4;
+export const INFLUENCER_VIBES_MAX = 2;
 
 export const INFLUENCER_SORTS = ["popular", "newest", "az"] as const;
 export type InfluencerSort = (typeof INFLUENCER_SORTS)[number];
@@ -271,6 +298,8 @@ export type Influencer = {
   niche: string[];
   /** Structured UGC situations (max 3); rotates across generation shots. */
   scenes?: string[];
+  /** On-camera energy / demeanor (max 2). */
+  vibeTags?: string[];
   gender: InfluencerGender;
   ageRange: InfluencerAgeRange;
   ethnicity?: string;
@@ -336,6 +365,8 @@ export type CreateInfluencerPayload = {
   niche: string[];
   /** Structured UGC situations (max 3). */
   scenes?: string[];
+  /** On-camera energy / demeanor (max 2). */
+  vibeTags?: string[];
   gender: InfluencerGender;
   ageRange: InfluencerAgeRange;
   ethnicity?: string;
@@ -359,6 +390,7 @@ export type UpdateInfluencerPayload = {
   directions?: string;
   niche?: string[];
   scenes?: string[];
+  vibeTags?: string[];
   aestheticTags?: string[];
   photoStyle?: InfluencerPhotoStyle;
 };
@@ -419,6 +451,9 @@ export type ExploreInfluencersQuery = {
   skinTone?: string;
   bodyShape?: string;
   niche?: string | string[];
+  /** Single value or comma-separated list for `$in` matching. */
+  scenes?: string | string[];
+  photoStyle?: InfluencerPhotoStyle | string;
   /** Single value or comma-separated list for `$in` matching. */
   status?: InfluencerStatus | string;
 };

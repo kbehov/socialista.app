@@ -4,10 +4,12 @@ import {
   deleteUgcClip,
   deleteUgcProject,
   duplicateUgcClip,
-  generateUgcClipImageAd,
   generateUgcClipScript,
   generateUgcClipStills,
   generateUgcClipVideos,
+  generateUgcProjectScript,
+  generateUgcProjectStills,
+  generateUgcProjectVideos,
   getUgcProject,
   getWorkspaceUgcProjects,
   openUgcClipEditor,
@@ -35,13 +37,15 @@ ugcProjectRoutes.post('/:id/clips', createUgcClip)
 ugcProjectRoutes.patch('/:id/clips/:clipId', updateUgcClipHandler)
 ugcProjectRoutes.delete('/:id/clips/:clipId', deleteUgcClip)
 ugcProjectRoutes.post('/:id/clips/:clipId/duplicate', duplicateUgcClip)
+ugcProjectRoutes.post('/:id/script', generateUgcProjectScript)
+ugcProjectRoutes.post('/:id/stills', generateUgcProjectStills)
+ugcProjectRoutes.post('/:id/videos', generateUgcProjectVideos)
 ugcProjectRoutes.post('/:id/clips/:clipId/script', generateUgcClipScript)
 ugcProjectRoutes.post('/:id/clips/:clipId/stills', generateUgcClipStills)
 ugcProjectRoutes.post('/:id/clips/:clipId/videos', generateUgcClipVideos)
 ugcProjectRoutes.post('/:id/clips/:clipId/stills/:index/regenerate', regenerateUgcClipStill)
 ugcProjectRoutes.post('/:id/clips/:clipId/video/regenerate', regenerateUgcClipVideo)
 ugcProjectRoutes.post('/:id/clips/:clipId/open-editor', openUgcClipEditor)
-ugcProjectRoutes.post('/:id/clips/:clipId/image-ad', generateUgcClipImageAd)
 ugcProjectRoutes.post('/:id/assemble', assembleUgcProject)
 ugcProjectRoutes.post('/:id/open-editor', openUgcProjectEditor)
 

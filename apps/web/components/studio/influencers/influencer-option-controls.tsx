@@ -1,5 +1,6 @@
 'use client'
 
+import { dashboardSurface } from '@/components/dashboard'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import type { ChoiceOption, SwatchOption } from '@/lib/studio/influencers/options'
 import {
@@ -10,12 +11,48 @@ import {
 } from '@/lib/studio/influencers/option-icons'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
-import { CheckIcon, ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 const TAP_SPRING = { type: 'spring' as const, bounce: 0, duration: 0.28 }
-const LAYOUT_SPRING = { type: 'spring' as const, bounce: 0, duration: 0.32 }
+
+const CHIP = cn(
+  'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium tracking-[-0.01em]',
+  'border transition-colors duration-150',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+  'active:scale-[0.98] motion-reduce:active:scale-100',
+)
+
+const CHIP_ON = 'border-transparent bg-foreground text-background'
+const CHIP_OFF = cn(
+  'border-border/55 bg-background text-muted-foreground',
+  'hover:border-border hover:bg-muted/40 hover:text-foreground',
+  'dark:border-border/70',
+)
+const CHIP_DISABLED = 'cursor-not-allowed opacity-40 hover:border-border/55 hover:bg-background hover:text-muted-foreground'
+
+function groupOptions(options: ReadonlyArray<ChoiceOption>) {
+  if (!options.some(option => option.group)) return null
+
+  const groups: Array<{ label?: string; options: ChoiceOption[] }> = []
+  const indexByLabel = new Map<string | undefined, number>()
+  for (const option of options) {
+    const label = option.group
+    const existing = indexByLabel.get(label)
+    if (existing !== undefined) {
+      groups[existing]!.options.push(option)
+      continue
+    }
+    indexByLabel.set(label, groups.length)
+    groups.push({ label, options: [option] })
+  }
+  return groups
+}
+
+function GroupLabel({ children }: { children: ReactNode }) {
+  return <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">{children}</p>
+}
 
 type SegmentedProps<T extends string> = {
   value: T
@@ -32,45 +69,30 @@ export function OptionSegmented<T extends string>({
   onChange,
   className,
   'aria-label': ariaLabel,
-  layoutId = 'influencer-segment-indicator',
 }: SegmentedProps<T>) {
-  const reduceMotion = useReducedMotion()
-
   return (
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn(
-        'relative flex flex-wrap gap-0.5 rounded-xl bg-muted/20 p-1 ring-1 ring-border/30',
-        className,
-      )}
+      className={cn(dashboardSurface.segment, 'flex w-full min-w-0', className)}
     >
       {options.map(option => {
         const selected = option.id === value
         return (
-          <motion.button
+          <button
             key={option.id}
             type="button"
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.id)}
-            whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-            transition={reduceMotion ? { duration: 0 } : TAP_SPRING}
             className={cn(
-              'relative min-h-9 flex-1 rounded-[10px] px-2.5 text-[13px] font-medium tracking-[-0.015em] sm:px-3',
-              'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-              selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/85',
+              dashboardSurface.segmentItem,
+              'inline-flex h-7 min-w-0 flex-1 items-center justify-center px-2',
+              selected ? dashboardSurface.segmentItemActive : dashboardSurface.segmentItemInactive,
             )}
           >
-            {selected ? (
-              <motion.span
-                layoutId={layoutId}
-                className="absolute inset-0 rounded-[10px] bg-background shadow-[0_1px_3px_rgba(0,0,0,0.05)] ring-1 ring-border/40"
-                transition={reduceMotion ? { duration: 0 } : LAYOUT_SPRING}
-              />
-            ) : null}
-            <span className="relative z-10">{option.label}</span>
-          </motion.button>
+            {option.label}
+          </button>
         )
       })}
     </div>
@@ -88,7 +110,7 @@ export function SwatchPicker({ value, options, onChange, 'aria-label': ariaLabel
   const reduceMotion = useReducedMotion()
 
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-1.5">
       {options.map(option => {
         const selected = option.id === value
         return (
@@ -103,27 +125,17 @@ export function SwatchPicker({ value, options, onChange, 'aria-label': ariaLabel
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
             transition={reduceMotion ? { duration: 0 } : TAP_SPRING}
             className={cn(
-              'group relative flex size-11 items-center justify-center rounded-full',
+              'relative flex size-8 items-center justify-center rounded-full',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               selected
                 ? 'ring-2 ring-foreground ring-offset-2 ring-offset-background'
-                : 'ring-1 ring-border/35 hover:ring-border/55',
+                : 'ring-1 ring-border/50 hover:ring-border',
             )}
           >
             <span
-              className={cn(
-                'size-7.5 rounded-full shadow-[inset_0_1px_3px_rgba(0,0,0,0.14)] transition-transform duration-150',
-                !selected && 'group-hover:scale-105',
-              )}
+              className="size-5 rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)]"
               style={{ backgroundColor: option.color }}
             />
-            {selected ? (
-              <span className="absolute inset-0 flex items-center justify-center">
-                <span className="flex size-4.5 items-center justify-center rounded-full bg-black/30 backdrop-blur-[2px]">
-                  <CheckIcon className="size-2.5 text-white" strokeWidth={2.5} />
-                </span>
-              </span>
-            ) : null}
           </motion.button>
         )
       })}
@@ -146,63 +158,39 @@ export function ChipSingleSelect({
   'aria-label': ariaLabel,
   iconGroup,
 }: ChipSingleProps) {
-  const reduceMotion = useReducedMotion()
-
   const renderChip = (option: ChoiceOption) => {
     const selected = option.id === value
     const Icon = iconGroup ? getOptionIcon(iconGroup, option.id) : undefined
     return (
-      <motion.button
+      <button
         key={option.id}
         type="button"
         role="radio"
         aria-checked={selected}
         onClick={() => onChange(option.id)}
-        whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-        transition={reduceMotion ? { duration: 0 } : TAP_SPRING}
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.015em]',
-          'ring-1 transition-[background-color,color,box-shadow,ring-color] duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-          selected
-            ? 'bg-foreground text-background shadow-[0_1px_3px_rgba(0,0,0,0.08)] ring-foreground'
-            : 'bg-muted/20 text-muted-foreground ring-border/25 hover:bg-muted/35 hover:text-foreground hover:ring-border/40',
-        )}
+        className={cn(CHIP, selected ? CHIP_ON : CHIP_OFF)}
       >
         <OptionIcon icon={Icon} selected={selected} />
         {option.label}
-      </motion.button>
+      </button>
     )
   }
 
-  if (!options.some(o => o.group)) {
+  const groups = groupOptions(options)
+  if (!groups) {
     return (
-      <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-2">
+      <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-1.5">
         {options.map(renderChip)}
       </div>
     )
-  }
-
-  const groups: Array<{ label?: string; options: ChoiceOption[] }> = []
-  for (const option of options) {
-    const last = groups[groups.length - 1]
-    if (last && last.label === option.group) {
-      last.options.push(option)
-    } else {
-      groups.push({ label: option.group, options: [option] })
-    }
   }
 
   return (
     <div role="radiogroup" aria-label={ariaLabel} className="space-y-3">
       {groups.map(group => (
         <div key={group.label ?? 'ungrouped'}>
-          {group.label ? (
-            <p className="mb-2 text-[12px] font-medium tracking-[0.04em] text-muted-foreground/70 uppercase">
-              {group.label}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">{group.options.map(renderChip)}</div>
+          {group.label ? <GroupLabel>{group.label}</GroupLabel> : null}
+          <div className="flex flex-wrap gap-1.5">{group.options.map(renderChip)}</div>
         </div>
       ))}
     </div>
@@ -226,8 +214,6 @@ export function ChipMultiSelect({
   max,
   iconGroup,
 }: ChipMultiProps) {
-  const reduceMotion = useReducedMotion()
-
   function toggle(id: string) {
     if (values.includes(id)) {
       onChange(values.filter(v => v !== id))
@@ -237,36 +223,42 @@ export function ChipMultiSelect({
     onChange([...values, id])
   }
 
+  const renderChip = (option: ChoiceOption) => {
+    const selected = values.includes(option.id)
+    const atMax = max !== undefined && values.length >= max && !selected
+    const Icon = iconGroup ? getOptionIcon(iconGroup, option.id) : undefined
+    return (
+      <button
+        key={option.id}
+        type="button"
+        aria-pressed={selected}
+        disabled={atMax}
+        onClick={() => toggle(option.id)}
+        className={cn(CHIP, selected ? CHIP_ON : CHIP_OFF, atMax && CHIP_DISABLED)}
+      >
+        <OptionIcon icon={Icon} selected={selected} />
+        {option.label}
+      </button>
+    )
+  }
+
+  const groups = groupOptions(options)
+  if (!groups) {
+    return (
+      <div role="group" aria-label={ariaLabel} className="flex flex-wrap gap-1.5">
+        {options.map(renderChip)}
+      </div>
+    )
+  }
+
   return (
-    <div role="group" aria-label={ariaLabel} className="flex flex-wrap gap-2">
-      {options.map(option => {
-        const selected = values.includes(option.id)
-        const atMax = max !== undefined && values.length >= max && !selected
-        const Icon = iconGroup ? getOptionIcon(iconGroup, option.id) : undefined
-        return (
-          <motion.button
-            key={option.id}
-            type="button"
-            aria-pressed={selected}
-            disabled={atMax}
-            onClick={() => toggle(option.id)}
-            whileTap={reduceMotion || atMax ? undefined : { scale: 0.97 }}
-            transition={reduceMotion ? { duration: 0 } : TAP_SPRING}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.015em]',
-              'ring-1 transition-[background-color,color,box-shadow,ring-color,opacity] duration-150',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-              selected
-                ? 'bg-foreground text-background shadow-[0_1px_3px_rgba(0,0,0,0.08)] ring-foreground'
-                : 'bg-muted/20 text-muted-foreground ring-border/25 hover:bg-muted/35 hover:text-foreground hover:ring-border/40',
-              atMax && 'cursor-not-allowed opacity-40 hover:bg-muted/20 hover:text-muted-foreground hover:ring-border/25',
-            )}
-          >
-            <OptionIcon icon={Icon} selected={selected} />
-            {option.label}
-          </motion.button>
-        )
-      })}
+    <div role="group" aria-label={ariaLabel} className="space-y-3">
+      {groups.map(group => (
+        <div key={group.label ?? 'ungrouped'}>
+          {group.label ? <GroupLabel>{group.label}</GroupLabel> : null}
+          <div className="flex flex-wrap gap-1.5">{group.options.map(renderChip)}</div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -286,56 +278,39 @@ export function ChoiceGrid({
   'aria-label': ariaLabel,
   iconGroup,
 }: ChoiceGridProps) {
-  const reduceMotion = useReducedMotion()
-
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div role="radiogroup" aria-label={ariaLabel} className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
       {options.map(option => {
         const selected = option.id === value
         const Icon = iconGroup ? getOptionIcon(iconGroup, option.id) : undefined
         return (
-          <motion.button
+          <button
             key={option.id}
             type="button"
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.id)}
-            whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-            transition={reduceMotion ? { duration: 0 } : TAP_SPRING}
             className={cn(
-              'rounded-xl px-3.5 py-3.5 text-left transition-[background-color,box-shadow,ring-color] duration-150',
-              'ring-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+              'rounded-lg border px-3 py-2.5 text-left transition-colors duration-150',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+              'active:scale-[0.98] motion-reduce:active:scale-100',
               selected
-                ? 'bg-foreground/[0.04] text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.04)] ring-foreground/25'
-                : 'bg-muted/15 text-muted-foreground ring-border/25 hover:bg-muted/30 hover:text-foreground hover:ring-border/40',
+                ? 'border-border bg-muted/40 text-foreground'
+                : 'border-border/55 text-muted-foreground hover:border-border hover:bg-muted/25 hover:text-foreground dark:border-border/70',
             )}
           >
             <span className="flex items-center gap-2">
-              {Icon ? (
-                <span
-                  className={cn(
-                    'flex size-6 shrink-0 items-center justify-center rounded-md',
-                    selected ? 'bg-foreground/10' : 'bg-muted/40',
-                  )}
-                >
-                  <OptionIcon icon={Icon} selected={false} className="text-foreground/70" />
-                </span>
-              ) : null}
-              <span className="block text-[13px] font-medium tracking-[-0.015em] text-foreground">
+              {Icon ? <OptionIcon icon={Icon} selected={false} className="text-foreground/55" /> : null}
+              <span className="block text-[12px] font-medium tracking-[-0.01em] text-foreground">
                 {option.label}
               </span>
             </span>
             {option.description ? (
-              <span
-                className={cn(
-                  'mt-1.5 block text-xs leading-relaxed text-muted-foreground',
-                  Icon && 'pl-8',
-                )}
-              >
+              <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
                 {option.description}
               </span>
             ) : null}
-          </motion.button>
+          </button>
         )
       })}
     </div>
@@ -348,23 +323,61 @@ export function FieldLabel({
   hint,
   icon,
 }: {
-  children: React.ReactNode
+  children: ReactNode
   htmlFor?: string
   hint?: string
   icon?: LucideIcon
 }) {
   return (
-    <div className="mb-2 flex items-baseline justify-between gap-3">
+    <div className="mb-1.5 flex items-baseline justify-between gap-3">
       <label
         htmlFor={htmlFor}
-        className="inline-flex items-center gap-2 text-[13px] font-medium tracking-[-0.012em] text-foreground"
+        className="inline-flex items-center gap-1.5 text-[13px] font-medium tracking-[-0.01em] text-foreground"
       >
         {icon ? <FieldIcon icon={icon} /> : null}
         {children}
       </label>
       {hint ? (
-        <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground/70">{hint}</span>
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/55">{hint}</span>
       ) : null}
+    </div>
+  )
+}
+
+export function PropertyRow({
+  label,
+  htmlFor,
+  hint,
+  align = 'start',
+  children,
+}: {
+  label: string
+  htmlFor?: string
+  hint?: string
+  align?: 'start' | 'center'
+  children: ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        'grid grid-cols-1 gap-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-x-6',
+        align === 'center' ? 'sm:items-center' : 'sm:items-start',
+      )}
+    >
+      <div
+        className={cn(
+          'flex items-center justify-between gap-2',
+          align === 'start' && 'sm:min-h-7 sm:items-start sm:pt-0.5',
+        )}
+      >
+        <label htmlFor={htmlFor} className="text-[13px] font-medium text-muted-foreground">
+          {label}
+        </label>
+        {hint ? (
+          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/55">{hint}</span>
+        ) : null}
+      </div>
+      <div className="min-w-0">{children}</div>
     </div>
   )
 }
@@ -376,36 +389,29 @@ export function FormSection({
 }: {
   title: string
   description?: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
-    <section className="scroll-mt-24 space-y-5">
-      <div className="space-y-1.5">
-        <h2 className="text-[15px] font-semibold leading-snug tracking-[-0.018em] text-foreground">
-          {title}
-        </h2>
-        {description ? (
-          <p className="max-w-prose text-[13px] leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
+    <section className="scroll-mt-24 space-y-4">
+      <div className="space-y-0.5">
+        <h2 className={dashboardSurface.sectionTitle}>{title}</h2>
+        {description ? <p className={dashboardSurface.sectionDescription}>{description}</p> : null}
       </div>
       <div>{children}</div>
     </section>
   )
 }
 
-/** Vertical stack of fields with consistent 24px rhythm. */
 export function FormFieldStack({
   children,
   className,
 }: {
-  children: React.ReactNode
+  children: ReactNode
   className?: string
 }) {
   const items = Array.isArray(children) ? children.filter(Boolean) : [children]
   return (
-    <div className={cn('flex flex-col gap-6', className)}>
+    <div className={cn('flex flex-col gap-5', className)}>
       {items.map((child, index) => (
         <div key={index}>{child}</div>
       ))}
@@ -413,10 +419,55 @@ export function FormFieldStack({
   )
 }
 
+export function FormDisclosure({
+  title,
+  summary,
+  children,
+  defaultOpen = false,
+}: {
+  title: string
+  summary?: string
+  children: ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger
+        type="button"
+        className={cn(
+          'group flex w-full items-center gap-3 px-4 py-3 text-left',
+          'transition-colors duration-150 hover:bg-muted/30',
+          'focus-visible:outline-none focus-visible:bg-muted/30',
+        )}
+      >
+        <span className="w-auto shrink-0 text-[13px] font-medium text-muted-foreground sm:w-[7rem]">
+          {title}
+        </span>
+        {!open && summary ? (
+          <span className="min-w-0 flex-1 truncate text-[13px] text-foreground/70">{summary}</span>
+        ) : (
+          <span className="min-w-0 flex-1" />
+        )}
+        <ChevronDownIcon
+          className={cn(
+            'size-3.5 shrink-0 text-muted-foreground/45 transition-transform duration-200 ease-out',
+            open && 'rotate-180',
+          )}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150">
+        <div className="space-y-5 px-4 pt-0.5 pb-4 sm:pr-4 sm:pl-[calc(1rem+7rem+1.5rem)]">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 type AdvancedCollapsibleProps = {
   label?: string
   icon?: LucideIcon
-  children: React.ReactNode
+  children: ReactNode
   defaultOpen?: boolean
   className?: string
 }
@@ -434,27 +485,30 @@ export function AdvancedCollapsible({
     <div className={className}>
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger
+          type="button"
           className={cn(
-            'group flex w-full items-center gap-2 py-1 text-left',
-            'text-[13px] font-medium tracking-[-0.015em] text-muted-foreground',
+            'group flex w-full items-center gap-1.5 py-1 text-left',
+            'text-[12px] font-medium tracking-[-0.01em] text-muted-foreground',
             'transition-colors duration-150 hover:text-foreground',
             'focus-visible:outline-none focus-visible:text-foreground',
             open && 'text-foreground',
           )}
         >
-          {icon ? <FieldIcon icon={icon} /> : null}
+          {icon ? <FieldIcon icon={icon} className="size-4 rounded-[4px] ring-0" /> : null}
           <span>{label}</span>
           <ChevronDownIcon
             className={cn(
-              'size-3.5 shrink-0 text-muted-foreground/65 transition-transform duration-200',
+              'size-3 shrink-0 text-muted-foreground/65 transition-transform duration-200',
               open && 'rotate-180',
             )}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="pt-4 data-[state=closed]:animate-none">
-          <div className="space-y-5">{children}</div>
+        <CollapsibleContent className="overflow-hidden pt-3 data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200">
+          <div className="space-y-4">{children}</div>
         </CollapsibleContent>
       </Collapsible>
     </div>
   )
 }
+
+export const chipClassName = { base: CHIP, on: CHIP_ON, off: CHIP_OFF, disabled: CHIP_DISABLED }

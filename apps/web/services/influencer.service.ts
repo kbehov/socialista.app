@@ -49,6 +49,13 @@ function appendInfluencerQuery(params: URLSearchParams, query?: ExploreInfluence
     if (niche) params.set('niche', niche)
   }
 
+  if (query.scenes) {
+    const scenes = Array.isArray(query.scenes) ? query.scenes.join(',') : query.scenes
+    if (scenes) params.set('scenes', scenes)
+  }
+
+  if (query.photoStyle) params.set('photoStyle', query.photoStyle)
+
   if ('visibility' in query && query.visibility) {
     params.set('visibility', query.visibility)
   }

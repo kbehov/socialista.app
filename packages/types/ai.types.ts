@@ -202,3 +202,34 @@ export type EditVideoResolution = 'auto' | '480p' | '720p'
 export type EditVideoResult = { success: true; data: GeneratedVideo } | { success: false; error: string }
 
 export type AnimateImageResult = { success: true; data: GeneratedVideo } | { success: false; error: string }
+
+export type GenerateTextToSpeechInput = {
+  text: string
+  voice: string
+  model?: string
+}
+export type GenerateTextToSpeechResult = {
+  url: string
+  content_type: string
+  file_name?: string
+}
+
+export type GetVoicesInput = {
+  search?: string
+  language?: string
+  gender?: string
+  accent?: string
+}
+
+export type Voice = {
+  voice_id: string
+  name: string
+  labels: string[]
+  description: string
+  preview_url: string
+}
+export type GetVoicesResult = {
+  voices?: Voice[]
+  has_more?: boolean
+  next_page_token?: string
+}
