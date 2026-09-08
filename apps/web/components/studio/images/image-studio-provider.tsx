@@ -69,3 +69,7 @@ export function useImageStudio() {
   }
   return context
 }
+
+export function useOptionalImageStudio() {
+  return useContext(ImageStudioContext)
+}

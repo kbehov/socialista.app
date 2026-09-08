@@ -13,16 +13,19 @@ function Slider({
   max = 100,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
-    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
-    [value, defaultValue, min, max],
-  )
+  const valueKey = Array.isArray(value) ? value.join(',') : ''
+  const defaultValueKey = Array.isArray(defaultValue) ? defaultValue.join(',') : ''
+  const _values = React.useMemo(() => {
+    if (valueKey) return valueKey.split(',').map(Number)
+    if (defaultValueKey) return defaultValueKey.split(',').map(Number)
+    return [min, max]
+  }, [valueKey, defaultValueKey, min, max])
 
   return (
     <SliderPrimitive.Root
       data-slot="slider"
       defaultValue={defaultValue}
-      value={value}
+      value={Array.isArray(value) ? _values : value}
       min={min}
       max={max}
       className={cn(

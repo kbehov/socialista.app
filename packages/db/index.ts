@@ -257,6 +257,7 @@ export {
   UgcVariantStatus,
   UgcVoiceProvider,
   type IUgcClip,
+  type IUgcClipAudioTake,
   type IUgcClipModels,
   type IUgcClipVoice,
   type IUgcProject,

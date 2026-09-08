@@ -3,6 +3,7 @@ import { parseParamId, withQueryParam, applyProjectQueryAlias } from '@/utils/co
 import { HttpError, successResponse } from '@/utils/http-response.js'
 import {
   assertCanAssemble,
+  assertCanGenerateAudio,
   assertCanGenerateScript,
   assertCanGenerateStills,
   assertCanGenerateVideo,
@@ -18,12 +19,14 @@ import {
   resolveClipInfluencerId,
   serializeUgcProject,
   serializeUgcProjectSummary,
+  toStoredVoice,
 } from '@/utils/ugc-project.utils.js'
 import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
 import { DEFAULT_VIDEO_FPS, DEFAULT_VIDEO_RESOLUTION } from '@/utils/video.utils.js'
-import { generateUgcAdScript, generateUgcAdScriptSegments } from '@socialista/ai'
+import { generateUgcAdScript, generateUgcAdScriptSegments, searchUgcVoices } from '@socialista/ai'
 import {
   addUgcClip,
+  addUgcClips,
   createUgcProject as createUgcProjectInDb,
   createVideo as createVideoInDb,
   deleteUgcProject as deleteUgcProjectInDb,
@@ -42,26 +45,37 @@ import {
   UgcProductKind,
   UgcProjectStatus,
   UgcScriptSource,
-  UgcVoiceProvider,
   VideoStatus,
   type IUgcClip,
   type IUgcProject,
   type IUgcProjectModels,
 } from '@socialista/db'
 import { createPublicAccessToken } from '@socialista/trigger'
-import type { GenerateUgcStillsTask, GenerateUgcVideoTask, AssembleUgcProjectTask } from '@socialista/trigger/task-types'
+import type {
+  GenerateUgcStillsTask,
+  GenerateUgcVideoTask,
+  GenerateUgcAudioTask,
+  AssembleUgcProjectTask,
+} from '@socialista/trigger/task-types'
 import {
   clampUgcDuration,
+  clampImageGenerationCount,
+  parseUgcCampaignPresetId,
   parseUgcFlowStep,
   parseUgcProductKind,
   PROMPT_KEYS,
   TASK_IDS,
+  UGC_CAMPAIGN_PRESETS,
   UGC_CLIP_TYPE_LABELS,
   UGC_DEFAULT_ASPECT_RATIO,
   UGC_DEFAULT_DURATION,
+  UGC_MAX_CLIPS,
   ugcClipShowsScript,
+  ugcResolvedClipVoice,
+  type ApplyUgcCampaignPresetPayload,
   type CreateUgcClipPayload,
   type CreateUgcProjectPayload,
+  type SearchUgcVoicesQuery,
   type UpdateUgcClipPayload,
   type UpdateUgcProjectPayload,
 } from '@socialista/types'
@@ -212,6 +226,11 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
       return clip
     })
   }
+  if (input.voice === null) {
+    updates.voice = undefined
+  } else if (input.voice) {
+    updates.voice = toStoredVoice(input.voice)
+  }
   if (typeof input.aspectRatio === 'string' && input.aspectRatio) updates.aspectRatio = input.aspectRatio
   if (input.models) {
     updates.models = {
@@ -279,6 +298,36 @@ export const createUgcClip = async (c: Context<AppContext>) => {
   return successResponse(c, 201, { project: serializeUgcProject(updated) })
 }
 
+export const applyUgcCampaignPreset = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const input = (await c.req.json()) as ApplyUgcCampaignPresetPayload
+  const project = await getUgcProjectForMember(id, userId)
+  const presetId = parseUgcCampaignPresetId(input.presetId)
+  const preset = UGC_CAMPAIGN_PRESETS.find(item => item.id === presetId)
+  if (!preset) throw new HttpError(400, 'Unknown campaign preset')
+
+  const remaining = UGC_MAX_CLIPS - (project.clips?.length ?? 0)
+  if (remaining <= 0) {
+    throw new HttpError(400, `You can add at most ${UGC_MAX_CLIPS} clips in a project`)
+  }
+
+  const beats = preset.beats.slice(0, remaining)
+  const influencerId = project.influencerId?.toString()
+  const clips = beats.map(beat =>
+    buildNewClip({
+      type: parseClipType(beat.type),
+      durationSec: beat.durationSec,
+      influencerId,
+      name: beat.name,
+    }),
+  )
+
+  const updated = await addUgcClips(id, clips)
+  if (!updated) throw new HttpError(404, 'UGC project not found')
+  return successResponse(c, 201, { project: serializeUgcProject(updated) })
+}
+
 export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'project ID')
@@ -326,15 +375,8 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   }
   if (input.voice === null) {
     clipUpdates.voice = undefined
-  } else if (input.voice) {
-    clipUpdates.voice = {
-      provider: UgcVoiceProvider.ELEVENLABS,
-      voiceId: input.voice.voiceId,
-      voiceName: input.voice.voiceName,
-      speed: input.voice.speed,
-      stability: input.voice.stability,
-      enabled: input.voice.enabled,
-    }
+  } else   if (input.voice) {
+    clipUpdates.voice = toStoredVoice(input.voice)
   }
   if (input.models) {
     clipUpdates.models = {
@@ -354,6 +396,27 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   }
   if (typeof input.plannedPrompt === 'string') clipUpdates.plannedPrompt = input.plannedPrompt
   if (input.plannedPrompt === null) clipUpdates.plannedPrompt = undefined
+  if (Array.isArray(input.stills)) {
+    clipUpdates.stills = input.stills.flatMap((still, index) => {
+      if (!still || typeof still !== 'object') return []
+      const imageUrl = typeof still.imageUrl === 'string' ? still.imageUrl : undefined
+      if (!imageUrl) return []
+      return [
+        {
+          index: typeof still.index === 'number' ? still.index : index,
+          imageUrl,
+          generationId: typeof still.generationId === 'string' ? still.generationId : undefined,
+          enhancedPrompt: typeof still.enhancedPrompt === 'string' ? still.enhancedPrompt : undefined,
+        },
+      ]
+    })
+  }
+  if (input.audioUrl === null) {
+    clipUpdates.audioUrl = undefined
+    clipUpdates.audioDurationSec = undefined
+  } else if (typeof input.audioUrl === 'string' && input.audioUrl) {
+    clipUpdates.audioUrl = input.audioUrl
+  }
 
   if (Object.keys(clipUpdates).length === 0) {
     throw new HttpError(400, 'No valid fields to update')
@@ -529,7 +592,14 @@ export const generateUgcProjectScript = async (c: Context<AppContext>) => {
 async function triggerStills(
   project: IUgcProject,
   userId: string,
-  options?: { clipId?: string; skipEnhance?: boolean },
+  options?: {
+    clipId?: string
+    skipEnhance?: boolean
+    prompt?: string
+    model?: string
+    referenceImageUrls?: string[]
+    count?: number
+  },
 ) {
   if (options?.clipId) {
     const clip = requireClip(project, options.clipId)
@@ -545,12 +615,21 @@ async function triggerStills(
     }
   }
 
+  const count = options?.count ? clampImageGenerationCount(options.count) : undefined
+  const prompt = options?.prompt?.trim() || undefined
+  const model = options?.model?.trim() || undefined
+  const referenceImageUrls = options?.referenceImageUrls?.filter(url => typeof url === 'string' && url.length > 0)
+
   const handle = await tasks.trigger<GenerateUgcStillsTask>(TASK_IDS.generateUgcStills, {
     projectId: project._id.toString(),
     workspaceId: project.workspace.toString(),
     userId,
     ...(options?.clipId ? { clipId: options.clipId } : {}),
     ...(options?.skipEnhance ? { skipEnhance: true } : {}),
+    ...(prompt ? { prompt } : {}),
+    ...(model ? { model } : {}),
+    ...(referenceImageUrls && referenceImageUrls.length > 0 ? { referenceImageUrls } : {}),
+    ...(count ? { count } : {}),
   })
   const publicAccessToken = await createPublicAccessToken(handle.id)
   const targets = options?.clipId
@@ -563,8 +642,18 @@ async function triggerStills(
     const updated = await updateUgcClip(
       project._id.toString(),
       clip.id,
-      { status: UgcClipStatus.GENERATING, stillsRunId: handle.id, error: undefined },
-      { status: UgcProjectStatus.GENERATING, stillsRunId: handle.id, error: undefined },
+      {
+        status: UgcClipStatus.GENERATING,
+        stillsRunId: handle.id,
+        error: undefined,
+        ...(model ? { models: { ...clip.models, image: model } } : {}),
+      },
+      {
+        status: UgcProjectStatus.GENERATING,
+        stillsRunId: handle.id,
+        error: undefined,
+        ...(model ? { models: { ...project.models, image: model } } : {}),
+      },
     )
     if (updated) latest = updated
   }
@@ -612,12 +701,23 @@ export const generateUgcClipStills = async (c: Context<AppContext>) => {
   const userId = c.get('userId')
   const id = parseParamId(c.req.param('id'), 'project ID')
   const clipId = c.req.param('clipId')
-  const body = (await c.req.json().catch(() => ({}))) as { stillIndex?: number; skipEnhance?: boolean }
+  const body = (await c.req.json().catch(() => ({}))) as {
+    stillIndex?: number
+    skipEnhance?: boolean
+    prompt?: string
+    model?: string
+    referenceImageUrls?: string[]
+    count?: number
+  }
   const project = await getUgcProjectForMember(id, userId)
   const clip = requireClip(project, clipId)
   const result = await triggerStills(project, userId, {
     clipId: clip.id,
     skipEnhance: body.skipEnhance === true,
+    prompt: typeof body.prompt === 'string' ? body.prompt : undefined,
+    model: typeof body.model === 'string' ? body.model : undefined,
+    referenceImageUrls: Array.isArray(body.referenceImageUrls) ? body.referenceImageUrls : undefined,
+    count: typeof body.count === 'number' ? body.count : undefined,
   })
   return successResponse(c, 202, result)
 }
@@ -861,4 +961,118 @@ export const openUgcProjectEditor = async (c: Context<AppContext>) => {
 
   await updateUgcProjectInDb(id, { composedProjectVideoId: video._id })
   return successResponse(c, 201, { videoId: video._id.toString() })
+}
+
+async function triggerAudio(
+  project: IUgcProject,
+  userId: string,
+  options?: { clipId?: string; text?: string },
+) {
+  const clipId = options?.clipId
+  let latest = project
+  const incoming = options?.text?.trim()
+  if (clipId && incoming) {
+    const saved = await updateUgcClip(project._id.toString(), clipId, {
+      script: { text: parseScriptText(incoming), source: UgcScriptSource.USER },
+    })
+    if (!saved) throw new HttpError(404, 'Clip not found')
+    latest = saved
+  }
+
+  const serialized = serializeUgcProject(latest)
+  const clips = clipId
+    ? [requireClip(latest, clipId)]
+    : (latest.clips ?? []).filter(clip => ugcClipShowsScript(clipTypeValue(clip.type)))
+
+  if (clips.length === 0) {
+    throw new HttpError(400, clipId ? 'Clip not found' : 'Add a talking scene first')
+  }
+
+  const targets: IUgcClip[] = []
+  for (const clip of clips) {
+    assertClipNotGenerating(clip)
+    const serializedClip = serialized.clips.find(item => item.id === clip.id)
+    const voice = ugcResolvedClipVoice(serialized, serializedClip)
+    if (voice.enabled === false) {
+      if (clipId) throw new HttpError(400, 'Voiceover is turned off for this scene')
+      continue
+    }
+    const text = (clipId === clip.id ? incoming : undefined) || clip.script?.text.trim()
+    if (!text) {
+      if (clipId) throw new HttpError(400, 'Write a script before generating audio')
+      continue
+    }
+    assertCanGenerateAudio({ ...clip, script: { text, source: clip.script?.source ?? UgcScriptSource.USER } })
+    targets.push(clip)
+  }
+
+  if (targets.length === 0) {
+    throw new HttpError(400, 'Write a script on a talking scene first')
+  }
+
+  const scriptText = clipId ? incoming || targets[0]?.script?.text.trim() : undefined
+  const handle = await tasks.trigger<GenerateUgcAudioTask>(TASK_IDS.generateUgcAudio, {
+    projectId: latest._id.toString(),
+    workspaceId: latest.workspace.toString(),
+    userId,
+    ...(clipId ? { clipId } : {}),
+    ...(scriptText ? { text: scriptText } : {}),
+  })
+  const publicAccessToken = await createPublicAccessToken(handle.id)
+
+  for (const clip of targets) {
+    const updated = await updateUgcClip(
+      latest._id.toString(),
+      clip.id,
+      { audioRunId: handle.id, error: undefined },
+      { audioRunId: handle.id, error: undefined },
+    )
+    if (updated) latest = updated
+  }
+
+  return {
+    project: serializeUgcProject(latest),
+    runId: handle.id,
+    publicAccessToken,
+  }
+}
+
+export const searchUgcProjectVoices = async (c: Context<AppContext>) => {
+  c.get('userId')
+  const read = (key: string) => {
+    const value = c.req.query(key)?.trim()
+    return value ? value : undefined
+  }
+  const filters: SearchUgcVoicesQuery = {
+    search: read('search'),
+    language: read('language'),
+    gender: read('gender'),
+    age: read('age'),
+    accent: read('accent'),
+    category: read('category'),
+  }
+  const result = await searchUgcVoices({
+    ...filters,
+    pageSize: 40,
+  })
+  return successResponse(c, 200, result)
+}
+
+export const generateUgcClipAudio = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const clipId = c.req.param('clipId')
+  const body = (await c.req.json().catch(() => ({}))) as { script?: string; text?: string }
+  const text = typeof body.script === 'string' ? body.script : typeof body.text === 'string' ? body.text : undefined
+  const project = await getUgcProjectForMember(id, userId)
+  const result = await triggerAudio(project, userId, { clipId, text })
+  return successResponse(c, 202, result)
+}
+
+export const generateUgcProjectAudio = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'project ID')
+  const project = await getUgcProjectForMember(id, userId)
+  const result = await triggerAudio(project, userId)
+  return successResponse(c, 202, result)
 }

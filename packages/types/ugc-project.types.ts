@@ -41,12 +41,15 @@ export type UgcSceneCount = (typeof UGC_SCENE_COUNTS)[number]
 export const UGC_MAX_VARIANTS = 3
 export const UGC_MAX_SCENES = 3
 export const UGC_MAX_CLIPS = 12
+export const UGC_MAX_STILL_VERSIONS = 24
+export const UGC_MAX_AUDIO_TAKES = 20
 export const UGC_DEFAULT_SCENE_COUNT: UgcSceneCount = 1
 export const UGC_DEFAULT_ASPECT_RATIO = '9:16' as const
 export const UGC_DURATION_MIN = 5
 export const UGC_DURATION_MAX = 15
 export const UGC_DEFAULT_DURATION = 8
-export const UGC_SCRIPT_MAX_CHARS = 150
+export const UGC_SCRIPT_MAX_CHARS = 120
+export const UGC_SPOKEN_CHARS_PER_SEC = 12
 
 export const UGC_CLIP_DEFAULT_SCENE_COUNT: Record<UgcClipType, UgcSceneCount> = {
   talking: 1,
@@ -137,8 +140,8 @@ export function ugcClipRequiresScreenshots(type: UgcClipType): boolean {
 }
 
 export function ugcScriptTargetChars(durationSec: number): number {
-  const clamped = Math.min(UGC_DURATION_MAX, Math.max(UGC_DURATION_MIN, durationSec))
-  return Math.round(50 + ((clamped - UGC_DURATION_MIN) / (UGC_DURATION_MAX - UGC_DURATION_MIN)) * 100)
+  const spokenWindow = Math.min(10, Math.max(UGC_DURATION_MIN, durationSec))
+  return Math.min(UGC_SCRIPT_MAX_CHARS, Math.round(spokenWindow * UGC_SPOKEN_CHARS_PER_SEC))
 }
 
 export function clampUgcDuration(value: unknown): number {
@@ -149,6 +152,13 @@ export function clampUgcDuration(value: unknown): number {
 
 export function clampUgcScript(text: string): string {
   return text.slice(0, UGC_SCRIPT_MAX_CHARS)
+}
+
+export function estimateUgcSpokenDurationSec(text: string, speed = 1): number {
+  const words = text.trim().split(/\s+/).filter(Boolean).length
+  if (words === 0) return 0
+  const rate = Math.max(0.7, Math.min(1.2, speed)) * 2.5
+  return Math.max(1, Math.round((words / rate) * 10) / 10)
 }
 
 export function clampUgcSceneCount(
@@ -166,6 +176,101 @@ export function ugcResolvedInfluencerId(
   clip?: { influencerId?: string },
 ): string | undefined {
   return clip?.influencerId ?? project.influencerId
+}
+
+/** Defaults tuned for conversational UGC (ElevenLabs 0–100 scale). */
+export const UGC_DEFAULT_VOICE: UgcClipVoice = {
+  provider: 'elevenlabs',
+  voiceId: '21m00Tcm4TlvDq8ikWAM',
+  voiceName: 'Rachel',
+  speed: 1.05,
+  stability: 45,
+  similarity: 75,
+  style: 15,
+  speakerBoost: true,
+  enabled: true,
+}
+
+export function ugcResolvedClipVoice(
+  project: { voice?: UgcClipVoice },
+  clip?: { voice?: UgcClipVoice },
+): UgcClipVoice {
+  return {
+    ...UGC_DEFAULT_VOICE,
+    ...project.voice,
+    ...clip?.voice,
+  }
+}
+
+export const UGC_CAMPAIGN_PRESET_IDS = [
+  'problem-solution',
+  'unboxing-review',
+  'viral-hook',
+  'b-roll-showcase',
+] as const
+export type UgcCampaignPresetId = (typeof UGC_CAMPAIGN_PRESET_IDS)[number]
+
+export type UgcCampaignPresetBeat = {
+  type: UgcClipType
+  durationSec: number
+  name: string
+}
+
+export type UgcCampaignPreset = {
+  id: UgcCampaignPresetId
+  label: string
+  description: string
+  beats: UgcCampaignPresetBeat[]
+}
+
+export const UGC_CAMPAIGN_PRESETS: UgcCampaignPreset[] = [
+  {
+    id: 'problem-solution',
+    label: 'Problem → Solution',
+    description: 'Hook the pain, show the product, close with a CTA.',
+    beats: [
+      { type: 'talking', durationSec: 6, name: 'Hook' },
+      { type: 'product-hold', durationSec: 8, name: 'Demo' },
+      { type: 'talking', durationSec: 6, name: 'CTA' },
+    ],
+  },
+  {
+    id: 'unboxing-review',
+    label: 'Unboxing & Review',
+    description: 'Open the box, show details, give a verdict.',
+    beats: [
+      { type: 'unboxing', durationSec: 8, name: 'Unbox' },
+      { type: 'b-roll', durationSec: 6, name: 'Details' },
+      { type: 'talking', durationSec: 7, name: 'Verdict' },
+    ],
+  },
+  {
+    id: 'viral-hook',
+    label: 'Viral Hook',
+    description: 'Fast opener, product showcase, punchy ask.',
+    beats: [
+      { type: 'talking', durationSec: 5, name: 'Hook' },
+      { type: 'product-hold', durationSec: 7, name: 'Showcase' },
+      { type: 'talking', durationSec: 5, name: 'CTA' },
+    ],
+  },
+  {
+    id: 'b-roll-showcase',
+    label: 'Product B-roll',
+    description: 'Aesthetic product shots with a hold-to-camera close.',
+    beats: [
+      { type: 'b-roll', durationSec: 6, name: 'B-roll 1' },
+      { type: 'b-roll', durationSec: 6, name: 'B-roll 2' },
+      { type: 'product-hold', durationSec: 6, name: 'Hold' },
+    ],
+  },
+]
+
+export function parseUgcCampaignPresetId(value: unknown): UgcCampaignPresetId | undefined {
+  if (typeof value === 'string' && (UGC_CAMPAIGN_PRESET_IDS as readonly string[]).includes(value)) {
+    return value as UgcCampaignPresetId
+  }
+  return undefined
 }
 
 export function parseUgcProductKind(value: unknown): UgcProductKind | undefined {
@@ -207,11 +312,50 @@ export function ugcClipSceneCount(_clip?: {
 }
 
 export function resizeUgcStills(stills: UgcSceneStill[], sceneCount: UgcSceneCount): UgcSceneStill[] {
-  const next = stills.slice(0, sceneCount).map((still, index) => ({ ...still, index }))
+  const next = stills.map((still, index) => ({ ...still, index }))
   while (next.length < sceneCount) {
     next.push({ index: next.length })
   }
   return next
+}
+
+export function appendUgcStills(existing: UgcSceneStill[], incoming: UgcSceneStill[]): UgcSceneStill[] {
+  const kept = existing.filter(still => still.imageUrl)
+  const added = incoming.filter(still => still.imageUrl)
+  return [...added, ...kept].slice(0, UGC_MAX_STILL_VERSIONS).map((still, index) => ({ ...still, index }))
+}
+
+export function appendUgcAudioTakes(
+  existing: UgcClipAudioTake[],
+  incoming: UgcClipAudioTake,
+): UgcClipAudioTake[] {
+  return [incoming, ...existing.filter(take => take.audioUrl !== incoming.audioUrl)].slice(
+    0,
+    UGC_MAX_AUDIO_TAKES,
+  )
+}
+
+export function ugcClipAudioTakes(clip: {
+  audioTakes?: UgcClipAudioTake[]
+  audioUrl?: string
+  audioDurationSec?: number
+}): UgcClipAudioTake[] {
+  if (clip.audioTakes && clip.audioTakes.length > 0) return clip.audioTakes
+  if (clip.audioUrl) {
+    return [{ id: 'current', audioUrl: clip.audioUrl, durationSec: clip.audioDurationSec }]
+  }
+  return []
+}
+
+export function ugcClipAudioTakeForUrl(
+  clips: Array<{ audioTakes?: UgcClipAudioTake[]; audioUrl?: string; audioDurationSec?: number }>,
+  url: string,
+): UgcClipAudioTake | undefined {
+  for (const clip of clips) {
+    const take = ugcClipAudioTakes(clip).find(item => item.audioUrl === url)
+    if (take) return take
+  }
+  return undefined
 }
 
 export function moveUgcStillToStart(stills: UgcSceneStill[], startFrameIndex: number): UgcSceneStill[] {
@@ -279,14 +423,86 @@ export type UgcClipVoice = {
   voiceName?: string
   speed?: number
   stability?: number
+  similarity?: number
+  style?: number
+  speakerBoost?: boolean
   enabled?: boolean
 }
+
+export type UgcVoiceLabels = {
+  language?: string
+  gender?: string
+  age?: string
+  accent?: string
+  useCase?: string
+}
+
+export type UgcVoice = {
+  id: string
+  name: string
+  previewUrl?: string
+  description?: string
+  labels: UgcVoiceLabels
+}
+
+export type SearchUgcVoicesQuery = {
+  search?: string
+  language?: string
+  gender?: string
+  age?: string
+  accent?: string
+  category?: string
+}
+
+export type SearchUgcVoicesResponse = {
+  voices: UgcVoice[]
+  hasMore?: boolean
+  nextPageToken?: string
+}
+
+export const UGC_VOICE_GENDERS = ['female', 'male', 'neutral'] as const
+export type UgcVoiceGender = (typeof UGC_VOICE_GENDERS)[number]
+
+export const UGC_VOICE_AGES = ['young', 'middle_aged', 'old'] as const
+export type UgcVoiceAge = (typeof UGC_VOICE_AGES)[number]
+
+export const UGC_VOICE_LANGUAGES = [
+  { id: 'en', label: '🇺🇸 English' },
+  { id: 'es', label: '🇪🇸 Spanish' },
+  { id: 'fr', label: '🇫🇷 French' },
+  { id: 'de', label: '🇩🇪 German' },
+  { id: 'it', label: '🇮🇹 Italian' },
+  { id: 'pt', label: '🇵🇹 Portuguese' },
+  { id: 'pl', label: '🇵🇱 Polish' },
+  { id: 'bg', label: '🇧🇬 Bulgarian' },
+  { id: 'hi', label: '🇮🇳 Hindi' },
+  { id: 'ja', label: '🇯🇵 Japanese' },
+  { id: 'zh', label: '🇨🇳 Chinese' },
+  { id: 'ko', label: '🇰🇷 Korean' },
+  { id: 'ar', label: '🇸🇦 Arabic' },
+] as const
+
+export const UGC_VOICE_ACCENTS = [
+  { id: 'american', label: 'American' },
+  { id: 'british', label: 'British' },
+  { id: 'australian', label: 'Australian' },
+  { id: 'indian', label: 'Indian' },
+  { id: 'irish', label: 'Irish' },
+  { id: 'african', label: 'African' },
+] as const
 
 export type UgcSceneStill = {
   index: number
   imageUrl?: string
   generationId?: string
   enhancedPrompt?: string
+}
+
+export type UgcClipAudioTake = {
+  id: string
+  audioUrl: string
+  durationSec?: number
+  scriptText?: string
 }
 
 export type UgcClip = {
@@ -306,12 +522,16 @@ export type UgcClip = {
   stills: UgcSceneStill[]
   plannedPrompt?: string
   negativePrompt?: string
+  audioUrl?: string
+  audioDurationSec?: number
+  audioTakes?: UgcClipAudioTake[]
   videoUrl?: string
   thumbnailUrl?: string
   generationId?: string
   composedVideoId?: string
   stillsRunId?: string
   videoRunId?: string
+  audioRunId?: string
   approved?: boolean
   error?: string
 }
@@ -345,6 +565,7 @@ export type UgcProject = {
   productUrl?: string
   productKind?: UgcProductKind
   influencerId?: string
+  voice?: UgcClipVoice
   aspectRatio: string
   models: UgcProjectModels
   flowStep?: UgcFlowStep
@@ -392,6 +613,7 @@ export type UpdateUgcProjectPayload = {
   productUrl?: string | null
   productKind?: UgcProductKind | null
   influencerId?: string | null
+  voice?: UgcClipVoice | null
   aspectRatio?: string
   models?: Partial<UgcProjectModels>
   clipOrder?: string[]
@@ -421,12 +643,18 @@ export type UpdateUgcClipPayload = {
   plannedPrompt?: string | null
   models?: Partial<UgcClipModels>
   approved?: boolean
+  stills?: UgcSceneStill[]
+  audioUrl?: string | null
 }
 
 export type GenerateUgcStillsPayload = {
   clipId?: string
   stillIndex?: number
   skipEnhance?: boolean
+  prompt?: string
+  model?: string
+  referenceImageUrls?: string[]
+  count?: number
 }
 
 export type GenerateUgcVideosPayload = {
@@ -441,6 +669,15 @@ export type OpenUgcEditorResponse = {
 
 export type GenerateUgcScriptPayload = {
   model?: string
+}
+
+export type ApplyUgcCampaignPresetPayload = {
+  presetId: UgcCampaignPresetId
+}
+
+export type GenerateUgcAudioPayload = {
+  clipId?: string
+  text?: string
 }
 
 export type UgcScriptSegment = {

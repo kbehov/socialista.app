@@ -13,7 +13,7 @@ import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-inpu
 import { STUDIO_HOME_COMPOSER_SURFACE_CLASS, STUDIO_TOOL_BUTTON_ACTIVE_CLASS, STUDIO_TOOL_BUTTON_CLASS, STUDIO_TOOL_CHEVRON_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
-import { useVideoStudio } from "@/components/studio/videos/video-studio-provider";
+import { useOptionalVideoStudio } from "@/components/studio/videos/video-studio-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type ReactNode,
 } from "react";
 import { toast } from "sonner";
 import { VideoPromptAnatomy } from "./video-prompt-anatomy";
@@ -74,39 +75,104 @@ const ASPECT_RATIOS = [
   ratio: number;
 }>;
 
+export type VideoPromptSubmitResult = {
+  prompt: string
+  model: string
+  aspectRatio: VideoAspectRatio
+  duration: number
+  generateAudio: boolean
+  imageUrls: string[]
+}
+
+export type VideoPromptInputProps = {
+  models: Model[]
+  initialAttachmentUrl?: string
+  initialAttachments?: AttachedMedia[]
+  onSubmitOverride?: (result: VideoPromptSubmitResult) => void
+  hideExtras?: boolean
+  starters?: ReactNode
+  placeholder?: string
+  pending?: boolean
+  initialPrompt?: string
+  initialAspectRatio?: VideoAspectRatio
+}
+
 function VideoPromptComposer({
   models,
   initialAttachmentUrl,
-}: {
-  models: Model[];
-  initialAttachmentUrl?: string;
-}) {
+  initialAttachments,
+  onSubmitOverride,
+  hideExtras,
+  starters,
+  placeholder: placeholderProp,
+  pending: pendingProp,
+  initialPrompt,
+  initialAspectRatio,
+}: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
-  const { composerRef, registerPromptHandlers } = useVideoStudio();
+  const studio = useOptionalVideoStudio();
+  const localComposerRef = useRef<HTMLDivElement>(null);
+  const composerRef = studio?.composerRef ?? localComposerRef;
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [isPending, startTransition] = useTransition();
-  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() =>
-    initialAttachmentUrl
-      ? [
-          {
-            id: "generation-source",
-            url: initialAttachmentUrl,
-            kind: "image",
-            source: "library",
-            label: "Generated",
-            name: "Generated image",
-          },
-        ]
-      : [],
-  );
-  const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("9:16");
+  const pending = pendingProp || isPending;
+  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() => {
+    if (initialAttachments?.length) return initialAttachments
+    if (initialAttachmentUrl) {
+      return [
+        {
+          id: "generation-source",
+          url: initialAttachmentUrl,
+          kind: "image",
+          source: "library",
+          label: "Generated",
+          name: "Generated image",
+        },
+      ]
+    }
+    return []
+  });
+  const dismissedAttachmentUrls = useRef(new Set<string>());
+  const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>(initialAspectRatio ?? "9:16");
   const [duration, setDuration] = useState(VIDEO_DURATION_DEFAULT);
   const [generateAudio, setGenerateAudio] = useState(true);
   const [skillId, setSkillId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
+
+  const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
+    setAttachedImages(current => {
+      const nextUrls = new Set(next.map(item => item.url));
+      for (const item of current) {
+        if (!nextUrls.has(item.url)) dismissedAttachmentUrls.current.add(item.url);
+      }
+      for (const item of next) {
+        dismissedAttachmentUrls.current.delete(item.url);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!initialAttachments) return;
+    setAttachedImages(current => {
+      const currentUrls = new Set(current.map(item => item.url));
+      const missing = initialAttachments.filter(
+        item =>
+          !currentUrls.has(item.url) &&
+          !dismissedAttachmentUrls.current.has(item.url),
+      );
+      if (missing.length === 0) return current;
+      return [...current, ...missing].slice(0, MAX_REFERENCE_IMAGES);
+    });
+  }, [initialAttachments]);
+
+  useEffect(() => {
+    if (!initialPrompt) return
+    textInput.setInput(initialPrompt)
+  }, [initialPrompt, textInput])
 
   const visibleModels = useMemo(() => {
     const videoModels = models.filter((model) => model.modelType === ModelType.VIDEO);
@@ -131,6 +197,7 @@ function VideoPromptComposer({
   }, [selectedModelId, visibleModels]);
 
   const placeholder = useMemo(() => {
+    if (placeholderProp) return placeholderProp;
     if (attachedImages.length >= 2) {
       return "the person from @image1 walks toward the product from @image2…";
     }
@@ -138,7 +205,7 @@ function VideoPromptComposer({
       return "the person from @image1 turns toward camera and smiles…";
     }
     return DEFAULT_PLACEHOLDER;
-  }, [attachedImages.length]);
+  }, [attachedImages.length, placeholderProp]);
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -182,18 +249,19 @@ function VideoPromptComposer({
   }, []);
 
   useEffect(() => {
-    registerPromptHandlers({
+    studio?.registerPromptHandlers({
       insertAtCursor,
       setPrompt,
       focusPrompt,
     });
-  }, [registerPromptHandlers, insertAtCursor, setPrompt, focusPrompt]);
+  }, [studio, insertAtCursor, setPrompt, focusPrompt]);
 
   useEffect(() => {
+    if (hideExtras) return;
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
     textareaRef.current?.focus();
-  }, []);
+  }, [hideExtras]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim();
@@ -213,6 +281,18 @@ function VideoPromptComposer({
 
     startTransition(async () => {
       const imageUrls = attachedImages.map((image) => image.url);
+      if (onSubmitOverride) {
+        onSubmitOverride({
+          prompt,
+          model: selectedModel.value,
+          aspectRatio,
+          duration,
+          generateAudio,
+          imageUrls,
+        });
+        return;
+      }
+
       const result = await startVideoGeneration({
         prompt,
         model: selectedModel.value,
@@ -248,7 +328,7 @@ function VideoPromptComposer({
             <PromptInputButton
               aria-label={`Aspect ratio ${selectedAspect.id}`}
               className={STUDIO_TOOL_BUTTON_CLASS}
-              disabled={isPending}
+              disabled={pending}
               size="xs"
               type="button"
             >
@@ -291,7 +371,7 @@ function VideoPromptComposer({
             <PromptInputButton
               aria-label={`Duration ${duration} seconds`}
               className={STUDIO_TOOL_BUTTON_CLASS}
-              disabled={isPending}
+              disabled={pending}
               size="xs"
               type="button"
             >
@@ -329,7 +409,7 @@ function VideoPromptComposer({
           STUDIO_TOOL_BUTTON_CLASS,
           generateAudio && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
         )}
-        disabled={isPending}
+        disabled={pending}
         onClick={() => setGenerateAudio((current) => !current)}
         size="xs"
         tooltip={
@@ -352,7 +432,7 @@ function VideoPromptComposer({
         target={PROMPT_KEYS.videoPrompt}
         value={skillId}
         onChange={setSkillId}
-        disabled={isPending}
+        disabled={pending}
       />
     </>
   );
@@ -364,17 +444,21 @@ function VideoPromptComposer({
         selectedModelId={selectedModelId}
         onSelectedModelChange={setSelectedModelId}
         attachments={attachedImages}
-        onAttachmentsChange={setAttachedImages}
+        onAttachmentsChange={handleAttachmentsChange}
         attachSources={["upload", "library", "influencer", "product"]}
         maxAttachments={MAX_REFERENCE_IMAGES}
         workspaceId={currentWorkspace?._id}
         placeholder={placeholder}
-        pending={isPending}
+        pending={pending}
         onSubmit={handleSubmit}
         submitLabel="Generate"
         submitTitle="Generate"
         submitAppearance="send"
-        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+        footerClassName={
+          hideExtras
+            ? "border-transparent bg-transparent px-2 pb-1.5 pt-0.5 sm:px-2.5"
+            : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+        }
         tools={tools}
         textareaRef={(node) => {
           textareaRef.current = node;
@@ -383,47 +467,48 @@ function VideoPromptComposer({
         emptyTitle="No video models yet"
         emptyDescription="Add a text-to-video or image-to-video model in the manager to start creating clips."
         surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        compact={hideExtras}
       />
 
       {attachedImages.length > 0 ? (
-        <div className="mt-2.5 px-0.5">
+        <div className={hideExtras ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
       ) : null}
 
-      <div className="mt-4 flex flex-col items-center gap-4">
-        <VideoStudioStarters disabled={isPending} />
+      {hideExtras ? (
+        starters ? (
+          <div className="mt-3 flex flex-col items-center gap-2">{starters}</div>
+        ) : null
+      ) : (
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <VideoStudioStarters disabled={pending} />
 
-        <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
-          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-            /
-          </Kbd>
-          <span>to focus</span>
-          <span aria-hidden className="text-black/16 dark:text-white/16">
-            ·
-          </span>
-          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-            {submitShortcut}
-          </Kbd>
-          <span>to generate</span>
-        </p>
+          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              /
+            </Kbd>
+            <span>to focus</span>
+            <span aria-hidden className="text-black/16 dark:text-white/16">
+              ·
+            </span>
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              {submitShortcut}
+            </Kbd>
+            <span>to generate</span>
+          </p>
 
-        <div className="w-full">
-          <VideoPromptAnatomy />
+          <div className="w-full">
+            <VideoPromptAnatomy />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-const VideoGenerationPromptInput = ({
-  models,
-  initialAttachmentUrl,
-}: {
-  models: Model[];
-  initialAttachmentUrl?: string;
-}) => {
-  if (models.length === 0) {
+export function VideoPromptInput(props: VideoPromptInputProps) {
+  if (props.models.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-black/[0.08] bg-black/[0.015] px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.015]">
         <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/8 dark:bg-white/[0.03] dark:ring-white/10">
@@ -442,11 +527,23 @@ const VideoGenerationPromptInput = ({
 
   return (
     <PromptInputProvider>
-      <VideoPromptComposer
-        initialAttachmentUrl={initialAttachmentUrl}
-        models={models}
-      />
+      <VideoPromptComposer {...props} />
     </PromptInputProvider>
+  );
+}
+
+const VideoGenerationPromptInput = ({
+  models,
+  initialAttachmentUrl,
+}: {
+  models: Model[];
+  initialAttachmentUrl?: string;
+}) => {
+  return (
+    <VideoPromptInput
+      initialAttachmentUrl={initialAttachmentUrl}
+      models={models}
+    />
   );
 };
 

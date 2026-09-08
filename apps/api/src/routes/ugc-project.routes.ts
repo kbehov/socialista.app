@@ -15,8 +15,12 @@ import {
   openUgcClipEditor,
   openUgcProjectEditor,
   assembleUgcProject,
+  applyUgcCampaignPreset,
+  generateUgcClipAudio,
+  generateUgcProjectAudio,
   regenerateUgcClipStill,
   regenerateUgcClipVideo,
+  searchUgcProjectVoices,
   updateUgcClipHandler,
   updateUgcProject,
 } from '@/controllers/ugc-project.controller.js'
@@ -28,12 +32,14 @@ const ugcProjectRoutes = new Hono<AppContext>()
 
 ugcProjectRoutes.use('/*', authMiddleware)
 
+ugcProjectRoutes.get('/voices', searchUgcProjectVoices)
 ugcProjectRoutes.get('/workspace/:workspaceId', getWorkspaceUgcProjects)
 ugcProjectRoutes.post('/', createUgcProject)
 ugcProjectRoutes.get('/:id', getUgcProject)
 ugcProjectRoutes.patch('/:id', updateUgcProject)
 ugcProjectRoutes.delete('/:id', deleteUgcProject)
 ugcProjectRoutes.post('/:id/clips', createUgcClip)
+ugcProjectRoutes.post('/:id/presets', applyUgcCampaignPreset)
 ugcProjectRoutes.patch('/:id/clips/:clipId', updateUgcClipHandler)
 ugcProjectRoutes.delete('/:id/clips/:clipId', deleteUgcClip)
 ugcProjectRoutes.post('/:id/clips/:clipId/duplicate', duplicateUgcClip)
@@ -41,6 +47,8 @@ ugcProjectRoutes.post('/:id/script', generateUgcProjectScript)
 ugcProjectRoutes.post('/:id/stills', generateUgcProjectStills)
 ugcProjectRoutes.post('/:id/videos', generateUgcProjectVideos)
 ugcProjectRoutes.post('/:id/clips/:clipId/script', generateUgcClipScript)
+ugcProjectRoutes.post('/:id/clips/:clipId/audio', generateUgcClipAudio)
+ugcProjectRoutes.post('/:id/audio', generateUgcProjectAudio)
 ugcProjectRoutes.post('/:id/clips/:clipId/stills', generateUgcClipStills)
 ugcProjectRoutes.post('/:id/clips/:clipId/videos', generateUgcClipVideos)
 ugcProjectRoutes.post('/:id/clips/:clipId/stills/:index/regenerate', regenerateUgcClipStill)

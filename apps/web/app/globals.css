@@ -1391,6 +1391,11 @@
     min-height: 8rem;
   }
 
+  .ugc-studio .image-studio-prompt [data-slot='input-group-control'],
+  .ugc-studio .video-studio-prompt [data-slot='input-group-control'] {
+    min-height: 6rem;
+  }
+
   .image-studio-prompt [data-slot='input-group-control']::placeholder,
   .video-studio-prompt [data-slot='input-group-control']::placeholder,
   .slideshow-studio-prompt [data-slot='input-group-control']::placeholder,

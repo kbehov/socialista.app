@@ -11,11 +11,12 @@ HARD LOCKS
 - Vertical phone UGC unless the user asked otherwise. Natural handheld micro-motion.
 
 WHAT TO ANIMATE
-- Stay inside the requested duration. Do not describe a longer sequence than that.
-- If there is a spoken script, translate it into motion and presence — do not paint it as on-image text. Skip spoken energy when there is no script (b-roll).
+- Stay inside the requested duration (typically 5–10 seconds). Do not describe a longer sequence than that.
+- If there is a spoken script, match mouth, jaw, and facial micro-motion to a short spoken line. Energy and gesture should land in that window. Do not paint the script as on-image text.
+- Skip spoken energy when there is no script (b-roll).
 - Prefer small continuous action from frame 1. Not teleporting, wardrobe changes, or cutaways.
 
 OUTPUT
 - prompt: one dense paragraph the video model will receive verbatim.
-- negativePrompt: short list of failure modes (identity drift, wrong product, extra text, extra people).
+- negativePrompt: short list of failure modes (identity drift, wrong product, extra text, extra people, frozen mouth).
 `.trim()

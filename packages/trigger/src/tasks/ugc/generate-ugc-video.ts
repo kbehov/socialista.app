@@ -1,4 +1,4 @@
-import { generateUgcVideo as generateUgcVideoClip, planUgcVideoPrompt } from '@socialista/ai'
+import { generateUgcVideo as generateUgcVideoClip, lipSync, planUgcVideoPrompt } from '@socialista/ai'
 import {
   connectDb,
   disconnectDb,
@@ -60,7 +60,7 @@ export const generateUgcVideo = schemaTask({
         throw new Error('Clip not found')
       }
 
-      const startFrame = clip.stills[0]?.imageUrl
+      const startFrame = clip.stills.find(still => still.imageUrl)?.imageUrl
       if (!startFrame) {
         throw new Error('Generate photos before video')
       }
@@ -90,7 +90,7 @@ export const generateUgcVideo = schemaTask({
       const influencerId = resolveInfluencerId(project, clip)
       const influencer = influencerId ? await getInfluencerById(influencerId) : null
 
-      const stillUrls = clip.stills.flatMap(still => (still.imageUrl ? [still.imageUrl] : []))
+      const stillUrls = startFrame ? [startFrame] : []
       let plannedPrompt = payload.plannedPrompt ?? clip.plannedPrompt
       let negativePrompt = clip.negativePrompt
       const script = clip.script?.text ?? ''
@@ -170,15 +170,28 @@ export const generateUgcVideo = schemaTask({
           aspectRatio: project.aspectRatio,
           negativePrompt,
           duration: clip.durationSec,
+          generateAudio: !clip.audioUrl,
           onProgress: setGenerationStatus,
         })
+
+        let finalVideoUrl = videoUrl
+        if (clip.audioUrl) {
+          setGenerationStatus(88, 'Lip-syncing audio')
+          finalVideoUrl = await lipSync({
+            videoUrl,
+            audioUrl: clip.audioUrl,
+            workspaceId: payload.workspaceId,
+            userId: payload.userId,
+            onProgress: (_progress, label) => setGenerationStatus(88, label),
+          })
+        }
 
         await finalizeGeneration(payload.workspaceId, model)
         await completeGenerationRecord({
           triggerRunId,
           result: {
             type: GenerationResultType.VIDEO,
-            url: videoUrl,
+            url: finalVideoUrl,
             thumbnailUrl: startFrame,
             durationSec: clip.durationSec,
           },
@@ -188,7 +201,7 @@ export const generateUgcVideo = schemaTask({
         })
 
         const latest = await updateUgcClip(payload.projectId, clip.id, {
-          videoUrl,
+          videoUrl: finalVideoUrl,
           thumbnailUrl: startFrame,
           generationId: started.generationId,
           plannedPrompt,

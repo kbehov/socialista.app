@@ -9,6 +9,10 @@ export const generateUgcStillsPayloadSchema = z.object({
   clipId: z.string().min(1).optional(),
   stillIndex: z.number().int().min(0).max(2).optional(),
   skipEnhance: z.boolean().optional(),
+  prompt: z.string().min(1).optional(),
+  model: z.string().min(1).optional(),
+  referenceImageUrls: z.array(z.string().min(1)).max(8).optional(),
+  count: z.number().int().min(1).max(3).optional(),
   ...skillPayloadFields,
 })
 

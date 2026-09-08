@@ -80,6 +80,9 @@ export interface IUgcClipVoice {
   voiceName?: string
   speed?: number
   stability?: number
+  similarity?: number
+  style?: number
+  speakerBoost?: boolean
   enabled?: boolean
 }
 
@@ -88,6 +91,13 @@ export interface IUgcSceneStill {
   imageUrl?: string
   generationId?: string
   enhancedPrompt?: string
+}
+
+export interface IUgcClipAudioTake {
+  id: string
+  audioUrl: string
+  durationSec?: number
+  scriptText?: string
 }
 
 export interface IUgcClip {
@@ -107,12 +117,16 @@ export interface IUgcClip {
   stills: IUgcSceneStill[]
   plannedPrompt?: string
   negativePrompt?: string
+  audioUrl?: string
+  audioDurationSec?: number
+  audioTakes?: IUgcClipAudioTake[]
   videoUrl?: string
   thumbnailUrl?: string
   generationId?: string
   composedVideoId?: Types.ObjectId
   stillsRunId?: string
   videoRunId?: string
+  audioRunId?: string
   approved?: boolean
   error?: string
 }
@@ -146,6 +160,7 @@ export interface IUgcProject {
   productUrl?: string
   productKind?: UgcProductKind
   influencerId?: Types.ObjectId
+  voice?: IUgcClipVoice
   aspectRatio: string
   models: IUgcProjectModels
   flowStep?: UgcFlowStep
@@ -165,6 +180,7 @@ export interface IUgcProject {
   variants?: IUgcVariant[]
   stillsRunId?: string
   videoRunId?: string
+  audioRunId?: string
 }
 
 export type UgcProjectDocument = HydratedDocument<IUgcProject>

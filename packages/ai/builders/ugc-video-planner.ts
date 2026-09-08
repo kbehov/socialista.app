@@ -25,7 +25,7 @@ function modelBias(videoModel: string): string {
 }
 
 const TYPE_MOTION: Record<UgcClipType, string> = {
-  talking: 'Animate talking-head energy: small head turns, blinks, natural mouth and gesture motion. Stay on this person.',
+  talking: 'Animate talking-head energy: natural mouth shapes for the spoken line, blinks, small head turns, and a handheld phone feel. Stay on this person.',
   'product-hold': 'Keep the product in hand. Slight product tilt, a step closer, a smile. Same SKU.',
   'b-roll': 'Product-only motion: slow push-in, gentle rotation, light shifting on materials. No new objects. No person unless already in frame 1.',
   unboxing: 'Hands open or lift the product from the packaging. Continuous action from frame 1. Same box and SKU.',
@@ -48,8 +48,8 @@ export function buildUgcVideoPlannerUserPrompt(input: UgcVideoPlannerInput): str
     input.identityFragment ?? '',
     `Product: ${product}.`,
     hasScript
-      ? `Spoken script (motion and presence only, never as on-image text):\n${input.script.trim()}`
-      : 'No spoken script. Animate the scene only.',
+      ? `Spoken script (~${input.durationSec ?? 8}s, motion and lip presence only, never as on-image text):\n${input.script.trim()}`
+      : 'No spoken script. Animate the scene only. Keep the mouth relaxed if a person is present.',
     directions ? `User directions: ${directions}` : 'No extra directions — keep it natural UGC.',
     'Write the image-to-video prompt now.',
   ]

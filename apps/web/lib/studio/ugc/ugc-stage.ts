@@ -1,6 +1,8 @@
 import {
   ugcClipRequiresCreator,
+  ugcClipRequiresProduct,
   ugcClipRequiresScript,
+  ugcClipShowsScript,
   type UgcClip,
   type UgcProject,
 } from '@socialista/types'
@@ -20,8 +22,43 @@ export function clipHasStill(clip: UgcClip): boolean {
   return clip.stills.some(still => Boolean(still.imageUrl))
 }
 
+/** Scene photos from generation — excludes campaign product / reference assets mixed into stills. */
+export function ugcClipGeneratedStills(clip: UgcClip, productImageUrls: string[] = []) {
+  const campaignUrls = new Set([
+    ...productImageUrls,
+    ...(clip.referenceImageUrls ?? []),
+  ])
+  return clip.stills.filter(still => {
+    if (!still.imageUrl) return false
+    if (still.generationId || still.enhancedPrompt) return true
+    return !campaignUrls.has(still.imageUrl)
+  })
+}
+
 export function clipHasScript(clip: UgcClip): boolean {
   return Boolean(clip.script?.text.trim())
+}
+
+export function clipHasAudio(clip: UgcClip): boolean {
+  return Boolean(clip.audioUrl)
+}
+
+export function ugcClipNextHint(project: UgcProject, clip: UgcClip): string {
+  if (ugcClipRequiresCreator(clip.type) && !project.influencerId && !clip.influencerId) {
+    return 'Pick a creator for this scene'
+  }
+  if (ugcClipRequiresProduct(clip.type) && project.productImageUrls.length === 0 && (clip.referenceImageUrls?.length ?? 0) === 0) {
+    return 'Add a product photo'
+  }
+  if (ugcClipRequiresScript(clip.type) && !clipHasScript(clip)) {
+    return 'Write or generate a script (max 120 chars)'
+  }
+  if (ugcClipShowsScript(clip.type) && clipHasScript(clip) && !clipHasAudio(clip) && clip.voice?.enabled !== false) {
+    return 'Generate the voiceover'
+  }
+  if (!clipHasStill(clip)) return 'Generate the first-scene photo'
+  if (!clip.videoUrl) return 'Generate the video'
+  return 'Scene ready'
 }
 
 export function ugcSceneBadge(clip: UgcClip, generating: boolean): string {

@@ -12,6 +12,9 @@ import type {
   GenerateUgcVideosPayload,
   GetUgcProjectsResponse,
   OpenUgcEditorResponse,
+  ApplyUgcCampaignPresetPayload,
+  SearchUgcVoicesQuery,
+  SearchUgcVoicesResponse,
   UgcGenerationHandle,
   UgcProject,
   UpdateUgcClipPayload,
@@ -118,6 +121,27 @@ export const generateUgcClipScript = async (
   return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.GENERATE_CLIP_SCRIPT(id, clipId), payload ?? {})
 }
 
+export const generateUgcClipAudio = async (
+  id: string,
+  clipId: string,
+  payload?: { script?: string },
+): Promise<ApiResponse<UgcGenerationHandle>> => {
+  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_AUDIO(id, clipId), payload ?? {})
+}
+
+export const generateUgcProjectAudio = async (
+  id: string,
+): Promise<ApiResponse<UgcGenerationHandle>> => {
+  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_PROJECT_AUDIO(id), {})
+}
+
+export const applyUgcCampaignPreset = async (
+  id: string,
+  payload: ApplyUgcCampaignPresetPayload,
+): Promise<ApiResponse<{ project: UgcProject }>> => {
+  return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.APPLY_PRESET(id), payload)
+}
+
 export const generateUgcVideos = async (
   id: string,
   payload: GenerateUgcVideosPayload,
@@ -162,4 +186,19 @@ export const openUgcProjectEditor = async (
   id: string,
 ): Promise<ApiResponse<OpenUgcEditorResponse>> => {
   return api.post<OpenUgcEditorResponse>(UGC_PROJECT_ROUTES.OPEN_PROJECT_EDITOR(id), {})
+}
+
+export const getUgcVoices = async (
+  query?: SearchUgcVoicesQuery,
+): Promise<ApiResponse<SearchUgcVoicesResponse>> => {
+  const params = new URLSearchParams()
+  if (query?.search) params.set('search', query.search)
+  if (query?.language) params.set('language', query.language)
+  if (query?.gender) params.set('gender', query.gender)
+  if (query?.age) params.set('age', query.age)
+  if (query?.accent) params.set('accent', query.accent)
+  if (query?.category) params.set('category', query.category)
+  const search = params.toString()
+  const path = `${UGC_PROJECT_ROUTES.SEARCH_VOICES}${search ? `?${search}` : ''}`
+  return api.get<SearchUgcVoicesResponse>(path)
 }

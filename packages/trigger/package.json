@@ -73,6 +73,10 @@
       "types": "./dist/schemas/generate-ugc-video.schema.d.ts",
       "import": "./dist/schemas/generate-ugc-video.schema.js"
     },
+    "./schemas/generate-ugc-audio": {
+      "types": "./dist/schemas/generate-ugc-audio.schema.d.ts",
+      "import": "./dist/schemas/generate-ugc-audio.schema.js"
+    },
     "./schemas/assemble-ugc-project": {
       "types": "./dist/schemas/assemble-ugc-project.schema.d.ts",
       "import": "./dist/schemas/assemble-ugc-project.schema.js"

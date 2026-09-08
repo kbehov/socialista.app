@@ -8,7 +8,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
-import { useImageStudio } from "@/components/studio/images/image-studio-provider";
+import { useOptionalImageStudio } from "@/components/studio/images/image-studio-provider";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
   StudioAttachedSkill,
@@ -43,6 +43,7 @@ import {
   IMAGE_GENERATION_COUNT_MAX,
   IMAGE_GENERATION_COUNT_MIN,
   PROMPT_KEYS,
+  type AspectRatio,
   type Model,
   type Skill,
 } from "@socialista/types";
@@ -55,6 +56,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type ReactNode,
 } from "react";
 import { toast } from "sonner";
 import { ImageStudioStarters } from "./image-studio-starters";
@@ -72,7 +74,26 @@ function getSubmitShortcutLabel() {
     : "Ctrl↵";
 }
 
-type AspectRatioId = "1:1" | "16:9" | "9:16" | "4:3";
+export type ImagePromptSubmitResult = {
+  prompt: string
+  model: string
+  aspectRatio: AspectRatio
+  imageUrls: string[]
+  numImages: number
+}
+
+export type ImagePromptInputProps = {
+  models: Model[]
+  onSubmitOverride?: (result: ImagePromptSubmitResult) => void
+  initialAttachments?: AttachedMedia[]
+  initialAspectRatio?: AspectRatio
+  initialModel?: string
+  hideExtras?: boolean
+  starters?: ReactNode
+  placeholder?: string
+  pending?: boolean
+  initialPrompt?: string
+}
 
 const ASPECT_RATIOS = [
   { id: "1:1", label: "Square", ratio: 1 },
@@ -80,28 +101,88 @@ const ASPECT_RATIOS = [
   { id: "9:16", label: "Portrait", ratio: 9 / 16 },
   { id: "4:3", label: "Classic", ratio: 4 / 3 },
 ] as const satisfies ReadonlyArray<{
-  id: AspectRatioId;
+  id: AspectRatio;
   label: string;
   ratio: number;
 }>;
 
-function ImagePromptComposer({ models }: { models: Model[] }) {
+function ImagePromptComposer({
+  models,
+  onSubmitOverride,
+  initialAttachments,
+  initialAspectRatio,
+  initialModel,
+  hideExtras,
+  starters,
+  placeholder: placeholderProp,
+  pending: pendingProp,
+  initialPrompt,
+}: ImagePromptInputProps) {
   const [submitShortcut] = useState(getSubmitShortcutLabel);
   const router = useRouter();
-  const { composerRef, registerPromptHandlers } = useImageStudio();
+  const studio = useOptionalImageStudio();
+  const localComposerRef = useRef<HTMLDivElement>(null);
+  const composerRef = studio?.composerRef ?? localComposerRef;
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [isPending, startTransition] = useTransition();
-  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>([]);
-  const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? "");
-  const [aspectRatio, setAspectRatio] = useState<AspectRatioId>("1:1");
+  const pending = pendingProp || isPending;
+  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(
+    () => initialAttachments ?? [],
+  );
+  const dismissedAttachmentUrls = useRef(new Set<string>());
+  const [selectedModelId, setSelectedModelId] = useState(
+    () => models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? "",
+  );
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(initialAspectRatio ?? "1:1");
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT);
   const [attachedSkill, setAttachedSkill] = useState<Skill | undefined>();
   const [enhance, setEnhance] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
 
+  const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
+    setAttachedImages(current => {
+      const nextUrls = new Set(next.map(item => item.url));
+      for (const item of current) {
+        if (!nextUrls.has(item.url)) dismissedAttachmentUrls.current.add(item.url);
+      }
+      for (const item of next) {
+        dismissedAttachmentUrls.current.delete(item.url);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!initialAttachments) return;
+    setAttachedImages(current => {
+      const currentUrls = new Set(current.map(item => item.url));
+      const missing = initialAttachments.filter(
+        item =>
+          !currentUrls.has(item.url) &&
+          !dismissedAttachmentUrls.current.has(item.url),
+      );
+      if (missing.length === 0) return current;
+      return [...current, ...missing].slice(0, MAX_REFERENCE_IMAGES);
+    });
+  }, [initialAttachments]);
+
+  useEffect(() => {
+    if (models.length === 0) return
+    setSelectedModelId(current => {
+      if (current && models.some(model => model._id === current)) return current
+      return models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? current
+    })
+  }, [initialModel, models])
+
+  useEffect(() => {
+    if (!initialPrompt) return
+    textInput.setInput(initialPrompt)
+  }, [initialPrompt, textInput])
+
   const placeholder = useMemo(() => {
+    if (placeholderProp) return placeholderProp;
     if (attachedImages.length >= 2) {
       return "the creator from @image1 holding the product from @image2, native UGC for Reels…";
     }
@@ -109,7 +190,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
       return "the product from @image1 on marble, ecommerce hero, clean studio light…";
     }
     return DEFAULT_PLACEHOLDER;
-  }, [attachedImages.length]);
+  }, [attachedImages.length, placeholderProp]);
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -153,18 +234,19 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
   }, []);
 
   useEffect(() => {
-    registerPromptHandlers({
+    studio?.registerPromptHandlers({
       insertAtCursor,
       setPrompt,
       focusPrompt,
     });
-  }, [registerPromptHandlers, insertAtCursor, setPrompt, focusPrompt]);
+  }, [studio, insertAtCursor, setPrompt, focusPrompt]);
 
   useEffect(() => {
+    if (hideExtras) return;
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
     textareaRef.current?.focus();
-  }, []);
+  }, [hideExtras]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim();
@@ -184,6 +266,17 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
 
     startTransition(async () => {
       const imageUrls = attachedImages.map((image) => image.url);
+      if (onSubmitOverride) {
+        onSubmitOverride({
+          prompt,
+          model: selectedModel.value,
+          aspectRatio,
+          imageUrls,
+          numImages,
+        });
+        return;
+      }
+
       const result = await startImageGeneration({
         prompt,
         model: selectedModel.value,
@@ -218,7 +311,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           <PromptInputButton
             aria-label={`Aspect ratio ${selectedAspect.id}`}
             className={STUDIO_TOOL_BUTTON_CLASS}
-            disabled={isPending}
+            disabled={pending}
             size="xs"
             type="button"
           >
@@ -233,7 +326,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
       <DropdownMenuContent align="start" className="min-w-44 w-44">
         <DropdownMenuRadioGroup
           value={aspectRatio}
-          onValueChange={(value) => setAspectRatio(value as AspectRatioId)}
+          onValueChange={(value) => setAspectRatio(value as AspectRatio)}
         >
           {ASPECT_RATIOS.map((option) => (
             <DropdownMenuRadioItem
@@ -263,7 +356,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         selectedModelId={selectedModelId}
         onSelectedModelChange={setSelectedModelId}
         attachments={attachedImages}
-        onAttachmentsChange={setAttachedImages}
+        onAttachmentsChange={handleAttachmentsChange}
         attachSources={["upload", "library", "influencer", "product"]}
         maxAttachments={MAX_REFERENCE_IMAGES}
         workspaceId={currentWorkspace?._id}
@@ -275,17 +368,21 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
           label: "Number of images",
         }}
         placeholder={placeholder}
-        pending={isPending}
+        pending={pending}
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? "Generate" : `Generate ${numImages}`}
         submitTitle={numImages === 1 ? "Generate" : `Generate ${numImages}`}
         submitAppearance="send"
-        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+        footerClassName={
+          hideExtras
+            ? "border-transparent bg-transparent px-2 pb-1.5 pt-0.5 sm:px-2.5"
+            : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+        }
         composerHeader={
           attachedSkill ? (
             <StudioAttachedSkill
               skill={attachedSkill}
-              disabled={isPending}
+              disabled={pending}
               onRemove={() => setAttachedSkill(undefined)}
             />
           ) : null
@@ -301,7 +398,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                 STUDIO_TOOL_BUTTON_CLASS,
                 enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
               )}
-              disabled={isPending}
+              disabled={pending}
               onClick={() => setEnhance((value) => !value)}
               size="xs"
               tooltip={
@@ -323,7 +420,7 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
                 if (!skillId) setAttachedSkill(undefined);
               }}
               onSelect={setAttachedSkill}
-              disabled={isPending || !enhance}
+              disabled={pending || !enhance}
             />
           </>
         }
@@ -334,41 +431,48 @@ function ImagePromptComposer({ models }: { models: Model[] }) {
         emptyTitle="No image models yet"
         emptyDescription="Add a text-to-image model in the manager to start making campaign stills."
         surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        compact={hideExtras}
       />
 
       {attachedImages.length > 0 ? (
-        <div className="mt-2.5 px-0.5">
+        <div className={hideExtras ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
       ) : null}
 
-      <div className="mt-4 flex flex-col items-center gap-4">
-        <ImageStudioStarters disabled={isPending} />
+      {hideExtras ? (
+        starters ? (
+          <div className="mt-3 flex flex-col items-center gap-2">{starters}</div>
+        ) : null
+      ) : (
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <ImageStudioStarters disabled={pending} />
 
-        <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
-          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-            /
-          </Kbd>
-          <span>to focus</span>
-          <span aria-hidden className="text-black/16 dark:text-white/16">
-            ·
-          </span>
-          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-            {submitShortcut}
-          </Kbd>
-          <span>to generate</span>
-        </p>
+          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              /
+            </Kbd>
+            <span>to focus</span>
+            <span aria-hidden className="text-black/16 dark:text-white/16">
+              ·
+            </span>
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              {submitShortcut}
+            </Kbd>
+            <span>to generate</span>
+          </p>
 
-        <div className="w-full">
-          <ImagePromptAnatomy />
+          <div className="w-full">
+            <ImagePromptAnatomy />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
-  if (models.length === 0) {
+export function ImagePromptInput(props: ImagePromptInputProps) {
+  if (props.models.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-black/[0.08] bg-black/[0.015] px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.015]">
         <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/8 dark:bg-white/[0.03] dark:ring-white/10">
@@ -387,9 +491,13 @@ const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
 
   return (
     <PromptInputProvider>
-      <ImagePromptComposer models={models} />
+      <ImagePromptComposer {...props} />
     </PromptInputProvider>
   );
+}
+
+const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
+  return <ImagePromptInput models={models} />;
 };
 
 export default ImageGenerationPromptInput;

@@ -4,6 +4,7 @@ import { GenerationDetailSheet } from '@/components/generations/generation-detai
 import { getGenerationTitle } from '@/components/generations/generation-meta'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
+import { setStudioImageDrag } from '@/lib/studio/prompt/studio-image-drag'
 import { cn } from '@/lib/utils'
 import type { Generation } from '@socialista/types'
 import { ArrowRightIcon, ImageIcon } from 'lucide-react'
@@ -19,6 +20,13 @@ function thumbUrl(generation: Generation): string | undefined {
   if (!result || result.type === 'video') return undefined
   const raw = result.urls?.[0] ?? result.url
   return raw && /^https?:\/\//.test(raw) ? resolveGeneratedImagePreviewUrl(raw) : undefined
+}
+
+function sourceUrl(generation: Generation): string | undefined {
+  const result = generation.result
+  if (!result || result.type === 'video') return undefined
+  const raw = result.urls?.[0] ?? result.url
+  return raw && /^https?:\/\//.test(raw) ? raw : undefined
 }
 
 function extraCount(generation: Generation): number {
@@ -57,6 +65,7 @@ export function RecentImagesStrip({ generations }: RecentImagesStripProps) {
       <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 lg:grid-cols-6">
         {items.map(generation => {
           const src = thumbUrl(generation)
+          const dragUrl = sourceUrl(generation) ?? src
           const title = getGenerationTitle(generation.prompt, generation.kind)
           const extras = extraCount(generation)
 
@@ -64,7 +73,19 @@ export function RecentImagesStrip({ generations }: RecentImagesStripProps) {
             <li key={generation._id}>
               <button
                 type="button"
+                draggable={Boolean(dragUrl)}
                 aria-label={`View still: ${title}`}
+                onDragStart={event => {
+                  if (!dragUrl) {
+                    event.preventDefault()
+                    return
+                  }
+                  setStudioImageDrag(event.dataTransfer, {
+                    url: dragUrl,
+                    label: 'Recent still',
+                    source: 'library',
+                  })
+                }}
                 onClick={() => setSelected(generation)}
                 className={cn(
                   'group relative aspect-square w-full overflow-hidden rounded-lg bg-black/[0.04] ring-1 ring-black/8',
@@ -72,6 +93,7 @@ export function RecentImagesStrip({ generations }: RecentImagesStripProps) {
                   'hover:ring-black/16 active:scale-[0.98] motion-reduce:active:scale-100',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
                   'dark:bg-white/[0.04] dark:ring-white/10 dark:hover:ring-white/18',
+                  dragUrl && 'cursor-grab active:cursor-grabbing',
                 )}
               >
                 {src ? (
@@ -79,6 +101,7 @@ export function RecentImagesStrip({ generations }: RecentImagesStripProps) {
                   <img
                     src={src}
                     alt=""
+                    draggable={false}
                     className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                   />
                 ) : (

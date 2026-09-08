@@ -41,7 +41,7 @@ export function buildUgcAdScriptUserPrompt(input: UgcAdScriptPromptInput): strin
   return [
     `Write one spoken UGC ad script about ${product}.`,
     input.productDescription?.trim() ? `Product context: ${input.productDescription.trim()}` : '',
-    `Duration: ${durationSec} seconds. Maximum ${target} characters. Shorter is better.`,
+    `Duration: ${durationSec} seconds. Maximum ${target} characters (aim under 120). Shorter is better — one breath.`,
     typeLine,
     creator ? `The on-camera creator is ${creator}.` : '',
     directions ? `Extra notes: ${directions}` : '',
@@ -77,7 +77,7 @@ export function buildUgcAdScriptSegmentsUserPrompt(input: {
     input.productDescription?.trim() ? `Product context: ${input.productDescription.trim()}` : '',
     creator ? `The on-camera creator is ${creator}.` : '',
     input.directions?.trim() ? `Extra notes: ${input.directions.trim()}` : '',
-    'Each segment must stay within its character budget. Contractions. No hashtags, emojis, or markdown.',
+    'Each segment must stay within its character budget (max 120 characters). Contractions. No hashtags, emojis, or markdown.',
     'The segments should feel like one continuous ad: hook, proof, close.',
     'Return one object per scene with that scene id and its spoken text (empty string if no talking).',
     sceneLines.join('\n\n'),

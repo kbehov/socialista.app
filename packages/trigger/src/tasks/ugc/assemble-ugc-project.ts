@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { assembleUgcProjectPayloadSchema } from '../../schemas/assemble-ugc-project.schema.js'
-import { runFfmpeg } from '../../services/video-export/ffmpeg.js'
+import { runFfmpeg, probeHasAudioStream } from '../../services/video-export/ffmpeg.js'
 import { uploadExportedVideo } from '../../services/video-upload.js'
 import {
   completeGenerationRecord,
@@ -87,27 +87,54 @@ export const assembleUgcProject = schemaTask({
         const normalizedPath = join(workDir, `norm-${index}.mp4`)
         await downloadToFile(clip.videoUrl, sourcePath)
         setGenerationStatus(15 + Math.round((index / readyClips.length) * 40), `Normalizing clip ${index + 1}`)
+        const hasAudio = await probeHasAudioStream(sourcePath)
         await runFfmpeg({
-          args: [
-            '-y',
-            '-i',
-            sourcePath,
-            '-vf',
-            'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
-            '-c:v',
-            'libx264',
-            '-preset',
-            'veryfast',
-            '-crf',
-            '20',
-            '-c:a',
-            'aac',
-            '-ar',
-            '48000',
-            '-ac',
-            '2',
-            normalizedPath,
-          ],
+          args: hasAudio
+            ? [
+                '-y',
+                '-i',
+                sourcePath,
+                '-vf',
+                'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
+                '-c:v',
+                'libx264',
+                '-preset',
+                'veryfast',
+                '-crf',
+                '20',
+                '-c:a',
+                'aac',
+                '-ar',
+                '48000',
+                '-ac',
+                '2',
+                normalizedPath,
+              ]
+            : [
+                '-y',
+                '-i',
+                sourcePath,
+                '-f',
+                'lavfi',
+                '-i',
+                'anullsrc=channel_layout=stereo:sample_rate=48000',
+                '-vf',
+                'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
+                '-c:v',
+                'libx264',
+                '-preset',
+                'veryfast',
+                '-crf',
+                '20',
+                '-c:a',
+                'aac',
+                '-ar',
+                '48000',
+                '-ac',
+                '2',
+                '-shortest',
+                normalizedPath,
+              ],
           durationSeconds: clip.durationSec ?? 8,
         })
         normalized.push(normalizedPath)

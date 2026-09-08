@@ -14,6 +14,7 @@ import {
   type IUgcProject,
   type IUgcProjectModels,
   type IUgcProjectScript,
+  type IUgcClipAudioTake,
   type IUgcSceneStill,
   type IUgcVariant,
 } from '../types/ugc-project.types.js'
@@ -61,6 +62,9 @@ const voiceSchema = new Schema<IUgcClipVoice>(
     voiceName: { type: String },
     speed: { type: Number },
     stability: { type: Number },
+    similarity: { type: Number },
+    style: { type: Number },
+    speakerBoost: { type: Boolean },
     enabled: { type: Boolean },
   },
   { _id: false },
@@ -72,6 +76,16 @@ const stillSchema = new Schema<IUgcSceneStill>(
     imageUrl: { type: String },
     generationId: { type: String },
     enhancedPrompt: { type: String },
+  },
+  { _id: false },
+)
+
+const audioTakeSchema = new Schema<IUgcClipAudioTake>(
+  {
+    id: { type: String, required: true },
+    audioUrl: { type: String, required: true },
+    durationSec: { type: Number },
+    scriptText: { type: String },
   },
   { _id: false },
 )
@@ -102,12 +116,16 @@ const clipSchema = new Schema<IUgcClip>(
     stills: { type: [stillSchema], default: [] },
     plannedPrompt: { type: String },
     negativePrompt: { type: String },
+    audioUrl: { type: String },
+    audioDurationSec: { type: Number },
+    audioTakes: { type: [audioTakeSchema], default: [] },
     videoUrl: { type: String },
     thumbnailUrl: { type: String },
     generationId: { type: String },
     composedVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
     stillsRunId: { type: String },
     videoRunId: { type: String },
+    audioRunId: { type: String },
     approved: { type: Boolean },
     error: { type: String },
   },
@@ -153,6 +171,7 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     productUrl: { type: String },
     productKind: { type: String, enum: enumValues(UgcProductKind) },
     influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer' },
+    voice: { type: voiceSchema },
     aspectRatio: { type: String, default: '9:16' },
     models: { type: modelsSchema, required: true },
     flowStep: { type: String, enum: enumValues(UgcFlowStep) },
@@ -169,6 +188,7 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     variants: { type: [variantSchema], default: undefined },
     stillsRunId: { type: String },
     videoRunId: { type: String },
+    audioRunId: { type: String },
   },
   { timestamps: true },
 )

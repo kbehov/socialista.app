@@ -8,15 +8,17 @@ import {
   UgcClipType,
   UgcProjectStatus,
   UgcScriptSource,
+  UgcVoiceProvider,
   type IUgcClip,
+  type IUgcClipAudioTake,
   type IUgcProject,
   type IUgcSceneStill,
 } from '@socialista/db'
-import type { UgcClip, UgcClipVoice, UgcProject, UgcProjectSummary, UgcSceneStill } from '@socialista/types'
+import type { UgcClip, UgcClipAudioTake, UgcClipVoice, UgcProject, UgcProjectSummary, UgcSceneStill } from '@socialista/types'
 import {
   clampUgcDuration,
   clampUgcScript,
-  resizeUgcStills,
+  ugcClipAudioTakes,
   UGC_CLIP_TYPE_LABELS,
   UGC_CLIP_TYPES,
   UGC_DEFAULT_CLIP_TYPE,
@@ -24,6 +26,7 @@ import {
   UGC_MAX_CLIPS,
   UGC_SCRIPT_MAX_CHARS,
   ugcClipSceneCount,
+  ugcClipShowsScript,
   type UgcClipType as UgcClipTypeValue,
   type UgcSceneCount,
 } from '@socialista/types'
@@ -87,6 +90,15 @@ export async function persistMigratedClips(project: IUgcProject): Promise<IUgcPr
   return updated ?? { ...project, clips }
 }
 
+function serializeAudioTake(take: IUgcClipAudioTake): UgcClipAudioTake {
+  return {
+    id: take.id,
+    audioUrl: take.audioUrl,
+    durationSec: take.durationSec,
+    scriptText: take.scriptText,
+  }
+}
+
 function serializeStill(still: IUgcSceneStill): UgcSceneStill {
   return {
     index: still.index,
@@ -104,7 +116,24 @@ function serializeVoice(voice?: IUgcClip['voice']): UgcClipVoice | undefined {
     ...(voice.voiceName ? { voiceName: voice.voiceName } : {}),
     ...(typeof voice.speed === 'number' ? { speed: voice.speed } : {}),
     ...(typeof voice.stability === 'number' ? { stability: voice.stability } : {}),
+    ...(typeof voice.similarity === 'number' ? { similarity: voice.similarity } : {}),
+    ...(typeof voice.style === 'number' ? { style: voice.style } : {}),
+    ...(typeof voice.speakerBoost === 'boolean' ? { speakerBoost: voice.speakerBoost } : {}),
     ...(typeof voice.enabled === 'boolean' ? { enabled: voice.enabled } : {}),
+  }
+}
+
+export function toStoredVoice(input: UgcClipVoice): IUgcClip['voice'] {
+  return {
+    provider: UgcVoiceProvider.ELEVENLABS,
+    voiceId: input.voiceId,
+    voiceName: input.voiceName,
+    speed: input.speed,
+    stability: input.stability,
+    similarity: input.similarity,
+    style: input.style,
+    speakerBoost: input.speakerBoost,
+    enabled: input.enabled,
   }
 }
 
@@ -113,9 +142,15 @@ export function resolveClipInfluencerId(project: IUgcProject, clip: IUgcClip): s
 }
 
 export function serializeClip(clip: IUgcClip): UgcClip {
-  const stills = (clip.stills ?? []).map(serializeStill)
+  const stills = (clip.stills ?? []).filter(still => still.imageUrl).map(serializeStill)
   const type = clipTypeValue(clip.type)
   const sceneCount = ugcClipSceneCount({ type, stills, sceneCount: clip.sceneCount })
+  const audioTakes = ugcClipAudioTakes({
+    audioTakes: (clip.audioTakes ?? []).filter(take => take.audioUrl).map(serializeAudioTake),
+    audioUrl: clip.audioUrl,
+    audioDurationSec: clip.audioDurationSec,
+  })
+  const selectedTake = audioTakes.find(take => take.audioUrl === clip.audioUrl) ?? audioTakes.at(-1)
   return {
     id: clip.id,
     type,
@@ -139,15 +174,19 @@ export function serializeClip(clip: IUgcClip): UgcClip {
     scenePrompt: clip.scenePrompt,
     directions: clip.directions,
     referenceImageUrls: clip.referenceImageUrls ?? [],
-    stills: resizeUgcStills(stills, sceneCount),
+    stills: stills.map((still, index) => ({ ...still, index })),
     plannedPrompt: clip.plannedPrompt,
     negativePrompt: clip.negativePrompt,
+    audioUrl: clip.audioUrl ?? selectedTake?.audioUrl,
+    audioDurationSec: clip.audioDurationSec ?? selectedTake?.durationSec,
+    audioTakes,
     videoUrl: clip.videoUrl,
     thumbnailUrl: clip.thumbnailUrl,
     generationId: clip.generationId,
     composedVideoId: clip.composedVideoId?.toString(),
     stillsRunId: clip.stillsRunId,
     videoRunId: clip.videoRunId,
+    audioRunId: clip.audioRunId,
     approved: clip.approved,
     error: clip.error,
   }
@@ -171,6 +210,7 @@ export function serializeUgcProject(project: IUgcProject): UgcProject {
     productUrl: project.productUrl,
     productKind: project.productKind,
     influencerId: campaignInfluencerId,
+    voice: serializeVoice(project.voice),
     aspectRatio: project.aspectRatio,
     models: {
       image: project.models.image,
@@ -255,6 +295,16 @@ export function assertCanGenerateScript(clip: IUgcClip) {
   const type = clipTypeValue(clip.type)
   if (type === 'b-roll') {
     throw new HttpError(400, 'This scene has no talking')
+  }
+}
+
+export function assertCanGenerateAudio(clip: IUgcClip) {
+  const type = clipTypeValue(clip.type)
+  if (!ugcClipShowsScript(type)) {
+    throw new HttpError(400, 'This scene has no spoken audio')
+  }
+  if (!clip.script?.text.trim()) {
+    throw new HttpError(400, 'Write a script before generating audio')
   }
 }
 

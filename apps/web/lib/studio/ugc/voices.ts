@@ -1,3 +1,5 @@
+import type { UgcClipVoice } from '@socialista/types'
+
 export const UGC_VOICES = [
   { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Calm, clear American' },
   { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Bold, young American' },
@@ -10,3 +12,19 @@ export const UGC_VOICES = [
 ] as const
 
 export type UgcVoiceOption = (typeof UGC_VOICES)[number]
+
+export function ugcVoiceEquals(a?: UgcClipVoice, b?: UgcClipVoice) {
+  if (a === b) return true
+  if (!a || !b) return false
+  return (
+    a.provider === b.provider &&
+    a.voiceId === b.voiceId &&
+    a.voiceName === b.voiceName &&
+    a.speed === b.speed &&
+    a.stability === b.stability &&
+    a.similarity === b.similarity &&
+    a.style === b.style &&
+    Boolean(a.speakerBoost) === Boolean(b.speakerBoost) &&
+    (a.enabled !== false) === (b.enabled !== false)
+  )
+}

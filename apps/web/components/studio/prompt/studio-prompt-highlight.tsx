@@ -20,6 +20,13 @@ export const PROMPT_FIELD_STYLE: CSSProperties = {
   tabSize: 4,
 };
 
+export const PROMPT_FIELD_STYLE_COMPACT: CSSProperties = {
+  ...PROMPT_FIELD_STYLE,
+  fontSize: 13,
+  lineHeight: "22px",
+  letterSpacing: "-0.14px",
+};
+
 const MIRROR_STYLE_PROPS = [
   "fontFamily",
   "fontSize",
@@ -53,6 +60,7 @@ type StudioPromptHighlightProps = {
   emphasizedIndex?: number | null;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   className?: string;
+  style?: CSSProperties;
 };
 
 function cssPropName(prop: string): string {
@@ -123,6 +131,7 @@ export function StudioPromptHighlight({
   emphasizedIndex = null,
   textareaRef,
   className,
+  style = PROMPT_FIELD_STYLE,
 }: StudioPromptHighlightProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const mirrorRef = useRef<HTMLPreElement>(null);
@@ -161,7 +170,7 @@ export function StudioPromptHighlight({
     >
       <pre
         ref={mirrorRef}
-        style={PROMPT_FIELD_STYLE}
+        style={style}
         className={cn("m-0 border-0 bg-transparent text-transparent", className)}
       >
         {segments.map((segment, index) => {

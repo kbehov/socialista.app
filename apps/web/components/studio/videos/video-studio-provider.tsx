@@ -69,3 +69,7 @@ export function useVideoStudio() {
   }
   return context
 }
+
+export function useOptionalVideoStudio() {
+  return useContext(VideoStudioContext)
+}

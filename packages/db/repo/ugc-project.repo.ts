@@ -31,7 +31,17 @@ export const updateUgcClip = async (
   clipId: string,
   clipUpdates: Partial<IUgcClip>,
   projectUpdates?: Partial<
-    Pick<IUgcProject, 'status' | 'error' | 'stillsRunId' | 'videoRunId' | 'assembledVideoUrl' | 'assembledRunId'>
+    Pick<
+      IUgcProject,
+      | 'status'
+      | 'error'
+      | 'stillsRunId'
+      | 'videoRunId'
+      | 'audioRunId'
+      | 'assembledVideoUrl'
+      | 'assembledRunId'
+      | 'models'
+    >
   >,
 ) => {
   const $set: Record<string, unknown> = {}
@@ -57,14 +67,28 @@ export const updateUgcClip = async (
     return getUgcProjectById(projectId)
   }
 
-  return await UgcProjectModel.findOneAndUpdate({ _id: projectId, 'clips.id': clipId }, ops, {
-    new: true,
-    arrayFilters: [{ 'clip.id': clipId }],
-  }).lean()
+  const usesClipFilter = Object.keys(clipUpdates).length > 0
+  return await UgcProjectModel.findOneAndUpdate(
+    usesClipFilter ? { _id: projectId, 'clips.id': clipId } : { _id: projectId },
+    ops,
+    {
+      new: true,
+      ...(usesClipFilter ? { arrayFilters: [{ 'clip.id': clipId }] } : {}),
+    },
+  ).lean()
 }
 
 export const addUgcClip = async (projectId: string, clip: IUgcClip) => {
   return await UgcProjectModel.findByIdAndUpdate(projectId, { $push: { clips: clip } }, { new: true }).lean()
+}
+
+export const addUgcClips = async (projectId: string, clips: IUgcClip[]) => {
+  if (clips.length === 0) return getUgcProjectById(projectId)
+  return await UgcProjectModel.findByIdAndUpdate(
+    projectId,
+    { $push: { clips: { $each: clips } } },
+    { new: true },
+  ).lean()
 }
 
 export const removeUgcClip = async (projectId: string, clipId: string) => {

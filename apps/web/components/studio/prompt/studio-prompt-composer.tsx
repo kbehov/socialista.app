@@ -41,7 +41,7 @@ import {
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
 } from "@/components/studio/prompt/studio-composer-surface";
-import { StudioPromptHighlight, PROMPT_FIELD_STYLE } from "@/components/studio/prompt/studio-prompt-highlight";
+import { StudioPromptHighlight, PROMPT_FIELD_STYLE, PROMPT_FIELD_STYLE_COMPACT } from "@/components/studio/prompt/studio-prompt-highlight";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -54,8 +54,14 @@ import {
   taggedAttachmentIndices,
 } from "@/lib/studio/prompt/reference-tags";
 import { getModelCompanyName } from "@/lib/model-company";
+import {
+  attachedMediaFromStudioDrag,
+  isStudioImageDrag,
+  readStudioImageDrag,
+} from "@/lib/studio/prompt/studio-image-drag";
 import { cn } from "@/lib/utils";
 import { formatModelCost } from "@/utils/format";
+import { toast } from "sonner";
 import { ContextSupport, type Model } from "@socialista/types";
 import {
   ArrowUpIcon,
@@ -78,6 +84,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type DragEvent as ReactDragEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   type Ref,
@@ -246,9 +253,17 @@ function StudioCountStepper({
 const PROMPT_TEXT_METRICS =
   "box-border w-full whitespace-pre-wrap break-words px-4 pt-4 pb-10 font-normal leading-[25px]";
 
+const PROMPT_TEXT_METRICS_COMPACT =
+  "box-border w-full whitespace-pre-wrap break-words px-3 pt-2.5 pb-7 text-[13px] font-normal leading-[22px]";
+
 const PROMPT_TEXTAREA_CLASS = cn(
   PROMPT_TEXT_METRICS,
   "block min-h-32 max-h-48 overflow-y-auto",
+);
+
+const PROMPT_TEXTAREA_CLASS_COMPACT = cn(
+  PROMPT_TEXT_METRICS_COMPACT,
+  "block min-h-[4.5rem] max-h-28 overflow-y-auto",
 );
 
 function StudioAttachmentChip({
@@ -369,6 +384,7 @@ export type StudioPromptComposerProps = {
   submitTitle?: string;
   footerClassName?: string;
   submitAppearance?: "labeled" | "send";
+  compact?: boolean;
 };
 
 export function StudioPromptComposer({
@@ -406,6 +422,7 @@ export function StudioPromptComposer({
   submitTitle,
   footerClassName,
   submitAppearance = "labeled",
+  compact = false,
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController();
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
@@ -418,6 +435,9 @@ export function StudioPromptComposer({
     number | null
   >(null);
   const innerTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const dropDepthRef = useRef(0);
+  const [dropActive, setDropActive] = useState(false);
+  const acceptsImageDrop = attachSources.length > 0 && !disabled && !pending;
 
   const setTextareaRef = useCallback(
     (node: HTMLTextAreaElement | null) => {
@@ -512,6 +532,57 @@ export function StudioPromptComposer({
       });
     },
     [onPromptChange, textInput],
+  );
+
+  const clearDropState = useCallback(() => {
+    dropDepthRef.current = 0;
+    setDropActive(false);
+  }, []);
+
+  const handleStudioImageDragOver = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      if (!acceptsImageDrop || !isStudioImageDrag(event.dataTransfer.types)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    },
+    [acceptsImageDrop],
+  );
+
+  const handleStudioImageDragEnter = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      if (!acceptsImageDrop || !isStudioImageDrag(event.dataTransfer.types)) return;
+      event.preventDefault();
+      dropDepthRef.current += 1;
+      setDropActive(true);
+    },
+    [acceptsImageDrop],
+  );
+
+  const handleStudioImageDragLeave = useCallback(() => {
+    dropDepthRef.current = Math.max(0, dropDepthRef.current - 1);
+    if (dropDepthRef.current === 0) setDropActive(false);
+  }, []);
+
+  const handleStudioImageDrop = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>) => {
+      const payload = readStudioImageDrag(event.dataTransfer);
+      clearDropState();
+      if (!payload || !acceptsImageDrop) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (attachments.some((item) => item.url === payload.url || item.id === `drag-${payload.url}`)) {
+        toast.error("That reference is already attached");
+        return;
+      }
+      if (attachments.length >= maxAttachments) {
+        toast.error(`You can attach up to ${maxAttachments} references`);
+        return;
+      }
+
+      onAttachmentsChange([...attachments, attachedMediaFromStudioDrag(payload)]);
+    },
+    [acceptsImageDrop, attachments, clearDropState, maxAttachments, onAttachmentsChange],
   );
 
   const handlePromptChange = useCallback(
@@ -746,24 +817,32 @@ export function StudioPromptComposer({
     </ModelSelector>
   ) : null;
 
+  const textMetrics = compact ? PROMPT_TEXT_METRICS_COMPACT : PROMPT_TEXT_METRICS;
+  const textareaClass = compact ? PROMPT_TEXTAREA_CLASS_COMPACT : PROMPT_TEXTAREA_CLASS;
+
   return (
     <div
       ref={composerRef}
+      onDragEnter={handleStudioImageDragEnter}
+      onDragLeave={handleStudioImageDragLeave}
+      onDragOver={handleStudioImageDragOver}
+      onDrop={handleStudioImageDrop}
       className={cn(
-        "w-full scroll-mt-10 transition-[transform,opacity] duration-300",
+        "relative w-full scroll-mt-10 transition-[transform,opacity] duration-300",
         highlighted && "animate-in fade-in-0 duration-300",
         className,
       )}
     >
       <PromptInput
         className={cn(
-          "rounded-2xl border-black/10 bg-background transition-[border-color,ring-color] duration-200",
+          "rounded-2xl border-black/10 bg-background transition-[border-color,box-shadow,ring-color] duration-200",
           "has-[[data-slot=input-group-control]:focus-visible]:border-black/18",
           "has-[[data-slot=input-group-control]:focus-visible]:ring-2",
           "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6",
           "dark:border-white/12",
           "dark:has-[[data-slot=input-group-control]:focus-visible]:border-white/20",
           highlighted && "border-foreground/15 ring-2 ring-foreground/8",
+          dropActive && "border-foreground/25 ring-2 ring-foreground/12",
           surfaceClassName,
         )}
         onSubmit={onSubmit}
@@ -786,13 +865,14 @@ export function StudioPromptComposer({
               attachmentCount={attachments.length}
               emphasizedIndex={hoveredAttachmentIndex}
               textareaRef={innerTextareaRef}
-              className={PROMPT_TEXT_METRICS}
+              className={textMetrics}
+              style={compact ? PROMPT_FIELD_STYLE_COMPACT : PROMPT_FIELD_STYLE}
             />
             <PromptInputTextarea
               ref={setTextareaRef}
-              style={PROMPT_FIELD_STYLE}
+              style={compact ? PROMPT_FIELD_STYLE_COMPACT : PROMPT_FIELD_STYLE}
               className={cn(
-                PROMPT_TEXTAREA_CLASS,
+                textareaClass,
                 "relative z-10 bg-transparent caret-foreground selection:bg-foreground/15",
                 "placeholder:text-muted-foreground/45 placeholder:transition-opacity placeholder:duration-300",
                 "shadow-none ring-0 focus:outline-none focus:ring-0 focus-visible:ring-0",
@@ -822,7 +902,10 @@ export function StudioPromptComposer({
             {hasPrompt ? (
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-4 bottom-3 z-10 text-[10px] tabular-nums tracking-[-0.01em] text-muted-foreground/35"
+                className={cn(
+                  "pointer-events-none absolute z-10 text-[10px] tabular-nums tracking-[-0.01em] text-muted-foreground/35",
+                  compact ? "right-3 bottom-2" : "right-4 bottom-3",
+                )}
               >
                 {textInput.value.length.toLocaleString()}
               </span>
@@ -845,7 +928,8 @@ export function StudioPromptComposer({
           <div
             id="studio-reference-attachments"
             className={cn(
-              "flex w-full items-end gap-2.5 overflow-x-auto border-t border-border/35 bg-muted/12 px-3 pt-2.5 pb-2 scrollbar-none sm:px-3.5",
+              "flex w-full items-end gap-2.5 overflow-x-auto border-t border-border/35 bg-muted/12 scrollbar-none",
+              compact ? "px-2.5 pt-2 pb-1.5" : "px-3 pt-2.5 pb-2 sm:px-3.5",
               mentionOpen && "bg-muted/18",
             )}
             role={mentionOpen ? "listbox" : "list"}
@@ -887,7 +971,7 @@ export function StudioPromptComposer({
 
         <PromptInputFooter
           className={cn(
-            "border-t border-border/35 bg-muted/12 px-2.5 py-2 sm:px-3",
+            compact ? "border-t border-border/35 bg-muted/12 px-2 py-1.5 sm:px-2.5" : "border-t border-border/35 bg-muted/12 px-2.5 py-2 sm:px-3",
             attachments.length > 0 && "border-t-0 pt-2",
             footerClassName,
           )}
@@ -976,6 +1060,11 @@ export function StudioPromptComposer({
           </div>
         </PromptInputFooter>
       </PromptInput>
+      {dropActive ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-background/80 text-[13px] font-medium tracking-tight">
+          Drop to attach
+        </div>
+      ) : null}
     </div>
   );
 }

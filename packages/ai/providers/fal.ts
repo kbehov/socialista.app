@@ -1,15 +1,15 @@
-import { fal } from '@fal-ai/client'
+import { fal } from '../fal.js'
 
 import type { GenerateImageOptions } from '@socialista/types'
 import { z } from 'zod'
 import { downloadRemoteImage, uploadGeneratedImage } from '../utils/image-upload.js'
 import { downloadRemoteVideo, uploadGeneratedVideo } from '../utils/video-upload.js'
 
-fal.config({
-  credentials: process.env.FAL_KEY as string,
-})
-// Export the fal client
-export { fal }
+// fal.config({
+//   credentials: process.env.FAL_KEY as string,
+// })
+// // Export the fal client
+// export { fal }
 // Export the schema for the image result
 export const FalImageResult = z.object({
   images: z.array(z.object({ url: z.string() })).min(1),
@@ -56,11 +56,7 @@ function buildFalImageInput(
   return { image_url: referenceImages[0]! }
 }
 
-async function persistFalImageUrl(
-  url: string,
-  workspaceId: string,
-  userId: string,
-): Promise<string> {
+async function persistFalImageUrl(url: string, workspaceId: string, userId: string): Promise<string> {
   try {
     const downloaded = await downloadRemoteImage(url)
     return await uploadGeneratedImage({
@@ -117,7 +113,10 @@ export async function generateImageFal({
   })
 
   const parsed = FalImageResult.parse(result.data)
-  const urls = parsed.images.map(image => image.url).filter(Boolean).slice(0, numImages)
+  const urls = parsed.images
+    .map(image => image.url)
+    .filter(Boolean)
+    .slice(0, numImages)
 
   if (urls.length === 0) {
     throw new Error('No image was returned from the model')

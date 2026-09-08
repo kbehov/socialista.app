@@ -77,6 +77,11 @@ export {
 } from './schemas/generate-ugc-video.schema.js'
 
 export {
+  generateUgcAudioPayloadSchema,
+  type GenerateUgcAudioPayload,
+} from './schemas/generate-ugc-audio.schema.js'
+
+export {
   cloneInfluencerPayloadSchema,
   type CloneInfluencerPayload,
 } from './schemas/clone-influencer.schema.js'

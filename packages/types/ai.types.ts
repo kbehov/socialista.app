@@ -207,6 +207,11 @@ export type GenerateTextToSpeechInput = {
   text: string
   voice: string
   model?: string
+  speed?: number
+  stability?: number
+  similarity?: number
+  style?: number
+  speakerBoost?: boolean
 }
 export type GenerateTextToSpeechResult = {
   url: string
@@ -218,7 +223,11 @@ export type GetVoicesInput = {
   search?: string
   language?: string
   gender?: string
+  age?: string
   accent?: string
+  category?: string
+  pageSize?: number
+  nextPageToken?: string
 }
 
 export type Voice = {
