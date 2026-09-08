@@ -1,17 +1,4 @@
-import type { UgcClipVoice } from '@socialista/types'
-
-export const UGC_VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Calm, clear American' },
-  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Bold, young American' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', description: 'Soft, conversational' },
-  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', description: 'Warm, well-rounded' },
-  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', description: 'Expressive, upbeat' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', description: 'Deep, casual' },
-  { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', description: 'Crisp narrator' },
-  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', description: 'Confident, mid-range' },
-] as const
-
-export type UgcVoiceOption = (typeof UGC_VOICES)[number]
+import type { UgcClip, UgcClipVoice, UgcProject } from '@socialista/types'
 
 export function ugcVoiceEquals(a?: UgcClipVoice, b?: UgcClipVoice) {
   if (a === b) return true
@@ -27,4 +14,39 @@ export function ugcVoiceEquals(a?: UgcClipVoice, b?: UgcClipVoice) {
     Boolean(a.speakerBoost) === Boolean(b.speakerBoost) &&
     (a.enabled !== false) === (b.enabled !== false)
   )
+}
+
+export function buildCampaignVoicePatches(
+  project: UgcProject,
+  voice: UgcClipVoice,
+  clipId?: string,
+): {
+  skip: boolean
+  campaignVoice: UgcClipVoice
+  disableClip: boolean
+  clearClipOverride: boolean
+  clipPatch?: { voice?: UgcClipVoice | null }
+  localClipPatch?: Partial<UgcClip>
+} {
+  const campaignVoice = { ...voice, enabled: true }
+  const clipVoice = clipId ? project.clips.find(item => item.id === clipId)?.voice : undefined
+  const disableClip = Boolean(clipId) && voice.enabled === false
+  const clearClipOverride =
+    Boolean(clipId) && voice.enabled !== false && clipVoice != null && clipVoice.enabled !== false
+
+  if (ugcVoiceEquals(project.voice, campaignVoice) && !disableClip && !clearClipOverride) {
+    return { skip: true, campaignVoice, disableClip, clearClipOverride }
+  }
+
+  let clipPatch: { voice?: UgcClipVoice | null } | undefined
+  let localClipPatch: Partial<UgcClip> | undefined
+  if (clipId && disableClip) {
+    clipPatch = { voice }
+    localClipPatch = { voice }
+  } else if (clipId && clearClipOverride) {
+    clipPatch = { voice: null }
+    localClipPatch = { voice: undefined }
+  }
+
+  return { skip: false, campaignVoice, disableClip, clearClipOverride, clipPatch, localClipPatch }
 }

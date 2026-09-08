@@ -32,7 +32,7 @@ import {
   Trash2Icon,
 } from 'lucide-react'
 import Image from 'next/image'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 
 export type ClipRailRun = {
   progress: number
@@ -244,23 +244,17 @@ function SceneRailCard({
             'active:scale-[0.99] motion-reduce:active:scale-100',
           )}
         >
-          <span className="relative hidden aspect-[9/16] w-10 shrink-0 overflow-hidden rounded-md bg-muted lg:block">
-            {preview ? (
-              <Image alt="" className="object-cover" fill sizes="40px" src={preview} unoptimized />
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                <Icon className="size-3" strokeWidth={1.5} />
-              </span>
-            )}
-            {generating ? (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-black/20">
-                <span
-                  className="block h-full bg-white/90 transition-[width] duration-300"
-                  style={{ width: `${Math.max(8, Math.min(100, progress))}%` }}
-                />
-              </span>
-            ) : null}
-          </span>
+          <ScenePreview
+            preview={preview}
+            index={index}
+            generating={generating}
+            progress={progress}
+            selected={selected}
+            fallback={<Icon className="size-3" strokeWidth={1.5} />}
+            className="hidden aspect-[9/16] w-10 shrink-0 rounded-md lg:block"
+            progressClassName="bg-black/20"
+            imageSizes="40px"
+          />
           <span className="hidden min-w-0 flex-1 py-1.5 pr-7 lg:block">
             <span className="flex items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground">
               {String(index + 1).padStart(2, '0')}
@@ -271,24 +265,16 @@ function SceneRailCard({
             <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{badge}</span>
           </span>
 
-          <span className="relative aspect-[9/16] w-full overflow-hidden rounded-lg bg-muted lg:hidden">
-            {preview ? (
-              <Image alt="" className="object-cover" fill sizes="72px" src={preview} unoptimized />
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center text-[11px] tabular-nums text-muted-foreground">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-            )}
-            {generating ? (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-black/25">
-                <span
-                  className="block h-full bg-white/90"
-                  style={{ width: `${Math.max(8, Math.min(100, progress))}%` }}
-                />
-              </span>
-            ) : null}
-            {selected ? <span className="absolute inset-0 ring-1 ring-foreground/40 ring-inset" /> : null}
-          </span>
+          <ScenePreview
+            preview={preview}
+            index={index}
+            generating={generating}
+            progress={progress}
+            selected={selected}
+            className="relative aspect-[9/16] w-full overflow-hidden rounded-lg lg:hidden"
+            progressClassName="bg-black/25"
+            imageSizes="72px"
+          />
         </button>
       </div>
 
@@ -332,5 +318,51 @@ function SceneRailCard({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  )
+}
+
+function ScenePreview({
+  preview,
+  index,
+  generating,
+  progress,
+  selected,
+  fallback,
+  className,
+  progressClassName,
+  imageSizes,
+}: {
+  preview?: string
+  index: number
+  generating: boolean
+  progress: number
+  selected?: boolean
+  fallback?: ReactNode
+  className?: string
+  progressClassName?: string
+  imageSizes: string
+}) {
+  const barWidth = `${Math.max(8, Math.min(100, progress))}%`
+
+  return (
+    <span className={cn('relative overflow-hidden bg-muted', className)}>
+      {preview ? (
+        <Image alt="" className="object-cover" fill sizes={imageSizes} src={preview} unoptimized />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+          {fallback ?? (
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          )}
+        </span>
+      )}
+      {generating ? (
+        <span className={cn('absolute inset-x-0 bottom-0 h-0.5', progressClassName)}>
+          <span className="block h-full bg-white/90 transition-[width] duration-300" style={{ width: barWidth }} />
+        </span>
+      ) : null}
+      {selected ? <span className="absolute inset-0 ring-1 ring-foreground/40 ring-inset" /> : null}
+    </span>
   )
 }

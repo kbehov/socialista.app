@@ -19,15 +19,6 @@ function getElevenLabsClient() {
   return elevenLabsClient
 }
 
-export const elevenlabs = {
-  get textToSpeech() {
-    return getElevenLabsClient().textToSpeech
-  },
-  get voices() {
-    return getElevenLabsClient().voices
-  },
-}
-
 const DEFAULT_MODEL = 'eleven_multilingual_v2'
 
 function to01(value: number | undefined, fallback: number) {
@@ -228,5 +219,3 @@ export const searchUgcVoices = async (input: GetVoicesInput = {}): Promise<Searc
     nextPageToken: owned?.nextPageToken,
   }
 }
-
-export const searchVoices = searchUgcVoices

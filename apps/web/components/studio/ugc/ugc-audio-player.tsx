@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import type { UgcClipAudioTake } from '@socialista/types'
 import { CheckIcon, PauseIcon, PlayIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type UgcAudioPlayerProps = {
   src: string
@@ -30,12 +30,14 @@ export function UgcAudioPlayer({
   className,
 }: UgcAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const currentRef = useRef(0)
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(durationSec ?? 0)
 
   useEffect(() => {
     setPlaying(false)
+    currentRef.current = 0
     setCurrent(0)
     setDuration(durationSec ?? 0)
   }, [src, durationSec])
@@ -43,7 +45,15 @@ export function UgcAudioPlayer({
   useEffect(() => {
     const node = audioRef.current
     if (!node) return
-    const onTime = () => setCurrent(node.currentTime)
+    let frame = 0
+    const onTime = () => {
+      currentRef.current = node.currentTime
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        setCurrent(node.currentTime)
+      })
+    }
     const onMeta = () => {
       if (Number.isFinite(node.duration)) setDuration(node.duration)
     }
@@ -52,6 +62,7 @@ export function UgcAudioPlayer({
     node.addEventListener('loadedmetadata', onMeta)
     node.addEventListener('ended', onEnded)
     return () => {
+      if (frame) window.cancelAnimationFrame(frame)
       node.removeEventListener('timeupdate', onTime)
       node.removeEventListener('loadedmetadata', onMeta)
       node.removeEventListener('ended', onEnded)
@@ -70,7 +81,6 @@ export function UgcAudioPlayer({
   }
 
   const max = Math.max(duration, 0.1)
-  const currentValue = useMemo(() => [current], [current])
 
   return (
     <div className={cn('space-y-1.5', className)}>
@@ -93,12 +103,13 @@ export function UgcAudioPlayer({
             min={0}
             max={max}
             step={0.1}
-            value={currentValue}
+            value={[current]}
             disabled={disabled}
             onValueChange={([next]) => {
-              if (typeof next !== 'number' || next === current) return
+              if (typeof next !== 'number' || next === currentRef.current) return
               const node = audioRef.current
               if (node) node.currentTime = next
+              currentRef.current = next
               setCurrent(next)
             }}
             className="w-full"

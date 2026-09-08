@@ -218,32 +218,21 @@ export function UgcSceneWorkbench({
             </>
           ) : null}
 
-          {tab === 'audio' ? (
+          {tab === 'audio' && showsScript ? (
             <>
-              {!showsScript ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <p className="text-[13px] font-medium tracking-tight">No voiceover on this scene</p>
-                  <p className="mt-1 max-w-xs text-[12px] leading-relaxed text-muted-foreground">
-                    Switch to a talking scene to write a script and generate audio.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {generatingAudio ? (
-                    <UgcGenerationStatus kind="audio" generating progressLabel="Generating voiceover…" />
-                  ) : null}
-                  {audioTakes.length > 0 ? (
-                    <UgcAudioTakes
-                      takes={audioTakes}
-                      selectedUrl={clip.audioUrl}
-                      disabled={busy}
-                      onSelect={onSelectAudio}
-                    />
-                  ) : !generatingAudio ? (
-                    <UgcAudioEmptyHint />
-                  ) : null}
-                </>
-              )}
+              {generatingAudio ? (
+                <UgcGenerationStatus kind="audio" generating progressLabel="Generating voiceover…" />
+              ) : null}
+              {audioTakes.length > 0 ? (
+                <UgcAudioTakes
+                  takes={audioTakes}
+                  selectedUrl={clip.audioUrl}
+                  disabled={busy}
+                  onSelect={onSelectAudio}
+                />
+              ) : !generatingAudio ? (
+                <UgcAudioEmptyHint />
+              ) : null}
             </>
           ) : null}
 
@@ -314,21 +303,21 @@ export function UgcSceneWorkbench({
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="image" className="mt-0 data-[state=inactive]:hidden" forceMount>
+              <TabsContent value="image" className="mt-0 data-[state=inactive]:hidden">
                 <ImagePromptInput
                   key={`${clip.id}-image`}
                   models={imageModels}
                   hideExtras
                   pending={generatingStill}
                   initialAttachments={imageAttachments}
-                  initialAspectRatio="9:16"
+                  initialAspectRatio={project.aspectRatio}
                   initialModel={resolvedImageModel}
                   placeholder="Describe the scene photo…"
                   onSubmitOverride={onImageSubmit}
                 />
               </TabsContent>
 
-              <TabsContent value="audio" className="mt-0 data-[state=inactive]:hidden" forceMount>
+              <TabsContent value="audio" className="mt-0 data-[state=inactive]:hidden">
                 <UgcAudioPromptInput
                   project={project}
                   clip={clip}
@@ -342,7 +331,7 @@ export function UgcSceneWorkbench({
                 />
               </TabsContent>
 
-              <TabsContent value="video" className="mt-0 space-y-2 data-[state=inactive]:hidden" forceMount>
+              <TabsContent value="video" className="mt-0 space-y-2 data-[state=inactive]:hidden">
                 {!hasStills && !hasVideo ? (
                   <p className="px-0.5 text-[12px] text-muted-foreground">
                     Generate a photo first, then animate it here.
@@ -354,7 +343,7 @@ export function UgcSceneWorkbench({
                   hideExtras
                   pending={generatingVideo}
                   initialAttachments={videoAttachments}
-                  initialAspectRatio="9:16"
+                  initialAspectRatio={project.aspectRatio}
                   placeholder="Describe the video motion…"
                   onSubmitOverride={onVideoSubmit}
                 />

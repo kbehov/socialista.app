@@ -649,7 +649,6 @@ export type UpdateUgcClipPayload = {
 
 export type GenerateUgcStillsPayload = {
   clipId?: string
-  stillIndex?: number
   skipEnhance?: boolean
   prompt?: string
   model?: string

@@ -42,6 +42,12 @@ type UgcAudioPromptInputProps = {
   onGenerateAudio: (script: string) => void
 }
 
+function initialScriptForClip(clip: UgcClip) {
+  const takeScript =
+    ugcClipAudioTakes(clip).find(take => take.audioUrl === clip.audioUrl)?.scriptText?.trim() ?? ''
+  return (takeScript || clip.script?.text || '').slice(0, UGC_SCRIPT_MAX_CHARS)
+}
+
 export function UgcAudioPromptInput(props: UgcAudioPromptInputProps) {
   const showsScript = ugcClipShowsScript(props.clip.type)
 
@@ -56,8 +62,10 @@ export function UgcAudioPromptInput(props: UgcAudioPromptInputProps) {
     )
   }
 
+  const composerKey = `${props.clip.id}:${props.clip.audioUrl ?? ''}:${props.clip.script?.text ?? ''}`
+
   return (
-    <PromptInputProvider key={props.clip.id} initialInput={props.clip.script?.text ?? ''}>
+    <PromptInputProvider key={composerKey} initialInput={initialScriptForClip(props.clip)}>
       <UgcAudioPromptComposer {...props} />
     </PromptInputProvider>
   )
@@ -78,15 +86,11 @@ function UgcAudioPromptComposer({
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const wasWritingRef = useRef(false)
-  const selectedAudioKeyRef = useRef(`${clip.id}:${clip.audioUrl ?? ''}`)
   const voice = ugcResolvedClipVoice(project, clip)
   const enabled = voice.enabled !== false
   const pending = Boolean(generatingAudio || writingScript || busy)
   const target = ugcScriptTargetChars(clip.durationSec)
   const voiceLabel = voice.voiceName?.trim() || 'Choose voice'
-  const selectedAudioUrl = clip.audioUrl ?? ''
-  const selectedTakeScript =
-    ugcClipAudioTakes(clip).find(take => take.audioUrl === clip.audioUrl)?.scriptText?.trim() ?? ''
 
   useEffect(() => {
     if (wasWritingRef.current && !writingScript && clip.script?.text) {
@@ -95,17 +99,7 @@ function UgcAudioPromptComposer({
     wasWritingRef.current = Boolean(writingScript)
   }, [clip.script?.text, textInput, writingScript])
 
-  useEffect(() => {
-    const key = `${clip.id}:${selectedAudioUrl}`
-    if (selectedAudioKeyRef.current === key) return
-    selectedAudioKeyRef.current = key
-    if (writingScript || generatingAudio) return
-    const next = (selectedTakeScript || clip.script?.text || '').slice(0, UGC_SCRIPT_MAX_CHARS)
-    if (next === textInput.value) return
-    textInput.setInput(next)
-  }, [clip.id, clip.script?.text, generatingAudio, selectedAudioUrl, selectedTakeScript, textInput, writingScript])
-
-  useEffect(() => {
+  const handlePromptChange = () => {
     const next = textInput.value.slice(0, UGC_SCRIPT_MAX_CHARS)
     if (next !== textInput.value) {
       textInput.setInput(next)
@@ -114,13 +108,7 @@ function UgcAudioPromptComposer({
     if (next === (clip.script?.text ?? '')) return
     if (!next) return
     onScriptChange(next)
-  }, [clip.script?.text, onScriptChange, textInput, textInput.value])
-
-  useEffect(() => {
-    if (generatingAudio && !textInput.value && clip.script?.text) {
-      textInput.setInput(clip.script.text.slice(0, UGC_SCRIPT_MAX_CHARS))
-    }
-  }, [clip.script?.text, generatingAudio, textInput, textInput.value])
+  }
 
   const handleSubmit = (message: PromptInputMessage) => {
     const script = message.text.trim().slice(0, UGC_SCRIPT_MAX_CHARS)
@@ -151,6 +139,7 @@ function UgcAudioPromptComposer({
         submitLabel={clip.audioUrl ? 'Regenerate' : 'Generate'}
         submitAppearance="send"
         surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        onPromptChange={handlePromptChange}
         onSubmit={handleSubmit}
         tools={
           <>

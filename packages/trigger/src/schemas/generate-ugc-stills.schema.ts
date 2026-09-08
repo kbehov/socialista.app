@@ -7,7 +7,6 @@ export const generateUgcStillsPayloadSchema = z.object({
   workspaceId: z.string().min(1),
   userId: z.string().min(1),
   clipId: z.string().min(1).optional(),
-  stillIndex: z.number().int().min(0).max(2).optional(),
   skipEnhance: z.boolean().optional(),
   prompt: z.string().min(1).optional(),
   model: z.string().min(1).optional(),

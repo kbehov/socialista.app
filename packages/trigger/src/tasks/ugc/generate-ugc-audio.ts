@@ -25,12 +25,20 @@ import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateUgcAudioPayloadSchema } from '../../schemas/generate-ugc-audio.schema.js'
 import { uploadGeneratedAudio } from '../../services/audio-upload.js'
+import {
+  completeGenerationRecord,
+  failGenerationRecord,
+  GenerationKind,
+  GenerationResultType,
+  startGenerationRecord,
+} from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
+import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function asClipVoice(voice?: IUgcClip['voice']): UgcClipVoice | undefined {
   if (!voice?.provider) return undefined
   return {
-    provider: 'elevenlabs',
+    provider: voice.provider as UgcClipVoice['provider'],
     ...(voice.voiceId ? { voiceId: voice.voiceId } : {}),
     ...(voice.voiceName ? { voiceName: voice.voiceName } : {}),
     ...(typeof voice.speed === 'number' ? { speed: voice.speed } : {}),
@@ -55,6 +63,10 @@ function talkingClips(project: IUgcProject, clipId?: string): IUgcClip[] {
   const clips = project.clips ?? []
   const scoped = clipId ? clips.filter(clip => clip.id === clipId) : clips
   return scoped.filter(clip => ugcClipShowsScript(clip.type as UgcClipType))
+}
+
+function resolveAudioModelValue(project: IUgcProject, clip: IUgcClip): string {
+  return clip.models?.script || project.models.script || project.models.video
 }
 
 export const generateUgcAudio = schemaTask({
@@ -95,6 +107,27 @@ export const generateUgcAudio = schemaTask({
           throw new Error('Pick a voice first')
         }
 
+        const modelValue = resolveAudioModelValue(project, clip)
+        const { model, workspace } = await loadModelAndWorkspace(modelValue, payload.workspaceId)
+        assertSufficientCredits(workspace, model.cost)
+
+        const triggerRunId = `${ctx.run.id}:${clip.id}`
+        const started = await startGenerationRecord({
+          kind: GenerationKind.VIDEO,
+          taskId: TASK_IDS.generateUgcAudio,
+          triggerRunId,
+          workspaceId: payload.workspaceId,
+          userId: payload.userId,
+          projectId: project.project?.toString(),
+          prompt: text,
+          model,
+          inputs: {
+            ugcProjectId: payload.projectId,
+            ugcClipId: clip.id,
+            durationSec: estimateUgcSpokenDurationSec(text, voice.speed ?? 1),
+          },
+        })
+
         setGenerationStatus(
           Math.round((completed / total) * 80),
           total === 1 ? 'Generating voiceover' : `Generating voiceover ${completed + 1} of ${total}`,
@@ -131,25 +164,7 @@ export const generateUgcAudio = schemaTask({
             durationSec,
             scriptText: text,
           }
-          const audioTakes = appendUgcAudioTakes(
-            ugcClipAudioTakes({
-              audioTakes: (clip.audioTakes ?? []).flatMap(item =>
-                item.audioUrl
-                  ? [
-                      {
-                        id: item.id,
-                        audioUrl: item.audioUrl,
-                        durationSec: item.durationSec,
-                        scriptText: item.scriptText,
-                      },
-                    ]
-                  : [],
-              ),
-              audioUrl: clip.audioUrl,
-              audioDurationSec: clip.audioDurationSec,
-            }),
-            take,
-          )
+          const audioTakes = appendUgcAudioTakes(ugcClipAudioTakes(clip), take)
 
           await updateUgcClip(
             payload.projectId,
@@ -178,8 +193,26 @@ export const generateUgcAudio = schemaTask({
             },
             { audioRunId: ctx.run.id, error: undefined },
           )
+
+          await finalizeGeneration(payload.workspaceId, model)
+          await completeGenerationRecord({
+            triggerRunId,
+            result: {
+              type: GenerationResultType.FILE,
+              url: audioUrl,
+              durationSec,
+              mimeType: 'audio/mpeg',
+            },
+            cost: model.cost,
+            startedAt: started.startedAt,
+          })
           completed += 1
         } catch (error) {
+          await failGenerationRecord({
+            triggerRunId,
+            error,
+            startedAt: started.startedAt,
+          }).catch(() => undefined)
           failed += 1
           logger.error('UGC voiceover failed', { clipId: clip.id, error })
           await updateUgcClip(payload.projectId, clip.id, {
@@ -203,5 +236,3 @@ export const generateUgcAudio = schemaTask({
     }
   },
 })
-
-export type GenerateUgcAudioTask = typeof generateUgcAudio

@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -77,13 +76,5 @@ export function UgcCampaignPresets({ open, applying, onOpenChange, onApply }: Ug
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
-
-export function UgcCampaignPresetsTrigger({ onClick }: { onClick: () => void }) {
-  return (
-    <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[12px]" onClick={onClick}>
-      Templates
-    </Button>
   )
 }

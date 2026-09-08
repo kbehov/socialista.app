@@ -14,7 +14,7 @@ export type GenerateUgcVideoInput = {
 
 export async function generateUgcVideo(input: GenerateUgcVideoInput): Promise<string> {
   const provider = input.provider.toLowerCase().replace(/\s+/g, '-').replace(/\./g, '')
-  if (!provider.includes('fal') && provider !== 'vercel') {
+  if (!provider.includes('fal')) {
     throw new Error(`Unsupported video provider: ${input.provider}`)
   }
 

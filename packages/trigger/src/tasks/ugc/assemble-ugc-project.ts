@@ -23,15 +23,11 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { loadModelAndWorkspace } from '../shared/workspace.js'
-
-async function downloadToFile(url: string, dest: string) {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to download clip (${response.status})`)
-  }
-  const bytes = Buffer.from(await response.arrayBuffer())
-  await writeFile(dest, bytes)
-}
+import {
+  buildUgcNormalizeFfmpegArgs,
+  downloadToFile,
+  ugcAspectDimensions,
+} from './shared.js'
 
 export const assembleUgcProject = schemaTask({
   id: TASK_IDS.assembleUgcProject,
@@ -54,6 +50,7 @@ export const assembleUgcProject = schemaTask({
 
       const videoModelValue = project.models.video
       const { model } = await loadModelAndWorkspace(videoModelValue, payload.workspaceId)
+      const { width, height } = ugcAspectDimensions(project.aspectRatio)
 
       await updateUgcProject(payload.projectId, {
         status: UgcProjectStatus.GENERATING,
@@ -73,6 +70,7 @@ export const assembleUgcProject = schemaTask({
         inputs: {
           ugcProjectId: payload.projectId,
           durationSec: readyClips.reduce((sum, clip) => sum + (clip.durationSec ?? 8), 0),
+          aspectRatio: project.aspectRatio,
         },
       })
       startedAt = started.startedAt
@@ -89,52 +87,7 @@ export const assembleUgcProject = schemaTask({
         setGenerationStatus(15 + Math.round((index / readyClips.length) * 40), `Normalizing clip ${index + 1}`)
         const hasAudio = await probeHasAudioStream(sourcePath)
         await runFfmpeg({
-          args: hasAudio
-            ? [
-                '-y',
-                '-i',
-                sourcePath,
-                '-vf',
-                'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
-                '-c:v',
-                'libx264',
-                '-preset',
-                'veryfast',
-                '-crf',
-                '20',
-                '-c:a',
-                'aac',
-                '-ar',
-                '48000',
-                '-ac',
-                '2',
-                normalizedPath,
-              ]
-            : [
-                '-y',
-                '-i',
-                sourcePath,
-                '-f',
-                'lavfi',
-                '-i',
-                'anullsrc=channel_layout=stereo:sample_rate=48000',
-                '-vf',
-                'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
-                '-c:v',
-                'libx264',
-                '-preset',
-                'veryfast',
-                '-crf',
-                '20',
-                '-c:a',
-                'aac',
-                '-ar',
-                '48000',
-                '-ac',
-                '2',
-                '-shortest',
-                normalizedPath,
-              ],
+          args: buildUgcNormalizeFfmpegArgs(sourcePath, normalizedPath, width, height, hasAudio),
           durationSeconds: clip.durationSec ?? 8,
         })
         normalized.push(normalizedPath)

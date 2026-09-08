@@ -702,7 +702,6 @@ export const generateUgcClipStills = async (c: Context<AppContext>) => {
   const id = parseParamId(c.req.param('id'), 'project ID')
   const clipId = c.req.param('clipId')
   const body = (await c.req.json().catch(() => ({}))) as {
-    stillIndex?: number
     skipEnhance?: boolean
     prompt?: string
     model?: string

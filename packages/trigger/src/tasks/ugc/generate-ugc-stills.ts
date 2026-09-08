@@ -11,6 +11,7 @@ import {
   getInfluencerById,
   getUgcProjectById,
   updateUgcClip,
+  updateUgcProject,
   UgcClipStatus,
   UgcProjectStatus,
   type IUgcClip,
@@ -37,6 +38,11 @@ import {
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { loadSkillOverride } from '../shared/skills.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
+import {
+  findUgcClip,
+  projectStatusFromClips,
+  resolveUgcInfluencerId,
+} from './shared.js'
 
 function influencerRefs(influencer: {
   coverImageUrl?: string
@@ -49,23 +55,6 @@ function influencerRefs(influencer: {
     influencer.coverImageUrl,
   ].filter((url): url is string => Boolean(url))
   return [...new Set(urls)]
-}
-
-function findClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
-  return (project.clips ?? []).find(clip => clip.id === clipId)
-}
-
-function resolveInfluencerId(project: IUgcProject, clip: IUgcClip): string | undefined {
-  return clip.influencerId?.toString() ?? project.influencerId?.toString()
-}
-
-function projectStatusFromClips(clips: IUgcClip[]): UgcProjectStatus {
-  if (clips.some(clip => clip.status === UgcClipStatus.GENERATING)) return UgcProjectStatus.GENERATING
-  if (clips.some(clip => clip.status === UgcClipStatus.READY)) return UgcProjectStatus.READY
-  if (clips.every(clip => clip.status === UgcClipStatus.FAILED) && clips.length > 0) {
-    return UgcProjectStatus.FAILED
-  }
-  return UgcProjectStatus.DRAFT
 }
 
 function previousSceneStillUrl(clips: IUgcClip[], clipId: string): string | undefined {
@@ -124,7 +113,7 @@ export const generateUgcStills = schemaTask({
       const totalShots = Math.max(targets.length * shotCount, 1)
 
       for (const target of targets) {
-        const clip = findClip({ ...project, clips: liveClips }, target.id) ?? target
+        const clip = findUgcClip({ ...project, clips: liveClips }, target.id) ?? target
         const clipType = clip.type as UgcClipType
         const existingStills = (clip.stills ?? []).filter(still => still.imageUrl)
 
@@ -152,7 +141,7 @@ export const generateUgcStills = schemaTask({
           },
         )
 
-        const influencerId = resolveInfluencerId(project, clip)
+        const influencerId = resolveUgcInfluencerId(project, clip)
         const influencer = influencerId ? await getInfluencerById(influencerId) : null
         if (influencerId && !influencer) {
           await updateUgcClip(
@@ -308,15 +297,10 @@ export const generateUgcStills = schemaTask({
       }
 
       const latestClips = liveClips
-      await updateUgcClip(
-        payload.projectId,
-        targets[0]!.id,
-        {},
-        {
-          status: projectStatusFromClips(latestClips),
-          error: failed ? 'Photo generation failed' : undefined,
-        },
-      )
+      await updateUgcProject(payload.projectId, {
+        status: projectStatusFromClips(latestClips),
+        error: failed ? 'Photo generation failed' : undefined,
+      })
 
       setGenerationStatus(100, failed ? 'Finished with errors' : 'Photos ready')
       return { projectId: payload.projectId, clipId: payload.clipId ?? targets[0]!.id }
@@ -344,5 +328,3 @@ export const generateUgcStills = schemaTask({
     }
   },
 })
-
-export type GenerateUgcStillsTask = typeof generateUgcStills
