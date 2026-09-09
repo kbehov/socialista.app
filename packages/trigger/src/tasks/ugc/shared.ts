@@ -4,7 +4,12 @@ import {
   type IUgcClip,
   type IUgcProject,
 } from '@socialista/db'
-import { writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+import { runFfmpeg } from '../../services/video-export/ffmpeg.js'
+import { uploadExportedVideo } from '../../services/video-upload.js'
 
 export function findUgcClip(project: IUgcProject, clipId: string): IUgcClip | undefined {
   return (project.clips ?? []).find(clip => clip.id === clipId)
@@ -98,6 +103,67 @@ export function buildUgcNormalizeFfmpegArgs(
     '-shortest',
     normalizedPath,
   ]
+}
+
+export function buildUgcVoiceoverFfmpegArgs(
+  videoPath: string,
+  audioPath: string,
+  outPath: string,
+): string[] {
+  return [
+    '-y',
+    '-i',
+    videoPath,
+    '-i',
+    audioPath,
+    '-map',
+    '0:v:0',
+    '-map',
+    '1:a:0',
+    '-c:v',
+    'copy',
+    '-c:a',
+    'aac',
+    '-ar',
+    '48000',
+    '-ac',
+    '2',
+    '-shortest',
+    outPath,
+  ]
+}
+
+export async function muxUgcVoiceover(input: {
+  videoUrl: string
+  audioUrl: string
+  workspaceId: string
+  clipId: string
+  runId: string
+  durationSec?: number
+}): Promise<string> {
+  const workDir = await mkdtemp(join(tmpdir(), 'ugc-mux-'))
+  try {
+    const videoPath = join(workDir, 'video.mp4')
+    const audioPath = join(workDir, 'audio.mp3')
+    const outPath = join(workDir, 'muxed.mp4')
+    await Promise.all([
+      downloadToFile(input.videoUrl, videoPath),
+      downloadToFile(input.audioUrl, audioPath),
+    ])
+    await runFfmpeg({
+      args: buildUgcVoiceoverFfmpegArgs(videoPath, audioPath, outPath),
+      durationSeconds: input.durationSec ?? 8,
+    })
+    const bytes = await readFile(outPath)
+    return uploadExportedVideo({
+      workspaceId: input.workspaceId,
+      videoId: input.clipId,
+      runId: input.runId,
+      bytes,
+    })
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => undefined)
+  }
 }
 
 export function fallbackUgcVideoPrompt(input: {

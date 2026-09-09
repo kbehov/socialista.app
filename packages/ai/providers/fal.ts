@@ -148,6 +148,7 @@ export type GenerateFalVideoOptions = {
   negativePrompt?: string
   duration?: number
   generateAudio?: boolean
+  resolution?: string
   workspaceId?: string
   userId?: string
   onProgress?: (progress: number, label: string) => void
@@ -191,6 +192,7 @@ export async function generateVideoFal({
   negativePrompt,
   duration,
   generateAudio,
+  resolution,
   workspaceId,
   userId,
   onProgress,
@@ -216,6 +218,10 @@ export async function generateVideoFal({
 
   if (generateAudio !== undefined) {
     input.generate_audio = generateAudio
+  }
+
+  if (resolution) {
+    input.resolution = resolution
   }
 
   const result = await fal.subscribe(model, {

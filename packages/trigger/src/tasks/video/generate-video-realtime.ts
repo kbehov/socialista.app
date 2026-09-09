@@ -1,7 +1,7 @@
 import { buildVideoPrompt, generateVideo } from '@socialista/ai'
 import { connectDb, CostUnit, disconnectDb } from '@socialista/db'
 import type { VideoGenerationOutput } from '@socialista/types'
-import { clampVideoDuration, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
+import { clampVideoDuration, PROMPT_KEYS, TASK_IDS, videoResolutionCostMultiplier } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { videoGenerationPayloadSchema } from '../../schemas/video-generation.schema.js'
@@ -39,13 +39,16 @@ export const realtimeVideoGeneration = schemaTask({
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
       const duration = clampVideoDuration(payload.duration)
       const generateAudio = payload.generateAudio ?? true
-      const billedCost = model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost
+      const billedCost =
+        (model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost) *
+        videoResolutionCostMultiplier(payload.resolution)
       assertSufficientCredits(workspace, billedCost)
       logger.info('video model', {
         model: model.value,
         provider: model.modelProvider,
         duration,
         generateAudio,
+        resolution: payload.resolution,
       })
 
       const referenceUrls = collectReferenceUrls(payload.imageUrl, payload.imageUrls)
@@ -63,6 +66,7 @@ export const realtimeVideoGeneration = schemaTask({
           aspectRatio: payload.aspectRatio,
           durationSec: duration,
           generateAudio,
+          resolution: payload.resolution,
           ...(referenceUrls[0] ? { referenceImageUrl: referenceUrls[0] } : {}),
         },
       })
@@ -71,23 +75,25 @@ export const realtimeVideoGeneration = schemaTask({
 
       setGenerationStatus(10, 'Preparing your prompt')
 
-      const systemOverride = await loadSkillOverride({
-        skillId: payload.skillId,
-        target: PROMPT_KEYS.videoPrompt,
-        workspaceId: payload.workspaceId,
-      })
-
-      const enhanced = await buildVideoPrompt({
-        prompt: payload.prompt,
-        media: referenceUrls.map(imageUrl => ({ imageUrl })),
-        aspectRatio: payload.aspectRatio,
-        durationSec: duration,
-        generateAudio,
-        systemOverride,
-        targetModel: model.value,
-      })
-
-      await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
+      const shouldEnhance = payload.enhance !== false
+      let enhanced = payload.prompt
+      if (shouldEnhance) {
+        const systemOverride = await loadSkillOverride({
+          skillId: payload.skillId,
+          target: PROMPT_KEYS.videoPrompt,
+          workspaceId: payload.workspaceId,
+        })
+        enhanced = await buildVideoPrompt({
+          prompt: payload.prompt,
+          media: referenceUrls.map(imageUrl => ({ imageUrl })),
+          aspectRatio: payload.aspectRatio,
+          durationSec: duration,
+          generateAudio,
+          systemOverride,
+          targetModel: model.value,
+        })
+        await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
+      }
       const finalPrompt = enhanced
 
       setGenerationStatus(40, 'Generating video')
@@ -102,6 +108,7 @@ export const realtimeVideoGeneration = schemaTask({
           userId: payload.userId,
           duration,
           generateAudio,
+          resolution: payload.resolution,
           imageUrl: payload.imageUrl,
           imageUrls: payload.imageUrls,
         },
@@ -131,7 +138,7 @@ export const realtimeVideoGeneration = schemaTask({
         },
         cost: billedCost,
         startedAt,
-        enhancedPrompt: enhanced,
+        ...(shouldEnhance ? { enhancedPrompt: enhanced } : {}),
       })
 
       setGenerationStatus(100, 'Complete')

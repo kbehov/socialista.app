@@ -18,6 +18,7 @@ import type { UgcClip, UgcClipAudioTake, UgcClipVoice, UgcProject, UgcProjectSum
 import {
   clampUgcDuration,
   clampUgcScript,
+  parseVideoResolution,
   ugcClipAudioTakes,
   UGC_CLIP_TYPE_LABELS,
   UGC_CLIP_TYPES,
@@ -212,6 +213,7 @@ export function serializeUgcProject(project: IUgcProject): UgcProject {
     influencerId: campaignInfluencerId,
     voice: serializeVoice(project.voice),
     aspectRatio: project.aspectRatio,
+    videoResolution: parseVideoResolution(project.videoResolution),
     models: {
       image: project.models.image,
       video: project.models.video,
@@ -221,7 +223,6 @@ export function serializeUgcProject(project: IUgcProject): UgcProject {
     flowStep: project.flowStep,
     clips: clips.map(serializeClip),
     assembledVideoUrl: project.assembledVideoUrl,
-    assembledGenerationId: project.assembledGenerationId,
     assembledRunId: project.assembledRunId,
     composedProjectVideoId: project.composedProjectVideoId?.toString(),
     error: project.error,
@@ -274,44 +275,10 @@ export function assertClipNotGenerating(clip: IUgcClip) {
   }
 }
 
-export function assertCanGenerateStills(project: IUgcProject, clip: IUgcClip) {
-  const imageModel = clip.models?.image || project.models.image
-  if (!imageModel) {
-    throw new HttpError(400, 'Choose an image model')
-  }
-}
-
-export function assertCanGenerateVideo(project: IUgcProject, clip: IUgcClip) {
-  const videoModel = clip.models?.video || project.models.video
-  if (!videoModel) {
-    throw new HttpError(400, 'Choose a video model')
-  }
-  if (!clip.stills.some(still => still.imageUrl)) {
-    throw new HttpError(400, 'Generate a photo first')
-  }
-}
-
 export function assertCanGenerateScript(clip: IUgcClip) {
-  const type = clipTypeValue(clip.type)
-  if (type === 'b-roll') {
-    throw new HttpError(400, 'This scene has no talking')
-  }
-}
-
-export function assertCanGenerateAudio(clip: IUgcClip) {
   const type = clipTypeValue(clip.type)
   if (!ugcClipShowsScript(type)) {
     throw new HttpError(400, 'This scene has no spoken audio')
-  }
-  if (!clip.script?.text.trim()) {
-    throw new HttpError(400, 'Write a script before generating audio')
-  }
-}
-
-export function assertCanAssemble(project: IUgcProject) {
-  const ready = (project.clips ?? []).filter(clip => Boolean(clip.videoUrl))
-  if (ready.length < 1) {
-    throw new HttpError(400, 'Generate at least one scene video first')
   }
 }
 
@@ -332,7 +299,7 @@ export function buildNewClip(input: {
   const type = clipTypeValue(resolvedType)
   const durationSec = clampUgcDuration(input.durationSec ?? UGC_DEFAULT_DURATION)
   const sceneCount = 1
-  const skipInfluencer = type === 'b-roll'
+  const skipInfluencer = type === 'b-roll' || type === 'hook'
   return {
     id: randomUUID(),
     type: resolvedType,

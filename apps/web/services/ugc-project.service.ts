@@ -8,14 +8,11 @@ import type {
   CreateUgcClipPayload,
   CreateUgcProjectPayload,
   GenerateUgcScriptPayload,
-  GenerateUgcStillsPayload,
-  GenerateUgcVideosPayload,
   GetUgcProjectsResponse,
   OpenUgcEditorResponse,
   ApplyUgcCampaignPresetPayload,
   SearchUgcVoicesQuery,
   SearchUgcVoicesResponse,
-  UgcGenerationHandle,
   UgcProject,
   UpdateUgcClipPayload,
   UpdateUgcProjectPayload,
@@ -96,16 +93,6 @@ export const duplicateUgcClip = async (
   return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.DUPLICATE_CLIP(id, clipId), {})
 }
 
-export const generateUgcStills = async (
-  id: string,
-  payload: GenerateUgcStillsPayload,
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  if (payload.clipId) {
-    return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_STILLS(id, payload.clipId), payload)
-  }
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_PROJECT_STILLS(id), payload)
-}
-
 export const generateUgcScript = async (
   id: string,
   payload?: GenerateUgcScriptPayload,
@@ -121,20 +108,6 @@ export const generateUgcClipScript = async (
   return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.GENERATE_CLIP_SCRIPT(id, clipId), payload ?? {})
 }
 
-export const generateUgcClipAudio = async (
-  id: string,
-  clipId: string,
-  payload?: { script?: string },
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_AUDIO(id, clipId), payload ?? {})
-}
-
-export const generateUgcProjectAudio = async (
-  id: string,
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_PROJECT_AUDIO(id), {})
-}
-
 export const applyUgcCampaignPreset = async (
   id: string,
   payload: ApplyUgcCampaignPresetPayload,
@@ -142,44 +115,11 @@ export const applyUgcCampaignPreset = async (
   return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.APPLY_PRESET(id), payload)
 }
 
-export const generateUgcVideos = async (
-  id: string,
-  payload: GenerateUgcVideosPayload,
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  if (payload.clipId) {
-    return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_VIDEOS(id, payload.clipId), payload)
-  }
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.GENERATE_PROJECT_VIDEOS(id), payload)
-}
-
-export const regenerateUgcStill = async (
-  id: string,
-  clipId: string,
-  index: number,
-  payload?: { skipEnhance?: boolean },
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.REGENERATE_STILL(id, clipId, index), payload ?? {})
-}
-
-export const regenerateUgcVideo = async (
-  id: string,
-  clipId: string,
-  payload?: GenerateUgcVideosPayload,
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.REGENERATE_VIDEO(id, clipId), payload ?? { clipId })
-}
-
 export const openUgcClipEditor = async (
   id: string,
   clipId: string,
 ): Promise<ApiResponse<OpenUgcEditorResponse>> => {
   return api.post<OpenUgcEditorResponse>(UGC_PROJECT_ROUTES.OPEN_EDITOR(id, clipId), {})
-}
-
-export const assembleUgcProject = async (
-  id: string,
-): Promise<ApiResponse<UgcGenerationHandle>> => {
-  return api.post<UgcGenerationHandle>(UGC_PROJECT_ROUTES.ASSEMBLE(id), {})
 }
 
 export const openUgcProjectEditor = async (

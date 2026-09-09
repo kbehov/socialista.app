@@ -3,6 +3,8 @@ import {
   VIDEO_DURATION_DEFAULT,
   VIDEO_DURATION_MAX,
   VIDEO_DURATION_MIN,
+  VIDEO_RESOLUTION_DEFAULT,
+  VIDEO_RESOLUTIONS,
 } from '@socialista/types'
 import { z } from 'zod'
 
@@ -20,6 +22,7 @@ export const videoGenerationPayloadSchema = z.object({
     .max(VIDEO_DURATION_MAX)
     .default(VIDEO_DURATION_DEFAULT),
   generateAudio: z.boolean().default(true),
+  resolution: z.enum(VIDEO_RESOLUTIONS).default(VIDEO_RESOLUTION_DEFAULT),
   imageUrl: z.string().url().optional(),
   imageUrls: z.array(z.string().url()).optional(),
 })

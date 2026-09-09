@@ -1,3 +1,5 @@
+import type { VideoResolution } from './video-generation.types.js'
+
 export const UGC_PROJECT_STATUSES = ['draft', 'generating', 'ready', 'failed'] as const
 export type UgcProjectStatus = (typeof UGC_PROJECT_STATUSES)[number]
 
@@ -12,6 +14,7 @@ export const UGC_SCRIPT_SOURCES = ['user', 'ai'] as const
 export type UgcScriptSource = (typeof UGC_SCRIPT_SOURCES)[number]
 
 export const UGC_CLIP_TYPES = [
+  'hook',
   'talking',
   'b-roll',
   'unboxing',
@@ -48,10 +51,11 @@ export const UGC_DEFAULT_ASPECT_RATIO = '9:16' as const
 export const UGC_DURATION_MIN = 5
 export const UGC_DURATION_MAX = 15
 export const UGC_DEFAULT_DURATION = 8
-export const UGC_SCRIPT_MAX_CHARS = 120
+export const UGC_SCRIPT_MAX_CHARS = 150
 export const UGC_SPOKEN_CHARS_PER_SEC = 12
 
 export const UGC_CLIP_DEFAULT_SCENE_COUNT: Record<UgcClipType, UgcSceneCount> = {
+  hook: 1,
   talking: 1,
   'b-roll': 1,
   unboxing: 1,
@@ -66,6 +70,7 @@ export const UGC_STARTER_SCENE_TYPES: UgcClipType[] = ['talking', 'product-hold'
 export const UGC_PRIMARY_SCENE_TYPES: UgcClipType[] = ['talking', 'product-hold', 'b-roll']
 
 export const UGC_CLIP_TYPE_LABELS: Record<UgcClipType, string> = {
+  hook: 'Text hook',
   talking: 'Talk to camera',
   'b-roll': 'Show the product',
   unboxing: 'Open the box',
@@ -75,6 +80,7 @@ export const UGC_CLIP_TYPE_LABELS: Record<UgcClipType, string> = {
 }
 
 export const UGC_CLIP_TYPE_DESCRIPTIONS: Record<UgcClipType, string> = {
+  hook: 'On-screen hook line — no talking, no voiceover',
   talking: 'They look at the camera and talk',
   'b-roll': 'Just the product — no person talking',
   unboxing: 'They open the package on camera',
@@ -114,10 +120,23 @@ export const UGC_CLIP_STORYBOARD_LABELS: Record<UgcClipStoryboardStatus, string>
 }
 
 const CREATOR_REQUIRED = new Set<UgcClipType>(['talking', 'unboxing', 'try-on', 'product-hold'])
-const SCRIPT_VISIBLE = new Set<UgcClipType>(['talking', 'product-hold', 'unboxing', 'try-on', 'app-showcase'])
-const SCRIPT_REQUIRED = new Set<UgcClipType>(['talking'])
+const SCRIPT_VISIBLE = new Set<UgcClipType>([
+  'hook',
+  'talking',
+  'product-hold',
+  'unboxing',
+  'try-on',
+  'app-showcase',
+  'b-roll',
+])
+const SCRIPT_REQUIRED = new Set<UgcClipType>(['talking', 'hook'])
 const PRODUCT_REQUIRED = new Set<UgcClipType>(['product-hold', 'b-roll', 'unboxing', 'try-on'])
 const SCREENSHOTS_REQUIRED = new Set<UgcClipType>(['app-showcase'])
+const LIP_SYNC_TYPES = new Set<UgcClipType>(['talking', 'product-hold', 'try-on', 'unboxing'])
+const ON_SCREEN_TEXT_TYPES = new Set<UgcClipType>(['hook'])
+
+export const UGC_AUDIO_MODES = ['none', 'lip-sync', 'voiceover'] as const
+export type UgcAudioMode = (typeof UGC_AUDIO_MODES)[number]
 
 export function ugcClipRequiresCreator(type: UgcClipType): boolean {
   return CREATOR_REQUIRED.has(type)
@@ -137,6 +156,23 @@ export function ugcClipRequiresProduct(type: UgcClipType): boolean {
 
 export function ugcClipRequiresScreenshots(type: UgcClipType): boolean {
   return SCREENSHOTS_REQUIRED.has(type)
+}
+
+export function ugcClipUsesLipSync(type: UgcClipType): boolean {
+  return LIP_SYNC_TYPES.has(type)
+}
+
+export function ugcClipShowsOnScreenText(type: UgcClipType): boolean {
+  return ON_SCREEN_TEXT_TYPES.has(type)
+}
+
+export function ugcClipGeneratesAudio(type: UgcClipType): boolean {
+  return ugcClipShowsScript(type) && !ugcClipShowsOnScreenText(type)
+}
+
+export function ugcClipAudioMode(type: UgcClipType, hasAudio: boolean): UgcAudioMode {
+  if (!hasAudio) return 'none'
+  return ugcClipUsesLipSync(type) ? 'lip-sync' : 'voiceover'
 }
 
 export function ugcScriptTargetChars(durationSec: number): number {
@@ -249,7 +285,7 @@ export const UGC_CAMPAIGN_PRESETS: UgcCampaignPreset[] = [
     label: 'Viral Hook',
     description: 'Fast opener, product showcase, punchy ask.',
     beats: [
-      { type: 'talking', durationSec: 5, name: 'Hook' },
+      { type: 'hook', durationSec: 5, name: 'Hook' },
       { type: 'product-hold', durationSec: 7, name: 'Showcase' },
       { type: 'talking', durationSec: 5, name: 'CTA' },
     ],
@@ -567,11 +603,11 @@ export type UgcProject = {
   influencerId?: string
   voice?: UgcClipVoice
   aspectRatio: string
+  videoResolution: VideoResolution
   models: UgcProjectModels
   flowStep?: UgcFlowStep
   clips: UgcClip[]
   assembledVideoUrl?: string
-  assembledGenerationId?: string
   assembledRunId?: string
   composedProjectVideoId?: string
   error?: string
@@ -615,6 +651,7 @@ export type UpdateUgcProjectPayload = {
   influencerId?: string | null
   voice?: UgcClipVoice | null
   aspectRatio?: string
+  videoResolution?: VideoResolution
   models?: Partial<UgcProjectModels>
   clipOrder?: string[]
   flowStep?: UgcFlowStep
@@ -647,21 +684,6 @@ export type UpdateUgcClipPayload = {
   audioUrl?: string | null
 }
 
-export type GenerateUgcStillsPayload = {
-  clipId?: string
-  skipEnhance?: boolean
-  prompt?: string
-  model?: string
-  referenceImageUrls?: string[]
-  count?: number
-}
-
-export type GenerateUgcVideosPayload = {
-  clipId?: string
-  plannedPrompt?: string
-  skipPlanner?: boolean
-}
-
 export type OpenUgcEditorResponse = {
   videoId: string
 }
@@ -674,24 +696,6 @@ export type ApplyUgcCampaignPresetPayload = {
   presetId: UgcCampaignPresetId
 }
 
-export type GenerateUgcAudioPayload = {
-  clipId?: string
-  text?: string
-}
-
-export type UgcScriptSegment = {
-  clipId: string
-  text: string
-}
-
-export type AssembleUgcProjectResponse = UgcGenerationHandle
-
 export type GetUgcProjectsResponse = {
   projects: UgcProjectSummary[]
-}
-
-export type UgcGenerationHandle = {
-  project: UgcProject
-  runId: string
-  publicAccessToken: string
 }

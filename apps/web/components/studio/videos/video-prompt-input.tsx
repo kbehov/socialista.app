@@ -31,15 +31,20 @@ import { getProjectId, useProjectStore } from "@/store/project.store";
 import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
+  clampVideoDuration,
   ContextSupport,
   ModelType,
   PROMPT_KEYS,
   VIDEO_DURATION_DEFAULT,
   VIDEO_DURATIONS,
+  VIDEO_RESOLUTION_COST_MULTIPLIERS,
+  VIDEO_RESOLUTION_DEFAULT,
+  videoResolutionCostMultiplier,
   type Model,
   type VideoAspectRatio,
+  type VideoResolution,
 } from "@socialista/types";
-import { ChevronDownIcon, SparklesIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { ChevronDownIcon, SparklesIcon, Volume2Icon, VolumeXIcon, WandSparklesIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -75,13 +80,23 @@ const ASPECT_RATIOS = [
   ratio: number;
 }>;
 
+const RESOLUTIONS = [
+  { id: "720p", label: "HD" },
+  { id: "1080p", label: "Full HD" },
+] as const satisfies ReadonlyArray<{
+  id: VideoResolution;
+  label: string;
+}>;
+
 export type VideoPromptSubmitResult = {
   prompt: string
   model: string
   aspectRatio: VideoAspectRatio
   duration: number
   generateAudio: boolean
+  resolution: VideoResolution
   imageUrls: string[]
+  enhance: boolean
 }
 
 export type VideoPromptInputProps = {
@@ -95,6 +110,8 @@ export type VideoPromptInputProps = {
   pending?: boolean
   initialPrompt?: string
   initialAspectRatio?: VideoAspectRatio
+  initialDuration?: number
+  initialResolution?: VideoResolution
 }
 
 function VideoPromptComposer({
@@ -108,6 +125,8 @@ function VideoPromptComposer({
   pending: pendingProp,
   initialPrompt,
   initialAspectRatio,
+  initialDuration,
+  initialResolution,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -136,8 +155,14 @@ function VideoPromptComposer({
   });
   const dismissedAttachmentUrls = useRef(new Set<string>());
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>(initialAspectRatio ?? "9:16");
-  const [duration, setDuration] = useState(VIDEO_DURATION_DEFAULT);
+  const [duration, setDuration] = useState(() =>
+    clampVideoDuration(initialDuration ?? VIDEO_DURATION_DEFAULT),
+  );
+  const [resolution, setResolution] = useState<VideoResolution>(
+    initialResolution ?? VIDEO_RESOLUTION_DEFAULT,
+  );
   const [generateAudio, setGenerateAudio] = useState(true);
+  const [enhance, setEnhance] = useState(true);
   const [skillId, setSkillId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
@@ -288,7 +313,9 @@ function VideoPromptComposer({
           aspectRatio,
           duration,
           generateAudio,
+          resolution,
           imageUrls,
+          enhance,
         });
         return;
       }
@@ -300,10 +327,12 @@ function VideoPromptComposer({
         aspectRatio,
         duration,
         generateAudio,
+        resolution,
         userId: "",
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
         ...(skillId ? { skillId } : {}),
         ...(projectId ? { projectId } : {}),
+        ...(enhance ? {} : { enhance: false }),
       });
 
       if (!result.success) {
@@ -319,6 +348,8 @@ function VideoPromptComposer({
 
   const selectedAspect =
     ASPECT_RATIOS.find((option) => option.id === aspectRatio) ?? ASPECT_RATIOS[0];
+  const selectedResolution =
+    RESOLUTIONS.find((option) => option.id === resolution) ?? RESOLUTIONS[0];
 
   const tools = (
     <>
@@ -359,6 +390,49 @@ function VideoPromptComposer({
                   {option.label}
                 </span>
                 <DropdownMenuShortcut>{option.id}</DropdownMenuShortcut>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <StudioInputActionTooltip label="Output resolution">
+          <DropdownMenuTrigger asChild>
+            <PromptInputButton
+              aria-label={`Resolution ${selectedResolution.id}`}
+              className={STUDIO_TOOL_BUTTON_CLASS}
+              disabled={pending}
+              size="xs"
+              type="button"
+            >
+              <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+                {selectedResolution.id}
+              </span>
+              <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+            </PromptInputButton>
+          </DropdownMenuTrigger>
+        </StudioInputActionTooltip>
+        <DropdownMenuContent align="start" className="min-w-44 w-44">
+          <DropdownMenuRadioGroup
+            value={resolution}
+            onValueChange={(value) => setResolution(value as VideoResolution)}
+          >
+            {RESOLUTIONS.map((option) => (
+              <DropdownMenuRadioItem
+                key={option.id}
+                className="rounded-lg"
+                value={option.id}
+              >
+                <span className="text-[13px] font-medium tracking-[-0.015em]">
+                  {option.label}
+                </span>
+                <DropdownMenuShortcut>
+                  {option.id}
+                  {VIDEO_RESOLUTION_COST_MULTIPLIERS[option.id] !== 1
+                    ? ` · ×${VIDEO_RESOLUTION_COST_MULTIPLIERS[option.id]}`
+                    : ""}
+                </DropdownMenuShortcut>
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -428,11 +502,33 @@ function VideoPromptComposer({
           {generateAudio ? "Audio" : "Muted"}
         </span>
       </PromptInputButton>
+      <PromptInputButton
+        aria-label={enhance ? "Prompt enhancement on" : "Prompt enhancement off"}
+        aria-pressed={enhance}
+        className={cn(
+          STUDIO_TOOL_BUTTON_CLASS,
+          enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+        )}
+        disabled={pending}
+        onClick={() => setEnhance((value) => !value)}
+        size="xs"
+        tooltip={
+          enhance
+            ? "Enhance on — AI refines your prompt before generating"
+            : "Raw prompt — send exactly what you typed"
+        }
+        type="button"
+      >
+        <WandSparklesIcon className="size-3.5 shrink-0" />
+        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+          {enhance ? "Enhance" : "Raw"}
+        </span>
+      </PromptInputButton>
       <StudioSkillPicker
         target={PROMPT_KEYS.videoPrompt}
         value={skillId}
         onChange={setSkillId}
-        disabled={pending}
+        disabled={pending || !enhance}
       />
     </>
   );
@@ -447,6 +543,7 @@ function VideoPromptComposer({
         onAttachmentsChange={handleAttachmentsChange}
         attachSources={["upload", "library", "influencer", "product"]}
         maxAttachments={MAX_REFERENCE_IMAGES}
+        costMultiplier={duration * videoResolutionCostMultiplier(resolution)}
         workspaceId={currentWorkspace?._id}
         placeholder={placeholder}
         pending={pending}

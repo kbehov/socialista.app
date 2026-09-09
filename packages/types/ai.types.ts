@@ -1,6 +1,6 @@
 import { AspectRatio } from './image-generation.types.js'
 import type { PromptKey } from './skill.types.js'
-import type { VideoAspectRatio } from './video-generation.types.js'
+import type { VideoAspectRatio, VideoResolution } from './video-generation.types.js'
 
 export const SLIDESHOW_CONTENT_TYPES = ['story', 'guide', 'list', 'routine', 'comparison', 'myth'] as const
 
@@ -158,9 +158,12 @@ export type GenerateVideoOptions = {
   userId: string
   duration: number
   generateAudio?: boolean
+  resolution?: VideoResolution
   imageUrl?: string
   imageUrls?: string[]
   skillId?: string
+  /** When false, send the user prompt to the video model without rewriting it. Default true. */
+  enhance?: boolean
   onProgress?: (progress: number, label: string) => void
 }
 

@@ -129,7 +129,7 @@ function UgcProjectWorkspaceInner({ workspaceId, initialProject }: UgcProjectWor
     videoBusy,
     assembling,
     anyGenerating,
-  } = useUgcActiveRuns({ project, setProject })
+  } = useUgcActiveRuns({ project })
 
   const refreshProject = useCallback(async () => {
     const response = await getUgcProject(project.id)
@@ -155,6 +155,7 @@ function UgcProjectWorkspaceInner({ workspaceId, initialProject }: UgcProjectWor
     patchProject,
     patchProjectLocal,
     patchClip,
+    patchClipLocal,
     startRun,
   })
 
@@ -382,7 +383,20 @@ function UgcProjectWorkspaceInner({ workspaceId, initialProject }: UgcProjectWor
           onProgress={(progress, label) => updateRunProgress(run.key, progress, label)}
           onSettled={() => {
             settleRun(run)
-            void refreshProject().then(tryAssembleIfReady)
+            void refreshProject().then(latest => {
+              tryAssembleIfReady(latest)
+              if (!latest) return
+              const message = run.clipId
+                ? latest.clips.find(clip => clip.id === run.clipId)?.error
+                : latest.error
+              if (message) {
+                toast.error(message)
+                return
+              }
+              if (run.pipeline === 'assemble') {
+                handleOpenEditor()
+              }
+            })
           }}
         />
       ))}

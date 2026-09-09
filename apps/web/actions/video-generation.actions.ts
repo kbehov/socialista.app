@@ -6,7 +6,7 @@ import { getWorkspaceBalance } from '@/services/workspace.service'
 import { createPublicAccessToken } from '@socialista/trigger'
 import type { RealtimeVideoGenerationTask } from '@socialista/trigger/task-types'
 import type { GenerateVideoOptions } from '@socialista/types'
-import { clampVideoDuration, CostUnit, TASK_IDS } from '@socialista/types'
+import { clampVideoDuration, CostUnit, TASK_IDS, VIDEO_RESOLUTION_DEFAULT, videoResolutionCostMultiplier } from '@socialista/types'
 import { tasks } from '@trigger.dev/sdk/v3'
 
 export type StartVideoGenerationResult =
@@ -32,7 +32,9 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       return { success: false, error: 'Model not found.' }
     }
 
-    const billedCost = model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost
+    const billedCost =
+      (model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost) *
+      videoResolutionCostMultiplier(input.resolution)
     if (credits < billedCost) {
       return { success: false, error: 'Insufficient AI credits.' }
     }
@@ -45,10 +47,12 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       aspectRatio: input.aspectRatio,
       duration,
       generateAudio: input.generateAudio ?? true,
+      resolution: input.resolution ?? VIDEO_RESOLUTION_DEFAULT,
       ...(input.imageUrl ? { imageUrl: input.imageUrl } : {}),
       ...(input.imageUrls && input.imageUrls.length > 0 ? { imageUrls: input.imageUrls } : {}),
       ...(input.skillId ? { skillId: input.skillId } : {}),
       ...(input.projectId ? { projectId: input.projectId } : {}),
+      ...(input.enhance === false ? { enhance: false } : {}),
     })
 
     const publicAccessToken = await createPublicAccessToken(handle.id)

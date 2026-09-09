@@ -1,6 +1,7 @@
 import { generateUgcVideo as generateUgcVideoClip, lipSync, planUgcVideoPrompt } from '@socialista/ai'
 import {
   connectDb,
+  CostUnit,
   disconnectDb,
   getInfluencerById,
   getUgcProjectById,
@@ -8,7 +9,7 @@ import {
   UgcClipStatus,
   UgcProjectStatus,
 } from '@socialista/db'
-import { TASK_IDS, type UgcClipType, PROMPT_KEYS } from '@socialista/types'
+import { TASK_IDS, ugcClipAudioMode, type UgcClipType, PROMPT_KEYS, parseVideoResolution, videoResolutionCostMultiplier } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { generateUgcVideoPayloadSchema } from '../../schemas/generate-ugc-video.schema.js'
@@ -25,6 +26,7 @@ import { assertSufficientCredits, finalizeGeneration, loadModel, loadModelAndWor
 import {
   fallbackUgcVideoPrompt,
   findUgcClip,
+  muxUgcVoiceover,
   projectStatusFromClips,
   resolveUgcInfluencerId,
 } from './shared.js'
@@ -58,7 +60,11 @@ export const generateUgcVideo = schemaTask({
 
       const videoModelValue = clip.models?.video || project.models.video
       const { model, workspace } = await loadModelAndWorkspace(videoModelValue, payload.workspaceId)
-      assertSufficientCredits(workspace, model.cost)
+      const resolution = parseVideoResolution(project.videoResolution)
+      const billedCost =
+        (model.costUnit === CostUnit.PER_SECOND ? model.cost * clip.durationSec : model.cost) *
+        videoResolutionCostMultiplier(resolution)
+      assertSufficientCredits(workspace, billedCost)
 
       const plannerValue = clip.models?.planner || project.models.planner || clip.models?.script || project.models.script
       const planner = plannerValue ? await loadModel(plannerValue).catch(() => null) : null
@@ -78,15 +84,15 @@ export const generateUgcVideo = schemaTask({
         },
       )
 
-      const influencerId = resolveUgcInfluencerId(project, clip)
-      const influencer = influencerId ? await getInfluencerById(influencerId) : null
-
       const stillUrls = [startFrame]
       let plannedPrompt = payload.plannedPrompt ?? clip.plannedPrompt
       let negativePrompt = clip.negativePrompt
       const script = clip.script?.text ?? ''
       const directions = clip.directions || clip.scenePrompt
       const clipType = clip.type as UgcClipType
+      const audioMode = ugcClipAudioMode(clipType, Boolean(clip.audioUrl))
+      const influencerId = clipType === 'hook' ? undefined : resolveUgcInfluencerId(project, clip)
+      const influencer = influencerId ? await getInfluencerById(influencerId) : null
 
       if (!payload.skipPlanner && !payload.plannedPrompt && planner) {
         setGenerationStatus(20, influencer ? `Planning ${influencer.name}` : 'Planning clip')
@@ -108,6 +114,7 @@ export const generateUgcVideo = schemaTask({
             videoModel: model.value,
             clipType,
             durationSec: clip.durationSec,
+            audioMode,
             systemOverride,
           })
           plannedPrompt = planned.prompt
@@ -154,6 +161,7 @@ export const generateUgcVideo = schemaTask({
           referenceImageUrl: startFrame,
           productImageUrl: project.productImageUrls[0],
           durationSec: clip.durationSec,
+          resolution,
         },
       })
       generationStarted = true
@@ -170,22 +178,47 @@ export const generateUgcVideo = schemaTask({
         negativePrompt,
         duration: clip.durationSec,
         generateAudio: !clip.audioUrl,
+        resolution,
+        workspaceId: payload.workspaceId,
+        userId: payload.userId,
         onProgress: setGenerationStatus,
       })
 
+      const audioUrl = clip.audioUrl
       let finalVideoUrl = videoUrl
-      if (clip.audioUrl) {
-        setGenerationStatus(88, 'Lip-syncing audio')
-        finalVideoUrl = await lipSync({
-          videoUrl,
-          audioUrl: clip.audioUrl,
-          workspaceId: payload.workspaceId,
-          userId: payload.userId,
-          onProgress: (_progress, label) => setGenerationStatus(88, label),
-        })
+      if (audioUrl) {
+        const muxVoiceover = () =>
+          muxUgcVoiceover({
+            videoUrl,
+            audioUrl,
+            workspaceId: payload.workspaceId,
+            clipId: clip.id,
+            runId: ctx.run.id,
+            durationSec: clip.durationSec,
+          })
+
+        if (audioMode === 'lip-sync') {
+          setGenerationStatus(88, 'Lip-syncing audio')
+          try {
+            finalVideoUrl = await lipSync({
+              videoUrl,
+              audioUrl,
+              workspaceId: payload.workspaceId,
+              userId: payload.userId,
+              onProgress: (_progress, label) => setGenerationStatus(88, label),
+            })
+          } catch (error) {
+            logger.error('UGC lip-sync failed, muxing voiceover', { clipId: clip.id, error })
+            setGenerationStatus(88, 'Adding voiceover')
+            finalVideoUrl = await muxVoiceover()
+          }
+        } else {
+          setGenerationStatus(88, 'Adding voiceover')
+          finalVideoUrl = await muxVoiceover()
+        }
       }
 
-      await finalizeGeneration(payload.workspaceId, model)
+      await finalizeGeneration(payload.workspaceId, model, billedCost)
       await completeGenerationRecord({
         triggerRunId,
         result: {
@@ -194,7 +227,7 @@ export const generateUgcVideo = schemaTask({
           thumbnailUrl: startFrame,
           durationSec: clip.durationSec,
         },
-        cost: model.cost,
+        cost: billedCost,
         startedAt: started.startedAt,
         enhancedPrompt: plannedPrompt,
       })

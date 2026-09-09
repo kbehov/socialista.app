@@ -60,13 +60,14 @@ import {
   readStudioImageDrag,
 } from "@/lib/studio/prompt/studio-image-drag";
 import { cn } from "@/lib/utils";
-import { formatModelCost } from "@/utils/format";
+import { formatCredits, formatModelCost } from "@/utils/format";
 import { toast } from "sonner";
-import { ContextSupport, type Model } from "@socialista/types";
+import { ContextSupport, CostUnit, type Model } from "@socialista/types";
 import {
   ArrowUpIcon,
   CheckIcon,
   ChevronDownIcon,
+  CoinsIcon,
   FileIcon,
   ImageIcon,
   MinusIcon,
@@ -361,6 +362,7 @@ export type StudioPromptComposerProps = {
   workspaceId?: string;
   attachClassName?: string;
   count?: StudioPromptComposerCount;
+  costMultiplier?: number;
   placeholder?: string;
   disabled?: boolean;
   pending?: boolean;
@@ -376,6 +378,7 @@ export type StudioPromptComposerProps = {
   highlighted?: boolean;
   textareaRef?: (node: HTMLTextAreaElement | null) => void;
   onPromptChange?: () => void;
+  maxLength?: number;
   className?: string;
   surfaceClassName?: string;
   composerRef?: Ref<HTMLDivElement>;
@@ -399,6 +402,7 @@ export function StudioPromptComposer({
   workspaceId,
   attachClassName,
   count,
+  costMultiplier,
   placeholder = "Describe what to generate…",
   disabled,
   pending,
@@ -414,6 +418,7 @@ export function StudioPromptComposer({
   highlighted,
   textareaRef: textareaRefProp,
   onPromptChange,
+  maxLength,
   className,
   surfaceClassName,
   composerRef,
@@ -471,9 +476,14 @@ export function StudioPromptComposer({
     pending ||
     (!hideModelSelector &&
       !selectedModel?.contextSupports?.includes(ContextSupport.IMAGE));
-  const multiplier = count?.value ?? 1;
+  const billedUnits =
+    selectedModel?.costUnit === CostUnit.PER_SECOND
+      ? (costMultiplier ?? count?.value ?? 1)
+      : (count?.value ?? 1);
   const costLabel = selectedModel
-    ? formatModelCost(selectedModel.cost * multiplier, selectedModel.costUnit)
+    ? selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
+      ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
+      : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit)
     : null;
 
   const taggedIndexes = taggedAttachmentIndices(
@@ -880,6 +890,7 @@ export function StudioPromptComposer({
               )}
               disabled={disabled || pending}
               placeholder={placeholder}
+              maxLength={maxLength}
               aria-autocomplete="list"
               aria-expanded={mentionOpen}
               aria-controls={
@@ -899,7 +910,7 @@ export function StudioPromptComposer({
               }
               onKeyDown={handlePromptKeyDown}
             />
-            {hasPrompt ? (
+            {hasPrompt && maxLength == null ? (
               <span
                 aria-hidden
                 className={cn(
@@ -1022,7 +1033,8 @@ export function StudioPromptComposer({
 
           <div className="flex shrink-0 items-center gap-2">
             {costLabel ? (
-              <span className="hidden text-[11px] tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40 md:inline">
+              <span className="flex items-center gap-1 text-[11px] tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40">
+                <CoinsIcon className="size-3" strokeWidth={1.75} />
                 {costLabel}
               </span>
             ) : null}

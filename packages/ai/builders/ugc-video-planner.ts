@@ -1,4 +1,4 @@
-import type { UgcClipType } from '@socialista/types'
+import type { UgcAudioMode, UgcClipType } from '@socialista/types'
 
 export type UgcVideoPlannerInput = {
   script: string
@@ -11,6 +11,7 @@ export type UgcVideoPlannerInput = {
   videoModel: string
   clipType?: UgcClipType
   durationSec?: number
+  audioMode?: UgcAudioMode
 }
 
 function modelBias(videoModel: string): string {
@@ -25,6 +26,7 @@ function modelBias(videoModel: string): string {
 }
 
 const TYPE_MOTION: Record<UgcClipType, string> = {
+  hook: 'This is a text-hook clip. Keep the on-screen line fully readable the whole time. Subtle kinetic type or handheld micro-motion only. Do not invent a talking person. Do not add extra slogans.',
   talking: 'Animate talking-head energy: natural mouth shapes for the spoken line, blinks, small head turns, and a handheld phone feel. Stay on this person.',
   'product-hold': 'Keep the product in hand. Slight product tilt, a step closer, a smile. Same SKU.',
   'b-roll': 'Product-only motion: slow push-in, gentle rotation, light shifting on materials. No new objects. No person unless already in frame 1.',
@@ -33,8 +35,27 @@ const TYPE_MOTION: Record<UgcClipType, string> = {
   'app-showcase': 'Phone stays readable. Slight handheld sway. Do not invent a different UI than the screen in frame 1.',
 }
 
+function scriptBlock(input: UgcVideoPlannerInput): string {
+  const script = input.script.trim()
+  const duration = input.durationSec ?? 8
+  if (input.clipType === 'hook') {
+    return script
+      ? `On-screen HOOK TEXT (paint this exact line in the video, never spoken):\n${script}`
+      : 'On-screen text hook. Invent one short punchy line and keep it readable. No talking.'
+  }
+  if (!script) {
+    return 'No spoken script. Animate the scene only. Keep the mouth relaxed if a person is present.'
+  }
+  if (input.audioMode === 'voiceover') {
+    return `Voiceover added in post, NOT spoken on camera — any person keeps a relaxed, closed mouth; product motion should illustrate the line (~${duration}s):\n${script}`
+  }
+  if (input.audioMode === 'lip-sync') {
+    return `Spoken line, lip-synced in post — animate confident talking to camera, mouth shapes matching a short spoken line (~${duration}s):\n${script}`
+  }
+  return `Spoken script (~${duration}s, motion and lip presence only, never as on-image text):\n${script}`
+}
+
 export function buildUgcVideoPlannerUserPrompt(input: UgcVideoPlannerInput): string {
-  const hasScript = Boolean(input.script.trim())
   const directions = input.directions?.trim()
   const product = input.productName?.trim() ?? 'the product in the still'
   const typeLine = input.clipType ? TYPE_MOTION[input.clipType] : ''
@@ -47,9 +68,7 @@ export function buildUgcVideoPlannerUserPrompt(input: UgcVideoPlannerInput): str
     input.influencerName ? `Creator: ${input.influencerName}.` : 'No on-camera creator — product or device only.',
     input.identityFragment ?? '',
     `Product: ${product}.`,
-    hasScript
-      ? `Spoken script (~${input.durationSec ?? 8}s, motion and lip presence only, never as on-image text):\n${input.script.trim()}`
-      : 'No spoken script. Animate the scene only. Keep the mouth relaxed if a person is present.',
+    scriptBlock(input),
     directions ? `User directions: ${directions}` : 'No extra directions — keep it natural UGC.',
     'Write the image-to-video prompt now.',
   ]

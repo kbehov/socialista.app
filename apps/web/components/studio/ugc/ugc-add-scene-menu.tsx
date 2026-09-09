@@ -12,10 +12,11 @@ import {
   type UgcClip,
   type UgcClipType,
 } from '@socialista/types'
-import { BoxIcon, HandIcon, MicIcon, PackageIcon, ShirtIcon, SmartphoneIcon } from 'lucide-react'
+import { BoxIcon, HandIcon, MicIcon, PackageIcon, ShirtIcon, SmartphoneIcon, TypeIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
 export const UGC_SCENE_ICONS: Record<UgcClipType, typeof MicIcon> = {
+  hook: TypeIcon,
   talking: MicIcon,
   'product-hold': HandIcon,
   'b-roll': PackageIcon,

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { UgcSceneStill } from '@socialista/types'
-import { AudioLinesIcon, CheckIcon, ImageIcon, VideoIcon } from 'lucide-react'
+import { AudioLinesIcon, CheckIcon, ImageIcon, TypeIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useState, type ReactNode } from 'react'
 
@@ -176,7 +176,17 @@ export function UgcStillsEmptyHint({ className }: { className?: string }) {
   )
 }
 
-export function UgcAudioEmptyHint({ className }: { className?: string }) {
+export function UgcAudioEmptyHint({ className, hook }: { className?: string; hook?: boolean }) {
+  if (hook) {
+    return (
+      <EmptyHint
+        className={className}
+        icon={<TypeIcon className="size-5" strokeWidth={1.5} />}
+        title="Write the on-screen hook"
+        description="A 3–8 word line that will be painted in the photo and video. No voiceover on this scene."
+      />
+    )
+  }
   return (
     <EmptyHint
       className={className}

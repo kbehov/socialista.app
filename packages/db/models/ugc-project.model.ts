@@ -1,3 +1,4 @@
+import { VIDEO_RESOLUTION_DEFAULT, VIDEO_RESOLUTIONS } from '@socialista/types'
 import { model, Schema } from 'mongoose'
 import { enumValues } from '../lib/schema.js'
 import {
@@ -173,11 +174,15 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer' },
     voice: { type: voiceSchema },
     aspectRatio: { type: String, default: '9:16' },
+    videoResolution: {
+      type: String,
+      enum: [...VIDEO_RESOLUTIONS],
+      default: VIDEO_RESOLUTION_DEFAULT,
+    },
     models: { type: modelsSchema, required: true },
     flowStep: { type: String, enum: enumValues(UgcFlowStep) },
     clips: { type: [clipSchema], default: [] },
     assembledVideoUrl: { type: String },
-    assembledGenerationId: { type: String },
     assembledRunId: { type: String },
     composedProjectVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
     error: { type: String },

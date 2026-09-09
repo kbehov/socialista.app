@@ -1,4 +1,5 @@
 import {
+  AI_CREDIT_COSTS,
   buildSlideImagePrompt,
   buildSlideshowSlides,
   canvasToImageAspectRatio,
@@ -13,7 +14,7 @@ import {
   toObjectId,
 } from '@socialista/db'
 import type { SlideshowGenerationOutput } from '@socialista/types'
-import { PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, TASK_IDS } from '@socialista/types'
+import { PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 
 import { slideshowGenerationPayloadSchema } from '../../schemas/slideshow-generation.schema.js'
@@ -49,7 +50,7 @@ export const realtimeSlideshowGeneration = schemaTask({
 
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
       const textModel = payload.textModel ? await loadModel(payload.textModel, 'Text model not found.') : null
-      const planCost = textModel?.cost ?? SLIDESHOW_PLAN_CREDIT_COST
+      const planCost = textModel?.cost ?? AI_CREDIT_COSTS.slideshowPlan
       const estimatedImageCount = payload.slideCount ?? SLIDESHOW_GENERATION_SLIDE_COUNT_MIN
       assertSufficientCredits(workspace, planCost + model.cost * estimatedImageCount)
 

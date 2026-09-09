@@ -25,6 +25,7 @@ export enum UgcScriptSource {
 }
 
 export enum UgcClipType {
+  HOOK = 'hook',
   TALKING = 'talking',
   B_ROLL = 'b-roll',
   UNBOXING = 'unboxing',
@@ -162,11 +163,11 @@ export interface IUgcProject {
   influencerId?: Types.ObjectId
   voice?: IUgcClipVoice
   aspectRatio: string
+  videoResolution?: string
   models: IUgcProjectModels
   flowStep?: UgcFlowStep
   clips: IUgcClip[]
   assembledVideoUrl?: string
-  assembledGenerationId?: string
   assembledRunId?: string
   composedProjectVideoId?: Types.ObjectId
   error?: string

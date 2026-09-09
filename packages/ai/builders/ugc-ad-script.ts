@@ -1,5 +1,6 @@
 import {
   clampUgcDuration,
+  UGC_SCRIPT_MAX_CHARS,
   ugcClipShowsScript,
   ugcScriptTargetChars,
   type UgcClipType,
@@ -22,12 +23,13 @@ export type UgcAdScriptSceneInput = {
 }
 
 const TYPE_VOICE: Record<UgcClipType, string> = {
+  hook: 'On-screen text hook only. Not spoken. Return a 3–8 word punchy line that will be painted on screen.',
   talking: 'Talking-head testimonial to camera. They speak the whole time.',
   'product-hold': 'They hold the product up and talk about it casually.',
   unboxing: 'They open or just opened the package and react out loud.',
   'try-on': 'They are wearing or using it and talk about how it feels.',
   'app-showcase': 'They show the app on their phone and talk through one moment.',
-  'b-roll': 'No spoken script needed — return a very short on-camera mutter if anything.',
+  'b-roll': 'Off-camera voiceover over product footage. Describe the product; they are not talking to camera.',
 }
 
 export function buildUgcAdScriptUserPrompt(input: UgcAdScriptPromptInput): string {
@@ -41,7 +43,7 @@ export function buildUgcAdScriptUserPrompt(input: UgcAdScriptPromptInput): strin
   return [
     `Write one spoken UGC ad script about ${product}.`,
     input.productDescription?.trim() ? `Product context: ${input.productDescription.trim()}` : '',
-    `Duration: ${durationSec} seconds. Maximum ${target} characters (aim under 120). Shorter is better — one breath.`,
+    `Duration: ${durationSec} seconds. Aim around ${target} characters, never over ${UGC_SCRIPT_MAX_CHARS}. Shorter is better — one breath.`,
     typeLine,
     creator ? `The on-camera creator is ${creator}.` : '',
     directions ? `Extra notes: ${directions}` : '',
@@ -77,7 +79,7 @@ export function buildUgcAdScriptSegmentsUserPrompt(input: {
     input.productDescription?.trim() ? `Product context: ${input.productDescription.trim()}` : '',
     creator ? `The on-camera creator is ${creator}.` : '',
     input.directions?.trim() ? `Extra notes: ${input.directions.trim()}` : '',
-    'Each segment must stay within its character budget (max 120 characters). Contractions. No hashtags, emojis, or markdown.',
+    `Each segment must stay within its character budget (max ${UGC_SCRIPT_MAX_CHARS} characters). Contractions. No hashtags, emojis, or markdown.`,
     'The segments should feel like one continuous ad: hook, proof, close.',
     'Return one object per scene with that scene id and its spoken text (empty string if no talking).',
     sceneLines.join('\n\n'),

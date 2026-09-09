@@ -14,15 +14,7 @@ import { join } from 'node:path'
 import { assembleUgcProjectPayloadSchema } from '../../schemas/assemble-ugc-project.schema.js'
 import { runFfmpeg, probeHasAudioStream } from '../../services/video-export/ffmpeg.js'
 import { uploadExportedVideo } from '../../services/video-upload.js'
-import {
-  completeGenerationRecord,
-  failGenerationRecord,
-  GenerationKind,
-  GenerationResultType,
-  startGenerationRecord,
-} from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
-import { loadModelAndWorkspace } from '../shared/workspace.js'
 import {
   buildUgcNormalizeFfmpegArgs,
   downloadToFile,
@@ -36,7 +28,6 @@ export const assembleUgcProject = schemaTask({
   retry: { maxAttempts: 1 },
   run: async (payload, { ctx }) => {
     const workDir = await mkdtemp(join(tmpdir(), 'ugc-assemble-'))
-    let startedAt: Date | undefined
 
     try {
       await connectDb()
@@ -48,8 +39,6 @@ export const assembleUgcProject = schemaTask({
         throw new Error('Generate at least one scene video first')
       }
 
-      const videoModelValue = project.models.video
-      const { model } = await loadModelAndWorkspace(videoModelValue, payload.workspaceId)
       const { width, height } = ugcAspectDimensions(project.aspectRatio)
 
       await updateUgcProject(payload.projectId, {
@@ -57,23 +46,6 @@ export const assembleUgcProject = schemaTask({
         assembledRunId: ctx.run.id,
         error: undefined,
       })
-
-      const started = await startGenerationRecord({
-        kind: GenerationKind.VIDEO,
-        taskId: TASK_IDS.assembleUgcProject,
-        triggerRunId: ctx.run.id,
-        workspaceId: payload.workspaceId,
-        userId: payload.userId,
-        projectId: project.project?.toString(),
-        prompt: `Assemble ${readyClips.length} UGC clips`,
-        model,
-        inputs: {
-          ugcProjectId: payload.projectId,
-          durationSec: readyClips.reduce((sum, clip) => sum + (clip.durationSec ?? 8), 0),
-          aspectRatio: project.aspectRatio,
-        },
-      })
-      startedAt = started.startedAt
 
       setGenerationStatus(10, 'Downloading clips')
 
@@ -116,16 +88,8 @@ export const assembleUgcProject = schemaTask({
         bytes,
       })
 
-      await completeGenerationRecord({
-        triggerRunId: ctx.run.id,
-        result: { type: GenerationResultType.VIDEO, url: assembledVideoUrl },
-        cost: 0,
-        startedAt: started.startedAt,
-      })
-
       await updateUgcProject(payload.projectId, {
         assembledVideoUrl,
-        assembledGenerationId: started.generationId,
         status: UgcProjectStatus.READY,
         error: undefined,
       })
@@ -135,13 +99,6 @@ export const assembleUgcProject = schemaTask({
       return { projectId: payload.projectId, assembledVideoUrl }
     } catch (error) {
       setGenerationFailure(error, 'Could not assemble clips')
-      if (startedAt) {
-        await failGenerationRecord({
-          triggerRunId: ctx.run.id,
-          error,
-          startedAt,
-        })
-      }
       await updateUgcProject(payload.projectId, {
         status: UgcProjectStatus.FAILED,
         error: error instanceof Error ? error.message : 'Could not assemble clips',

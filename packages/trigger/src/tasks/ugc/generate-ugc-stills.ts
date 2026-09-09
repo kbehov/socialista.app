@@ -3,6 +3,7 @@ import {
   buildUgcSceneStillPrompt,
   buildUgcStillRefUrls,
   generateImage,
+  UGC_HOOK_STILL_LOCK_FOOTER,
   UGC_STILL_LOCK_FOOTER,
 } from '@socialista/ai'
 import {
@@ -15,7 +16,6 @@ import {
   UgcClipStatus,
   UgcProjectStatus,
   type IUgcClip,
-  type IUgcProject,
 } from '@socialista/db'
 import {
   appendUgcStills,
@@ -141,7 +141,7 @@ export const generateUgcStills = schemaTask({
           },
         )
 
-        const influencerId = resolveUgcInfluencerId(project, clip)
+        const influencerId = clipType === 'hook' ? undefined : resolveUgcInfluencerId(project, clip)
         const influencer = influencerId ? await getInfluencerById(influencerId) : null
         if (influencerId && !influencer) {
           await updateUgcClip(
@@ -177,6 +177,7 @@ export const generateUgcStills = schemaTask({
               identityFragment: influencer?.identity?.basePromptFragment,
               productName: project.productName,
               scenePrompt: clip.scenePrompt,
+              hookText: clipType === 'hook' ? clip.script?.text : undefined,
             })
 
         let nextStills = [...existingStills]
@@ -222,7 +223,8 @@ export const generateUgcStills = schemaTask({
                 await setGenerationEnhancedPrompt(triggerRunId, enhanced)
               }
 
-              const finalPrompt = `${enhanced}\n\n${UGC_STILL_LOCK_FOOTER}`
+              const lockFooter = clipType === 'hook' ? UGC_HOOK_STILL_LOCK_FOOTER : UGC_STILL_LOCK_FOOTER
+              const finalPrompt = `${enhanced}\n\n${lockFooter}`
               setGenerationStatus(
                 40 + Math.round((completed / totalShots) * 50),
                 `Generating photo ${completed + 1} of ${totalShots}`,

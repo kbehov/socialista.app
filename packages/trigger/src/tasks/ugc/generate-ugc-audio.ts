@@ -15,7 +15,7 @@ import {
   TASK_IDS,
   UGC_DEFAULT_VOICE,
   ugcClipAudioTakes,
-  ugcClipShowsScript,
+  ugcClipGeneratesAudio,
   ugcResolvedClipVoice,
   type UgcClipAudioTake,
   type UgcClipType,
@@ -62,7 +62,7 @@ function clipScriptText(clip: IUgcClip, payloadText?: string, clipId?: string): 
 function talkingClips(project: IUgcProject, clipId?: string): IUgcClip[] {
   const clips = project.clips ?? []
   const scoped = clipId ? clips.filter(clip => clip.id === clipId) : clips
-  return scoped.filter(clip => ugcClipShowsScript(clip.type as UgcClipType))
+  return scoped.filter(clip => ugcClipGeneratesAudio(clip.type as UgcClipType))
 }
 
 function resolveAudioModelValue(project: IUgcProject, clip: IUgcClip): string {
@@ -82,7 +82,7 @@ export const generateUgcAudio = schemaTask({
 
       const targets = talkingClips(project, payload.clipId)
       if (targets.length === 0) {
-        throw new Error(payload.clipId ? 'Clip not found' : 'Add a talking scene first')
+        throw new Error(payload.clipId ? 'Clip not found' : 'Add a scene with a script first')
       }
 
       const speakable = targets.filter(clip => {
@@ -90,16 +90,20 @@ export const generateUgcAudio = schemaTask({
         return voice.enabled !== false && Boolean(clipScriptText(clip, payload.text, payload.clipId))
       })
       if (speakable.length === 0) {
-        throw new Error(
-          payload.clipId ? 'Write a script before generating audio' : 'Write a script on a talking scene first',
-        )
+        throw new Error(payload.clipId ? 'Write a script before generating audio' : 'Write a script first')
+      }
+
+      const pending = payload.clipId ? speakable : speakable.filter(clip => !clip.audioUrl)
+      if (pending.length === 0) {
+        setGenerationStatus(100, 'Voiceover ready')
+        return { projectId: payload.projectId, clipId: payload.clipId, generated: 0 }
       }
 
       let completed = 0
-      const total = speakable.length
+      const total = pending.length
       let failed = 0
 
-      for (const clip of speakable) {
+      for (const clip of pending) {
         const voice = resolveVoice(project, clip)
         const text = clipScriptText(clip, payload.text, payload.clipId)
         const voiceId = voice.voiceId || UGC_DEFAULT_VOICE.voiceId

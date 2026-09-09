@@ -160,23 +160,16 @@ export function restoreUgcActiveRuns(project: UgcProject): UgcActiveRun[] {
   return next
 }
 
-export function useUgcActiveRuns({
-  project,
-  setProject,
-}: {
-  project: UgcProject
-  setProject: (project: UgcProject) => void
-}) {
+export function useUgcActiveRuns({ project }: { project: UgcProject }) {
   const [activeRuns, setActiveRuns] = useState<UgcActiveRun[]>([])
 
   const startRun = useCallback(
     (
-      handle: { project: UgcProject; runId: string; publicAccessToken: string },
+      handle: { runId: string; publicAccessToken: string },
       pipeline: UgcPipeline,
       clipId?: string,
     ) => {
-      rememberRun(handle.project.id, handle.runId, handle.publicAccessToken, pipeline, clipId)
-      setProject(handle.project)
+      rememberRun(project.id, handle.runId, handle.publicAccessToken, pipeline, clipId)
       setActiveRuns(current => {
         const without = current.filter(run => {
           if (run.runId === handle.runId) return false
@@ -208,7 +201,7 @@ export function useUgcActiveRuns({
         ]
       })
     },
-    [setProject],
+    [project.id],
   )
 
   const updateRunProgress = useCallback((runKey: string, progress: number, label: string) => {

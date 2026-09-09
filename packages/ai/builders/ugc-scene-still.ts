@@ -7,9 +7,13 @@ export type UgcSceneStillPromptInput = {
   identityFragment?: string
   productName?: string
   scenePrompt?: string
+  hookText?: string
 }
 
 const BEATS: Record<UgcClipType, Record<number, string>> = {
+  hook: {
+    0: 'Vertical UGC hook card: one short punchy line of on-screen typography is the hero. Large, readable, high-contrast type. Lifestyle or product-in-background is OK. No face talking. The hook line must appear verbatim as text in the image.',
+  },
   talking: {
     0: 'Talking-head start frame: the creator faces the phone camera, mid-shot, natural expression mid-sentence. Lived-in room. Product may be nearby but does not have to be in hand.',
   },
@@ -37,17 +41,23 @@ export const UGC_STILL_LOCK_FOOTER = `
 Keep the exact same person as the attached creator photos (face, hair, age, body, skin — do not beautify into someone else). Keep the exact same product as the product photos (silhouette, label, color, materials — do not swap the SKU). No watermarks, captions, logos, or AI-generated text labels.
 `.trim()
 
+export const UGC_HOOK_STILL_LOCK_FOOTER = `
+Render the hook line as real on-image typography, spelled exactly. High contrast, large, fully readable. Do not misspell. No extra slogans. Keep any product in the photo matching the product references. No watermarks or extra logos.
+`.trim()
+
 export function buildUgcSceneStillPrompt(input: UgcSceneStillPromptInput): string {
   const typeBeats = BEATS[input.clipType]
   const beat = typeBeats[input.sceneIndex] ?? typeBeats[0] ?? BEATS['product-hold'][0]!
+  const isHook = input.clipType === 'hook'
+  const hook = input.hookText?.trim()
   const productLine = input.productName?.trim()
     ? `Product: ${input.productName.trim()}. The attached product photos are ground truth.`
-    : input.clipType === 'talking'
+    : input.clipType === 'talking' || isHook
       ? ''
       : 'Product: the item in the product reference photo. Match it exactly.'
   const creatorLine = input.influencerName?.trim()
     ? `Creator: ${input.influencerName.trim()}. The attached person photos ARE this creator.`
-    : input.clipType === 'b-roll'
+    : input.clipType === 'b-roll' || isHook
       ? 'No person in frame unless the user scene look asks for hands only.'
       : ''
   const look = input.scenePrompt?.trim() ? `User scene look: ${input.scenePrompt.trim()}.` : ''
@@ -57,8 +67,11 @@ export function buildUgcSceneStillPrompt(input: UgcSceneStillPromptInput): strin
     input.identityFragment?.trim() ?? '',
     productLine,
     `Clip type: ${input.clipType}. Scene ${input.sceneIndex + 1} of ${input.sceneCount}. ${beat}`,
+    isHook && hook ? `HOOK LINE (paint this exact text in the image):\n${hook}` : '',
     look,
-    'Photoreal UGC still. Describe only what is in the frame. No on-image text.',
+    isHook
+      ? 'Photoreal UGC still with the hook as large readable type in frame.'
+      : 'Photoreal UGC still. Describe only what is in the frame. No on-image text.',
   ]
     .filter(Boolean)
     .join('\n')

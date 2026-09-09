@@ -13,7 +13,9 @@ import {
   UgcStillsGrid,
   UgcVideoEmptyHint,
 } from '@/components/studio/ugc/ugc-stills-grid'
+import { ErrorState } from '@/components/common/error-state'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,23 +24,28 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ugcClipGeneratedStills } from '@/lib/studio/ugc/ugc-stage'
+import { downloadGeneratedVideo } from '@/lib/video-generation/video-actions'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
 import {
   UGC_CLIP_TYPE_LABELS,
   UGC_CLIP_TYPES,
   ugcClipShowsScript,
+  ugcClipShowsOnScreenText,
   ugcClipRequiresProduct,
   ugcClipAudioTakes,
   ugcResolvedClipModels,
   ugcResolvedInfluencerId,
+  type AspectRatio,
   type UgcClip,
   type UgcClipType,
   type UgcClipVoice,
   type UgcProject,
+  type VideoAspectRatio,
 } from '@socialista/types'
-import { AudioLinesIcon, ChevronDownIcon, ImageIcon, VideoIcon } from 'lucide-react'
+import { AudioLinesIcon, ChevronDownIcon, DownloadIcon, ImageIcon, TypeIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { VideoPromptInput, type VideoPromptSubmitResult } from '@/components/studio/videos/video-prompt-input'
 
 export type UgcWorkbenchTab = 'image' | 'audio' | 'video'
@@ -153,6 +160,7 @@ export function UgcSceneWorkbench({
   const hasStills = stillUrls.length > 0
   const hasVideo = Boolean(clip.videoUrl)
   const showsScript = ugcClipShowsScript(clip.type)
+  const isHook = ugcClipShowsOnScreenText(clip.type)
   const audioTakes = ugcClipAudioTakes(clip)
   const resolvedImageModel = ugcResolvedClipModels(project, clip).image
   const clipIndex = project.clips.findIndex(item => item.id === clip.id)
@@ -203,6 +211,8 @@ export function UgcSceneWorkbench({
                   progress={stillsProgress}
                   progressLabel={stillsProgressLabel}
                 />
+              ) : clip.error ? (
+                <ErrorState title="Generation failed" description={clip.error} />
               ) : null}
               {hasStills ? (
                 <UgcStillsGrid
@@ -212,7 +222,7 @@ export function UgcSceneWorkbench({
                   onToggle={toggleStill}
                   onUseSelected={() => onUseStills(selectedStillUrls)}
                 />
-              ) : !generatingStill ? (
+              ) : !generatingStill && !clip.error ? (
                 <UgcStillsEmptyHint />
               ) : null}
             </>
@@ -220,18 +230,20 @@ export function UgcSceneWorkbench({
 
           {tab === 'audio' && showsScript ? (
             <>
-              {generatingAudio ? (
+              {generatingAudio && !isHook ? (
                 <UgcGenerationStatus kind="audio" generating progressLabel="Generating voiceover…" />
               ) : null}
-              {audioTakes.length > 0 ? (
+              {!isHook && audioTakes.length > 0 ? (
                 <UgcAudioTakes
                   takes={audioTakes}
                   selectedUrl={clip.audioUrl}
                   disabled={busy}
                   onSelect={onSelectAudio}
                 />
-              ) : !generatingAudio ? (
+              ) : !isHook && !generatingAudio ? (
                 <UgcAudioEmptyHint />
+              ) : isHook && !clip.script?.text.trim() ? (
+                <UgcAudioEmptyHint hook />
               ) : null}
             </>
           ) : null}
@@ -245,15 +257,20 @@ export function UgcSceneWorkbench({
                   progress={videoProgress}
                   progressLabel={videoProgressLabel}
                 />
+              ) : clip.error ? (
+                <ErrorState title="Generation failed" description={clip.error} />
               ) : null}
               {hasVideo && clip.videoUrl ? (
-                <UgcPhonePreview
-                  key={clip.videoUrl}
-                  src={clip.videoUrl}
-                  poster={clip.thumbnailUrl ?? stillUrls[0]}
-                  aspectRatio={project.aspectRatio}
-                />
-              ) : !generatingVideo ? (
+                <div className="flex flex-col items-center gap-3">
+                  <UgcPhonePreview
+                    key={clip.videoUrl}
+                    src={clip.videoUrl}
+                    poster={clip.thumbnailUrl ?? stillUrls[0]}
+                    aspectRatio={project.aspectRatio}
+                  />
+                  <UgcClipDownloadButton url={clip.videoUrl} name={clip.name} />
+                </div>
+              ) : !generatingVideo && !clip.error ? (
                 <>
                   <UgcVideoEmptyHint />
                   {hasStills && videoAttachments.length > 0 ? (
@@ -294,8 +311,12 @@ export function UgcSceneWorkbench({
                   Image
                 </TabsTrigger>
                 <TabsTrigger value="audio" className="h-7 gap-1.5 px-2.5 text-[12px]">
-                  <AudioLinesIcon data-icon="inline-start" className="size-3.5" />
-                  Audio
+                  {isHook ? (
+                    <TypeIcon data-icon="inline-start" className="size-3.5" />
+                  ) : (
+                    <AudioLinesIcon data-icon="inline-start" className="size-3.5" />
+                  )}
+                  {isHook ? 'Hook' : 'Audio'}
                 </TabsTrigger>
                 <TabsTrigger value="video" className="h-7 gap-1.5 px-2.5 text-[12px]">
                   <VideoIcon data-icon="inline-start" className="size-3.5" />
@@ -303,21 +324,21 @@ export function UgcSceneWorkbench({
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="image" className="mt-0 data-[state=inactive]:hidden">
+              <TabsContent value="image" forceMount className="mt-0 data-[state=inactive]:hidden">
                 <ImagePromptInput
                   key={`${clip.id}-image`}
                   models={imageModels}
                   hideExtras
                   pending={generatingStill}
                   initialAttachments={imageAttachments}
-                  initialAspectRatio={project.aspectRatio}
+                  initialAspectRatio={project.aspectRatio as AspectRatio}
                   initialModel={resolvedImageModel}
                   placeholder="Describe the scene photo…"
                   onSubmitOverride={onImageSubmit}
                 />
               </TabsContent>
 
-              <TabsContent value="audio" className="mt-0 data-[state=inactive]:hidden">
+              <TabsContent value="audio" forceMount className="mt-0 data-[state=inactive]:hidden">
                 <UgcAudioPromptInput
                   project={project}
                   clip={clip}
@@ -331,10 +352,10 @@ export function UgcSceneWorkbench({
                 />
               </TabsContent>
 
-              <TabsContent value="video" className="mt-0 space-y-2 data-[state=inactive]:hidden">
+              <TabsContent value="video" forceMount className="mt-0 space-y-2 data-[state=inactive]:hidden">
                 {!hasStills && !hasVideo ? (
                   <p className="px-0.5 text-[12px] text-muted-foreground">
-                    Generate a photo first, then animate it here.
+                    Attach a photo or generate one first, then animate it here.
                   </p>
                 ) : null}
                 <VideoPromptInput
@@ -343,7 +364,9 @@ export function UgcSceneWorkbench({
                   hideExtras
                   pending={generatingVideo}
                   initialAttachments={videoAttachments}
-                  initialAspectRatio={project.aspectRatio}
+                  initialAspectRatio={project.aspectRatio as VideoAspectRatio}
+                  initialDuration={clip.durationSec}
+                  initialResolution={project.videoResolution}
                   placeholder="Describe the video motion…"
                   onSubmitOverride={onVideoSubmit}
                 />
@@ -353,6 +376,36 @@ export function UgcSceneWorkbench({
         </div>
       </div>
     </div>
+  )
+}
+
+function UgcClipDownloadButton({ url, name }: { url: string; name?: string }) {
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    setIsDownloading(true)
+    try {
+      await downloadGeneratedVideo(url, name)
+      toast.success('Download started')
+    } catch {
+      toast.error('Could not download video')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  return (
+    <Button
+      className="h-8 gap-1.5 px-3 text-[12px]"
+      disabled={isDownloading}
+      onClick={() => void handleDownload()}
+      size="sm"
+      type="button"
+      variant="outline"
+    >
+      {isDownloading ? <Spinner className="size-3.5" /> : <DownloadIcon className="size-3.5" />}
+      Download clip
+    </Button>
   )
 }
 
