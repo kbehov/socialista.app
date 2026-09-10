@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { ImageGenerationOutput } from '@socialista/types'
 import { AlertCircleIcon, CheckIcon, DownloadIcon, PlusIcon, SendIcon, VideoIcon } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { RefObject } from 'react'
 import { useEffect, useState } from 'react'
@@ -168,14 +167,8 @@ export function GeneratedImage({
             {productImageUrl ? (
               <div className="ml-auto flex">
                 <div className="relative size-8 shrink-0 overflow-hidden rounded-md border border-black/10 bg-black/[0.03] dark:border-white/12 dark:bg-white/[0.03]">
-                  <Image
-                    alt="Product reference"
-                    className="object-cover"
-                    fill
-                    sizes="32px"
-                    src={productImageUrl}
-                    unoptimized
-                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- product CDN URLs vary by provider */}
+                  <img alt="Product reference" className="absolute inset-0 size-full object-cover" src={productImageUrl} />
                 </div>
               </div>
             ) : null}
@@ -195,25 +188,13 @@ export function GeneratedImage({
             <p className="text-sm text-destructive">Could not load the generated image preview.</p>
           </div>
         ) : previewSrc ? (
-          isDataImageUrl(selectedUrl) || previewSrc.startsWith('blob:') ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              alt={previewAlt}
-              className="absolute inset-0 size-full object-contain"
-              onError={() => setPreviewError(true)}
-              src={previewSrc}
-            />
-          ) : (
-            <Image
-              alt={previewAlt}
-              className="object-contain"
-              fill
-              onError={() => setPreviewError(true)}
-              sizes="(max-width: 768px) 100vw, 672px"
-              src={previewSrc}
-              unoptimized
-            />
-          )
+          // eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop
+          <img
+            alt={previewAlt}
+            className="absolute inset-0 size-full object-contain"
+            onError={() => setPreviewError(true)}
+            src={previewSrc}
+          />
         ) : null}
       </GenerationPreviewFrame>
 
@@ -244,14 +225,8 @@ export function GeneratedImage({
                     : 'ring-black/10 hover:ring-black/18 dark:ring-white/12 dark:hover:ring-white/20',
                 )}
               >
-                <Image
-                  alt=""
-                  className="object-cover"
-                  fill
-                  sizes="56px"
-                  src={resolveGeneratedImagePreviewUrl(url)}
-                  unoptimized
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
+                <img alt="" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
               </button>
             )
           })}

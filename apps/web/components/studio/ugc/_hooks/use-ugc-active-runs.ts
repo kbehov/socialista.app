@@ -7,7 +7,7 @@ import {
 import type { UgcProject } from '@socialista/types'
 import { useCallback, useMemo, useState } from 'react'
 
-export type UgcPipeline = 'stills' | 'video' | 'assemble' | 'audio'
+export type UgcPipeline = 'stills' | 'video' | 'audio'
 
 export type UgcActiveRun = {
   key: string
@@ -23,7 +23,6 @@ const RUN_STORAGE_PREFIX = 'ugc-run:'
 const LEGACY_CLIP_RUN = 'ugc-clip-run:'
 const LEGACY_CLIP_AUDIO_RUN = 'ugc-clip-audio-run:'
 const LEGACY_STILLS_RUN = 'ugc-stills-run:'
-const LEGACY_ASSEMBLE_RUN = 'ugc-assemble-run:'
 const LEGACY_AUDIO_RUN = 'ugc-audio-run:'
 
 function runStorageKey(projectId: string, pipeline: UgcPipeline, clipId?: string) {
@@ -37,8 +36,6 @@ function pipelineLabel(pipeline: UgcPipeline) {
       return 'Generating voiceover…'
     case 'video':
       return 'Rendering…'
-    case 'assemble':
-      return 'Stitching…'
     case 'stills':
       return 'Generating photos…'
   }
@@ -65,8 +62,6 @@ function readStoredRunId(projectId: string, pipeline: UgcPipeline, clipId?: stri
     return sessionStorage.getItem(`${LEGACY_STILLS_RUN}${projectId}`)
   } else if (pipeline === 'audio') {
     return sessionStorage.getItem(`${LEGACY_AUDIO_RUN}${projectId}`)
-  } else if (pipeline === 'assemble') {
-    return sessionStorage.getItem(`${LEGACY_ASSEMBLE_RUN}${projectId}`)
   }
 
   return null
@@ -82,8 +77,6 @@ function clearStoredRun(projectId: string, pipeline: UgcPipeline, clipId?: strin
     sessionStorage.removeItem(`${LEGACY_STILLS_RUN}${projectId}`)
   } else if (pipeline === 'audio') {
     sessionStorage.removeItem(`${LEGACY_AUDIO_RUN}${projectId}`)
-  } else if (pipeline === 'assemble') {
-    sessionStorage.removeItem(`${LEGACY_ASSEMBLE_RUN}${projectId}`)
   }
 }
 
@@ -151,12 +144,6 @@ export function restoreUgcActiveRuns(project: UgcProject): UgcActiveRun[] {
     }
   }
 
-  if (project.assembledRunId && project.status === 'generating') {
-    const runId = readStoredRunId(project.id, 'assemble') ?? project.assembledRunId
-    const accessToken = readGenerationAccessToken(runId)
-    if (accessToken) push(makeRun(runId, accessToken, 'assemble'))
-  }
-
   return next
 }
 
@@ -194,9 +181,7 @@ export function useUgcActiveRuns({ project }: { project: UgcProject }) {
                 ? 'Generating voiceover…'
                 : pipeline === 'video'
                   ? 'Rendering…'
-                  : pipeline === 'assemble'
-                    ? 'Stitching…'
-                    : 'Starting…',
+                  : 'Starting…',
           },
         ]
       })
@@ -244,7 +229,6 @@ export function useUgcActiveRuns({ project }: { project: UgcProject }) {
 
   const stillsRun = activeRuns.find(run => run.pipeline === 'stills')
   const videoBusy = activeRuns.some(run => run.pipeline === 'video')
-  const assembling = activeRuns.some(run => run.pipeline === 'assemble')
   const anyGenerating =
     project.clips.some(clip => clip.status === 'generating') || activeRuns.length > 0
 
@@ -257,7 +241,6 @@ export function useUgcActiveRuns({ project }: { project: UgcProject }) {
     runsByClipId,
     stillsRun,
     videoBusy,
-    assembling,
     anyGenerating,
   }
 }

@@ -1,7 +1,6 @@
 'use client'
 
 import { editImage } from '@/actions/fal.actions'
-import { proxiedImageUrl } from '@/lib/carousel/image-url'
 import { resolveFalImageUrl } from '@/lib/carousel/resolve-fal-image-url'
 import { useEditorStore } from '@/lib/carousel/store'
 import type { LayerId, SlideId } from '@socialista/types'
@@ -139,13 +138,12 @@ export function SlideImageEditProvider({ children }: { children: ReactNode }) {
 
   const applyEditedImage = useCallback(
     (target: ImageEditTarget, url: string) => {
-      const proxied = proxiedImageUrl(url)
       if (target.kind === 'background') {
-        setSlideBackground(target.slideId, proxied)
+        setSlideBackground(target.slideId, url)
         toast.success('Background image updated')
         return
       }
-      setLayerImageUrl(target.slideId, target.layerId, proxied)
+      setLayerImageUrl(target.slideId, target.layerId, url)
       toast.success('Image layer updated')
     },
     [setLayerImageUrl, setSlideBackground],

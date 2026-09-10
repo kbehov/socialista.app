@@ -4,9 +4,13 @@ import type { MediaType, SerializedMediaAsset } from '@socialista/types'
  * Client-side media asset. Extends the persisted {@link SerializedMediaAsset}
  * with fields that only exist in browser memory (File, objectUrl, thumbnails,
  * waveform). These are stripped before save.
+ *
+ * `file` is present for freshly imported local/remote blobs. Hydrated editor
+ * assets stream from `objectUrl` (proxied CDN) and omit `file` until save
+ * needs a re-upload.
  */
 export interface MediaAsset extends SerializedMediaAsset {
-  file: File
+  file?: File
   objectUrl: string
   /** Base64 JPEG thumbnails for timeline strips (video/image). */
   thumbnails?: string[]
@@ -15,7 +19,11 @@ export interface MediaAsset extends SerializedMediaAsset {
 }
 
 export function isMediaAssetAvailable(asset: MediaAsset | SerializedMediaAsset): asset is MediaAsset {
-  return 'file' in asset && 'objectUrl' in asset
+  return 'objectUrl' in asset && typeof (asset as MediaAsset).objectUrl === 'string'
+}
+
+export function revokeMediaObjectUrl(url: string): void {
+  if (url.startsWith('blob:')) URL.revokeObjectURL(url)
 }
 
 export function inferMediaType(file: File): MediaType | null {

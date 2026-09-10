@@ -1,0 +1,2 @@
+export const SLIDESHOW_LIST_PAGE_SIZE = 24
+export const VIDEO_LIST_PAGE_SIZE = 24

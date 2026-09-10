@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { getAspectRatioClass } from '@/utils/aspect-ratio'
 import type { UgcSceneStill } from '@socialista/types'
 import { AudioLinesIcon, CheckIcon, ImageIcon, TypeIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -14,6 +15,7 @@ type UgcStillsGridProps = {
   generating?: boolean
   onToggle: (url: string) => void
   onUseSelected?: () => void
+  aspectRatio?: string
   className?: string
 }
 
@@ -23,6 +25,7 @@ export function UgcStillsGrid({
   generating,
   onToggle,
   onUseSelected,
+  aspectRatio = '9:16',
   className,
 }: UgcStillsGridProps) {
   const visible = stills.filter(still => still.imageUrl)
@@ -51,7 +54,7 @@ export function UgcStillsGrid({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {visible.map((still, index) => {
           const url = still.imageUrl
           if (!url) return null
@@ -60,6 +63,7 @@ export function UgcStillsGrid({
               key={still.generationId ?? `${still.index}-${url}-${index}`}
               url={url}
               active={selectedSet.has(url)}
+              aspectRatio={aspectRatio}
               onToggle={() => onToggle(url)}
             />
           )
@@ -72,10 +76,12 @@ export function UgcStillsGrid({
 function UgcStillTile({
   url,
   active,
+  aspectRatio = '9:16',
   onToggle,
 }: {
   url: string
   active: boolean
+  aspectRatio?: string
   onToggle: () => void
 }) {
   const [zoomed, setZoomed] = useState(false)
@@ -84,13 +90,14 @@ function UgcStillTile({
     <>
       <div
         className={cn(
-          'group relative aspect-[9/16] overflow-hidden rounded-lg bg-muted/40',
+          'group relative h-[clamp(8.5rem,30svh,13rem)] overflow-hidden rounded-lg bg-muted/40',
+          getAspectRatioClass(aspectRatio),
           active
             ? 'ring-2 ring-foreground/80'
             : 'ring-1 ring-black/[0.06] dark:ring-white/[0.08]',
         )}
       >
-        <Image alt="" src={url} fill className="object-cover" sizes="280px" unoptimized />
+        <Image alt="" src={url} fill className="object-cover" sizes="160px" unoptimized />
 
         <button
           type="button"

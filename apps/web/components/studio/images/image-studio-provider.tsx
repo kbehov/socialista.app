@@ -1,11 +1,15 @@
 'use client'
 
+import { presetToAttachedMedia } from '@/lib/studio/preset-media'
 import { commitHaptic } from '@/utils/haptics'
+import type { AttachedMedia } from '@/components/files/attach-media/types'
+import type { Preset } from '@socialista/types'
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
 
 type PromptHandlers = {
   insertAtCursor: (snippet: string) => void
   setPrompt: (text: string) => void
+  setAttachments: (attachments: AttachedMedia[]) => void
   focusPrompt: () => void
 }
 
@@ -13,6 +17,7 @@ type ImageStudioContextValue = {
   composerRef: React.RefObject<HTMLDivElement | null>
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
+  applyPreset: (preset: Preset) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -49,14 +54,25 @@ export function ImageStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
+  const applyPreset = useCallback(
+    (preset: Preset) => {
+      handlersRef.current?.setPrompt(preset.prompt)
+      handlersRef.current?.setAttachments(presetToAttachedMedia(preset))
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
       setPrompt,
+      applyPreset,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyPreset, registerPromptHandlers],
   )
 
   return <ImageStudioContext.Provider value={value}>{children}</ImageStudioContext.Provider>

@@ -14,9 +14,14 @@ import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { SlideshowPromptAnatomy } from '@/components/studio/slideshows/slideshow-prompt-anatomy'
 import { useSlideshowStudio } from '@/components/studio/slideshows/slideshow-studio-provider'
-import { SlideshowStudioStarters } from '@/components/studio/slideshows/slideshow-studio-starters'
+import {
+  SLIDESHOW_STUDIO_PLACEHOLDER_EXAMPLES,
+  SlideshowStudioStarters,
+} from '@/components/studio/slideshows/slideshow-studio-starters'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
+  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
+  STUDIO_HERO_SUBMIT_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
@@ -70,9 +75,11 @@ function getSubmitShortcutLabel() {
 function SlideshowPromptComposerInner({
   models,
   textModels,
+  homeHero = false,
 }: {
   models: Model[]
   textModels: Model[]
+  homeHero?: boolean
 }) {
   const router = useRouter()
   const [submitShortcut] = useState(getSubmitShortcutLabel)
@@ -161,9 +168,15 @@ function SlideshowPromptComposerInner({
 
   const submitLabel = useMemo(() => {
     if (isPending) return 'Generating…'
+    if (homeHero) return 'Create slideshow'
     if (isAutoSlideCount) return useAiImages ? 'Generate' : 'Create'
     return useAiImages ? `Generate ${slideCount}` : `Create ${slideCount}`
-  }, [isPending, isAutoSlideCount, slideCount, useAiImages])
+  }, [homeHero, isPending, isAutoSlideCount, slideCount, useAiImages])
+
+  const animatedPlaceholderWords = useMemo(() => {
+    if (!homeHero) return undefined
+    return [...SLIDESHOW_STUDIO_PLACEHOLDER_EXAMPLES]
+  }, [homeHero])
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim()
@@ -281,15 +294,24 @@ function SlideshowPromptComposerInner({
           label: 'Number of slides',
         }}
         placeholder={DEFAULT_PLACEHOLDER}
+        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={submitLabel}
         submitTitle={submitLabel}
-        submitAppearance="send"
-        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+        submitAppearance={homeHero ? 'labeled' : 'send'}
+        submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
+        footerClassName={
+          homeHero
+            ? 'border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5'
+            : 'border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3'
+        }
         emptyTitle="Describe a slideshow"
         emptyDescription="Stock photos work without an image model. Pick a text model to write the slides, then add a text-to-image model for AI images."
-        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={
+          homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+        }
+        compact={homeHero}
         composerRef={composerRef}
         textareaRef={node => {
           textareaRef.current = node
@@ -344,31 +366,33 @@ function SlideshowPromptComposerInner({
         }
       />
 
-      <div className="mt-4 flex flex-col items-center gap-4">
-        <SlideshowStudioStarters disabled={isPending} />
+      {homeHero ? null : (
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <SlideshowStudioStarters disabled={isPending} />
 
-        <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
-          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-            /
-          </Kbd>
-          <span>to focus</span>
-          <span aria-hidden className="text-black/16 dark:text-white/16">
-            ·
-          </span>
-          <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-            {submitShortcut}
-          </Kbd>
-          <span>to generate</span>
-        </p>
+          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              /
+            </Kbd>
+            <span>to focus</span>
+            <span aria-hidden className="text-black/16 dark:text-white/16">
+              ·
+            </span>
+            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
+              {submitShortcut}
+            </Kbd>
+            <span>to generate</span>
+          </p>
 
-        <p className="text-[11px] tabular-nums tracking-[-0.01em] text-black/32 dark:text-white/32">
-          {useAiImages && isAutoSlideCount ? 'from' : '≈'} {formatCredits(estimatedCost)} credits
-        </p>
+          <p className="text-[11px] tabular-nums tracking-[-0.01em] text-black/32 dark:text-white/32">
+            {useAiImages && isAutoSlideCount ? 'from' : '≈'} {formatCredits(estimatedCost)} credits
+          </p>
 
-        <div className="w-full">
-          <SlideshowPromptAnatomy />
+          <div className="w-full">
+            <SlideshowPromptAnatomy />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -376,13 +400,19 @@ function SlideshowPromptComposerInner({
 export function SlideshowPromptComposer({
   models,
   textModels,
+  homeHero = true,
 }: {
   models: Model[]
   textModels: Model[]
+  homeHero?: boolean
 }) {
   return (
     <PromptInputProvider>
-      <SlideshowPromptComposerInner models={models} textModels={textModels} />
+      <SlideshowPromptComposerInner
+        models={models}
+        textModels={textModels}
+        homeHero={homeHero}
+      />
     </PromptInputProvider>
   )
 }

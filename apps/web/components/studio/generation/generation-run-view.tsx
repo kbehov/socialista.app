@@ -29,7 +29,6 @@ import type { StaticAdGenerationPayload } from '@socialista/trigger/schemas/stat
 import type { VideoGenerationPayload } from '@socialista/trigger/schemas/video-generation'
 import type { ImageGenerationOutput, Model, VideoGenerationOutput } from '@socialista/types'
 import { ArrowLeftIcon } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
@@ -99,14 +98,8 @@ function ImagePromptMetaStrip({
                 key={url}
                 className="relative size-8 shrink-0 overflow-hidden rounded-md border border-black/10 bg-black/[0.03] -ml-1 first:ml-0 dark:border-white/12 dark:bg-white/[0.03]"
               >
-                <Image
-                  alt="Reference"
-                  className="object-cover"
-                  fill
-                  sizes="32px"
-                  src={resolveGeneratedImagePreviewUrl(url)}
-                  unoptimized
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
+                <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
               </div>
             ))}
           </div>
@@ -161,14 +154,8 @@ function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPaylo
                 key={url}
                 className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
               >
-                <Image
-                  alt="Reference"
-                  className="object-cover"
-                  fill
-                  sizes="32px"
-                  src={resolveGeneratedImagePreviewUrl(url)}
-                  unoptimized
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
+                <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
               </div>
             ))}
             {referenceUrls.length > 4 ? (
@@ -218,14 +205,8 @@ function VideoPromptMetaStrip({ payload, model }: { payload: VideoGenerationPayl
                 key={url}
                 className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
               >
-                <Image
-                  alt="Reference"
-                  className="object-cover"
-                  fill
-                  sizes="32px"
-                  src={resolveGeneratedImagePreviewUrl(url)}
-                  unoptimized
-                />
+                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
+                <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
               </div>
             ))}
           </div>

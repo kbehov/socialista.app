@@ -10,30 +10,45 @@ import { cn } from '@/lib/utils'
 import type { VideoSummaryResponse } from '@socialista/types'
 import { ArrowRightIcon, Loader2Icon } from 'lucide-react'
 import Link from 'next/link'
+import InfiniteScroll from 'react-infinite-scroll-component'
+
+const SCROLL_TARGET_ID = 'dashboard-scroll'
+
+function ScrollLoader() {
+  return (
+    <div className="flex items-center justify-center py-10">
+      <Loader2Icon className="size-3.5 animate-spin text-black/36 dark:text-white/36" />
+    </div>
+  )
+}
 
 type RecentVideosListProps = {
   workspaceId: string
   initialVideos: VideoSummaryResponse[]
   initialError?: string | null
+  initialHasMore?: boolean
 }
 
 export function RecentVideosList({
   workspaceId,
   initialVideos,
   initialError = null,
+  initialHasMore = false,
 }: RecentVideosListProps) {
   const {
     videos,
     error,
     isLoading,
+    hasMore,
     deleteTarget,
     isDeleting,
     duplicatingId,
     setDeleteTarget,
     loadVideos,
+    fetchMore,
     handleDelete,
     handleDuplicate,
-  } = useVideosList({ workspaceId, initialVideos, initialError })
+  } = useVideosList({ workspaceId, initialVideos, initialError, initialHasMore })
 
   if (!error && videos.length === 0 && !isLoading) {
     return null
@@ -75,22 +90,33 @@ export function RecentVideosList({
           }
         />
       ) : (
-        <div
-          className={cn(
-            'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
-            isLoading && 'opacity-60',
-          )}
+        <InfiniteScroll
+          dataLength={videos.length}
+          next={fetchMore}
+          hasMore={hasMore}
+          loader={<ScrollLoader />}
+          scrollableTarget={SCROLL_TARGET_ID}
+          scrollThreshold={0.9}
+          className="!overflow-visible"
+          style={{ overflow: 'visible' }}
         >
-          {videos.map(video => (
-            <VideoCard
-              key={video.id}
-              video={video}
-              onDelete={setDeleteTarget}
-              onDuplicate={item => void handleDuplicate(item)}
-              isDuplicating={duplicatingId === video.id}
-            />
-          ))}
-        </div>
+          <div
+            className={cn(
+              'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
+              isLoading && 'opacity-60',
+            )}
+          >
+            {videos.map(video => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                onDelete={setDeleteTarget}
+                onDuplicate={item => void handleDuplicate(item)}
+                isDuplicating={duplicatingId === video.id}
+              />
+            ))}
+          </div>
+        </InfiniteScroll>
       )}
 
       <DeleteConfirmDialog

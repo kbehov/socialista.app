@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
-import { proxiedImageUrl } from '@/lib/carousel/image-url'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { searchPixabayVideos, type PixabayVideoResult } from '@/services/pixabay.service'
 import { cn } from '@/lib/utils'
 
@@ -240,7 +240,7 @@ export function PixabayVideoSearchDialog({ open, onOpenChange, onSelect }: Pixab
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={proxiedImageUrl(video.previewUrl)}
+                        src={displayImageUrl(video.previewUrl)}
                         alt={video.tags ?? video.name}
                         loading="lazy"
                         className="size-full object-cover transition-transform duration-200 group-hover:scale-105"

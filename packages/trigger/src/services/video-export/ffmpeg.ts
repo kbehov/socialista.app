@@ -1,19 +1,20 @@
-import { spawn } from 'node:child_process'
-import ffmpegStaticImport from 'ffmpeg-static'
+import { spawn } from "node:child_process";
+import ffmpegStaticImport from "ffmpeg-static";
 
-export type FfmpegProgressHandler = (progress: number) => void
+export type FfmpegProgressHandler = (progress: number) => void;
 
 function resolveFfmpegPath(): string {
-  const fromEnv = process.env.FFMPEG_PATH
-  if (fromEnv) return fromEnv
+  const fromEnv = process.env.FFMPEG_PATH;
+  if (fromEnv) return fromEnv;
 
   const candidate =
-    typeof ffmpegStaticImport === 'string'
+    typeof ffmpegStaticImport === "string"
       ? ffmpegStaticImport
-      : ((ffmpegStaticImport as unknown as { default?: string | null })?.default ?? null)
+      : ((ffmpegStaticImport as unknown as { default?: string | null })
+          ?.default ?? null);
 
-  if (typeof candidate === 'string' && candidate.length > 0) return candidate
-  return 'ffmpeg'
+  if (typeof candidate === "string" && candidate.length > 0) return candidate;
+  return "ffmpeg";
 }
 
 /**
@@ -21,22 +22,54 @@ function resolveFfmpegPath(): string {
  * Uses ffmpeg -i stderr parsing so we don't need a separate ffprobe binary.
  */
 export function probeHasAudioStream(fsPath: string): Promise<boolean> {
-  const bin = resolveFfmpegPath()
-  return new Promise(resolve => {
-    const child = spawn(bin, ['-hide_banner', '-i', fsPath], {
-      stdio: ['ignore', 'ignore', 'pipe'],
-    })
+  const bin = resolveFfmpegPath();
+  return new Promise((resolve) => {
+    const child = spawn(bin, ["-hide_banner", "-i", fsPath], {
+      stdio: ["ignore", "ignore", "pipe"],
+    });
 
-    let stderr = ''
-    child.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8')
-    })
+    let stderr = "";
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString("utf8");
+    });
 
-    child.on('error', () => resolve(false))
-    child.on('close', () => {
-      resolve(/Stream #\d+:\d+.*Audio:/i.test(stderr))
-    })
-  })
+    child.on("error", () => resolve(false));
+    child.on("close", () => {
+      resolve(/Stream #\d+:\d+.*Audio:/i.test(stderr));
+    });
+  });
+}
+
+/**
+ * Read a media file's duration in seconds.
+ * Uses ffmpeg -i stderr parsing so we don't need a separate ffprobe binary.
+ */
+export function probeMediaDurationSec(fsPath: string): Promise<number | null> {
+  const bin = resolveFfmpegPath();
+  return new Promise((resolve) => {
+    const child = spawn(bin, ["-hide_banner", "-i", fsPath], {
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+
+    let stderr = "";
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString("utf8");
+    });
+
+    child.on("error", () => resolve(null));
+    child.on("close", () => {
+      const match = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/i.exec(stderr);
+      if (!match) {
+        resolve(null);
+        return;
+      }
+      const hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      const seconds = Number(match[3]);
+      const total = hours * 3600 + minutes * 60 + seconds;
+      resolve(Number.isFinite(total) && total > 0 ? total : null);
+    });
+  });
 }
 
 /**
@@ -44,66 +77,72 @@ export function probeHasAudioStream(fsPath: string): Promise<boolean> {
  * `out_time_us` relative to `durationSeconds`.
  */
 export function runFfmpeg(options: {
-  args: string[]
-  durationSeconds: number
-  onProgress?: FfmpegProgressHandler
+  args: string[];
+  durationSeconds: number;
+  onProgress?: FfmpegProgressHandler;
   /** Throttle progress callbacks (ms). Default 500. */
-  throttleMs?: number
+  throttleMs?: number;
 }): Promise<void> {
-  const { args, durationSeconds, onProgress, throttleMs = 500 } = options
-  const bin = resolveFfmpegPath()
-  const durationUs = Math.max(durationSeconds, 0.001) * 1_000_000
+  const { args, durationSeconds, onProgress, throttleMs = 500 } = options;
+  const bin = resolveFfmpegPath();
+  const durationUs = Math.max(durationSeconds, 0.001) * 1_000_000;
 
   return new Promise((resolve, reject) => {
-    const child = spawn(bin, ['-hide_banner', '-nostats', '-progress', 'pipe:1', ...args], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
+    const child = spawn(
+      bin,
+      ["-hide_banner", "-nostats", "-progress", "pipe:1", ...args],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
 
-    let lastEmit = 0
-    let stderr = ''
+    let lastEmit = 0;
+    let stderr = "";
 
     const emitProgress = (ratio: number) => {
-      if (!onProgress) return
-      const now = Date.now()
-      if (now - lastEmit < throttleMs && ratio < 1) return
-      lastEmit = now
-      onProgress(Math.max(0, Math.min(1, ratio)))
-    }
+      if (!onProgress) return;
+      const now = Date.now();
+      if (now - lastEmit < throttleMs && ratio < 1) return;
+      lastEmit = now;
+      onProgress(Math.max(0, Math.min(1, ratio)));
+    };
 
-    child.stdout?.on('data', (chunk: Buffer) => {
-      const text = chunk.toString('utf8')
-      for (const line of text.split('\n')) {
-        const trimmed = line.trim()
-        if (trimmed.startsWith('out_time_us=')) {
-          const us = Number(trimmed.slice('out_time_us='.length))
+    child.stdout?.on("data", (chunk: Buffer) => {
+      const text = chunk.toString("utf8");
+      for (const line of text.split("\n")) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("out_time_us=")) {
+          const us = Number(trimmed.slice("out_time_us=".length));
           if (Number.isFinite(us) && us >= 0) {
-            emitProgress(us / durationUs)
+            emitProgress(us / durationUs);
           }
-        } else if (trimmed === 'progress=end') {
-          emitProgress(1)
+        } else if (trimmed === "progress=end") {
+          emitProgress(1);
         }
       }
-    })
+    });
 
-    child.stderr?.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8')
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString("utf8");
       if (stderr.length > 64_000) {
-        stderr = stderr.slice(-32_000)
+        stderr = stderr.slice(-32_000);
       }
-    })
+    });
 
-    child.on('error', err => {
-      reject(new Error(`Failed to start ffmpeg: ${err.message}`))
-    })
+    child.on("error", (err) => {
+      reject(new Error(`Failed to start ffmpeg: ${err.message}`));
+    });
 
-    child.on('close', code => {
+    child.on("close", (code) => {
       if (code === 0) {
-        emitProgress(1)
-        resolve()
-        return
+        emitProgress(1);
+        resolve();
+        return;
       }
-      const tail = stderr.trim().split('\n').slice(-12).join('\n')
-      reject(new Error(`ffmpeg exited with code ${code}${tail ? `:\n${tail}` : ''}`))
-    })
-  })
+      const tail = stderr.trim().split("\n").slice(-12).join("\n");
+      reject(
+        new Error(`ffmpeg exited with code ${code}${tail ? `:\n${tail}` : ""}`),
+      );
+    });
+  });
 }

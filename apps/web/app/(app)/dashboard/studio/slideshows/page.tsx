@@ -1,5 +1,6 @@
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { SlideshowStudioWorkspace } from '@/components/studio/slideshows/slideshow-studio-workspace'
+import { SLIDESHOW_LIST_PAGE_SIZE } from '@/constants/studio'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceSlideshows } from '@/services/slideshow.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
@@ -14,7 +15,12 @@ export default async function SlideshowsPage() {
   const textModelsPromise = getModels(`limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`)
   const slideshowsPromise = contextPromise.then(({ workspace, project }) => {
     if (!workspace) return null
-    return getWorkspaceSlideshows(workspace.id, 'draft', { projectId: project?.id })
+    return getWorkspaceSlideshows(workspace.id, {
+      status: 'draft',
+      page: 1,
+      limit: SLIDESHOW_LIST_PAGE_SIZE,
+      projectId: project?.id,
+    })
   })
 
   const [{ workspace }, imageModelsRes, textModelsRes, slideshowsRes] = await Promise.all([
@@ -40,6 +46,7 @@ export default async function SlideshowsPage() {
       workspaceId={workspace.id}
       initialSlideshows={slideshows}
       initialError={error}
+      initialHasMore={Boolean(slideshowsRes?.meta?.hasNextPage)}
     />
   )
 }

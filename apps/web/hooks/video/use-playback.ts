@@ -38,6 +38,28 @@ function getClipLocalTime(clip: VideoClip, timelineTime: number): number {
   return clip.trimIn + elapsed * speed
 }
 
+function syncElementAudio(video: HTMLVideoElement, clip: VideoClip) {
+  const state = useVideoEditorStore.getState()
+  const asset = state.assets[clip.assetId]
+  if (!asset || !isMediaAssetAvailable(asset) || asset.file) {
+    video.muted = true
+    return
+  }
+  const track = state.project.tracks.find(t => t.id === clip.trackId)
+  const muted = Boolean(track?.muted) || clip.volume <= 0
+  video.muted = muted
+  video.volume = muted ? 0 : Math.max(0, Math.min(1, clip.volume))
+  const speed = clip.speed ?? 1
+  if (video.playbackRate !== speed) video.playbackRate = speed
+}
+
+function pauseInactiveVideos(slots: Map<ClipId, VideoSlot>, activeClipId: ClipId) {
+  for (const [clipId, slot] of slots) {
+    if (clipId === activeClipId) continue
+    if (!slot.video.paused) slot.video.pause()
+  }
+}
+
 function scheduleImageDraw(slot: ImageSlot, onLoad: () => void) {
   if (slot.image.complete && slot.image.naturalWidth) {
     onLoad()
@@ -148,7 +170,9 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
     const video = document.createElement('video')
     video.src = asset.objectUrl
-    video.muted = true // Audio handled via Web Audio for sync
+    // Local files decode audio via Web Audio. Hydrated CDN clips stream audio
+    // from the element so we don't download the whole file on editor open.
+    video.muted = Boolean(asset.file)
     video.playsInline = true
     video.preload = 'auto'
     video.crossOrigin = 'anonymous'
@@ -200,12 +224,19 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     const asset = getAsset(clip)
     if (!asset || !isMediaAssetAvailable(asset)) return null
     if (silentAudioAssetsRef.current.has(asset.id)) return null
+    // Remote video clips play their own audio from the <video> element.
+    if (clip.type === 'video' && !asset.file) return null
     const cached = audioBuffersRef.current.get(asset.id)
     if (cached) return cached
     const ctx = getAudioContext()
     if (!ctx) return null
     try {
-      const buf = await asset.file.arrayBuffer()
+      const buf = asset.file
+        ? await asset.file.arrayBuffer()
+        : await fetch(asset.objectUrl).then(response => {
+            if (!response.ok) throw new Error('Failed to fetch audio')
+            return response.arrayBuffer()
+          })
       const audioBuffer = await ctx.decodeAudioData(buf.slice(0))
       audioBuffersRef.current.set(asset.id, audioBuffer)
       return audioBuffer
@@ -232,6 +263,13 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
   const applyLiveVolume = (clipId: ClipId, volume: number) => {
     const clamped = Math.max(0, Math.min(1, volume))
+    const videoSlot = videoSlotsRef.current.get(clipId)
+    if (videoSlot) {
+      const clip = useVideoEditorStore.getState().project.clips[clipId]
+      if (clip && clip.type !== 'audio' && clip.type !== 'image') {
+        syncElementAudio(videoSlot.video, clip)
+      }
+    }
     for (const slot of activeAudioSlotsRef.current) {
       if (slot.clipId !== clipId) continue
       slot.baseVolume = clamped
@@ -261,6 +299,7 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
     const asset = state.assets[clip.assetId]
     if (!asset || !isMediaAssetAvailable(asset)) return
+    if (clip.type === 'video' && !asset.file) return
 
     const clipEnd = clip.startTime + clip.duration
     if (clipEnd <= fromTime) return
@@ -496,6 +535,8 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
         if (slot) {
           const localTime = getClipLocalTime(activeVideoClip, newTime)
           const video = slot.video
+          syncElementAudio(video, activeVideoClip)
+          pauseInactiveVideos(videoSlotsRef.current, activeVideoClip.id)
           const buffering = video.readyState < 2
           setBuffering(buffering)
           if (Math.abs(video.currentTime - localTime) > 0.15) {
@@ -552,8 +593,28 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
     startPlayheadRef.current = useVideoEditorStore.getState().playhead
     // eslint-disable-next-line react-hooks/purity -- playback start records wall clock
     lastPlayheadStoreWriteRef.current = performance.now()
-    // Schedule audio for active clips
-    void scheduleAudioAt(useVideoEditorStore.getState().playhead)
+    const playheadTime = useVideoEditorStore.getState().playhead
+    const activeVideoClip = pickActiveVideoClip(
+      state.project.tracks,
+      state.project.clips,
+      state.assets,
+      playheadTime,
+    )
+    if (activeVideoClip && activeVideoClip.type !== 'image') {
+      const slot = getVideoSlot(activeVideoClip)
+      if (slot) {
+        syncElementAudio(slot.video, activeVideoClip)
+        try {
+          slot.video.currentTime = getClipLocalTime(activeVideoClip, playheadTime)
+        } catch {
+          // noop
+        }
+        void slot.video.play().catch(() => {
+          // Autoplay blocked
+        })
+      }
+    }
+    void scheduleAudioAt(playheadTime)
     play()
     rafRef.current = requestAnimationFrame(tick)
   }

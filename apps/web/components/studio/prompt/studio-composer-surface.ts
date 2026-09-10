@@ -18,6 +18,24 @@ export const STUDIO_HOME_COMPOSER_SURFACE_CLASS = cn(
   'dark:has-[[data-slot=input-group-control]:focus-visible]:ring-white/[0.08]',
 )
 
+/** White card embedded in the gradient studio home hero banner. */
+export const STUDIO_HERO_COMPOSER_SURFACE_CLASS = cn(
+  'rounded-2xl border-0 bg-white',
+  'shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18),0_2px_8px_-2px_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)]',
+  'dark:bg-[var(--surface-1)]',
+  'dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.06)]',
+  'has-[[data-slot=input-group-control]:focus-visible]:ring-1',
+  'has-[[data-slot=input-group-control]:focus-visible]:ring-black/[0.06]',
+  'dark:has-[[data-slot=input-group-control]:focus-visible]:ring-white/[0.1]',
+)
+
+/** Black CTA submit button for studio home hero composers. */
+export const STUDIO_HERO_SUBMIT_CLASS = cn(
+  'h-8 gap-1.5 rounded-xl border-0 bg-black px-3.5 text-[13px] font-medium tracking-[-0.015em] text-white shadow-none',
+  'hover:bg-black/90 hover:text-white',
+  'dark:bg-white dark:text-black dark:hover:bg-white/90',
+)
+
 /** @deprecated Use STUDIO_HOME_COMPOSER_SURFACE_CLASS */
 export const IMAGE_STUDIO_COMPOSER_SURFACE_CLASS = STUDIO_HOME_COMPOSER_SURFACE_CLASS
 

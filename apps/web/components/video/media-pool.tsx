@@ -8,6 +8,7 @@ import {
 import { VIDEO_BROWSE_FILES_EVENT, VIDEO_FOCUS_URL_IMPORT_EVENT } from '@/lib/video/editor-events'
 import { useVideoEditorStore } from '@/lib/video/store'
 import {
+  generateVideoThumbnails,
   importMediaAsset,
   importMediaFromLibrary,
   importMediaFromUrl,
@@ -83,9 +84,12 @@ export function MediaPool() {
             )
           }
           try {
-            const asset = await importMediaAsset(file)
+            const asset = await importMediaAsset(file, { deferThumbnails: true })
             registerAsset(asset)
             placeAssetAtPlayhead(asset.id, asset.name)
+            void generateVideoThumbnails(asset).then(thumbnails => {
+              if (thumbnails.length > 0) useVideoEditorStore.getState().setAssetThumbnails(asset.id, thumbnails)
+            })
           } catch (err) {
             if (err instanceof MediaImportError) {
               toast.error(`${file.name}: ${err.message}`)
@@ -119,15 +123,21 @@ export function MediaPool() {
             continue
           }
           try {
-            const asset = await importMediaFromLibrary({
-              url: item.url,
-              name: item.name,
-              fileId: item.id,
-              width: item.width,
-              height: item.height,
-            })
+            const asset = await importMediaFromLibrary(
+              {
+                url: item.url,
+                name: item.name,
+                fileId: item.id,
+                width: item.width,
+                height: item.height,
+              },
+              { deferThumbnails: true },
+            )
             registerAsset(asset)
             placeAssetAtPlayhead(asset.id, asset.name)
+            void generateVideoThumbnails(asset).then(thumbnails => {
+              if (thumbnails.length > 0) useVideoEditorStore.getState().setAssetThumbnails(asset.id, thumbnails)
+            })
           } catch (err) {
             const label = item.name ?? 'file'
             if (err instanceof MediaImportError) {
@@ -146,13 +156,17 @@ export function MediaPool() {
 
   const handlePixabaySelect = useCallback(async (video: PixabayVideoResult) => {
     try {
-      const asset = await importMediaFromUrl(video.videoUrl, video.name)
-      if (asset.file.size > MAX_IMPORT_BYTES_WARN) {
+      const asset = await importMediaFromUrl(video.videoUrl, video.name, { deferThumbnails: true })
+      if (asset.file && asset.file.size > MAX_IMPORT_BYTES_WARN) {
         toast.message(
           `${video.name} is large (${(asset.file.size / 1024 / 1024).toFixed(0)} MB) — import may take a moment`,
         )
       }
       registerAndPlaceAtPlayhead(asset)
+      // Timeline thumbnails generate in the background so the import feels instant.
+      void generateVideoThumbnails(asset).then(thumbnails => {
+        if (thumbnails.length > 0) useVideoEditorStore.getState().setAssetThumbnails(asset.id, thumbnails)
+      })
     } catch (err) {
       if (err instanceof MediaImportError) {
         toast.error(err.message)

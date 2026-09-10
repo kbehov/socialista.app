@@ -1,187 +1,196 @@
-import type { HydratedDocument, Types } from 'mongoose'
+import type { HydratedDocument, Types } from "mongoose";
 
 export enum UgcProjectStatus {
-  DRAFT = 'draft',
-  GENERATING = 'generating',
-  READY = 'ready',
-  FAILED = 'failed',
+  DRAFT = "draft",
+  GENERATING = "generating",
+  READY = "ready",
+  FAILED = "failed",
 }
 
 export enum UgcClipStatus {
-  IDLE = 'idle',
-  QUEUED = 'queued',
-  GENERATING = 'generating',
-  READY = 'ready',
-  FAILED = 'failed',
+  IDLE = "idle",
+  QUEUED = "queued",
+  GENERATING = "generating",
+  READY = "ready",
+  FAILED = "failed",
 }
 
 /** @deprecated Use UgcClipStatus. */
-export const UgcVariantStatus = UgcClipStatus
-export type UgcVariantStatus = UgcClipStatus
+export const UgcVariantStatus = UgcClipStatus;
+export type UgcVariantStatus = UgcClipStatus;
 
 export enum UgcScriptSource {
-  USER = 'user',
-  AI = 'ai',
+  USER = "user",
+  AI = "ai",
 }
 
 export enum UgcClipType {
-  HOOK = 'hook',
-  TALKING = 'talking',
-  B_ROLL = 'b-roll',
-  UNBOXING = 'unboxing',
-  TRY_ON = 'try-on',
-  PRODUCT_HOLD = 'product-hold',
-  APP_SHOWCASE = 'app-showcase',
+  HOOK = "hook",
+  TALKING = "talking",
+  B_ROLL = "b-roll",
+  UNBOXING = "unboxing",
+  TRY_ON = "try-on",
+  PRODUCT_HOLD = "product-hold",
+  APP_SHOWCASE = "app-showcase",
 }
 
 export enum UgcVoiceProvider {
-  ELEVENLABS = 'elevenlabs',
+  ELEVENLABS = "elevenlabs",
 }
 
 export enum UgcProductKind {
-  PHYSICAL = 'physical',
-  APP = 'app',
-  WEBSITE = 'website',
+  PHYSICAL = "physical",
+  APP = "app",
+  WEBSITE = "website",
 }
 
 export enum UgcFlowStep {
-  PRODUCT = 'product',
-  SCENES = 'scenes',
-  AVATAR = 'avatar',
-  SCRIPT = 'script',
-  STILLS = 'stills',
-  REVIEW = 'review',
-  VIDEO = 'video',
+  PRODUCT = "product",
+  SCENES = "scenes",
+  AVATAR = "avatar",
+  SCRIPT = "script",
+  STILLS = "stills",
+  REVIEW = "review",
+  VIDEO = "video",
 }
 
-export type UgcSceneCount = 1 | 2 | 3
+export type UgcSceneCount = 1 | 2 | 3;
 
 export interface IUgcProjectModels {
-  image: string
-  script?: string
-  video: string
-  planner?: string
+  image: string;
+  script?: string;
+  video: string;
+  planner?: string;
 }
 
 export interface IUgcProjectScript {
-  text: string
-  source: UgcScriptSource
+  text: string;
+  source: UgcScriptSource;
 }
 
 export interface IUgcClipModels {
-  image?: string
-  script?: string
-  video?: string
-  planner?: string
+  image?: string;
+  script?: string;
+  video?: string;
+  planner?: string;
 }
 
 export interface IUgcClipVoice {
-  provider: UgcVoiceProvider
-  voiceId?: string
-  voiceName?: string
-  speed?: number
-  stability?: number
-  similarity?: number
-  style?: number
-  speakerBoost?: boolean
-  enabled?: boolean
+  provider: UgcVoiceProvider;
+  voiceId?: string;
+  voiceName?: string;
+  speed?: number;
+  stability?: number;
+  similarity?: number;
+  style?: number;
+  speakerBoost?: boolean;
+  enabled?: boolean;
 }
 
 export interface IUgcSceneStill {
-  index: number
-  imageUrl?: string
-  generationId?: string
-  enhancedPrompt?: string
+  index: number;
+  imageUrl?: string;
+  generationId?: string;
+  enhancedPrompt?: string;
 }
 
 export interface IUgcClipAudioTake {
-  id: string
-  audioUrl: string
-  durationSec?: number
-  scriptText?: string
+  id: string;
+  audioUrl: string;
+  durationSec?: number;
+  scriptText?: string;
+}
+
+export interface IUgcClipVideoTake {
+  id: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  durationSec?: number;
+  prompt?: string;
 }
 
 export interface IUgcClip {
-  id: string
-  type: UgcClipType
-  name?: string
-  status: UgcClipStatus
-  durationSec: number
-  sceneCount?: UgcSceneCount
-  influencerId?: Types.ObjectId
-  script?: IUgcProjectScript
-  voice?: IUgcClipVoice
-  models?: IUgcClipModels
-  scenePrompt?: string
-  directions?: string
-  referenceImageUrls?: string[]
-  stills: IUgcSceneStill[]
-  plannedPrompt?: string
-  negativePrompt?: string
-  audioUrl?: string
-  audioDurationSec?: number
-  audioTakes?: IUgcClipAudioTake[]
-  videoUrl?: string
-  thumbnailUrl?: string
-  generationId?: string
-  composedVideoId?: Types.ObjectId
-  stillsRunId?: string
-  videoRunId?: string
-  audioRunId?: string
-  approved?: boolean
-  error?: string
+  id: string;
+  type: UgcClipType;
+  name?: string;
+  status: UgcClipStatus;
+  durationSec: number;
+  sceneCount?: UgcSceneCount;
+  influencerId?: Types.ObjectId;
+  script?: IUgcProjectScript;
+  voice?: IUgcClipVoice;
+  models?: IUgcClipModels;
+  scenePrompt?: string;
+  directions?: string;
+  referenceImageUrls?: string[];
+  stills: IUgcSceneStill[];
+  plannedPrompt?: string;
+  negativePrompt?: string;
+  audioUrl?: string;
+  audioDurationSec?: number;
+  audioTakes?: IUgcClipAudioTake[];
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  videoTakes?: IUgcClipVideoTake[];
+  generationId?: string;
+  composedVideoId?: Types.ObjectId;
+  stillsRunId?: string;
+  videoRunId?: string;
+  audioRunId?: string;
+  approved?: boolean;
+  error?: string;
 }
 
 /** @deprecated Older influencer-variant shape. Prefer IUgcClip. */
 export interface IUgcVariant {
-  id: string
-  influencerId: Types.ObjectId
-  status: UgcClipStatus
-  stills: IUgcSceneStill[]
-  plannedPrompt?: string
-  negativePrompt?: string
-  videoUrl?: string
-  thumbnailUrl?: string
-  generationId?: string
-  composedVideoId?: Types.ObjectId
-  error?: string
+  id: string;
+  influencerId: Types.ObjectId;
+  status: UgcClipStatus;
+  stills: IUgcSceneStill[];
+  plannedPrompt?: string;
+  negativePrompt?: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  generationId?: string;
+  composedVideoId?: Types.ObjectId;
+  error?: string;
 }
 
 export interface IUgcProject {
-  _id: Types.ObjectId
-  name: string
-  status: UgcProjectStatus
-  workspace: Types.ObjectId
-  project?: Types.ObjectId
-  createdBy: Types.ObjectId
-  productId?: Types.ObjectId
-  productImageUrls: string[]
-  productName?: string
-  productDescription?: string
-  productUrl?: string
-  productKind?: UgcProductKind
-  influencerId?: Types.ObjectId
-  voice?: IUgcClipVoice
-  aspectRatio: string
-  videoResolution?: string
-  models: IUgcProjectModels
-  flowStep?: UgcFlowStep
-  clips: IUgcClip[]
-  assembledVideoUrl?: string
-  assembledRunId?: string
-  composedProjectVideoId?: Types.ObjectId
-  error?: string
-  createdAt: Date
-  updatedAt: Date
+  _id: Types.ObjectId;
+  name: string;
+  status: UgcProjectStatus;
+  workspace: Types.ObjectId;
+  project?: Types.ObjectId;
+  createdBy: Types.ObjectId;
+  productId?: Types.ObjectId;
+  productImageUrls: string[];
+  productName?: string;
+  productDescription?: string;
+  productUrl?: string;
+  productKind?: UgcProductKind;
+  influencerId?: Types.ObjectId;
+  voice?: IUgcClipVoice;
+  aspectRatio: string;
+  videoResolution?: string;
+  models: IUgcProjectModels;
+  flowStep?: UgcFlowStep;
+  clips: IUgcClip[];
+  assembledVideoUrl?: string;
+  assembledRunId?: string;
+  composedProjectVideoId?: Types.ObjectId;
+  error?: string;
+  createdAt: Date;
+  updatedAt: Date;
   /** Legacy fields kept so older documents still load. */
-  influencerIds?: Types.ObjectId[]
-  sceneCount?: UgcSceneCount
-  script?: IUgcProjectScript
-  directions?: string
-  variants?: IUgcVariant[]
-  stillsRunId?: string
-  videoRunId?: string
-  audioRunId?: string
+  influencerIds?: Types.ObjectId[];
+  sceneCount?: UgcSceneCount;
+  script?: IUgcProjectScript;
+  directions?: string;
+  variants?: IUgcVariant[];
+  stillsRunId?: string;
+  videoRunId?: string;
+  audioRunId?: string;
 }
 
-export type UgcProjectDocument = HydratedDocument<IUgcProject>
+export type UgcProjectDocument = HydratedDocument<IUgcProject>;

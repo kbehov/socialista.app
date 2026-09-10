@@ -32,7 +32,7 @@ function generateId(): string {
 function loadVideoElement(src: string): Promise<HTMLVideoElement> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
-    video.preload = 'auto'
+    video.preload = 'metadata'
     video.muted = true
     video.playsInline = true
     video.crossOrigin = 'anonymous'
@@ -137,7 +137,7 @@ async function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
   })
 }
 
-async function captureVideoThumbnails(file: File, src: string, duration: number): Promise<string[]> {
+async function captureVideoThumbnails(src: string, duration: number): Promise<string[]> {
   const video = await loadVideoElement(src)
   const thumbs: string[] = []
   try {
@@ -205,10 +205,16 @@ async function computeWaveform(file: File, sampleRate: number): Promise<Int8Arra
   }
 }
 
+export interface ImportMediaOptions {
+  /** Skip timeline thumbnail capture; call generateVideoThumbnails afterwards. */
+  deferThumbnails?: boolean
+}
+
 async function probeVideoOrImage(
   file: File,
   src: string,
   type: 'video' | 'image',
+  options?: ImportMediaOptions,
 ): Promise<{ duration: number; width: number; height: number; thumbnails: string[] }> {
   if (type === 'image') {
     const img = await loadImageElement(src)
@@ -224,13 +230,24 @@ async function probeVideoOrImage(
   const duration = video.duration
   const width = video.videoWidth
   const height = video.videoHeight
-  const thumbnails = await captureVideoThumbnails(file, src, duration)
+  // Thumbnail capture seeks through the whole video (slow); callers can defer it.
+  const thumbnails = options?.deferThumbnails ? [] : await captureVideoThumbnails(src, duration)
   video.removeAttribute('src')
   video.load()
   return { duration, width, height, thumbnails }
 }
 
-export async function importMediaAsset(file: File): Promise<MediaAsset> {
+/** Capture timeline thumbnails in the background after a fast (deferred) import. */
+export async function generateVideoThumbnails(asset: MediaAsset): Promise<string[]> {
+  if (asset.type !== 'video' || !asset.objectUrl) return []
+  try {
+    return await captureVideoThumbnails(asset.objectUrl, asset.duration)
+  } catch {
+    return []
+  }
+}
+
+export async function importMediaAsset(file: File, options?: ImportMediaOptions): Promise<MediaAsset> {
   const type = inferMediaType(file)
   if (!type) {
     throw new MediaImportError(`Unsupported file type: ${file.type || file.name}`, 'unsupported')
@@ -247,7 +264,7 @@ export async function importMediaAsset(file: File): Promise<MediaAsset> {
       const waveform = await computeWaveform(file, sampleRate)
       return { id, name: file.name, type, file, objectUrl, hash, duration, waveform }
     }
-    const { duration, width, height, thumbnails } = await probeVideoOrImage(file, objectUrl, type as 'video' | 'image')
+    const { duration, width, height, thumbnails } = await probeVideoOrImage(file, objectUrl, type as 'video' | 'image', options)
     return { id, name: file.name, type: type as MediaType, file, objectUrl, hash, duration, width, height, thumbnails }
   } catch (err) {
     URL.revokeObjectURL(objectUrl)
@@ -280,7 +297,7 @@ function filenameFromUrl(url: string, contentType: string): string {
   return `import.${subtype}`
 }
 
-export async function importMediaFromUrl(remoteUrl: string, name?: string): Promise<MediaAsset> {
+export async function importMediaFromUrl(remoteUrl: string, name?: string, options?: ImportMediaOptions): Promise<MediaAsset> {
   const trimmed = remoteUrl.trim()
   if (!trimmed || !/^https?:\/\//.test(trimmed)) {
     throw new MediaImportError('Enter a valid http(s) URL', 'unsupported')
@@ -306,7 +323,7 @@ export async function importMediaFromUrl(remoteUrl: string, name?: string): Prom
   const filename = name ?? filenameFromUrl(trimmed, contentType)
   const file = new File([blob], filename, { type: contentType || blob.type })
 
-  return importMediaAsset(file)
+  return importMediaAsset(file, options)
 }
 
 /** Import a workspace library file already hosted on CDN — preserves `url`/`fileId` so save skips re-upload. */
@@ -316,8 +333,8 @@ export async function importMediaFromLibrary(input: {
   fileId?: string
   width?: number
   height?: number
-}): Promise<MediaAsset> {
-  const imported = await importMediaFromUrl(input.url, input.name)
+}, options?: ImportMediaOptions): Promise<MediaAsset> {
+  const imported = await importMediaFromUrl(input.url, input.name, options)
   return {
     ...imported,
     url: input.url,

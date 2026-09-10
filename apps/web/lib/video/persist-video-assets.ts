@@ -11,8 +11,11 @@ export type PersistVideoAssetsResult = {
   uploadedBytes: number
 }
 
-function needsUpload(serialized: SerializedMediaAsset, runtime: MediaAsset | SerializedMediaAsset | undefined): runtime is MediaAsset {
-  if (!runtime || !isMediaAssetAvailable(runtime)) return false
+function needsUpload(
+  serialized: SerializedMediaAsset,
+  runtime: MediaAsset | SerializedMediaAsset | undefined,
+): runtime is MediaAsset & { file: File } {
+  if (!runtime || !isMediaAssetAvailable(runtime) || !runtime.file) return false
   if (!serialized.url) return true
   return serialized.hash !== runtime.hash
 }

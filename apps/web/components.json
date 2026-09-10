@@ -26,6 +26,7 @@
     "@ai-elements": "https://ai-sdk.dev/elements/api/registry/{name}.json",
     "@magicui": "https://magicui.design/r/{name}",
     "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json",
-    "@coss": "https://coss.com/ui/r/{name}.json"
+    "@coss": "https://coss.com/ui/r/{name}.json",
+    "@cult-ui": "https://cult-ui.com/r/{name}.json"
   }
 }

@@ -12,6 +12,7 @@ import {
 import { useDragResize } from '@/hooks/carousel/use-drag-resize'
 import { useLayerSnap } from '@/hooks/carousel/use-layer-snap'
 import { useEditorStore } from '@/lib/carousel/store'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { cn } from '@/lib/utils'
 import { filtersToCss } from '@/utils/media-filters'
 import type { ImageLayer, SlideId } from '@socialista/types'
@@ -105,7 +106,7 @@ export function ImageLayerNode({
       {effective.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={effective.imageUrl}
+          src={displayImageUrl(effective.imageUrl)}
           alt=""
           draggable={false}
           decoding="async"

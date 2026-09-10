@@ -15,6 +15,8 @@ import {
   StudioSkillPicker,
 } from "@/components/skills/studio-skill-picker";
 import {
+  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
+  STUDIO_HERO_SUBMIT_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
@@ -45,6 +47,7 @@ import {
   PROMPT_KEYS,
   type AspectRatio,
   type Model,
+  type Preset,
   type Skill,
 } from "@socialista/types";
 import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
@@ -56,10 +59,10 @@ import {
   useRef,
   useState,
   useTransition,
-  type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { ImageStudioStarters } from "./image-studio-starters";
+import { ImageStudioPresets } from "./image-studio-presets";
+import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
 import { ImagePromptAnatomy } from "./prompt-anatomy";
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -84,12 +87,13 @@ export type ImagePromptSubmitResult = {
 
 export type ImagePromptInputProps = {
   models: Model[]
+  presets?: Preset[]
   onSubmitOverride?: (result: ImagePromptSubmitResult) => void
   initialAttachments?: AttachedMedia[]
   initialAspectRatio?: AspectRatio
   initialModel?: string
   hideExtras?: boolean
-  starters?: ReactNode
+  homeHero?: boolean
   placeholder?: string
   pending?: boolean
   initialPrompt?: string
@@ -108,12 +112,13 @@ const ASPECT_RATIOS = [
 
 function ImagePromptComposer({
   models,
+  presets = [],
   onSubmitOverride,
   initialAttachments,
   initialAspectRatio,
   initialModel,
   hideExtras,
-  starters,
+  homeHero = false,
   placeholder: placeholderProp,
   pending: pendingProp,
   initialPrompt,
@@ -192,6 +197,12 @@ function ImagePromptComposer({
     return DEFAULT_PLACEHOLDER;
   }, [attachedImages.length, placeholderProp]);
 
+  const animatedPlaceholderWords = useMemo(() => {
+    if (!homeHero || placeholderProp || attachedImages.length > 0) return undefined;
+    const examples = buildPresetPlaceholderExamples(presets);
+    return examples.length > 0 ? examples : undefined;
+  }, [attachedImages.length, homeHero, placeholderProp, presets]);
+
   const insertAtCursor = useCallback(
     (snippet: string) => {
       const el = textareaRef.current;
@@ -229,6 +240,11 @@ function ImagePromptComposer({
     [textInput],
   );
 
+  const setAttachments = useCallback((attachments: AttachedMedia[]) => {
+    dismissedAttachmentUrls.current.clear();
+    setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES));
+  }, []);
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
@@ -237,9 +253,10 @@ function ImagePromptComposer({
     studio?.registerPromptHandlers({
       insertAtCursor,
       setPrompt,
+      setAttachments,
       focusPrompt,
     });
-  }, [studio, insertAtCursor, setPrompt, focusPrompt]);
+  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt]);
 
   useEffect(() => {
     if (hideExtras) return;
@@ -368,14 +385,32 @@ function ImagePromptComposer({
           label: "Number of images",
         }}
         placeholder={placeholder}
+        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={pending}
         onSubmit={handleSubmit}
-        submitLabel={numImages === 1 ? "Generate" : `Generate ${numImages}`}
-        submitTitle={numImages === 1 ? "Generate" : `Generate ${numImages}`}
-        submitAppearance="send"
+        submitLabel={
+          homeHero
+            ? numImages === 1
+              ? "Create image"
+              : `Create ${numImages} images`
+            : numImages === 1
+              ? "Generate"
+              : `Generate ${numImages}`
+        }
+        submitTitle={
+          homeHero
+            ? numImages === 1
+              ? "Create image"
+              : `Create ${numImages} images`
+            : numImages === 1
+              ? "Generate"
+              : `Generate ${numImages}`
+        }
+        submitAppearance={homeHero ? "labeled" : "send"}
+        submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
         footerClassName={
-          hideExtras
-            ? "border-transparent bg-transparent px-2 pb-1.5 pt-0.5 sm:px-2.5"
+          hideExtras || homeHero
+            ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
             : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         }
         composerHeader={
@@ -430,23 +465,21 @@ function ImagePromptComposer({
         composerRef={composerRef}
         emptyTitle="No image models yet"
         emptyDescription="Add a text-to-image model in the manager to start making campaign stills."
-        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
-        compact={hideExtras}
+        surfaceClassName={
+          homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+        }
+        compact={hideExtras || homeHero}
       />
 
       {attachedImages.length > 0 ? (
-        <div className={hideExtras ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
+        <div className={hideExtras || homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
       ) : null}
 
-      {hideExtras ? (
-        starters ? (
-          <div className="mt-3 flex flex-col items-center gap-2">{starters}</div>
-        ) : null
-      ) : (
+      {homeHero || hideExtras ? null : (
         <div className="mt-4 flex flex-col items-center gap-4">
-          <ImageStudioStarters disabled={pending} />
+          <ImageStudioPresets presets={presets} disabled={pending} />
 
           <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
@@ -496,8 +529,14 @@ export function ImagePromptInput(props: ImagePromptInputProps) {
   );
 }
 
-const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
-  return <ImagePromptInput models={models} />;
+const ImageGenerationPromptInput = ({
+  models,
+  presets = [],
+}: {
+  models: Model[]
+  presets?: Preset[]
+}) => {
+  return <ImagePromptInput models={models} presets={presets} homeHero />;
 };
 
 export default ImageGenerationPromptInput;

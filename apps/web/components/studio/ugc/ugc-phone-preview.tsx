@@ -47,8 +47,8 @@ export function UgcPhonePreview({
   }
 
   return (
-    <div className={cn('mx-auto flex w-full max-w-[240px] flex-col items-center', className)}>
-      <div className="relative w-full overflow-hidden rounded-[1.75rem] bg-zinc-950 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.55)] ring-1 ring-black/20 dark:ring-white/10">
+    <div className={cn('mx-auto flex flex-col items-center', className)}>
+      <div className="relative h-[min(44svh,24rem)] max-w-full overflow-hidden rounded-[1.75rem] bg-zinc-950 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.55)] ring-1 ring-black/20 dark:ring-white/10">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-2">
           <span className="h-1.5 w-16 rounded-full bg-white/25" />
         </div>
@@ -57,7 +57,7 @@ export function UgcPhonePreview({
           type="button"
           onClick={toggle}
           aria-label={playing ? 'Pause preview' : 'Play preview'}
-          className={cn('relative w-full bg-black', getAspectRatioClass(aspectRatio))}
+          className={cn('relative block h-full max-w-full bg-black', getAspectRatioClass(aspectRatio))}
         >
           <video
             ref={videoRef}

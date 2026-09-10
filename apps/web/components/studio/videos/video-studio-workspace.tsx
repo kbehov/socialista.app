@@ -12,6 +12,7 @@ type VideoStudioWorkspaceProps = {
   workspaceName: string
   initialVideos: VideoSummaryResponse[]
   initialError?: string | null
+  initialHasMore?: boolean
   initialAttachmentUrl?: string
 }
 
@@ -20,25 +21,26 @@ export function VideoStudioWorkspace({
   workspaceId,
   initialVideos,
   initialError = null,
+  initialHasMore = false,
   initialAttachmentUrl,
 }: VideoStudioWorkspaceProps) {
   return (
     <VideoStudioProvider>
       <div className="image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col">
-        <VideoStudioHero />
-
-        <section
-          id="video-studio-composer"
-          aria-label="Create a video"
-          className="relative z-10 mx-auto flex w-full max-w-[48rem] flex-col px-4 pb-6 sm:px-6 lg:px-8 -mt-7 sm:-mt-8"
-        >
-          <VideoGenerationPromptInput initialAttachmentUrl={initialAttachmentUrl} models={models} />
-        </section>
+        <VideoStudioHero>
+          <section id="video-studio-composer" aria-label="Create a video">
+            <VideoGenerationPromptInput
+              initialAttachmentUrl={initialAttachmentUrl}
+              models={models}
+            />
+          </section>
+        </VideoStudioHero>
 
         <RecentVideosList
           workspaceId={workspaceId}
           initialVideos={initialVideos}
           initialError={initialError}
+          initialHasMore={initialHasMore}
         />
       </div>
     </VideoStudioProvider>

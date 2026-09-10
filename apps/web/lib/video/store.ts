@@ -69,7 +69,7 @@ import {
   type VideoFormatPresetId,
 } from './format-presets'
 import type { MediaAsset } from './types'
-import { isMediaAssetAvailable } from './types'
+import { isMediaAssetAvailable, revokeMediaObjectUrl } from './types'
 import { frameAtTime, timeAtFrame } from './timecode'
 
 type AssetMap = Record<string, MediaAsset | SerializedMediaAsset>
@@ -145,6 +145,8 @@ interface EditorState {
   registerAsset: (asset: MediaAsset) => void
   relinkAsset: (assetId: string, file: File, hash: string) => void
   removeAsset: (assetId: string) => void
+  /** Attach lazily generated timeline thumbnails to a hydrated asset. */
+  setAssetThumbnails: (assetId: string, thumbnails: string[]) => void
   /** Attach runtime media loaded from persisted URLs without duplicating project.assets. */
   hydrateRuntimeAssets: (assets: MediaAsset[]) => void
   /** Sync persisted asset metadata after upload on save. */
@@ -577,6 +579,14 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       }))
     },
 
+    setAssetThumbnails: (assetId, thumbnails) => {
+      set(state => {
+        const existing = state.assets[assetId]
+        if (!existing || !isMediaAssetAvailable(existing)) return {}
+        return { assets: { ...state.assets, [assetId]: { ...existing, thumbnails } } }
+      })
+    },
+
     relinkAsset: (assetId, file, hash) => {
       set(state => {
         const existing = state.assets[assetId]
@@ -612,7 +622,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       record(state => {
         const asset = state.assets[assetId]
         if (asset && isMediaAssetAvailable(asset)) {
-          URL.revokeObjectURL(asset.objectUrl)
+          revokeMediaObjectUrl(asset.objectUrl)
         }
         const newAssets = { ...state.assets }
         delete newAssets[assetId]
@@ -1354,7 +1364,7 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       for (const id of Object.keys(state.assets)) {
         const asset = state.assets[id]
         if (asset && isMediaAssetAvailable(asset)) {
-          URL.revokeObjectURL(asset.objectUrl)
+          revokeMediaObjectUrl(asset.objectUrl)
         }
       }
       const fresh = createProject()

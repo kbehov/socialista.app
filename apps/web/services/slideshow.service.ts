@@ -37,16 +37,26 @@ export const getSlideshow = async (
   return api.get<{ slideshow: SlideshowResponse }>(SLIDESHOW_ROUTES.GET_BY_ID(id), { signal: options?.signal })
 }
 
+type GetWorkspaceSlideshowsQuery = {
+  status?: string
+  page?: number
+  limit?: number
+  sort?: string
+  projectId?: string
+}
+
 export const getWorkspaceSlideshows = async (
   workspaceId: string,
-  status?: string,
-  options?: { projectId?: string },
+  query?: GetWorkspaceSlideshowsQuery,
 ): Promise<ApiResponse<GetSlideshowsResponse>> => {
   const params = new URLSearchParams()
-  if (status) params.set('status', status)
-  if (options?.projectId) params.set('project', options.projectId)
-  const query = params.toString()
-  const path = `${SLIDESHOW_ROUTES.GET_WORKSPACE_SLIDESHOWS(workspaceId)}${query ? `?${query}` : ''}`
+  if (query?.status) params.set('status', query.status)
+  if (query?.page) params.set('page', String(query.page))
+  if (query?.limit) params.set('limit', String(query.limit))
+  if (query?.sort) params.set('sort', query.sort)
+  if (query?.projectId) params.set('project', query.projectId)
+  const search = params.toString()
+  const path = `${SLIDESHOW_ROUTES.GET_WORKSPACE_SLIDESHOWS(workspaceId)}${search ? `?${search}` : ''}`
   return api.get<GetSlideshowsResponse>(path)
 }
 

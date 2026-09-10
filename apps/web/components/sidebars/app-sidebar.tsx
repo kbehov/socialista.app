@@ -11,7 +11,6 @@ import {
   DASHBOARD_ROUTES,
   isDashboardAccountsPath,
   isDashboardContextPath,
-  isDashboardFilesPath,
   isDashboardGenerationsPath,
   isDashboardPostsPath,
   isDashboardRootPath,
@@ -23,7 +22,6 @@ import { cn } from '@/lib/utils'
 import type { ProjectResponse, WorkspaceResponse } from '@socialista/types'
 import {
   ChartColumnIcon,
-  FolderArchiveIcon,
   HistoryIcon,
   ImagesIcon,
   LayersIcon,
@@ -128,12 +126,6 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
 
 function buildWorkspaceItems(pathname: string): SidebarNavItem[] {
   return [
-    {
-      title: 'Files',
-      url: DASHBOARD_ROUTES.FILES,
-      icon: navIcon(FolderArchiveIcon),
-      isActive: isDashboardFilesPath(pathname),
-    },
     {
       title: 'Context & skills',
       url: DASHBOARD_ROUTES.CONTEXT,

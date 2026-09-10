@@ -8,6 +8,7 @@ import { CheckIcon, CropIcon, XIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-reac
 import { Button } from '@/components/ui/button'
 import { DEFAULT_BACKGROUND_IMAGE_ADJUSTMENT } from '@/lib/carousel/defaults'
 import { useEditorStore } from '@/lib/carousel/store'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { cn } from '@/lib/utils'
 
 type SlideImageAdjustOverlayProps = {
@@ -94,7 +95,7 @@ function CropAdjustOverlay({ imageUrl, aspect, initial, onApply, onCancel }: Cro
       onPointerDown={event => event.stopPropagation()}
     >
       <Cropper
-        image={imageUrl}
+        image={displayImageUrl(imageUrl)}
         crop={crop}
         zoom={zoom}
         aspect={aspect}

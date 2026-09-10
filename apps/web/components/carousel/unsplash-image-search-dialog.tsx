@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
-import { proxiedImageUrl } from '@/lib/carousel/image-url'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import {
   searchUnsplashPhotos,
   trackUnsplashDownload,
@@ -151,7 +151,7 @@ export function UnsplashImageSearchDialog({ open, onOpenChange, onSelect }: Unsp
 
   const handleSelectPhoto = (photo: UnsplashPhotoResult) => {
     void trackUnsplashDownload(photo.downloadLocation)
-    onSelect(proxiedImageUrl(photo.imageUrl))
+    onSelect(photo.imageUrl)
     handleOpenChange(false)
   }
 
@@ -210,7 +210,7 @@ export function UnsplashImageSearchDialog({ open, onOpenChange, onSelect }: Unsp
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={proxiedImageUrl(photo.previewUrl)}
+                      src={displayImageUrl(photo.previewUrl)}
                       alt={photo.altText ?? photo.title ?? 'Unsplash photo'}
                       loading="lazy"
                       className="size-full object-cover transition-transform duration-200 group-hover:scale-105"

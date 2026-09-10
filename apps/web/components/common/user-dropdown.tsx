@@ -1,5 +1,6 @@
 'use client'
 
+import { ThemeMenuToggle } from '@/components/theme-toggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -94,6 +95,8 @@ export function UserDropdown({ className }: { className?: string }) {
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator className="my-1" />
+        <ThemeMenuToggle />
         <DropdownMenuSeparator className="my-1" />
         <DropdownMenuItem
           variant="destructive"

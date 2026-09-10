@@ -31,7 +31,7 @@ import {
 } from './defaults'
 import { createLayerId, createSlideId } from './id'
 import { DEFAULT_ASPECT_RATIO_ID, findAspectRatioId, getAspectRatioPreset } from './aspect-ratios'
-import { proxiedImageUrl } from './image-url'
+import { displayImageUrl } from './image-url'
 import {
   alignAlongAxis,
   alignToEdge,
@@ -789,7 +789,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     applyTikTokImport: imageUrls => {
       if (imageUrls.length === 0) return
       const tiktokCanvas = getAspectRatioPreset('tiktok').dimensions
-      const slides = imageUrls.map((imageUrl, order) => createSlide(order, proxiedImageUrl(imageUrl)))
+      const slides = imageUrls.map((imageUrl, order) => createSlide(order, displayImageUrl(imageUrl)))
       set({
         aspectRatioId: 'tiktok',
         canvas: tiktokCanvas,

@@ -20,6 +20,7 @@ import {
   UploadIcon,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { sortLayers } from '@/lib/carousel/defaults'
 import { overlayFillColor } from '@/lib/carousel/overlay-style'
 import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
@@ -281,7 +282,7 @@ function SortableLayerRow({
               />
             ) : layer.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={layer.imageUrl} alt="" className="size-5 shrink-0 rounded object-cover" />
+              <img src={displayImageUrl(layer.imageUrl)} alt="" className="size-5 shrink-0 rounded object-cover" />
             ) : (
               <ImageIcon className="size-3.5 shrink-0" />
             )}

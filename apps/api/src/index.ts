@@ -14,6 +14,8 @@ import aiCompanyRoutes from '@/routes/ai-company.routes.js'
 import modelRoutes from '@/routes/model.routes.js'
 import notificationRoutes from '@/routes/notification.routes.js'
 import brandRoutes from '@/routes/brand.routes.js'
+import feedbackRoutes from '@/routes/feedback.routes.js'
+import presetRoutes from '@/routes/preset.routes.js'
 import productRoutes from '@/routes/product.routes.js'
 import projectRoutes from '@/routes/project.routes.js'
 import skillRoutes from '@/routes/skill.routes.js'
@@ -64,6 +66,8 @@ app.route('/models', modelRoutes)
 app.route('/ai-companies', aiCompanyRoutes)
 app.route('/notifications', notificationRoutes)
 app.route('/brands', brandRoutes)
+app.route('/feedbacks', feedbackRoutes)
+app.route('/presets', presetRoutes)
 app.route('/products', productRoutes)
 app.route('/projects', projectRoutes)
 app.route('/skills', skillRoutes)

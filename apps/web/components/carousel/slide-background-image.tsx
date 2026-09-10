@@ -12,6 +12,7 @@ import {
   unregisterBackgroundTransformFlusher,
 } from '@/lib/carousel/background-transform-flush'
 import { cn } from '@/lib/utils'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { filtersToCss } from '@/utils/media-filters'
 import type {
   BackgroundImageAdjustment,
@@ -82,6 +83,7 @@ export function SlideBackgroundImage({
   layoutHeight,
   children,
 }: SlideBackgroundImageProps) {
+  const displaySrc = displayImageUrl(imageUrl)
   const transform = resolveBackgroundTransform(adjustment)
   const isFrame = usesFrame(adjustment)
   const imageStyle = backgroundImageStyle(adjustment)
@@ -146,7 +148,7 @@ export function SlideBackgroundImage({
               ref={imageRef}
               key={imageUrl}
               data-slot="canvas-bg-image"
-              src={imageUrl}
+              src={displaySrc}
               alt=""
               className={imageClassName}
               style={renderedImageStyle}
@@ -181,7 +183,7 @@ export function SlideBackgroundImage({
           <img
             ref={imageRef}
             data-slot="canvas-bg-image"
-            src={imageUrl}
+            src={displaySrc}
             alt=""
             className={cn('absolute inset-0 size-full object-cover select-none', imageClassName)}
             style={{ ...imageStyle, ...renderedImageStyle }}
@@ -204,7 +206,7 @@ export function SlideBackgroundImage({
         <img
           ref={imageRef}
           data-slot="canvas-bg-image"
-          src={imageUrl}
+          src={displaySrc}
           alt=""
           className={cn('absolute inset-0 size-full object-cover select-none', imageClassName)}
           style={renderedImageStyle}

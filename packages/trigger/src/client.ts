@@ -82,11 +82,6 @@ export {
 } from './schemas/generate-ugc-audio.schema.js'
 
 export {
-  assembleUgcProjectPayloadSchema,
-  type AssembleUgcProjectPayload,
-} from './schemas/assemble-ugc-project.schema.js'
-
-export {
   cloneInfluencerPayloadSchema,
   type CloneInfluencerPayload,
 } from './schemas/clone-influencer.schema.js'

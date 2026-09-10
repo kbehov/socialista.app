@@ -125,6 +125,22 @@ export const BRAND_ROUTES = {
   GET_WORKSPACE_BRANDS: (workspaceId: string) => `/brands/workspace/${workspaceId}`,
 } as const
 
+export const PRESET_ROUTES = {
+  LIST: '/presets',
+  GET_BY_ID: (id: string) => `/presets/${id}`,
+  CREATE: '/presets',
+  UPDATE: (id: string) => `/presets/${id}`,
+  DELETE: (id: string) => `/presets/${id}`,
+} as const
+
+export const FEEDBACK_ROUTES = {
+  CREATE: '/feedbacks',
+  GET_BY_ID: (id: string) => `/feedbacks/${id}`,
+  UPDATE: (id: string) => `/feedbacks/${id}`,
+  DELETE: (id: string) => `/feedbacks/${id}`,
+  GET_WORKSPACE_FEEDBACKS: (workspaceId: string) => `/feedbacks/workspace/${workspaceId}`,
+} as const
+
 export const PRODUCT_ROUTES = {
   EXTRACT_PRODUCT: `/products/extract`,
   CREATE: '/products',

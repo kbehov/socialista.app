@@ -1,6 +1,6 @@
-import { VIDEO_RESOLUTION_DEFAULT, VIDEO_RESOLUTIONS } from '@socialista/types'
-import { model, Schema } from 'mongoose'
-import { enumValues } from '../lib/schema.js'
+import { VIDEO_RESOLUTION_DEFAULT, VIDEO_RESOLUTIONS } from "@socialista/types";
+import { model, Schema } from "mongoose";
+import { enumValues } from "../lib/schema.js";
 import {
   UgcClipStatus,
   UgcClipType,
@@ -16,9 +16,10 @@ import {
   type IUgcProjectModels,
   type IUgcProjectScript,
   type IUgcClipAudioTake,
+  type IUgcClipVideoTake,
   type IUgcSceneStill,
   type IUgcVariant,
-} from '../types/ugc-project.types.js'
+} from "../types/ugc-project.types.js";
 
 const modelsSchema = new Schema<IUgcProjectModels>(
   {
@@ -28,11 +29,11 @@ const modelsSchema = new Schema<IUgcProjectModels>(
     planner: { type: String },
   },
   { _id: false },
-)
+);
 
 const scriptSchema = new Schema<IUgcProjectScript>(
   {
-    text: { type: String, default: '' },
+    text: { type: String, default: "" },
     source: {
       type: String,
       enum: enumValues(UgcScriptSource),
@@ -40,7 +41,7 @@ const scriptSchema = new Schema<IUgcProjectScript>(
     },
   },
   { _id: false },
-)
+);
 
 const clipModelsSchema = new Schema<IUgcClipModels>(
   {
@@ -50,7 +51,7 @@ const clipModelsSchema = new Schema<IUgcClipModels>(
     planner: { type: String },
   },
   { _id: false },
-)
+);
 
 const voiceSchema = new Schema<IUgcClipVoice>(
   {
@@ -69,7 +70,7 @@ const voiceSchema = new Schema<IUgcClipVoice>(
     enabled: { type: Boolean },
   },
   { _id: false },
-)
+);
 
 const stillSchema = new Schema<IUgcSceneStill>(
   {
@@ -79,7 +80,7 @@ const stillSchema = new Schema<IUgcSceneStill>(
     enhancedPrompt: { type: String },
   },
   { _id: false },
-)
+);
 
 const audioTakeSchema = new Schema<IUgcClipAudioTake>(
   {
@@ -89,7 +90,18 @@ const audioTakeSchema = new Schema<IUgcClipAudioTake>(
     scriptText: { type: String },
   },
   { _id: false },
-)
+);
+
+const videoTakeSchema = new Schema<IUgcClipVideoTake>(
+  {
+    id: { type: String, required: true },
+    videoUrl: { type: String, required: true },
+    thumbnailUrl: { type: String },
+    durationSec: { type: Number },
+    prompt: { type: String },
+  },
+  { _id: false },
+);
 
 const clipSchema = new Schema<IUgcClip>(
   {
@@ -107,7 +119,7 @@ const clipSchema = new Schema<IUgcClip>(
     },
     durationSec: { type: Number, default: 8 },
     sceneCount: { type: Number, enum: [1, 2, 3] },
-    influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer' },
+    influencerId: { type: Schema.Types.ObjectId, ref: "Influencer" },
     script: { type: scriptSchema },
     voice: { type: voiceSchema },
     models: { type: clipModelsSchema },
@@ -122,8 +134,9 @@ const clipSchema = new Schema<IUgcClip>(
     audioTakes: { type: [audioTakeSchema], default: [] },
     videoUrl: { type: String },
     thumbnailUrl: { type: String },
+    videoTakes: { type: [videoTakeSchema], default: [] },
     generationId: { type: String },
-    composedVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
+    composedVideoId: { type: Schema.Types.ObjectId, ref: "Video" },
     stillsRunId: { type: String },
     videoRunId: { type: String },
     audioRunId: { type: String },
@@ -131,12 +144,16 @@ const clipSchema = new Schema<IUgcClip>(
     error: { type: String },
   },
   { _id: false },
-)
+);
 
 const variantSchema = new Schema<IUgcVariant>(
   {
     id: { type: String, required: true },
-    influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer', required: true },
+    influencerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Influencer",
+      required: true,
+    },
     status: {
       type: String,
       enum: enumValues(UgcClipStatus),
@@ -148,11 +165,11 @@ const variantSchema = new Schema<IUgcVariant>(
     videoUrl: { type: String },
     thumbnailUrl: { type: String },
     generationId: { type: String },
-    composedVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
+    composedVideoId: { type: Schema.Types.ObjectId, ref: "Video" },
     error: { type: String },
   },
   { _id: false },
-)
+);
 
 const ugcProjectSchema = new Schema<IUgcProject>(
   {
@@ -162,18 +179,23 @@ const ugcProjectSchema = new Schema<IUgcProject>(
       enum: enumValues(UgcProjectStatus),
       default: UgcProjectStatus.DRAFT,
     },
-    workspace: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true, index: true },
-    project: { type: Schema.Types.ObjectId, ref: 'Project', index: true },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    productId: { type: Schema.Types.ObjectId, ref: 'Product' },
+    workspace: {
+      type: Schema.Types.ObjectId,
+      ref: "Workspace",
+      required: true,
+      index: true,
+    },
+    project: { type: Schema.Types.ObjectId, ref: "Project", index: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    productId: { type: Schema.Types.ObjectId, ref: "Product" },
     productImageUrls: { type: [String], default: [] },
     productName: { type: String },
     productDescription: { type: String },
     productUrl: { type: String },
     productKind: { type: String, enum: enumValues(UgcProductKind) },
-    influencerId: { type: Schema.Types.ObjectId, ref: 'Influencer' },
+    influencerId: { type: Schema.Types.ObjectId, ref: "Influencer" },
     voice: { type: voiceSchema },
-    aspectRatio: { type: String, default: '9:16' },
+    aspectRatio: { type: String, default: "9:16" },
     videoResolution: {
       type: String,
       enum: [...VIDEO_RESOLUTIONS],
@@ -184,9 +206,12 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     clips: { type: [clipSchema], default: [] },
     assembledVideoUrl: { type: String },
     assembledRunId: { type: String },
-    composedProjectVideoId: { type: Schema.Types.ObjectId, ref: 'Video' },
+    composedProjectVideoId: { type: Schema.Types.ObjectId, ref: "Video" },
     error: { type: String },
-    influencerIds: { type: [{ type: Schema.Types.ObjectId, ref: 'Influencer' }], default: undefined },
+    influencerIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: "Influencer" }],
+      default: undefined,
+    },
     sceneCount: { type: Number, enum: [1, 2, 3] },
     script: { type: scriptSchema },
     directions: { type: String },
@@ -196,11 +221,14 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     audioRunId: { type: String },
   },
   { timestamps: true },
-)
+);
 
-ugcProjectSchema.index({ workspace: 1, updatedAt: -1 })
-ugcProjectSchema.index({ workspace: 1, status: 1 })
-ugcProjectSchema.index({ project: 1, updatedAt: -1 })
-ugcProjectSchema.index({ project: 1, status: 1 })
+ugcProjectSchema.index({ workspace: 1, updatedAt: -1 });
+ugcProjectSchema.index({ workspace: 1, status: 1 });
+ugcProjectSchema.index({ project: 1, updatedAt: -1 });
+ugcProjectSchema.index({ project: 1, status: 1 });
 
-export const UgcProjectModel = model<IUgcProject>('UgcProject', ugcProjectSchema)
+export const UgcProjectModel = model<IUgcProject>(
+  "UgcProject",
+  ugcProjectSchema,
+);

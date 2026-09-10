@@ -5,6 +5,7 @@ import { VideoStudio } from '@/components/video/video-studio'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { hydrateVideoAssets } from '@/lib/video/hydrate-video-assets'
+import { generateVideoThumbnails } from '@/lib/video/media-import'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { getVideo } from '@/services/video.service'
 import { Loader2Icon } from 'lucide-react'
@@ -55,11 +56,21 @@ export function VideoEditorLoader({ videoId }: VideoEditorLoaderProps) {
         },
       })
 
-      const hydrated = await hydrateVideoAssets(video.assets)
+      const hydrated = hydrateVideoAssets(video.assets)
       if (cancelled) return
       hydrateRuntimeAssets(hydrated)
-
       setIsLoading(false)
+
+      // Fill in timeline thumbnails in the background now that the editor is interactive.
+      const setAssetThumbnails = useVideoEditorStore.getState().setAssetThumbnails
+      void (async () => {
+        for (const asset of hydrated) {
+          if (cancelled || asset.type !== 'video') continue
+          const thumbnails = await generateVideoThumbnails(asset)
+          if (cancelled || thumbnails.length === 0) continue
+          setAssetThumbnails(asset.id, thumbnails)
+        }
+      })()
     }
 
     void load()

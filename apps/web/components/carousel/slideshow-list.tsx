@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/common/error-state'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { SLIDESHOW_LIST_PAGE_SIZE } from '@/constants/studio'
 import { getAspectRatioPreset } from '@/lib/carousel/aspect-ratios'
 import { cn } from '@/lib/utils'
 import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/services/slideshow.service'
@@ -17,9 +18,19 @@ import { formatRelativeTime } from '@/utils/format'
 import type { SlideshowSummaryResponse } from '@socialista/types'
 import { ArrowRightIcon, CopyIcon, Loader2Icon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import InfiniteScroll from 'react-infinite-scroll-component'
 import { toast } from 'sonner'
+
+const SCROLL_TARGET_ID = 'dashboard-scroll'
+
+function ScrollLoader() {
+  return (
+    <div className="flex items-center justify-center py-10">
+      <Loader2Icon className="size-3.5 animate-spin text-black/36 dark:text-white/36" />
+    </div>
+  )
+}
 
 function SlideshowCard({
   slideshow,
@@ -152,22 +163,27 @@ type SlideshowListProps = {
   workspaceId: string
   initialSlideshows: SlideshowSummaryResponse[]
   initialError?: string | null
+  initialHasMore?: boolean
 }
 
 export function SlideshowList({
   workspaceId,
   initialSlideshows,
   initialError = null,
+  initialHasMore = false,
 }: SlideshowListProps) {
-  const router = useRouter()
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [slideshows, setSlideshows] = useState(initialSlideshows)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(initialHasMore)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(initialError)
   const [deleteTarget, setDeleteTarget] = useState<SlideshowSummaryResponse | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
   const skipInitialSync = useRef(true)
+  const requestIdRef = useRef(0)
+  const loadingMoreRef = useRef(false)
 
   useEffect(() => {
     if (skipInitialSync.current) {
@@ -176,23 +192,56 @@ export function SlideshowList({
     }
     setSlideshows(initialSlideshows)
     setError(initialError)
-  }, [initialSlideshows, initialError])
+    setPage(1)
+    setHasMore(initialHasMore)
+  }, [initialSlideshows, initialError, initialHasMore])
+
+  const fetchPage = useCallback(
+    async (nextPage: number, append: boolean) => {
+      const requestId = ++requestIdRef.current
+      const response = await getWorkspaceSlideshows(workspaceId, {
+        status: 'draft',
+        page: nextPage,
+        limit: SLIDESHOW_LIST_PAGE_SIZE,
+        projectId,
+      })
+
+      if (requestId !== requestIdRef.current) return
+
+      if (!response.success || !response.data) {
+        const message = response.message ?? 'Failed to load slideshows'
+        if (append) {
+          toast.error(message)
+          return
+        }
+        setError(message)
+        setSlideshows([])
+        setHasMore(false)
+        return
+      }
+
+      const nextSlideshows = response.data.slideshows
+      setError(null)
+      setSlideshows(current => (append ? [...current, ...nextSlideshows] : nextSlideshows))
+      setPage(nextPage)
+      setHasMore(Boolean(response.meta?.hasNextPage))
+    },
+    [workspaceId, projectId],
+  )
 
   const loadSlideshows = useCallback(async () => {
     setIsLoading(true)
-    setError(null)
-
-    const response = await getWorkspaceSlideshows(workspaceId, 'draft', { projectId })
-    if (!response.success || !response.data) {
-      setError(response.message ?? 'Failed to load slideshows')
-      setSlideshows([])
-      setIsLoading(false)
-      return
-    }
-
-    setSlideshows(response.data.slideshows)
+    await fetchPage(1, false)
     setIsLoading(false)
-  }, [workspaceId, projectId])
+  }, [fetchPage])
+
+  const handleLoadMore = () => {
+    if (isLoading || loadingMoreRef.current || !hasMore) return
+    loadingMoreRef.current = true
+    void fetchPage(page + 1, true).finally(() => {
+      loadingMoreRef.current = false
+    })
+  }
 
   const handleDelete = async () => {
     if (!deleteTarget || isDeleting) return
@@ -206,9 +255,10 @@ export function SlideshowList({
       return
     }
 
-    toast.success('Slideshow deleted')
+    const deletedId = deleteTarget.id
+    setSlideshows(current => current.filter(slideshow => slideshow.id !== deletedId))
     setDeleteTarget(null)
-    router.refresh()
+    toast.success('Slideshow deleted')
   }
 
   const handleDuplicate = async (slideshow: SlideshowSummaryResponse) => {
@@ -224,7 +274,7 @@ export function SlideshowList({
     }
 
     toast.success(`Duplicated as “${response.data.slideshow.name}”`)
-    router.refresh()
+    await fetchPage(1, false)
   }
 
   if (!error && slideshows.length === 0 && !isLoading) {
@@ -275,22 +325,33 @@ export function SlideshowList({
           ))}
         </div>
       ) : (
-        <div
-          className={cn(
-            'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
-            isLoading && 'opacity-60',
-          )}
+        <InfiniteScroll
+          dataLength={slideshows.length}
+          next={handleLoadMore}
+          hasMore={hasMore}
+          loader={<ScrollLoader />}
+          scrollableTarget={SCROLL_TARGET_ID}
+          scrollThreshold={0.9}
+          className="!overflow-visible"
+          style={{ overflow: 'visible' }}
         >
-          {slideshows.map(slideshow => (
-            <SlideshowCard
-              key={slideshow.id}
-              slideshow={slideshow}
-              onDelete={setDeleteTarget}
-              onDuplicate={item => void handleDuplicate(item)}
-              isDuplicating={duplicatingId === slideshow.id}
-            />
-          ))}
-        </div>
+          <div
+            className={cn(
+              'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
+              isLoading && 'opacity-60',
+            )}
+          >
+            {slideshows.map(slideshow => (
+              <SlideshowCard
+                key={slideshow.id}
+                slideshow={slideshow}
+                onDelete={setDeleteTarget}
+                onDuplicate={item => void handleDuplicate(item)}
+                isDuplicating={duplicatingId === slideshow.id}
+              />
+            ))}
+          </div>
+        </InfiniteScroll>
       )}
 
       <DeleteConfirmDialog

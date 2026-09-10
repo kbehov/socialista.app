@@ -9,7 +9,6 @@ import { resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { VideoGenerationOutput } from '@socialista/types'
 import { AlertCircleIcon, CheckIcon, DownloadIcon, FolderIcon, PlusIcon, SendIcon } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { RefObject } from 'react'
 import { useState } from 'react'
@@ -101,14 +100,8 @@ export function GeneratedVideo({
                     key={url}
                     className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
                   >
-                    <Image
-                      alt="Reference"
-                      className="object-cover"
-                      fill
-                      sizes="32px"
-                      src={resolveGeneratedImagePreviewUrl(url)}
-                      unoptimized
-                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
+                    <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
                   </div>
                 ))}
               </div>

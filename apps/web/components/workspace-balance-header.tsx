@@ -55,7 +55,7 @@ export function WorkspaceBalanceHeader({
           <Badge
             variant="ghost"
             className={cn(
-              'h-7 cursor-pointer gap-1.5 rounded-[6px] px-2 font-medium tabular-nums transition-colors hover:bg-muted/60',
+              'h-7 cursor-pointer gap-1.5 rounded-[6px] border-none px-2 font-medium tabular-nums transition-colors hover:bg-muted/60',
               className,
             )}
           >

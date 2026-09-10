@@ -12,6 +12,7 @@ type SlideshowStudioWorkspaceProps = {
   workspaceId: string
   initialSlideshows: SlideshowSummaryResponse[]
   initialError?: string | null
+  initialHasMore?: boolean
 }
 
 export function SlideshowStudioWorkspace({
@@ -20,24 +21,22 @@ export function SlideshowStudioWorkspace({
   workspaceId,
   initialSlideshows,
   initialError = null,
+  initialHasMore = false,
 }: SlideshowStudioWorkspaceProps) {
   return (
     <SlideshowStudioProvider>
       <div className="image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col">
-        <SlideshowStudioHero />
-
-        <section
-          id="slideshow-studio-composer"
-          aria-label="Create a slideshow"
-          className="relative z-10 mx-auto flex w-full max-w-[48rem] flex-col px-4 pb-6 sm:px-6 lg:px-8 -mt-7 sm:-mt-8"
-        >
-          <SlideshowPromptComposer models={models} textModels={textModels} />
-        </section>
+        <SlideshowStudioHero>
+          <section id="slideshow-studio-composer" aria-label="Create a slideshow">
+            <SlideshowPromptComposer models={models} textModels={textModels} />
+          </section>
+        </SlideshowStudioHero>
 
         <SlideshowList
           workspaceId={workspaceId}
           initialSlideshows={initialSlideshows}
           initialError={initialError}
+          initialHasMore={initialHasMore}
         />
       </div>
     </SlideshowStudioProvider>

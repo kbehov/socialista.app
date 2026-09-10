@@ -36,6 +36,15 @@ export const SLIDESHOW_STUDIO_STARTERS = [
   },
 ] as const
 
+function truncateExamplePrompt(text: string, max = 84): string {
+  if (text.length <= max) return text
+  return `${text.slice(0, max).trimEnd()}…`
+}
+
+export const SLIDESHOW_STUDIO_PLACEHOLDER_EXAMPLES = SLIDESHOW_STUDIO_STARTERS.map(starter =>
+  truncateExamplePrompt(starter.prompt),
+)
+
 export function SlideshowStudioStarters({ disabled }: { disabled?: boolean }) {
   const { setPrompt } = useSlideshowStudio()
 

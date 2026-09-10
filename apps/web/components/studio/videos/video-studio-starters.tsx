@@ -36,6 +36,15 @@ export const VIDEO_STUDIO_STARTERS = [
   },
 ] as const
 
+function truncateExamplePrompt(text: string, max = 84): string {
+  if (text.length <= max) return text
+  return `${text.slice(0, max).trimEnd()}…`
+}
+
+export const VIDEO_STUDIO_PLACEHOLDER_EXAMPLES = VIDEO_STUDIO_STARTERS.map(starter =>
+  truncateExamplePrompt(starter.prompt),
+)
+
 export function VideoStudioStarters({ disabled }: { disabled?: boolean }) {
   const { setPrompt } = useVideoStudio()
 

@@ -24,7 +24,6 @@ import { cn } from '@/lib/utils'
 import type { SlideshowGenerationPayload } from '@socialista/trigger/schemas/slideshow-generation'
 import type { SlideshowGenerationOutput } from '@socialista/types'
 import { ArrowLeftIcon, ImagesIcon } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -177,13 +176,11 @@ export function SlideshowGenerationRunView({ runId }: SlideshowGenerationRunView
               <div className="overflow-hidden rounded-xl bg-black/[0.03] dark:bg-white/[0.04]">
                 {previewUrl ? (
                   <div className="relative aspect-[4/5] w-full bg-black/4">
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
+                    <img
                       alt="Generated slideshow preview"
-                      className="object-cover"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 640px"
+                      className="absolute inset-0 size-full object-cover"
                       src={previewUrl}
-                      unoptimized
                     />
                   </div>
                 ) : (

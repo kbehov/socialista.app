@@ -5,7 +5,6 @@ import { finderGridClassName } from '@/components/media/folder-grid'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
-import { proxiedImageUrl } from '@/lib/carousel/image-url'
 import { cn } from '@/lib/utils'
 import { getFolders, getWorkspaceFiles } from '@/services/files.service'
 import { getWorkspaceId, useWorkspaceStore } from '@/store/workspace.store'
@@ -150,7 +149,7 @@ export function WorkspaceImagePickerDialog({
   }, [open, isLoading, isLoadingMore, error, hasMore, imageFiles.length, files.length, fetchMore])
 
   const handleSelectImage = (url: string) => {
-    onSelect(proxiedImageUrl(url))
+    onSelect(url)
     handleOpenChange(false)
   }
 

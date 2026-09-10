@@ -37,16 +37,26 @@ export const getVideo = async (id: string): Promise<ApiResponse<{ video: VideoRe
   return api.get<{ video: VideoResponse }>(VIDEO_ROUTES.GET_BY_ID(id))
 }
 
+type GetWorkspaceVideosQuery = {
+  status?: string
+  page?: number
+  limit?: number
+  sort?: string
+  projectId?: string
+}
+
 export const getWorkspaceVideos = async (
   workspaceId: string,
-  status?: string,
-  options?: { projectId?: string },
+  query?: GetWorkspaceVideosQuery,
 ): Promise<ApiResponse<GetVideosResponse>> => {
   const params = new URLSearchParams()
-  if (status) params.set('status', status)
-  if (options?.projectId) params.set('project', options.projectId)
-  const query = params.toString()
-  const path = `${VIDEO_ROUTES.GET_WORKSPACE_VIDEOS(workspaceId)}${query ? `?${query}` : ''}`
+  if (query?.status) params.set('status', query.status)
+  if (query?.page) params.set('page', String(query.page))
+  if (query?.limit) params.set('limit', String(query.limit))
+  if (query?.sort) params.set('sort', query.sort)
+  if (query?.projectId) params.set('project', query.projectId)
+  const search = params.toString()
+  const path = `${VIDEO_ROUTES.GET_WORKSPACE_VIDEOS(workspaceId)}${search ? `?${search}` : ''}`
   return api.get<GetVideosResponse>(path)
 }
 

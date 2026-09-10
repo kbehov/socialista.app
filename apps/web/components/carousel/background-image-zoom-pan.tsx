@@ -1,6 +1,7 @@
 'use client'
 
 import { TransformWrapper, TransformComponent, useTransformEffect } from 'react-zoom-pan-pinch'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { cn } from '@/lib/utils'
 
 type ZoomPanTransform = {
@@ -66,7 +67,7 @@ function ReadonlyZoomPanPreview({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           data-slot="canvas-bg-image"
-          src={imageUrl}
+          src={displayImageUrl(imageUrl)}
           alt=""
           className={cn('size-full object-cover select-none', className)}
           draggable={false}
@@ -136,7 +137,7 @@ export function BackgroundImageZoomPan({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 data-slot="canvas-bg-image"
-                src={imageUrl}
+                src={displayImageUrl(imageUrl)}
                 alt=""
                 className={cn('size-full object-cover select-none', className)}
                 draggable={false}

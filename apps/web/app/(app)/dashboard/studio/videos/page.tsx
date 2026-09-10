@@ -1,5 +1,6 @@
-import { VideoStudioWorkspace } from '@/components/studio/videos/video-studio-workspace'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
+import { VideoStudioWorkspace } from '@/components/studio/videos/video-studio-workspace'
+import { VIDEO_LIST_PAGE_SIZE } from '@/constants/studio'
 import { getGeneration } from '@/services/generation.service'
 import { getModels } from '@/services/models.service'
 import { getWorkspaceVideos } from '@/services/video.service'
@@ -36,7 +37,12 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 
   const [modelsRes, videosResponse, initialAttachmentUrl] = await Promise.all([
     getModels('limit=20&modelType=video&sort=-usageCount'),
-    getWorkspaceVideos(workspace.id, 'draft', { projectId: project?.id }),
+    getWorkspaceVideos(workspace.id, {
+      status: 'draft',
+      page: 1,
+      limit: VIDEO_LIST_PAGE_SIZE,
+      projectId: project?.id,
+    }),
     getGenerationImageUrl(generationId),
   ])
 
@@ -51,6 +57,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
       workspaceName={workspace.name}
       initialVideos={videos}
       initialError={error}
+      initialHasMore={Boolean(videosResponse.meta?.hasNextPage)}
       initialAttachmentUrl={initialAttachmentUrl}
     />
   )

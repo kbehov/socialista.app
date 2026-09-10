@@ -17,10 +17,9 @@ import {
   AudioLinesIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
+  ClapperboardIcon,
   ImageIcon,
-  LayersIcon,
   Loader2Icon,
-  PencilIcon,
   SlidersHorizontalIcon,
   VideoIcon,
 } from 'lucide-react'
@@ -46,15 +45,13 @@ type UgcStudioTopbarProps = {
   aspectRatio?: string
   sceneCount: number
   totalDurationSec: number
-  assembling?: boolean
-  canAssemble?: boolean
-  assembledVideoUrl?: string
-  openingProjectEditor?: boolean
+  finishing?: boolean
+  canFinish?: boolean
+  editorPrepared?: boolean
   generating?: boolean
   settingsIncomplete?: boolean
   onNameChange: (name: string) => void
-  onAssemble: () => void
-  onOpenAssembledEditor: () => void
+  onFinish: () => void
   onOpenSettings?: () => void
   onGenerateAllPhotos?: () => void
   onGenerateAllAudio?: () => void
@@ -67,15 +64,13 @@ export function UgcStudioTopbar({
   aspectRatio,
   sceneCount,
   totalDurationSec,
-  assembling,
-  canAssemble,
-  assembledVideoUrl,
-  openingProjectEditor,
+  finishing,
+  canFinish,
+  editorPrepared,
   generating,
   settingsIncomplete,
   onNameChange,
-  onAssemble,
-  onOpenAssembledEditor,
+  onFinish,
   onOpenSettings,
   onGenerateAllPhotos,
   onGenerateAllAudio,
@@ -179,24 +174,6 @@ export function UgcStudioTopbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {assembledVideoUrl ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2 text-[12px]"
-            disabled={openingProjectEditor}
-            onClick={onOpenAssembledEditor}
-          >
-            {openingProjectEditor ? (
-              <Loader2Icon className="size-3.5 animate-spin" />
-            ) : (
-              <PencilIcon className="size-3.5" />
-            )}
-            Edit
-          </Button>
-        ) : null}
-
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
@@ -204,20 +181,24 @@ export function UgcStudioTopbar({
                 type="button"
                 size="sm"
                 className="h-7 px-2.5 text-[12px]"
-                disabled={!canAssemble || assembling}
-                onClick={onAssemble}
+                disabled={!canFinish || finishing}
+                onClick={onFinish}
               >
-                {assembling ? (
+                {finishing ? (
                   <Loader2Icon className="size-3.5 animate-spin" />
                 ) : (
-                  <LayersIcon className="size-3.5" />
+                  <ClapperboardIcon className="size-3.5" />
                 )}
-                Assemble
+                {editorPrepared ? 'Edit video' : 'Finish video'}
               </Button>
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            {canAssemble ? 'Stitch ready scenes into one ad' : 'Render at least one scene first'}
+            {canFinish
+              ? editorPrepared
+                ? 'Open the video editor for final touches'
+                : 'Open all scenes in the video editor for final touches'
+              : 'Generate a video for every scene first'}
           </TooltipContent>
         </Tooltip>
       </div>

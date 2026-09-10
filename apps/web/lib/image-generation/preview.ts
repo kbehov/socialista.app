@@ -1,13 +1,13 @@
-import { proxiedImageUrl } from '@/lib/carousel/image-url'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 
 export function isDataImageUrl(url: string): boolean {
   return url.startsWith('data:image/')
 }
 
-/** Display URL for generated images — proxies remote fal URLs, passes through data/blob paths. */
+/** Display URL for generated images — load the CDN directly except hotlink-protected hosts. */
 export function resolveGeneratedImagePreviewUrl(imageUrl: string): string {
   if (!imageUrl) return ''
-  return proxiedImageUrl(imageUrl)
+  return displayImageUrl(imageUrl)
 }
 
 /** Convert a data URL to a blob URL for lighter DOM preview of large base64 payloads. */

@@ -48,7 +48,7 @@ export function VideoList({
   const loadVideos = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    const response = await getWorkspaceVideos(workspaceId, 'draft', { projectId })
+    const response = await getWorkspaceVideos(workspaceId, { status: 'draft', projectId })
     if (!response.success || !response.data) {
       setError(response.message ?? 'Failed to load videos')
       setVideos([])

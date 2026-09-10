@@ -35,6 +35,7 @@ import {
   attachmentChipLabel,
   type StudioAttachSource,
 } from "@/components/studio/prompt/studio-attach-menu";
+import { StudioAnimatedPlaceholder } from "@/components/studio/prompt/studio-animated-placeholder";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
@@ -364,6 +365,7 @@ export type StudioPromptComposerProps = {
   count?: StudioPromptComposerCount;
   costMultiplier?: number;
   placeholder?: string;
+  animatedPlaceholderWords?: string[];
   disabled?: boolean;
   pending?: boolean;
   onSubmit: (message: PromptInputMessage) => void;
@@ -387,6 +389,7 @@ export type StudioPromptComposerProps = {
   submitTitle?: string;
   footerClassName?: string;
   submitAppearance?: "labeled" | "send";
+  submitClassName?: string;
   compact?: boolean;
 };
 
@@ -404,6 +407,7 @@ export function StudioPromptComposer({
   count,
   costMultiplier,
   placeholder = "Describe what to generate…",
+  animatedPlaceholderWords,
   disabled,
   pending,
   onSubmit,
@@ -427,6 +431,7 @@ export function StudioPromptComposer({
   submitTitle,
   footerClassName,
   submitAppearance = "labeled",
+  submitClassName,
   compact = false,
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController();
@@ -829,6 +834,8 @@ export function StudioPromptComposer({
 
   const textMetrics = compact ? PROMPT_TEXT_METRICS_COMPACT : PROMPT_TEXT_METRICS;
   const textareaClass = compact ? PROMPT_TEXTAREA_CLASS_COMPACT : PROMPT_TEXTAREA_CLASS;
+  const showAnimatedPlaceholder =
+    Boolean(animatedPlaceholderWords?.length) && textInput.value.length === 0;
 
   return (
     <div
@@ -878,6 +885,12 @@ export function StudioPromptComposer({
               className={textMetrics}
               style={compact ? PROMPT_FIELD_STYLE_COMPACT : PROMPT_FIELD_STYLE}
             />
+            {showAnimatedPlaceholder ? (
+              <StudioAnimatedPlaceholder
+                words={animatedPlaceholderWords!}
+                compact={compact}
+              />
+            ) : null}
             <PromptInputTextarea
               ref={setTextareaRef}
               style={compact ? PROMPT_FIELD_STYLE_COMPACT : PROMPT_FIELD_STYLE}
@@ -889,7 +902,7 @@ export function StudioPromptComposer({
                 "dark:bg-transparent",
               )}
               disabled={disabled || pending}
-              placeholder={placeholder}
+              placeholder={showAnimatedPlaceholder ? "" : placeholder}
               maxLength={maxLength}
               aria-autocomplete="list"
               aria-expanded={mentionOpen}
@@ -1050,6 +1063,7 @@ export function StudioPromptComposer({
                     ? "rounded-md"
                     : "rounded-md px-2 text-[12px] font-medium tracking-[-0.015em]",
                   !canSubmit && "opacity-40",
+                  submitClassName,
                 )}
                 disabled={!canSubmit}
                 size={submitAppearance === "send" ? "icon-xs" : "xs"}
@@ -1061,10 +1075,12 @@ export function StudioPromptComposer({
                   )
                 ) : (
                   <>
-                    <span className="hidden sm:inline">{submitLabel}</span>
-                    <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
-                      ⌘↵
-                    </Kbd>
+                    <span>{submitLabel}</span>
+                    {!submitClassName ? (
+                      <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
+                        ⌘↵
+                      </Kbd>
+                    ) : null}
                   </>
                 )}
               </PromptInputSubmit>

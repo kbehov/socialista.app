@@ -4,8 +4,9 @@ import { useState, useTransition, type RefObject } from 'react'
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { importMediaFromUrl, MediaImportError } from '@/lib/video/media-import'
+import { generateVideoThumbnails, importMediaFromUrl, MediaImportError } from '@/lib/video/media-import'
 import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
+import { useVideoEditorStore } from '@/lib/video/store'
 import { MAX_IMPORT_BYTES_WARN } from '@/lib/video/defaults'
 import { cn } from '@/lib/utils'
 
@@ -32,13 +33,16 @@ export function VideoUrlImportForm({ className, inputRef, compact = false }: Vid
 
     startTransition(async () => {
       try {
-        const asset = await importMediaFromUrl(trimmed)
-        if (asset.file.size > MAX_IMPORT_BYTES_WARN) {
+        const asset = await importMediaFromUrl(trimmed, undefined, { deferThumbnails: true })
+        if (asset.file && asset.file.size > MAX_IMPORT_BYTES_WARN) {
           toast.message(
             `Large file (${(asset.file.size / 1024 / 1024).toFixed(0)} MB) — import may take a moment`,
           )
         }
         registerAndPlaceAtPlayhead(asset)
+        void generateVideoThumbnails(asset).then(thumbnails => {
+          if (thumbnails.length > 0) useVideoEditorStore.getState().setAssetThumbnails(asset.id, thumbnails)
+        })
         setUrl('')
       } catch (err) {
         if (err instanceof MediaImportError) {

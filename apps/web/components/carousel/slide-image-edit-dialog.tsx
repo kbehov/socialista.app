@@ -12,6 +12,7 @@ import {
 import { Kbd } from '@/components/ui/kbd'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { displayImageUrl } from '@/lib/carousel/image-url'
 import { formatCredits } from '@/utils/format'
 import { ImageIcon, Loader2Icon, SparklesIcon } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
@@ -171,7 +172,7 @@ function SlideImageEditDialogBody({
         {imageUrl && !previewFailed ? (
           // eslint-disable-next-line @next/next/no-img-element -- editor preview of arbitrary/local URLs
           <img
-            src={imageUrl}
+            src={displayImageUrl(imageUrl)}
             alt=""
             className="size-full object-cover"
             onError={() => setPreviewFailed(true)}

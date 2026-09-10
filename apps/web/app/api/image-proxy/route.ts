@@ -6,12 +6,9 @@ const BROWSER_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 /**
- * Proxy remote images through the server so the export pipeline can draw them
- * onto a canvas without cross-origin restrictions.
- *
- * The export function replaces remote image URLs with /api/image-proxy?url=...
- * before serialising the slide to PNG. Responses are aggressively cached since
- * the same background image may be exported multiple times in a session.
+ * Proxy remote images through the server so canvas export / fetch can read
+ * them without CORS, and so hotlink-protected CDNs (TikTok) can be displayed.
+ * Display of Unsplash, Pixabay, fal, and R2 should use the original URL.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const rawUrl = request.nextUrl.searchParams.get('url')
@@ -21,16 +18,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return new NextResponse('Missing or invalid URL', { status: 400 })
   }
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15_000)
+
   let response: Response
   try {
     response = await fetch(url, {
-      signal: AbortSignal.timeout(15_000),
+      signal: controller.signal,
       headers: buildUpstreamHeaders(url),
       redirect: 'follow',
+      cache: 'no-store',
     })
   } catch {
+    clearTimeout(timer)
     return new NextResponse('Failed to fetch image', { status: 502 })
   }
+  clearTimeout(timer)
 
   if (!response.ok) {
     return new NextResponse('Upstream error', { status: response.status })
@@ -41,14 +44,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return new NextResponse('Not an image', { status: 400 })
   }
 
-  const body = await response.arrayBuffer()
-  return new NextResponse(body, {
-    headers: {
-      'Content-Type': contentType,
-      'Cache-Control': 'public, max-age=86400, immutable',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+  if (!response.body) {
+    return new NextResponse('Empty upstream response', { status: 502 })
+  }
+
+  const headers = new Headers()
+  headers.set('Content-Type', contentType)
+  headers.set('Cache-Control', 'public, max-age=86400, immutable')
+  headers.set('Access-Control-Allow-Origin', '*')
+  const contentLength = response.headers.get('content-length')
+  if (contentLength) headers.set('Content-Length', contentLength)
+
+  return new NextResponse(response.body, { headers })
 }
 
 /** Unwrap accidentally nested `/api/image-proxy?url=…` targets. */
