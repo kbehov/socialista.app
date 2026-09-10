@@ -17,6 +17,7 @@ import {
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
+  STUDIO_TOOL_ICON_BUTTON_CLASS,
 } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
@@ -48,6 +49,7 @@ import {
   VIDEO_RESOLUTION_DEFAULT,
   videoResolutionCostMultiplier,
   type Model,
+  type Preset,
   type VideoAspectRatio,
   type VideoResolution,
 } from "@socialista/types";
@@ -68,11 +70,9 @@ import {
   useTransition,
 } from "react";
 import { toast } from "sonner";
+import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
 import { VideoPromptAnatomy } from "./video-prompt-anatomy";
-import {
-  VIDEO_STUDIO_PLACEHOLDER_EXAMPLES,
-  VideoStudioStarters,
-} from "./video-studio-starters";
+import { StudioPreset } from "@/components/studio/prompt/studio-preset";
 
 const MAX_REFERENCE_IMAGES = 3;
 const DEFAULT_PLACEHOLDER =
@@ -116,6 +116,7 @@ export type VideoPromptSubmitResult = {
 
 export type VideoPromptInputProps = {
   models: Model[];
+  presets?: Preset[];
   initialAttachmentUrl?: string;
   initialAttachments?: AttachedMedia[];
   onSubmitOverride?: (result: VideoPromptSubmitResult) => void;
@@ -134,6 +135,7 @@ export type VideoPromptInputProps = {
 
 function VideoPromptComposer({
   models,
+  presets = [],
   initialAttachmentUrl,
   initialAttachments,
   onSubmitOverride,
@@ -265,8 +267,9 @@ function VideoPromptComposer({
 
   const animatedPlaceholderWords = useMemo(() => {
     if (!homeHero || placeholderProp || attachedImages.length > 0) return undefined;
-    return [...VIDEO_STUDIO_PLACEHOLDER_EXAMPLES];
-  }, [attachedImages.length, homeHero, placeholderProp]);
+    const examples = buildPresetPlaceholderExamples(presets);
+    return examples.length > 0 ? examples : undefined;
+  }, [attachedImages.length, homeHero, placeholderProp, presets]);
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -305,6 +308,11 @@ function VideoPromptComposer({
     [textInput],
   );
 
+  const setAttachments = useCallback((attachments: AttachedMedia[]) => {
+    dismissedAttachmentUrls.current.clear();
+    setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES));
+  }, []);
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
@@ -313,9 +321,10 @@ function VideoPromptComposer({
     studio?.registerPromptHandlers({
       insertAtCursor,
       setPrompt,
+      setAttachments,
       focusPrompt,
     });
-  }, [studio, insertAtCursor, setPrompt, focusPrompt]);
+  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt]);
 
   useEffect(() => {
     if (hideExtras) return;
@@ -548,12 +557,12 @@ function VideoPromptComposer({
         }
         aria-pressed={enhance}
         className={cn(
-          STUDIO_TOOL_BUTTON_CLASS,
+          STUDIO_TOOL_ICON_BUTTON_CLASS,
           enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
         )}
         disabled={pending}
         onClick={() => setEnhance((value) => !value)}
-        size="xs"
+        size="icon-xs"
         tooltip={
           enhance
             ? "Enhance on — AI refines your prompt before generating"
@@ -562,9 +571,6 @@ function VideoPromptComposer({
         type="button"
       >
         <WandSparklesIcon className="size-3.5 shrink-0" />
-        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-          {enhance ? "Enhance" : "Raw"}
-        </span>
       </PromptInputButton>
       <StudioSkillPicker
         target={PROMPT_KEYS.videoPrompt}
@@ -621,7 +627,9 @@ function VideoPromptComposer({
 
       {homeHero || hideExtras ? null : (
         <div className="mt-4 flex flex-col items-center gap-4">
-          <VideoStudioStarters disabled={pending} />
+          {studio ? (
+            <StudioPreset presets={presets} disabled={pending} onApply={studio.applyPreset} />
+          ) : null}
 
           <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
@@ -673,15 +681,18 @@ export function VideoPromptInput(props: VideoPromptInputProps) {
 
 const VideoGenerationPromptInput = ({
   models,
+  presets = [],
   initialAttachmentUrl,
 }: {
   models: Model[];
+  presets?: Preset[];
   initialAttachmentUrl?: string;
 }) => {
   return (
     <VideoPromptInput
       initialAttachmentUrl={initialAttachmentUrl}
       models={models}
+      presets={presets}
       homeHero
     />
   );

@@ -249,7 +249,3 @@ export const ANALYTICS_ROUTES = {
   GET_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary`,
   EXPORT_SUMMARY: (workspaceId: string) => `/workspaces/${workspaceId}/analytics/summary/export`,
 } as const
-
-export const WAITLIST_ROUTES = {
-  JOIN: '/waitlist',
-} as const

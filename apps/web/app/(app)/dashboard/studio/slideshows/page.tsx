@@ -2,9 +2,10 @@ import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { SlideshowStudioWorkspace } from '@/components/studio/slideshows/slideshow-studio-workspace'
 import { SLIDESHOW_LIST_PAGE_SIZE } from '@/constants/studio'
 import { getModels } from '@/services/models.service'
+import { getPresets } from '@/services/preset.service'
 import { getWorkspaceSlideshows } from '@/services/slideshow.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
-import { ModelType } from '@socialista/types'
+import { ModelType, PresetKind } from '@socialista/types'
 import { preload } from 'react-dom'
 
 export default async function SlideshowsPage() {
@@ -13,6 +14,12 @@ export default async function SlideshowsPage() {
   const contextPromise = getCurrentWorkspaceContext()
   const imageModelsPromise = getModels('limit=20&modelType=image&sort=-usageCount')
   const textModelsPromise = getModels(`limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`)
+  const presetsPromise = getPresets({
+    kind: PresetKind.SLIDESHOW,
+    active: true,
+    limit: 20,
+    sort: 'sortOrder',
+  })
   const slideshowsPromise = contextPromise.then(({ workspace, project }) => {
     if (!workspace) return null
     return getWorkspaceSlideshows(workspace.id, {
@@ -23,10 +30,11 @@ export default async function SlideshowsPage() {
     })
   })
 
-  const [{ workspace }, imageModelsRes, textModelsRes, slideshowsRes] = await Promise.all([
+  const [{ workspace }, imageModelsRes, textModelsRes, presetsRes, slideshowsRes] = await Promise.all([
     contextPromise,
     imageModelsPromise,
     textModelsPromise,
+    presetsPromise,
     slideshowsPromise,
   ])
 
@@ -43,6 +51,7 @@ export default async function SlideshowsPage() {
     <SlideshowStudioWorkspace
       models={models}
       textModels={textModels}
+      presets={presetsRes.success ? (presetsRes.data?.presets ?? []) : []}
       workspaceId={workspace.id}
       initialSlideshows={slideshows}
       initialError={error}

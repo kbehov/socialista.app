@@ -24,7 +24,6 @@ import postRoutes from '@/routes/post.routes.js'
 import { slideshowRoutes } from '@/routes/slideshow.routes.js'
 import userRoutes from '@/routes/user.routes.js'
 import { videoRoutes } from '@/routes/video.routes.js'
-import waitlistRoutes from '@/routes/waitlist.routes.js'
 import workspaceRoutes from '@/routes/workspace.routes.js'
 import { toHttpError } from '@/utils/common.utils.js'
 import { errorResponse } from '@/utils/http-response.js'
@@ -74,7 +73,6 @@ app.route('/skills', skillRoutes)
 app.route('/static-ad-templates', staticAdTemplateRoutes)
 app.route('/posts', postRoutes)
 app.route('/accounts', accountRoutes)
-app.route('/waitlist', waitlistRoutes)
 app.route('/cron', cronRoutes)
 serve(
   {

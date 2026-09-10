@@ -1,78 +1,101 @@
-import { AudienceTabs } from '@/app/(home)/_components/landing/audience-tabs'
-import { BrandMarquee } from '@/app/(home)/_components/landing/brand-marquee'
-import { LandingFaq } from '@/app/(home)/_components/landing/landing-faq'
-import { LandingFeatures } from '@/app/(home)/_components/landing/landing-features'
-import { LandingFinalCta } from '@/app/(home)/_components/landing/landing-final-cta'
-import { LandingHero } from '@/app/(home)/_components/landing/landing-hero'
-import { LandingShowcase } from '@/app/(home)/_components/landing/landing-showcase'
-import { LandingWorkflow } from '@/app/(home)/_components/landing/landing-workflow'
-import styles from '@/app/(home)/_components/landing/landing.module.css'
-import { ProblemStrip } from '@/app/(home)/_components/landing/problem-strip'
-import { RoadmapSection } from '@/app/(home)/_components/landing/roadmap-section'
-import { SiteFooter } from '@/app/(home)/_components/landing/site-footer'
-import { SiteHeader } from '@/app/(home)/_components/landing/site-header'
-import { StatsBand } from '@/app/(home)/_components/landing/stats-band'
+import { FeatureChapter } from '@/components/landing/feature-chapter'
+import { MEASURE_CHAPTER, PAGE_METADATA, PUBLISH_CHAPTER } from '@/components/landing/content'
+import { LandingFaq } from '@/components/landing/landing-faq'
+import { LandingFinalCta } from '@/components/landing/landing-final-cta'
+import { LandingHero } from '@/components/landing/landing-hero'
+import { LandingPricing } from '@/components/landing/landing-pricing'
+import { MockupAnalytics } from '@/components/landing/mockups/mockup-analytics'
+import { MockupComposer } from '@/components/landing/mockups/mockup-composer'
+import { PlatformsMarquee } from '@/components/landing/platforms-marquee'
+import { StudioTour } from '@/components/landing/studio-tour'
+import { formatProductPrice } from '@/lib/pricing'
+import { getPolarProducts } from '@/services/billing.service'
+import type { PolarProduct } from '@socialista/types'
 import type { Metadata } from 'next'
-
-const title = 'Socialista — The social content studio you actually want to open'
-const description =
-  'Generate images and ads, design carousels, edit short video, and schedule everything from one workspace. Join the Socialista waitlist for early access.'
 
 export const metadata: Metadata = {
   title: {
-    absolute: title,
+    absolute: PAGE_METADATA.title,
   },
-  description,
+  description: PAGE_METADATA.description,
   openGraph: {
-    title,
-    description,
+    title: PAGE_METADATA.title,
+    description: PAGE_METADATA.description,
     type: 'website',
     siteName: 'Socialista',
   },
   twitter: {
     card: 'summary_large_image',
-    title,
-    description,
+    title: PAGE_METADATA.title,
+    description: PAGE_METADATA.description,
   },
   alternates: {
     canonical: '/',
   },
 }
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Socialista',
-  applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Web',
-  description,
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-    availability: 'https://schema.org/PreOrder',
-  },
+function buildJsonLd(products: PolarProduct[] | undefined) {
+  const offers =
+    products && products.length > 0
+      ? products.map(product => {
+          const pricing = formatProductPrice(product)
+          const price = product.prices.find(p => p.priceAmount != null && p.priceAmount > 0)
+          return {
+            '@type': 'Offer',
+            name: product.name,
+            price: price?.priceAmount != null ? (price.priceAmount / 100).toFixed(2) : pricing.amount,
+            priceCurrency: price?.priceCurrency?.toUpperCase() ?? 'USD',
+            availability: 'https://schema.org/InStock',
+          }
+        })
+      : undefined
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Socialista',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description: PAGE_METADATA.description,
+    ...(offers ? { offers } : {}),
+  }
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const polarResponse = await getPolarProducts({ recurringOnly: true })
+  const products = polarResponse.data?.products ?? []
+  const jsonLd = buildJsonLd(polarResponse.data?.products)
+
   return (
-    <div className={styles.shell}>
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <SiteHeader />
-      <main>
-        <LandingHero />
-        <BrandMarquee />
-        <StatsBand />
-        <ProblemStrip />
-        <LandingShowcase />
-        <LandingWorkflow />
-        <LandingFeatures />
-        <AudienceTabs />
-        <RoadmapSection />
-        <LandingFaq />
-        <LandingFinalCta />
-      </main>
-      <SiteFooter />
-    </div>
+      <LandingHero />
+      <PlatformsMarquee />
+      <StudioTour />
+      <FeatureChapter
+        id="publish"
+        eyebrow={PUBLISH_CHAPTER.eyebrow}
+        title={PUBLISH_CHAPTER.title}
+        description={PUBLISH_CHAPTER.description}
+        points={PUBLISH_CHAPTER.points}
+        visual={<MockupComposer />}
+      />
+      <FeatureChapter
+        id="measure"
+        eyebrow={MEASURE_CHAPTER.eyebrow}
+        title={MEASURE_CHAPTER.title}
+        description={MEASURE_CHAPTER.description}
+        points={MEASURE_CHAPTER.points}
+        visual={<MockupAnalytics />}
+        reverse
+        alt
+      />
+      <LandingPricing
+        products={products}
+        loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}
+      />
+      <LandingFaq />
+      <LandingFinalCta />
+    </>
   )
 }

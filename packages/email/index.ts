@@ -8,5 +8,4 @@ export {
   sendBillingRenewedEmail,
   sendBillingSuccessEmail,
 } from './services/billing.js'
-export { sendWaitlistEmail } from './services/waitlist.js'
 export { getAppUrl } from './lib/env.js'

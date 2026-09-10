@@ -55,4 +55,12 @@ export const STUDIO_TOOL_BUTTON_ACTIVE_CLASS = cn(
   '[&_svg]:text-foreground/70',
 )
 
+export const STUDIO_TOOL_ICON_BUTTON_CLASS = cn(
+  STUDIO_TOOL_BUTTON_CLASS,
+  'size-6 gap-0 px-0',
+)
+
+/** Max width for studio prompt composers (home hero and centered layouts). */
+export const STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS = 'max-w-[48rem]'
+
 export const STUDIO_TOOL_CHEVRON_CLASS = 'size-3! shrink-0 opacity-45'

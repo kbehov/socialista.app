@@ -38,6 +38,7 @@ import {
 import { StudioAnimatedPlaceholder } from "@/components/studio/prompt/studio-animated-placeholder";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
+  STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
@@ -845,7 +846,8 @@ export function StudioPromptComposer({
       onDragOver={handleStudioImageDragOver}
       onDrop={handleStudioImageDrop}
       className={cn(
-        "relative w-full scroll-mt-10 transition-[transform,opacity] duration-300",
+        "relative mx-auto w-full scroll-mt-10 transition-[transform,opacity] duration-300",
+        STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS,
         highlighted && "animate-in fade-in-0 duration-300",
         className,
       )}
@@ -1000,7 +1002,7 @@ export function StudioPromptComposer({
             footerClassName,
           )}
         >
-          <PromptInputTools className="min-w-0 flex-wrap gap-1.5">
+          <PromptInputTools className="min-w-0 flex-nowrap gap-1 overflow-x-auto scrollbar-none">
             {attachSources.length > 0 ? (
               <StudioAttachMenu
                 sources={attachSources}

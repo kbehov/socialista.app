@@ -1,6 +1,10 @@
+'use client'
+
 import * as React from "react"
+import Image from "next/image"
 
 import { cn } from "@/lib/utils"
+import { commitHaptic } from "@/utils/haptics"
 
 function Card({
   className,
@@ -92,6 +96,72 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+type PresetCardProps = {
+  title: string
+  description: string
+  image?: string
+  imagePosition?: string
+  previewClassName?: string
+  onSelect?: () => void
+  className?: string
+}
+
+function PresetCard({
+  title,
+  description,
+  image,
+  imagePosition,
+  previewClassName,
+  onSelect,
+  className,
+}: PresetCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onSelect?.()
+        commitHaptic({ vibrateDuration: 8 })
+      }}
+      className={cn(
+        "group flex w-[7.25rem] shrink-0 flex-col text-left sm:w-[7.75rem]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        className
+      )}
+    >
+      <div
+        className={cn(
+          "relative aspect-[4/5] w-full overflow-hidden rounded-xl",
+          "ring-1 ring-black/[0.06] transition-[transform,box-shadow] duration-200",
+          "group-hover:shadow-[0_6px_18px_-8px_rgba(0,0,0,0.18)]",
+          "group-active:scale-[0.98] motion-reduce:group-active:scale-100",
+          "dark:ring-white/[0.08]",
+          previewClassName
+        )}
+      >
+        {image ? (
+          <Image
+            src={image}
+            alt=""
+            fill
+            sizes="124px"
+            className={cn("select-none object-cover", imagePosition)}
+          />
+        ) : null}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(0,0,0,0.28)_100%)]"
+        />
+      </div>
+      <p className="mt-2 text-[12px] font-medium leading-[1.25] tracking-[-0.02em] text-foreground">
+        {title}
+      </p>
+      <p className="mt-0.5 line-clamp-2 text-[11px] leading-[1.35] tracking-[-0.01em] text-black/44 dark:text-white/44">
+        {description}
+      </p>
+    </button>
+  )
+}
+
 export {
   Card,
   CardHeader,
@@ -100,4 +170,6 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  PresetCard,
 }
+export type { PresetCardProps }

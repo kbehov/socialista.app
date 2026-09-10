@@ -36,13 +36,13 @@ export const dashboardSurface = {
   emptyHero: 'rounded-lg border border-border/55 bg-muted/10 dark:border-border/75',
   emptyIcon: 'size-9 rounded-md border border-border/55 bg-background dark:border-border/75 [&_svg]:size-3.5',
 
-  /** Primary page-header CTA — compact, rectangular, Linear */
+  /** Primary page-header CTA — compact, rounded-xl to match studio headers */
   createCta:
-    'h-8 rounded-md px-3 text-[13px] font-medium shadow-none transition-colors active:scale-[0.98] motion-reduce:active:scale-100',
+    'h-8 rounded-xl px-3 text-[13px] font-medium shadow-none transition-colors active:scale-[0.98] motion-reduce:active:scale-100',
 
   /** Compact outline control — filters, refresh, export */
   toolbarControl:
-    'h-7 rounded-md border border-border/55 bg-background px-2.5 text-[12px] font-medium shadow-none dark:border-border/70 hover:bg-muted/40 hover:text-foreground active:scale-[0.98] motion-reduce:active:scale-100',
+    'h-7 rounded-xl border border-border/55 bg-background px-2.5 text-[12px] font-medium shadow-none dark:border-border/70 hover:bg-muted/40 hover:text-foreground active:scale-[0.98] motion-reduce:active:scale-100',
 
   metricLabel: 'text-[11px] font-medium text-muted-foreground',
   metricValue: 'text-xl font-medium tracking-[-0.022em] tabular-nums text-foreground',

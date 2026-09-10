@@ -7,25 +7,15 @@ import {
 } from '@/components/studio/studio-home-hero-actions'
 import {
   StudioHomeHero,
-  type StudioHomeFeatureCard,
 } from '@/components/studio/studio-home-hero'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { mapPresetToFeatureCard } from '@/lib/studio/preset-media'
 import type { Preset } from '@socialista/types'
 import { useMemo, type ReactNode } from 'react'
 
 type ImageStudioHeroProps = {
   presets: Preset[]
   children: ReactNode
-}
-
-function mapPresetToFeatureCard(preset: Preset): StudioHomeFeatureCard {
-  return {
-    id: preset._id,
-    title: preset.name,
-    description: preset.description,
-    prompt: preset.prompt,
-    image: preset.image,
-  }
 }
 
 export function ImageStudioHero({ presets, children }: ImageStudioHeroProps) {

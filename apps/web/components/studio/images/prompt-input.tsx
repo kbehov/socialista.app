@@ -21,6 +21,7 @@ import {
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
+  STUDIO_TOOL_ICON_BUTTON_CLASS,
 } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
@@ -61,7 +62,7 @@ import {
   useTransition,
 } from "react";
 import { toast } from "sonner";
-import { ImageStudioPresets } from "./image-studio-presets";
+import { StudioPreset } from "@/components/studio/prompt/studio-preset";
 import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
 import { ImagePromptAnatomy } from "./prompt-anatomy";
 
@@ -430,12 +431,12 @@ function ImagePromptComposer({
               aria-label={enhance ? "Prompt enhancement on" : "Prompt enhancement off"}
               aria-pressed={enhance}
               className={cn(
-                STUDIO_TOOL_BUTTON_CLASS,
+                STUDIO_TOOL_ICON_BUTTON_CLASS,
                 enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
               )}
               disabled={pending}
               onClick={() => setEnhance((value) => !value)}
-              size="xs"
+              size="icon-xs"
               tooltip={
                 enhance
                   ? "Enhance on — AI refines your prompt before generating"
@@ -444,9 +445,6 @@ function ImagePromptComposer({
               type="button"
             >
               <WandSparklesIcon className="size-3.5 shrink-0" />
-              <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-                {enhance ? "Enhance" : "Raw"}
-              </span>
             </PromptInputButton>
             <StudioSkillPicker
               target={PROMPT_KEYS.imagePrompt}
@@ -479,7 +477,9 @@ function ImagePromptComposer({
 
       {homeHero || hideExtras ? null : (
         <div className="mt-4 flex flex-col items-center gap-4">
-          <ImageStudioPresets presets={presets} disabled={pending} />
+          {studio ? (
+            <StudioPreset presets={presets} disabled={pending} onApply={studio.applyPreset} />
+          ) : null}
 
           <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">

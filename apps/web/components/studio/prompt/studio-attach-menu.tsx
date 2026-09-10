@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import {
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
+  STUDIO_TOOL_ICON_BUTTON_CLASS,
 } from "@/components/studio/prompt/studio-composer-surface";
 import { getWorkspaceProducts } from "@/services/product.service";
 import { getProjectId, useProjectStore } from "@/store/project.store";
@@ -206,28 +207,31 @@ export function StudioAttachMenu({
     }));
 
   const attachButtonClass = cn(
-    STUDIO_TOOL_BUTTON_CLASS,
+    STUDIO_TOOL_ICON_BUTTON_CLASS,
     attachments.length > 0 && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
     className,
   );
 
   const attachTooltip = disabled
     ? (disabledReason ?? "Attach references")
-    : "Attach reference images";
+    : attachments.length > 0
+      ? `Attach references (${attachments.length} attached)`
+      : "Attach reference images";
 
   const trigger = (
     <StudioInputActionTooltip label={attachTooltip}>
       <PromptInputActionMenuTrigger
-        aria-label="Attach references"
+        aria-label={
+          attachments.length > 0
+            ? `Attach references, ${attachments.length} attached`
+            : "Attach references"
+        }
         className={attachButtonClass}
         disabled={disabled}
-        size="xs"
+        size="icon-xs"
         type="button"
       >
         <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
-        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-          {attachments.length > 0 ? attachments.length : "Attach"}
-        </span>
       </PromptInputActionMenuTrigger>
     </StudioInputActionTooltip>
   );
@@ -238,14 +242,11 @@ export function StudioAttachMenu({
         aria-label="Attach references"
         className={attachButtonClass}
         disabled
-        size="xs"
+        size="icon-xs"
         tooltip="No attach sources"
         type="button"
       >
         <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
-        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-          Attach
-        </span>
       </PromptInputButton>
     );
   }

@@ -1,3 +1,4 @@
+import type { StudioHomeFeatureCard } from '@/components/studio/studio-home-hero'
 import type { AttachedMedia } from '@/components/files/attach-media/types'
 import type { Preset } from '@socialista/types'
 
@@ -19,4 +20,14 @@ export function truncatePresetPrompt(text: string, max = 84): string {
 
 export function buildPresetPlaceholderExamples(presets: Preset[]): string[] {
   return presets.map(preset => truncatePresetPrompt(preset.prompt))
+}
+
+export function mapPresetToFeatureCard(preset: Preset): StudioHomeFeatureCard {
+  return {
+    id: preset._id,
+    title: preset.name,
+    description: preset.description,
+    prompt: preset.prompt,
+    image: preset.image,
+  }
 }

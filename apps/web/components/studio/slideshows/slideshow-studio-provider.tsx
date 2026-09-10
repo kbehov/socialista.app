@@ -1,6 +1,7 @@
 'use client'
 
 import { commitHaptic } from '@/utils/haptics'
+import type { Preset } from '@socialista/types'
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
 
 type PromptHandlers = {
@@ -13,6 +14,7 @@ type SlideshowStudioContextValue = {
   composerRef: React.RefObject<HTMLDivElement | null>
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
+  applyPreset: (preset: Preset) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -49,14 +51,24 @@ export function SlideshowStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
+  const applyPreset = useCallback(
+    (preset: Preset) => {
+      handlersRef.current?.setPrompt(preset.prompt)
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
       setPrompt,
+      applyPreset,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyPreset, registerPromptHandlers],
   )
 
   return <SlideshowStudioContext.Provider value={value}>{children}</SlideshowStudioContext.Provider>

@@ -4,11 +4,12 @@ import { SlideshowList } from '@/components/carousel/slideshow-list'
 import { SlideshowPromptComposer } from '@/components/carousel/slideshow-prompt-composer'
 import { SlideshowStudioHero } from '@/components/studio/slideshows/slideshow-studio-hero'
 import { SlideshowStudioProvider } from '@/components/studio/slideshows/slideshow-studio-provider'
-import type { Model, SlideshowSummaryResponse } from '@socialista/types'
+import type { Model, Preset, SlideshowSummaryResponse } from '@socialista/types'
 
 type SlideshowStudioWorkspaceProps = {
   models: Model[]
   textModels: Model[]
+  presets: Preset[]
   workspaceId: string
   initialSlideshows: SlideshowSummaryResponse[]
   initialError?: string | null
@@ -18,6 +19,7 @@ type SlideshowStudioWorkspaceProps = {
 export function SlideshowStudioWorkspace({
   models,
   textModels,
+  presets,
   workspaceId,
   initialSlideshows,
   initialError = null,
@@ -26,9 +28,9 @@ export function SlideshowStudioWorkspace({
   return (
     <SlideshowStudioProvider>
       <div className="image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col">
-        <SlideshowStudioHero>
+        <SlideshowStudioHero presets={presets}>
           <section id="slideshow-studio-composer" aria-label="Create a slideshow">
-            <SlideshowPromptComposer models={models} textModels={textModels} />
+            <SlideshowPromptComposer models={models} textModels={textModels} presets={presets} />
           </section>
         </SlideshowStudioHero>
 

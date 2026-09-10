@@ -145,7 +145,6 @@ Core entities in `@socialista/db`:
 | **Inspiration** | Inspiration models        | Inspiration/reference content.                                          |
 | **Model**       | `ModelModel`              | AI model catalog (provider, cost, capabilities).                        |
 | **Invitation**  | `InvitationModel`         | Workspace invites.                                                      |
-| **Waitlist**    | `WaitlistModel`           | Public waitlist signups.                                                |
 
 **Naming distinction:** `oauthAccounts` on User ≠ `Account` model. The former is **app auth**; the latter is a **managed social channel** used for publishing.
 

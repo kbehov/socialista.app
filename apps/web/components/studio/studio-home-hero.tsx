@@ -13,10 +13,10 @@ import {
   CarouselItem,
   useCarousel,
 } from '@/components/ui/carousel'
+import { PresetCard } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { commitHaptic } from '@/utils/haptics'
+import { STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import { ChevronRightIcon } from 'lucide-react'
-import Image from 'next/image'
 import type { ReactNode } from 'react'
 
 const HERO_SIZES = '(max-width: 768px) 100vw, 1024px'
@@ -74,59 +74,6 @@ function FeatureCarouselNav() {
       )}
     >
       <ChevronRightIcon className="size-4" strokeWidth={1.75} />
-    </button>
-  )
-}
-
-function FeatureCard({
-  card,
-  onSelect,
-}: {
-  card: StudioHomeFeatureCard
-  onSelect: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        onSelect()
-        commitHaptic({ vibrateDuration: 8 })
-      }}
-      className={cn(
-        'group flex w-[9.75rem] shrink-0 flex-col text-left sm:w-[10.5rem]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-      )}
-    >
-      <div
-        className={cn(
-          'relative aspect-[3/4] w-full overflow-hidden rounded-2xl',
-          'ring-1 ring-black/[0.06] transition-[transform,box-shadow] duration-200',
-          'group-hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.2)]',
-          'group-active:scale-[0.98] motion-reduce:group-active:scale-100',
-          'dark:ring-white/[0.08]',
-          card.previewClassName,
-        )}
-      >
-        {card.image ? (
-          <Image
-            src={card.image}
-            alt=""
-            fill
-            sizes="168px"
-            className={cn('select-none object-cover', card.imagePosition)}
-          />
-        ) : null}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(0,0,0,0.28)_100%)]"
-        />
-      </div>
-      <p className="mt-2.5 text-[13px] font-medium leading-[1.25] tracking-[-0.02em] text-foreground">
-        {card.title}
-      </p>
-      <p className="mt-0.5 text-[12px] leading-[1.4] tracking-[-0.01em] text-black/44 dark:text-white/44">
-        {card.description}
-      </p>
     </button>
   )
 }
@@ -223,7 +170,7 @@ export function StudioHomeHero({
           <div aria-hidden className="studio-home-hero-noise pointer-events-none absolute inset-0 z-[3]" />
 
           <div className="relative z-10 flex items-center justify-center px-4 py-7 sm:px-6 sm:py-9">
-            <div className="w-full max-w-[42rem]">{children}</div>
+            <div className={cn('w-full', STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS)}>{children}</div>
           </div>
         </div>
 
@@ -238,10 +185,17 @@ export function StudioHomeHero({
               }}
             >
               <div className="relative w-full min-w-0 pr-10 sm:pr-12">
-                <CarouselContent className="-ml-3.5 ml-0" aria-label="Presets">
+                <CarouselContent className="-ml-2.5 ml-0" aria-label="Presets">
                   {featureCards.map(card => (
-                    <CarouselItem key={card.id} className="basis-auto pl-3.5">
-                      <FeatureCard card={card} onSelect={() => onFeatureSelect(card)} />
+                    <CarouselItem key={card.id} className="basis-auto pl-2.5">
+                      <PresetCard
+                        title={card.title}
+                        description={card.description}
+                        image={card.image}
+                        imagePosition={card.imagePosition}
+                        previewClassName={card.previewClassName}
+                        onSelect={() => onFeatureSelect(card)}
+                      />
                     </CarouselItem>
                   ))}
                 </CarouselContent>

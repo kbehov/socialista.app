@@ -29,7 +29,6 @@ export { SlideshowModel } from "./models/slideshow.model.js";
 export { UgcProjectModel } from "./models/ugc-project.model.js";
 export { UserModel } from "./models/user.model.js";
 export { VideoModel } from "./models/video.model.js";
-export { WaitlistModel } from "./models/waitlist.model.js";
 export { WorkspaceModel } from "./models/workspace.model.js";
 export * from "./repo/image.repo.js";
 export * from "./repo/influencer.repo.js";
@@ -51,7 +50,6 @@ export * from "./repo/slideshow.repo.js";
 export * from "./repo/ugc-project.repo.js";
 export * from "./repo/user.repo.js";
 export * from "./repo/video.repo.js";
-export * from "./repo/waitlist.repo.js";
 export * from "./repo/workspace.repo.js";
 export {
   type IImage,
@@ -256,12 +254,6 @@ export {
   type UpdateInfluencerCloneRequestInput,
   type UpdateInfluencerInput,
 } from "./types/influencer.types.js";
-export type {
-  CreateWaitlistEntryInput,
-  IWaitlistEntry,
-  WaitlistDocument,
-} from "./types/waitlist.types.js";
-
 export {
   UserRole,
   UserStatus,
