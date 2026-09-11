@@ -56,7 +56,7 @@ export function SiteHeader() {
             <Link href="/auth/signin">Sign in</Link>
           </Button>
           <Button size="sm" className="hidden h-8 px-3.5 text-sm sm:inline-flex" asChild>
-            <Link href="/auth/signup">Get started</Link>
+            <Link href="/auth/signup">Start free</Link>
           </Button>
           <MobileNav />
         </div>

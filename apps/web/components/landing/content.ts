@@ -1,20 +1,69 @@
 export const LANDING_NAV = [
+  { href: '/#outcomes', label: 'Why Socialista' },
   { href: '/#studio', label: 'Studio' },
-  { href: '/#publish', label: 'Publish' },
-  { href: '/#workspace', label: 'Workspace' },
+  { href: '/#platform', label: 'Platform' },
   { href: '/#pricing', label: 'Pricing' },
   { href: '/#faq', label: 'FAQ' },
 ] as const
 
 export const HERO = {
-  eyebrow: 'Social content studio',
-  titleBefore: 'The fastest way to create',
-  titleAccent: 'social content',
+  titleLine1: 'The fastest way to',
+  titleLine2: 'create social content.',
   description:
-    'Generate images, ads, carousels, UGC, and video. Connect the accounts. Schedule from the same desk. See what actually landed.',
+    'Generate stills, ads, carousels, and UGC — then schedule to every channel from one workspace. No exports. No extra tools.',
+  googleCta: 'Continue with Google',
+  primaryCta: 'Start creating free',
 } as const
 
-export const HERO_PROOF_POINTS = ['Free to start', 'No credit card', 'Works in your browser'] as const
+export const HERO_PROOF_POINTS = ['Free to start', 'No credit card', 'Cancel anytime'] as const
+
+export const HERO_AUDIENCE = {
+  title: 'Built for real content teams',
+  subtitle: 'Founders, creators, and growth marketers.',
+} as const
+
+export const HERO_SLIDES = [
+  {
+    id: 'ugc',
+    layout: 'caption' as const,
+    hook: 'POV: you posted today',
+    line: 'without opening five tabs',
+    likes: '128.0K',
+    views: '410.0K',
+  },
+  {
+    id: 'video',
+    layout: 'caption' as const,
+    hook: 'Shot in the browser.',
+    line: 'Trim, caption, export — then schedule.',
+    likes: '86.4K',
+    views: '275.0K',
+  },
+  {
+    id: 'carousel',
+    layout: 'card' as const,
+    hook: '1. Create once',
+    line: 'Native ratios. A caption per channel.',
+    likes: '64.2K',
+    views: '198.0K',
+  },
+  {
+    id: 'ads',
+    layout: 'caption' as const,
+    hook: 'Catalog in. Ad out.',
+    line: 'Headline and CTA stay in-frame.',
+    likes: '52.8K',
+    views: '163.0K',
+  },
+  {
+    id: 'talent',
+    layout: 'caption' as const,
+    hook: 'A face your brand owns',
+    line: 'Reused across stills and UGC.',
+    likes: '91.5K',
+    views: '312.0K',
+  },
+] as const
 
 export const PLATFORMS = [
   { id: 'instagram' as const, label: 'Instagram' },
@@ -29,191 +78,184 @@ export const PLATFORMS = [
 
 export type PlatformId = (typeof PLATFORMS)[number]['id']
 
+export const PAIN_POINTS = {
+  eyebrow: 'The problem',
+  title: 'Social teams are drowning in tools',
+  description:
+    'Most teams stitch together Canva, a scheduler, an AI image app, and a spreadsheet. Every handoff costs time, money, and consistency.',
+  items: [
+    {
+      pain: 'Hours lost to exports and reformatting',
+      solution: 'Native ratios and platform previews — create once, adapt per channel.',
+    },
+    {
+      pain: '$400+ per month across disconnected tools',
+      solution: 'Studio, composer, and analytics in one subscription.',
+    },
+    {
+      pain: 'Generic AI that ignores your brand',
+      solution: 'Brand voice, catalog, and skills loaded into every generation.',
+    },
+    {
+      pain: 'No idea what actually drove results',
+      solution: 'Performance sits beside the creative that produced it.',
+    },
+  ],
+} as const
+
+export const OUTCOMES = {
+  eyebrow: 'The outcome',
+  title: 'More output. Less overhead.',
+  description: 'Teams use Socialista to ship faster, spend less, and keep creative on-brand at scale.',
+  stats: [
+    {
+      value: '10+',
+      unit: 'hrs',
+      label: 'saved per week',
+      description: 'No more exporting, resizing, and re-uploading between apps.',
+    },
+    {
+      value: '3×',
+      unit: '',
+      label: 'faster to publish',
+      description: 'From prompt to scheduled post in one flow — not five tabs.',
+    },
+    {
+      value: '50+',
+      unit: '',
+      label: 'assets per session',
+      description: 'Bulk-generate images, ads, and carousels with brand context loaded.',
+    },
+    {
+      value: '1',
+      unit: '',
+      label: 'workspace for everything',
+      description: 'Replace your stack of creation, scheduling, and reporting tools.',
+    },
+  ],
+} as const
+
+export const BENTO = {
+  eyebrow: 'Platform',
+  title: 'Everything you need to win on social',
+  description: 'Create in the studio. Publish to every channel. Measure what moves the needle.',
+  cells: [
+    {
+      id: 'create',
+      label: 'Create',
+      title: 'AI studio for every format',
+      description: 'Images, static ads, carousels, UGC, and short-form video — sized for the feed, not a crop later.',
+      span: 'large' as const,
+    },
+    {
+      id: 'publish',
+      label: 'Publish',
+      title: 'Write once, ship everywhere',
+      description: 'Per-platform variants, live previews, and a calendar in the same composer.',
+      span: 'medium' as const,
+    },
+    {
+      id: 'measure',
+      label: 'Measure',
+      title: 'See what landed',
+      description: 'Reach and engagement by channel, tied to the post that produced it.',
+      span: 'medium' as const,
+    },
+    {
+      id: 'brand',
+      label: 'Brand',
+      title: 'Context that sticks',
+      description: 'Voice, catalog, and reusable skills so every run stays on-model.',
+      span: 'small' as const,
+    },
+    {
+      id: 'team',
+      label: 'Team',
+      title: 'Built for collaboration',
+      description: 'Shared workspaces, files, and products — invite your whole team.',
+      span: 'small' as const,
+    },
+  ],
+} as const
+
 export const STUDIO_INDEX = {
   eyebrow: 'Studio',
-  title: 'Every format, one desk',
-  description: 'Images, ads, carousels, video, influencers, and UGC — without switching tools.',
+  title: 'Every format. One desk.',
+  description: 'From product stills to talking-head UGC — generate in the ratios you actually post.',
 } as const
 
 export const STUDIO_CARDS = [
   {
     id: 'images' as const,
-    href: '/#images',
+    href: '/#studio',
     label: 'Images',
-    title: 'Prompt studio for social',
-    description: 'Channel sizes in the control row. Vibes for UGC, product, and launches.',
+    title: 'Feed-ready stills',
+    description: 'UGC, product, and lifestyle — in Stories, Reels, and feed ratios.',
   },
   {
     id: 'videos' as const,
-    href: '/#videos',
+    href: '/#studio',
     label: 'Videos',
-    title: 'Timeline in the browser',
-    description: 'Trim, caption, and export short-form MP4s. No desktop app.',
+    title: 'Short-form in the browser',
+    description: 'Trim, caption, and export MP4s. No desktop app required.',
   },
   {
     id: 'slideshows' as const,
-    href: '/#slideshows',
+    href: '/#studio',
     label: 'Slideshows',
-    title: 'Carousels you would post',
-    description: 'Slide-by-slide type and layout — not a template dump.',
+    title: 'Carousels that convert',
+    description: 'Slide-by-slide typography and layout — built to hold attention.',
   },
   {
     id: 'ads' as const,
-    href: '/#ads',
+    href: '/#studio',
     label: 'Static ads',
-    title: 'Catalog in, frame out',
-    description: 'Headlines and CTAs stay on the product, not pasted on after.',
+    title: 'Catalog to creative',
+    description: 'Pull product data in. Headlines and CTAs stay in the frame.',
   },
   {
     id: 'influencers' as const,
-    href: '/#influencers',
+    href: '/#studio',
     label: 'Influencers',
-    title: 'Faces you own',
-    description: 'Persistent on-brand talent, reused across stills and UGC.',
+    title: 'Talent you own',
+    description: 'Persistent on-brand faces, reused across stills and UGC.',
   },
   {
     id: 'ugc' as const,
-    href: '/#ugc',
+    href: '/#studio',
     label: 'UGC ads',
     title: 'Script to talking clip',
-    description: 'Script, talent, scene stills, phone-native output.',
+    description: 'Phone-native output that looks shot on device — because it converts.',
   },
 ] as const
 
-export const FEATURE_IMAGES = {
-  eyebrow: 'Images',
-  title: 'Stills that already look like the feed',
-  description:
-    'Generate in the ratios you actually post. Product, lifestyle, and UGC vibes — not a generic image box.',
-  points: [
-    { title: 'Native ratios', description: 'Stories, Reels, feed, and landscape without a crop afterthought.' },
-    { title: 'Brand-aware', description: 'Workspace context steers look and copy so output stays on-model.' },
-  ],
-} as const
-
-export const FEATURE_VIDEOS = {
-  eyebrow: 'Videos',
-  title: 'Short-form, edited in the tab',
-  description: 'A timeline for hooks, captions, and exports. Cut in the browser, ship as MP4.',
-  points: [
-    { title: 'Trim and caption', description: 'On-screen type that matches the platform, not a burned-in afterthought.' },
-    { title: 'Export ready', description: '1080p MP4s sized for Reels, Shorts, and TikTok.' },
-  ],
-} as const
-
-export const FEATURE_SLIDESHOWS = {
-  eyebrow: 'Slideshows',
-  title: 'Carousels with real typography',
-  description: 'Build slide-by-slide. Tight type, consistent spacing, swipe that holds attention.',
-} as const
-
-export const FEATURE_ADS = {
-  eyebrow: 'Static ads',
-  title: 'Product frames that sell',
-  description: 'Pull from the catalog. Headline, offer, and CTA sit in the layout — Meta-ready without a designer round-trip.',
-} as const
-
-export const FEATURE_INFLUENCERS = {
-  eyebrow: 'Influencers',
-  title: 'A roster you can reuse',
-  description:
-    'Clone talent once, then cast them in stills, ads, and UGC. Same face, same brand, every format.',
-} as const
-
-export const FEATURE_UGC = {
-  eyebrow: 'UGC ads',
-  title: 'Talking clips, phone-native',
-  description: 'Script the hook, pick the talent, generate the scene. Output looks like it was shot on a phone — because that is the format that converts.',
-} as const
-
-export const FEATURE_ACCOUNTS = {
-  eyebrow: 'Accounts',
-  title: 'Connect the channels you publish to',
-  description:
-    'OAuth for Instagram, TikTok, LinkedIn, and the rest. Tokens stay secure; channels stay in the workspace.',
-  points: [
-    { title: 'One workspace', description: 'Every connected account lives next to the posts it will receive.' },
-    { title: 'Status you can see', description: 'Connected, pending, or needs attention — before you hit schedule.' },
-  ],
-} as const
-
-export const FEATURE_POSTS = {
-  eyebrow: 'Posts',
-  title: 'Write once, adapt per network',
-  description:
-    'A composer with per-platform variants, previews that match what ships, and a calendar in the same view.',
-  points: [
-    { title: 'Multi-platform', description: 'Captions and formats can differ. Previews follow each network.' },
-    { title: 'Calendar', description: 'Drafts, scheduled, and published — this week, in one place.' },
-  ],
-} as const
-
-export const FEATURE_ANALYTICS = {
-  eyebrow: 'Analytics',
-  title: 'What shipped, what moved',
-  description: 'Reach and posts by account, next to the work — not buried in a third dashboard.',
-  points: [
-    { title: 'By channel', description: 'See which accounts carried the week without exporting a CSV.' },
-    { title: 'Tied to posts', description: 'Performance sits beside the creative that produced it.' },
-  ],
-} as const
-
-export const FEATURE_CONTEXT = {
-  eyebrow: 'Context & skills',
-  title: 'Memory the studio actually reads',
-  description: 'Brand voice, catalog, and custom skills — so generation stays on-model instead of generic.',
-  points: [
-    { title: 'Brand voice', description: 'Tone and rules the models follow on every run.' },
-    { title: 'Skills', description: 'Reusable instructions for hooks, CTAs, and format-specific jobs.' },
-  ],
-} as const
-
-export const FEATURE_GENERATIONS = {
-  eyebrow: 'Generations',
-  title: 'Every run, still openable',
-  description: 'Inputs, outputs, and status — pick up a still, ad, or clip where you left it.',
-} as const
-
 export const WORKFLOW = {
   eyebrow: 'How it works',
-  title: 'Create, publish, measure',
+  title: 'Three steps to shipped content',
+  description: 'No exports. No re-uploads. No context switching.',
   steps: [
     {
       n: '01',
       title: 'Create in the studio',
-      description: 'Images, ads, carousels, UGC, or video — with brand context already loaded.',
+      description: 'Generate images, ads, carousels, or video with your brand context already loaded.',
     },
     {
       n: '02',
-      title: 'Publish to the accounts',
-      description: 'Composer, variants, and a calendar. Schedule without exporting files.',
+      title: 'Schedule from the composer',
+      description: 'Adapt captions per platform, preview what ships, and queue from one calendar.',
     },
     {
       n: '03',
-      title: 'See what landed',
-      description: 'Analytics beside the post. Generations you can reopen and rerun.',
+      title: 'Measure and iterate',
+      description: 'See reach and engagement beside the creative. Reopen any generation and rerun.',
     },
   ],
 } as const
 
-export const SLIDESHOW_SLIDES = [
-  { kicker: '01 · Hook', title: 'Stop scrolling.', caption: 'First slide earns the swipe.' },
-  { kicker: '02 · Proof', title: 'What changed.', caption: 'Product in the real scene.' },
-  { kicker: '03 · Offer', title: 'This week only.', caption: 'Price and constraint, not noise.' },
-  { kicker: '04 · CTA', title: 'Shop the drop.', caption: 'One action. Large type.' },
-] as const
-
-export const AD_CARDS = [
-  { product: 'Aero Watch', price: '$240', cta: 'Shop now' },
-  { product: 'Nova Runner', price: '$160', cta: 'Buy' },
-  { product: 'Pulse Audio', price: '$89', cta: 'Add to bag' },
-  { product: 'Sol Glass', price: '$48', cta: 'Get yours' },
-] as const
-
 export const PRICING_SECTION = {
   eyebrow: 'Pricing',
   title: 'Plans that scale with your output',
-  description: 'Start free. Upgrade when your team and volume need more credits, seats, and connected accounts.',
+  description: 'Start free. Upgrade when your team needs more credits, seats, and connected accounts.',
   fallbackTitle: 'Plans live in your workspace',
   fallbackDescription: 'Create an account to see current pricing, credits, and team limits for your region.',
 } as const
@@ -227,7 +269,12 @@ export const FAQ_ITEMS = [
   {
     question: 'Which platforms do you support?',
     answer:
-      'Instagram, TikTok, YouTube, X, LinkedIn, Pinterest, Facebook, and Threads for publishing. Creation formats follow each channel’s native specs.',
+      "Instagram, TikTok, YouTube, X, LinkedIn, Pinterest, Facebook, and Threads for publishing. Creation formats follow each channel's native specs.",
+  },
+  {
+    question: 'How much time can I save?',
+    answer:
+      'Teams typically cut 10+ hours per week by eliminating exports between creation tools, schedulers, and analytics dashboards. Everything lives in one workspace.',
   },
   {
     question: 'Does Socialista include scheduling?',
@@ -244,39 +291,33 @@ export const FAQ_ITEMS = [
     answer:
       'Yes. Workspaces support multiple members, shared files, products, and brand context. Invite teammates from settings.',
   },
-  {
-    question: 'What happens to my data?',
-    answer:
-      'Your content, accounts, and workspace data belong to you. We do not sell your data or use your creatives to train public models.',
-  },
 ] as const
 
 export const FINAL_CTA = {
-  title: 'Open the studio',
-  description: 'Create your workspace and ship your first post today.',
+  title: 'Ship your first post today',
+  description: 'Create your free workspace. No credit card. Start generating in under two minutes.',
+  cta: 'Get started free',
 } as const
 
 export const FOOTER = {
-  tagline: 'Social content studio for creators, agencies, and brands.',
+  tagline: 'The social content studio for creators, agencies, and brands who ship at scale.',
   columns: [
     {
       title: 'Product',
       links: [
+        { href: '/#outcomes', label: 'Why Socialista' },
         { href: '/#studio', label: 'Studio' },
-        { href: '/#publish', label: 'Publish' },
-        { href: '/#workspace', label: 'Workspace' },
+        { href: '/#platform', label: 'Platform' },
         { href: '/#pricing', label: 'Pricing' },
       ],
     },
     {
       title: 'Studio',
       links: [
-        { href: '/#images', label: 'Images' },
-        { href: '/#videos', label: 'Videos' },
-        { href: '/#ads', label: 'Static ads' },
-        { href: '/#ugc', label: 'UGC ads' },
-        { href: '/#influencers', label: 'Influencers' },
-        { href: '/#slideshows', label: 'Slideshows' },
+        { href: '/#studio', label: 'Images' },
+        { href: '/#studio', label: 'Videos' },
+        { href: '/#studio', label: 'Static ads' },
+        { href: '/#studio', label: 'UGC ads' },
       ],
     },
     {
@@ -293,5 +334,5 @@ export const FOOTER = {
 export const PAGE_METADATA = {
   title: 'Socialista — The fastest way to create social content',
   description:
-    'Generate images, ads, carousels, and UGC. Connect accounts, schedule posts, and track performance — in one workspace.',
+    'Generate images, ads, carousels, and UGC. Connect accounts, schedule posts, and track ROI — in one workspace. Save time, cut tool costs, ship faster.',
 } as const

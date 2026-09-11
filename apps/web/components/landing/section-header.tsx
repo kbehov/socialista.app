@@ -28,8 +28,8 @@ export function SectionHeader({
           'font-semibold tracking-[-0.03em] text-balance',
           eyebrow ? 'mt-3' : '',
           size === 'lg'
-            ? 'text-[2rem] leading-[1.12] sm:text-5xl'
-            : 'text-[1.75rem] leading-[1.15] sm:text-4xl',
+            ? 'text-[2.125rem] leading-[1.1] sm:text-[2.75rem]'
+            : 'text-[1.875rem] leading-[1.12] sm:text-[2.375rem]',
         )}
       >
         {title}

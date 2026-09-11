@@ -24,12 +24,16 @@
   z-index: 40;
   height: 3.5rem;
   border-bottom: 1px solid transparent;
-  background-color: var(--background);
-  transition: border-color 180ms ease-out;
+  background-color: color-mix(in oklch, var(--background) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  transition:
+    border-color 180ms ease-out,
+    background-color 180ms ease-out;
 }
 
 .headerScrolled {
   border-bottom-color: var(--border);
+  background-color: color-mix(in oklch, var(--background) 92%, transparent);
 }
 
 .headerInner {
@@ -144,37 +148,116 @@
 .heroStage {
   position: relative;
   overflow: hidden;
+  overflow-x: clip;
+}
+
+.heroGridBg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklch, var(--foreground) 6%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 20%, transparent 75%);
+  opacity: 0.45;
 }
 
 .heroGlow {
   position: absolute;
   inset: -3rem 0 auto;
-  height: min(28rem, 62vh);
+  height: min(32rem, 68vh);
   margin-inline: auto;
-  max-width: 46rem;
+  max-width: 52rem;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   pointer-events: none;
   background: radial-gradient(
-    ellipse 70% 58% at 50% 42%,
-    color-mix(in oklch, var(--foreground) 5%, transparent),
-    transparent 70%
+    ellipse 72% 60% at 50% 38%,
+    color-mix(in oklch, var(--foreground) 6%, transparent),
+    transparent 72%
   );
-  filter: blur(36px);
+  filter: blur(40px);
+}
+
+.heroInner {
+  max-width: 80rem;
+}
+
+.heroLayout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.75rem;
+  justify-items: center;
+}
+
+@media (min-width: 640px) {
+  .heroLayout {
+    gap: 2.25rem;
+  }
+}
+
+.heroCopy {
+  max-width: 44rem;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .heroTitle {
-  font-size: clamp(2.25rem, 5.4vw, 4.35rem);
+  font-size: clamp(2.4rem, 5.6vw, 4.05rem);
   font-weight: 600;
-  line-height: 1.04;
-  letter-spacing: -0.038em;
+  line-height: 1.02;
+  letter-spacing: -0.048em;
   text-wrap: balance;
 }
 
-.heroAccent {
+.heroDescription {
+  max-width: 36rem;
+  margin-inline: auto;
+  margin-top: 0.95rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
   color: var(--muted-foreground);
-  font-weight: 500;
+  text-wrap: pretty;
+}
+
+@media (min-width: 640px) {
+  .heroDescription {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+  }
+}
+
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.heroGoogleCta {
+  height: 2.75rem;
+  padding-inline: 1.2rem;
+  border-radius: 999px;
+  background-color: var(--background);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--foreground) 6%, transparent);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.heroPrimaryCta {
+  min-width: 10.5rem;
+}
+
+.heroVisual {
+  min-width: 0;
+  width: 100%;
 }
 
 .proofList {
@@ -183,6 +266,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem 1.25rem;
+  margin-top: 1.1rem;
 }
 
 .proofItem {
@@ -204,19 +288,242 @@
   color: var(--success);
 }
 
-.heroCollage {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-top: 2.75rem;
+.dark .heroGoogleCta {
+  background-color: color-mix(in oklch, var(--background) 88%, var(--foreground));
 }
 
-@media (min-width: 768px) {
-  .heroCollage {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.85rem;
-    margin-top: 3.25rem;
+/* ——— Pain points ——— */
+
+.painSection {
+  background-color: color-mix(in oklch, var(--surface-0) 40%, var(--background));
+}
+
+.painGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .painGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
   }
+}
+
+@media (min-width: 1024px) {
+  .painGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.painCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.35rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 8px);
+  background-color: var(--background);
+  transition:
+    border-color 180ms ease-out,
+    box-shadow 220ms ease-out;
+}
+
+.painCard:hover {
+  border-color: color-mix(in oklch, var(--foreground) 14%, var(--border));
+  box-shadow: 0 20px 44px -28px color-mix(in oklch, var(--foreground) 18%, transparent);
+}
+
+.painLabel {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--muted-foreground) 85%, transparent);
+}
+
+.painText {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.015em;
+  color: color-mix(in oklch, var(--foreground) 75%, var(--muted-foreground));
+}
+
+.painDivider {
+  display: flex;
+  align-items: center;
+  margin-block: 1rem;
+  padding-block: 0.25rem;
+}
+
+.painDivider::before,
+.painDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--border);
+}
+
+.painDivider svg {
+  margin-inline: 0.65rem;
+  flex-shrink: 0;
+}
+
+.solutionLabel {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--success);
+}
+
+.solutionText {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+/* ——— Outcomes ——— */
+
+.outcomesGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .outcomesGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .outcomesGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+}
+
+.outcomeCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 8px);
+  background-color: var(--background);
+}
+
+.outcomeValue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+
+.outcomeNumber {
+  font-size: clamp(2.25rem, 4vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.outcomeUnit {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  letter-spacing: -0.02em;
+}
+
+.outcomeLabel {
+  margin-top: 0.65rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.outcomeDescription {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+/* ——— Bento ——— */
+
+.bentoGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .bentoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto;
+    gap: 1.15rem;
+  }
+
+  .bentoCellLarge {
+    grid-column: 1 / -1;
+  }
+
+  .bentoCellMedium {
+    min-height: 0;
+  }
+
+  .bentoCellSmall {
+    min-height: 0;
+  }
+}
+
+.bentoCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 10px);
+  background-color: var(--background);
+}
+
+.bentoCardCompact {
+  padding: 1.35rem 1.4rem;
+}
+
+.bentoCardCopy {
+  padding: 1.35rem 1.4rem 0;
+}
+
+.bentoCardCompact .bentoTitle {
+  margin-top: 0.5rem;
+}
+
+.bentoTitle {
+  margin-top: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.bentoDescription {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+
+.bentoCardVisual {
+  margin-top: 1.25rem;
+  padding: 0 1rem 1rem;
+}
+
+.bentoCardVisualCompact {
+  margin-top: 1rem;
+  padding: 0 0.75rem 0.75rem;
+  min-height: 0;
 }
 
 .mediaCard {
@@ -230,53 +537,38 @@
     0 22px 44px -24px color-mix(in oklch, var(--foreground) 22%, transparent);
 }
 
-.heroCardTall {
-  grid-column: span 2;
-  aspect-ratio: 3 / 4;
+.bentoMasonry {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 5.5rem);
+  gap: 0.55rem;
 }
 
-.heroCardSquare {
-  grid-column: span 2;
-  aspect-ratio: 1;
+@media (min-width: 640px) {
+  .bentoMasonry {
+    grid-template-rows: repeat(2, 6.5rem);
+    gap: 0.65rem;
+  }
 }
 
-.heroCardWide {
+.bentoMasonryA {
   grid-column: span 2;
-  aspect-ratio: 4 / 5;
+  grid-row: span 2;
 }
 
-@media (min-width: 768px) {
-  .heroCardTall {
-    grid-column: span 2;
-    aspect-ratio: 3 / 4;
-  }
+.bentoMasonryB {
+  grid-column: span 1;
+  grid-row: span 1;
+}
 
-  .heroCardA {
-    transform: rotate(-2.4deg);
-  }
+.bentoMasonryC {
+  grid-column: span 1;
+  grid-row: span 2;
+}
 
-  .heroCardB {
-    transform: rotate(1.8deg);
-    margin-top: 1.75rem;
-  }
-
-  .heroCardC {
-    transform: rotate(-1.2deg);
-  }
-
-  .heroCardD {
-    transform: rotate(2deg);
-    margin-top: 2.25rem;
-  }
-
-  .heroCardE {
-    transform: rotate(-1.6deg);
-  }
-
-  .heroCardF {
-    transform: rotate(1.4deg);
-    margin-top: 1.25rem;
-  }
+.bentoMasonryD {
+  grid-column: span 2;
+  grid-row: span 1;
 }
 
 /* ——— Studio index ——— */
@@ -856,6 +1148,14 @@
   color: color-mix(in oklch, var(--background) 65%, transparent);
 }
 
+.finalCtaButton svg {
+  transition: transform 180ms ease-out;
+}
+
+.finalCtaButton:hover svg {
+  transform: translateX(2px);
+}
+
 .finalFaces {
   display: flex;
   justify-content: center;
@@ -909,16 +1209,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroCardA,
-  .heroCardB,
-  .heroCardC,
-  .heroCardD,
-  .heroCardE,
-  .heroCardF {
-    transform: none;
-    margin-top: 0;
-  }
-
   .studioCard:hover {
     transform: none;
   }

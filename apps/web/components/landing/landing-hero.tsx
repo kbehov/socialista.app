@@ -1,91 +1,103 @@
 'use client'
 
+import { AUTH_ERROR_MESSAGES, GoogleIcon } from '@/components/forms/auth-form-shared'
 import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { persistBrowserTimezoneCookie } from '@/utils/timezone'
+import { Check, Loader2 } from 'lucide-react'
+import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { HERO, HERO_PROOF_POINTS } from './content'
 import { FadeIn, Stagger, StaggerItem } from './fade-in'
+import { HeroAudience } from './hero-audience'
+import { HeroCarousel } from './hero-carousel'
 import styles from './landing.module.css'
-import { IMG, VIDEO } from './media'
-import { MediaFrame } from './media-frame'
 import { SectionInner } from './section'
-
-const HERO_CARDS = [
-  { key: 'a', src: IMG.p1, video: VIDEO.tea, className: `${styles.heroCardTall} ${styles.heroCardA}`, priority: true },
-  { key: 'b', src: IMG.p5, className: `${styles.heroCardWide} ${styles.heroCardB}`, priority: true },
-  { key: 'c', src: IMG.p3, video: VIDEO.beach, className: `${styles.heroCardTall} ${styles.heroCardC}`, priority: true },
-  { key: 'd', src: IMG.fashion1, className: `${styles.heroCardSquare} ${styles.heroCardD}` },
-  { key: 'e', src: IMG.p7, className: `${styles.heroCardTall} ${styles.heroCardE}` },
-  { key: 'f', src: IMG.p8, video: VIDEO.hoop, className: `${styles.heroCardWide} ${styles.heroCardF}` },
-] as const
 
 export function LandingHero() {
   return (
-    <section className={`${styles.heroStage} pt-14 pb-10 sm:pt-20 sm:pb-14 lg:pt-24 lg:pb-16`}>
+    <section className={`${styles.heroStage} pt-10 pb-12 sm:pt-12 sm:pb-16 lg:pt-14 lg:pb-20`}>
       <div className={styles.heroGlow} aria-hidden="true" />
+      <div className={styles.heroGridBg} aria-hidden="true" />
 
-      <SectionInner>
-        <Stagger className="relative z-10 mx-auto max-w-3xl text-center" delay={0.02} immediate>
-          <StaggerItem>
-            <p className={styles.eyebrowPill}>
-              <span className={styles.eyebrowDot} />
-              {HERO.eyebrow}
-            </p>
-          </StaggerItem>
+      <SectionInner className={styles.heroInner}>
+        <div className={styles.heroLayout}>
+          <Stagger className={styles.heroCopy} delay={0.02} immediate>
+            <StaggerItem>
+              <h1 className={styles.heroTitle}>
+                {HERO.titleLine1}
+                <br />
+                {HERO.titleLine2}
+              </h1>
+            </StaggerItem>
 
-          <StaggerItem>
-            <h1 className={`${styles.heroTitle} mt-6`}>
-              {HERO.titleBefore} <span className={styles.heroAccent}>{HERO.titleAccent}</span>
-            </h1>
-          </StaggerItem>
+            <StaggerItem>
+              <p className={styles.heroDescription}>{HERO.description}</p>
+            </StaggerItem>
 
-          <StaggerItem>
-            <p className="mx-auto mt-5 max-w-xl text-[0.9375rem] leading-7 text-pretty text-muted-foreground sm:text-base sm:leading-8">
-              {HERO.description}
-            </p>
-          </StaggerItem>
+            <StaggerItem>
+              <div className={styles.heroCtas}>
+                <HeroGoogleButton />
+                <Button asChild size="lg" className={`${styles.heroPrimaryCta} h-11 rounded-full px-6`}>
+                  <Link href="/auth/signup">{HERO.primaryCta}</Link>
+                </Button>
+              </div>
+            </StaggerItem>
 
-          <StaggerItem>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild size="lg" className="h-11 px-6">
-                <Link href="/auth/signup">Get started</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="h-11 px-6">
-                <Link href="/auth/signin">Sign in</Link>
-              </Button>
-            </div>
-          </StaggerItem>
+            <StaggerItem>
+              <ul className={styles.proofList}>
+                {HERO_PROOF_POINTS.map(point => (
+                  <li key={point} className={styles.proofItem}>
+                    <span className={styles.proofCheck} aria-hidden="true">
+                      <Check className="size-2.5" strokeWidth={3} />
+                    </span>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </StaggerItem>
 
-          <StaggerItem>
-            <ul className={`${styles.proofList} mt-6`}>
-              {HERO_PROOF_POINTS.map(point => (
-                <li key={point} className={styles.proofItem}>
-                  <span className={styles.proofCheck} aria-hidden="true">
-                    <Check className="size-2.5" strokeWidth={3} />
-                  </span>
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </StaggerItem>
-        </Stagger>
+            <StaggerItem>
+              <HeroAudience />
+            </StaggerItem>
+          </Stagger>
 
-        <FadeIn delay={0.22} immediate>
-          <div className={styles.heroCollage} aria-hidden="true">
-            {HERO_CARDS.map(card => (
-              <MediaFrame
-                key={card.key}
-                src={card.src}
-                video={'video' in card ? card.video : undefined}
-                className={`${styles.mediaCard} ${card.className}`}
-                sizes="(max-width: 768px) 50vw, 240px"
-                priority={'priority' in card && card.priority}
-              />
-            ))}
-          </div>
-        </FadeIn>
+          <FadeIn delay={0.16} immediate className={styles.heroVisual}>
+            <HeroCarousel />
+          </FadeIn>
+        </div>
       </SectionInner>
     </section>
+  )
+}
+
+function HeroGoogleButton() {
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true)
+      persistBrowserTimezoneCookie()
+      await signIn('google', { callbackUrl: '/dashboard' })
+    } catch {
+      toast.error(AUTH_ERROR_MESSAGES.default)
+      setIsGoogleLoading(false)
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="lg"
+      className={`h-11 rounded-full px-5 ${styles.heroGoogleCta}`}
+      onClick={handleGoogleSignIn}
+      disabled={isGoogleLoading}
+    >
+      {isGoogleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon className="size-4" />}
+      {HERO.googleCta}
+    </Button>
   )
 }

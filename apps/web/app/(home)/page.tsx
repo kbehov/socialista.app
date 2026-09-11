@@ -1,8 +1,10 @@
 import { PAGE_METADATA } from '@/components/landing/content'
-import { PlatformFeatures, StudioFeatures, WorkspaceFeatures } from '@/components/landing/feature-sections'
+import { LandingBento } from '@/components/landing/landing-bento'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
+import { LandingOutcomes } from '@/components/landing/landing-outcomes'
+import { LandingPainPoints } from '@/components/landing/landing-pain-points'
 import { LandingPricing } from '@/components/landing/landing-pricing'
 import { LandingWorkflow } from '@/components/landing/landing-workflow'
 import { PlatformsMarquee } from '@/components/landing/platforms-marquee'
@@ -70,11 +72,11 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingHero />
       <PlatformsMarquee />
+      <LandingPainPoints />
+      <LandingOutcomes />
+      <LandingBento />
       <StudioIndex />
-      <StudioFeatures />
       <LandingWorkflow />
-      <PlatformFeatures />
-      <WorkspaceFeatures />
       <LandingPricing products={products} loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')} />
       <LandingFaq />
       <LandingFinalCta />

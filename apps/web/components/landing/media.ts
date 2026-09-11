@@ -35,6 +35,7 @@ export const VIDEO = {
   tea: 'https://cdn.pixabay.com/video/2023/06/17/167569-837244635_tiny.mp4',
   horses: 'https://cdn.pixabay.com/video/2024/03/31/206294_small.mp4',
   hoop: 'https://cdn.pixabay.com/video/2024/04/18/208442_small.mp4',
+  motion: 'https://cdn.pixabay.com/video/2024/03/31/206293_small.mp4',
 } as const
 
 export const TALENT = [

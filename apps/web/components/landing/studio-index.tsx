@@ -17,7 +17,7 @@ const CARD_MEDIA: Record<(typeof STUDIO_CARDS)[number]['id'], { src: string; vid
 
 export function StudioIndex() {
   return (
-    <Section id="studio" border>
+    <Section id="studio" border alt>
       <FadeIn>
         <SectionHeader
           eyebrow={STUDIO_INDEX.eyebrow}

@@ -1,10 +1,28 @@
 # AGENTS.md
 
-Instructions for coding agents working in the **Socialista** repository — a social media content studio and publishing workspace.
+Instructions for coding agents working in the **Socialista** repository — a social content studio and publishing workspace.
+
+## What Socialista is
+
+**Socialista** is a social content studio for creators, agencies, and brands. Users create multi-format creatives, publish to connected channels, and measure performance — without exporting files between tools.
+
+**Positioning (product copy):** “The fastest way to create social content.” Tagline: social content studio for creators, agencies, and brands.
+
+**Core loop:** Create → Publish → Measure
+
+| Stage | What users do |
+| ----- | ------------- |
+| **Create** | Generate images, static ads, carousels/slideshows, short video, AI influencers, and UGC talking clips — steered by brand voice, product catalog, and reusable skills |
+| **Publish** | Connect social accounts, compose per-platform variants, schedule from a calendar, publish without leaving the workspace |
+| **Measure** | Workspace + per-account analytics next to the posts and generations that produced them |
+
+**Who it is for:** Teams that need on-brand social creatives at volume (stills, ads, carousels, UGC, video), shared workspace context (brands, products, skills), and one place to schedule and review performance.
+
+**What “workspace” means here:** A team/org container with members, plan limits/credits, connected social accounts, studio assets, and optional **projects** (scoped sub-containers inside a workspace). Generation and publishing stay workspace-scoped; many queries also accept `projectId`.
 
 ## Project overview
 
-Socialista helps teams create, schedule, and publish social content inside workspaces: connected social accounts, a multi-platform post composer, AI image/static-ad generation, slideshows, videos, product catalogs, and file storage. The codebase is a **pnpm + Turborepo monorepo**.
+The codebase is a **pnpm + Turborepo monorepo** that powers that product: dashboard + studio UI, REST API, MongoDB models, shared wire types, and Trigger.dev background jobs (AI generation, publish, analytics, token refresh).
 
 | Area            | Choice                                                                 |
 | --------------- | ---------------------------------------------------------------------- |
@@ -47,10 +65,10 @@ socialista.app/
 | Package              | Role                                                                                                      |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | `@socialista/web`    | UI, NextAuth session, server actions, social OAuth connector, Trigger.dev client hooks, calls the API     |
-| `@socialista/api`    | Auth tokens, CRUD (accounts, posts, generations, products, …), file/R2 uploads, workspace/billing         |
+| `@socialista/api`    | Auth tokens, CRUD (accounts, posts, generations, brands, products, skills, influencers, UGC, …), R2, billing |
 | `@socialista/db`     | Models, repos, filters, connection helpers — used by API and Trigger tasks                                |
-| `@socialista/types`  | Cross-app request/response types, `TASK_IDS`, aspect ratios, static-ad styles, account/post DTOs          |
-| `@socialista/trigger`| Realtime image & static-ad generation tasks; providers (fal / Vercel AI); prompt builders                 |
+| `@socialista/types`  | Cross-app DTOs & constants (`TASK_IDS`, ratios, `PromptKey`, account/post DTOs)                           |
+| `@socialista/trigger`| AI generation (image, static-ad, video, slideshow, influencer, UGC), publish, analytics, token refresh   |
 
 ## Commands
 
@@ -127,30 +145,62 @@ Apps load `.env` themselves. **Do not add `dotenv` to shared library packages** 
 - **Do not push** unless the user explicitly asks.
 - Never skip hooks, force-push to main, or amend commits you did not create.
 
+## Feature map (product → code)
+
+Use this when deciding where a change belongs:
+
+| Feature | User value | Primary surface |
+| ------- | ---------- | --------------- |
+| **Images** | Prompt studio; native social ratios; brand-aware stills | `studio/images/`, image Trigger tasks |
+| **Static ads** | Product catalog → framed ads with headline / offer / CTA in-layout | `studio/images/static-ads/` |
+| **Slideshows** | Carousel editor + AI slideshow generation; publish as carousel posts | `studio/slideshows/` |
+| **Videos** | Browser timeline (trim/caption/export MP4) + AI video generation | `studio/videos/` |
+| **Influencers** | Persistent AI personas (generate/clone); reuse across stills & UGC | `studio/influencers/` |
+| **UGC ads** | Script → talent → scene stills → phone-native talking clips (audio/video takes) | `studio/ugc/` |
+| **Accounts** | OAuth-connected social channels for publishing | `accounts/`, `lib/connector/` |
+| **Posts** | Multi-platform composer, variants, calendar, schedule/publish | `posts/`, `components/posts/` |
+| **Analytics** | Workspace overview + per-account insights (synced via Trigger) | `analytics/`, `accounts/analytics/[id]` |
+| **Context & skills** | Brands (voice/logo/colors), Products (catalog), Skills (prompt instructions by `PromptKey`) | `context/brands|products|skills` |
+| **Generations** | AI run history; reopen / continue from prior runs | `generations/` |
+| **Files** | Workspace media library on R2 | `files/` |
+| **Projects** | Named scopes inside a workspace (sidebar `ProjectSwitcher`) | `Project` model; many list APIs take `projectId` |
+| **Settings / billing** | Members, Polar plans (credits, seats, accounts, scheduled posts) | `settings/`, `upgrade/` |
+
+Landing copy for these features lives in `apps/web/components/landing/content.ts` — keep product language consistent when changing marketing or empty states.
+
 ## Domain model
 
 Core entities in `@socialista/db`:
 
-| Entity          | Model                     | Purpose                                                                 |
-| --------------- | ------------------------- | ----------------------------------------------------------------------- |
-| **User**        | `UserModel`               | App user. `oauthAccounts` = sign-in providers (Google, GitHub, etc.).   |
-| **Workspace**   | `WorkspaceModel`          | Team/org container: members, plan limits, usage, billing.               |
-| **Account**     | `AccountModel`            | Social platform channel connected to a workspace for publishing.        |
-| **Post**        | `PostModel`               | Draft / scheduled / published post targeting one account + provider.    |
-| **Generation**  | `GenerationModel`         | Persisted AI run record (image, static-ad, video) + Trigger run metadata.|
-| **Product**     | `ProductModel`            | Catalog product (URL extract + manual fields) for ads/studio.           |
-| **Image**       | `ImageModel` / collections| Generated & uploaded images, collections/folders.                       |
-| **Slideshow**   | `SlideshowModel`          | Multi-slide canvas compositions.                                        |
-| **Video**       | `VideoModel`              | Timeline-based video projects.                                          |
-| **Inspiration** | Inspiration models        | Inspiration/reference content.                                          |
-| **Model**       | `ModelModel`              | AI model catalog (provider, cost, capabilities).                        |
-| **Invitation**  | `InvitationModel`         | Workspace invites.                                                      |
+| Entity            | Model                              | Purpose                                                                 |
+| ----------------- | ---------------------------------- | ----------------------------------------------------------------------- |
+| **User**          | `UserModel`                        | App user. `oauthAccounts` = sign-in providers (Google, GitHub, etc.).   |
+| **Workspace**     | `WorkspaceModel`                   | Team/org container: members, plan limits, usage, billing.               |
+| **Project**       | `ProjectModel`                     | Scoped container inside a workspace (name, timezone, default/archived). |
+| **Account**       | `AccountModel`                     | Social platform channel connected to a workspace for publishing.        |
+| **Post**          | `PostModel`                        | Draft / scheduled / published post targeting one account + provider.    |
+| **Generation**    | `GenerationModel`                  | Persisted AI run record + Trigger run metadata (image, ad, video, …).   |
+| **Brand**         | `BrandModel`                       | Brand context (name, voice/description, logo, colors) for studio runs.  |
+| **Product**       | `ProductModel`                     | Catalog product (URL extract + manual fields) for ads / UGC / studio.   |
+| **Skill**         | `SkillModel`                       | Reusable prompt instructions keyed by `PromptKey` / target.             |
+| **Influencer**    | `InfluencerModel`                  | AI persona roster (generate / clone); identity for stills & UGC.        |
+| **UgcProject**    | `UgcProjectModel`                  | Multi-step UGC pipeline (product → scenes → avatar → script → video).   |
+| **Image**         | `ImageModel` / collections         | Generated & uploaded images, collections/folders.                       |
+| **Slideshow**     | `SlideshowModel`                   | Multi-slide canvas compositions.                                        |
+| **Video**         | `VideoModel`                       | Timeline-based video projects.                                          |
+| **Notification**  | `NotificationModel`                | In-app notifications for workspace users.                               |
+| **Account analytics** | `AccountAnalyticsSnapshotModel` | Synced performance snapshots per connected account.                     |
+| **Inspiration**   | Inspiration models                 | Inspiration/reference content (also used in manager ops).               |
+| **Model**         | `ModelModel`                       | AI model catalog (provider, cost, capabilities).                        |
+| **Invitation**    | `InvitationModel`                  | Workspace invites.                                                      |
 
 **Naming distinction:** `oauthAccounts` on User ≠ `Account` model. The former is **app auth**; the latter is a **managed social channel** used for publishing.
 
 **Post vs Generation:** Posts are social publishables (draft → scheduled → published). Generations are AI job history (studio runs), not publish payloads.
 
-Credits/limits are enforced on the workspace (checked in Trigger tasks before generation).
+**Context vs Studio:** Brands, products, and skills are **inputs** the studio reads. Influencers and UGC projects are **studio outputs / assets** that can feed posts.
+
+Credits/limits are enforced on the workspace (checked in Trigger tasks before generation). Skills are injected into generation via shared Trigger helpers (`tasks/shared/skills.ts`).
 
 ### Account & post shapes (agents)
 
@@ -163,24 +213,36 @@ Credits/limits are enforced on the workspace (checked in Trigger tasks before ge
 
 ## Product surface (dashboard)
 
-Under `apps/web/app/(app)/dashboard/`:
+Under `apps/web/app/(app)/dashboard/`. Sidebar IA roughly: **Platform** (Analytics / Accounts / Posts) → **Studio** (six tools) → **Workspace** (Context & skills / Generations). Files remain a primary media home (`DASHBOARD_ROUTES.HOME` → `/dashboard/files`).
 
-| Area              | Path                         | Notes                                                                 |
-| ----------------- | ---------------------------- | --------------------------------------------------------------------- |
-| Accounts          | `accounts/`                  | Connect / manage social channels; OAuth callback handling             |
-| Posts             | `posts/`, `posts/create/`    | List + calendar views, filters; multi-platform composer               |
-| Generations       | `generations/`               | Workspace AI run history (image / static-ad / video)                  |
-| Studio — images   | `studio/images/`             | Prompt studio + realtime generation runs (`[runId]`)                  |
-| Studio — ads      | `studio/images/static-ads/`  | Product-aware static ad generation                                    |
-| Studio — slides   | `studio/slideshows/`         | Slideshow editor                                                      |
-| Studio — video    | `studio/videos/`             | Video editor                                                          |
-| Products          | `products/`                  | Product catalog (create via URL extract or form)                      |
-| Files             | `files/`, `folders/`         | Workspace file browser                                                |
-| Upgrade           | `upgrade/`                   | Polar paywall / plan upgrade                                          |
+| Area                 | Path                              | Notes                                                                 |
+| -------------------- | --------------------------------- | --------------------------------------------------------------------- |
+| Analytics            | `analytics/` (also dashboard root)| Workspace performance overview                                        |
+| Accounts             | `accounts/`                       | Connect / manage social channels; OAuth callback handling             |
+| Account analytics    | `accounts/analytics/[id]`         | Per-channel insights                                                  |
+| Posts                | `posts/`, `posts/create/`         | List + calendar; multi-platform composer                              |
+| Studio — images      | `studio/images/`                  | Prompt studio + realtime runs (`[runId]`)                             |
+| Studio — ads         | `studio/images/static-ads/`       | Product-aware static ad generation                                    |
+| Studio — slides      | `studio/slideshows/`              | Carousel editor + AI slideshow runs                                   |
+| Studio — video       | `studio/videos/`                  | Timeline editor + AI video / captions / export                        |
+| Studio — influencers | `studio/influencers/`             | Persona library; create / clone                                       |
+| Studio — UGC         | `studio/ugc/`                     | UGC project wizard (script → stills → audio/video)                    |
+| Context              | `context/`                        | Hub for brands, products, skills                                      |
+| Brands               | `context/brands/`                 | Brand voice / logo / colors                                           |
+| Products             | `context/products/`               | Catalog (URL extract or form); old `/dashboard/products` redirects    |
+| Skills               | `context/skills/`                 | Reusable prompt instructions                                          |
+| Generations          | `generations/`                    | Workspace AI run history                                              |
+| Files                | `files/`                          | Workspace file browser / folders                                      |
+| Notifications        | `notifications/`                  | In-app notification center                                            |
+| Settings             | `settings/`, `members/`, `billing/` | Workspace settings, team, billing                                   |
+| Account (user)       | `account/`                        | Signed-in user profile                                                |
+| Upgrade              | `upgrade/`                        | Polar paywall / plan upgrade                                          |
 
-Route constants live in `apps/web/constants/app-routes.ts` (`DASHBOARD_ROUTES`). Keep sidebar active-state helpers in sync when adding paths.
+Route constants live in `apps/web/constants/app-routes.ts` (`DASHBOARD_ROUTES`). Keep sidebar active-state helpers in sync when adding paths. Command palette mirrors create/nav for studio tools including UGC and influencers.
 
-Web talks to the API via `apps/web/lib/api.ts` (Bearer + `x-user-id`). Domain clients live in `apps/web/services/`. Studio Trigger flows use colocated `_actions/` and hooks (`use-generation-run`, `use-static-ad-generation-run`).
+Web talks to the API via `apps/web/lib/api.ts` (Bearer + `x-user-id`). Domain clients live in `apps/web/services/`. Studio Trigger flows use colocated `_actions/` and hooks (e.g. `use-generation-run`, `use-static-ad-generation-run`).
+
+Internal **manager** (`/manager/…`) is ops-only (inspirations, models, files) — separate from the user dashboard.
 
 ### Publishing UI (posts & accounts)
 
@@ -238,7 +300,7 @@ const users = await UserModel.find({ status: 'active' })
 ## `@socialista/types` conventions
 
 - Shared **wire** types for web ↔ API ↔ Trigger (payloads, responses, constants).
-- Put new cross-package constants here (e.g. `TASK_IDS`, `ASPECT_RATIOS`, `STATIC_AD_MODEL`, `ConnectProvider`).
+- Put new cross-package constants here (e.g. `TASK_IDS`, `ASPECT_RATIOS`, `STATIC_AD_MODEL`, `ConnectProvider`, `PromptKey`).
 - Account/post DTOs omit secrets; use `AccountSummary` for lean list rows when the UI does not need tokens/scopes/metadata.
 - Build after changes: `pnpm --filter @socialista/types run build`.
 
@@ -253,14 +315,21 @@ packages/trigger/src/
 ├── providers/                # fal, Vercel AI image generators
 ├── services/                 # upload helpers
 └── tasks/
-    ├── image/                # generate-image-realtime, generate-static-ad-realtime
-    └── shared/               # credits, workspace load, status metadata
+    ├── image/                # realtime image + static-ad generation
+    ├── video/                # realtime video, captions, export
+    ├── slideshow/            # realtime slideshow generation
+    ├── influencer/           # generate + clone influencers
+    ├── ugc/                  # UGC stills, audio, video
+    ├── posts/                # publish-post
+    ├── analytics/            # fetch + sweep account analytics
+    ├── accounts/             # refresh-account-token
+    └── shared/               # credits, workspace, skills, status, notify
 ```
 
 - Tasks are discovered from `dirs: ["./src/tasks"]` in `trigger.config.ts`.
-- Use `schemaTask` + Zod schemas; task `id` must match `TASK_IDS` in `@socialista/types`.
+- Use `schemaTask` + Zod schemas; task `id` must match `TASK_IDS` in `@socialista/types` (image/static-ad/video/slideshow generation, influencer generate/clone, UGC stills/audio/video, video captions/export, publish-post, analytics fetch/sweep, refresh-account-token).
 - Export schemas/types through `package.json` `exports` (`@socialista/trigger`, `./schemas/*`, `./task-types`).
-- Prefer shared helpers in `tasks/shared/` for credits, status, and finalize — do not duplicate per task.
+- Prefer shared helpers in `tasks/shared/` for credits, skills injection, status, and finalize — do not duplicate per task.
 - Generation documents are written/updated so the Generations dashboard and studio run pages stay in sync.
 - Local: `pnpm dev:trigger`. Deploy: `pnpm deploy:trigger`.
 
@@ -278,6 +347,7 @@ packages/trigger/src/
 - Colocate feature UI: `_components/`, `_actions/`, `_lib/` next to the route when studio-specific; shared publishing UI lives under `components/posts/` and `components/accounts/`.
 - Prefer existing `services/` for API calls; server actions for mutations that need session/Trigger (see `actions/post.actions.ts`).
 - Social connect: implement provider logic in `lib/connector/`, wire `app/api/connect/<provider>/`, then surface UX in `components/accounts/`.
+- New studio formats (influencers, UGC) and context entities (brands, skills) follow the same pattern: types/db → API routes → web services → dashboard route + sidebar/`DASHBOARD_ROUTES`.
 - Next.js 16 may differ from older training data — check `apps/web/AGENTS.md` / local Next docs when unsure.
 - React performance: follow `.agents/skills/vercel-react-best-practices` when writing or refactoring React/Next code.
 

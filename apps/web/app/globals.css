@@ -414,6 +414,7 @@
   --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
   --animate-shine: shine var(--duration) infinite linear;
   --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
+  --animate-hero-badge-float: hero-badge-float var(--duration, 3.2s) ease-out forwards;
 
   @keyframes marquee {
     from {
@@ -464,6 +465,23 @@
     50%,
     100% {
       opacity: 0;
+    }
+  }
+
+  @keyframes hero-badge-float {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    15% {
+      opacity: 1;
+    }
+    70% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-180px);
     }
   }
 }
