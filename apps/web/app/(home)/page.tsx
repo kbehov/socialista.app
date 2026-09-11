@@ -1,13 +1,12 @@
-import { FeatureChapter } from '@/components/landing/feature-chapter'
-import { MEASURE_CHAPTER, PAGE_METADATA, PUBLISH_CHAPTER } from '@/components/landing/content'
+import { PAGE_METADATA } from '@/components/landing/content'
+import { PlatformFeatures, StudioFeatures, WorkspaceFeatures } from '@/components/landing/feature-sections'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingPricing } from '@/components/landing/landing-pricing'
-import { MockupAnalytics } from '@/components/landing/mockups/mockup-analytics'
-import { MockupComposer } from '@/components/landing/mockups/mockup-composer'
+import { LandingWorkflow } from '@/components/landing/landing-workflow'
 import { PlatformsMarquee } from '@/components/landing/platforms-marquee'
-import { StudioTour } from '@/components/landing/studio-tour'
+import { StudioIndex } from '@/components/landing/studio-index'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
 import type { PolarProduct } from '@socialista/types'
@@ -71,29 +70,12 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingHero />
       <PlatformsMarquee />
-      <StudioTour />
-      <FeatureChapter
-        id="publish"
-        eyebrow={PUBLISH_CHAPTER.eyebrow}
-        title={PUBLISH_CHAPTER.title}
-        description={PUBLISH_CHAPTER.description}
-        points={PUBLISH_CHAPTER.points}
-        visual={<MockupComposer />}
-      />
-      <FeatureChapter
-        id="measure"
-        eyebrow={MEASURE_CHAPTER.eyebrow}
-        title={MEASURE_CHAPTER.title}
-        description={MEASURE_CHAPTER.description}
-        points={MEASURE_CHAPTER.points}
-        visual={<MockupAnalytics />}
-        reverse
-        alt
-      />
-      <LandingPricing
-        products={products}
-        loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}
-      />
+      <StudioIndex />
+      <StudioFeatures />
+      <LandingWorkflow />
+      <PlatformFeatures />
+      <WorkspaceFeatures />
+      <LandingPricing products={products} loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')} />
       <LandingFaq />
       <LandingFinalCta />
     </>

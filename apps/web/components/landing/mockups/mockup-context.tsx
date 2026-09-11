@@ -30,7 +30,7 @@ function Inspector() {
 
 export function MockupContext() {
   return (
-    <ProductMockup active="context" navItems={WORKSPACE_NAV} title="Context & skills" inspector={<Inspector />}>
+    <ProductMockup active="context" navItems={WORKSPACE_NAV} title="Context & skills" actionLabel="Save" inspector={<Inspector />}>
       <div className="space-y-2">
         {[
           { title: 'Brand voice', desc: 'Direct, warm, no jargon' },

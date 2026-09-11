@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { motion, useReducedMotion, type HTMLMotionProps } from 'motion/react'
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 const fadeTransition = { type: 'spring' as const, bounce: 0, duration: 0.45 }
 
@@ -22,21 +22,11 @@ export function FadeIn({
   immediate = false,
   ...props
 }: FadeInProps) {
-  const [mounted, setMounted] = useState(false)
   const reduceMotion = useReducedMotion()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const offset = reduceMotion ? 0 : y
 
-  if (!mounted || reduceMotion) {
-    return (
-      <div className={className} {...props}>
-        {children}
-      </div>
-    )
+  if (reduceMotion) {
+    return <div className={className}>{children}</div>
   }
 
   if (immediate) {
@@ -56,7 +46,7 @@ export function FadeIn({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: offset }}
+      initial={{ opacity: 1, y: offset }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{ ...fadeTransition, delay }}
@@ -82,12 +72,7 @@ export function Stagger({
   stagger = 0.06,
   immediate = false,
 }: StaggerProps) {
-  const [mounted, setMounted] = useState(false)
   const reduceMotion = useReducedMotion()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const variants = {
     hidden: {},
@@ -99,7 +84,7 @@ export function Stagger({
     },
   }
 
-  if (!mounted || reduceMotion) {
+  if (reduceMotion) {
     return <div className={cn(className)}>{children}</div>
   }
 
@@ -116,7 +101,7 @@ export function Stagger({
       className={cn(className)}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.15 }}
+      viewport={{ once: true, amount: 0.2 }}
       variants={variants}
     >
       {children}
@@ -133,15 +118,10 @@ export function StaggerItem({
   className?: string
   y?: number
 }) {
-  const [mounted, setMounted] = useState(false)
   const reduceMotion = useReducedMotion()
   const offset = reduceMotion ? 0 : y
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted || reduceMotion) {
+  if (reduceMotion) {
     return <div className={className}>{children}</div>
   }
 

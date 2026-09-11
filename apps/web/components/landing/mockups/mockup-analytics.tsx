@@ -30,7 +30,7 @@ function Inspector() {
 
 export function MockupAnalytics() {
   return (
-    <ProductMockup active="analytics" navItems={WORKSPACE_NAV} title="Analytics" inspector={<Inspector />}>
+    <ProductMockup active="analytics" navItems={WORKSPACE_NAV} title="Analytics" actionLabel="Open" inspector={<Inspector />}>
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-2">
           {[

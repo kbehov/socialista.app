@@ -17,6 +17,7 @@ type ProductMockupProps = {
   children: ReactNode
   inspector?: ReactNode
   title?: string
+  actionLabel?: string
   className?: string
 }
 
@@ -26,6 +27,7 @@ export function ProductMockup({
   children,
   inspector,
   title = 'Studio',
+  actionLabel = 'Generate',
   className,
 }: ProductMockupProps) {
   const activeId = active ?? navItems[0]?.id
@@ -66,7 +68,7 @@ export function ProductMockup({
                 Draft
               </span>
               <span className="rounded-md bg-foreground px-2 py-0.5 text-[0.625rem] font-medium text-background">
-                Generate
+                {actionLabel}
               </span>
             </div>
           </div>

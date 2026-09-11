@@ -10,13 +10,16 @@ import {
 } from '@/components/ui/sheet'
 import { MenuIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 
 import { LANDING_NAV } from './content'
 import styles from './landing.module.css'
 
 export function MobileNav() {
+  const [open, setOpen] = useState(false)
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="Open menu">
           <MenuIcon className="size-4" />
@@ -28,13 +31,14 @@ export function MobileNav() {
         </SheetHeader>
         <nav className="mt-6 flex flex-col gap-1">
           {LANDING_NAV.map(item => (
-            <Link
+            <a
               key={item.href}
               href={item.href}
               className={`${styles.navLink} rounded-md px-2 py-2.5 text-sm`}
+              onClick={() => setOpen(false)}
             >
               {item.label}
-            </Link>
+            </a>
           ))}
           <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
             <Button variant="outline" asChild>

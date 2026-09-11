@@ -6,24 +6,37 @@ import Link from 'next/link'
 
 import { HERO, HERO_PROOF_POINTS } from './content'
 import { FadeIn, Stagger, StaggerItem } from './fade-in'
-import { HeroVisual } from './hero-visual'
 import styles from './landing.module.css'
+import { IMG, VIDEO } from './media'
+import { MediaFrame } from './media-frame'
 import { SectionInner } from './section'
+
+const HERO_CARDS = [
+  { key: 'a', src: IMG.p1, video: VIDEO.tea, className: `${styles.heroCardTall} ${styles.heroCardA}`, priority: true },
+  { key: 'b', src: IMG.p5, className: `${styles.heroCardWide} ${styles.heroCardB}`, priority: true },
+  { key: 'c', src: IMG.p3, video: VIDEO.beach, className: `${styles.heroCardTall} ${styles.heroCardC}`, priority: true },
+  { key: 'd', src: IMG.fashion1, className: `${styles.heroCardSquare} ${styles.heroCardD}` },
+  { key: 'e', src: IMG.p7, className: `${styles.heroCardTall} ${styles.heroCardE}` },
+  { key: 'f', src: IMG.p8, video: VIDEO.hoop, className: `${styles.heroCardWide} ${styles.heroCardF}` },
+] as const
 
 export function LandingHero() {
   return (
-    <section className={`${styles.heroSection} pt-16 pb-12 sm:pt-24 sm:pb-16 lg:pt-28 lg:pb-20`}>
+    <section className={`${styles.heroStage} pt-14 pb-10 sm:pt-20 sm:pb-14 lg:pt-24 lg:pb-16`}>
       <div className={styles.heroGlow} aria-hidden="true" />
 
       <SectionInner>
-        <Stagger className="mx-auto max-w-3xl text-center" delay={0.02} immediate>
+        <Stagger className="relative z-10 mx-auto max-w-3xl text-center" delay={0.02} immediate>
           <StaggerItem>
-            <p className={styles.eyebrow}>{HERO.eyebrow}</p>
+            <p className={styles.eyebrowPill}>
+              <span className={styles.eyebrowDot} />
+              {HERO.eyebrow}
+            </p>
           </StaggerItem>
 
           <StaggerItem>
-            <h1 className="mt-6 text-[2.125rem] font-semibold tracking-[-0.03em] text-balance sm:text-5xl sm:leading-[1.06] lg:text-[3.5rem] lg:leading-[1.04]">
-              {HERO.title}
+            <h1 className={`${styles.heroTitle} mt-6`}>
+              {HERO.titleBefore} <span className={styles.heroAccent}>{HERO.titleAccent}</span>
             </h1>
           </StaggerItem>
 
@@ -34,7 +47,7 @@ export function LandingHero() {
           </StaggerItem>
 
           <StaggerItem>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg" className="h-11 px-6">
                 <Link href="/auth/signup">Get started</Link>
               </Button>
@@ -58,7 +71,20 @@ export function LandingHero() {
           </StaggerItem>
         </Stagger>
 
-        <HeroVisual />
+        <FadeIn delay={0.22} immediate>
+          <div className={styles.heroCollage} aria-hidden="true">
+            {HERO_CARDS.map(card => (
+              <MediaFrame
+                key={card.key}
+                src={card.src}
+                video={'video' in card ? card.video : undefined}
+                className={`${styles.mediaCard} ${card.className}`}
+                sizes="(max-width: 768px) 50vw, 240px"
+                priority={'priority' in card && card.priority}
+              />
+            ))}
+          </div>
+        </FadeIn>
       </SectionInner>
     </section>
   )

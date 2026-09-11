@@ -21,20 +21,36 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    const scrollToHash = () => {
+      const id = window.location.hash.replace('#', '')
+      if (!id) return
+      document.getElementById(id)?.scrollIntoView({ behavior: 'instant', block: 'start' })
+    }
+
+    scrollToHash()
+    const timer = window.setTimeout(scrollToHash, 80)
+    window.addEventListener('hashchange', scrollToHash)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('hashchange', scrollToHash)
+    }
+  }, [])
+
   return (
     <header className={cn(styles.header, scrolled && styles.headerScrolled)}>
-      <div className={`${styles.section} flex h-full items-center justify-between gap-4`}>
+      <div className={`${styles.section} ${styles.headerInner}`}>
         <Logo />
 
         <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
           {LANDING_NAV.map(item => (
-            <Link key={item.href} href={item.href} className={styles.navLink}>
+            <a key={item.href} href={item.href} className={styles.navLink}>
               {item.label}
-            </Link>
+            </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className={styles.headerActions}>
           <ThemeToggle />
           <Button variant="ghost" size="sm" className="hidden text-muted-foreground sm:inline-flex" asChild>
             <Link href="/auth/signin">Sign in</Link>

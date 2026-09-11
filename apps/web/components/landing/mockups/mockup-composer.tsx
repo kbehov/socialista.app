@@ -1,6 +1,8 @@
 import { CalendarDaysIcon, Link2Icon, SendIcon } from 'lucide-react'
 
 import styles from '../landing.module.css'
+import { IMG } from '../media'
+import { MediaFrame } from '../media-frame'
 import { ProductMockup, type MockupNavItem } from './product-mockup'
 
 const PUBLISH_NAV: MockupNavItem[] = [
@@ -39,7 +41,7 @@ function Inspector() {
 
 export function MockupComposer() {
   return (
-    <ProductMockup active="posts" navItems={PUBLISH_NAV} title="Post composer" inspector={<Inspector />}>
+    <ProductMockup active="posts" navItems={PUBLISH_NAV} title="Post composer" actionLabel="Schedule" inspector={<Inspector />}>
       <div className="space-y-3">
         <div className="flex gap-1.5">
           {['Instagram', 'TikTok', 'LinkedIn'].map((ch, i) => (
@@ -59,8 +61,8 @@ export function MockupComposer() {
           <span className="truncate">New drop — swipe for the full story →</span>
         </div>
         <div className="flex gap-2">
-          <div className={`${styles.mockupSwatch} aspect-square w-16 rounded-md`} />
-          <div className={`${styles.mockupSwatchAlt} aspect-square w-16 rounded-md`} />
+          <MediaFrame src={IMG.fashion1} className="aspect-square w-16 rounded-md" sizes="64px" />
+          <MediaFrame src={IMG.watch} className="aspect-square w-16 rounded-md" sizes="64px" objectPosition="50% 50%" />
         </div>
         <div className={styles.mockupCalendar}>
           {DAYS.map((day, i) => (

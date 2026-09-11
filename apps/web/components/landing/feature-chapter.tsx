@@ -51,7 +51,7 @@ export function FeatureChapter({
           </ul>
         </FadeIn>
 
-        <FadeIn delay={0.06} className={styles.featureChapterVisual}>
+        <FadeIn delay={0.06} className={`${styles.featureChapterVisual} min-w-0`}>
           {visual}
         </FadeIn>
       </div>

@@ -44,7 +44,7 @@ export default function OpenGraphImage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 920 }}>
           <div style={{ display: 'flex', fontSize: 56, fontWeight: 700, letterSpacing: -2, lineHeight: 1.05 }}>
-            The studio that ships the post
+            The fastest way to create social content
           </div>
           <div style={{ display: 'flex', fontSize: 24, opacity: 0.65, maxWidth: 780, lineHeight: 1.4 }}>
             {PAGE_METADATA.description}
