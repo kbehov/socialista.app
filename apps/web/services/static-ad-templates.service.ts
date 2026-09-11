@@ -26,11 +26,21 @@ export const getStaticAdTemplates = async (
 
   const search = params.toString()
   const path = `${STATIC_AD_TEMPLATE_ROUTES.LIST}${search ? `?${search}` : ''}`
-  return api.get<StaticAdTemplateListResponse>(path)
+  return api.get<StaticAdTemplateListResponse>(path, {
+    next: {
+      revalidate: 3600,
+      tags: ['static-ad-templates'],
+    },
+  })
 }
 
 export const getStaticAdTemplateCategories = async (): Promise<
   ApiResponse<StaticAdTemplateCategoriesListResponse>
 > => {
-  return api.get<StaticAdTemplateCategoriesListResponse>(STATIC_AD_TEMPLATE_ROUTES.CATEGORIES)
+  return api.get<StaticAdTemplateCategoriesListResponse>(STATIC_AD_TEMPLATE_ROUTES.CATEGORIES, {
+    next: {
+      revalidate: 3600,
+      tags: ['static-ad-template-categories'],
+    },
+  })
 }

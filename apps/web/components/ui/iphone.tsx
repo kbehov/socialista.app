@@ -52,9 +52,8 @@ export function Iphone({
           }}
         >
           <video
-            className="block size-full object-cover object-top"
+            className="block size-full object-cover"
             src={videoSrc}
-            poster={src}
             autoPlay
             loop
             muted

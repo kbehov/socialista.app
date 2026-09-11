@@ -13,7 +13,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { LANDING_NAV } from './content'
-import styles from './landing.module.css'
+import { landingNavLink } from './landing-classes'
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
@@ -34,7 +34,7 @@ export function MobileNav() {
             <a
               key={item.href}
               href={item.href}
-              className={`${styles.navLink} rounded-md px-2 py-2.5 text-sm`}
+              className={`${landingNavLink} rounded-md px-2 py-2.5 text-sm`}
               onClick={() => setOpen(false)}
             >
               {item.label}

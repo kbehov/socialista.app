@@ -2,7 +2,7 @@ import Logo from '@/components/common/logo'
 import Link from 'next/link'
 
 import { FOOTER } from './content'
-import styles from './landing.module.css'
+import { landingEyebrow } from './landing-classes'
 import { SectionInner } from './section'
 
 export function SiteFooter() {
@@ -11,7 +11,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border py-12 sm:py-16">
       <SectionInner>
-        <div className={styles.footerColumns}>
+        <div className="grid gap-8 sm:grid-cols-[1.4fr_repeat(3,minmax(0,1fr))]">
           <div>
             <Logo />
             <p className="mt-4 max-w-xs text-sm leading-6 text-muted-foreground">{FOOTER.tagline}</p>
@@ -19,7 +19,7 @@ export function SiteFooter() {
 
           {FOOTER.columns.map(column => (
             <div key={column.title}>
-              <p className={styles.eyebrow}>{column.title}</p>
+              <p className={landingEyebrow}>{column.title}</p>
               <ul className="mt-4 space-y-2.5">
                 {column.links.map(link => (
                   <li key={link.label}>

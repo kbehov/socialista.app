@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroSlideOverlay } from '@/components/cards/hero-slide-overlay'
+import { GlareHover } from '@/components/ui/glare-hover'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -116,7 +117,19 @@ export function HeroPhoneSlide({
         </button>
       ) : null}
 
-      <div className="relative size-full overflow-hidden bg-[#222]">
+      <GlareHover
+        width="100%"
+        height="100%"
+        background="#1a1a1a"
+        color="#ffffff"
+        opacity={0.28}
+        playOnce
+        className={cn(
+          'size-full rounded-[1.15rem] md:rounded-[1.65rem]',
+          reduceMotion && 'before:transition-none hover:before:transition-none'
+        )}
+      >
+        <div className="relative size-full overflow-hidden bg-[#222]">
         <Image
           src={media.poster}
           alt=""
@@ -164,7 +177,8 @@ export function HeroPhoneSlide({
           className="pointer-events-none absolute bottom-[0.45rem] left-1/2 z-[5] h-[0.28rem] w-[28%] -translate-x-1/2 rounded-full bg-white/[0.88]"
           aria-hidden="true"
         />
-      </div>
+        </div>
+      </GlareHover>
     </article>
   )
 }

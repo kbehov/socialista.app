@@ -1,6 +1,6 @@
 import { STUDIO_CARDS, STUDIO_INDEX } from './content'
 import { FadeIn } from './fade-in'
-import styles from './landing.module.css'
+import { landingEyebrow } from './landing-classes'
 import { IMG, VIDEO } from './media'
 import { MediaFrame } from './media-frame'
 import { Section } from './section'
@@ -26,20 +26,23 @@ export function StudioIndex() {
         />
       </FadeIn>
 
-      <div className={`${styles.studioGrid} mt-10 sm:mt-12`}>
+      <div className="mt-10 grid gap-[0.85rem] sm:mt-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
         {STUDIO_CARDS.map((card, index) => {
           const media = CARD_MEDIA[card.id]
           return (
             <FadeIn key={card.id} delay={index * 0.04}>
-              <a href={card.href} className={styles.studioCard}>
+              <a
+                href={card.href}
+                className="flex flex-col overflow-hidden rounded-[calc(var(--radius)+8px)] border border-border bg-background text-inherit no-underline transition-[transform,border-color,box-shadow] duration-[180ms] ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_oklch,var(--foreground)_16%,var(--border))] hover:shadow-[0_18px_40px_-28px_color-mix(in_oklch,var(--foreground)_22%,transparent)] active:scale-[0.985] motion-reduce:transform-none motion-reduce:hover:transform-none"
+              >
                 <MediaFrame
                   src={media.src}
                   video={media.video}
-                  className={styles.studioCardMedia}
+                  className="relative aspect-[16/11]"
                   sizes="(max-width: 768px) 100vw, 360px"
                 />
-                <div className={styles.studioCardBody}>
-                  <p className={styles.eyebrow}>{card.label}</p>
+                <div className="flex flex-col gap-[0.35rem] px-[1.1rem] pt-4 pb-[1.15rem]">
+                  <p className={landingEyebrow}>{card.label}</p>
                   <p className="text-[0.975rem] font-medium tracking-tight">{card.title}</p>
                   <p className="text-sm leading-6 text-muted-foreground">{card.description}</p>
                 </div>

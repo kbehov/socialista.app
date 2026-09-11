@@ -7,10 +7,10 @@ const HERO_AVATARS = TALENT.slice(0, 4)
 
 export function HeroAudience() {
   return (
-    <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-      <AvatarGroup className="shrink-0">
+    <div className="mt-5 flex flex-col items-center gap-3.5 sm:flex-row sm:justify-center sm:gap-5">
+      <AvatarGroup className="shrink-0 *:data-[slot=avatar]:size-9">
         {HERO_AVATARS.map(person => (
-          <Avatar key={person.name} size="sm" className="ring-2 ring-background">
+          <Avatar key={person.name} className="ring-2 ring-background">
             <AvatarImage src={person.src} alt={person.name} />
             <AvatarFallback>{person.name.slice(0, 1)}</AvatarFallback>
           </Avatar>

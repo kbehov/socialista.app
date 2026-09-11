@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
-import styles from './landing.module.css'
+import { landingSection, landingSectionAlt } from './landing-classes'
 
 type SectionProps = {
   children: ReactNode
@@ -18,15 +18,15 @@ export function Section({ children, className, id, border = false, alt = false }
       className={cn(
         'scroll-mt-20 py-16 sm:py-24',
         border && 'border-t border-border',
-        alt && styles.sectionAlt,
+        alt && landingSectionAlt,
         className,
       )}
     >
-      <div className={styles.section}>{children}</div>
+      <div className={landingSection}>{children}</div>
     </section>
   )
 }
 
 export function SectionInner({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn(styles.section, className)}>{children}</div>
+  return <div className={cn(landingSection, className)}>{children}</div>
 }

@@ -1,6 +1,6 @@
 import { ChartColumnIcon, HistoryIcon, SparklesIcon } from 'lucide-react'
 
-import styles from '../landing.module.css'
+import { landingEyebrow, landingMockupCard } from '../landing-classes'
 import { ProductMockup, type MockupNavItem } from './product-mockup'
 
 const WORKSPACE_NAV: MockupNavItem[] = [
@@ -13,15 +13,15 @@ function Inspector() {
   return (
     <>
       <div>
-        <p className={styles.eyebrow}>Range</p>
+        <p className={landingEyebrow}>Range</p>
         <p className="mt-1.5 text-xs font-medium">Last 30 days</p>
       </div>
       <div>
-        <p className={styles.eyebrow}>Top channel</p>
+        <p className={landingEyebrow}>Top channel</p>
         <p className="mt-1.5 text-xs font-medium">Instagram</p>
       </div>
       <div>
-        <p className={styles.eyebrow}>Published</p>
+        <p className={landingEyebrow}>Published</p>
         <p className="mt-1.5 text-xs font-medium">24 posts</p>
       </div>
     </>
@@ -38,13 +38,13 @@ export function MockupAnalytics() {
             { label: 'Posts', value: '24' },
             { label: 'Accounts', value: '5' },
           ].map(stat => (
-            <div key={stat.label} className={`${styles.mockupCard} p-2.5`}>
+            <div key={stat.label} className={`${landingMockupCard} p-2.5`}>
               <p className="text-[0.5625rem] text-muted-foreground">{stat.label}</p>
               <p className="mt-1 text-sm font-semibold tabular-nums tracking-tight">{stat.value}</p>
             </div>
           ))}
         </div>
-        <div className={styles.mockupCard}>
+        <div className={landingMockupCard}>
           <div className="flex h-20 items-end gap-1 p-2.5">
             {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
               <div

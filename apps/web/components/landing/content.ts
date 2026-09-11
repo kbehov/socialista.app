@@ -7,6 +7,17 @@ export const LANDING_NAV = [
 ] as const
 
 export const HERO = {
+  title: {
+    line1: {
+      prefix: 'The',
+      emphasis: 'fastest',
+      suffix: 'way to',
+    },
+    line2: {
+      prefix: 'create',
+      sparkles: 'social content',
+    },
+  },
   titleLine1: 'The fastest way to',
   titleLine2: 'create social content.',
   description:
@@ -77,6 +88,48 @@ export const PLATFORMS = [
 ] as const
 
 export type PlatformId = (typeof PLATFORMS)[number]['id']
+
+export const PLATFORMS_BEAM = {
+  eyebrow: 'Distribution',
+  title: 'Trending social media channels',
+  description:
+    'Create once, then publish natively to every major network — with per-platform previews and scheduling built in.',
+  layout: {
+    top: ['instagram', 'youtube', 'facebook'] as const,
+    middle: ['tiktok', 'linkedin'] as const,
+    bottom: ['threads', 'pinterest', 'twitter'] as const,
+  },
+} as const
+
+export const STATIC_ADS_SECTION = {
+  eyebrow: 'Static ads',
+  title: 'Rapidly create high-converting static ads that win',
+  description:
+    'Drop in your product catalog and generate on-brand ads with headlines, offers, and CTAs locked in-frame — ready for Meta, TikTok, and more.',
+  cta: 'Create static ads',
+} as const
+
+export const FEATURE_MARQUEE_MODELS = [
+  { id: 'gpt-image-2', label: 'GPT Image 2' },
+  { id: 'nano-banana-2', label: 'Nano Banana 2' },
+  { id: 'seedance-2-5', label: 'Seedance 2.5' },
+  { id: 'flux-pro', label: 'Flux Pro' },
+  { id: 'kling-video', label: 'Kling Video' },
+  { id: 'veo-3', label: 'Veo 3' },
+  { id: 'imagen-4', label: 'Imagen 4' },
+  { id: 'ideogram-3', label: 'Ideogram 3' },
+] as const
+
+export const FEATURE_MARQUEE_FEATURES = [
+  { id: 'ugc-studio', label: 'UGC Studio' },
+  { id: 'captions', label: 'Captions' },
+  { id: 'voice-overs', label: 'Voice Overs' },
+  { id: 'static-ads', label: 'Static Ads' },
+  { id: 'slideshows', label: 'Slideshows' },
+  { id: 'ai-influencers', label: 'AI Influencers' },
+  { id: 'video-studio', label: 'Video Studio' },
+  { id: 'brand-voice', label: 'Brand Voice' },
+] as const
 
 export const PAIN_POINTS = {
   eyebrow: 'The problem',

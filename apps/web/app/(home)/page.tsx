@@ -7,7 +7,9 @@ import { LandingOutcomes } from '@/components/landing/landing-outcomes'
 import { LandingPainPoints } from '@/components/landing/landing-pain-points'
 import { LandingPricing } from '@/components/landing/landing-pricing'
 import { LandingWorkflow } from '@/components/landing/landing-workflow'
-import { PlatformsMarquee } from '@/components/landing/platforms-marquee'
+import { FeaturesMarquee } from '@/components/landing/features-marquee'
+import { LandingPlatformsBeam } from '@/components/landing/landing-platforms-beam'
+import { LandingStaticAds } from '@/components/landing/landing-static-ads'
 import { StudioIndex } from '@/components/landing/studio-index'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
@@ -71,7 +73,9 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingHero />
-      <PlatformsMarquee />
+      <FeaturesMarquee />
+      <LandingPlatformsBeam />
+      <LandingStaticAds />
       <LandingPainPoints />
       <LandingOutcomes />
       <LandingBento />

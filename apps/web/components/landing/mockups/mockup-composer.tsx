@@ -1,6 +1,6 @@
 import { CalendarDaysIcon, Link2Icon, SendIcon } from 'lucide-react'
 
-import styles from '../landing.module.css'
+import { landingEyebrow } from '../landing-classes'
 import { IMG } from '../media'
 import { MediaFrame } from '../media-frame'
 import { ProductMockup, type MockupNavItem } from './product-mockup'
@@ -24,15 +24,15 @@ function Inspector() {
   return (
     <>
       <div>
-        <p className={styles.eyebrow}>Channels</p>
+        <p className={landingEyebrow}>Channels</p>
         <p className="mt-1.5 text-xs font-medium">IG · TikTok · LinkedIn</p>
       </div>
       <div>
-        <p className={styles.eyebrow}>Status</p>
+        <p className={landingEyebrow}>Status</p>
         <p className="mt-1.5 text-xs font-medium">Scheduled · Tue 9:00</p>
       </div>
       <div>
-        <p className={styles.eyebrow}>Variants</p>
+        <p className={landingEyebrow}>Variants</p>
         <p className="mt-1.5 text-xs font-medium">3 platforms</p>
       </div>
     </>
@@ -57,19 +57,22 @@ export function MockupComposer() {
             </span>
           ))}
         </div>
-        <div className={styles.mockupPrompt}>
+        <div className="flex items-center gap-2 rounded-[calc(var(--radius)-2px)] border border-border bg-surface-0 px-3 py-2 text-[0.6875rem] text-muted-foreground">
           <span className="truncate">New drop — swipe for the full story →</span>
         </div>
         <div className="flex gap-2">
           <MediaFrame src={IMG.fashion1} className="aspect-square w-16 rounded-md" sizes="64px" />
           <MediaFrame src={IMG.watch} className="aspect-square w-16 rounded-md" sizes="64px" objectPosition="50% 50%" />
         </div>
-        <div className={styles.mockupCalendar}>
+        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-[calc(var(--radius)-2px)] border border-border bg-border">
           {DAYS.map((day, i) => (
-            <div key={day} className={styles.mockupCalCell}>
+            <div key={day} className="min-h-[3.25rem] bg-background p-[0.35rem] text-[0.625rem] text-muted-foreground">
               <span>{day}</span>
               {EVENTS[i]?.map(event => (
-                <div key={event} className={styles.mockupCalEvent}>
+                <div
+                  key={event}
+                  className="mt-[0.2rem] truncate rounded-[3px] bg-surface-1 px-1 py-[0.15rem] text-[0.5625rem] font-medium text-foreground"
+                >
                   {event}
                 </div>
               ))}

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-import styles from './landing.module.css'
+import { landingEyebrow } from './landing-classes'
 
 type SectionHeaderProps = {
   eyebrow?: string
@@ -21,7 +21,7 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <header className={cn(align === 'center' && 'mx-auto max-w-2xl text-center', className)}>
-      {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
+      {eyebrow ? <p className={landingEyebrow}>{eyebrow}</p> : null}
       <h2
         suppressHydrationWarning
         className={cn(

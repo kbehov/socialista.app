@@ -7,7 +7,6 @@ import Link from 'next/link'
 
 import { PRICING_SECTION } from './content'
 import { FadeIn } from './fade-in'
-import styles from './landing.module.css'
 import { Section } from './section'
 import { SectionHeader } from './section-header'
 
@@ -42,7 +41,7 @@ export function LandingPricing({ products, loadError = null }: LandingPricingPro
       </FadeIn>
 
       {hasProducts ? (
-        <FadeIn delay={0.06} className={`${styles.pricingGrid} mt-12`}>
+        <FadeIn delay={0.06} className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {products.map((product, index) => (
             <PricingCard
               key={product.id}
