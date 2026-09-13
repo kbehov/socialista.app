@@ -2,17 +2,14 @@
 
 import Logo from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { LANDING_NAV } from "./content";
-import {
-  landingCtaPrimary,
-  landingCtaSecondary,
-  landingNavLink,
-} from "./landing-classes";
+import { landingCtaSecondary, landingNavLink } from "./landing-classes";
 import { MobileNav } from "./mobile-nav";
 
 export function SiteHeader() {
@@ -81,19 +78,13 @@ export function SiteHeader() {
           >
             <Link href="/auth/signup">Sign up</Link>
           </Button>
-          <Button
-            asChild
-            size="lg"
-            className={cn(
-              landingCtaPrimary,
-              "hidden h-10 gap-1.5 px-6 text-sm md:inline-flex",
-            )}
+          <ShimmerButton
+            href="/auth/signup"
+            className="hidden h-10 px-6 text-sm md:inline-flex"
           >
-            <Link href="/auth/signup">
-              Start for $0
-              <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
-            </Link>
-          </Button>
+            Start for $0
+            <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+          </ShimmerButton>
           <MobileNav />
         </div>
       </div>

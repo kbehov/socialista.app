@@ -1,10 +1,14 @@
+import { cn } from "@/lib/utils";
+
 import { HERO } from "./content";
 import { landingH1 } from "./landing-classes";
+
+const TITLE_LINE1_PHRASES = HERO.titleLine1.split(/(?<=\.)\s+/);
 
 function WorkspaceDoodle() {
   return (
     <svg
-      className="pointer-events-none absolute inset-x-[-4%] -bottom-[0.18em] h-[0.35em] w-[108%] text-pink-400/80 dark:text-pink-400/70"
+      className="pointer-events-none absolute inset-x-[-6%] -bottom-[0.14em] h-[0.28em] w-[112%] text-pink-400/80 dark:text-pink-400/70"
       viewBox="0 0 120 12"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -25,12 +29,23 @@ function WorkspaceDoodle() {
 export function HeroHeading() {
   return (
     <h1
-      className={`${landingH1} mx-auto w-full max-w-5xl text-center text-foreground`}
+      id="hero-heading"
+      className={cn(
+        landingH1,
+        "mx-auto w-full text-center text-foreground",
+      )}
     >
-      <span className="block">{HERO.titleLine1}</span>
-      <span className="mt-1 block sm:mt-1.5">
+      <span className="block">
+        {TITLE_LINE1_PHRASES.map((phrase, index) => (
+          <span key={phrase}>
+            {index > 0 ? " " : null}
+            <span className="whitespace-nowrap">{phrase}</span>
+          </span>
+        ))}
+      </span>
+      <span className="mt-[0.16em] block sm:mt-[0.12em]">
         {HERO.titleLine2Prefix}{" "}
-        <span className="relative inline-block">
+        <span className="relative inline-block whitespace-nowrap">
           {HERO.titleLine2Highlight}
           <WorkspaceDoodle />
         </span>{" "}

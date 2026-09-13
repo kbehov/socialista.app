@@ -14,6 +14,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
+
 import { HERO } from "./content";
 import { landingCtaPrimary } from "./landing-classes";
 
@@ -30,21 +32,25 @@ export function CtaPair({
 }: CtaPairProps) {
   return (
     <div className={className}>
-      <Button asChild size="lg" className={landingCtaPrimary}>
+      <Button
+        asChild
+        size="lg"
+        className={cn(landingCtaPrimary, "h-12 w-full px-7 text-[0.9375rem] sm:w-auto")}
+      >
         <Link
           href={primaryHref}
-          className="min-w-[12.75rem] justify-center px-6"
+          className="min-w-0 justify-center px-7 sm:min-w-[13.5rem]"
         >
           <WordRotate
             words={[...HERO.primaryCtaWords]}
             icons={[...PRIMARY_CTA_ICONS]}
             duration={2800}
-            wrapperClassName="py-0"
-            className="text-sm font-medium"
+            wrapperClassName="flex w-full justify-center py-0.5"
+            className="text-[0.9375rem] font-medium"
             motionProps={{
-              initial: { opacity: 0, y: 8 },
+              initial: { opacity: 0, y: 6 },
               animate: { opacity: 1, y: 0 },
-              exit: { opacity: 0, y: -8 },
+              exit: { opacity: 0, y: -6 },
               transition: { duration: 0.2, ease: "easeOut" },
             }}
           />
@@ -74,7 +80,7 @@ function HeroGoogleButton() {
       type="button"
       variant="outline"
       size="lg"
-      className="rounded-full px-6"
+      className="h-12 w-full rounded-full px-7 text-[0.9375rem] sm:w-auto"
       onClick={handleGoogleSignIn}
       disabled={isGoogleLoading}
     >

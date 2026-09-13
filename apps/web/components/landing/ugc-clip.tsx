@@ -21,6 +21,7 @@ function releaseSlot() {
 type UgcClipProps = {
   poster: string;
   video?: string;
+  alt?: string;
   className?: string;
   sizes?: string;
   priority?: boolean;
@@ -30,6 +31,7 @@ type UgcClipProps = {
 export function UgcClip({
   poster,
   video,
+  alt = "",
   className,
   sizes = "(max-width: 768px) 50vw, 240px",
   priority = false,
@@ -99,7 +101,7 @@ export function UgcClip({
     >
       <Image
         src={poster}
-        alt=""
+        alt={alt}
         fill
         sizes={sizes}
         priority={priority}

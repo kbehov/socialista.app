@@ -59,33 +59,33 @@ const BEAM_NODES: Record<
 > = {
   "top-left": {
     platformId: "instagram",
-    curvature: -110,
-    endYOffset: -12,
+    curvature: -78,
+    endYOffset: -8,
     delay: 0,
   },
-  "top-center": { platformId: "youtube", curvature: -65, delay: 0.3 },
+  "top-center": { platformId: "youtube", curvature: -46, delay: 0.25 },
   "top-right": {
     platformId: "facebook",
-    curvature: -110,
-    endYOffset: -12,
+    curvature: -78,
+    endYOffset: -8,
     reverse: true,
-    delay: 0.6,
+    delay: 0.5,
   },
-  "mid-left": { platformId: "tiktok", delay: 0.15 },
-  "mid-right": { platformId: "linkedin", reverse: true, delay: 0.45 },
+  "mid-left": { platformId: "tiktok", delay: 0.12 },
+  "mid-right": { platformId: "linkedin", reverse: true, delay: 0.38 },
   "bottom-left": {
     platformId: "threads",
-    curvature: 110,
-    endYOffset: 12,
-    delay: 0.9,
+    curvature: 78,
+    endYOffset: 8,
+    delay: 0.75,
   },
-  "bottom-center": { platformId: "pinterest", curvature: 65, delay: 1.2 },
+  "bottom-center": { platformId: "pinterest", curvature: 46, delay: 1 },
   "bottom-right": {
     platformId: "twitter",
-    curvature: 110,
-    endYOffset: 12,
+    curvature: 78,
+    endYOffset: 8,
     reverse: true,
-    delay: 1.5,
+    delay: 1.25,
   },
 };
 
@@ -96,7 +96,7 @@ const BeamCircle = forwardRef<
   <div
     ref={ref}
     className={cn(
-      "z-10 flex size-11 items-center justify-center rounded-full border border-border bg-background shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_5%,transparent),0_12px_28px_-16px_color-mix(in_oklch,var(--foreground)_16%,transparent)] sm:size-12",
+      "z-10 flex size-9 items-center justify-center rounded-full border border-border bg-background sm:size-10",
       className,
     )}
   >
@@ -115,19 +115,19 @@ function PlatformNode({
   const platform = platformById[id];
 
   return (
-    <div className="flex min-w-[4.5rem] flex-col items-center gap-2.5">
+    <div className="group/platform flex min-w-[3.75rem] flex-col items-center gap-2 sm:min-w-[4.25rem]">
       <BeamCircle
         ref={nodeRef}
         className="size-auto border-none bg-transparent shadow-none"
       >
         <SocialPlatformIcon
           provider={id}
-          size={24}
+          size={18}
           framed
-          className="size-12 rounded-full ring-0 sm:size-14"
+          className="size-9 rounded-full ring-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/platform:scale-105 sm:size-10"
         />
       </BeamCircle>
-      <span className="text-[0.6875rem] font-medium tracking-[-0.01em] whitespace-nowrap text-muted-foreground sm:text-[0.8125rem]">
+      <span className="text-[0.625rem] font-medium tracking-[-0.01em] whitespace-nowrap text-muted-foreground/80 transition-colors duration-200 group-hover/platform:text-muted-foreground sm:text-[0.6875rem]">
         {platform.label}
       </span>
     </div>
@@ -168,14 +168,16 @@ export function LandingPlatforms() {
   return (
     <section
       id="channels"
+      aria-labelledby="channels-heading"
       className={cn(
-        "scroll-mt-20 overflow-x-clip border-t border-border",
+        "scroll-mt-24 overflow-x-clip border-t border-border",
         landingSectionY,
       )}
     >
       <div className={landingSection}>
         <FadeIn>
           <SectionHeader
+            titleId="channels-heading"
             title={PLATFORMS_SECTION.title}
             description={PLATFORMS_SECTION.description}
             align="center"
@@ -183,29 +185,35 @@ export function LandingPlatforms() {
         </FadeIn>
 
         <FadeIn delay={0.08} className={landingContentGap}>
-          <div
-            ref={containerRef}
-            className="relative flex min-h-96 w-full items-center justify-center overflow-hidden px-3 pt-8 pb-2 sm:min-h-[30rem] sm:px-5 sm:pt-10 sm:pb-3"
-          >
-            <div className="flex min-h-[19rem] w-full max-w-[30rem] flex-col justify-between gap-10 sm:min-h-[22rem] sm:max-w-[42rem] sm:gap-14">
-              <div className="flex items-center justify-between">
+          <figure className="mx-auto w-full max-w-3xl">
+            <div
+              ref={containerRef}
+              className="relative flex w-full items-center justify-center overflow-hidden px-2 py-4 sm:px-4 sm:py-6"
+            >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-[12%] rounded-full bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_4%,transparent)_0%,transparent_68%)]"
+            />
+
+            <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17rem] sm:gap-9">
+              <div className="flex items-center justify-between px-1">
                 <PlatformNode id="instagram" nodeRef={topLeftRef} />
                 <PlatformNode id="youtube" nodeRef={topCenterRef} />
                 <PlatformNode id="facebook" nodeRef={topRightRef} />
               </div>
 
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-3 sm:gap-4">
                 <PlatformNode id="tiktok" nodeRef={midLeftRef} />
                 <BeamCircle
                   ref={centerRef}
-                  className="size-20 rounded-[calc(var(--radius)+6px)] border-[color-mix(in_oklch,var(--foreground)_10%,var(--border))] bg-foreground shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_8%,transparent),0_24px_48px_-18px_color-mix(in_oklch,var(--foreground)_28%,transparent)] sm:size-[5.75rem]"
+                  className="size-14 rounded-[calc(var(--radius)+4px)] border-[color-mix(in_oklch,var(--foreground)_10%,var(--border))] bg-foreground shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_6%,transparent),0_16px_32px_-14px_color-mix(in_oklch,var(--foreground)_22%,transparent)] sm:size-16"
                 >
-                  <div className="relative size-9 sm:size-10">
+                  <div className="relative size-7 sm:size-8">
                     <Image
                       src="/socialista-logo.webp"
-                      alt=""
+                      alt="Socialista"
                       fill
-                      sizes="40px"
+                      sizes="32px"
                       className="object-contain invert dark:invert-0"
                     />
                   </div>
@@ -213,7 +221,7 @@ export function LandingPlatforms() {
                 <PlatformNode id="linkedin" nodeRef={midRightRef} />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-1">
                 <PlatformNode id="threads" nodeRef={bottomLeftRef} />
                 <PlatformNode id="pinterest" nodeRef={bottomCenterRef} />
                 <PlatformNode id="twitter" nodeRef={bottomRightRef} />
@@ -239,22 +247,21 @@ export function LandingPlatforms() {
                   reverse={reverse}
                   endYOffset={endYOffset}
                   delay={delay}
-                  duration={4}
+                  duration={4.5}
                   pathColor={colors.path}
-                  pathWidth={3}
-                  pathOpacity={0.45}
+                  pathWidth={2}
+                  pathOpacity={0.28}
                   gradientStartColor={colors.start}
                   gradientStopColor={colors.stop}
                 />
               ),
             )}
-          </div>
+            </div>
+            <figcaption className="sr-only">
+              Socialista publishes to {PLATFORMS.map((platform) => platform.label).join(", ")}.
+            </figcaption>
+          </figure>
         </FadeIn>
-
-        <p className="sr-only">
-          Supported channels:{" "}
-          {PLATFORMS.map((platform) => platform.label).join(", ")}
-        </p>
       </div>
     </section>
   );

@@ -10,12 +10,18 @@ export function LandingMeasure() {
     <Section id="measure" border alt>
       <FadeIn>
         <SectionHeader
+          titleId="measure-heading"
           title={MEASURE.title}
           description={MEASURE.description}
         />
       </FadeIn>
       <FadeIn delay={0.06} className={landingContentGap}>
-        <MockupAnalytics />
+        <figure>
+          <MockupAnalytics />
+          <figcaption className="sr-only">
+            Workspace analytics tied to the posts and generations that produced them.
+          </figcaption>
+        </figure>
       </FadeIn>
     </Section>
   );

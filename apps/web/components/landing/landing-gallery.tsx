@@ -29,13 +29,13 @@ function splitItems(items: GalleryItem[]) {
   return [items.slice(0, midpoint), items.slice(midpoint)] as const;
 }
 
-function GalleryCard({ imageUrl }: { imageUrl: string }) {
+function GalleryCard({ imageUrl, alt }: { imageUrl: string; alt: string }) {
   return (
     <div className="relative w-44 shrink-0 sm:w-52">
       <div className={cn(landingMediaCard, "aspect-[4/5]")}>
         <Image
           src={imageUrl}
-          alt=""
+          alt={alt}
           fill
           sizes="(max-width: 640px) 176px, 208px"
           className="object-cover"
@@ -64,10 +64,12 @@ function GalleryRow({
   items,
   reverse = false,
   durationClass,
+  startIndex = 0,
 }: {
   items: GalleryItem[];
   reverse?: boolean;
   durationClass: string;
+  startIndex?: number;
 }) {
   return (
     <div className="relative">
@@ -79,8 +81,12 @@ function GalleryRow({
         repeat={4}
         className={cn("py-2 [--gap:1rem]", durationClass)}
       >
-        {items.map((item) => (
-          <GalleryCard key={item.id} imageUrl={item.imageUrl} />
+        {items.map((item, index) => (
+          <GalleryCard
+            key={item.id}
+            imageUrl={item.imageUrl}
+            alt={`Static ad example ${startIndex + index + 1}`}
+          />
         ))}
       </Marquee>
     </div>
@@ -114,14 +120,16 @@ export async function LandingGallery() {
   return (
     <section
       id="ads"
+      aria-labelledby="ads-heading"
       className={cn(
-        "scroll-mt-20 overflow-x-clip border-t border-border",
+        "scroll-mt-24 overflow-x-clip border-t border-border",
         landingSectionY,
       )}
     >
       <div className={landingSection}>
         <FadeIn>
           <SectionHeader
+            titleId="ads-heading"
             title={GALLERY.title}
             description={GALLERY.description}
             align="center"
@@ -130,16 +138,20 @@ export async function LandingGallery() {
       </div>
 
       <FadeIn delay={0.08} className={`relative w-full ${landingContentGap}`}>
-        <div className="relative space-y-3 sm:space-y-4">
+        <figure className="relative space-y-3 sm:space-y-4">
           <GalleryRow items={topRow} durationClass="[--duration:52s]" />
           {bottomRow.length > 0 ? (
             <GalleryRow
               items={bottomRow}
               reverse
               durationClass="[--duration:58s]"
+              startIndex={topRow.length}
             />
           ) : null}
-        </div>
+          <figcaption className="sr-only">
+            Example static ads generated from a product catalog in Socialista.
+          </figcaption>
+        </figure>
       </FadeIn>
 
       <div className={cn(landingSection, "mt-12")}>

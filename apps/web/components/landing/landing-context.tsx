@@ -10,12 +10,18 @@ export function LandingContext() {
     <Section id="context" border>
       <FadeIn>
         <SectionHeader
+          titleId="context-heading"
           title={CONTEXT.title}
           description={CONTEXT.description}
         />
       </FadeIn>
       <FadeIn delay={0.06} className={landingContentGap}>
-        <MockupContext />
+        <figure>
+          <MockupContext />
+          <figcaption className="sr-only">
+            Brand voice, product catalog, and reusable skills applied to every studio generation.
+          </figcaption>
+        </figure>
       </FadeIn>
     </Section>
   );

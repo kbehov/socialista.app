@@ -425,6 +425,27 @@
   --animate-shine: shine var(--duration) infinite linear;
   --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
   --animate-hero-badge-float: hero-badge-float var(--duration, 3.2s) ease-out forwards;
+  --animate-fire-flicker: fire-flicker 1.35s ease-in-out infinite;
+
+  @keyframes fire-flicker {
+    0%,
+    100% {
+      transform: scale(1) rotate(-4deg);
+      filter: brightness(1) saturate(1);
+    }
+    25% {
+      transform: scale(1.1) rotate(3deg) translateY(-6%);
+      filter: brightness(1.18) saturate(1.12);
+    }
+    50% {
+      transform: scale(0.94) rotate(-5deg);
+      filter: brightness(0.92) saturate(0.96);
+    }
+    75% {
+      transform: scale(1.06) rotate(2deg) translateY(-3%);
+      filter: brightness(1.1) saturate(1.06);
+    }
+  }
 
   @keyframes marquee {
     from {

@@ -37,6 +37,7 @@ export function LandingPricing({
     <Section id="pricing" border alt>
       <FadeIn>
         <SectionHeader
+          titleId="pricing-heading"
           title={
             hasProducts ? PRICING_SECTION.title : PRICING_SECTION.fallbackTitle
           }

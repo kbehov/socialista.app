@@ -6,14 +6,15 @@ import { SectionHeader } from "./section-header";
 
 export function LandingCompare() {
   return (
-    <Section border>
+    <Section id="compare" border>
       <FadeIn>
         <SectionHeader
+          titleId="compare-heading"
           title={COMPARE.title}
           description={COMPARE.description}
         />
       </FadeIn>
-      <div
+      <dl
         className={`${landingContentGap} divide-y divide-border border-y border-border`}
       >
         {COMPARE.rows.map((row, index) => (
@@ -22,12 +23,22 @@ export function LandingCompare() {
             delay={index * 0.04}
             className="grid gap-6 py-8 sm:grid-cols-3 sm:gap-8"
           >
-            <h3 className={landingH3}>{row.label}</h3>
-            <p className={landingBodySm}>{row.old}</p>
-            <p className="text-sm leading-[1.5] text-foreground">{row.next}</p>
+            <dt className={landingH3}>{row.label}</dt>
+            <dd className={`${landingBodySm} m-0`}>
+              <span className="mb-1.5 block text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground/80">
+                {COMPARE.beforeLabel}
+              </span>
+              {row.old}
+            </dd>
+            <dd className="m-0 text-[0.9375rem] leading-[1.65] text-pretty text-foreground">
+              <span className="mb-1.5 block text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground/80">
+                {COMPARE.afterLabel}
+              </span>
+              {row.next}
+            </dd>
           </FadeIn>
         ))}
-      </div>
+      </dl>
     </Section>
   );
 }

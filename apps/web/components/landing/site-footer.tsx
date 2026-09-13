@@ -21,8 +21,8 @@ export function SiteFooter() {
           </div>
 
           {FOOTER.columns.map((column) => (
-            <div key={column.title}>
-              <p className={landingLabel}>{column.title}</p>
+            <nav key={column.title} aria-label={column.title}>
+              <h2 className={landingLabel}>{column.title}</h2>
               <ul className="mt-4 space-y-2.5">
                 {column.links.map((link) => (
                   <li key={link.label}>
@@ -35,7 +35,7 @@ export function SiteFooter() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
 

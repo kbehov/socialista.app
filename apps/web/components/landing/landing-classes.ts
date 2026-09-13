@@ -1,29 +1,34 @@
 /* Landing page design tokens — Linear minimalism × Apple precision
-   8px rhythm. Type scale is editorial, not dashboard-dense. */
+   8px rhythm. Type scale is editorial: hero display, section titles one step down. */
 
 export const landingSection = "mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8";
 
 export const landingSectionY = "py-20 sm:py-24 lg:py-28";
 
-export const landingContentGap = "mt-12 sm:mt-16";
+export const landingContentGap = "mt-10 sm:mt-14";
 
-/** Default landing section title — Geist, bold, 40px+ */
+/** Hero display — Geist, tight tracking, 36–60px. Phrase-wraps in the heading, not mid-clause. */
 export const landingH1 =
-  "text-[clamp(2.5rem,5.25vw,3.5rem)] font-bold leading-[1.06] tracking-[-0.04em] text-balance";
+  "text-[clamp(2.25rem,1.05rem+4.4vw,3.75rem)] font-bold leading-[1.14] tracking-[-0.032em] sm:leading-[1.08] sm:tracking-[-0.042em]";
 
+/** Section titles — one step below hero so the page has a real hierarchy */
 export const landingH2 =
-  "text-[clamp(2.5rem,5.25vw,3.5rem)] font-bold leading-[1.06] tracking-[-0.04em] text-balance";
+  "text-[clamp(1.875rem,3.6vw,2.625rem)] font-semibold leading-[1.12] tracking-[-0.035em] text-balance";
 
 export const landingH3 =
-  "text-lg font-semibold leading-[1.3] tracking-[-0.02em]";
+  "text-[1.0625rem] font-semibold leading-[1.35] tracking-[-0.02em] sm:text-lg";
 
 export const landingBody =
-  "max-w-xl text-base leading-[1.65] text-pretty text-muted-foreground";
+  "max-w-[36rem] text-[1.0625rem] leading-[1.7] text-pretty text-muted-foreground";
 
-export const landingBodySm = "text-sm leading-[1.5] text-muted-foreground";
+export const landingBodySm =
+  "text-[0.9375rem] leading-[1.65] text-pretty text-muted-foreground";
 
 export const landingLabel =
-  "text-sm font-medium tracking-[-0.01em] text-muted-foreground";
+  "text-[0.8125rem] font-medium tracking-[-0.01em] text-muted-foreground";
+
+export const landingEyebrow =
+  "text-[0.75rem] font-medium uppercase tracking-[0.08em] text-muted-foreground";
 
 export const landingMockupLabel =
   "text-[0.625rem] font-medium text-muted-foreground";

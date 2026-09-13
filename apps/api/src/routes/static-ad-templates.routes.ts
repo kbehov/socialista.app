@@ -8,9 +8,9 @@ import { Hono } from 'hono'
 
 const staticAdTemplateRoutes = new Hono<AppContext>()
 
-staticAdTemplateRoutes.use('/*', authMiddleware)
-
-staticAdTemplateRoutes.get('/categories', listStaticAdTemplateCategories)
 staticAdTemplateRoutes.get('/', listStaticAdTemplates)
+
+staticAdTemplateRoutes.use('/categories', authMiddleware)
+staticAdTemplateRoutes.get('/categories', listStaticAdTemplateCategories)
 
 export default staticAdTemplateRoutes

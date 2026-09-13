@@ -13,7 +13,12 @@ type SectionProps = {
   id?: string;
   border?: boolean;
   alt?: boolean;
+  labelledBy?: string;
 };
+
+export function sectionHeadingId(sectionId: string) {
+  return `${sectionId}-heading`;
+}
 
 export function Section({
   children,
@@ -21,12 +26,16 @@ export function Section({
   id,
   border = false,
   alt = false,
+  labelledBy,
 }: SectionProps) {
+  const headingId = labelledBy ?? (id ? sectionHeadingId(id) : undefined);
+
   return (
     <section
       id={id}
+      aria-labelledby={headingId}
       className={cn(
-        "scroll-mt-20",
+        "scroll-mt-24",
         landingSectionY,
         border && "border-t border-border",
         alt && landingSectionAlt,

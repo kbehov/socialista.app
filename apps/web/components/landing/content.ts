@@ -128,6 +128,47 @@ export const PLATFORMS_SECTION = {
     'Every major channel, built into one workspace — create, schedule, and publish without jumping between tools.',
 } as const
 
+export const INFLUENCER_SECTION = {
+  title: 'Create your own AI Influencer',
+  eyebrow:
+    'Generate an influencer in seconds — then make them hold your product, show your app, and wear your clothes.',
+  cta: 'Create AI Influencer',
+  mockup: {
+    badge: 'Made in Socialista',
+    username: '@miara.creates',
+    caption: 'POV: your brand finally has a face it owns',
+    hashtags: '#aicreator #ugc',
+  },
+  features: [
+    {
+      id: 'quality' as const,
+      side: 'left' as const,
+      title: 'Photorealistic quality',
+      description: 'Phone-native AI influencers that look shot on device — generated from a single prompt.',
+    },
+    {
+      id: 'consistency' as const,
+      side: 'left' as const,
+      title: 'Consistent brand presence',
+      description: 'Keep the same face, vibe, and identity across every still and clip.',
+    },
+    {
+      id: 'control' as const,
+      side: 'right' as const,
+      title: 'Full creative control',
+      description: 'Customize appearance, tone, and style to match your brand voice.',
+    },
+    {
+      id: 'ownership' as const,
+      side: 'right' as const,
+      title: 'Yours, forever',
+      description: 'Reuse your unique character across images, UGC, and video — freely.',
+    },
+  ],
+} as const
+
+export type InfluencerFeatureId = (typeof INFLUENCER_SECTION.features)[number]['id']
+
 export const PROBLEM = {
   title: 'Your calendar is empty because creation lives in five other tabs.',
   description:
@@ -171,50 +212,40 @@ export const LOOP = {
   ],
 } as const
 
-export const STUDIO = {
-  title: 'Every format. One studio.',
-  description: 'From product stills to talking-head UGC — generate with brand context already loaded.',
-  tabs: [
+export const STUDIO_BENTO = {
+  eyebrow: 'Features',
+  titleEmoji: '🔥',
+  title: 'Dominate social media',
+  description: '10x your content quantity and quality. Scale like top brands with Socialista.',
+  usedByLabel: '👥 Used by',
+  usedBy: [
+    { emoji: '🚀', label: 'Founders' },
+    { emoji: '📣', label: 'Marketers' },
+    { emoji: '🛒', label: 'E-commerce brands' },
+    { emoji: '🎬', label: 'Content creators' },
+    { emoji: '📱', label: 'Mobile apps' },
+    { emoji: '🏢', label: 'Agencies' },
+  ],
+  cards: [
     {
-      id: 'images' as const,
-      label: 'Images',
-      title: 'Feed-ready stills',
-      description: 'UGC, product, and lifestyle — in Stories, Reels, and feed ratios.',
-    },
-    {
-      id: 'ads' as const,
-      label: 'Static ads',
-      title: 'Catalog in. Ad out.',
-      description: 'Headlines, offers, and CTAs stay in-frame — ready for Meta, TikTok, and more.',
+      id: 'ugc' as const,
+      title: 'UGC Videos',
+      description: 'Script-to-clip talking heads that look shot on a phone — native vertical takes ready to publish.',
     },
     {
       id: 'slideshows' as const,
-      label: 'Slideshows',
-      title: 'Carousels built to hold a swipe',
-      description: 'Slide-by-slide layout and typography for Instagram and LinkedIn.',
+      title: 'Viral Slideshows',
+      description: 'AI carousels with slide-by-slide layout — built to hold a swipe on Instagram and LinkedIn.',
     },
     {
-      id: 'videos' as const,
-      label: 'Video',
-      title: 'Short-form in the browser',
-      description: 'Trim, caption, and export MP4 — then schedule without leaving the workspace.',
-    },
-    {
-      id: 'influencers' as const,
-      label: 'Influencers',
-      title: 'A face the brand owns',
-      description: 'Persistent on-brand talent, reused across stills and UGC.',
-    },
-    {
-      id: 'ugc' as const,
-      label: 'UGC',
-      title: 'Script to talking clip',
-      description: 'Phone-native output that looks shot on device.',
+      id: 'ads' as const,
+      title: 'Static Ads',
+      description: 'Drop in your catalog and generate on-brand ads with headlines, offers, and CTAs locked in-frame.',
     },
   ],
 } as const
 
-export type StudioTabId = (typeof STUDIO.tabs)[number]['id']
+export type StudioBentoCardId = (typeof STUDIO_BENTO.cards)[number]['id']
 
 export const UGC_REEL = {
   title: 'Talking clips that look shot on a phone.',
@@ -228,9 +259,9 @@ export const GALLERY = {
 } as const
 
 export const PUBLISH = {
-  title: 'Write once. Ship native.',
-  description:
-    'Per-platform variants, live previews, and one calendar. Instagram, TikTok, YouTube, LinkedIn, Facebook, Threads, Pinterest, and X.',
+  titleLines: ['Schedule Posts', 'From', 'Socialista'] as const,
+  description: 'Post directly to all social media at once with one click.',
+  cta: 'Post Now',
 } as const
 
 export const CONTEXT = {
@@ -292,6 +323,8 @@ export const COMPARE = {
   title: 'The five-tab stack, collapsed.',
   description:
     'You do not need a design tool, a generator, an editor, a scheduler, and a spreadsheet to post this week.',
+  beforeLabel: 'Before',
+  afterLabel: 'With Socialista',
   rows: [
     {
       label: 'Time to a live post',

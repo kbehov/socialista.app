@@ -16,6 +16,7 @@ export function LandingFaq() {
     <Section id="faq" border>
       <FadeIn>
         <SectionHeader
+          titleId="faq-heading"
           title={FAQ_SECTION.title}
           description={FAQ_SECTION.description}
           align="center"
@@ -30,11 +31,11 @@ export function LandingFaq() {
               value={`faq-${index}`}
               className="border-none"
             >
-              <AccordionTrigger className="py-5 text-base font-medium tracking-[-0.015em] hover:no-underline">
+              <AccordionTrigger className="py-5 text-[1.0625rem] font-medium tracking-[-0.015em] hover:no-underline">
                 {item.question}
               </AccordionTrigger>
               <AccordionContent className={landingBodySm}>
-                {item.answer}
+                <p>{item.answer}</p>
               </AccordionContent>
             </AccordionItem>
           ))}
