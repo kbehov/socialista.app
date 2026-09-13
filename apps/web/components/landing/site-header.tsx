@@ -1,69 +1,102 @@
-'use client'
+"use client";
 
-import Logo from '@/components/common/logo'
-import { ShimmerButton } from '@/components/ui/shimmer-button'
-import { cn } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import Logo from "@/components/common/logo";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-import { LANDING_NAV } from './content'
-import { landingNavLink, landingSection } from './landing-classes'
-import { MobileNav } from './mobile-nav'
+import { LANDING_NAV } from "./content";
+import {
+  landingCtaPrimary,
+  landingCtaSecondary,
+  landingNavLink,
+} from "./landing-classes";
+import { MobileNav } from "./mobile-nav";
 
 export function SiteHeader() {
-  const [scrolled, setScrolled] = useState(false)
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const scrollToHash = () => {
-      const id = window.location.hash.replace('#', '')
-      if (!id) return
-      document.getElementById(id)?.scrollIntoView({ behavior: 'instant', block: 'start' })
-    }
+      const id = window.location.hash.replace("#", "");
+      if (!id) return;
+      document
+        .getElementById(id)
+        ?.scrollIntoView({ behavior: "instant", block: "start" });
+    };
 
-    scrollToHash()
-    const timer = window.setTimeout(scrollToHash, 80)
-    window.addEventListener('hashchange', scrollToHash)
+    scrollToHash();
+    const timer = window.setTimeout(scrollToHash, 80);
+    window.addEventListener("hashchange", scrollToHash);
     return () => {
-      window.clearTimeout(timer)
-      window.removeEventListener('hashchange', scrollToHash)
-    }
-  }, [])
+      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", scrollToHash);
+    };
+  }, []);
 
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-40 h-16 border-b border-transparent bg-[color-mix(in_oklch,var(--background)_82%,transparent)] backdrop-blur-[12px] backdrop-saturate-[140%] transition-[border-color,background-color] duration-[180ms] ease-out',
-        scrolled && 'border-border bg-[color-mix(in_oklch,var(--background)_92%,transparent)]',
-      )}
-    >
-      <div className={`${landingSection} grid h-full grid-cols-[1fr_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr]`}>
-        <Logo />
+    <header className="sticky top-0 z-40 flex justify-center px-4 pt-3 sm:px-5 sm:pt-4">
+      <div
+        className={cn(
+          "flex w-fit max-w-[calc(100vw-2rem)] items-center gap-4 rounded-full border border-border/70 bg-background/70 px-4 py-2 shadow-[var(--shadow-sm)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow,border-color] duration-200 ease-out supports-[backdrop-filter]:bg-background/65 sm:gap-6 sm:px-5 sm:py-2.5",
+          scrolled &&
+            "border-border bg-background/85 shadow-[var(--shadow-md)] supports-[backdrop-filter]:bg-background/78",
+        )}
+      >
+        <Logo size="lg" className="pl-1 sm:pl-1.5" />
 
-        <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
-          {LANDING_NAV.map(item => (
-            <a key={item.href} href={item.href} className={landingNavLink}>
+        <nav
+          aria-label="Primary"
+          className="hidden items-center gap-7 px-1.5 md:flex lg:gap-8"
+        >
+          {LANDING_NAV.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className={cn(landingNavLink, "text-[0.9375rem]")}
+            >
               {item.label}
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center justify-self-end gap-2">
-          <ShimmerButton
-            href="/auth/signin"
-            borderRadius="9999px"
-            className="hidden h-9 px-5 py-0 text-sm font-semibold sm:inline-flex"
+        <div className="flex items-center gap-2 pl-1.5 sm:pl-2">
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className={cn(
+              landingCtaSecondary,
+              "hidden h-10 px-5 text-sm md:inline-flex",
+            )}
           >
-            Login or Signup
-          </ShimmerButton>
+            <Link href="/auth/signup">Sign up</Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            className={cn(
+              landingCtaPrimary,
+              "hidden h-10 gap-1.5 px-6 text-sm md:inline-flex",
+            )}
+          >
+            <Link href="/auth/signup">
+              Start for $0
+              <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+            </Link>
+          </Button>
           <MobileNav />
         </div>
       </div>
     </header>
-  )
+  );
 }

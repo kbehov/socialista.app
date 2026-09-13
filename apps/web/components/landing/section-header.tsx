@@ -1,49 +1,39 @@
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
-import { landingEyebrow } from './landing-classes'
+import { landingBody, landingH2 } from "./landing-classes";
 
 type SectionHeaderProps = {
-  eyebrow?: string
-  title: string
-  description?: string
-  align?: 'left' | 'center'
-  size?: 'default' | 'lg'
-  className?: string
-}
+  title: string;
+  description?: string;
+  align?: "left" | "center";
+  className?: string;
+};
 
 export function SectionHeader({
-  eyebrow,
   title,
   description,
-  align = 'left',
-  size = 'default',
+  align = "left",
   className,
 }: SectionHeaderProps) {
   return (
-    <header className={cn(align === 'center' && 'mx-auto max-w-2xl text-center', className)}>
-      {eyebrow ? <p className={landingEyebrow}>{eyebrow}</p> : null}
-      <h2
-        suppressHydrationWarning
-        className={cn(
-          'font-semibold tracking-[-0.03em] text-balance',
-          eyebrow ? 'mt-3' : '',
-          size === 'lg'
-            ? 'text-[2.125rem] leading-[1.1] sm:text-[2.75rem]'
-            : 'text-[1.875rem] leading-[1.12] sm:text-[2.375rem]',
-        )}
-      >
-        {title}
-      </h2>
+    <header
+      className={cn(
+        align === "center" && "mx-auto max-w-3xl text-center",
+        className,
+      )}
+    >
+      <h2 className={landingH2}>{title}</h2>
       {description ? (
         <p
           className={cn(
-            'mt-4 text-[0.9375rem] leading-7 text-pretty text-muted-foreground sm:text-base',
-            align === 'center' ? 'mx-auto max-w-xl' : 'max-w-xl',
+            landingBody,
+            "mt-5",
+            align === "center" ? "mx-auto" : "",
           )}
         >
           {description}
         </p>
       ) : null}
     </header>
-  )
+  );
 }

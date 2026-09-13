@@ -1,18 +1,22 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
-import { motion, useReducedMotion, type HTMLMotionProps } from 'motion/react'
-import type { ReactNode } from 'react'
+import { cn } from "@/lib/utils";
+import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
+import type { ReactNode } from "react";
 
-const fadeTransition = { type: 'spring' as const, bounce: 0, duration: 0.45 }
+const fadeTransition = {
+  type: "tween" as const,
+  duration: 0.2,
+  ease: [0.16, 1, 0.3, 1] as const,
+};
 
 type FadeInProps = {
-  children: ReactNode
-  className?: string
-  delay?: number
-  y?: number
-  immediate?: boolean
-} & Omit<HTMLMotionProps<'div'>, 'children'>
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  y?: number;
+  immediate?: boolean;
+} & Omit<HTMLMotionProps<"div">, "children">;
 
 export function FadeIn({
   children,
@@ -22,11 +26,11 @@ export function FadeIn({
   immediate = false,
   ...props
 }: FadeInProps) {
-  const reduceMotion = useReducedMotion()
-  const offset = reduceMotion ? 0 : y
+  const reduceMotion = useReducedMotion();
+  const offset = reduceMotion ? 0 : y;
 
   if (reduceMotion) {
-    return <div className={className}>{children}</div>
+    return <div className={className}>{children}</div>;
   }
 
   if (immediate) {
@@ -40,13 +44,13 @@ export function FadeIn({
       >
         {children}
       </motion.div>
-    )
+    );
   }
 
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 1, y: offset }}
+      initial={{ opacity: 0, y: offset }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{ ...fadeTransition, delay }}
@@ -54,16 +58,16 @@ export function FadeIn({
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 type StaggerProps = {
-  children: ReactNode
-  className?: string
-  delay?: number
-  stagger?: number
-  immediate?: boolean
-}
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  stagger?: number;
+  immediate?: boolean;
+};
 
 export function Stagger({
   children,
@@ -72,7 +76,7 @@ export function Stagger({
   stagger = 0.06,
   immediate = false,
 }: StaggerProps) {
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = useReducedMotion();
 
   const variants = {
     hidden: {},
@@ -82,18 +86,23 @@ export function Stagger({
         staggerChildren: stagger,
       },
     },
-  }
+  };
 
   if (reduceMotion) {
-    return <div className={cn(className)}>{children}</div>
+    return <div className={cn(className)}>{children}</div>;
   }
 
   if (immediate) {
     return (
-      <motion.div className={cn(className)} initial="hidden" animate="show" variants={variants}>
+      <motion.div
+        className={cn(className)}
+        initial="hidden"
+        animate="show"
+        variants={variants}
+      >
         {children}
       </motion.div>
-    )
+    );
   }
 
   return (
@@ -106,7 +115,7 @@ export function Stagger({
     >
       {children}
     </motion.div>
-  )
+  );
 }
 
 export function StaggerItem({
@@ -114,15 +123,15 @@ export function StaggerItem({
   className,
   y = 8,
 }: {
-  children: ReactNode
-  className?: string
-  y?: number
+  children: ReactNode;
+  className?: string;
+  y?: number;
 }) {
-  const reduceMotion = useReducedMotion()
-  const offset = reduceMotion ? 0 : y
+  const reduceMotion = useReducedMotion();
+  const offset = reduceMotion ? 0 : y;
 
   if (reduceMotion) {
-    return <div className={className}>{children}</div>
+    return <div className={className}>{children}</div>;
   }
 
   return (
@@ -139,5 +148,5 @@ export function StaggerItem({
     >
       {children}
     </motion.div>
-  )
+  );
 }

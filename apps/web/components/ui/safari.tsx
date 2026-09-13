@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from "react"
+import type { HTMLAttributes, ReactNode } from "react"
 
 const SAFARI_WIDTH = 1203
 const SAFARI_HEIGHT = 753
@@ -20,6 +20,7 @@ export interface SafariProps extends HTMLAttributes<HTMLDivElement> {
   imageSrc?: string
   videoSrc?: string
   mode?: SafariMode
+  children?: ReactNode
 }
 
 export function Safari({
@@ -29,10 +30,12 @@ export function Safari({
   mode = "default",
   className,
   style,
+  children,
   ...props
 }: SafariProps) {
   const hasVideo = !!videoSrc
-  const hasMedia = hasVideo || !!imageSrc
+  const hasChildren = children != null
+  const hasMedia = hasVideo || !!imageSrc || hasChildren
 
   return (
     <div
@@ -81,6 +84,21 @@ export function Safari({
             alt=""
             className="block size-full object-cover object-top"
           />
+        </div>
+      )}
+
+      {!hasVideo && !imageSrc && hasChildren && (
+        <div
+          className="pointer-events-none absolute z-0 overflow-hidden bg-background"
+          style={{
+            left: `${LEFT_PCT}%`,
+            top: `${TOP_PCT}%`,
+            width: `${WIDTH_PCT}%`,
+            height: `${HEIGHT_PCT}%`,
+            borderRadius: "0 0 11px 11px",
+          }}
+        >
+          {children}
         </div>
       )}
 

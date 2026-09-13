@@ -1,14 +1,16 @@
-import { WORKFLOW } from './content'
-import { FadeIn } from './fade-in'
-import { Section } from './section'
-import { SectionHeader } from './section-header'
+import { cn } from "@/lib/utils";
+
+import { WORKFLOW } from "./content";
+import { FadeIn } from "./fade-in";
+import { landingBodySm, landingContentGap, landingH3 } from "./landing-classes";
+import { Section } from "./section";
+import { SectionHeader } from "./section-header";
 
 export function LandingWorkflow() {
   return (
     <Section border alt>
       <FadeIn>
         <SectionHeader
-          eyebrow={WORKFLOW.eyebrow}
           title={WORKFLOW.title}
           description={WORKFLOW.description}
           align="center"
@@ -16,19 +18,24 @@ export function LandingWorkflow() {
       </FadeIn>
       <FadeIn
         delay={0.05}
-        className="mt-12 grid gap-5 border-t border-border pt-8 sm:mt-14 lg:grid-cols-3 lg:gap-0 lg:border-t-0 lg:pt-0"
+        className={`${landingContentGap} grid gap-8 lg:grid-cols-3 lg:gap-10`}
       >
-        {WORKFLOW.steps.map((step, index) => (
+        {WORKFLOW.steps.map((step) => (
           <div
             key={step.n}
-            className="border-b border-border pb-5 lg:border-b-0 lg:border-l lg:px-8 lg:pb-0 first:lg:border-l-0 first:lg:pl-0"
+            className="relative border-t border-border pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10 first:lg:border-l-0 first:lg:pl-0"
           >
-            <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground tabular-nums">{step.n}</p>
-            <h3 className="mt-3 text-lg font-semibold tracking-[-0.025em]">{step.title}</h3>
-            <p className="mt-2.5 text-sm leading-6 text-muted-foreground">{step.description}</p>
+            <span
+              className="inline-flex size-8 items-center justify-center rounded-full border border-border bg-muted/30 text-xs font-medium tabular-nums text-muted-foreground"
+              aria-hidden="true"
+            >
+              {step.n}
+            </span>
+            <h3 className={cn(landingH3, "mt-4")}>{step.title}</h3>
+            <p className={cn(landingBodySm, "mt-2")}>{step.description}</p>
           </div>
         ))}
       </FadeIn>
     </Section>
-  )
+  );
 }

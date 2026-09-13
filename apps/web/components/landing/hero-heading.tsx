@@ -1,43 +1,41 @@
-'use client'
+import { HERO } from "./content";
+import { landingH1 } from "./landing-classes";
 
-import { SparklesText } from '@/components/ui/sparkles-text'
-
-import { HERO } from './content'
-
-const HERO_SPARKLE_COLORS = {
-  first: 'oklch(0.68 0.16 285)',
-  second: 'oklch(0.72 0.14 330)',
-} as const
-
-const LINE_1_CLASS =
-  'text-[clamp(2rem,4.5vw,2.875rem)] font-normal leading-[1.12] tracking-[-0.028em]'
-const LINE_2_CLASS =
-  'text-[clamp(2.5rem,6vw,4rem)] font-semibold leading-[1.02] tracking-[-0.044em]'
+function WorkspaceDoodle() {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-x-[-4%] -bottom-[0.18em] h-[0.35em] w-[108%] text-pink-400/80 dark:text-pink-400/70"
+      viewBox="0 0 120 12"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      preserveAspectRatio="none"
+    >
+      <path
+        d="M2 8C18 3.5 32 9.5 48 7C64 4.5 78 9 94 6.5C102 5.5 112 7.5 118 5"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function HeroHeading() {
-  const { line1, line2 } = HERO.title
-
   return (
-    <h1 className="mx-auto max-w-[40rem] text-balance text-center">
-      <span className={`block text-muted-foreground ${LINE_1_CLASS}`}>
-        {line1.prefix}{' '}
-        <span className={`font-medium text-foreground ${LINE_1_CLASS} tracking-[-0.03em]`}>
-          {line1.emphasis}
-        </span>{' '}
-        {line1.suffix}
-      </span>
-
-      <span className={`mt-3 block text-foreground sm:mt-4 ${LINE_2_CLASS}`}>
-        {line2.prefix}{' '}
-        <SparklesText
-          className={`align-baseline ${LINE_2_CLASS}`}
-          sparklesCount={6}
-          colors={HERO_SPARKLE_COLORS}
-        >
-          {line2.sparkles}
-        </SparklesText>
-        .
+    <h1
+      className={`${landingH1} mx-auto w-full max-w-5xl text-center text-foreground`}
+    >
+      <span className="block">{HERO.titleLine1}</span>
+      <span className="mt-1 block sm:mt-1.5">
+        {HERO.titleLine2Prefix}{" "}
+        <span className="relative inline-block">
+          {HERO.titleLine2Highlight}
+          <WorkspaceDoodle />
+        </span>{" "}
+        {HERO.titleLine2Suffix}
       </span>
     </h1>
-  )
+  );
 }
