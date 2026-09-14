@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { CtaPair } from "./cta-pair";
 import { FINAL_CTA } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingBody, landingH2 } from "./landing-classes";
+import { landingBody, landingFinalCtaGlow, landingH2 } from "./landing-classes";
 import { SectionInner } from "./section";
 
 export function LandingFinalCta() {
@@ -14,7 +14,7 @@ export function LandingFinalCta() {
       className="relative overflow-hidden border-t border-border bg-[color-mix(in_oklch,var(--foreground)_97%,var(--background))] text-background dark:bg-surface-2 dark:text-foreground"
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_15%_50%,color-mix(in_oklch,var(--background)_8%,transparent),transparent_55%),radial-gradient(ellipse_40%_60%_at_85%_20%,color-mix(in_oklch,var(--guest-accent)_12%,transparent),transparent_50%)]"
+        className={cn("pointer-events-none absolute inset-0", landingFinalCtaGlow)}
         aria-hidden="true"
       />
       <SectionInner className="relative py-20 sm:py-24 lg:py-28">

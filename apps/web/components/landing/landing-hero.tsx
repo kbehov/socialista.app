@@ -10,12 +10,10 @@ import { SectionInner } from './section'
 
 export function LandingHero() {
   return (
-    <section aria-labelledby="hero-heading" className="relative pt-8 pb-0 sm:pt-10 lg:pt-12">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 left-1/2 h-[min(28rem,60vh)] w-full max-w-3xl -translate-x-1/2 bg-[radial-gradient(ellipse_68%_58%_at_50%_42%,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_74%)]"
-        aria-hidden="true"
-      />
-
+    <section
+      aria-labelledby="hero-heading"
+      className="relative isolate overflow-x-clip pt-8 pb-0 sm:pt-10 lg:pt-12"
+    >
       <HeroDoodles />
 
       <SectionInner className="max-w-6xl">
@@ -32,7 +30,7 @@ export function LandingHero() {
               <HeroHeading />
             </StaggerItem>
             <StaggerItem>
-              <p className="mx-auto mt-5 max-w-82 text-[0.9375rem] leading-[1.55] text-pretty text-muted-foreground sm:mt-6 sm:max-w-lg sm:text-sm sm:leading-[1.65] lg:text-md lg:leading-[1.6]">
+              <p className="mx-auto mt-5 max-w-md text-[0.9375rem] leading-[1.55] text-pretty text-muted-foreground sm:mt-6 sm:max-w-lg sm:text-[0.975rem] sm:leading-[1.65]">
                 {HERO.description}
               </p>
             </StaggerItem>

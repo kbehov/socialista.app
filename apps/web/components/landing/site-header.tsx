@@ -66,7 +66,7 @@ export function SiteHeader() {
             <Link href="/auth/signin">Sign in</Link>
           </Button>
           <ShimmerButton href="/auth/signup" className="hidden h-10 px-6 text-sm md:inline-flex">
-            Start for $0
+            Create your first post
             <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
           </ShimmerButton>
           <MobileNav />

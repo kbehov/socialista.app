@@ -63,7 +63,7 @@ export function MobileNav() {
             </Button>
             <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
               <Link href="/auth/signup" onClick={() => setOpen(false)}>
-                Start for $0
+                Create your first post
                 <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
               </Link>
             </Button>

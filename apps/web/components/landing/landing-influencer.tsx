@@ -19,6 +19,8 @@ import {
   landingBody,
   landingContentGap,
   landingH2,
+  landingH3,
+  landingInfluencerGlow,
 } from "./landing-classes";
 import { Section } from "./section";
 
@@ -61,9 +63,7 @@ function InfluencerFeature({
       )}
     >
       <FeatureIcon icon={icon} />
-      <h3 className="text-xl font-semibold leading-[1.25] tracking-[-0.02em] sm:text-2xl">
-        {title}
-      </h3>
+      <h3 className={landingH3}>{title}</h3>
       <p className={cn(landingBody, "max-w-none text-[0.9375rem] sm:text-base")}>
         {description}
       </p>
@@ -95,7 +95,10 @@ export function LandingInfluencer() {
       <div className={cn(landingContentGap, "relative")}>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-[10%] top-[18%] bottom-[8%] rounded-full bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_3%,transparent)_0%,transparent_72%)]"
+          className={cn(
+            "pointer-events-none absolute inset-x-[6%] top-[12%] bottom-[6%] rounded-full",
+            landingInfluencerGlow,
+          )}
         />
 
         <div className="relative mx-auto grid w-full max-w-5xl justify-items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-8 xl:gap-12">

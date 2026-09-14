@@ -4,14 +4,14 @@ import { ShieldCheck, Timer, Zap } from 'lucide-react'
 import { HERO_PROOF_POINTS } from './content'
 
 const ITEMS: { icon: LucideIcon; iconClass: string }[] = [
-  { icon: Zap, iconClass: 'text-amber-500' },
-  { icon: Timer, iconClass: 'text-sky-500' },
-  { icon: ShieldCheck, iconClass: 'text-emerald-500' },
+  { icon: Zap, iconClass: 'text-accent-orange' },
+  { icon: Timer, iconClass: 'text-[color-mix(in_oklch,var(--guest-accent)_85%,var(--foreground))]' },
+  { icon: ShieldCheck, iconClass: 'text-[color-mix(in_oklch,var(--accent-orange)_55%,var(--foreground))]' },
 ]
 
 export function HeroEyebrow() {
   return (
-    <ul className="mx-auto flex max-w-full items-center justify-center rounded-full border border-border/70 bg-background/70 px-0.5 py-0.5 text-xs text-foreground/80  tracking-[-0.01em]  sm:px-1.5 sm:py-1 sm:text-[0.8125rem]">
+    <ul className="mx-auto flex max-w-full items-center justify-center rounded-full border border-[color-mix(in_oklch,var(--foreground)_10%,var(--border))] bg-background/65 px-0.5 py-0.5 text-xs text-foreground/85 shadow-[0_1px_0_color-mix(in_oklch,var(--background)_50%,transparent)_inset,0_8px_24px_-16px_color-mix(in_oklch,var(--foreground)_12%,transparent)] backdrop-blur-md tracking-[-0.01em] sm:px-1.5 sm:py-1 sm:text-[0.8125rem]">
       {HERO_PROOF_POINTS.map((point, index) => {
         const item = ITEMS[index]
         if (!item) return null

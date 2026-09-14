@@ -6,17 +6,16 @@ import type { ReactNode } from 'react'
 
 import { STUDIO_BENTO } from './content'
 import { FadeIn } from './fade-in'
-import { landingBody, landingContentGap, landingH2, landingMediaCard } from './landing-classes'
+import { landingBody, landingContentGap, landingH2, landingMediaCard, landingPanel } from './landing-classes'
 import { GALLERY_FALLBACK, IMG, VIDEO } from './media'
 import { Section } from './section'
 import { StudioTitleFire } from './studio-title-fire'
 import { UgcClip } from './ugc-clip'
 
-const bentoCard =
-  'flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-[color-mix(in_oklch,var(--foreground)_6%,var(--border))] bg-background shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_12px_32px_-12px_color-mix(in_oklch,var(--foreground)_10%,transparent)]'
+const bentoCard = `flex h-full flex-col overflow-hidden ${landingPanel}`
 
 const bentoVisual =
-  'relative mx-5 mt-5 h-[18.75rem] overflow-hidden rounded-[1.25rem] bg-[color-mix(in_oklch,var(--muted)_55%,var(--background))] sm:m-1 sm:h-[20rem]'
+  'relative mx-5 mt-5 h-[18.75rem] overflow-hidden rounded-[1rem] bg-[color-mix(in_oklch,var(--muted)_55%,var(--background))] sm:m-1 sm:h-[20rem]'
 
 const bentoVisualFade = 'from-[color-mix(in_oklch,var(--muted)_55%,var(--background))]'
 
@@ -48,9 +47,9 @@ function BentoCard({
     <FadeIn delay={delay} className="h-full">
       <div className={bentoCard}>
         <div className={bentoVisual}>{children}</div>
-        <div className="flex flex-1 flex-col p-6 pt-3 sm:p-7 sm:pt-4">
-          <h3 className="text-lg font-semibold leading-snug tracking-tight sm:text-xl">{title}</h3>
-          <p className="mt-2.5 text-[0.9375rem] leading-[1.6] text-pretty text-muted-foreground">{description}</p>
+        <div className="flex flex-1 flex-col p-6 pt-4 sm:p-7 sm:pt-5">
+          <h3 className="text-[1.0625rem] font-semibold leading-[1.35] tracking-[-0.02em] sm:text-lg">{title}</h3>
+          <p className="mt-2 text-[0.9375rem] leading-[1.6] text-pretty text-muted-foreground">{description}</p>
         </div>
       </div>
     </FadeIn>
@@ -198,7 +197,7 @@ export async function LandingStudio() {
               <StudioTitleFire emoji={STUDIO_BENTO.titleEmoji} className="mr-2 sm:mr-2.5" />
               {STUDIO_BENTO.title}
             </h2>
-            <p className={cn(landingBody, 'mt-1.5 ml-10 lg:ml-13')}>{STUDIO_BENTO.description}</p>
+            <p className={cn(landingBody, 'mt-3')}>{STUDIO_BENTO.description}</p>
           </hgroup>
 
           <aside className="lg:max-w-md lg:shrink-0 lg:pb-1" aria-label={STUDIO_BENTO.usedByLabel}>

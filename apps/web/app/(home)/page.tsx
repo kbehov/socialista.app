@@ -1,13 +1,12 @@
 import { FAQ_ITEMS, PAGE_METADATA } from '@/components/landing/content'
+import { LandingAdditionalFeatures } from '@/components/landing/landing-additional-features'
 import { LandingAnalytics } from '@/components/landing/landing-analytics'
-import { LandingContextSkills } from '@/components/landing/landing-context-skills'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
 import { LandingPlatforms } from '@/components/landing/landing-platforms'
 import { LandingPricing } from '@/components/landing/landing-pricing'
-import { LandingPublish } from '@/components/landing/landing-publish'
 import { LandingStudio } from '@/components/landing/landing-studio'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
@@ -112,9 +111,9 @@ export default async function HomePage() {
       <LandingStudio />
       <LandingInfluencer />
       <LandingPlatforms />
-      <LandingPublish />
+      <LandingAdditionalFeatures />
+      {/* <LandingPublish /> */}
       <LandingAnalytics />
-      <LandingContextSkills />
       <LandingPricing
         products={products}
         loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}

@@ -29,8 +29,7 @@ export function HeroSocialProof({ className }: HeroSocialProofProps) {
 
       <div className="flex flex-col items-center gap-0.5 text-center sm:items-start sm:text-left">
         <p className="text-[0.8125rem] leading-snug tracking-[-0.01em] text-foreground/90">
-          <span className="font-semibold tabular-nums text-foreground">{HERO_SOCIAL_PROOF.count}</span>{' '}
-          {HERO_SOCIAL_PROOF.label}
+          <span className="font-semibold text-foreground">{HERO_SOCIAL_PROOF.lead}</span>
         </p>
         <p className="text-xs leading-snug text-muted-foreground">{HERO_SOCIAL_PROOF.subline}</p>
       </div>

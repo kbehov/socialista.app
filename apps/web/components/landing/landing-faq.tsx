@@ -7,7 +7,7 @@ import {
 
 import { FAQ_ITEMS, FAQ_SECTION } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingBodySm, landingContentGap } from "./landing-classes";
+import { landingBodySm, landingContentGap, landingH3 } from "./landing-classes";
 import { Section } from "./section";
 import { SectionHeader } from "./section-header";
 
@@ -31,7 +31,7 @@ export function LandingFaq() {
               value={`faq-${index}`}
               className="border-none"
             >
-              <AccordionTrigger className="py-5 text-[1.0625rem] font-medium tracking-[-0.015em] hover:no-underline">
+              <AccordionTrigger className={`${landingH3} py-5 text-left hover:no-underline`}>
                 {item.question}
               </AccordionTrigger>
               <AccordionContent className={landingBodySm}>

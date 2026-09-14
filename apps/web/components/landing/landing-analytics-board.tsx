@@ -9,6 +9,8 @@ import { useInView, useMotionValue, useReducedMotion, useSpring } from 'motion/r
 import { startTransition, useEffect, useId, useRef, useState } from 'react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 
+import { landingPanel } from './landing-classes'
+
 type ChartMetric = 'reach' | 'engagement' | 'views' | 'rate'
 
 type SeriesPoint = {
@@ -71,7 +73,7 @@ const CHART_COPY: Record<ChartMetric, { title: string; description: string }> = 
 const CHART_MARGIN = { top: 8, right: 8, left: 0, bottom: 0 } as const
 
 const CHART_CONFIG: ChartConfig = {
-  value: { label: 'Value', color: 'var(--chart-1)' },
+  value: { label: 'Value', color: 'var(--accent-orange)' },
 }
 
 const TICK_MS = 2800
@@ -149,9 +151,9 @@ function LiveCount({
 
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] font-medium tracking-[-0.01em]">
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_oklch,var(--foreground)_8%,var(--border))] bg-[color-mix(in_oklch,var(--muted)_35%,var(--background))] px-2.5 py-1 text-[11px] font-medium tracking-[-0.01em] text-foreground/90">
       <span className="relative flex size-1.5" aria-hidden>
-        <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-50 motion-reduce:animate-none" />
+        <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-45 motion-reduce:animate-none" />
         <span className="relative size-1.5 rounded-full bg-success" />
       </span>
       Live
@@ -180,13 +182,19 @@ function KpiButton({
       onClick={() => onSelect(metric)}
       aria-pressed={selected}
       className={cn(
-        'flex min-w-0 flex-col gap-1 px-3.5 py-3.5 text-left transition-colors duration-150',
+        'relative flex min-w-0 flex-col gap-1 px-3.5 py-3.5 text-left transition-[background-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset',
         selected
-          ? 'bg-[color-mix(in_oklch,var(--muted)_70%,var(--background))]'
-          : 'bg-background hover:bg-muted/20',
+          ? 'bg-[color-mix(in_oklch,var(--muted)_55%,var(--background))] shadow-[inset_0_1px_0_color-mix(in_oklch,var(--foreground)_6%,transparent)]'
+          : 'bg-background hover:bg-muted/25',
       )}
     >
+      {selected ? (
+        <span
+          aria-hidden
+          className="absolute inset-x-3.5 top-0 h-0.5 rounded-full bg-foreground/80 sm:inset-x-4"
+        />
+      ) : null}
       <span className={cn('text-[11px] font-medium', selected ? 'text-foreground' : 'text-muted-foreground')}>
         {label}
       </span>
@@ -194,7 +202,7 @@ function KpiButton({
         <LiveCount
           value={value}
           format={metric}
-          className="text-xl font-semibold tracking-[-0.03em] text-foreground"
+          className="text-[1.375rem] font-semibold tracking-[-0.03em] text-foreground sm:text-xl"
         />
         <span className="text-[11px] font-medium tabular-nums text-success">{trend}</span>
       </span>
@@ -215,8 +223,8 @@ function AnalyticsChart({ metric, series }: { metric: ChartMetric; series: Serie
   return (
     <ChartContainer
       config={CHART_CONFIG}
-      className="aspect-auto h-[200px] w-full sm:h-[228px]"
-      initialDimension={{ width: 640, height: 228 }}
+      className="aspect-auto h-[208px] w-full sm:h-[236px]"
+      initialDimension={{ width: 640, height: 236 }}
     >
       <AreaChart data={chartData} margin={CHART_MARGIN}>
         <defs>
@@ -281,18 +289,23 @@ function AnalyticsChart({ metric, series }: { metric: ChartMetric; series: Serie
 function ChannelMix() {
   return (
     <div>
-      <p className="text-[11px] font-medium text-muted-foreground">Channel mix</p>
-      <ul className="mt-3 space-y-2.5">
+      <p className="text-[11px] font-medium tracking-[-0.01em] text-muted-foreground">Channel mix</p>
+      <ul className="mt-3 space-y-3">
         {CHANNELS.map(channel => (
           <li key={channel.provider} className="flex items-center gap-2.5">
-            <SocialPlatformIcon provider={channel.provider} size={12} />
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background">
+              <SocialPlatformIcon provider={channel.provider} size={12} />
+            </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-[12px] font-medium">{channel.label}</span>
+                <span className="truncate text-[12px] font-medium tracking-[-0.01em]">{channel.label}</span>
                 <span className="text-[11px] tabular-nums text-muted-foreground">{channel.share}%</span>
               </div>
-              <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-foreground/70" style={{ width: `${channel.share}%` }} />
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted/80">
+                <div
+                  className="h-full rounded-full bg-[color-mix(in_oklch,var(--accent-orange)_78%,var(--foreground))]"
+                  style={{ width: `${channel.share}%` }}
+                />
               </div>
             </div>
           </li>
@@ -305,18 +318,30 @@ function ChannelMix() {
 function TopCreatives({ creatives }: { creatives: CreativeRow[] }) {
   return (
     <div>
-      <p className="text-[11px] font-medium text-muted-foreground">Top this week</p>
-      <ul className="mt-3 space-y-1">
+      <p className="text-[11px] font-medium tracking-[-0.01em] text-muted-foreground">Top this week</p>
+      <ul className="mt-3 space-y-0.5">
         {creatives.map((creative, index) => (
           <li
             key={creative.title}
             className={cn(
-              'flex items-center gap-2.5 rounded-lg px-1.5 py-1.5',
-              index === 0 && 'bg-muted/40',
+              'flex items-center gap-2 rounded-[calc(var(--radius)+2px)] px-2 py-2 transition-colors duration-150',
+              index === 0 &&
+                'border border-[color-mix(in_oklch,var(--foreground)_8%,var(--border))] bg-[color-mix(in_oklch,var(--muted)_40%,var(--background))]',
             )}
           >
-            <SocialPlatformIcon provider={creative.provider} size={12} />
-            <span className="min-w-0 flex-1 truncate text-[12px] font-medium">{creative.title}</span>
+            <span
+              className={cn(
+                'flex size-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold tabular-nums',
+                index === 0 ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground',
+              )}
+              aria-hidden
+            >
+              {index + 1}
+            </span>
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background">
+              <SocialPlatformIcon provider={creative.provider} size={12} />
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[12px] font-medium tracking-[-0.01em]">{creative.title}</span>
             <LiveCount
               value={creative.views}
               format="count"
@@ -374,12 +399,12 @@ export function LandingAnalyticsBoard() {
   return (
     <div
       ref={boardRef}
-      className="overflow-hidden rounded-[1.75rem] border border-[color-mix(in_oklch,var(--foreground)_6%,var(--border))] bg-background shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_18px_40px_-18px_color-mix(in_oklch,var(--foreground)_12%,transparent)]"
+      className={cn('overflow-hidden', landingPanel)}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-3.5 sm:px-5">
+      <div className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-4 sm:px-6 sm:py-4">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium tracking-tight">Workspace analytics</p>
-          <p className="text-xs text-muted-foreground">Last 7 days · sample workspace</p>
+          <p className="text-[13px] font-semibold tracking-[-0.02em]">Workspace analytics</p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">Last 7 days · sample workspace</p>
         </div>
         <LiveBadge />
       </div>
@@ -398,21 +423,25 @@ export function LandingAnalyticsBoard() {
         ))}
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_17.5rem]">
-        <div className="relative min-w-0 px-3 pb-4 pt-4 sm:px-4 sm:pt-5">
-          <div className="mb-3 flex items-end justify-between gap-3 px-1">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="relative min-w-0 px-3 pb-5 pt-4 sm:px-5 sm:pb-6 sm:pt-5">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-3 top-12 bottom-4 rounded-[1.25rem] bg-[radial-gradient(ellipse_at_50%_100%,color-mix(in_oklch,var(--accent-orange)_10%,transparent)_0%,transparent_62%)] sm:inset-x-5"
+          />
+          <div className="relative mb-4 flex flex-col gap-3 px-0.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[13px] font-medium tracking-tight">{chartCopy.title}</p>
-              <p className="text-xs text-muted-foreground">{chartCopy.description}</p>
+              <p className="text-[13px] font-semibold tracking-[-0.02em]">{chartCopy.title}</p>
+              <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{chartCopy.description}</p>
             </div>
-            <p className="hidden rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
+            <p className="w-fit rounded-full border border-[color-mix(in_oklch,var(--foreground)_8%,var(--border))] bg-[color-mix(in_oklch,var(--muted)_30%,var(--background))] px-2.5 py-1 text-[11px] font-medium tracking-[-0.01em] text-muted-foreground">
               Winning post · UGC hook v2
             </p>
           </div>
           <AnalyticsChart metric={metric} series={series} />
         </div>
 
-        <aside className="flex flex-col gap-6 border-t border-border/50 px-4 py-4 sm:px-5 lg:border-l lg:border-t-0">
+        <aside className="flex flex-col justify-center gap-7 border-t border-border/50 px-4 py-5 sm:px-6 lg:border-l lg:border-t-0 lg:py-6">
           <TopCreatives creatives={creatives} />
           <ChannelMix />
         </aside>
