@@ -23,14 +23,17 @@ import {
   type DbTrack,
   type IVideo,
   VideoStatus,
+  getModels,
 } from '@socialista/db'
 import { createPublicAccessToken } from '@socialista/trigger'
-import type { ExportVideoTask, GenerateVideoCaptionsTask } from '@socialista/trigger/task-types'
+import type { ExportVideoTask, GenerateAudioTask, GenerateVideoCaptionsTask } from '@socialista/trigger/task-types'
 import {
   TASK_IDS,
+  VIDEO_AUDIO_MAX_CHARS,
   type CreateVideoPayload,
   type DuplicateVideoPayload,
   type ExportSettings,
+  type GenerateAudioVoice,
   type UpdateVideoPayload,
 } from '@socialista/types'
 import { tasks } from '@trigger.dev/sdk/v3'
@@ -274,6 +277,77 @@ export const generateVideoCaptions = async (c: Context<AppContext>) => {
     workspaceId: video.workspace.toString(),
     userId,
     clipId,
+  })
+
+  const publicAccessToken = await createPublicAccessToken(handle.id)
+
+  return successResponse(c, 202, {
+    runId: handle.id,
+    publicAccessToken,
+  })
+}
+
+function parseAudioVoice(raw: unknown): GenerateAudioVoice {
+  if (!raw || typeof raw !== 'object') {
+    throw new HttpError(400, 'voice is required')
+  }
+  const voice = raw as Record<string, unknown>
+  if (typeof voice.voiceId !== 'string' || voice.voiceId.trim().length === 0) {
+    throw new HttpError(400, 'Pick a voice first')
+  }
+
+  const optionalNumber = (value: unknown) =>
+    typeof value === 'number' && Number.isFinite(value) ? value : undefined
+  const speed = optionalNumber(voice.speed)
+  const stability = optionalNumber(voice.stability)
+  const similarity = optionalNumber(voice.similarity)
+  const style = optionalNumber(voice.style)
+
+  return {
+    voiceId: voice.voiceId.trim(),
+    ...(typeof voice.voiceName === 'string' && voice.voiceName.trim()
+      ? { voiceName: voice.voiceName.trim() }
+      : {}),
+    ...(speed !== undefined ? { speed } : {}),
+    ...(stability !== undefined ? { stability } : {}),
+    ...(similarity !== undefined ? { similarity } : {}),
+    ...(style !== undefined ? { style } : {}),
+    ...(typeof voice.speakerBoost === 'boolean' ? { speakerBoost: voice.speakerBoost } : {}),
+  }
+}
+
+export const generateVideoAudio = async (c: Context<AppContext>) => {
+  const userId = c.get('userId')
+  const id = parseParamId(c.req.param('id'), 'video ID')
+  const video = await getVideoForMember(id, userId)
+
+  const body = (await c.req.json()) as { text?: unknown; voice?: unknown }
+  if (typeof body.text !== 'string') {
+    throw new HttpError(400, 'text is required')
+  }
+  const text = body.text.trim()
+  if (!text) {
+    throw new HttpError(400, 'Write a script before generating audio')
+  }
+  if (text.length > VIDEO_AUDIO_MAX_CHARS) {
+    throw new HttpError(400, `Script must be ${VIDEO_AUDIO_MAX_CHARS} characters or fewer`)
+  }
+
+  const voice = parseAudioVoice(body.voice)
+
+  const { models } = await getModels('limit=1&modelType=text&sort=-usageCount')
+  const model = models[0]
+  if (!model) {
+    throw new HttpError(400, 'Add a text model in the catalog first')
+  }
+
+  const handle = await tasks.trigger<GenerateAudioTask>(TASK_IDS.generateAudio, {
+    videoId: id,
+    workspaceId: video.workspace.toString(),
+    userId,
+    text,
+    voice,
+    model: model.value,
   })
 
   const publicAccessToken = await createPublicAccessToken(handle.id)

@@ -64,6 +64,7 @@ export const TASK_IDS = {
   generateUgcStills: 'generate-ugc-stills',
   generateUgcVideo: 'generate-ugc-video',
   generateUgcAudio: 'generate-ugc-audio',
+  generateAudio: 'generate-audio',
   videoGeneration: 'realtime-video-generation',
   slideshowGeneration: 'realtime-slideshow-generation',
   videoCaptions: 'generate-video-captions',

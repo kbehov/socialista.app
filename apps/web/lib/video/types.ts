@@ -30,5 +30,9 @@ export function inferMediaType(file: File): MediaType | null {
   if (file.type.startsWith('video/')) return 'video'
   if (file.type.startsWith('audio/')) return 'audio'
   if (file.type.startsWith('image/')) return 'image'
+  const name = file.name.toLowerCase()
+  if (/\.(mp3|wav|m4a|aac|ogg|flac|weba)$/.test(name)) return 'audio'
+  if (/\.(mp4|webm|mov|m4v|mkv)$/.test(name)) return 'video'
+  if (/\.(png|jpe?g|gif|webp|avif|svg)$/.test(name)) return 'image'
   return null
 }

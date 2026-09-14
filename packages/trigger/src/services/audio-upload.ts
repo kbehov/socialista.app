@@ -22,3 +22,22 @@ export async function uploadGeneratedAudio({
   logger.info('UGC voiceover uploaded to R2', { key, bytes: bytes.length })
   return url
 }
+
+export type UploadVideoAudioInput = {
+  workspaceId: string
+  videoId: string
+  runId: string
+  bytes: Buffer
+}
+
+export async function uploadVideoAudio({
+  workspaceId,
+  videoId,
+  runId,
+  bytes,
+}: UploadVideoAudioInput): Promise<string> {
+  const key = `video-audio/${workspaceId}/${videoId}-${runId}.mp3`
+  const url = await uploadR2Object({ key, bytes, contentType: 'audio/mpeg' })
+  logger.info('Video voiceover uploaded to R2', { key, bytes: bytes.length })
+  return url
+}

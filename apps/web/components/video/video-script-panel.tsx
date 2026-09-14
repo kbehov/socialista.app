@@ -14,14 +14,16 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { SCRIPT_ROLE_OVERLAY_PRESETS } from '@/lib/video/defaults'
+import { openVideoAudioPanelWithScript } from '@/lib/video/editor-events'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
 import { formatCredits } from '@/utils/format'
 import type { VideoScriptSegment, VideoScriptTone } from '@socialista/types'
-import { PROMPT_KEYS, VIDEO_SCRIPT_TONES } from '@socialista/types'
+import { PROMPT_KEYS, VIDEO_AUDIO_MAX_CHARS, VIDEO_SCRIPT_TONES } from '@socialista/types'
 import {
   ArrowLeftIcon,
+  AudioLinesIcon,
   Loader2Icon,
   SparklesIcon,
 } from 'lucide-react'
@@ -71,6 +73,15 @@ function roleBadgeClass(role: VideoScriptSegment['role']): string {
   return 'bg-foreground/6 text-muted-foreground'
 }
 
+function scriptToVoiceoverText(segments: VideoScriptSegment[]): string {
+  return segments
+    .map(segment => segment.text.trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function VideoScriptPanel({
   embedded = false,
   showPanelHeader = true,
@@ -92,6 +103,7 @@ export function VideoScriptPanel({
   const [title, setTitle] = useState('')
   const [segments, setSegments] = useState<VideoScriptSegment[]>([])
   const [replaceExisting, setReplaceExisting] = useState(false)
+  const [applied, setApplied] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [skillId, setSkillId] = useState<string | undefined>()
 
@@ -119,6 +131,7 @@ export function VideoScriptPanel({
       }
       setTitle(result.title)
       setSegments(result.segments)
+      setApplied(false)
       setView('preview')
       toast.success(`Generated ${result.segments.length} captions`)
     })
@@ -158,7 +171,31 @@ export function VideoScriptPanel({
         ? `Replaced timeline text with ${ids.length} overlay${ids.length === 1 ? '' : 's'}`
         : `Applied ${ids.length} text overlay${ids.length === 1 ? '' : 's'}`,
     )
+    setApplied(true)
   }, [addTextOverlays, replaceExisting, seek, segments])
+
+  const handleGenerateAudio = useCallback(() => {
+    const voiceover = scriptToVoiceoverText(segments)
+    if (!voiceover) {
+      toast.error('Add some script text first')
+      return
+    }
+
+    if (!applied) {
+      if (segments.length === 0) {
+        toast.error('Nothing to apply')
+        return
+      }
+      handleApply()
+    }
+
+    const truncated = voiceover.length > VIDEO_AUDIO_MAX_CHARS
+    const next = voiceover.slice(0, VIDEO_AUDIO_MAX_CHARS)
+    if (truncated) {
+      toast.message(`Script is over ${VIDEO_AUDIO_MAX_CHARS} characters — trim it in the audio panel`)
+    }
+    openVideoAudioPanelWithScript(next)
+  }, [applied, handleApply, segments])
 
   const applyExample = (example: (typeof PROMPT_EXAMPLES)[number]) => {
     setPrompt(example.prompt)
@@ -465,6 +502,7 @@ export function VideoScriptPanel({
                 Regenerate
               </Button>
               <Button
+                variant={applied ? 'outline' : 'default'}
                 className="h-9 flex-1 rounded-lg text-[12px] font-medium shadow-xs"
                 onClick={handleApply}
                 disabled={segments.length === 0}
@@ -472,6 +510,15 @@ export function VideoScriptPanel({
                 Apply to timeline
               </Button>
             </div>
+            <Button
+              variant={applied ? 'default' : 'outline'}
+              className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium shadow-xs"
+              onClick={handleGenerateAudio}
+              disabled={segments.length === 0}
+            >
+              <AudioLinesIcon className="size-3.5" strokeWidth={2} />
+              Generate audio
+            </Button>
           </div>
         </>
       )}

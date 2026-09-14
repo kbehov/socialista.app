@@ -61,6 +61,10 @@
       "types": "./dist/schemas/video-captions.schema.d.ts",
       "import": "./dist/schemas/video-captions.schema.js"
     },
+    "./schemas/generate-audio": {
+      "types": "./dist/schemas/generate-audio.schema.d.ts",
+      "import": "./dist/schemas/generate-audio.schema.js"
+    },
     "./schemas/generate-influencer": {
       "types": "./dist/schemas/generate-influencer.schema.d.ts",
       "import": "./dist/schemas/generate-influencer.schema.js"

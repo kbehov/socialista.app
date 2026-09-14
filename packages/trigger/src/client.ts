@@ -62,6 +62,11 @@ export {
 } from './schemas/video-captions.schema.js'
 
 export {
+  generateAudioPayloadSchema,
+  type GenerateAudioPayload,
+} from './schemas/generate-audio.schema.js'
+
+export {
   generateInfluencerPayloadSchema,
   type GenerateInfluencerPayload,
 } from './schemas/generate-influencer.schema.js'

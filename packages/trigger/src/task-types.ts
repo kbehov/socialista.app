@@ -11,6 +11,7 @@ import type { generateUgcVideo } from './tasks/ugc/generate-ugc-video.js'
 import type { generateUgcAudio } from './tasks/ugc/generate-ugc-audio.js'
 import type { exportVideo } from './tasks/video/export-video.js'
 import type { generateVideoCaptions } from './tasks/video/generate-video-captions.js'
+import type { generateAudio } from './tasks/video/generate-audio.js'
 import type { realtimeVideoGeneration } from './tasks/video/generate-video-realtime.js'
 import type { realtimeSlideshowGeneration } from './tasks/slideshow/generate-slideshow-realtime.js'
 
@@ -27,5 +28,6 @@ export type AnalyticsSweepTask = typeof analyticsSweep
 export type FetchAccountAnalyticsTask = typeof fetchAccountAnalyticsTask
 export type ExportVideoTask = typeof exportVideo
 export type GenerateVideoCaptionsTask = typeof generateVideoCaptions
+export type GenerateAudioTask = typeof generateAudio
 export type RealtimeVideoGenerationTask = typeof realtimeVideoGeneration
 export type RealtimeSlideshowGenerationTask = typeof realtimeSlideshowGeneration

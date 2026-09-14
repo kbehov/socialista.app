@@ -276,3 +276,25 @@ export type VideoCaptionsResponse = {
   runId: string
   publicAccessToken: string
 }
+
+export const VIDEO_AUDIO_MAX_CHARS = 1000
+
+export type GenerateAudioVoice = {
+  voiceId: string
+  voiceName?: string
+  speed?: number
+  stability?: number
+  similarity?: number
+  style?: number
+  speakerBoost?: boolean
+}
+
+export type GenerateAudioOutput = {
+  audioUrl: string
+  durationSec: number
+}
+
+export type GenerateAudioResponse = {
+  runId: string
+  publicAccessToken: string
+}

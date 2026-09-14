@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { CaptionsIcon, ChevronLeftIcon, ChevronRightIcon, ImageIcon, SparklesIcon, TypeIcon, XIcon } from 'lucide-react'
+import { AudioLinesIcon, CaptionsIcon, ChevronLeftIcon, ChevronRightIcon, ImageIcon, SparklesIcon, TypeIcon, XIcon } from 'lucide-react'
+import { VideoAudioPanel } from '@/components/video/video-audio-panel'
 import { VideoSourcePanel } from '@/components/video/video-source-panel'
 import { VideoScriptPanel } from '@/components/video/video-script-panel'
 import { VideoCaptionsPanel } from '@/components/video/video-captions-panel'
@@ -21,6 +22,7 @@ export type VideoSidebarTab = VideoStudioPanelTab
 const SIDEBAR_TABS = [
   { id: 'media' as const, label: 'Media', icon: ImageIcon },
   { id: 'text' as const, label: 'Text', icon: TypeIcon },
+  { id: 'audio' as const, label: 'Audio', icon: AudioLinesIcon },
   { id: 'script' as const, label: 'Script', icon: SparklesIcon },
   { id: 'captions' as const, label: 'Captions', icon: CaptionsIcon },
 ]
@@ -28,8 +30,13 @@ const SIDEBAR_TABS = [
 const TAB_META: Record<VideoSidebarTab, { title: string; description: string }> = {
   media: { title: 'Media', description: 'Upload, library, Pixabay, or paste a URL' },
   text: { title: 'Text', description: 'Add text boxes and presets at the playhead' },
+  audio: { title: 'Audio', description: 'Generate a voiceover or upload your own' },
   script: { title: 'Script', description: 'Generate timed on-screen captions' },
   captions: { title: 'Captions', description: "Generate captions from your video's audio" },
+}
+
+function isPanelTab(value: string | null | unknown): value is VideoSidebarTab {
+  return value === 'media' || value === 'text' || value === 'audio' || value === 'script' || value === 'captions'
 }
 
 function readPanelOpen(): boolean {
@@ -46,7 +53,7 @@ function readPanelTab(): VideoSidebarTab {
   if (typeof window === 'undefined') return 'media'
   try {
     const stored = sessionStorage.getItem(PANEL_TAB_STORAGE_KEY)
-    if (stored === 'text' || stored === 'script' || stored === 'media' || stored === 'captions') return stored
+    if (isPanelTab(stored)) return stored
     return 'media'
   } catch {
     return 'media'
@@ -54,7 +61,7 @@ function readPanelTab(): VideoSidebarTab {
 }
 
 function parsePanelTab(detail: unknown): VideoSidebarTab {
-  if (detail === 'text' || detail === 'script' || detail === 'media' || detail === 'captions') return detail
+  if (isPanelTab(detail)) return detail
   return 'media'
 }
 
@@ -137,6 +144,15 @@ function VideoPanelContent({
         <VideoTextPanel embedded showPanelHeader={showPanelHeader} />
       </div>
       <div
+        id={panelId ? `${panelId}-audio` : undefined}
+        role="tabpanel"
+        hidden={tab !== 'audio'}
+        className={cn('h-full min-h-0', tab !== 'audio' && 'hidden')}
+        aria-hidden={tab !== 'audio'}
+      >
+        <VideoAudioPanel embedded showPanelHeader={showPanelHeader} />
+      </div>
+      <div
         id={panelId ? `${panelId}-script` : undefined}
         role="tabpanel"
         hidden={tab !== 'script'}
@@ -158,7 +174,7 @@ function VideoPanelContent({
   )
 }
 
-/** Left source rail — Media + Text + Script + Captions (inspector lives on the right). */
+/** Left source rail — Media + Text + Audio + Script + Captions (inspector lives on the right). */
 export function VideoStudioSidebar({ className }: { className?: string }) {
   const [panelOpen, setPanelOpen] = useState(() => readPanelOpen())
   const [tab, setTab] = useState<VideoSidebarTab>(() => readPanelTab())

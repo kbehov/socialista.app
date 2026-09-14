@@ -208,6 +208,7 @@ async function computeWaveform(file: File, sampleRate: number): Promise<Int8Arra
 export interface ImportMediaOptions {
   /** Skip timeline thumbnail capture; call generateVideoThumbnails afterwards. */
   deferThumbnails?: boolean
+  forceType?: MediaType
 }
 
 async function probeVideoOrImage(
@@ -248,7 +249,7 @@ export async function generateVideoThumbnails(asset: MediaAsset): Promise<string
 }
 
 export async function importMediaAsset(file: File, options?: ImportMediaOptions): Promise<MediaAsset> {
-  const type = inferMediaType(file)
+  const type = options?.forceType ?? inferMediaType(file)
   if (!type) {
     throw new MediaImportError(`Unsupported file type: ${file.type || file.name}`, 'unsupported')
   }
@@ -318,10 +319,14 @@ export async function importMediaFromUrl(remoteUrl: string, name?: string, optio
     throw new MediaImportError(`Failed to fetch media (${response.status})`, 'decode-failed')
   }
 
-  const contentType = response.headers.get('content-type')?.split(';')[0]?.trim() ?? 'application/octet-stream'
+  const headerType = response.headers.get('content-type')?.split(';')[0]?.trim() ?? ''
   const blob = await response.blob()
+  const contentType =
+    options?.forceType === 'audio' && !headerType.startsWith('audio/') && !blob.type.startsWith('audio/')
+      ? 'audio/mpeg'
+      : headerType || blob.type || 'application/octet-stream'
   const filename = name ?? filenameFromUrl(trimmed, contentType)
-  const file = new File([blob], filename, { type: contentType || blob.type })
+  const file = new File([blob], filename, { type: contentType })
 
   return importMediaAsset(file, options)
 }

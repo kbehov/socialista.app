@@ -9,6 +9,8 @@ import type {
   DuplicateVideoPayload,
   ExportSettings,
   ExportVideoResponse,
+  GenerateAudioResponse,
+  GenerateAudioVoice,
   GetVideosResponse,
   UpdateVideoPayload,
   VideoCaptionsResponse,
@@ -18,18 +20,17 @@ import { revalidatePath } from 'next/cache'
 
 const STUDIO_VIDEOS_PATH = DASHBOARD_ROUTES.STUDIO.VIDEOS
 
-function revalidateVideoPaths(videoId?: string) {
+function revalidateVideoPaths() {
+  // Only the videos list. Revalidating the editor route remounts the client studio
+  // and wipes in-progress timeline work (voiceover runs, unsaved clips).
   revalidatePath(STUDIO_VIDEOS_PATH)
-  if (videoId) {
-    revalidatePath(DASHBOARD_ROUTES.STUDIO.video(videoId))
-  }
 }
 
 export const createVideo = async (
   payload: CreateVideoPayload,
 ): Promise<ApiResponse<{ video: VideoResponse }>> => {
   const response = await api.post<{ video: VideoResponse }>(VIDEO_ROUTES.CREATE, payload)
-  revalidateVideoPaths(response.data?.video.id)
+  revalidateVideoPaths()
   return response
 }
 
@@ -65,13 +66,13 @@ export const updateVideo = async (
   payload: UpdateVideoPayload,
 ): Promise<ApiResponse<{ video: VideoResponse }>> => {
   const response = await api.patch<{ video: VideoResponse }>(VIDEO_ROUTES.UPDATE(id), payload)
-  revalidateVideoPaths(id)
+  revalidateVideoPaths()
   return response
 }
 
 export const deleteVideo = async (id: string): Promise<ApiResponse<{ id: string }>> => {
   const response = await api.delete<{ id: string }>(VIDEO_ROUTES.DELETE(id))
-  revalidateVideoPaths(id)
+  revalidateVideoPaths()
   return response
 }
 
@@ -80,7 +81,7 @@ export const duplicateVideo = async (
   payload?: DuplicateVideoPayload,
 ): Promise<ApiResponse<{ video: VideoResponse }>> => {
   const response = await api.post<{ video: VideoResponse }>(VIDEO_ROUTES.DUPLICATE(id), payload ?? {})
-  revalidateVideoPaths(response.data?.video.id)
+  revalidateVideoPaths()
   return response
 }
 
@@ -96,4 +97,11 @@ export const generateVideoCaptions = async (
   clipId: string,
 ): Promise<ApiResponse<VideoCaptionsResponse>> => {
   return api.post<VideoCaptionsResponse>(VIDEO_ROUTES.CAPTIONS(id), { clipId })
+}
+
+export const generateVideoAudio = async (
+  id: string,
+  body: { text: string; voice: GenerateAudioVoice },
+): Promise<ApiResponse<GenerateAudioResponse>> => {
+  return api.post<GenerateAudioResponse>(VIDEO_ROUTES.AUDIO(id), body)
 }

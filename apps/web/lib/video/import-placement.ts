@@ -56,3 +56,33 @@ export function registerAndPlaceAtPlayhead(asset: MediaAsset): void {
   registerAsset(asset)
   placeAssetAtPlayhead(asset.id, asset.name)
 }
+
+/** Create an audio track if needed, then drop the clip at the playhead (or after existing audio). */
+export function placeAudioOnTimeline(asset: MediaAsset): boolean {
+  if (asset.type !== 'audio') {
+    toast.error('Generated file is not audio')
+    return false
+  }
+
+  useVideoEditorStore.getState().registerAsset(asset)
+
+  const playhead = useVideoEditorStore.getState().playhead
+  let result = addAssetToTimeline(asset.id, playhead)
+
+  if (result !== 'ok') {
+    const trackId = findTrackForAsset(asset, true)
+    if (trackId) {
+      const project = useVideoEditorStore.getState().project
+      const appendAt = getTrackEndTime(project, trackId)
+      result = addAssetToTimeline(asset.id, appendAt, trackId)
+    }
+  }
+
+  if (result === 'ok') {
+    toast.success('Audio added to the audio track')
+    return true
+  }
+
+  toast.error(placementErrorMessage(result, asset.name))
+  return false
+}

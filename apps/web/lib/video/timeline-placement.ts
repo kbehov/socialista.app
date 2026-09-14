@@ -34,13 +34,13 @@ export function addAssetToTimeline(
   trackId?: TrackId,
   duration?: number,
 ): 'ok' | 'missing' | 'no-track' | 'blocked' {
-  const state = useVideoEditorStore.getState()
-  const asset = state.assets[assetId]
+  const asset = useVideoEditorStore.getState().assets[assetId]
   if (!asset || !isMediaAssetAvailable(asset)) return 'missing'
 
   const resolvedTrackId = trackId ?? findTrackForAsset(asset)
   if (!resolvedTrackId) return 'no-track'
 
+  const state = useVideoEditorStore.getState()
   const track = state.project.tracks.find(t => t.id === resolvedTrackId)
   if (!track) return 'no-track'
   if (track.locked) return 'blocked'

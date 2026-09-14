@@ -95,6 +95,7 @@ export const VIDEO_ROUTES = {
   DUPLICATE: (id: string) => `/videos/${id}/duplicate`,
   EXPORT: (id: string) => `/videos/${id}/export`,
   CAPTIONS: (id: string) => `/videos/${id}/captions`,
+  AUDIO: (id: string) => `/videos/${id}/audio`,
   GET_WORKSPACE_VIDEOS: (workspaceId: string) => `/videos/workspace/${workspaceId}`,
 } as const
 export function inspirationRoute(template: string, id: string): string {
