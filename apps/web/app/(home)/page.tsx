@@ -1,21 +1,14 @@
 import { FAQ_ITEMS, PAGE_METADATA } from '@/components/landing/content'
-import { LandingAudience } from '@/components/landing/landing-audience'
-import { LandingCompare } from '@/components/landing/landing-compare'
-import { LandingContext } from '@/components/landing/landing-context'
+import { LandingAnalytics } from '@/components/landing/landing-analytics'
+import { LandingContextSkills } from '@/components/landing/landing-context-skills'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
-import { LandingGallery } from '@/components/landing/landing-gallery'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
-import { LandingLoop } from '@/components/landing/landing-loop'
-import { LandingMeasure } from '@/components/landing/landing-measure'
 import { LandingPlatforms } from '@/components/landing/landing-platforms'
 import { LandingPricing } from '@/components/landing/landing-pricing'
-import { LandingProblem } from '@/components/landing/landing-problem'
 import { LandingPublish } from '@/components/landing/landing-publish'
 import { LandingStudio } from '@/components/landing/landing-studio'
-import { LandingUgcReel } from '@/components/landing/landing-ugc-reel'
-import { LandingWorkflow } from '@/components/landing/landing-workflow'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
 import type { PolarProduct } from '@socialista/types'
@@ -116,19 +109,12 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingHero />
-      <LandingPlatforms />
-      <LandingInfluencer />
       <LandingStudio />
+      <LandingInfluencer />
+      <LandingPlatforms />
       <LandingPublish />
-      <LandingProblem />
-      <LandingLoop />
-      <LandingUgcReel />
-      <LandingGallery />
-      <LandingContext />
-      <LandingMeasure />
-      <LandingAudience />
-      <LandingWorkflow />
-      <LandingCompare />
+      <LandingAnalytics />
+      <LandingContextSkills />
       <LandingPricing
         products={products}
         loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}

@@ -57,8 +57,8 @@ export function MobileNav() {
               size="lg"
               className={landingCtaSecondary}
             >
-              <Link href="/auth/signup" onClick={() => setOpen(false)}>
-                Sign up
+              <Link href="/auth/signin" onClick={() => setOpen(false)}>
+                Sign in
               </Link>
             </Button>
             <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>

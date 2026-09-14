@@ -209,12 +209,7 @@ export function LandingPublish() {
           <FadeIn className="absolute inset-[18%] z-20 flex flex-col items-center justify-center text-center sm:inset-[20%]">
             <hgroup>
               <h2 id="publish-heading" className={landingH2}>
-                {PUBLISH.titleLines.map((line, index) => (
-                  <span key={line}>
-                    {index > 0 ? <br /> : null}
-                    {line}
-                  </span>
-                ))}
+                {PUBLISH.title}
               </h2>
               <p className="mt-5 max-w-[30rem] text-[1.0625rem] leading-[1.7] text-pretty text-muted-foreground sm:mt-6">
                 {PUBLISH.description}

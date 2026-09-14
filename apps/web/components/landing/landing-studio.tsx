@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 
 import { STUDIO_BENTO } from './content'
 import { FadeIn } from './fade-in'
-import { landingBody, landingContentGap, landingEyebrow, landingH2, landingMediaCard } from './landing-classes'
+import { landingBody, landingContentGap, landingH2, landingMediaCard } from './landing-classes'
 import { GALLERY_FALLBACK, IMG, VIDEO } from './media'
 import { Section } from './section'
 import { StudioTitleFire } from './studio-title-fire'
@@ -16,7 +16,7 @@ const bentoCard =
   'flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-[color-mix(in_oklch,var(--foreground)_6%,var(--border))] bg-background shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_4%,transparent),0_12px_32px_-12px_color-mix(in_oklch,var(--foreground)_10%,transparent)]'
 
 const bentoVisual =
-  'relative mx-5 mt-5 h-[18.75rem] overflow-hidden rounded-[1.25rem] bg-[color-mix(in_oklch,var(--muted)_55%,var(--background))] sm:mx-6 sm:mt-6 sm:h-[20rem]'
+  'relative mx-5 mt-5 h-[18.75rem] overflow-hidden rounded-[1.25rem] bg-[color-mix(in_oklch,var(--muted)_55%,var(--background))] sm:m-1 sm:h-[20rem]'
 
 const bentoVisualFade = 'from-[color-mix(in_oklch,var(--muted)_55%,var(--background))]'
 
@@ -29,7 +29,7 @@ const SLIDESHOW_MOCK_IMAGES = [
   IMG.canvasSkincare,
 ] as const
 
-const AD_TEMPLATE_LIMIT = 10
+const AD_TEMPLATE_LIMIT = 8
 
 type AdItem = { id: string; imageUrl: string }
 
@@ -46,13 +46,13 @@ function BentoCard({
 }) {
   return (
     <FadeIn delay={delay} className="h-full">
-      <article className={bentoCard}>
+      <div className={bentoCard}>
         <div className={bentoVisual}>{children}</div>
-        <div className="flex flex-1 flex-col p-6 pt-5 sm:p-7 sm:pt-6">
-          <h3 className="text-lg font-semibold leading-[1.3] tracking-[-0.02em] sm:text-xl">{title}</h3>
+        <div className="flex flex-1 flex-col p-6 pt-3 sm:p-7 sm:pt-4">
+          <h3 className="text-lg font-semibold leading-snug tracking-tight sm:text-xl">{title}</h3>
           <p className="mt-2.5 text-[0.9375rem] leading-[1.6] text-pretty text-muted-foreground">{description}</p>
         </div>
-      </article>
+      </div>
     </FadeIn>
   )
 }
@@ -103,7 +103,7 @@ function AdMarqueeItem({ imageUrl }: { imageUrl: string }) {
       <div
         className={cn(
           landingMediaCard,
-          'aspect-[4/5] w-full border-0 shadow-[0_2px_8px_-2px_color-mix(in_oklch,var(--foreground)_12%,transparent)]',
+          'aspect-4/5 w-full border-0 shadow-[0_2px_8px_-2px_color-mix(in_oklch,var(--foreground)_12%,transparent)]',
         )}
       >
         <Image src={imageUrl} alt="" fill sizes="(max-width: 768px) 140px, 160px" className="object-cover" />
@@ -121,14 +121,14 @@ function StaticAdsCardVisual({ items }: { items: AdItem[] }) {
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b to-transparent',
+          'pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-linear-to-b to-transparent',
           bentoVisualFade,
         )}
       />
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t to-transparent',
+          'pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t to-transparent',
           bentoVisualFade,
         )}
       />
@@ -194,12 +194,11 @@ export async function LandingStudio() {
       <FadeIn>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
           <hgroup className="max-w-2xl">
-            <p className={landingEyebrow}>{STUDIO_BENTO.eyebrow}</p>
             <h2 id="studio-heading" className={cn(landingH2, 'mt-3')}>
               <StudioTitleFire emoji={STUDIO_BENTO.titleEmoji} className="mr-2 sm:mr-2.5" />
               {STUDIO_BENTO.title}
             </h2>
-            <p className={cn(landingBody, 'mt-4 sm:mt-5')}>{STUDIO_BENTO.description}</p>
+            <p className={cn(landingBody, 'mt-1.5 ml-10 lg:ml-13')}>{STUDIO_BENTO.description}</p>
           </hgroup>
 
           <aside className="lg:max-w-md lg:shrink-0 lg:pb-1" aria-label={STUDIO_BENTO.usedByLabel}>
@@ -208,7 +207,7 @@ export async function LandingStudio() {
               {STUDIO_BENTO.usedBy.map(({ emoji, label }) => (
                 <li
                   key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_oklch,var(--foreground)_8%,var(--border))] bg-background px-3 py-1.5 text-[0.6875rem] font-medium tracking-[-0.01em] text-muted-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_oklch,var(--foreground)_8%,var(--border))] bg-background px-3 py-1.5 text-sidebar-label font-medium tracking-[-0.01em] text-muted-foreground"
                 >
                   <span aria-hidden="true" className="text-[0.8125rem] leading-none">
                     {emoji}

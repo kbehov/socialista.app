@@ -1,11 +1,9 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 
+import { CtaPair } from "./cta-pair";
 import { FINAL_CTA } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingBody, landingCtaPrimary, landingH2 } from "./landing-classes";
+import { landingBody, landingH2 } from "./landing-classes";
 import { SectionInner } from "./section";
 
 export function LandingFinalCta() {
@@ -34,22 +32,10 @@ export function LandingFinalCta() {
               {FINAL_CTA.description}
             </p>
           </hgroup>
-          <div className="mt-8 flex justify-center sm:mt-10">
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className={cn(
-                landingCtaPrimary,
-                "bg-background text-foreground hover:bg-background/90 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90",
-              )}
-            >
-              <Link href="/auth/signup" className="group">
-                {FINAL_CTA.cta}
-                <ArrowRight className="size-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
-              </Link>
-            </Button>
-          </div>
+          <CtaPair
+            inverted
+            className="mt-8 flex w-full flex-col items-stretch justify-center gap-2.5 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
+          />
         </FadeIn>
       </SectionInner>
     </section>

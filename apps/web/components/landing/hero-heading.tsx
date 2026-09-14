@@ -8,7 +8,7 @@ const TITLE_LINE1_PHRASES = HERO.titleLine1.split(/(?<=\.)\s+/);
 function WorkspaceDoodle() {
   return (
     <svg
-      className="pointer-events-none absolute inset-x-[-6%] -bottom-[0.14em] h-[0.28em] w-[112%] text-pink-400/80 dark:text-pink-400/70"
+      className="pointer-events-none absolute inset-x-[-6%] bottom-[-0.14em] h-[0.28em] w-[112%] text-pink-400/80 dark:text-pink-400/70"
       viewBox="0 0 120 12"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -48,8 +48,8 @@ export function HeroHeading() {
         <span className="relative inline-block whitespace-nowrap">
           {HERO.titleLine2Highlight}
           <WorkspaceDoodle />
-        </span>{" "}
-        {HERO.titleLine2Suffix}
+        </span>
+        {HERO.titleLine2Suffix ? ` ${HERO.titleLine2Suffix}` : null}
       </span>
     </h1>
   );

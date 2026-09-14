@@ -1,6 +1,6 @@
-import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from '@/components/ui/avatar'
 import { HERO_SOCIAL_PROOF } from '@/components/landing/content'
 import { IMG } from '@/components/landing/media'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 
 const HERO_AVATARS = [
@@ -9,7 +9,6 @@ const HERO_AVATARS = [
   { src: IMG.posterUgc4, fallback: 'C' },
   { src: IMG.posterUgc6, fallback: 'D' },
   { src: IMG.posterUgc9, fallback: 'E' },
-  { src: IMG.posterUgc12, fallback: 'F' },
 ] as const
 
 type HeroSocialProofProps = {
@@ -30,14 +29,10 @@ export function HeroSocialProof({ className }: HeroSocialProofProps) {
 
       <div className="flex flex-col items-center gap-0.5 text-center sm:items-start sm:text-left">
         <p className="text-[0.8125rem] leading-snug tracking-[-0.01em] text-foreground/90">
-          <span className="font-semibold tabular-nums text-foreground">
-            {HERO_SOCIAL_PROOF.count}
-          </span>{' '}
+          <span className="font-semibold tabular-nums text-foreground">{HERO_SOCIAL_PROOF.count}</span>{' '}
           {HERO_SOCIAL_PROOF.label}
         </p>
-        <p className="text-xs leading-snug text-muted-foreground">
-          {HERO_SOCIAL_PROOF.subline}
-        </p>
+        <p className="text-xs leading-snug text-muted-foreground">{HERO_SOCIAL_PROOF.subline}</p>
       </div>
     </div>
   )

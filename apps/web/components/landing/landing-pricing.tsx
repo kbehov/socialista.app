@@ -60,7 +60,7 @@ export function LandingPricing({
               key={product.id}
               product={product}
               isFeatured={index === featuredIndex}
-              ctaLabel="Start creating free"
+              ctaLabel="Start for $0"
               checkoutUrl={`/auth/signup?plan=${encodeURIComponent(product.id)}`}
             />
           ))}
