@@ -13,7 +13,7 @@ import { ChevronRight, MenuIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { LANDING_NAV } from "./content";
+import { HERO, LANDING_NAV } from "./content";
 import {
   landingCtaPrimary,
   landingCtaSecondary,
@@ -63,7 +63,7 @@ export function MobileNav() {
             </Button>
             <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
               <Link href="/auth/signup" onClick={() => setOpen(false)}>
-                Create your first post
+                {HERO.primaryCta}
                 <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
               </Link>
             </Button>

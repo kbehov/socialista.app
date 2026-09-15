@@ -8,7 +8,7 @@ import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-import { LANDING_NAV } from './content'
+import { HERO, LANDING_NAV } from './content'
 import { landingCtaSecondary, landingNavLink } from './landing-classes'
 import { MobileNav } from './mobile-nav'
 
@@ -66,7 +66,7 @@ export function SiteHeader() {
             <Link href="/auth/signin">Sign in</Link>
           </Button>
           <ShimmerButton href="/auth/signup" className="hidden h-10 px-6 text-sm md:inline-flex">
-            Create your first post
+            {HERO.primaryCta}
             <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
           </ShimmerButton>
           <MobileNav />

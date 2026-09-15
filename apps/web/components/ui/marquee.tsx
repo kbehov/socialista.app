@@ -27,8 +27,8 @@ interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
    */
   vertical?: boolean
   /**
-   * Number of times to repeat the content
-   * @default 4
+   * Duplicate tracks inside one sliding row (use 2 for seamless -50% loop)
+   * @default 2
    */
   repeat?: number
 }
@@ -39,36 +39,42 @@ export function Marquee({
   pauseOnHover = false,
   children,
   vertical = false,
-  repeat = 4,
+  repeat = 2,
   ...props
 }: MarqueeProps) {
   return (
     <div
       {...props}
       className={cn(
-        "group flex gap-(--gap) overflow-hidden p-2 [--duration:40s] [--gap:1rem]",
-        {
-          "flex-row": !vertical,
-          "flex-col": vertical,
-        },
+        "group overflow-hidden p-2 [--duration:40s] [--gap:1rem]",
         className
       )}
     >
-      {Array(repeat)
-        .fill(0)
-        .map((_, i) => (
-          <div
-            key={i}
-            className={cn("flex shrink-0 justify-around gap-(--gap)", {
-              "animate-marquee flex-row": !vertical,
-              "animate-marquee-vertical flex-col": vertical,
-              "group-hover:[animation-play-state:paused]": pauseOnHover,
-              "[animation-direction:reverse]": reverse,
-            })}
-          >
-            {children}
-          </div>
-        ))}
+      <div
+        className={cn(
+          "flex w-max shrink-0",
+          {
+            "animate-marquee-landing flex-row": !vertical,
+            "animate-marquee-vertical flex-col": vertical,
+            "group-hover:[animation-play-state:paused]": pauseOnHover,
+            "[animation-direction:reverse]": reverse,
+          }
+        )}
+      >
+        {Array(repeat)
+          .fill(0)
+          .map((_, i) => (
+            <div
+              key={i}
+              className={cn("flex shrink-0 justify-start gap-(--gap)", {
+                "flex-row": !vertical,
+                "flex-col": vertical,
+              })}
+            >
+              {children}
+            </div>
+          ))}
+      </div>
     </div>
   )
 }

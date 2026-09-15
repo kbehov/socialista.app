@@ -18,6 +18,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
+  --landing-canvas: #faf8f4;
+  --landing-ink: #151515;
+  --landing-stone: #e9e4db;
+  --landing-orange: #ff5a1f;
+  --landing-charcoal: #1d1c1a;
+  --landing-peach: #ffe2d5;
   /* ── Primitives ───────────────────────────────────────────────────────── */
 
   --spacing: 0.25rem;
@@ -184,6 +190,17 @@
   --color-3: oklch(69.6% 0.165 251);
   --color-4: oklch(80.2% 0.134 225);
   --color-5: oklch(90.7% 0.231 133);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-ready {
+    animation: landing-ready 3.2s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+  }
+
+  @keyframes landing-ready {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 .dark {
@@ -420,6 +437,7 @@
   --ease-emphasized: var(--ease-emphasized);
 
   --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-landing: marquee-landing var(--duration) linear infinite;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
   --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
   --animate-shine: shine var(--duration) infinite linear;
@@ -462,6 +480,15 @@
     }
     to {
       transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+
+  @keyframes marquee-landing {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
     }
   }
 

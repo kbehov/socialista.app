@@ -1,13 +1,15 @@
 import { FAQ_ITEMS, PAGE_METADATA } from '@/components/landing/content'
-import { LandingAdditionalFeatures } from '@/components/landing/landing-additional-features'
 import { LandingAnalytics } from '@/components/landing/landing-analytics'
+import { LandingCapabilities } from '@/components/landing/landing-capabilities'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
+import { LandingOutputGallery } from '@/components/landing/landing-output-gallery'
 import { LandingPlatforms } from '@/components/landing/landing-platforms'
 import { LandingPricing } from '@/components/landing/landing-pricing'
-import { LandingStudio } from '@/components/landing/landing-studio'
+import { LandingUgcAds } from '@/components/landing/landing-ugc-ads'
+import { LandingWorkflow } from '@/components/landing/landing-workflow'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
 import type { PolarProduct } from '@socialista/types'
@@ -108,11 +110,13 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <LandingHero />
-      <LandingStudio />
+      <LandingUgcAds />
       <LandingInfluencer />
       <LandingPlatforms />
-      <LandingAdditionalFeatures />
-      {/* <LandingPublish /> */}
+      <LandingWorkflow />
+      <LandingOutputGallery />
+
+      <LandingCapabilities />
       <LandingAnalytics />
       <LandingPricing
         products={products}

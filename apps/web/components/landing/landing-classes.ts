@@ -25,7 +25,7 @@ export const landingLabel = 'text-[0.8125rem] font-medium tracking-[-0.01em] tex
 
 export const landingEyebrow = 'text-[0.75rem] font-medium uppercase tracking-[0.08em] text-muted-foreground'
 
-export const landingSectionAlt = 'bg-[color-mix(in_oklch,var(--surface-0)_50%,var(--background))]'
+export const landingSectionAlt = 'bg-[color-mix(in_srgb,var(--landing-stone)_30%,transparent)]'
 
 export const landingNavLink =
   'relative text-sm font-medium tracking-[-0.01em] text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground after:absolute after:inset-x-0 after:-bottom-[0.15rem] after:h-px after:bg-current after:origin-center after:scale-x-0 after:transition-transform after:duration-150 after:ease-out hover:after:scale-x-100'

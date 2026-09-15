@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { Hand } from 'lucide-react'
 import {
   AnimatePresence,
+  animate,
   motion,
   useMotionValue,
   useTransform,
@@ -22,6 +23,14 @@ import {
 
 const SWIPE_OFFSET = 96
 const SWIPE_VELOCITY = 520
+
+const STACK_SPRING = { type: 'spring' as const, stiffness: 300, damping: 30, mass: 0.9 }
+const ENTER_SPRING = { type: 'spring' as const, stiffness: 260, damping: 28, mass: 0.95 }
+const EXIT_EASE = [0.22, 1, 0.36, 1] as const
+const SNAP_BACK_SPRING = { type: 'spring' as const, stiffness: 420, damping: 34, mass: 0.85 }
+
+const STACK_SCALE_STEP = 0.026
+const STACK_Y_STEP = 12
 
 export type SwipeDirection = 'left' | 'right'
 
@@ -55,6 +64,9 @@ type SwipeStackProps<T> = {
   onSwipe?: (item: T, direction: SwipeDirection, index: number) => void
   onActiveChange?: (index: number) => void
   showSwipeHint?: boolean
+  showStackBase?: boolean
+  /** Fill a fixed-height parent (e.g. phone shell). Do not use on standalone carousels. */
+  fillHeight?: boolean
 }
 
 const DEFAULT_SWIPE_LABELS: SwipeStackLabels = {
@@ -146,10 +158,34 @@ function TopSwipeCard({
   onExitComplete,
 }: TopSwipeCardProps) {
   const x = useMotionValue(0)
-  const rotate = useTransform(x, [-220, 0, 220], [-16, 0, 16])
-  const dragOpacity = useTransform(x, [-180, -90, 0, 90, 180], [0.55, 1, 1, 1, 0.55])
+  const cardOpacity = useMotionValue(1)
+  const rotate = useTransform(x, [-240, 0, 240], [-14, 0, 14])
   const skipOpacity = useTransform(x, [-140, -36, 0], [1, 0.35, 0])
   const postOpacity = useTransform(x, [0, 36, 140], [0, 0.35, 1])
+
+  useEffect(() => {
+    if (!exitDirection) return
+
+    const targetX = exitDirection === 'left' ? -520 : 520
+    const xControl = animate(x, targetX, {
+      duration: 0.52,
+      ease: EXIT_EASE,
+    })
+    const opacityControl = animate(cardOpacity, 0, {
+      duration: 0.38,
+      ease: [0.4, 0, 0.2, 1],
+      delay: 0.12,
+    })
+
+    void Promise.all([xControl.finished, opacityControl.finished]).then(() => {
+      onExitComplete()
+    })
+
+    return () => {
+      xControl.stop()
+      opacityControl.stop()
+    }
+  }, [cardOpacity, exitDirection, onExitComplete, x])
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (disabled || exitDirection) return
@@ -164,34 +200,26 @@ function TopSwipeCard({
 
     if (offset < -SWIPE_OFFSET || velocity < -SWIPE_VELOCITY) {
       onDismiss('left')
+      return
     }
+
+    void animate(x, 0, SNAP_BACK_SPRING)
   }
 
   return (
     <motion.div
-      className="absolute inset-0 z-30 touch-none cursor-grab select-none active:cursor-grabbing"
-      style={exitDirection ? undefined : { x, rotate, opacity: dragOpacity }}
+      className="absolute inset-0 z-30 cursor-grab select-none active:cursor-grabbing"
+      style={{ x, rotate, opacity: cardOpacity, touchAction: 'none' }}
       drag={disabled || exitDirection ? false : 'x'}
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.9}
+      dragElastic={0.82}
+      dragMomentum={false}
+      dragTransition={{ bounceStiffness: 380, bounceDamping: 32, power: 0.28 }}
       onDragStart={() => onInteraction()}
-      initial={{ scale: 0.94, opacity: 0.82, y: 10 }}
-      animate={
-        exitDirection
-          ? {
-              x: exitDirection === 'left' ? -420 : 420,
-              rotate: exitDirection === 'left' ? -18 : 18,
-              opacity: 0,
-              scale: 1,
-              y: 0,
-            }
-          : { x: 0, rotate: 0, scale: 1, opacity: 1, y: 0 }
-      }
-      transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+      initial={{ scale: 1 - STACK_SCALE_STEP, y: STACK_Y_STEP }}
+      animate={exitDirection ? undefined : { scale: 1, y: 0 }}
+      transition={ENTER_SPRING}
       onDragEnd={handleDragEnd}
-      onAnimationComplete={() => {
-        if (exitDirection) onExitComplete()
-      }}
     >
       {children}
 
@@ -249,6 +277,8 @@ export function SwipeStack<T>({
   onSwipe,
   onActiveChange,
   showSwipeHint = true,
+  showStackBase = true,
+  fillHeight = false,
 }: SwipeStackProps<T>) {
   const reduceMotion = useReducedMotion()
   const count = items.length
@@ -353,13 +383,14 @@ export function SwipeStack<T>({
 
   return (
     <div
-      className={cn('w-full', className)}
+      className={cn('w-full', fillHeight ? 'h-full min-h-0' : undefined, className)}
       onMouseEnter={pauseOnHover ? () => setHoverPaused(true) : undefined}
       onMouseLeave={pauseOnHover ? () => setHoverPaused(false) : undefined}
     >
       <div
         className={cn(
           'relative mx-auto outline-none focus-visible:rounded-[2rem] focus-visible:ring-[3px] focus-visible:ring-ring/45',
+          fillHeight ? 'h-full min-h-0' : undefined,
           stageClassName,
         )}
         role="region"
@@ -369,19 +400,10 @@ export function SwipeStack<T>({
         onKeyDown={handleKeyDown}
       >
         <div className={cn('relative mx-auto', cardClassName)}>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-[8%] -bottom-5 flex flex-col items-center gap-1.5"
-          >
-            <div className="h-1 w-full rounded-full bg-border/50" />
-            <div className="h-1 w-[92%] rounded-full bg-border/40" />
-            <div className="h-1 w-[84%] rounded-full bg-border/30" />
-          </div>
-
           <div className="relative">
             <div
               className={cn(
-                'relative aspect-[9/16] w-full rounded-[1.75rem] shadow-[0_24px_48px_-16px_color-mix(in_oklch,var(--foreground)_20%,transparent),0_8px_24px_-8px_color-mix(in_oklch,var(--foreground)_12%,transparent),0_2px_6px_-1px_color-mix(in_oklch,var(--foreground)_8%,transparent)]',
+                'relative aspect-[9/16] w-full overflow-hidden rounded-[1.75rem] shadow-[0_24px_48px_-16px_color-mix(in_oklch,var(--foreground)_20%,transparent),0_8px_24px_-8px_color-mix(in_oklch,var(--foreground)_12%,transparent),0_2px_6px_-1px_color-mix(in_oklch,var(--foreground)_8%,transparent)]',
                 cardFrameClassName,
               )}
             >
@@ -392,15 +414,15 @@ export function SwipeStack<T>({
 
               return (
                 <motion.div
-                  key={`${getItemKey(item, itemIndex)}-stack-${stackDepth}`}
+                  key={getItemKey(item, itemIndex)}
                   className="pointer-events-none absolute inset-0"
                   initial={false}
                   animate={{
-                    scale: 1 - stackDepth * 0.028,
-                    y: stackDepth * 16,
-                    opacity: 1 - stackDepth * 0.055,
+                    scale: 1 - stackDepth * STACK_SCALE_STEP,
+                    y: stackDepth * STACK_Y_STEP,
+                    opacity: 1 - stackDepth * STACK_SCALE_STEP * 2,
                   }}
-                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  transition={STACK_SPRING}
                   style={{ zIndex: 20 - stackDepth }}
                 >
                   {renderCard(item, {
@@ -425,7 +447,7 @@ export function SwipeStack<T>({
                 </div>
               ) : (
                 <TopSwipeCard
-                  key={`${getItemKey(topItem, topIndex)}-${activeIndex}`}
+                  key={getItemKey(topItem, topIndex)}
                   disabled={count <= 1}
                   exitDirection={exitDirection}
                   swipeLabels={swipeLabels}
@@ -447,6 +469,17 @@ export function SwipeStack<T>({
 
             {typeof overlay === 'function' ? overlay(topIndex) : overlay}
           </div>
+
+          {showStackBase ? (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none mt-4 flex flex-col items-center gap-1.5 px-[8%]"
+            >
+              <div className="h-1 w-full rounded-full bg-border/50" />
+              <div className="h-1 w-[92%] rounded-full bg-border/40" />
+              <div className="h-1 w-[84%] rounded-full bg-border/30" />
+            </div>
+          ) : null}
         </div>
 
         {typeof liveRegion === 'function' ? liveRegion(topIndex) : liveRegion}
