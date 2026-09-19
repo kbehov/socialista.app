@@ -1,18 +1,17 @@
-import { ShimmerButton } from '@/components/ui/shimmer-button'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 import { SLIDESHOWS } from './content'
 import { FadeIn } from './fade-in'
+import { landingContentGap, landingCtaPrimary } from './landing-classes'
+import { cn } from '@/lib/utils'
 import { Section } from './section'
 import { LandingSectionIntro } from './section-header'
 import { SlideshowShowcase } from './slideshow-floating-cards'
 
 export function LandingSlideshows() {
   return (
-    <Section
-      id="slideshows"
-      landingDivider
-      className="!py-14 sm:!py-16 lg:!py-20"
-    >
+    <Section id="slideshows" landingDivider>
       <FadeIn>
         <LandingSectionIntro
           titleId="slideshows-heading"
@@ -23,14 +22,14 @@ export function LandingSlideshows() {
           description={SLIDESHOWS.description}
         />
 
-        <div className="mt-8 sm:mt-9">
+        <div className={cn(landingContentGap)}>
           <SlideshowShowcase />
         </div>
 
-        <div className="mt-6 flex justify-center sm:mt-7">
-          <ShimmerButton href="/auth/signup" className="h-11 px-7 text-sm font-medium">
-            {SLIDESHOWS.cta}
-          </ShimmerButton>
+        <div className={cn(landingContentGap, 'flex justify-center')}>
+          <Button asChild size="lg" className={cn(landingCtaPrimary, 'h-11 px-7')}>
+            <Link href="/auth/signup">{SLIDESHOWS.cta}</Link>
+          </Button>
         </div>
       </FadeIn>
     </Section>

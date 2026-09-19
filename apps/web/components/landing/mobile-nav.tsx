@@ -29,13 +29,16 @@ export function MobileNav() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-10 rounded-full md:hidden"
+          className="size-11 min-h-11 min-w-11 rounded-full md:hidden"
           aria-label="Open menu"
         >
           <MenuIcon className="size-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[min(100vw-2rem,20rem)]">
+      <SheetContent
+        side="right"
+        className="w-[min(100vw-2rem,20rem)] border-[color-mix(in_srgb,var(--landing-stone)_75%,transparent)] bg-[var(--landing-canvas)]"
+      >
         <SheetHeader>
           <SheetTitle className="text-left text-base">Menu</SheetTitle>
         </SheetHeader>
@@ -50,7 +53,7 @@ export function MobileNav() {
               {item.label}
             </a>
           ))}
-          <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
+          <div className="mt-4 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--landing-stone)_75%,transparent)] pt-4">
             <Button
               asChild
               variant="outline"

@@ -14,7 +14,7 @@ export function SiteFooter() {
       <SectionInner>
         <div className="grid gap-10 sm:grid-cols-[1.5fr_repeat(3,minmax(0,1fr))] sm:gap-8">
           <div>
-            <Logo />
+            <Logo variant="landing" />
             <p className={cn(landingBodySm, "mt-4 max-w-[16rem] text-[var(--landing-muted)]")}>
               {FOOTER.tagline}
             </p>

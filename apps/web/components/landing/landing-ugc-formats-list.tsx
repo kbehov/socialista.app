@@ -6,9 +6,7 @@ import { Hand, PackageOpen, Smartphone, type LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { UGC_ADS } from './content'
-
-const glass =
-  'border border-white/18 bg-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl'
+import { landingGlass } from './landing-classes'
 
 const formatsItem = UGC_ADS.items[2]
 
@@ -77,7 +75,8 @@ export function LandingUgcFormatsList() {
             >
               <motion.div
                 className={cn(
-                  `relative z-0 flex w-full origin-center cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 transition-[border-color,box-shadow] duration-200 ease-out hover:z-20 ${glass}`,
+                  landingGlass,
+                  'relative z-0 flex w-full origin-center cursor-pointer items-center gap-3 rounded-2xl px-4 py-3.5 transition-[border-color,box-shadow] duration-200 ease-out hover:z-20',
                   active ? 'ring-1 ring-white/30' : 'hover:border-white/28 hover:shadow-[0_16px_40px_-18px_rgba(0,0,0,0.65)]',
                 )}
                 initial={false}

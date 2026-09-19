@@ -8,6 +8,7 @@ import {
   landingFinalCtaGlow,
   landingSectionLead,
   landingSectionTitle,
+  landingSectionTitleAccent,
 } from "./landing-classes";
 import { SectionInner } from "./section";
 
@@ -26,7 +27,10 @@ export function LandingFinalCta() {
         <FadeIn className="mx-auto max-w-xl text-center">
           <hgroup>
             <h2 id="get-started-heading" className={cn(landingSectionTitle, "text-inherit")}>
-              {FINAL_CTA.title}
+              {FINAL_CTA.title}{" "}
+              <span className={cn(landingSectionTitleAccent, "text-inherit")}>
+                {FINAL_CTA.titleAccent}
+              </span>
             </h2>
             <p
               className={cn(

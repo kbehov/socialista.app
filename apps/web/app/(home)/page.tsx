@@ -103,7 +103,6 @@ function buildJsonLd(products: PolarProduct[] | undefined) {
 export default async function HomePage() {
   const polarResponse = await getPolarProducts({ recurringOnly: true })
   const products = polarResponse.data?.products ?? []
-  console.log(products)
   const jsonLd = buildJsonLd(polarResponse.data?.products)
 
   return (

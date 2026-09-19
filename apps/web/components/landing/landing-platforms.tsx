@@ -3,7 +3,7 @@
 import { SocialPlatformIcon } from "@/components/icons/social-platform-icon";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { LogoGlyph, LogoWordmark } from "@/components/common/logo";
 import { forwardRef, useRef, type RefObject } from "react";
 
 import {
@@ -16,7 +16,6 @@ import {
   landingContentGap,
   landingSection,
   landingSectionDivider,
-  landingSectionY,
 } from "./landing-classes";
 import { LandingSectionIntro } from "./section-header";
 
@@ -125,7 +124,7 @@ function PlatformNode({
           provider={id}
           size={18}
           framed
-          className="size-9 rounded-full ring-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/platform:scale-105 sm:size-10"
+          className="size-9 rounded-full ring-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover/platform:scale-105 sm:size-10"
         />
       </BeamCircle>
       <span className="text-[0.625rem] font-medium tracking-[-0.01em] whitespace-nowrap text-[var(--landing-muted)]/90 transition-colors duration-200 group-hover/platform:text-[var(--landing-ink)] sm:text-[0.6875rem]">
@@ -153,9 +152,8 @@ export function LandingPlatforms() {
       id="channels"
       aria-labelledby="channels-heading"
       className={cn(
-        "landing-canvas scroll-mt-24 overflow-x-clip",
+        "landing-canvas scroll-mt-24 overflow-x-clip py-16 sm:py-20 lg:py-24",
         landingSectionDivider,
-        landingSectionY,
       )}
     >
       <div className={landingSection}>
@@ -183,20 +181,13 @@ export function LandingPlatforms() {
 
               <div className="flex items-center justify-between gap-3 sm:gap-4">
                 <PlatformNode id="tiktok" nodeRef={midLeftRef} />
-                <BeamCircle
+                <div
                   ref={centerRef}
-                  className="size-14 rounded-[calc(var(--radius)+4px)] border-[color-mix(in_oklch,var(--foreground)_10%,var(--border))] bg-foreground shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_6%,transparent),0_16px_32px_-14px_color-mix(in_oklch,var(--foreground)_22%,transparent)] sm:size-16"
+                  className="z-10 flex min-w-[5.5rem] flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] px-4 py-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:min-w-[6.25rem] sm:gap-2.5 sm:px-5 sm:py-4"
                 >
-                  <div className="relative size-7 sm:size-8">
-                    <Image
-                      src="/socialista-logo.webp"
-                      alt="Socialista"
-                      fill
-                      sizes="32px"
-                      className="object-contain invert dark:invert-0"
-                    />
-                  </div>
-                </BeamCircle>
+                  <LogoGlyph size="hero" priority />
+                  <LogoWordmark tone="onDark" size="sm" className="text-[0.6875rem] sm:text-xs" />
+                </div>
                 <PlatformNode id="linkedin" nodeRef={midRightRef} />
               </div>
 
@@ -217,7 +208,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.instagram.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.instagram.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.instagram.stop}
             />
@@ -230,7 +221,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.youtube.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.youtube.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.youtube.stop}
             />
@@ -245,7 +236,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.facebook.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.facebook.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.facebook.stop}
             />
@@ -257,7 +248,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.tiktok.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.tiktok.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.tiktok.stop}
             />
@@ -270,7 +261,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.linkedin.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.linkedin.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.linkedin.stop}
             />
@@ -284,7 +275,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.threads.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.threads.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.threads.stop}
             />
@@ -297,7 +288,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.pinterest.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.pinterest.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.pinterest.stop}
             />
@@ -312,7 +303,7 @@ export function LandingPlatforms() {
               duration={4.5}
               pathColor={PLATFORM_BEAM_COLORS.twitter.path}
               pathWidth={2}
-              pathOpacity={0.28}
+              pathOpacity={0.18}
               gradientStartColor={PLATFORM_BEAM_COLORS.twitter.start}
               gradientStopColor={PLATFORM_BEAM_COLORS.twitter.stop}
             />

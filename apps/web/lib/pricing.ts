@@ -80,7 +80,7 @@ export const formatProductPrice = (product: PolarProduct): FormattedProductPrice
   if (price.amountType === 'free' || price.priceAmount === 0) {
     return {
       amount: 'Free',
-      intervalLabel: interval ? `per ${interval}` : null,
+      intervalLabel: null,
       billingNote: product.isRecurring ? 'No credit card required' : 'One-time access',
       isFree: true,
     }
@@ -332,16 +332,11 @@ export const getProductFeatureLines = (product: PolarProduct, overrides?: string
 }
 
 export const getDefaultCtaLabel = (
-  product: PolarProduct,
+  _product: PolarProduct,
   options?: { isCurrentPlan?: boolean; isFeatured?: boolean },
 ) => {
   if (options?.isCurrentPlan) return 'Current plan'
-
-  const pricing = formatProductPrice(product)
-
-  if (pricing.isFree) return 'Get started free'
-  if (options?.isFeatured) return `Upgrade to ${product.name}`
-  return `Choose ${product.name}`
+  return 'Get Started'
 }
 
 export const getDefaultPricingFootnote = (product: PolarProduct) => {

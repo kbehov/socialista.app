@@ -14,23 +14,30 @@ import { UGC_ADS } from './content'
 import { FadeIn } from './fade-in'
 import { LandingUgcFormatsList } from './landing-ugc-formats-list'
 import {
+  landingContentGap,
   landingFeatureCaptionBody,
   landingFeatureCaptionTitle,
+  landingGlass,
+  landingGlassBadge,
+  landingMediaCardHover,
   landingMediaPanel,
 } from './landing-classes'
+import { LazyAutoplayVideo } from './lazy-autoplay-video'
 import { IMG, VIDEO } from './media'
 import { Section } from './section'
 import { LandingSectionIntro } from './section-header'
 
-const glass =
-  'border border-white/18 bg-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl'
+const featureCard = cn(
+  landingMediaPanel,
+  landingMediaCardHover,
+  'flex min-h-[22rem] flex-col sm:min-h-[26rem] lg:min-h-[27.5rem]',
+)
 
-const glassBadge =
-  `${glass} h-auto rounded-xl px-2 py-0.5 text-[0.6875rem] font-medium leading-4 tracking-[-0.01em] text-white/90 shadow-none hover:bg-white/[0.12] hover:text-white`
-
-const featureCard = cn(landingMediaPanel, 'flex min-h-[22rem] flex-col sm:min-h-[26rem] lg:min-h-[27.5rem]')
-
-const shapeVideoCard = cn(landingMediaPanel, 'flex min-h-[22rem] flex-col bg-black sm:min-h-[26rem] lg:min-h-[27.5rem]')
+const shapeVideoCard = cn(
+  landingMediaPanel,
+  landingMediaCardHover,
+  'flex min-h-[22rem] flex-col bg-black sm:min-h-[26rem] lg:min-h-[27.5rem]',
+)
 
 export function LandingUgcAds() {
   return (
@@ -44,7 +51,7 @@ export function LandingUgcAds() {
         />
       </FadeIn>
 
-      <div className="mt-10 grid gap-8 sm:mt-12 lg:grid-cols-3 lg:gap-6 xl:gap-8">
+      <div className={cn(landingContentGap, 'grid gap-8 lg:grid-cols-3 lg:gap-6 xl:gap-8')}>
         <FadeIn delay={0.04}>
           <FeatureColumn>
             <CreatorCard />
@@ -84,29 +91,24 @@ function CreatorCard() {
   return (
     <>
       <article className={featureCard} aria-hidden="true">
-        <video
+        <LazyAutoplayVideo
           src={VIDEO.creatorPicker}
           poster={IMG.creatorPickerBg}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          className="absolute inset-0 size-full object-cover object-[50%_28%]"
+          className="object-[50%_28%]"
+          objectPosition="50% 28%"
         />
         <div className="pointer-events-none absolute inset-0 bg-black/5" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
         <div className="absolute left-4 top-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap gap-1.5 sm:left-5 sm:top-5">
           {item.niches.map(niche => (
-            <Badge key={niche} variant="ghost" className={glassBadge}>
+            <Badge key={niche} variant="ghost" className={landingGlassBadge}>
               {niche}
             </Badge>
           ))}
         </div>
         <div className="absolute inset-x-4 bottom-4 z-10 sm:inset-x-5 sm:bottom-5">
           <div className="relative w-full">
-            <div className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 ${glass}`}>
+            <div className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 ${landingGlass}`}>
               <span className="text-[0.8125rem] font-medium text-white/55">{item.modelLabel}</span>
               <span className="flex items-center gap-1.5 text-[0.9375rem] font-medium tracking-[-0.02em] text-white">
                 {item.modelValue}
@@ -135,16 +137,11 @@ function ShapeCard() {
   return (
     <>
       <article className={shapeVideoCard} aria-hidden="true">
-        <video
+        <LazyAutoplayVideo
           src={VIDEO.shapeAdPreview}
           poster={IMG.shapeAdPreview}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          className="absolute inset-0 size-full object-cover object-[50%_18%]"
+          className="object-[50%_18%]"
+          objectPosition="50% 18%"
         />
         <div
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"
@@ -157,7 +154,7 @@ function ShapeCard() {
             return (
               <div
                 key={tool}
-                className={`relative flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[0.6875rem] font-medium tracking-[-0.01em] text-white ${glass} ${
+                className={`relative flex items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[0.6875rem] font-medium tracking-[-0.01em] text-white ${landingGlass} ${
                   active ? 'ring-1 ring-white/35' : ''
                 }`}
               >
@@ -180,15 +177,10 @@ function FormatsCard() {
   return (
     <>
       <article className={shapeVideoCard} aria-hidden="true">
-        <video
+        <LazyAutoplayVideo
           src={VIDEO.formatsPreview}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          className="absolute inset-0 size-full object-cover object-center"
+          className="object-center"
+          objectPosition="center"
         />
         <div className="relative z-10 flex min-h-[14.5rem] flex-1 flex-col items-center justify-center px-5 py-8 sm:min-h-[15.5rem] sm:px-6 sm:py-9">
           <LandingUgcFormatsList />

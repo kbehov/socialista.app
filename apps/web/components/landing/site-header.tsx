@@ -2,14 +2,13 @@
 
 import Logo from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
-import { ShimmerButton } from '@/components/ui/shimmer-button'
 import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { HERO, LANDING_NAV } from './content'
-import { landingCtaSecondary, landingNavLink } from './landing-classes'
+import { landingCtaPrimaryCompact, landingCtaSecondary, landingNavLink } from './landing-classes'
 import { MobileNav } from './mobile-nav'
 
 export function SiteHeader() {
@@ -47,7 +46,7 @@ export function SiteHeader() {
             'border-[color-mix(in_srgb,var(--landing-stone)_92%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_94%,white)] shadow-[0_2px_4px_color-mix(in_oklch,var(--landing-ink)_6%,transparent),0_12px_32px_-16px_color-mix(in_oklch,var(--landing-ink)_14%,transparent)] supports-backdrop-filter:bg-[color-mix(in_srgb,var(--landing-canvas)_88%,white)]',
         )}
       >
-        <Logo size="default" className="pl-1 sm:pl-1.5" />
+        <Logo variant="landing" className="pl-0.5 sm:pl-1" />
 
         <nav aria-label="Primary" className="hidden items-center gap-7 px-1.5 md:flex lg:gap-8">
           {LANDING_NAV.map(item => (
@@ -66,10 +65,12 @@ export function SiteHeader() {
           >
             <Link href="/auth/signin">Sign in</Link>
           </Button>
-          <ShimmerButton href="/auth/signup" className="hidden h-10 px-6 text-sm md:inline-flex">
-            {HERO.primaryCta}
-            <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
-          </ShimmerButton>
+          <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
+            <Link href="/auth/signup">
+              {HERO.primaryCta}
+              <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+            </Link>
+          </Button>
           <MobileNav />
         </div>
       </div>

@@ -6,7 +6,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import {
@@ -18,7 +19,8 @@ import { InfluencerSwipeCarousel } from "./influencer-swipe-carousel";
 import {
   landingBody,
   landingContentGap,
-  landingH3,
+  landingCtaPrimary,
+  landingFeatureCaptionTitle,
   landingInfluencerGlow,
 } from "./landing-classes";
 import { Section } from "./section";
@@ -34,7 +36,7 @@ const FEATURE_ICONS: Record<InfluencerFeatureId, LucideIcon> = {
 function FeatureIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <span
-      className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground text-background sm:size-10"
+      className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--landing-stone)_70%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_28%,white)] text-[var(--landing-ink)] sm:size-10"
       aria-hidden="true"
     >
       <Icon className="size-[1.125rem] sm:size-5" strokeWidth={1.75} />
@@ -63,7 +65,7 @@ function InfluencerFeature({
       )}
     >
       <FeatureIcon icon={icon} />
-      <h3 className={landingH3}>{title}</h3>
+      <h3 className={landingFeatureCaptionTitle}>{title}</h3>
       <p className={cn(landingBody, "max-w-none text-[0.9375rem] sm:text-base")}>
         {description}
       </p>
@@ -134,12 +136,9 @@ export function LandingInfluencer() {
           <div className="flex w-full flex-col items-center gap-6 sm:gap-7 lg:w-auto lg:shrink-0">
             <InfluencerSwipeCarousel />
             <FadeIn delay={0.08}>
-              <ShimmerButton
-                href="/auth/signup"
-                className="h-11 px-6 text-sm font-medium"
-              >
-                {INFLUENCER_SECTION.cta}
-              </ShimmerButton>
+              <Button asChild size="lg" className={cn(landingCtaPrimary, "h-11 px-7")}>
+                <Link href="/auth/signup">{INFLUENCER_SECTION.cta}</Link>
+              </Button>
             </FadeIn>
           </div>
 

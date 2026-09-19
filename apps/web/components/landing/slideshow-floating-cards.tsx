@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 import { SLIDESHOW_MARQUEE_ITEMS } from './media'
+import { landingMediaCardHover } from './landing-classes'
 
 type SlideshowItem = (typeof SLIDESHOW_MARQUEE_ITEMS)[number]
 
@@ -46,6 +47,7 @@ function SlideshowPreviewCard({
     <article
       className={cn(
         'relative aspect-9/16 shrink-0 overflow-hidden rounded-[0.95rem] bg-[#121212] shadow-[0_14px_32px_-18px_rgb(0_0_0/0.38),0_0_0_1px_rgb(255_255_255/0.1)] sm:rounded-[1.05rem]',
+        landingMediaCardHover,
         featured ? cardWidthFeatured : cardWidth,
         className,
       )}

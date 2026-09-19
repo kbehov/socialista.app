@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { SectionInner } from './section'
 import {
   landingCtaStack,
+  landingHeroDisplay,
   landingHeroEyebrow,
   landingHeroHeadingGlow,
   landingHeroLead,
@@ -33,10 +34,7 @@ export function LandingHero() {
               likes={HERO_FLOAT_STATS.likes}
               views={HERO_FLOAT_STATS.views}
             />
-            <h1
-              id="hero-heading"
-              className="text-balance font-semibold text-[clamp(2.875rem,6.8vw,6.4rem)] leading-[0.96] tracking-[-0.072em] text-[var(--landing-ink)] sm:leading-[0.94]"
-            >
+            <h1 id="hero-heading" className={landingHeroDisplay}>
               {HERO.title}{' '}
               <span className="font-serif text-[1.02em] font-normal italic tracking-[-0.02em]">
                 {HERO.titleAccent}

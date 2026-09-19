@@ -11,7 +11,7 @@ export const HERO = {
   titleAccent: 'social media.',
   description:
     'Create and schedule UGC videos, winning ads, and carousels in one place. Learn which ideas perform best to run again.',
-  primaryCta: 'Start creating free',
+  primaryCta: 'Start creating for free',
   googleCta: 'Continue with Google',
 } as const
 
@@ -92,28 +92,34 @@ export const SLIDESHOWS = {
 
 export const FEATURES_BENTO = {
   eyebrow: 'Features',
-  title: 'Everything you need, all in one.',
+  title: 'Create, publish, and see',
+  titleAccent: 'what hits.',
   description:
-    'Create, refine, schedule, and learn from one workspace—no duct-taping tools together.',
+    'UGC, ads, carousels, scheduling, and analytics in one workspace—no duct-taping tools together.',
   items: [
     {
       id: 'scheduling' as const,
-      title: 'Scheduling & Publishing',
+      title: 'Queue it. Post it.',
       description: 'Queue posts per channel, preview captions, and ship on your calendar—not someone else’s.',
     },
     {
       id: 'analytics' as const,
-      title: 'Analytics',
+      title: 'See what spikes',
       description: 'Reach, engagement, and the creatives behind the spike—without exporting spreadsheets.',
     },
     {
+      id: 'short-videos' as const,
+      title: 'Short videos',
+      description: 'Vertical hooks and UGC-style clips sized for Reels, TikTok, and Shorts.',
+    },
+    {
       id: 'video-editor' as const,
-      title: 'Video Editor',
+      title: 'Video editor',
       description: 'Trim clips, tune captions, and polish motion before anything goes live.',
     },
     {
       id: 'slideshow-editor' as const,
-      title: 'Slideshow Editor',
+      title: 'Slideshow editor',
       description: 'Stack slides, set pacing, and export carousels built for the feed.',
     },
     {
@@ -122,13 +128,8 @@ export const FEATURES_BENTO = {
       description: 'Turn a brief into product stills and ad frames that match your brand.',
     },
     {
-      id: 'short-videos' as const,
-      title: 'Short Videos',
-      description: 'Vertical hooks and UGC-style clips sized for Reels, TikTok, and Shorts.',
-    },
-    {
       id: 'context-skills' as const,
-      title: 'Context and Skills',
+      title: 'Context and skills',
       description: 'Brands, products, and creative rules stay attached to every run.',
     },
   ],
@@ -137,43 +138,60 @@ export const FEATURES_BENTO = {
 export type FeatureBentoId = (typeof FEATURES_BENTO.items)[number]['id']
 
 export const PRICING_SECTION = {
-  title: 'Start with an idea. Scale with your output.',
+  title: 'Start with an idea.',
+  titleAccent: 'Scale with your output.',
   description:
     'Try the studio without a card. Upgrade when your team needs more creative capacity, seats, or connected accounts.',
+  cta: 'Get Started',
+  footnote: 'Start free. Cancel anytime.',
   fallbackTitle: 'Plans live in your workspace.',
   fallbackDescription: 'Create an account to see current pricing, credits, and team limits for your region.',
+  enterprise: {
+    eyebrow: 'Enterprise',
+    description: 'Custom credits, priority support, and procurement-friendly billing for larger teams.',
+    cta: 'Contact sales',
+    href: 'mailto:sales@socialista.app?subject=Socialista%20Enterprise',
+  },
+  trust: [
+    'Secure checkout',
+    'Cancel anytime',
+    'No card to start',
+    'You own your creatives',
+    'Shared team workspaces',
+    'Instant studio access',
+  ] as const,
 } as const
 
 export const FAQ_SECTION = {
-  title: 'The practical questions',
-  description: 'Ownership, workflow, publishing, and billing.',
+  title: 'Before you try it',
+  description: 'Real UGC, paid ads, ownership, and billing.',
 } as const
 
 export const FAQ_ITEMS = [
   {
+    question: 'Does the UGC look real, or like AI?',
+    answer:
+      'Socialista is built for native UGC—talking-head clips, product-in-hand shots, and ad-ready vertical video. You pick the creator, shape hooks and captions, and refine until it matches your brand.',
+  },
+  {
+    question: 'Can I run creatives as Meta or TikTok ads?',
+    answer:
+      'Yes. Export ad-ready vertical video and static frames sized for paid social, or schedule organic posts to connected accounts from the same studio.',
+  },
+  {
+    question: 'What else can I make besides UGC?',
+    answer:
+      'Static and motion ads, slideshows and carousels, AI images, short-form video, and channel-ready posts—plus scheduling, publishing, and analytics in one workspace.',
+  },
+  {
+    question: 'Who owns the files I generate?',
+    answer:
+      'Your workspace owns the creative you generate and upload. Keep it in your library, export it, or schedule it from Socialista.',
+  },
+  {
     question: 'Who is Socialista for?',
     answer:
       'Marketers, agencies, founders, and growth teams use Socialista to create and publish social creative—whether you are promoting a product, an app, a service, or a client account.',
-  },
-  {
-    question: 'Can I save brand and campaign context?',
-    answer:
-      'Yes. Store brand voice, offers, products, and creative rules in your workspace, then reuse them across UGC, ads, carousels, and scheduled posts.',
-  },
-  {
-    question: 'What can I create in Socialista?',
-    answer:
-      'UGC-style video, static and motion ads, images, slideshows, and channel-ready post creative—built for common social formats.',
-  },
-  {
-    question: 'Which channels can I publish to?',
-    answer:
-      'Connect Instagram, TikTok, YouTube, X, LinkedIn, Pinterest, Facebook, and Threads. Adapt each post before it enters the queue.',
-  },
-  {
-    question: 'Who owns the creative I generate?',
-    answer:
-      'Your workspace owns the files you generate and upload. Keep them in your library, export them, or schedule them from Socialista.',
   },
   {
     question: 'Can my team work in the same workspace?',
@@ -182,13 +200,14 @@ export const FAQ_ITEMS = [
   },
   {
     question: 'Can I cancel a paid plan?',
-    answer: 'Yes. You can cancel from billing and keep access through the end of the current billing period.',
+    answer: 'Yes. Cancel from billing and keep access through the end of the current billing period.',
   },
 ] as const
 
 export const FINAL_CTA = {
-  title: 'Your next campaign starts in one studio.',
-  description: 'Start creating for free. No credit card required.',
+  title: 'Start creating today.',
+  titleAccent: 'No card.',
+  description: 'UGC, ads, carousels, and publishing—free to start.',
 } as const
 
 export const FOOTER = {
@@ -214,7 +233,7 @@ export const FOOTER = {
     {
       title: 'Account',
       links: [
-        { href: '/auth/signup', label: 'Start creating free' },
+        { href: '/auth/signup', label: 'Start creating for free' },
         { href: '/auth/signin', label: 'Sign in' },
       ],
     },
@@ -224,7 +243,7 @@ export const FOOTER = {
 export const PAGE_METADATA = {
   title: 'Socialista — AI social studio for marketers and teams',
   description:
-    'Create UGC, ads, and carousels. Publish to every major channel and learn which creative to make next—for brands, agencies, founders, and app teams.',
+    'Create UGC video, winning ads, and carousels in one studio. Publish to every major channel and learn what to make next—for marketers, agencies, and founders.',
 } as const
 
 // Temporary compatibility data for detail components retained outside the new

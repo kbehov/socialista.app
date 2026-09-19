@@ -21,14 +21,35 @@ export const landingSectionLead =
 export const landingHeroEyebrow =
   'text-sm font-semibold tracking-[-0.015em] text-[var(--landing-orange)]'
 
+/** Shared glass on dark media mockups */
+export const landingGlass =
+  'border border-white/18 bg-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl'
+
+export const landingGlassBadge =
+  `${landingGlass} h-auto rounded-xl px-2 py-0.5 text-[0.6875rem] font-medium leading-4 tracking-[-0.01em] text-white/90 shadow-none hover:bg-white/[0.12] hover:text-white`
+
+/** Subtle lift on dark media cards — see `.landing-media-hover` in globals.css */
+export const landingMediaCardHover = 'landing-media-hover'
+
+export const landingHeroDisplay =
+  'text-balance font-semibold text-[clamp(2.875rem,6.8vw,6.4rem)] leading-[0.96] tracking-[-0.05em] text-[var(--landing-ink)] sm:leading-[0.94]'
+
 export const landingHeroLead =
-  'mx-auto max-w-2xl text-pretty text-[1.0625rem] leading-7 text-[var(--landing-muted)] sm:text-xl sm:leading-8'
+  'mx-auto max-w-2xl text-pretty text-[1.0625rem] leading-7 text-[var(--landing-muted)] sm:text-lg sm:leading-8'
 
 export const landingFeatureCaptionTitle =
   'font-serif text-[1.25rem] italic leading-snug tracking-[-0.02em] text-[var(--landing-ink)] sm:text-[1.375rem]'
 
 export const landingFeatureCaptionBody =
   'mt-2 text-[0.9375rem] leading-6 text-[var(--landing-muted)]'
+
+/** Pricing tiers stay paper-white even when OS / app theme is dark */
+export const landingPricingCardSurface =
+  'bg-white text-[var(--landing-ink)] dark:bg-white dark:text-[var(--landing-ink)]'
+
+/** Dark pricing tiers on the landing section — matches feature media panels */
+export const landingPricingCardDark =
+  'bg-[#0c0c0c] text-white dark:bg-[#0c0c0c] dark:text-white'
 
 export const landingMediaPanel =
   'relative overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0c0c0c] outline outline-1 outline-[oklch(0_0_0/0.1)]'
@@ -69,8 +90,31 @@ export const landingNavLink =
 export const landingMediaCard =
   'relative overflow-hidden rounded-[calc(var(--radius)+4px)] border border-border bg-surface-0 shadow-[var(--shadow-xs)]'
 
+export const landingCtaPress =
+  'transition-[transform,background-color,color,border-color,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96]'
+
 export const landingCtaPrimary =
-  'h-11 gap-2 rounded-full px-6 text-sm font-medium shadow-none transition-[transform,background-color,color,border-color,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96]'
+  `h-11 gap-2 rounded-full px-6 text-sm font-medium shadow-none bg-[var(--landing-charcoal)] text-white hover:bg-[color-mix(in_oklch,var(--landing-charcoal),white_10%)] ${landingCtaPress}`
+
+/** Hero, final CTA, pricing fallback */
+export const landingCtaPrimaryLg =
+  `h-12 gap-2 rounded-full px-7 text-[0.9375rem] font-medium shadow-none bg-[var(--landing-charcoal)] text-white hover:bg-[color-mix(in_oklch,var(--landing-charcoal),white_10%)] ${landingCtaPress}`
+
+/** Sticky header primary */
+export const landingCtaPrimaryCompact =
+  `h-10 gap-1.5 rounded-full px-6 text-sm font-medium shadow-none bg-[var(--landing-charcoal)] text-white hover:bg-[color-mix(in_oklch,var(--landing-charcoal),white_10%)] ${landingCtaPress}`
+
+export const landingCtaGoogle =
+  `h-12 gap-2 rounded-full border border-[color-mix(in_srgb,var(--landing-stone)_85%,transparent)] bg-[color-mix(in_srgb,white_88%,var(--landing-canvas))] px-7 text-[0.9375rem] font-medium text-[var(--landing-ink)] shadow-none hover:bg-[color-mix(in_srgb,white_72%,var(--landing-canvas))] ${landingCtaPress}`
+
+export const landingCtaGoogleCompact =
+  `h-10 gap-2 rounded-full border border-[color-mix(in_srgb,var(--landing-stone)_85%,transparent)] bg-[color-mix(in_srgb,white_88%,var(--landing-canvas))] px-5 text-sm font-medium text-[var(--landing-ink)] shadow-none hover:bg-[color-mix(in_srgb,white_72%,var(--landing-canvas))] ${landingCtaPress}`
+
+export const landingCtaGoogleInverted =
+  `border-[color-mix(in_srgb,var(--landing-canvas)_35%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_12%,transparent)] text-[color-mix(in_srgb,var(--landing-canvas)_96%,white)] hover:bg-[color-mix(in_srgb,var(--landing-canvas)_18%,transparent)]`
+
+export const landingCtaPrimaryInverted =
+  'bg-[color-mix(in_srgb,var(--landing-canvas)_96%,white)] text-[var(--landing-charcoal)] hover:bg-[color-mix(in_srgb,var(--landing-canvas)_88%,white)]'
 
 export const landingCtaSecondary =
   'h-11 gap-2 rounded-full border-border/80 bg-background px-6 text-sm font-medium shadow-none hover:bg-muted/40'

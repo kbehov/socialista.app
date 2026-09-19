@@ -30,7 +30,6 @@ const TITLE_SLOTS: Omit<OrbSlot, 'value' | 'kind'>[] = [
       'left-[max(-0.15rem,-1%)] top-[22%] -translate-y-1/2 sm:left-[-0.5rem] lg:left-[-1.25rem]',
     floatDuration: 5.4,
     floatDelay: 0.2,
-    muted: true,
   },
   {
     id: 'title-like-right',
@@ -39,30 +38,12 @@ const TITLE_SLOTS: Omit<OrbSlot, 'value' | 'kind'>[] = [
     floatDuration: 4.8,
     floatDelay: 0.55,
   },
-  {
-    id: 'title-like-mid-right',
-    className:
-      'right-[max(0rem,0%)] bottom-[18%] sm:right-[-0.35rem]',
-    floatDuration: 5.1,
-    floatDelay: 0.85,
-    muted: true,
-  },
 ]
-
-function accentLikeCount(likes: string): string {
-  const match = likes.match(/^([\d.]+)K$/i)
-  if (!match) return likes
-  const value = Number.parseFloat(match[1]!)
-  if (!Number.isFinite(value)) return likes
-  const accent = Math.max(9.6, Math.round(value * 0.12 * 10) / 10)
-  return `${accent.toFixed(1)}K`
-}
 
 function buildSlots(likes: string, views: string): OrbSlot[] {
   return [
     { ...TITLE_SLOTS[0], kind: 'view', value: views },
     { ...TITLE_SLOTS[1], kind: 'like', value: likes },
-    { ...TITLE_SLOTS[2], kind: 'like', value: accentLikeCount(likes) },
   ]
 }
 

@@ -29,7 +29,7 @@ export function LandingStaticAds() {
       </FadeIn>
 
       <FadeIn delay={0.08} className={landingContentGap}>
-        <div className="relative overflow-hidden rounded-[var(--landing-panel-radius)] bg-[#0c0c0c] shadow-[0_28px_64px_-36px_rgba(0,0,0,0.45)] outline outline-1 outline-[oklch(0_0_0/0.1)] sm:rounded-[2.5rem] lg:rounded-[2.75rem]">
+        <div className="relative overflow-hidden rounded-[var(--landing-panel-radius)] bg-[#0c0c0c] shadow-[0_28px_64px_-36px_rgba(0,0,0,0.45)] outline outline-1 outline-[oklch(0_0_0/0.1)]">
           <div className="relative flex min-h-[22rem] flex-col sm:min-h-[28rem] lg:min-h-[32.5rem]">
             <StaticAdsMarquee />
 
