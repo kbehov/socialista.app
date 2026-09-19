@@ -82,6 +82,8 @@ type SwipeCarouselProps = {
   showSwipeHint?: boolean
   maxVisible?: number
   fillHeight?: boolean
+  stackPeek?: boolean
+  swipeHintVariant?: 'default' | 'influencer'
 }
 
 export function SwipeCarousel({
@@ -100,6 +102,8 @@ export function SwipeCarousel({
   showSwipeHint = true,
   maxVisible,
   fillHeight,
+  stackPeek,
+  swipeHintVariant,
 }: SwipeCarouselProps) {
   const reduceMotion = useReducedMotion()
   const isInfluencer = variant === 'influencer'
@@ -116,7 +120,8 @@ export function SwipeCarousel({
         ? 'shadow-[0_20px_44px_-22px_color-mix(in_oklch,var(--foreground)_22%,transparent)]'
         : undefined)
 
-  const resolvedMaxVisible = maxVisible ?? (isInfluencer ? 2 : 3)
+  const resolvedStackPeek = stackPeek ?? isInfluencer
+  const resolvedMaxVisible = maxVisible ?? (resolvedStackPeek ? 3 : isInfluencer ? 2 : 3)
   const resolvedFillHeight = fillHeight ?? embedded
 
   return (
@@ -131,9 +136,11 @@ export function SwipeCarousel({
       maxVisible={resolvedMaxVisible}
       autoplayMs={resolvedAutoplay}
       swipeLabels={resolvedLabels}
-      showSwipeHint={showSwipeHint && !embedded}
+      showSwipeHint={showSwipeHint && (!embedded || isInfluencer)}
+      swipeHintVariant={swipeHintVariant ?? (isInfluencer ? 'influencer' : 'default')}
       showStackBase={showStackBase}
       fillHeight={resolvedFillHeight}
+      stackPeek={resolvedStackPeek}
       liveRegion={activeIndex => (
         <div className="sr-only" aria-live="polite">
           {isInfluencer
@@ -174,6 +181,7 @@ export function SwipeCarousel({
           variant={isInfluencer ? 'influencer' : 'post'}
           influencer={slide.influencer}
           embedded={embedded}
+          swipeActions={context.swipeActions}
         />
       )}
     />

@@ -33,7 +33,7 @@ export function CtaPair({ primaryHref = '/auth/signup', className, inverted = fa
           landingCtaPrimary,
           'h-12 w-full px-7 text-[0.9375rem] sm:w-auto',
           inverted &&
-            'bg-background text-foreground hover:bg-background/90 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90',
+            'bg-[color-mix(in_srgb,var(--landing-canvas)_96%,white)] text-[var(--landing-charcoal)] hover:bg-[color-mix(in_srgb,var(--landing-canvas)_88%,white)]',
         )}
       >
         <Link href={primaryHref}>{HERO.primaryCta}</Link>
@@ -62,8 +62,8 @@ function HeroGoogleButton({ inverted = false }: { inverted?: boolean }) {
       variant="outline"
       size="lg"
       className={cn(
-        'h-12 w-full rounded-full px-7 text-[0.9375rem] sm:w-auto',
-        inverted && 'border-background/30 bg-background/10 text-background hover:bg-background/15',
+        'h-12 w-full rounded-full px-7 text-[0.9375rem] transition-[transform,background-color,color,border-color,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] sm:w-auto',
+        inverted && 'border-[color-mix(in_srgb,var(--landing-canvas)_35%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_12%,transparent)] text-[color-mix(in_srgb,var(--landing-canvas)_96%,white)] hover:bg-[color-mix(in_srgb,var(--landing-canvas)_18%,transparent)]',
       )}
       onClick={handleGoogleSignIn}
       disabled={isGoogleLoading}

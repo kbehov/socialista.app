@@ -1,18 +1,18 @@
 export const LANDING_NAV = [
-  { href: '/#workflow', label: 'How it works' },
-  { href: '/#creative', label: 'Creative studio' },
-  { href: '/#analytics', label: 'Analytics' },
+  { href: '/#ugc-ads', label: 'UGC ads' },
+  { href: '/#influencers', label: 'AI creators' },
+  { href: '/#features', label: 'Features' },
   { href: '/#pricing', label: 'Pricing' },
 ] as const
 
 export const HERO = {
   eyebrow: 'For marketers, agencies, founders, and growth teams',
-  title: 'The AI studio to dominate social media.',
+  title: 'The AI studio to dominate',
+  titleAccent: 'social media.',
   description:
-    'Create and schedule UGC videos, winning ads and carousels in one place.Learn which ideas perform best to run again.',
+    'Create and schedule UGC videos, winning ads, and carousels in one place. Learn which ideas perform best to run again.',
   primaryCta: 'Start creating free',
   googleCta: 'Continue with Google',
-  secondaryCta: 'See how it works',
 } as const
 
 export const HERO_PROOF_POINTS = ['Ship content fast', 'Publish to social media', 'Free to start · no card'] as const
@@ -52,85 +52,89 @@ export const UGC_ADS = {
   ],
 } as const
 
-export const WORKFLOW = {
-  title: 'From brief to live post in one loop',
+export const STATIC_ADS = {
+  title: 'Make',
+  titleAccent: 'Winning Ads',
   description:
-    'Brand voice, offers, and campaign details stay in one workspace—from the first idea to the post that goes live, and the next one you make from the results.',
-  steps: [
-    {
-      number: '01',
-      title: 'Set your context',
-      description: 'Add brand voice, offers, products, or campaign details once.',
-    },
-    {
-      number: '02',
-      title: 'Make the variations',
-      description: 'Generate UGC, static ads, and swipeable carousels from the same brief.',
-    },
-    {
-      number: '03',
-      title: 'Ship what is ready',
-      description: 'Adapt captions and formats, then schedule each connected channel.',
-    },
-    {
-      number: '04',
-      title: 'Make the next winner',
-      description: 'Trace performance back to the creative—not just the channel stats.',
-    },
-  ],
-} as const
-
-export const OUTPUT_GALLERY = {
-  title: 'One brief. Formats that fit the feed.',
-  description:
-    'Run client campaigns, launch an app, or keep a brand feed moving—without rebuilding every asset from scratch.',
-  items: [
-    { id: 'ugc', title: 'Creator-style UGC', description: 'Hooks that feel native on Reels and TikTok.' },
-    { id: 'ad', title: 'Static and motion ads', description: 'Offers, launches, and apps held in one clear frame.' },
-    { id: 'carousel', title: 'Swipeable stories', description: 'Educate, tease, or convert across a sequence.' },
-  ],
-} as const
-
-export const CAPABILITIES = {
-  title: 'Everything between an idea and a published post',
-  description:
-    'Creative, publishing, and learning in one workspace—whether you run one brand, many clients, or a product you are growing.',
+    'Turn one product photo into a static ad that can actually run. Pick a proven layout, drop in your offer, and generate a frame built for paid social.',
   items: [
     {
-      title: 'Context-aware creative',
-      description: 'Brand voice, offers, and campaign details stay tied to every generation.',
+      id: 'product' as const,
+      step: '01',
+      title: 'Add your product',
+      description: 'Upload a product shot. Keep the bottle, the app, or the SKU in-frame—no reshoot required.',
     },
     {
-      title: 'A shared publishing desk',
-      description: 'Draft, adapt captions, schedule, and review the calendar together.',
+      id: 'template' as const,
+      step: '02',
+      title: 'Select template',
+      description: 'Start from layouts that already convert. Swap the product, keep the winning structure.',
     },
     {
-      title: 'Creative that learns',
-      description: 'See the posts behind the signal, then open the exact run to iterate.',
+      id: 'create' as const,
+      step: '03',
+      title: 'Create the ad',
+      description: 'Generate a static ad in seconds. Headline, offer, and CTA locked in one clear frame.',
     },
   ],
 } as const
 
-export const ANALYTICS = {
-  title: 'Know what to make again',
+export type StaticAdsStepId = (typeof STATIC_ADS.items)[number]['id']
+
+export const SLIDESHOWS = {
+  eyebrow: 'Slideshow studio',
+  title: 'Create',
+  titleAccent: 'viral slideshows',
   description:
-    'Tie every result back to the creative that produced it. Spot the format, hook, or angle worth repeating—across brands, clients, or channels.',
+    'Faceless TikTok slideshows that feel native—hooks, slides, and captions in one flow.',
+  cta: 'Create slideshow',
+} as const
+
+export const FEATURES_BENTO = {
+  eyebrow: 'Features',
+  title: 'Everything you need, all in one.',
+  description:
+    'Create, refine, schedule, and learn from one workspace—no duct-taping tools together.',
   items: [
     {
-      id: 'workspace' as const,
-      title: 'One clear view',
-      description: 'Your workspace, channels, and posts in one place.',
+      id: 'scheduling' as const,
+      title: 'Scheduling & Publishing',
+      description: 'Queue posts per channel, preview captions, and ship on your calendar—not someone else’s.',
     },
-    { id: 'channels' as const, title: 'Results by channel', description: 'See where each idea earns attention.' },
     {
-      id: 'iteration' as const,
-      title: 'A faster next brief',
-      description: 'Open the source creative and make the follow-up while it is fresh.',
+      id: 'analytics' as const,
+      title: 'Analytics',
+      description: 'Reach, engagement, and the creatives behind the spike—without exporting spreadsheets.',
+    },
+    {
+      id: 'video-editor' as const,
+      title: 'Video Editor',
+      description: 'Trim clips, tune captions, and polish motion before anything goes live.',
+    },
+    {
+      id: 'slideshow-editor' as const,
+      title: 'Slideshow Editor',
+      description: 'Stack slides, set pacing, and export carousels built for the feed.',
+    },
+    {
+      id: 'image-generation' as const,
+      title: 'Image generation',
+      description: 'Turn a brief into product stills and ad frames that match your brand.',
+    },
+    {
+      id: 'short-videos' as const,
+      title: 'Short Videos',
+      description: 'Vertical hooks and UGC-style clips sized for Reels, TikTok, and Shorts.',
+    },
+    {
+      id: 'context-skills' as const,
+      title: 'Context and Skills',
+      description: 'Brands, products, and creative rules stay attached to every run.',
     },
   ],
 } as const
 
-export type AnalyticsFeatureId = (typeof ANALYTICS.items)[number]['id']
+export type FeatureBentoId = (typeof FEATURES_BENTO.items)[number]['id']
 
 export const PRICING_SECTION = {
   title: 'Start with an idea. Scale with your output.',
@@ -193,18 +197,18 @@ export const FOOTER = {
     {
       title: 'Product',
       links: [
-        { href: '/#workflow', label: 'How it works' },
-        { href: '/#creative', label: 'Creative studio' },
-        { href: '/#analytics', label: 'Analytics' },
+        { href: '/#ugc-ads', label: 'UGC ads' },
+        { href: '/#features', label: 'Features' },
+        { href: '/#channels', label: 'Channels' },
         { href: '/#pricing', label: 'Pricing' },
       ],
     },
     {
       title: 'Create',
       links: [
-        { href: '/#creative', label: 'UGC video' },
-        { href: '/#creative', label: 'Static ads' },
-        { href: '/#creative', label: 'Carousels' },
+        { href: '/#ugc-ads', label: 'UGC video' },
+        { href: '/#static-ads', label: 'Static ads' },
+        { href: '/#slideshows', label: 'Slideshows' },
       ],
     },
     {
@@ -238,9 +242,10 @@ export const PLATFORMS = [
 export type PlatformId = (typeof PLATFORMS)[number]['id']
 
 export const PLATFORMS_SECTION = {
-  title: 'One click to every channel',
+  title: 'Post to every channel',
+  titleAccent: 'from one studio',
   description:
-    'Connect Instagram, TikTok, YouTube, LinkedIn, and the rest. Native ratios, captions per platform—queue from the same place you create.',
+    'Connect Instagram, TikTok, YouTube, LinkedIn, and more. Export native sizes and captions per platform, then schedule without switching tools.',
 } as const
 
 export const PUBLISH = {
@@ -314,29 +319,6 @@ export const HERO_SLIDES = [
     views: '189.0K',
   },
 ] as const
-export const STUDIO_BENTO = {
-  eyebrow: 'Studio',
-  titleEmoji: '✦',
-  title: OUTPUT_GALLERY.title,
-  description: OUTPUT_GALLERY.description,
-  usedByLabel: 'Formats',
-  usedBy: [],
-  cards: OUTPUT_GALLERY.items,
-} as const
-export type StudioBentoCardId = (typeof STUDIO_BENTO.cards)[number]['id']
-export const ADDITIONAL_FEATURES = {
-  title: CAPABILITIES.title,
-  description: '',
-  cards: [
-    { id: 'brand-profile' as const, title: 'Brand profile', description: CAPABILITIES.items[0].description },
-    { id: 'post-composer' as const, title: 'Post composer', description: CAPABILITIES.items[1].description },
-    { id: 'content-calendar' as const, title: 'Content calendar', description: CAPABILITIES.items[1].description },
-    { id: 'video-editor' as const, title: 'Video editor', description: 'Refine video before it is ready to publish.' },
-    { id: 'skills' as const, title: 'Creative rules', description: CAPABILITIES.items[0].description },
-    { id: 'products' as const, title: 'Products', description: CAPABILITIES.items[0].description },
-  ],
-} as const
-export type AdditionalFeatureId = (typeof ADDITIONAL_FEATURES.cards)[number]['id']
 export const INFLUENCER_SECTION = {
   title: 'Your brand deserves',
   titleAccent: 'a face',
@@ -344,7 +326,7 @@ export const INFLUENCER_SECTION = {
     'Spin up an AI creator in seconds — put them on your product, in your app, or in your fit. Same persona across every clip and still.',
   cta: 'Try an AI creator',
   mockup: {
-    badge: 'Made in Socialista',
+    badge: 'Made In Socialista',
     username: '@jessica.socialista',
     caption: 'POV: your brand finally has a face it owns',
     hashtags: '#aicreator #ugc',

@@ -1,15 +1,14 @@
 import { FAQ_ITEMS, PAGE_METADATA } from '@/components/landing/content'
-import { LandingAnalytics } from '@/components/landing/landing-analytics'
-import { LandingCapabilities } from '@/components/landing/landing-capabilities'
 import { LandingFaq } from '@/components/landing/landing-faq'
+import { LandingFeatures } from '@/components/landing/landing-features'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
-import { LandingOutputGallery } from '@/components/landing/landing-output-gallery'
 import { LandingPlatforms } from '@/components/landing/landing-platforms'
 import { LandingPricing } from '@/components/landing/landing-pricing'
+import { LandingSlideshows } from '@/components/landing/landing-slideshows'
+import { LandingStaticAds } from '@/components/landing/landing-static-ads'
 import { LandingUgcAds } from '@/components/landing/landing-ugc-ads'
-import { LandingWorkflow } from '@/components/landing/landing-workflow'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
 import type { PolarProduct } from '@socialista/types'
@@ -104,6 +103,7 @@ function buildJsonLd(products: PolarProduct[] | undefined) {
 export default async function HomePage() {
   const polarResponse = await getPolarProducts({ recurringOnly: true })
   const products = polarResponse.data?.products ?? []
+  console.log(products)
   const jsonLd = buildJsonLd(polarResponse.data?.products)
 
   return (
@@ -113,11 +113,9 @@ export default async function HomePage() {
       <LandingUgcAds />
       <LandingInfluencer />
       <LandingPlatforms />
-      <LandingWorkflow />
-      <LandingOutputGallery />
-
-      <LandingCapabilities />
-      <LandingAnalytics />
+      <LandingStaticAds />
+      <LandingSlideshows />
+      <LandingFeatures />
       <LandingPricing
         products={products}
         loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}

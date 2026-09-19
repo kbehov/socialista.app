@@ -15,9 +15,10 @@ import { FadeIn } from "./fade-in";
 import {
   landingContentGap,
   landingSection,
+  landingSectionDivider,
   landingSectionY,
 } from "./landing-classes";
-import { SectionHeader } from "./section-header";
+import { LandingSectionIntro } from "./section-header";
 
 const platformById = Object.fromEntries(
   PLATFORMS.map((platform) => [platform.id, platform]),
@@ -127,7 +128,7 @@ function PlatformNode({
           className="size-9 rounded-full ring-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/platform:scale-105 sm:size-10"
         />
       </BeamCircle>
-      <span className="text-[0.625rem] font-medium tracking-[-0.01em] whitespace-nowrap text-muted-foreground/80 transition-colors duration-200 group-hover/platform:text-muted-foreground sm:text-[0.6875rem]">
+      <span className="text-[0.625rem] font-medium tracking-[-0.01em] whitespace-nowrap text-[var(--landing-muted)]/90 transition-colors duration-200 group-hover/platform:text-[var(--landing-ink)] sm:text-[0.6875rem]">
         {platform.label}
       </span>
     </div>
@@ -152,17 +153,18 @@ export function LandingPlatforms() {
       id="channels"
       aria-labelledby="channels-heading"
       className={cn(
-        "scroll-mt-24 overflow-x-clip border-t border-border",
+        "landing-canvas scroll-mt-24 overflow-x-clip",
+        landingSectionDivider,
         landingSectionY,
       )}
     >
       <div className={landingSection}>
         <FadeIn>
-          <SectionHeader
+          <LandingSectionIntro
             titleId="channels-heading"
             title={PLATFORMS_SECTION.title}
+            titleAccent={PLATFORMS_SECTION.titleAccent}
             description={PLATFORMS_SECTION.description}
-            align="center"
           />
         </FadeIn>
 
@@ -172,7 +174,7 @@ export function LandingPlatforms() {
               ref={containerRef}
               className="relative flex w-full items-center justify-center overflow-hidden px-2 py-4 sm:px-4 sm:py-6"
             >
-            <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17rem] sm:gap-9">
+            <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17.5rem] sm:gap-9">
               <div className="flex items-center justify-between px-1">
                 <PlatformNode id="instagram" nodeRef={topLeftRef} />
                 <PlatformNode id="youtube" nodeRef={topCenterRef} />

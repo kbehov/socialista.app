@@ -1,38 +1,57 @@
 import { CtaPair } from './cta-pair'
-import { HERO } from './content'
+import { HERO, HERO_SLIDES } from './content'
 import { FadeIn } from './fade-in'
+import { HeroEngagementOrbs } from './hero-engagement-orbs'
 import { HeroMarquee } from './hero-marquee'
 import { HeroSocialProof } from './hero-social-proof'
+import { cn } from '@/lib/utils'
 import { SectionInner } from './section'
+import {
+  landingCtaStack,
+  landingHeroEyebrow,
+  landingHeroHeadingGlow,
+  landingHeroLead,
+} from './landing-classes'
+
+const HERO_FLOAT_STATS = HERO_SLIDES[0]
 
 export function LandingHero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="landing-canvas relative overflow-hidden pb-10 pt-14 sm:pb-12 sm:pt-20"
+      className="landing-canvas relative overflow-x-clip pb-12 pt-12 sm:pb-16 sm:pt-[4.75rem]"
     >
       <SectionInner className="max-w-7xl">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="text-sm font-semibold tracking-[-0.015em] text-[var(--landing-orange)]">
-            {HERO.eyebrow}
-          </p>
-          <h1
-            id="hero-heading"
-            className="mt-5 text-balance font-semibold text-[clamp(3rem,6.8vw,6.4rem)] leading-[.94] tracking-[-0.072em] text-[var(--landing-ink)]"
-          >
-            {HERO.title}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-[1.0625rem] leading-7 text-[var(--landing-muted)] sm:text-xl sm:leading-8">
-            {HERO.description}
-          </p>
-          <CtaPair className="mt-8 flex flex-col justify-center gap-3 sm:flex-row" />
+          <p className={landingHeroEyebrow}>{HERO.eyebrow}</p>
+          <div className="relative mx-auto mt-4 w-full max-w-[min(100%,52rem)] px-1 sm:mt-5 sm:px-0">
+            <div
+              className={`pointer-events-none absolute inset-x-[-8%] top-[-20%] bottom-[-28%] -z-10 ${landingHeroHeadingGlow}`}
+              aria-hidden="true"
+            />
+            <HeroEngagementOrbs
+              likes={HERO_FLOAT_STATS.likes}
+              views={HERO_FLOAT_STATS.views}
+            />
+            <h1
+              id="hero-heading"
+              className="text-balance font-semibold text-[clamp(2.875rem,6.8vw,6.4rem)] leading-[0.96] tracking-[-0.072em] text-[var(--landing-ink)] sm:leading-[0.94]"
+            >
+              {HERO.title}{' '}
+              <span className="font-serif text-[1.02em] font-normal italic tracking-[-0.02em]">
+                {HERO.titleAccent}
+              </span>
+            </h1>
+          </div>
+          <p className={cn(landingHeroLead, 'mt-6 sm:mt-7')}>{HERO.description}</p>
+          <CtaPair className={cn(landingCtaStack, 'mt-8 sm:mt-9')} />
         </div>
 
         <FadeIn delay={0.14} immediate className="relative z-1 mt-12 w-full min-w-0 sm:mt-14 lg:mt-16">
           <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-clip">
             <HeroMarquee />
           </div>
-          <FadeIn delay={0.22} immediate className="mt-7 flex justify-center sm:mt-9">
+          <FadeIn delay={0.22} immediate className="mt-8 flex justify-center sm:mt-10">
             <HeroSocialProof />
           </FadeIn>
         </FadeIn>

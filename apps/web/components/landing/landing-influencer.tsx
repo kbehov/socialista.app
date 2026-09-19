@@ -22,6 +22,7 @@ import {
   landingInfluencerGlow,
 } from "./landing-classes";
 import { Section } from "./section";
+import { LandingSectionIntro } from "./section-header";
 
 const FEATURE_ICONS: Record<InfluencerFeatureId, LucideIcon> = {
   quality: Smartphone,
@@ -106,22 +107,14 @@ export function LandingInfluencer() {
   );
 
   return (
-    <Section id="influencers" border>
+    <Section id="influencers" landingDivider>
       <FadeIn>
-        <div className="mx-auto max-w-3xl text-center">
-          <h2
-            id="influencers-heading"
-            className="text-balance text-[clamp(2.125rem,4.5vw,3.375rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[var(--landing-ink)]"
-          >
-            {INFLUENCER_SECTION.title}{" "}
-            <span className="font-serif text-[1.02em] font-normal italic tracking-[-0.02em]">
-              {INFLUENCER_SECTION.titleAccent}
-            </span>
-          </h2>
-          <p className={cn(landingBody, "mx-auto mt-5 max-w-2xl sm:mt-5")}>
-            {INFLUENCER_SECTION.eyebrow}
-          </p>
-        </div>
+        <LandingSectionIntro
+          titleId="influencers-heading"
+          title={INFLUENCER_SECTION.title}
+          titleAccent={INFLUENCER_SECTION.titleAccent}
+          description={INFLUENCER_SECTION.eyebrow}
+        />
       </FadeIn>
 
       <div className={cn(landingContentGap, "relative")}>

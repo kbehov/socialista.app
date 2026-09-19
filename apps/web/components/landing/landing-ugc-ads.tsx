@@ -8,12 +8,19 @@ import {
 import type { ReactNode } from 'react'
 
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 import { UGC_ADS } from './content'
 import { FadeIn } from './fade-in'
 import { LandingUgcFormatsList } from './landing-ugc-formats-list'
+import {
+  landingFeatureCaptionBody,
+  landingFeatureCaptionTitle,
+  landingMediaPanel,
+} from './landing-classes'
 import { IMG, VIDEO } from './media'
 import { Section } from './section'
+import { LandingSectionIntro } from './section-header'
 
 const glass =
   'border border-white/18 bg-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl'
@@ -21,33 +28,23 @@ const glass =
 const glassBadge =
   `${glass} h-auto rounded-xl px-2 py-0.5 text-[0.6875rem] font-medium leading-4 tracking-[-0.01em] text-white/90 shadow-none hover:bg-white/[0.12] hover:text-white`
 
-const featureCard =
-  'relative flex min-h-[22rem] flex-col overflow-hidden rounded-[1.75rem] bg-[#0c0c0c] sm:min-h-[26rem] lg:min-h-[27.5rem]'
+const featureCard = cn(landingMediaPanel, 'flex min-h-[22rem] flex-col sm:min-h-[26rem] lg:min-h-[27.5rem]')
 
-const shapeVideoCard =
-  'relative flex min-h-[22rem] flex-col overflow-hidden rounded-[1.75rem] bg-black sm:min-h-[26rem] lg:min-h-[27.5rem]'
+const shapeVideoCard = cn(landingMediaPanel, 'flex min-h-[22rem] flex-col bg-black sm:min-h-[26rem] lg:min-h-[27.5rem]')
 
 export function LandingUgcAds() {
   return (
-    <Section id="ugc-ads" className="landing-canvas border-t border-[var(--landing-stone)]/80 pb-16 pt-16 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
+    <Section id="ugc-ads" landingDivider>
       <FadeIn>
-        <div className="mx-auto max-w-3xl text-center">
-          <h2
-            id="ugc-ads-heading"
-            className="text-balance text-[clamp(2.125rem,4.5vw,3.375rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[var(--landing-ink)]"
-          >
-            {UGC_ADS.title}{' '}
-            <span className="font-serif text-[1.02em] font-normal italic tracking-[-0.02em]">
-              {UGC_ADS.titleAccent}
-            </span>
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-pretty text-[1.0625rem] leading-7 text-[var(--landing-muted)] sm:text-lg sm:leading-8">
-            {UGC_ADS.description}
-          </p>
-        </div>
+        <LandingSectionIntro
+          titleId="ugc-ads-heading"
+          title={UGC_ADS.title}
+          titleAccent={UGC_ADS.titleAccent}
+          description={UGC_ADS.description}
+        />
       </FadeIn>
 
-      <div className="mt-12 grid gap-8 sm:mt-14 lg:grid-cols-3 lg:gap-6 xl:gap-8">
+      <div className="mt-10 grid gap-8 sm:mt-12 lg:grid-cols-3 lg:gap-6 xl:gap-8">
         <FadeIn delay={0.04}>
           <FeatureColumn>
             <CreatorCard />
@@ -75,10 +72,8 @@ function FeatureColumn({ children }: { children: ReactNode }) {
 function FeatureCaption({ title, description }: { title: string; description: string }) {
   return (
     <div className="px-0.5">
-      <h3 className="font-serif text-[1.375rem] italic leading-snug tracking-[-0.02em] text-[var(--landing-ink)] sm:text-2xl">
-        {title}
-      </h3>
-      <p className="mt-2 text-[0.9375rem] leading-6 text-[var(--landing-muted)]">{description}</p>
+      <h3 className={cn(landingFeatureCaptionTitle, 'sm:text-2xl')}>{title}</h3>
+      <p className={landingFeatureCaptionBody}>{description}</p>
     </div>
   )
 }

@@ -109,7 +109,7 @@ function PaywallProductGrid({
   return (
     <div
       className={cn(
-        'grid gap-4',
+        'grid gap-6 lg:gap-7',
         variant === 'page' ? 'md:grid-cols-2 xl:grid-cols-3' : products.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1',
       )}
     >
@@ -120,7 +120,6 @@ function PaywallProductGrid({
           checkoutUrl={getProductCheckoutUrl(product.id, workspaceId)}
           isFeatured={product.id === featuredId}
           isCurrentPlan={product.id === currentProductId}
-          className={cn(product.id === featuredId && products.length > 1 && 'md:-translate-y-1')}
         />
       ))}
     </div>

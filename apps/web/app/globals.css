@@ -20,10 +20,13 @@
 :root {
   --landing-canvas: #faf8f4;
   --landing-ink: #151515;
+  --landing-muted: #5f5a52;
   --landing-stone: #e9e4db;
   --landing-orange: #ff5a1f;
   --landing-charcoal: #1d1c1a;
   --landing-peach: #ffe2d5;
+  --landing-media-radius: 1.75rem;
+  --landing-panel-radius: 2.25rem;
   /* ── Primitives ───────────────────────────────────────────────────────── */
 
   --spacing: 0.25rem;
@@ -190,6 +193,14 @@
   --color-3: oklch(69.6% 0.165 251);
   --color-4: oklch(80.2% 0.134 225);
   --color-5: oklch(90.7% 0.231 133);
+}
+
+.landing-canvas {
+  color: var(--landing-ink);
+}
+
+.landing-section-divider {
+  border-top: 1px solid color-mix(in srgb, var(--landing-stone) 72%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -443,27 +454,6 @@
   --animate-shine: shine var(--duration) infinite linear;
   --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
   --animate-hero-badge-float: hero-badge-float var(--duration, 3.2s) ease-out forwards;
-  --animate-fire-flicker: fire-flicker 1.35s ease-in-out infinite;
-
-  @keyframes fire-flicker {
-    0%,
-    100% {
-      transform: scale(1) rotate(-4deg);
-      filter: brightness(1) saturate(1);
-    }
-    25% {
-      transform: scale(1.1) rotate(3deg) translateY(-6%);
-      filter: brightness(1.18) saturate(1.12);
-    }
-    50% {
-      transform: scale(0.94) rotate(-5deg);
-      filter: brightness(0.92) saturate(0.96);
-    }
-    75% {
-      transform: scale(1.06) rotate(2deg) translateY(-3%);
-      filter: brightness(1.1) saturate(1.06);
-    }
-  }
 
   @keyframes marquee {
     from {

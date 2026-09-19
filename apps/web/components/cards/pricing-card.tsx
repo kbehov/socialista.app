@@ -1,30 +1,17 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  formatPlanLimitValue,
   formatProductPrice,
   getDefaultCtaLabel,
   getDefaultPricingFootnote,
-  getProductBenefitItems,
-  getProductPlanLimits,
-  type ProductBenefitItem,
-  type ProductPlanLimit,
+  getProductFeatureLines,
+  type ProductFeatureLine,
 } from '@/lib/pricing'
 import { cn } from '@/lib/utils'
 import type { PolarProduct } from '@socialista/types'
-import {
-  ArrowRightIcon,
-  AtSignIcon,
-  CalendarDaysIcon,
-  CheckIcon,
-  CoinsIcon,
-  SparklesIcon,
-  UsersIcon,
-} from 'lucide-react'
+import { CheckIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
-import type { ComponentType } from 'react'
 
 export type PricingCardProps = {
   product: PolarProduct
@@ -35,84 +22,56 @@ export type PricingCardProps = {
   isCurrentPlan?: boolean
   isFeatured?: boolean
   badge?: string
+  tierIndex?: number
   onSelect?: (product: PolarProduct) => void
   disabled?: boolean
   className?: string
 }
 
-const PLAN_LIMIT_ICONS: Record<ProductPlanLimit['key'], ComponentType<{ className?: string }>> = {
-  posts: CalendarDaysIcon,
-  members: UsersIcon,
-  accounts: AtSignIcon,
-}
+/** Reference-inspired accent — vivid check chips on a light card */
+const FEATURE_INCLUDED_ICON_CLASS =
+  'flex size-5 shrink-0 items-center justify-center rounded-full bg-[#c8ef4a] text-[#141414] dark:bg-[#b8e035] dark:text-[#0a0a0a]'
 
-function PricingPlanLimits({ limits }: { limits: ProductPlanLimit[] }) {
-  if (limits.length === 0) return null
+const FEATURE_EXCLUDED_ICON_CLASS =
+  'flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--landing-stone)_55%,#e8e6e1)] text-[var(--landing-muted)] dark:bg-muted dark:text-muted-foreground'
+
+function PricingFeatureStatusIcon({ included }: { included: boolean }) {
+  if (included) {
+    return (
+      <span className={cn(FEATURE_INCLUDED_ICON_CLASS, 'mt-0.5')}>
+        <CheckIcon className="size-3 stroke-[3]" aria-hidden />
+      </span>
+    )
+  }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/25">
-      <div
-        className={cn(
-          'grid divide-x divide-border/60',
-          limits.length === 1 && 'grid-cols-1',
-          limits.length === 2 && 'grid-cols-2',
-          limits.length >= 3 && 'grid-cols-3',
-        )}
-      >
-        {limits.map(limit => {
-          const Icon = PLAN_LIMIT_ICONS[limit.key]
-
-          return (
-            <div
-              key={limit.key}
-              className="flex flex-col items-center px-2 py-3.5 text-center"
-              aria-label={`${formatPlanLimitValue(limit.value)} ${limit.label}`}
-            >
-              <span className="flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border/50">
-                <Icon className="size-3.5" />
-              </span>
-              <p className="mt-2 text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatPlanLimitValue(limit.value)}
-              </p>
-              <p className="mt-0.5 text-[11px] leading-4 font-medium text-muted-foreground">{limit.shortLabel}</p>
-            </div>
-          )
-        })}
-      </div>
-    </div>
+    <span className={cn(FEATURE_EXCLUDED_ICON_CLASS, 'mt-0.5')}>
+      <XIcon className="size-3 stroke-[2.5]" aria-hidden />
+    </span>
   )
 }
 
-function PricingBenefitIcon({ type }: { type: string }) {
-  if (type === 'meter_credit') {
-    return <CoinsIcon className="size-3 stroke-[2.5]" />
-  }
-
-  return <CheckIcon className="size-2.5 stroke-3" />
-}
-
-function PricingBenefitsList({ benefits }: { benefits: ProductBenefitItem[] }) {
-  if (benefits.length === 0) return null
+function PricingFeatureList({ features }: { features: ProductFeatureLine[] }) {
+  if (features.length === 0) return null
 
   return (
-    <ul className="space-y-2.5">
-      {benefits.map(benefit => {
-        const isCredit = benefit.type === 'meter_credit'
-
-        return (
-          <li key={benefit.id} className="flex items-start gap-3 text-sm leading-5 text-foreground/90">
-            <span
-              className={cn(
-                'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full',
-                isCredit ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary',
-              )}
-            >
-              <PricingBenefitIcon type={benefit.type} />
-            </span>
-            <span className="min-w-0 pt-px">{benefit.description}</span>
-          </li>
-        )
-      })}
+    <ul className="mt-5 space-y-4">
+      {features.map(feature => (
+        <li key={feature.id} className="flex items-start gap-3">
+          <PricingFeatureStatusIcon included={feature.included} />
+          <span
+            className={cn(
+              'min-w-0 text-pretty text-[0.9375rem] leading-[1.5]',
+              feature.included
+                ? 'text-[var(--landing-ink)]/88'
+                : 'text-[var(--landing-muted)]',
+            )}
+          >
+            <span className="sr-only">{feature.included ? 'Included:' : 'Not included:'}</span>
+            {feature.text}
+          </span>
+        </li>
+      ))}
     </ul>
   )
 }
@@ -122,28 +81,25 @@ function PricingCardCta({
   ctaLabel,
   disabled,
   isCurrentPlan,
-  isFeatured,
   onSelect,
   product,
-}: Pick<
-  PricingCardProps,
-  'checkoutUrl' | 'ctaLabel' | 'disabled' | 'isCurrentPlan' | 'isFeatured' | 'onSelect' | 'product'
->) {
-  const label = ctaLabel ?? getDefaultCtaLabel(product, { isCurrentPlan, isFeatured })
+}: Pick<PricingCardProps, 'checkoutUrl' | 'ctaLabel' | 'disabled' | 'isCurrentPlan' | 'onSelect' | 'product'>) {
+  const label = ctaLabel ?? getDefaultCtaLabel(product, { isCurrentPlan })
   const isDisabled = disabled || isCurrentPlan
 
   const buttonClassName = cn(
-    'h-11 w-full rounded-[min(var(--radius-md),12px)] text-sm font-medium',
-    isFeatured && !isCurrentPlan && 'shadow-sm',
+    'h-11 w-full rounded-lg text-sm font-semibold tracking-[-0.01em]',
+    'transition-[transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.98]',
+    !isCurrentPlan &&
+      'border-0 bg-[var(--landing-charcoal)] text-white shadow-none hover:bg-[color-mix(in_oklch,var(--landing-charcoal),white_10%)] dark:bg-foreground dark:text-background dark:hover:bg-foreground/90',
   )
+
+  const variant = isCurrentPlan ? 'secondary' : 'default'
 
   if (checkoutUrl && !isDisabled) {
     return (
-      <Button asChild size="lg" variant={isFeatured ? 'default' : 'outline'} className={buttonClassName}>
-        <Link href={checkoutUrl}>
-          {label}
-          <ArrowRightIcon className="size-4 opacity-80" />
-        </Link>
+      <Button asChild size="lg" variant={variant} className={buttonClassName}>
+        <Link href={checkoutUrl}>{label}</Link>
       </Button>
     )
   }
@@ -152,13 +108,12 @@ function PricingCardCta({
     <Button
       type="button"
       size="lg"
-      variant={isCurrentPlan ? 'secondary' : isFeatured ? 'default' : 'outline'}
+      variant={variant}
       className={buttonClassName}
       disabled={isDisabled}
       onClick={() => onSelect?.(product)}
     >
       {label}
-      {!isCurrentPlan ? <ArrowRightIcon className="size-4 opacity-80" /> : null}
     </Button>
   )
 }
@@ -171,116 +126,87 @@ export function PricingCard({
   footnote,
   isCurrentPlan = false,
   isFeatured = false,
-  badge,
   onSelect,
   disabled = false,
   className,
+  badge,
 }: PricingCardProps) {
   const pricing = formatProductPrice(product)
-  const planLimits = getProductPlanLimits(product)
-  const benefits = getProductBenefitItems(product, features)
-  const hasPlanContent = planLimits.length > 0 || benefits.length > 0
+  const featureLines = getProductFeatureLines(product, features)
   const resolvedFeatured = isFeatured || product.metadata.featured === true
+  const resolvedFootnote = footnote === undefined ? getDefaultPricingFootnote(product) : footnote
   const resolvedBadge =
     badge ??
     (typeof product.metadata.badge === 'string' ? product.metadata.badge : undefined) ??
-    (resolvedFeatured ? 'Most popular' : undefined)
-  const resolvedFootnote = footnote === undefined ? getDefaultPricingFootnote(product) : footnote
+    (resolvedFeatured ? 'Popular' : undefined)
+  const tagline =
+    product.description?.trim() ||
+    (typeof product.metadata.tagline === 'string' ? product.metadata.tagline.trim() : '')
+
+  const intervalLabel = pricing.intervalLabel?.replace(/^per\s+/i, '') ?? null
 
   return (
-    <article
+    <div
       className={cn(
-        'relative flex h-full flex-col rounded-2xl bg-card p-6 text-card-foreground',
-        resolvedFeatured
-          ? 'z-10 shadow-lg ring-2 ring-primary/70'
-          : 'shadow-xs ring-1 ring-foreground/10 transition-[box-shadow,ring-color,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15',
-        isCurrentPlan && 'ring-primary/30',
+        'relative flex h-full flex-col rounded-2xl border border-[color-mix(in_srgb,var(--landing-stone)_48%,#e8e6e1)] bg-white',
+        'shadow-[0_1px_2px_oklch(0_0_0/0.04),0_12px_40px_-20px_oklch(0_0_0/0.12)]',
+        'dark:border-border/80 dark:bg-card dark:shadow-[0_1px_2px_oklch(0_0_0/0.2),0_16px_48px_-24px_oklch(0_0_0/0.45)]',
         className,
       )}
     >
-      {resolvedFeatured ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent"
-        />
-      ) : null}
-
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            {resolvedFeatured ? <SparklesIcon className="size-4 shrink-0 text-amber-500" /> : null}
-            <h3 className="truncate text-lg font-semibold tracking-tight">{product.name}</h3>
-          </div>
-          {product.description ? (
-            <p className="text-sm leading-5 text-muted-foreground">{product.description}</p>
+      <article className="flex h-full flex-col px-8 py-9 sm:px-9 sm:py-10">
+        <header className="flex items-start justify-between gap-4">
+          <h3 className="text-base font-medium tracking-[-0.015em] text-[var(--landing-ink)]">{product.name}</h3>
+          {resolvedBadge ? (
+            <span
+              className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--landing-stone)_70%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_35%,white)] px-2.5 py-1 text-[0.6875rem] font-medium tracking-[-0.01em] text-[var(--landing-muted)]"
+            >
+              {resolvedBadge}
+            </span>
           ) : null}
-        </div>
+        </header>
 
-        {resolvedBadge ? (
-          <Badge
-            variant={resolvedFeatured ? 'default' : 'secondary'}
-            className={cn(
-              'shrink-0 px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase',
-              resolvedFeatured && 'bg-primary text-primary-foreground',
-            )}
-          >
-            {resolvedBadge}
-          </Badge>
-        ) : null}
-      </div>
-
-      <div className="mt-6 border-b border-border/70 pb-6">
-        <div className="flex items-end gap-2">
-          <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{pricing.amount}</p>
-          {pricing.intervalLabel ? (
-            <p className="pb-1 text-sm font-medium text-muted-foreground">
-              /{pricing.intervalLabel.replace('per ', '')}
+        <div className="mt-6 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <p className="text-[clamp(2.5rem,2.15rem+1.5vw,3.25rem)] font-semibold leading-none tracking-[-0.04em] text-[var(--landing-ink)] tabular-nums">
+            {pricing.amount}
+          </p>
+          {intervalLabel ? (
+            <p className="text-[0.9375rem] font-normal leading-snug text-[var(--landing-muted)]">
+              per {intervalLabel}
             </p>
           ) : null}
         </div>
-        {pricing.billingNote ? <p className="mt-2 text-xs text-muted-foreground">{pricing.billingNote}</p> : null}
-      </div>
 
-      {hasPlanContent ? (
-        <div className="mt-6 flex-1 space-y-5">
-          {planLimits.length > 0 ? (
-            <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-                Plan capacity
-              </p>
-              <PricingPlanLimits limits={planLimits} />
-            </div>
-          ) : null}
-
-          {benefits.length > 0 ? (
-            <div className="space-y-2.5">
-              {planLimits.length > 0 ? (
-                <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-                  Also included
-                </p>
-              ) : null}
-              <PricingBenefitsList benefits={benefits} />
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className="mt-6 flex-1" />
-      )}
-
-      <div className="mt-8 space-y-2">
-        <PricingCardCta
-          checkoutUrl={checkoutUrl}
-          ctaLabel={ctaLabel}
-          disabled={disabled}
-          isCurrentPlan={isCurrentPlan}
-          isFeatured={resolvedFeatured}
-          onSelect={onSelect}
-          product={product}
-        />
-        {resolvedFootnote ? (
-          <p className="text-center text-[11px] leading-4 text-muted-foreground">{resolvedFootnote}</p>
+        {tagline ? (
+          <p className="mt-4 max-w-[28ch] text-[0.9375rem] leading-[1.55] text-[var(--landing-muted)]">{tagline}</p>
         ) : null}
-      </div>
-    </article>
+
+        <div className={cn('mt-8', !tagline && 'mt-7')}>
+          <PricingCardCta
+            checkoutUrl={checkoutUrl}
+            ctaLabel={ctaLabel}
+            disabled={disabled}
+            isCurrentPlan={isCurrentPlan}
+            onSelect={onSelect}
+            product={product}
+          />
+        </div>
+
+        {featureLines.length > 0 ? (
+          <div className="mt-8 flex-1 border-t border-[color-mix(in_srgb,var(--landing-stone)_55%,#e5e7eb)] pt-8 dark:border-border/70">
+            <p className="text-[0.6875rem] font-semibold tracking-[0.12em] text-[var(--landing-muted)] uppercase">
+              Features
+            </p>
+            <PricingFeatureList features={featureLines} />
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+
+        {resolvedFootnote ? (
+          <p className="mt-6 text-[0.6875rem] leading-4 text-[var(--landing-muted)]">{resolvedFootnote}</p>
+        ) : null}
+      </article>
+    </div>
   )
 }

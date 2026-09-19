@@ -7,7 +7,12 @@ import Link from "next/link";
 
 import { HERO, PRICING_SECTION } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingContentGap, landingCtaPrimary } from "./landing-classes";
+import {
+  landingContentGap,
+  landingCtaPrimary,
+  landingSectionPricing,
+} from "./landing-classes";
+import { cn } from "@/lib/utils";
 import { Section } from "./section";
 import { SectionHeader } from "./section-header";
 
@@ -34,7 +39,7 @@ export function LandingPricing({
   const hasProducts = products.length > 0 && !loadError;
 
   return (
-    <Section id="pricing" border alt>
+    <Section id="pricing" landingDivider alt containerClassName={landingSectionPricing}>
       <FadeIn>
         <SectionHeader
           titleId="pricing-heading"
@@ -47,13 +52,22 @@ export function LandingPricing({
               : PRICING_SECTION.fallbackDescription
           }
           align="center"
+          variant="display"
         />
       </FadeIn>
 
       {hasProducts ? (
         <FadeIn
           delay={0.06}
-          className={`${landingContentGap} grid gap-4 md:grid-cols-2 lg:grid-cols-3`}
+          className={cn(
+            landingContentGap,
+            "grid items-stretch gap-6 sm:gap-7 lg:gap-8",
+            products.length === 1 && "mx-auto max-w-md",
+            products.length === 2 &&
+              "md:mx-auto md:max-w-4xl md:grid-cols-2",
+            products.length === 3 && "lg:grid-cols-3",
+            products.length >= 4 && "md:grid-cols-2 xl:grid-cols-4",
+          )}
         >
           {products.map((product, index) => (
             <PricingCard

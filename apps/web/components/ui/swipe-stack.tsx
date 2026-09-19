@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Hand } from 'lucide-react'
+import { Hand, MousePointer2 } from 'lucide-react'
 import {
   AnimatePresence,
   animate,
@@ -31,14 +31,22 @@ const SNAP_BACK_SPRING = { type: 'spring' as const, stiffness: 420, damping: 34,
 
 const STACK_SCALE_STEP = 0.026
 const STACK_Y_STEP = 12
+const PEEK_STACK_SCALE_STEP = 0.042
+const PEEK_STACK_Y_STEP = 20
 
 export type SwipeDirection = 'left' | 'right'
+
+export type SwipeStackSwipeActions = {
+  pass: () => void
+  match: () => void
+}
 
 export type SwipeStackRenderContext = {
   index: number
   stackDepth: number
   isTop: boolean
   total: number
+  swipeActions?: SwipeStackSwipeActions
 }
 
 type SwipeStackLabels = {
@@ -67,6 +75,9 @@ type SwipeStackProps<T> = {
   showStackBase?: boolean
   /** Fill a fixed-height parent (e.g. phone shell). Do not use on standalone carousels. */
   fillHeight?: boolean
+  /** Show scaled cards peeking below the top card (Tinder-style deck). */
+  stackPeek?: boolean
+  swipeHintVariant?: 'default' | 'influencer'
 }
 
 const DEFAULT_SWIPE_LABELS: SwipeStackLabels = {
@@ -88,6 +99,46 @@ type TopSwipeCardProps = {
   onInteraction: () => void
   onDismiss: (direction: SwipeDirection) => void
   onExitComplete: () => void
+  stackPeek: boolean
+  stackScaleStep: number
+  stackYStep: number
+  hintVariant: 'default' | 'influencer'
+}
+
+const HINT_SHAKE = {
+  x: [0, -9, 9, -6, 6, 0],
+  transition: {
+    duration: 1.85,
+    repeat: Infinity,
+    repeatDelay: 2.2,
+    ease: 'easeInOut' as const,
+  },
+}
+
+function SwipeStackInfluencerHint() {
+  return (
+    <motion.div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <motion.div
+        className="absolute left-[58%] top-[38%] flex flex-col items-center gap-2"
+        animate={{ x: [-14, 16, -12, 14, 0], y: [0, -2, 0, -1, 0] }}
+        transition={{ duration: 2.1, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+      >
+        <div className="flex size-11 items-center justify-center rounded-full border border-white/28 bg-black/55 shadow-[0_10px_28px_-8px_rgb(0_0_0/0.65)] backdrop-blur-md">
+          <MousePointer2 className="size-5 text-white" strokeWidth={2.1} />
+        </div>
+        <span className="rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-white/92 backdrop-blur-sm">
+          Swipe
+        </span>
+      </motion.div>
+    </motion.div>
+  )
 }
 
 function SwipeStackHint() {
@@ -156,6 +207,10 @@ function TopSwipeCard({
   onInteraction,
   onDismiss,
   onExitComplete,
+  stackPeek,
+  stackScaleStep,
+  stackYStep,
+  hintVariant,
 }: TopSwipeCardProps) {
   const x = useMotionValue(0)
   const cardOpacity = useMotionValue(1)
@@ -208,7 +263,10 @@ function TopSwipeCard({
 
   return (
     <motion.div
-      className="absolute inset-0 z-30 cursor-grab select-none active:cursor-grabbing"
+      className={cn(
+        'absolute inset-0 z-30 cursor-grab select-none overflow-hidden active:cursor-grabbing',
+        stackPeek && 'rounded-[1.75rem] shadow-[0_20px_44px_-22px_color-mix(in_oklch,var(--foreground)_22%,transparent)]',
+      )}
       style={{ x, rotate, opacity: cardOpacity, touchAction: 'none' }}
       drag={disabled || exitDirection ? false : 'x'}
       dragConstraints={{ left: 0, right: 0 }}
@@ -216,12 +274,17 @@ function TopSwipeCard({
       dragMomentum={false}
       dragTransition={{ bounceStiffness: 380, bounceDamping: 32, power: 0.28 }}
       onDragStart={() => onInteraction()}
-      initial={{ scale: 1 - STACK_SCALE_STEP, y: STACK_Y_STEP }}
+      initial={{ scale: 1 - stackScaleStep, y: stackYStep }}
       animate={exitDirection ? undefined : { scale: 1, y: 0 }}
       transition={ENTER_SPRING}
       onDragEnd={handleDragEnd}
     >
-      {children}
+      <motion.div
+        className="size-full"
+        animate={showSwipeHint && !exitDirection && hintVariant === 'influencer' ? HINT_SHAKE : { x: 0 }}
+      >
+        {children}
+      </motion.div>
 
       {exitDirection === 'left' ? (
         <SwipeStamp
@@ -253,7 +316,13 @@ function TopSwipeCard({
       )}
 
       <AnimatePresence>
-        {showSwipeHint && !exitDirection ? <SwipeStackHint key="swipe-hint" /> : null}
+        {showSwipeHint && !exitDirection ? (
+          hintVariant === 'influencer' ? (
+            <SwipeStackInfluencerHint key="swipe-hint-influencer" />
+          ) : (
+            <SwipeStackHint key="swipe-hint" />
+          )
+        ) : null}
       </AnimatePresence>
     </motion.div>
   )
@@ -279,7 +348,11 @@ export function SwipeStack<T>({
   showSwipeHint = true,
   showStackBase = true,
   fillHeight = false,
+  stackPeek = false,
+  swipeHintVariant = 'default',
 }: SwipeStackProps<T>) {
+  const stackScaleStep = stackPeek ? PEEK_STACK_SCALE_STEP : STACK_SCALE_STEP
+  const stackYStep = stackPeek ? PEEK_STACK_Y_STEP : STACK_Y_STEP
   const reduceMotion = useReducedMotion()
   const count = items.length
   const [activeIndex, setActiveIndex] = useState(0)
@@ -288,7 +361,8 @@ export function SwipeStack<T>({
   const [hoverPaused, setHoverPaused] = useState(false)
   const [pageHidden, setPageHidden] = useState(false)
   const paused = pauseOnHover && (hoverPaused || pageHidden)
-  const hintVisible = showSwipeHint && !hasInteracted && !reduceMotion && count > 1
+  const hintVisible =
+    showSwipeHint && !hasInteracted && !reduceMotion && count > 1 && activeIndex === 0
 
   const markInteracted = useCallback(() => {
     setHasInteracted(true)
@@ -342,14 +416,23 @@ export function SwipeStack<T>({
   }, [count, onActiveChange])
 
   useEffect(() => {
-    if (reduceMotion || paused || count <= 1 || autoplayMs <= 0 || exitDirection) return
+    if (
+      reduceMotion ||
+      paused ||
+      count <= 1 ||
+      autoplayMs <= 0 ||
+      exitDirection ||
+      hintVisible
+    ) {
+      return
+    }
 
     const id = window.setInterval(() => {
       dismiss('left')
     }, autoplayMs)
 
     return () => window.clearInterval(id)
-  }, [autoplayMs, count, dismiss, exitDirection, paused, reduceMotion])
+  }, [autoplayMs, count, dismiss, exitDirection, hintVisible, paused, reduceMotion])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -374,6 +457,14 @@ export function SwipeStack<T>({
       goPrev()
     }
   }
+
+  const topSwipeActions = useMemo<SwipeStackSwipeActions | undefined>(() => {
+    if (count <= 1 || exitDirection) return undefined
+    return {
+      pass: () => dismiss('right'),
+      match: () => dismiss('left'),
+    }
+  }, [count, dismiss, exitDirection])
 
   if (count === 0) return null
 
@@ -403,8 +494,17 @@ export function SwipeStack<T>({
           <div className="relative">
             <div
               className={cn(
-                'relative aspect-[9/16] w-full overflow-hidden rounded-[1.75rem] shadow-[0_24px_48px_-16px_color-mix(in_oklch,var(--foreground)_20%,transparent),0_8px_24px_-8px_color-mix(in_oklch,var(--foreground)_12%,transparent),0_2px_6px_-1px_color-mix(in_oklch,var(--foreground)_8%,transparent)]',
+                'relative aspect-[9/16] w-full',
+                stackPeek
+                  ? 'overflow-visible pb-7'
+                  : 'overflow-hidden rounded-[1.75rem] shadow-[0_24px_48px_-16px_color-mix(in_oklch,var(--foreground)_20%,transparent),0_8px_24px_-8px_color-mix(in_oklch,var(--foreground)_12%,transparent),0_2px_6px_-1px_color-mix(in_oklch,var(--foreground)_8%,transparent)]',
                 cardFrameClassName,
+              )}
+            >
+            <div
+              className={cn(
+                'absolute inset-x-0 top-0',
+                stackPeek ? 'bottom-7' : 'inset-y-0',
               )}
             >
             {[...stackIndices].reverse().map((itemIndex, reverseDepth) => {
@@ -415,15 +515,18 @@ export function SwipeStack<T>({
               return (
                 <motion.div
                   key={getItemKey(item, itemIndex)}
-                  className="pointer-events-none absolute inset-0"
+                  className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem]"
                   initial={false}
                   animate={{
-                    scale: 1 - stackDepth * STACK_SCALE_STEP,
-                    y: stackDepth * STACK_Y_STEP,
-                    opacity: 1 - stackDepth * STACK_SCALE_STEP * 2,
+                    scale: 1 - stackDepth * stackScaleStep,
+                    y: stackDepth * stackYStep,
+                    opacity: 1 - stackDepth * (stackPeek ? 0.04 : stackScaleStep * 2),
                   }}
                   transition={STACK_SPRING}
-                  style={{ zIndex: 20 - stackDepth }}
+                  style={{
+                    zIndex: 20 - stackDepth,
+                    transformOrigin: stackPeek ? '50% 0%' : '50% 50%',
+                  }}
                 >
                   {renderCard(item, {
                     index: itemIndex,
@@ -437,12 +540,18 @@ export function SwipeStack<T>({
 
             {topItem ? (
               reduceMotion ? (
-                <div className="absolute inset-0 z-30">
+                <div
+                  className={cn(
+                    'absolute inset-0 z-30 overflow-hidden',
+                    stackPeek && 'rounded-[1.75rem]',
+                  )}
+                >
                   {renderCard(topItem, {
                     index: topIndex,
                     stackDepth: 0,
                     isTop: true,
                     total: count,
+                    swipeActions: topSwipeActions,
                   })}
                 </div>
               ) : (
@@ -455,16 +564,22 @@ export function SwipeStack<T>({
                   onInteraction={markInteracted}
                   onDismiss={dismiss}
                   onExitComplete={completeDismiss}
+                  stackPeek={stackPeek}
+                  stackScaleStep={stackScaleStep}
+                  stackYStep={stackYStep}
+                  hintVariant={swipeHintVariant}
                 >
                   {renderCard(topItem, {
                     index: topIndex,
                     stackDepth: 0,
                     isTop: true,
                     total: count,
+                    swipeActions: topSwipeActions,
                   })}
                 </TopSwipeCard>
               )
             ) : null}
+            </div>
             </div>
 
             {typeof overlay === 'function' ? overlay(topIndex) : overlay}

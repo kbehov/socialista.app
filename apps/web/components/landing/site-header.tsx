@@ -42,8 +42,9 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 flex justify-center px-4 pt-3 sm:px-5 sm:pt-4">
       <div
         className={cn(
-          'flex w-fit max-w-[calc(100vw-2rem)] items-center gap-4 rounded-full border border-border/70 bg-background/70 px-4 py-2 shadow-sm backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow,border-color] duration-200 ease-out supports-backdrop-filter:bg-background/65 sm:gap-6 sm:px-5 sm:py-2.5',
-          scrolled && 'border-border bg-background/85 shadow-md supports-backdrop-filter:bg-background/78',
+          'flex w-fit max-w-[calc(100vw-2rem)] items-center gap-4 rounded-full border border-[color-mix(in_srgb,var(--landing-stone)_78%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_82%,white)] px-4 py-2 shadow-[0_1px_2px_color-mix(in_oklch,var(--landing-ink)_5%,transparent),0_8px_24px_-12px_color-mix(in_oklch,var(--landing-ink)_10%,transparent)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow,border-color] duration-200 ease-out supports-backdrop-filter:bg-[color-mix(in_srgb,var(--landing-canvas)_76%,white)] sm:gap-6 sm:px-5 sm:py-2.5',
+          scrolled &&
+            'border-[color-mix(in_srgb,var(--landing-stone)_92%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_94%,white)] shadow-[0_2px_4px_color-mix(in_oklch,var(--landing-ink)_6%,transparent),0_12px_32px_-16px_color-mix(in_oklch,var(--landing-ink)_14%,transparent)] supports-backdrop-filter:bg-[color-mix(in_srgb,var(--landing-canvas)_88%,white)]',
         )}
       >
         <Logo size="default" className="pl-1 sm:pl-1.5" />

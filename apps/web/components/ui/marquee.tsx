@@ -31,6 +31,10 @@ interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
    * @default 2
    */
   repeat?: number
+  /**
+   * When true, vertical overflow is visible so transformed children (e.g. arched marquees) are not clipped.
+   */
+  allowOverflow?: boolean
 }
 
 export function Marquee({
@@ -40,13 +44,15 @@ export function Marquee({
   children,
   vertical = false,
   repeat = 2,
+  allowOverflow = false,
   ...props
 }: MarqueeProps) {
   return (
     <div
       {...props}
       className={cn(
-        "group overflow-hidden p-2 [--duration:40s] [--gap:1rem]",
+        "group p-2 [--duration:40s] [--gap:1rem]",
+        allowOverflow ? "overflow-visible" : "overflow-hidden",
         className
       )}
     >

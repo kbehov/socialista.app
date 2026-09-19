@@ -4,7 +4,10 @@ import { BadgeCheck, Heart, X } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
+import type { SwipeStackSwipeActions } from '@/components/ui/swipe-stack'
 import { cn } from '@/lib/utils'
+
+import { INFLUENCER_SECTION } from './content'
 
 export type SwipeCarouselMedia = {
   poster: string
@@ -29,6 +32,23 @@ type SwipeCarouselCardProps = {
   variant?: 'post' | 'influencer'
   influencer?: SwipeCarouselInfluencer
   embedded?: boolean
+  swipeActions?: SwipeStackSwipeActions
+}
+
+function InfluencerInfoSkeleton() {
+  return (
+    <div className="space-y-[2.6cqw]" aria-hidden="true">
+      <div className="flex items-center gap-[2.2cqw]">
+        <div className="h-[5.2cqw] w-[42%] animate-pulse rounded-lg bg-white/22" />
+        <div className="h-[3.4cqw] w-[14%] animate-pulse rounded-md bg-white/14" />
+      </div>
+      <div className="h-[3.4cqw] w-[78%] animate-pulse rounded-md bg-white/18" />
+      <div className="flex flex-wrap gap-[1.8cqw] pt-[0.4cqw]">
+        <div className="h-[4.8cqw] w-[30%] animate-pulse rounded-full bg-white/14" />
+        <div className="h-[4.8cqw] w-[26%] animate-pulse rounded-full bg-white/14" />
+      </div>
+    </div>
+  )
 }
 
 export function SwipeCarouselCard({
@@ -41,12 +61,14 @@ export function SwipeCarouselCard({
   variant = 'post',
   influencer,
   embedded = false,
+  swipeActions,
 }: SwipeCarouselCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoReady, setVideoReady] = useState(false)
   const videoSrc = media.video || undefined
   const playVideo = Boolean(videoSrc) && !reduceMotion && isTop && stackDepth === 0
   const isInfluencer = variant === 'influencer' && influencer
+  const showActionButtons = isInfluencer && isTop && stackDepth === 0 && swipeActions
 
   useEffect(() => {
     const el = videoRef.current
@@ -58,7 +80,14 @@ export function SwipeCarouselCard({
     }
   }, [playVideo])
 
-  const radius = embedded ? 'rounded-none' : 'rounded-[1.75rem]'
+  const radius =
+    embedded && variant !== 'influencer' ? 'rounded-none' : 'rounded-[1.75rem]'
+  const imageSizes =
+    variant === 'influencer'
+      ? '(max-width: 768px) 90vw, 560px'
+      : embedded
+        ? '560px'
+        : '(max-width: 768px) 58vw, 560px'
 
   return (
     <article
@@ -68,7 +97,7 @@ export function SwipeCarouselCard({
       )}
       aria-label={
         isInfluencer
-          ? `Creator ${influencer.name}, ${index + 1} of ${total}`
+          ? `AI creator preview ${index + 1} of ${total}`
           : `Sample post ${index + 1} of ${total}`
       }
       aria-hidden={!isTop}
@@ -78,8 +107,9 @@ export function SwipeCarouselCard({
         alt=""
         fill
         draggable={false}
-        sizes={embedded ? '280px' : '(max-width: 768px) 58vw, 17.5rem'}
-        priority={index < 2}
+        quality={92}
+        sizes={imageSizes}
+        priority={index < 3}
         className="pointer-events-none object-cover outline outline-1 -outline-offset-1 outline-white/10"
         style={{ objectPosition: media.objectPosition }}
       />
@@ -108,55 +138,55 @@ export function SwipeCarouselCard({
             aria-hidden
           />
           <div className="pointer-events-none absolute inset-x-[4.5%] top-[5.5%] flex items-center gap-[2.2cqw]">
-            <span className="inline-flex max-w-[72%] items-center gap-[1.8cqw] rounded-full border border-white/20 bg-black/35 px-[2.8cqw] py-[1.4cqw] backdrop-blur-md">
+            <span className="inline-flex max-w-[85%] items-center gap-[1.8cqw] rounded-full border border-white/20 bg-black/35 px-[2.8cqw] py-[1.4cqw] backdrop-blur-md">
               <BadgeCheck className="size-[3.4cqw] shrink-0 text-[#21c985]" strokeWidth={2.25} />
               <span className="truncate text-[2.65cqw] font-semibold tracking-[-0.02em] text-white">
-                AI creator
+                {INFLUENCER_SECTION.mockup.badge}
               </span>
             </span>
           </div>
 
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 px-[5%] pb-[14%] pt-[18%]"
+            className="pointer-events-none absolute inset-x-0 bottom-0 px-[5%] pb-[19%] pt-[18%]"
             style={{
               background:
                 'linear-gradient(to top, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.42) 48%, transparent 100%)',
             }}
           >
-            <div className="flex flex-wrap items-end gap-x-[2.5cqw] gap-y-[1cqw]">
-              <h3 className="text-[5.2cqw] font-semibold leading-none tracking-[-0.03em] text-white">
-                {influencer.name}
-              </h3>
-              <p className="pb-[0.35cqw] text-[3.1cqw] font-medium leading-none text-white/72">
-                {influencer.age}
-              </p>
-            </div>
-            <p className="mt-[2cqw] text-[3.35cqw] font-medium leading-snug tracking-[-0.015em] text-white/88">
-              {influencer.hook}
-            </p>
-            <ul className="mt-[2.4cqw] flex flex-wrap gap-[1.6cqw]">
-              {influencer.tags.map(tag => (
-                <li
-                  key={tag}
-                  className="rounded-full border border-white/22 bg-white/10 px-[2.4cqw] py-[1.1cqw] text-[2.55cqw] font-medium leading-none tracking-[-0.01em] text-white/92 backdrop-blur-sm"
-                >
-                  {tag}
-                </li>
-              ))}
-            </ul>
+            <InfluencerInfoSkeleton />
           </div>
 
-          {isTop && stackDepth === 0 ? (
+          {showActionButtons ? (
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-[3.5%] flex items-center justify-center gap-[7cqw]"
-              aria-hidden
+              className="absolute inset-x-0 bottom-[4%] z-50 flex items-center justify-center gap-8"
             >
-              <span className="flex size-[9.5cqw] items-center justify-center rounded-full border border-white/18 bg-black/45 shadow-[0_8px_24px_-10px_rgb(0_0_0/0.65)] backdrop-blur-md">
-                <X className="size-[4.2cqw] text-[#ff4458]" strokeWidth={2.5} />
-              </span>
-              <span className="flex size-[11cqw] items-center justify-center rounded-full border border-white/18 bg-black/45 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.7)] backdrop-blur-md">
-                <Heart className="size-[5cqw] fill-[#21c985] text-[#21c985]" strokeWidth={2} />
-              </span>
+              <button
+                type="button"
+                aria-label="Pass"
+                className="flex size-14 items-center justify-center rounded-full border border-white/20 bg-black/50 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.7)] backdrop-blur-md transition-transform duration-150 ease-out active:scale-[0.96] sm:size-[3.75rem]"
+                onPointerDown={event => event.stopPropagation()}
+                onClick={event => {
+                  event.stopPropagation()
+                  swipeActions.pass()
+                }}
+              >
+                <X className="size-7 text-[#ff4458] sm:size-8" strokeWidth={2.75} />
+              </button>
+              <button
+                type="button"
+                aria-label="Match"
+                className="flex size-16 items-center justify-center rounded-full border border-white/20 bg-black/50 shadow-[0_12px_32px_-10px_rgb(0_0_0/0.75)] backdrop-blur-md transition-transform duration-150 ease-out active:scale-[0.96] sm:size-[4.25rem]"
+                onPointerDown={event => event.stopPropagation()}
+                onClick={event => {
+                  event.stopPropagation()
+                  swipeActions.match()
+                }}
+              >
+                <Heart
+                  className="size-8 fill-[#21c985] text-[#21c985] sm:size-9"
+                  strokeWidth={2}
+                />
+              </button>
             </div>
           ) : null}
         </>
