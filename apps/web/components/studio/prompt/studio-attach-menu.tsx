@@ -251,43 +251,81 @@ export function StudioAttachMenu({
     );
   }
 
+  const singleSource = sources.length === 1 ? sources[0] : null;
+  const singleDisabled =
+    disabled ||
+    (atMax &&
+      singleSource !== "upload" &&
+      singleSource !== "library") ||
+    ((singleSource === "upload" || singleSource === "library") &&
+      mediaSlots === 0);
+
+  const triggerButton = singleSource ? (
+    <StudioInputActionTooltip
+      label={
+        singleSource === "influencer"
+          ? atMax
+            ? "Only one photo can be attached"
+            : "Attach a creator photo"
+          : attachTooltip
+      }
+    >
+      <PromptInputButton
+        aria-label={
+          singleSource === "influencer"
+            ? "Attach a creator photo"
+            : "Attach references"
+        }
+        className={attachButtonClass}
+        disabled={singleDisabled}
+        onClick={() => handleSource(singleSource)}
+        size="icon-xs"
+        type="button"
+      >
+        <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+      </PromptInputButton>
+    </StudioInputActionTooltip>
+  ) : (
+    <PromptInputActionMenu>
+      {trigger}
+      <PromptInputActionMenuContent className="w-52 p-1">
+        {sources.map((source) => {
+          const item = SOURCE_ITEMS[source];
+          const Icon = item.icon;
+          return (
+            <PromptInputActionMenuItem
+              key={source}
+              className="gap-2.5 rounded-lg px-2 py-1.5"
+              disabled={
+                disabled ||
+                (atMax && source !== "upload" && source !== "library") ||
+                ((source === "upload" || source === "library") &&
+                  mediaSlots === 0)
+              }
+              onSelect={() => handleSource(source)}
+            >
+              <Icon
+                className="size-3.5 text-muted-foreground"
+                strokeWidth={1.75}
+              />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-[13px] font-medium leading-none">
+                  {item.label}
+                </span>
+                <span className="mt-0.5 text-[11px] leading-none text-muted-foreground">
+                  {item.description}
+                </span>
+              </span>
+            </PromptInputActionMenuItem>
+          );
+        })}
+      </PromptInputActionMenuContent>
+    </PromptInputActionMenu>
+  );
+
   return (
     <>
-      <PromptInputActionMenu>
-        {trigger}
-        <PromptInputActionMenuContent className="w-52 p-1">
-          {sources.map((source) => {
-            const item = SOURCE_ITEMS[source];
-            const Icon = item.icon;
-            return (
-              <PromptInputActionMenuItem
-                key={source}
-                className="gap-2.5 rounded-lg px-2 py-1.5"
-                disabled={
-                  disabled ||
-                  (atMax && source !== "upload" && source !== "library") ||
-                  ((source === "upload" || source === "library") &&
-                    mediaSlots === 0)
-                }
-                onSelect={() => handleSource(source)}
-              >
-                <Icon
-                  className="size-3.5 text-muted-foreground"
-                  strokeWidth={1.75}
-                />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[13px] font-medium leading-none">
-                    {item.label}
-                  </span>
-                  <span className="mt-0.5 text-[11px] leading-none text-muted-foreground">
-                    {item.description}
-                  </span>
-                </span>
-              </PromptInputActionMenuItem>
-            );
-          })}
-        </PromptInputActionMenuContent>
-      </PromptInputActionMenu>
+      {triggerButton}
 
       {sources.includes("upload") || sources.includes("library") ? (
         <AttachImagesDialog

@@ -1,4 +1,6 @@
 import {
+  CostUnit,
+  ModelType,
   deductAiCredits,
   getModelByValue,
   getWorkspaceById,
@@ -6,6 +8,7 @@ import {
   type IModel,
   type IWorkspace,
 } from '@socialista/db'
+import { UGC_TALKING_HEAD_MODEL_VALUE, ugcTalkingHeadModel } from '@socialista/types'
 
 export async function loadModel(modelValue: string, notFoundMessage?: string): Promise<IModel> {
   const model = await getModelByValue(modelValue)
@@ -21,6 +24,26 @@ export async function loadWorkspace(workspaceId: string): Promise<IWorkspace> {
     throw new Error('Workspace not found. Please contact support.')
   }
   return workspace
+}
+
+/** DB model when seeded in the manager; otherwise the shared synthetic descriptor. */
+export async function loadTalkingHeadModel(): Promise<IModel> {
+  const stored = await getModelByValue(UGC_TALKING_HEAD_MODEL_VALUE)
+  if (stored) return stored
+  const fallback = ugcTalkingHeadModel()
+  return {
+    value: fallback.value,
+    name: fallback.name,
+    cost: fallback.cost,
+    costUnit: CostUnit.PER_SECOND,
+    modelType: ModelType.VIDEO,
+    contextSupports: fallback.contextSupports ?? [],
+    allowedInUgc: true,
+    usageCount: 0,
+    modelProvider: fallback.modelProvider,
+    createdAt: fallback.createdAt,
+    updatedAt: fallback.updatedAt,
+  } as IModel
 }
 
 export async function loadModelAndWorkspace(
@@ -44,7 +67,9 @@ export function assertSufficientCredits(workspace: IWorkspace, cost: number) {
 export async function finalizeGeneration(workspaceId: string, model: IModel, credits = model.cost) {
   await deductAiCredits(workspaceId, credits)
 
-  void incrementModelUsage(model._id.toString()).catch(() => {
-    // usageCount is an analytics counter; a failed increment shouldn't fail a successful generation.
-  })
+  if (model._id) {
+    void incrementModelUsage(model._id.toString()).catch(() => {
+      // usageCount is an analytics counter; a failed increment shouldn't fail a successful generation.
+    })
+  }
 }

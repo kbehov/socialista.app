@@ -16,6 +16,7 @@ const modelSchema = new Schema<IModel>(
       required: true,
       default: [ContextSupport.TEXT],
     },
+    allowedInUgc: { type: Boolean, required: true, default: false },
     modelProvider: { type: String, required: true },
     company: { type: Schema.Types.ObjectId, ref: 'AiCompany', required: true },
   },
@@ -24,6 +25,7 @@ const modelSchema = new Schema<IModel>(
 
 modelSchema.index({ contextSupports: 1 })
 modelSchema.index({ modelType: 1, contextSupports: 1 })
+modelSchema.index({ modelType: 1, allowedInUgc: 1 })
 modelSchema.index({ company: 1 })
 
 export const ModelModel = model<IModel>('Model', modelSchema)

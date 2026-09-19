@@ -1,3 +1,9 @@
+import {
+  ContextSupport,
+  CostUnit,
+  ModelType,
+  type Model,
+} from "./model.types.js";
 import type { VideoResolution } from "./video-generation.types.js";
 
 export const UGC_PROJECT_STATUSES = [
@@ -27,11 +33,17 @@ export type UgcScriptSource = (typeof UGC_SCRIPT_SOURCES)[number];
 export const UGC_CLIP_TYPES = [
   "hook",
   "talking",
+  "product-hold",
   "b-roll",
   "unboxing",
+  "cta",
+  "demo",
   "try-on",
-  "product-hold",
+  "review",
+  "reaction",
+  "before-after",
   "app-showcase",
+  "custom",
 ] as const;
 export type UgcClipType = (typeof UGC_CLIP_TYPES)[number];
 
@@ -52,9 +64,275 @@ export type UgcFlowStep = (typeof UGC_FLOW_STEPS)[number];
 export const UGC_SCENE_COUNTS = [1, 2, 3] as const;
 export type UgcSceneCount = (typeof UGC_SCENE_COUNTS)[number];
 
+export const UGC_SCENE_GROUPS = [
+  "opener",
+  "talking",
+  "product",
+  "proof",
+  "close",
+  "screen",
+  "custom",
+] as const;
+export type UgcSceneGroup = (typeof UGC_SCENE_GROUPS)[number];
+
+export const UGC_SCENE_GROUP_LABELS: Record<UgcSceneGroup, string> = {
+  opener: "Openers",
+  talking: "To camera",
+  product: "Product",
+  proof: "Proof",
+  close: "Close",
+  screen: "Screen",
+  custom: "Custom",
+};
+
+export type UgcSceneSetting =
+  | "creator"
+  | "product"
+  | "screenshots"
+  | "script"
+  | "voice"
+  | "onScreenText";
+
+export type UgcSceneDefinition = {
+  type: UgcClipType;
+  label: string;
+  shortLabel: string;
+  description: string;
+  group: UgcSceneGroup;
+  primary: boolean;
+  defaultDurationSec: number;
+  defaultSceneCount: UgcSceneCount;
+  requiresCreator: boolean;
+  requiresProduct: boolean;
+  requiresScreenshots: boolean;
+  showsScript: boolean;
+  requiresScript: boolean;
+  usesLipSync: boolean;
+  showsOnScreenText: boolean;
+};
+
+function defineUgcScene(
+  type: UgcClipType,
+  definition: Omit<UgcSceneDefinition, "type">,
+): UgcSceneDefinition {
+  return { type, ...definition };
+}
+
+export const UGC_SCENE_CATALOG: Record<UgcClipType, UgcSceneDefinition> = {
+  hook: defineUgcScene("hook", {
+    label: "Hook",
+    shortLabel: "Hook",
+    description: "A punchy opening line to camera that stops the scroll",
+    group: "opener",
+    primary: true,
+    defaultDurationSec: 5,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: false,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  talking: defineUgcScene("talking", {
+    label: "Talking head",
+    shortLabel: "Talk",
+    description: "Face the camera and talk — product nearby is optional",
+    group: "talking",
+    primary: true,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: false,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  "product-hold": defineUgcScene("product-hold", {
+    label: "Product in hand",
+    shortLabel: "In hand",
+    description: "Hold the product up and talk about it",
+    group: "product",
+    primary: true,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  "b-roll": defineUgcScene("b-roll", {
+    label: "Product b-roll",
+    shortLabel: "B-roll",
+    description: "Product-only beauty shots — no talking to camera",
+    group: "product",
+    primary: true,
+    defaultDurationSec: 6,
+    defaultSceneCount: 1,
+    requiresCreator: false,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: false,
+    usesLipSync: false,
+    showsOnScreenText: false,
+  }),
+  unboxing: defineUgcScene("unboxing", {
+    label: "Unboxing",
+    shortLabel: "Unbox",
+    description: "Open the box or mailer on camera",
+    group: "product",
+    primary: true,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  cta: defineUgcScene("cta", {
+    label: "Call to action",
+    shortLabel: "CTA",
+    description: "Close with a clear ask to camera",
+    group: "close",
+    primary: true,
+    defaultDurationSec: 6,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: false,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  demo: defineUgcScene("demo", {
+    label: "Product demo",
+    shortLabel: "Demo",
+    description: "Use the product so the viewer sees how it works",
+    group: "product",
+    primary: false,
+    defaultDurationSec: 10,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  "try-on": defineUgcScene("try-on", {
+    label: "Try-on",
+    shortLabel: "Try-on",
+    description: "Wear, apply, or put it on on camera",
+    group: "product",
+    primary: false,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  review: defineUgcScene("review", {
+    label: "Review",
+    shortLabel: "Review",
+    description: "Honest take with one specific result",
+    group: "talking",
+    primary: false,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: false,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  reaction: defineUgcScene("reaction", {
+    label: "First reaction",
+    shortLabel: "React",
+    description: "First look or first use — a real reaction",
+    group: "proof",
+    primary: false,
+    defaultDurationSec: 6,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  "before-after": defineUgcScene("before-after", {
+    label: "Before & after",
+    shortLabel: "Before/after",
+    description: "Show the before, then the after",
+    group: "proof",
+    primary: false,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: true,
+    requiresProduct: true,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: true,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+  "app-showcase": defineUgcScene("app-showcase", {
+    label: "App on screen",
+    shortLabel: "App",
+    description: "Show the app or site on a phone",
+    group: "screen",
+    primary: false,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: false,
+    requiresProduct: false,
+    requiresScreenshots: true,
+    showsScript: true,
+    requiresScript: false,
+    usesLipSync: false,
+    showsOnScreenText: false,
+  }),
+  custom: defineUgcScene("custom", {
+    label: "Custom",
+    shortLabel: "Custom",
+    description: "Your own shot — look, motion, and talking are up to you",
+    group: "custom",
+    primary: false,
+    defaultDurationSec: 8,
+    defaultSceneCount: 1,
+    requiresCreator: false,
+    requiresProduct: false,
+    requiresScreenshots: false,
+    showsScript: true,
+    requiresScript: false,
+    usesLipSync: true,
+    showsOnScreenText: false,
+  }),
+};
+
 export const UGC_MAX_VARIANTS = 3;
 export const UGC_MAX_SCENES = 3;
 export const UGC_MAX_CLIPS = 12;
+export const UGC_AD_PLAN_SCENE_MAX = 3;
 export const UGC_MAX_STILL_VERSIONS = 24;
 export const UGC_MAX_AUDIO_TAKES = 20;
 export const UGC_MAX_VIDEO_TAKES = 12;
@@ -66,49 +344,106 @@ export const UGC_DEFAULT_DURATION = 8;
 export const UGC_SCRIPT_MAX_CHARS = 150;
 export const UGC_SPOKEN_CHARS_PER_SEC = 12;
 
-export const UGC_CLIP_DEFAULT_SCENE_COUNT: Record<UgcClipType, UgcSceneCount> =
-  {
-    hook: 1,
-    talking: 1,
-    "b-roll": 1,
-    unboxing: 1,
-    "try-on": 1,
-    "product-hold": 1,
-    "app-showcase": 1,
-  };
+function catalogField<K extends keyof UgcSceneDefinition>(
+  key: K,
+): Record<UgcClipType, UgcSceneDefinition[K]> {
+  return Object.fromEntries(
+    UGC_CLIP_TYPES.map((type) => [type, UGC_SCENE_CATALOG[type][key]]),
+  ) as Record<UgcClipType, UgcSceneDefinition[K]>;
+}
+
+export const UGC_CLIP_DEFAULT_SCENE_COUNT = catalogField("defaultSceneCount");
+export const UGC_CLIP_TYPE_LABELS = catalogField("label");
+export const UGC_CLIP_TYPE_SHORT_LABELS = catalogField("shortLabel");
+export const UGC_CLIP_TYPE_DESCRIPTIONS = catalogField("description");
 
 export const UGC_DEFAULT_CLIP_TYPE: UgcClipType = "talking";
+
+export const UGC_TALKING_HEAD_MODEL_VALUE =
+  "fal-ai/bytedance/omnihuman/v1.5" as const;
+export const UGC_TALKING_HEAD_MODEL_NAME = "OmniHuman 1.5";
+export const UGC_TALKING_HEAD_CREDITS_PER_SECOND = 30;
+
+const TALKING_HEAD_MODEL: Model = {
+  _id: UGC_TALKING_HEAD_MODEL_VALUE,
+  value: UGC_TALKING_HEAD_MODEL_VALUE,
+  name: UGC_TALKING_HEAD_MODEL_NAME,
+  cost: UGC_TALKING_HEAD_CREDITS_PER_SECOND,
+  costUnit: CostUnit.PER_SECOND,
+  modelType: ModelType.VIDEO,
+  contextSupports: [ContextSupport.IMAGE, ContextSupport.AUDIO],
+  allowedInUgc: true,
+  modelProvider: "fal",
+  createdAt: new Date(0),
+  updatedAt: new Date(0),
+};
+
+export function ugcClipUsesTalkingHeadModel(type: UgcClipType): boolean {
+  return type === "talking";
+}
+
+/** Synthetic wire model so the composer and trigger share one descriptor without a DB row. */
+export function ugcTalkingHeadModel(): Model {
+  return TALKING_HEAD_MODEL;
+}
 
 export const UGC_STARTER_SCENE_TYPES: UgcClipType[] = [
   "talking",
   "product-hold",
   "b-roll",
 ];
-export const UGC_PRIMARY_SCENE_TYPES: UgcClipType[] = [
-  "talking",
-  "product-hold",
-  "b-roll",
-];
 
-export const UGC_CLIP_TYPE_LABELS: Record<UgcClipType, string> = {
-  hook: "Text hook",
-  talking: "Talk to camera",
-  "b-roll": "Show the product",
-  unboxing: "Open the box",
-  "try-on": "Wear / use it",
-  "product-hold": "Hold the product",
-  "app-showcase": "Show it on a phone",
-};
+export const UGC_PRIMARY_SCENE_TYPES: UgcClipType[] = UGC_CLIP_TYPES.filter(
+  (type) => UGC_SCENE_CATALOG[type].primary,
+);
 
-export const UGC_CLIP_TYPE_DESCRIPTIONS: Record<UgcClipType, string> = {
-  hook: "On-screen hook line — no talking, no voiceover",
-  talking: "They look at the camera and talk",
-  "b-roll": "Just the product — no person talking",
-  unboxing: "They open the package on camera",
-  "try-on": "They wear or use it",
-  "product-hold": "They hold it up and talk about it",
-  "app-showcase": "They show the app on a phone",
-};
+export const UGC_EXTRA_SCENE_TYPES: UgcClipType[] = UGC_CLIP_TYPES.filter(
+  (type) => !UGC_SCENE_CATALOG[type].primary,
+);
+
+export const UGC_SCENE_TYPES_BY_GROUP: Array<{
+  group: UgcSceneGroup;
+  types: UgcClipType[];
+}> = UGC_SCENE_GROUPS.map((group) => ({
+  group,
+  types: UGC_CLIP_TYPES.filter((type) => UGC_SCENE_CATALOG[type].group === group),
+})).filter((entry) => entry.types.length > 0);
+
+export function ugcSceneDefinition(type: UgcClipType): UgcSceneDefinition {
+  return UGC_SCENE_CATALOG[type];
+}
+
+export function ugcSceneDefaultDurationSec(type: UgcClipType): number {
+  return UGC_SCENE_CATALOG[type].defaultDurationSec;
+}
+
+export function ugcClipTypesWhere(
+  predicate: (scene: UgcSceneDefinition) => boolean,
+): UgcClipType[] {
+  return UGC_CLIP_TYPES.filter((type) => predicate(UGC_SCENE_CATALOG[type]));
+}
+
+export function parseUgcClipType(value: unknown): UgcClipType | undefined {
+  if (
+    typeof value === "string" &&
+    (UGC_CLIP_TYPES as readonly string[]).includes(value)
+  ) {
+    return value as UgcClipType;
+  }
+  return undefined;
+}
+
+export function formatUgcSceneCatalogForPrompt(): string {
+  return UGC_CLIP_TYPES.map((type) => {
+    const scene = UGC_SCENE_CATALOG[type];
+    const script = scene.requiresScript
+      ? "Spoken script required."
+      : scene.showsScript
+        ? "Optional voiceover. Empty script if silent."
+        : "Empty script.";
+    return `- ${type}: ${scene.description}. ~${scene.defaultDurationSec}s. ${script}`;
+  }).join("\n");
+}
 
 export const UGC_FLOW_STEP_LABELS: Record<UgcFlowStep, string> = {
   product: "Product",
@@ -150,66 +485,60 @@ export const UGC_CLIP_STORYBOARD_LABELS: Record<
   generating: "Generating",
 };
 
-const CREATOR_REQUIRED = new Set<UgcClipType>([
-  "talking",
-  "unboxing",
-  "try-on",
-  "product-hold",
-]);
-const SCRIPT_VISIBLE = new Set<UgcClipType>([
-  "hook",
-  "talking",
-  "product-hold",
-  "unboxing",
-  "try-on",
-  "app-showcase",
-  "b-roll",
-]);
-const SCRIPT_REQUIRED = new Set<UgcClipType>(["talking", "hook"]);
-const PRODUCT_REQUIRED = new Set<UgcClipType>([
-  "product-hold",
-  "b-roll",
-  "unboxing",
-  "try-on",
-]);
-const SCREENSHOTS_REQUIRED = new Set<UgcClipType>(["app-showcase"]);
-const LIP_SYNC_TYPES = new Set<UgcClipType>([
-  "talking",
-  "product-hold",
-  "try-on",
-  "unboxing",
-]);
-const ON_SCREEN_TEXT_TYPES = new Set<UgcClipType>(["hook"]);
-
 export const UGC_AUDIO_MODES = ["none", "lip-sync", "voiceover"] as const;
 export type UgcAudioMode = (typeof UGC_AUDIO_MODES)[number];
 
 export function ugcClipRequiresCreator(type: UgcClipType): boolean {
-  return CREATOR_REQUIRED.has(type);
+  return UGC_SCENE_CATALOG[type].requiresCreator;
 }
 
 export function ugcClipShowsScript(type: UgcClipType): boolean {
-  return SCRIPT_VISIBLE.has(type);
+  return UGC_SCENE_CATALOG[type].showsScript;
 }
 
 export function ugcClipRequiresScript(type: UgcClipType): boolean {
-  return SCRIPT_REQUIRED.has(type);
+  return UGC_SCENE_CATALOG[type].requiresScript;
 }
 
 export function ugcClipRequiresProduct(type: UgcClipType): boolean {
-  return PRODUCT_REQUIRED.has(type);
+  return UGC_SCENE_CATALOG[type].requiresProduct;
 }
 
 export function ugcClipRequiresScreenshots(type: UgcClipType): boolean {
-  return SCREENSHOTS_REQUIRED.has(type);
+  return UGC_SCENE_CATALOG[type].requiresScreenshots;
 }
 
 export function ugcClipUsesLipSync(type: UgcClipType): boolean {
-  return LIP_SYNC_TYPES.has(type);
+  return UGC_SCENE_CATALOG[type].usesLipSync;
 }
 
 export function ugcClipShowsOnScreenText(type: UgcClipType): boolean {
-  return ON_SCREEN_TEXT_TYPES.has(type);
+  return UGC_SCENE_CATALOG[type].showsOnScreenText;
+}
+
+export function ugcClipIsFreeform(type: UgcClipType): boolean {
+  return UGC_SCENE_CATALOG[type].group === "custom";
+}
+
+export function ugcSceneHasSetting(
+  type: UgcClipType,
+  setting: UgcSceneSetting,
+): boolean {
+  const scene = UGC_SCENE_CATALOG[type];
+  switch (setting) {
+    case "creator":
+      return scene.requiresCreator;
+    case "product":
+      return scene.requiresProduct;
+    case "screenshots":
+      return scene.requiresScreenshots;
+    case "script":
+      return scene.showsScript;
+    case "voice":
+      return scene.showsScript && !scene.showsOnScreenText;
+    case "onScreenText":
+      return scene.showsOnScreenText;
+  }
 }
 
 export function ugcClipGeneratesAudio(type: UgcClipType): boolean {
@@ -319,7 +648,7 @@ export const UGC_CAMPAIGN_PRESETS: UgcCampaignPreset[] = [
     beats: [
       { type: "talking", durationSec: 6, name: "Hook" },
       { type: "product-hold", durationSec: 8, name: "Demo" },
-      { type: "talking", durationSec: 6, name: "CTA" },
+      { type: "cta", durationSec: 6, name: "CTA" },
     ],
   },
   {
@@ -329,7 +658,7 @@ export const UGC_CAMPAIGN_PRESETS: UgcCampaignPreset[] = [
     beats: [
       { type: "unboxing", durationSec: 8, name: "Unbox" },
       { type: "b-roll", durationSec: 6, name: "Details" },
-      { type: "talking", durationSec: 7, name: "Verdict" },
+      { type: "review", durationSec: 7, name: "Verdict" },
     ],
   },
   {
@@ -339,7 +668,7 @@ export const UGC_CAMPAIGN_PRESETS: UgcCampaignPreset[] = [
     beats: [
       { type: "hook", durationSec: 5, name: "Hook" },
       { type: "product-hold", durationSec: 7, name: "Showcase" },
-      { type: "talking", durationSec: 5, name: "CTA" },
+      { type: "cta", durationSec: 5, name: "CTA" },
     ],
   },
   {
@@ -706,6 +1035,7 @@ export type UgcClip = {
   models?: UgcClipModels;
   scenePrompt?: string;
   directions?: string;
+  imagePrompt?: string;
   referenceImageUrls?: string[];
   stills: UgcSceneStill[];
   plannedPrompt?: string;
@@ -836,6 +1166,7 @@ export type UpdateUgcClipPayload = {
   voice?: UgcClipVoice | null;
   scenePrompt?: string | null;
   directions?: string | null;
+  imagePrompt?: string | null;
   referenceImageUrls?: string[];
   plannedPrompt?: string | null;
   models?: Partial<UgcClipModels>;
@@ -855,6 +1186,23 @@ export type GenerateUgcScriptPayload = {
 
 export type ApplyUgcCampaignPresetPayload = {
   presetId: UgcCampaignPresetId;
+};
+
+export type UgcAdPlanScene = {
+  name: string;
+  type: UgcClipType;
+  goal: string;
+  script: string;
+  imagePrompt: string;
+  videoPrompt: string;
+  durationSec: number;
+};
+
+export type UgcAdPlan = {
+  concept: string;
+  format: string;
+  targetAudience: string;
+  scenes: UgcAdPlanScene[];
 };
 
 export type GetUgcProjectsResponse = {

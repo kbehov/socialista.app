@@ -1,31 +1,21 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { UGC_SCENE_ICONS, UGC_SCENE_MENU_GROUPS } from '@/utils/ugc/scene.utils'
 import {
   UGC_CLIP_TYPE_DESCRIPTIONS,
   UGC_CLIP_TYPE_LABELS,
-  UGC_CLIP_TYPES,
+  UGC_CLIP_TYPE_SHORT_LABELS,
   UGC_MAX_CLIPS,
-  UGC_PRIMARY_SCENE_TYPES,
+  UGC_STARTER_SCENE_TYPES,
   type UgcClip,
   type UgcClipType,
 } from '@socialista/types'
-import { BoxIcon, HandIcon, MicIcon, PackageIcon, ShirtIcon, SmartphoneIcon, TypeIcon } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
-export const UGC_SCENE_ICONS: Record<UgcClipType, typeof MicIcon> = {
-  hook: TypeIcon,
-  talking: MicIcon,
-  'product-hold': HandIcon,
-  'b-roll': PackageIcon,
-  unboxing: BoxIcon,
-  'try-on': ShirtIcon,
-  'app-showcase': SmartphoneIcon,
-}
-
-const EXTRA_TYPES = UGC_CLIP_TYPES.filter(type => !UGC_PRIMARY_SCENE_TYPES.includes(type))
+export { UGC_SCENE_ICONS } from '@/utils/ugc/scene.utils'
 
 type UgcAddSceneMenuProps = {
   clips: UgcClip[]
@@ -45,7 +35,6 @@ export function UgcAddSceneMenu({
   onUseStarter,
 }: UgcAddSceneMenuProps) {
   const [open, setOpen] = useState(false)
-  const [showExtra, setShowExtra] = useState(false)
   const used = new Set(clips.map(clip => clip.type))
   const atLimit = clips.length >= UGC_MAX_CLIPS
 
@@ -57,7 +46,7 @@ export function UgcAddSceneMenu({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent align={align} className="w-72 p-1.5">
+      <PopoverContent align={align} className="w-72 max-h-[min(28rem,70vh)] overflow-y-auto p-1.5">
         {clips.length === 0 && onUseStarter ? (
           <button
             type="button"
@@ -69,50 +58,31 @@ export function UgcAddSceneMenu({
             className="mb-1 w-full rounded-lg bg-foreground px-2.5 py-2 text-left text-background transition active:scale-[0.99] motion-reduce:active:scale-100"
           >
             <p className="text-[13px] font-medium">Use a 3-scene ad</p>
-            <p className="mt-0.5 text-[11px] text-background/70">Talk · Hold · Show</p>
+            <p className="mt-0.5 text-[11px] text-background/70">
+              {UGC_STARTER_SCENE_TYPES.map(type => UGC_CLIP_TYPE_SHORT_LABELS[type]).join(' · ')}
+            </p>
           </button>
         ) : null}
         <div className="grid">
-          {UGC_PRIMARY_SCENE_TYPES.map(type => {
-            const Icon = UGC_SCENE_ICONS[type]
-            const added = used.has(type)
-            return (
-              <SceneTypeButton
-                key={type}
-                type={type}
-                Icon={Icon}
-                added={added}
-                disabled={creating || atLimit}
-                onSelect={() => add(type)}
-              />
-            )
-          })}
+          {UGC_SCENE_MENU_GROUPS.map(section => (
+            <div key={section.group} className="mt-1 first:mt-0">
+              <p className="px-2.5 pt-1.5 pb-0.5 text-[11px] text-muted-foreground">{section.label}</p>
+              {section.types.map(type => {
+                const Icon = UGC_SCENE_ICONS[type]
+                return (
+                  <SceneTypeButton
+                    key={type}
+                    type={type}
+                    Icon={Icon}
+                    added={used.has(type)}
+                    disabled={creating || atLimit}
+                    onSelect={() => add(type)}
+                  />
+                )
+              })}
+            </div>
+          ))}
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="mt-0.5 h-7 w-full justify-start px-2.5 text-[12px] text-muted-foreground"
-          onClick={() => setShowExtra(value => !value)}
-        >
-          {showExtra ? 'Hide other scenes' : 'More scene types'}
-        </Button>
-        {showExtra ? (
-          <div className="grid">
-            {EXTRA_TYPES.map(type => {
-              const Icon = UGC_SCENE_ICONS[type]
-              return (
-                <SceneTypeButton
-                  key={type}
-                  type={type}
-                  Icon={Icon}
-                  disabled={creating || atLimit}
-                  onSelect={() => add(type)}
-                />
-              )
-            })}
-          </div>
-        ) : null}
       </PopoverContent>
     </Popover>
   )
@@ -126,7 +96,7 @@ function SceneTypeButton({
   onSelect,
 }: {
   type: UgcClipType
-  Icon: typeof MicIcon
+  Icon: LucideIcon
   added?: boolean
   disabled?: boolean
   onSelect: () => void

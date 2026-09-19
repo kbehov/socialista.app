@@ -75,6 +75,7 @@ import {
   UGC_DEFAULT_DURATION,
   UGC_MAX_CLIPS,
   VIDEO_RESOLUTION_DEFAULT,
+  ugcClipRequiresCreator,
   ugcClipShowsScript,
   type ApplyUgcCampaignPresetPayload,
   type CreateUgcClipPayload,
@@ -257,11 +258,7 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
     updates.influencerId = nextId;
     const previousId = project.influencerId?.toString();
     updates.clips = (project.clips ?? []).map((clip) => {
-      if (
-        clipTypeValue(clip.type) === "b-roll" ||
-        clipTypeValue(clip.type) === "hook"
-      )
-        return clip;
+      if (!ugcClipRequiresCreator(clipTypeValue(clip.type))) return clip;
       const currentId = clip.influencerId?.toString();
       if (!currentId || currentId === previousId) {
         return { ...clip, influencerId: nextId };
@@ -451,6 +448,9 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   if (typeof input.directions === "string")
     clipUpdates.directions = input.directions;
   if (input.directions === null) clipUpdates.directions = undefined;
+  if (typeof input.imagePrompt === "string")
+    clipUpdates.imagePrompt = input.imagePrompt;
+  if (input.imagePrompt === null) clipUpdates.imagePrompt = undefined;
   if (Array.isArray(input.referenceImageUrls)) {
     clipUpdates.referenceImageUrls = input.referenceImageUrls.filter(
       (url) => typeof url === "string",
@@ -537,6 +537,7 @@ export const duplicateUgcClip = async (c: Context<AppContext>) => {
   copy.script = clip.script ? { ...clip.script } : copy.script;
   copy.scenePrompt = clip.scenePrompt;
   copy.directions = clip.directions;
+  copy.imagePrompt = clip.imagePrompt;
   copy.voice = clip.voice ? { ...clip.voice } : copy.voice;
   copy.referenceImageUrls = [...(clip.referenceImageUrls ?? [])];
   copy.stills = emptyStills(1);

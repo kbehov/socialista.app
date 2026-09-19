@@ -8,7 +8,9 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
+  STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
@@ -20,7 +22,6 @@ import { cn } from '@/lib/utils'
 import {
   UGC_SCRIPT_MAX_CHARS,
   ugcClipAudioTakes,
-  ugcClipShowsOnScreenText,
   ugcClipShowsScript,
   ugcResolvedClipVoice,
   type UgcClip,
@@ -45,6 +46,7 @@ type UgcAudioPromptInputProps = {
   onWriteScript: () => void
   onVoiceChange: (voice: UgcClipVoice) => void
   onGenerateAudio: (script: string) => void
+  embedded?: boolean
 }
 
 function initialScriptForClip(clip: UgcClip) {
@@ -55,14 +57,13 @@ function initialScriptForClip(clip: UgcClip) {
 
 export function UgcAudioPromptInput(props: UgcAudioPromptInputProps) {
   const showsScript = ugcClipShowsScript(props.clip.type)
-  const isHook = ugcClipShowsOnScreenText(props.clip.type)
 
   if (!showsScript) {
     return (
-      <div className="px-1 py-4 text-center">
-        <p className="text-[13px] font-medium tracking-tight">This scene has no talking</p>
-        <p className="mx-auto mt-1 max-w-sm text-[12px] leading-relaxed text-muted-foreground">
-          Product-only shots skip voiceover. Switch to a talking scene to write a script, or add a text hook.
+      <div className="flex min-h-[7.5rem] flex-col items-center justify-center px-4 py-8 text-center sm:px-6">
+        <p className="text-[13px] font-medium tracking-[-0.015em]">This scene has no talking</p>
+        <p className="mx-auto mt-1.5 max-w-sm text-[12px] leading-relaxed text-muted-foreground">
+          Product-only shots skip voiceover. Switch to a talking scene to write a script.
         </p>
       </div>
     )
@@ -72,7 +73,7 @@ export function UgcAudioPromptInput(props: UgcAudioPromptInputProps) {
 
   return (
     <PromptInputProvider key={composerKey} initialInput={initialScriptForClip(props.clip)}>
-      <UgcAudioPromptComposer {...props} isHook={isHook} />
+      <UgcAudioPromptComposer {...props} />
     </PromptInputProvider>
   )
 }
@@ -87,8 +88,8 @@ function UgcAudioPromptComposer({
   onWriteScript,
   onVoiceChange,
   onGenerateAudio,
-  isHook,
-}: UgcAudioPromptInputProps & { isHook: boolean }) {
+  embedded = false,
+}: UgcAudioPromptInputProps) {
   const { textInput } = usePromptInputController()
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -121,16 +122,12 @@ function UgcAudioPromptComposer({
   const handleSubmit = (message: PromptInputMessage) => {
     const script = message.text.trim().slice(0, UGC_SCRIPT_MAX_CHARS)
     if (!script) return
-    if (isHook) {
-      onScriptChange(script)
-      return
-    }
     if (!enabled) return
     onGenerateAudio(script)
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className={embedded ? undefined : 'space-y-1.5'}>
       <StudioPromptComposer
         models={[]}
         selectedModelId=""
@@ -143,48 +140,48 @@ function UgcAudioPromptComposer({
         allowEmptyModels
         compact
         pending={pending}
-        disabled={pending || (!isHook && !enabled)}
-        placeholder={isHook ? 'Stop scrolling — this is the one.' : 'Hey — wait until you try this…'}
-        submitLabel={isHook ? 'Save' : clip.audioUrl ? 'Regenerate' : 'Generate'}
+        disabled={pending || !enabled}
+        placeholder="Hey — wait until you try this…"
+        submitLabel={clip.audioUrl ? 'Regenerate' : 'Generate'}
         submitAppearance="send"
-        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={
+          embedded ? STUDIO_NESTED_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+        }
+        footerClassName={embedded ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS : undefined}
+        embedded={embedded}
         maxLength={UGC_SCRIPT_MAX_CHARS}
         onPromptChange={handlePromptChange}
         onSubmit={handleSubmit}
         tools={
           <>
-            {isHook ? null : (
-              <>
-                <StudioInputActionTooltip label="Choose ElevenLabs voice">
-                  <PromptInputButton
-                    type="button"
-                    size="xs"
-                    disabled={pending}
-                    className={cn(STUDIO_TOOL_BUTTON_CLASS, STUDIO_TOOL_BUTTON_ACTIVE_CLASS, 'max-w-[9.5rem]')}
-                    onClick={() => setVoiceOpen(true)}
-                  >
-                    <MicIcon className="size-3.5 shrink-0" />
-                    <span className="truncate text-[12px] font-medium">{voiceLabel}</span>
-                    <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
-                  </PromptInputButton>
-                </StudioInputActionTooltip>
+            <StudioInputActionTooltip label="Choose ElevenLabs voice">
+              <PromptInputButton
+                type="button"
+                size="xs"
+                disabled={pending}
+                className={cn(STUDIO_TOOL_BUTTON_CLASS, STUDIO_TOOL_BUTTON_ACTIVE_CLASS, 'max-w-[9.5rem]')}
+                onClick={() => setVoiceOpen(true)}
+              >
+                <MicIcon className="size-3.5 shrink-0" />
+                <span className="truncate text-[12px] font-medium">{voiceLabel}</span>
+                <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+              </PromptInputButton>
+            </StudioInputActionTooltip>
 
-                <StudioInputActionTooltip label="Voice settings">
-                  <PromptInputButton
-                    type="button"
-                    size="xs"
-                    disabled={pending}
-                    className={STUDIO_TOOL_BUTTON_CLASS}
-                    onClick={() => setSettingsOpen(true)}
-                  >
-                    <Settings2Icon className="size-3.5 shrink-0" />
-                    <span className="text-[12px] font-medium">Settings</span>
-                  </PromptInputButton>
-                </StudioInputActionTooltip>
-              </>
-            )}
+            <StudioInputActionTooltip label="Voice settings">
+              <PromptInputButton
+                type="button"
+                size="xs"
+                disabled={pending}
+                className={STUDIO_TOOL_BUTTON_CLASS}
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings2Icon className="size-3.5 shrink-0" />
+                <span className="text-[12px] font-medium">Settings</span>
+              </PromptInputButton>
+            </StudioInputActionTooltip>
 
-            <StudioInputActionTooltip label={isHook ? 'Write hook with AI' : 'Write script with AI'}>
+            <StudioInputActionTooltip label="Write script with AI">
               <PromptInputButton
                 type="button"
                 size="xs"

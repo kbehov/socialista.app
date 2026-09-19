@@ -13,7 +13,9 @@ import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-inpu
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_HERO_SUBMIT_CLASS,
+  STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
@@ -22,6 +24,7 @@ import {
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
 import { useOptionalVideoStudio } from "@/components/studio/videos/video-studio-provider";
+import type { StudioAttachSource } from "@/components/studio/prompt/studio-attach-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +78,12 @@ import { VideoPromptAnatomy } from "./video-prompt-anatomy";
 import { StudioPreset } from "@/components/studio/prompt/studio-preset";
 
 const MAX_REFERENCE_IMAGES = 3;
+const DEFAULT_ATTACH_SOURCES: StudioAttachSource[] = [
+  "upload",
+  "library",
+  "influencer",
+  "product",
+];
 const DEFAULT_PLACEHOLDER =
   "Slow push-in on a matte serum, hard side light, steam in the beam…";
 
@@ -131,6 +140,15 @@ export type VideoPromptInputProps = {
   initialGenerateAudio?: boolean;
   /** When true, force audio off and disable the toggle (e.g. UGC scene with a lip-synced voiceover). */
   audioLocked?: boolean;
+  embedded?: boolean;
+  modelLocked?: boolean;
+  hideSettings?: boolean;
+  disabled?: boolean;
+  submitDisabled?: boolean;
+  costMultiplier?: number;
+  attachSources?: readonly StudioAttachSource[];
+  maxAttachments?: number;
+  minAttachments?: number;
 };
 
 function VideoPromptComposer({
@@ -149,6 +167,15 @@ function VideoPromptComposer({
   initialResolution,
   initialGenerateAudio,
   audioLocked,
+  embedded = false,
+  modelLocked = false,
+  hideSettings = false,
+  disabled,
+  submitDisabled,
+  costMultiplier: costMultiplierProp,
+  attachSources = DEFAULT_ATTACH_SOURCES,
+  maxAttachments = MAX_REFERENCE_IMAGES,
+  minAttachments = 0,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -160,7 +187,7 @@ function VideoPromptComposer({
   const [isPending, startTransition] = useTransition();
   const pending = pendingProp || isPending;
   const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() => {
-    if (initialAttachments?.length) return initialAttachments;
+    if (initialAttachments?.length) return initialAttachments.slice(0, maxAttachments);
     if (initialAttachmentUrl) {
       return [
         {
@@ -218,9 +245,9 @@ function VideoPromptComposer({
           !dismissedAttachmentUrls.current.has(item.url),
       );
       if (missing.length === 0) return current;
-      return [...current, ...missing].slice(0, MAX_REFERENCE_IMAGES);
+      return [...current, ...missing].slice(0, maxAttachments);
     });
-  }, [initialAttachments]);
+  }, [initialAttachments, maxAttachments]);
 
   useEffect(() => {
     if (!initialPrompt) return;
@@ -310,8 +337,8 @@ function VideoPromptComposer({
 
   const setAttachments = useCallback((attachments: AttachedMedia[]) => {
     dismissedAttachmentUrls.current.clear();
-    setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES));
-  }, []);
+    setAttachedImages(attachments.slice(0, maxAttachments));
+  }, [maxAttachments]);
 
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
@@ -334,6 +361,7 @@ function VideoPromptComposer({
   }, [hideExtras]);
 
   const handleSubmit = (message: PromptInputMessage) => {
+    if (disabled || submitDisabled) return;
     const prompt = message.text.trim();
     if (!prompt) return;
 
@@ -398,7 +426,37 @@ function VideoPromptComposer({
   const selectedResolution =
     RESOLUTIONS.find((option) => option.id === resolution) ?? RESOLUTIONS[0];
 
-  const tools = (
+  const tools = hideSettings ? (
+    <>
+      <PromptInputButton
+        aria-label={
+          enhance ? "Prompt enhancement on" : "Prompt enhancement off"
+        }
+        aria-pressed={enhance}
+        className={cn(
+          STUDIO_TOOL_ICON_BUTTON_CLASS,
+          enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+        )}
+        disabled={pending || disabled}
+        onClick={() => setEnhance((value) => !value)}
+        size="icon-xs"
+        tooltip={
+          enhance
+            ? "Enhance on — AI refines your prompt before generating"
+            : "Raw prompt — send exactly what you typed"
+        }
+        type="button"
+      >
+        <WandSparklesIcon className="size-3.5 shrink-0" />
+      </PromptInputButton>
+      <StudioSkillPicker
+        target={PROMPT_KEYS.videoPrompt}
+        value={skillId}
+        onChange={setSkillId}
+        disabled={pending || disabled || !enhance}
+      />
+    </>
+  ) : (
     <>
       <DropdownMenu>
         <StudioInputActionTooltip label="Output aspect ratio">
@@ -589,22 +647,31 @@ function VideoPromptComposer({
         onSelectedModelChange={setSelectedModelId}
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
-        attachSources={["upload", "library", "influencer", "product"]}
-        maxAttachments={MAX_REFERENCE_IMAGES}
-        costMultiplier={duration * videoResolutionCostMultiplier(resolution)}
+        attachSources={attachSources}
+        maxAttachments={maxAttachments}
+        minAttachments={minAttachments}
+        costMultiplier={
+          costMultiplierProp ??
+          duration * videoResolutionCostMultiplier(resolution)
+        }
         workspaceId={currentWorkspace?._id}
         placeholder={placeholder}
         animatedPlaceholderWords={animatedPlaceholderWords}
         pending={pending}
+        disabled={disabled}
+        submitDisabled={submitDisabled}
+        modelLocked={modelLocked}
         onSubmit={handleSubmit}
         submitLabel={homeHero ? "Create video" : "Generate"}
         submitTitle={homeHero ? "Create video" : "Generate"}
         submitAppearance={homeHero ? "labeled" : "send"}
         submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
         footerClassName={
-          hideExtras || homeHero
-            ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
-            : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+          embedded
+            ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
+            : hideExtras || homeHero
+              ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
+              : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         }
         tools={tools}
         textareaRef={(node) => {
@@ -614,12 +681,17 @@ function VideoPromptComposer({
         emptyTitle="No video models yet"
         emptyDescription="Add a text-to-video or image-to-video model in the manager to start creating clips."
         surfaceClassName={
-          homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+          embedded
+            ? STUDIO_NESTED_COMPOSER_SURFACE_CLASS
+            : homeHero
+              ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
+              : STUDIO_HOME_COMPOSER_SURFACE_CLASS
         }
-        compact={hideExtras || homeHero}
+        compact={hideExtras || homeHero || embedded}
+        embedded={embedded}
       />
 
-      {attachedImages.length > 0 ? (
+      {attachedImages.length > 0 && !embedded ? (
         <div className={hideExtras || homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>

@@ -23,6 +23,7 @@ export const createModelSchema = z.object({
   contextSupports: z
     .array(z.nativeEnum(ContextSupport))
     .min(1, 'Select at least one context support'),
+  allowedInUgc: z.boolean(),
   modelProvider: z.string().trim().min(1, 'Provider is required').max(100, 'Provider must be 100 characters or less'),
   company: z.string().trim().min(1, 'Company is required'),
 })

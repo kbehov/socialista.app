@@ -17,7 +17,9 @@ import {
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_HERO_SUBMIT_CLASS,
+  STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
@@ -98,6 +100,7 @@ export type ImagePromptInputProps = {
   placeholder?: string
   pending?: boolean
   initialPrompt?: string
+  embedded?: boolean
 }
 
 const ASPECT_RATIOS = [
@@ -123,6 +126,7 @@ function ImagePromptComposer({
   placeholder: placeholderProp,
   pending: pendingProp,
   initialPrompt,
+  embedded = false,
 }: ImagePromptInputProps) {
   const [submitShortcut] = useState(getSubmitShortcutLabel);
   const router = useRouter();
@@ -410,9 +414,11 @@ function ImagePromptComposer({
         submitAppearance={homeHero ? "labeled" : "send"}
         submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
         footerClassName={
-          hideExtras || homeHero
-            ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
-            : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+          embedded
+            ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
+            : hideExtras || homeHero
+              ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
+              : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         }
         composerHeader={
           attachedSkill ? (
@@ -464,12 +470,17 @@ function ImagePromptComposer({
         emptyTitle="No image models yet"
         emptyDescription="Add a text-to-image model in the manager to start making campaign stills."
         surfaceClassName={
-          homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+          embedded
+            ? STUDIO_NESTED_COMPOSER_SURFACE_CLASS
+            : homeHero
+              ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
+              : STUDIO_HOME_COMPOSER_SURFACE_CLASS
         }
-        compact={hideExtras || homeHero}
+        compact={hideExtras || homeHero || embedded}
+        embedded={embedded}
       />
 
-      {attachedImages.length > 0 ? (
+      {attachedImages.length > 0 && !embedded ? (
         <div className={hideExtras || homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>

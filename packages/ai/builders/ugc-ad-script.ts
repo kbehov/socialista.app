@@ -23,13 +23,19 @@ export type UgcAdScriptSceneInput = {
 }
 
 const TYPE_VOICE: Record<UgcClipType, string> = {
-  hook: 'On-screen text hook only. Not spoken. Return a 3–8 word punchy line that will be painted on screen.',
-  talking: 'Talking-head testimonial to camera. They speak the whole time.',
+  hook: 'Spoken hook to camera. One punchy opening line they say out loud — pattern interrupt, curiosity gap, or bold specific claim. Not on-screen text.',
+  talking: 'Talking-head to camera. They speak the whole time.',
   'product-hold': 'They hold the product up and talk about it casually.',
   unboxing: 'They open or just opened the package and react out loud.',
+  cta: 'Spoken close to camera. One clear ask — what to do next. Not “learn more.”',
+  demo: 'They talk through one how-it-works step while using it.',
   'try-on': 'They are wearing or using it and talk about how it feels.',
-  'app-showcase': 'They show the app on their phone and talk through one moment.',
-  'b-roll': 'Off-camera voiceover over product footage. Describe the product; they are not talking to camera.',
+  review: 'Honest review to camera. One specific result or detail, not a feature list.',
+  reaction: 'First reaction out loud — surprise, delight, or a real first-use comment.',
+  'before-after': 'They name the before, then the after, in one short spoken beat.',
+  'app-showcase': 'Off-camera or casual voiceover over the phone screen. Empty if silent.',
+  'b-roll': 'Off-camera voiceover over product footage. Describe the product; they are not talking to camera. Empty if silent.',
+  custom: 'Optional spoken line. Follow the user notes. Empty string if they did not ask for talking.',
 }
 
 export function buildUgcAdScriptUserPrompt(input: UgcAdScriptPromptInput): string {

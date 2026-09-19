@@ -6,6 +6,7 @@ export enum ModelType {
   VIDEO = 'video',
   AUDIO = 'audio',
   TRANSCRIBE = 'transcribe',
+  LIP_SYNC = 'lip-sync',
 }
 
 export enum CostUnit {
@@ -30,6 +31,7 @@ export type Model = {
   costUnit: CostUnit
   modelType: ModelType
   contextSupports?: ContextSupport[]
+  allowedInUgc?: boolean
   modelProvider: string
   company?: ModelCompany
   createdAt: Date
@@ -47,6 +49,7 @@ export type CreateModelInput = {
   costUnit: CostUnit
   modelType: ModelType
   contextSupports: ContextSupport[]
+  allowedInUgc: boolean
   modelProvider: string
   company: string
 }

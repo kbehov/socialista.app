@@ -36,17 +36,35 @@ export const STUDIO_HERO_SUBMIT_CLASS = cn(
   'dark:bg-white dark:text-black dark:hover:bg-white/90',
 )
 
+/** Nested inside a parent composer shell (e.g. UGC scene tabs). */
+export const STUDIO_NESTED_COMPOSER_SURFACE_CLASS = cn(
+  'rounded-none border-0 bg-transparent shadow-none',
+  'has-[[data-slot=input-group-control]:focus-visible]:border-transparent',
+  'has-[[data-slot=input-group-control]:focus-visible]:ring-0',
+)
+
+/** Footer row when nested in a UGC / tabbed composer shell. */
+export const STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS =
+  'border-t border-border/35 bg-muted/8 px-3 pb-2.5 pt-1.5 sm:px-3.5'
+
+/** Outer shell for UGC scene prompt (tabs + nested inputs). */
+export const STUDIO_UGC_COMPOSER_SHELL_CLASS = cn(
+  STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  'overflow-hidden transition-[border-color,box-shadow] duration-200',
+)
+
 /** @deprecated Use STUDIO_HOME_COMPOSER_SURFACE_CLASS */
 export const IMAGE_STUDIO_COMPOSER_SURFACE_CLASS = STUDIO_HOME_COMPOSER_SURFACE_CLASS
 
 /** Borderless ghost chip for composer footer actions. */
 export const STUDIO_TOOL_BUTTON_CLASS = cn(
-  'h-6 gap-1 rounded-md border-0 bg-transparent px-1.5 shadow-none',
+  'inline-flex h-6 items-center gap-1 rounded-md border-0 bg-transparent px-1.5 shadow-none',
   'text-[12px] font-medium leading-none tracking-[-0.015em] text-foreground/80',
   'hover:bg-black/[0.04] hover:text-foreground',
   'dark:hover:bg-white/[0.06]',
   'active:scale-[0.98] motion-reduce:active:scale-100',
   '[&_svg]:size-3.5 [&_svg]:text-foreground/45',
+  '[&_img]:size-3.5 [&_img]:shrink-0 [&_img]:object-contain',
 )
 
 export const STUDIO_TOOL_BUTTON_ACTIVE_CLASS = cn(

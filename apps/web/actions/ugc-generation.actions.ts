@@ -12,11 +12,15 @@ import type {
 } from "@socialista/trigger/task-types";
 import {
   clampImageGenerationCount,
+  clampUgcDuration,
   CostUnit,
   TASK_IDS,
   UGC_SCRIPT_MAX_CHARS,
+  UGC_TALKING_HEAD_MODEL_VALUE,
   ugcClipGeneratesAudio,
+  ugcClipUsesTalkingHeadModel,
   ugcResolvedClipVoice,
+  ugcTalkingHeadModel,
   videoResolutionCostMultiplier,
   type UgcClip,
   type UgcProject,
@@ -185,26 +189,43 @@ export async function startUgcVideoGeneration(input: {
     if (!clip) return fail("Clip not found");
     const busy = assertClipIdle(clip);
     if (busy) return busy;
-    const videoModelValue = clip.models?.video || project.models.video;
+    const talkingHead = ugcClipUsesTalkingHeadModel(clip.type);
+    const videoModelValue = talkingHead
+      ? UGC_TALKING_HEAD_MODEL_VALUE
+      : clip.models?.video || project.models.video;
     if (!videoModelValue) {
       return fail("Choose a video model");
     }
     if (!clip.stills.some((still) => still.imageUrl)) {
-      return fail("Generate a photo first");
+      return fail(
+        talkingHead
+          ? "Attach a creator photo or generate one first"
+          : "Generate a photo first",
+      );
+    }
+    if (talkingHead && !clip.audioUrl) {
+      return fail("Generate the voiceover before rendering this talking-head scene");
     }
 
+    const talkingModel = talkingHead ? ugcTalkingHeadModel() : null;
     const encoded = encodeURIComponent(videoModelValue);
     const [balanceRes, modelsRes] = await Promise.all([
       getWorkspaceBalance(project.workspaceId),
-      getModels(`limit=20&modelType=video&value=${encoded}`),
+      talkingModel
+        ? Promise.resolve({ data: { models: [talkingModel] } })
+        : getModels(`limit=20&modelType=video&value=${encoded}`),
     ]);
-    const model = modelsRes.data?.models[0];
+    const model = talkingModel ?? modelsRes.data?.models[0];
     if (!model) return fail("Model not found.");
 
+    const billedDuration = talkingHead
+      ? clampUgcDuration(clip.audioDurationSec ?? clip.durationSec)
+      : clip.durationSec;
     const billedCost =
       (model.costUnit === CostUnit.PER_SECOND
-        ? model.cost * clip.durationSec
-        : model.cost) * videoResolutionCostMultiplier(project.videoResolution);
+        ? model.cost * billedDuration
+        : model.cost) *
+      (talkingHead ? 1 : videoResolutionCostMultiplier(project.videoResolution));
     const credits = balanceRes.data?.aiCreditsBalance ?? 0;
     if (credits < billedCost) {
       return fail("Insufficient AI credits.");

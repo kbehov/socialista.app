@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { cn } from '@/lib/utils'
 import { getAspectRatioClass } from '@/utils/aspect-ratio'
 import type { UgcSceneStill } from '@socialista/types'
-import { AudioLinesIcon, CheckIcon, ImageIcon, TypeIcon, VideoIcon } from 'lucide-react'
+import { AudioLinesIcon, CheckIcon, ImageIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useState, type ReactNode } from 'react'
 
@@ -183,34 +183,40 @@ export function UgcStillsEmptyHint({ className }: { className?: string }) {
   )
 }
 
-export function UgcAudioEmptyHint({ className, hook }: { className?: string; hook?: boolean }) {
-  if (hook) {
-    return (
-      <EmptyHint
-        className={className}
-        icon={<TypeIcon className="size-5" strokeWidth={1.5} />}
-        title="Write the on-screen hook"
-        description="A 3–8 word line that will be painted in the photo and video. No voiceover on this scene."
-      />
-    )
-  }
+export function UgcAudioEmptyHint({
+  className,
+  title = 'Write a line of dialogue',
+  description = 'One short line they would say on camera. Generate the voiceover below.',
+}: {
+  className?: string
+  title?: string
+  description?: string
+}) {
   return (
     <EmptyHint
       className={className}
       icon={<AudioLinesIcon className="size-5" strokeWidth={1.5} />}
-      title="Write a line of dialogue"
-      description="One short line they would say on camera. Generate the voiceover below."
+      title={title}
+      description={description}
     />
   )
 }
 
-export function UgcVideoEmptyHint({ className }: { className?: string }) {
+export function UgcVideoEmptyHint({
+  className,
+  title = 'Describe the motion',
+  description = 'A turn, smile, or product reveal from the start frame. Preview appears here when ready.',
+}: {
+  className?: string
+  title?: string
+  description?: string
+}) {
   return (
     <EmptyHint
       className={className}
       icon={<VideoIcon className="size-5" strokeWidth={1.5} />}
-      title="Describe the motion"
-      description="A turn, smile, or product reveal from the start frame. Preview appears here when ready."
+      title={title}
+      description={description}
     />
   )
 }

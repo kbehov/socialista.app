@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { dashboardSurface } from '@/components/dashboard'
 import { cn } from '@/lib/utils'
+import type { UgcProductChange } from '@/types/ugc.types'
 import { extractProduct } from '@/services/product.service'
 import { uploadToWorkspace } from '@/services/files.service'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
@@ -21,14 +22,7 @@ import Image from 'next/image'
 import { useCallback, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-export type UgcProductChange = {
-  imageUrls: string[]
-  productName?: string
-  productId?: string | null
-  productDescription?: string
-  productUrl?: string | null
-  productKind?: UgcProductKind | null
-}
+export type { UgcProductChange }
 
 type UgcProductInputProps = {
   workspaceId: string

@@ -32,8 +32,15 @@ const STATUS_LABEL: Record<string, string> = {
   failed: 'Failed',
 }
 
+const STATUS_TONE: Record<string, string> = {
+  draft: 'text-muted-foreground',
+  generating: 'text-amber-700 dark:text-amber-400',
+  ready: 'text-emerald-700 dark:text-emerald-400',
+  failed: 'text-destructive',
+}
+
 const STATUS_DOT: Record<string, string> = {
-  draft: 'bg-muted-foreground/45',
+  draft: 'bg-muted-foreground/50',
   generating: 'bg-amber-500',
   ready: 'bg-emerald-500',
   failed: 'bg-destructive',
@@ -58,6 +65,25 @@ type UgcStudioTopbarProps = {
   onGenerateAllVideos?: () => void
 }
 
+function TopbarMeta({
+  className,
+  children,
+}: {
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-md bg-muted/50 px-1.5 py-0.5 text-[11px] leading-none tabular-nums text-muted-foreground ring-1 ring-black/[0.04] dark:ring-white/[0.06]',
+        className,
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
 export function UgcStudioTopbar({
   name,
   status,
@@ -78,70 +104,75 @@ export function UgcStudioTopbar({
 }: UgcStudioTopbarProps) {
   const credits = useWorkspaceStore(s => s.currentWorkspace?.billing.aiCreditsBalance ?? 0)
   const statusLabel = status ? (STATUS_LABEL[status] ?? status) : undefined
-  const statusDot = status ? (STATUS_DOT[status] ?? 'bg-muted-foreground/45') : undefined
+  const statusDot = status ? (STATUS_DOT[status] ?? STATUS_DOT.draft) : undefined
+  const statusTone = status ? (STATUS_TONE[status] ?? STATUS_TONE.draft) : undefined
 
   return (
-    <header className="flex h-11 min-w-0 shrink-0 items-center gap-2 border-b border-black/[0.06] bg-background/80 px-2 backdrop-blur-xl dark:border-white/[0.08] sm:gap-3 sm:px-3">
-      <div className="flex min-w-0 flex-1 items-center gap-1">
+    <header className="flex h-10 min-w-0 shrink-0 items-center gap-2 border-b border-black/[0.06] bg-background/90 px-2 backdrop-blur-xl dark:border-white/[0.08] sm:gap-2.5 sm:px-3">
+      <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button asChild size="icon-sm" variant="ghost" className="size-7 shrink-0 text-muted-foreground">
+            <Button
+              asChild
+              size="icon-xs"
+              variant="ghost"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
               <Link href={DASHBOARD_ROUTES.STUDIO.UGC} aria-label="Back to UGC ads">
-                <ChevronLeftIcon className="size-3.5" />
+                <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
               </Link>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>All UGC ads</TooltipContent>
+          <TooltipContent side="bottom">All UGC ads</TooltipContent>
         </Tooltip>
 
         <Input
           value={name}
           onChange={event => onNameChange(event.target.value)}
           aria-label="Project name"
-          className="h-7 max-w-[min(100%,16rem)] border-transparent bg-transparent px-1.5 text-[13px] font-medium tracking-tight shadow-none placeholder:text-muted-foreground focus-visible:border-border focus-visible:bg-background"
+          className="h-7 max-w-[min(100%,15rem)] min-w-[6rem] border-transparent bg-transparent px-1.5 text-[13px] font-medium tracking-[-0.01em] shadow-none placeholder:text-muted-foreground focus-visible:border-border/80 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/25 sm:max-w-[min(100%,18rem)]"
         />
 
-        <div className="ml-1 hidden min-w-0 items-center gap-2 text-[12px] text-muted-foreground sm:flex">
-          {statusLabel && statusDot ? (
-            <span className="inline-flex items-center gap-1.5">
-              <span className={cn('size-1.5 rounded-full', statusDot)} />
+        <div className="ml-0.5 hidden min-w-0 items-center gap-1 sm:flex">
+          {statusLabel && statusDot && statusTone ? (
+            <TopbarMeta className={cn('gap-1.5 font-medium', statusTone)}>
+              <span className={cn('size-1.5 rounded-full', statusDot)} aria-hidden />
               {statusLabel}
-            </span>
+            </TopbarMeta>
           ) : null}
-          <span className="text-border">·</span>
-          <span className="tabular-nums">{aspectRatio ?? '9:16'}</span>
-          <span className="text-border">·</span>
-          <span className="tabular-nums">
+          <TopbarMeta>{aspectRatio ?? '9:16'}</TopbarMeta>
+          <TopbarMeta>
             {sceneCount} {sceneCount === 1 ? 'scene' : 'scenes'}
-          </span>
-          <span className="text-border">·</span>
-          <span className="tabular-nums">{totalDurationSec}s</span>
+          </TopbarMeta>
+          <TopbarMeta>{totalDurationSec}s</TopbarMeta>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <span className="mr-1 hidden text-[12px] tabular-nums text-muted-foreground md:inline">
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+        <span className="mr-0.5 hidden rounded-md bg-muted/45 px-2 py-1 text-[11px] font-medium tabular-nums leading-none text-muted-foreground ring-1 ring-black/[0.04] md:inline dark:ring-white/[0.06]">
           {formatCredits(credits)} credits
         </span>
+
+        <span className="mx-0.5 hidden h-4 w-px bg-black/[0.08] md:block dark:bg-white/[0.1]" aria-hidden />
 
         {onOpenSettings ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                size="icon-sm"
+                size="icon-xs"
                 variant="ghost"
-                className="relative size-7 lg:hidden"
+                className="relative text-muted-foreground hover:text-foreground lg:hidden"
                 aria-label="Campaign settings"
                 onClick={onOpenSettings}
               >
-                <SlidersHorizontalIcon className="size-3.5" />
+                <SlidersHorizontalIcon className="size-3.5" strokeWidth={1.75} />
                 {settingsIncomplete ? (
-                  <span className="absolute top-1 right-1 size-1.5 rounded-full bg-amber-500" />
+                  <span className="absolute top-1 right-1 size-1.5 rounded-full bg-amber-500 ring-2 ring-background" />
                 ) : null}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Campaign</TooltipContent>
+            <TooltipContent side="bottom">Campaign settings</TooltipContent>
           </Tooltip>
         ) : null}
 
@@ -151,24 +182,24 @@ export function UgcStudioTopbar({
               type="button"
               size="sm"
               variant="ghost"
-              className="h-7 gap-1 px-2 text-[12px] text-muted-foreground"
+              className="h-7 gap-1 px-2 text-[12px] font-medium text-muted-foreground hover:text-foreground"
               disabled={generating}
             >
               Generate
-              <ChevronDownIcon className="size-3 opacity-60" />
+              <ChevronDownIcon className="size-3 opacity-60" strokeWidth={1.75} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-44">
             <DropdownMenuItem disabled={!onGenerateAllPhotos} onClick={onGenerateAllPhotos}>
-              <ImageIcon className="size-3.5" />
+              <ImageIcon className="size-3.5" strokeWidth={1.75} />
               All photos
             </DropdownMenuItem>
             <DropdownMenuItem disabled={!onGenerateAllAudio} onClick={onGenerateAllAudio}>
-              <AudioLinesIcon className="size-3.5" />
+              <AudioLinesIcon className="size-3.5" strokeWidth={1.75} />
               All audio
             </DropdownMenuItem>
             <DropdownMenuItem disabled={!onGenerateAllVideos} onClick={onGenerateAllVideos}>
-              <VideoIcon className="size-3.5" />
+              <VideoIcon className="size-3.5" strokeWidth={1.75} />
               All videos
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -176,24 +207,24 @@ export function UgcStudioTopbar({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <span>
+            <span className="inline-flex">
               <Button
                 type="button"
                 size="sm"
-                className="h-7 px-2.5 text-[12px]"
+                className="h-7 gap-1.5 px-2.5 text-[12px] font-medium tracking-[-0.01em]"
                 disabled={!canFinish || finishing}
                 onClick={onFinish}
               >
                 {finishing ? (
-                  <Loader2Icon className="size-3.5 animate-spin" />
+                  <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
                 ) : (
-                  <ClapperboardIcon className="size-3.5" />
+                  <ClapperboardIcon className="size-3.5" strokeWidth={1.75} />
                 )}
                 {editorPrepared ? 'Edit video' : 'Finish video'}
               </Button>
             </span>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="bottom">
             {canFinish
               ? editorPrepared
                 ? 'Open the video editor for final touches'

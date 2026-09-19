@@ -27,11 +27,21 @@ import {
   type UgcProductKind,
   type UgcProject,
 } from '@socialista/types'
-import { ChevronRightIcon, PackageIcon, UserRoundIcon, XIcon } from 'lucide-react'
+import {
+  ChevronRightIcon,
+  LayoutTemplateIcon,
+  MicIcon,
+  PackageIcon,
+  UserRoundIcon,
+  XIcon,
+} from 'lucide-react'
 import Image from 'next/image'
 import { useState, type ReactNode } from 'react'
 
 const ASPECT_RATIOS = ['9:16', '1:1', '16:9'] as const
+
+const SIDEBAR_SCROLL =
+  'min-h-0 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.12)_transparent] dark:[scrollbar-color:rgba(255,255,255,0.12)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/10 dark:[&::-webkit-scrollbar-thumb]:bg-white/10'
 
 type UgcSettingsSidebarProps = {
   workspaceId: string
@@ -75,34 +85,34 @@ export function UgcSettingsSidebar({
   return (
     <aside
       className={cn(
-        'flex min-h-0 w-full shrink-0 flex-col border-t border-black/[0.06] bg-background dark:border-white/[0.08] lg:w-[280px] lg:border-t-0 lg:border-l',
+        'flex min-h-0 w-full shrink-0 flex-col border-t border-black/[0.06] bg-background dark:border-white/[0.08] lg:w-[268px] lg:border-t-0 lg:border-l',
         className,
       )}
     >
       <Tabs defaultValue="campaign" className="flex min-h-0 flex-1 flex-col gap-0">
-        <div className="flex h-10 shrink-0 items-end gap-1 border-b border-black/[0.06] px-3 dark:border-white/[0.08]">
-          <TabsList variant="line" className="h-9 min-w-0 flex-1 [&_[data-slot=tabs-trigger]]:after:hidden">
-            <TabsTrigger value="campaign" className="text-[12.5px]">
-              Campaign
-            </TabsTrigger>
-            <TabsTrigger value="assets" className="text-[12.5px]">
-              Assets
-            </TabsTrigger>
+        <div className="flex h-10 shrink-0 items-center gap-1 border-b border-black/[0.06] px-2 dark:border-white/[0.08]">
+          <TabsList
+            variant="line"
+            className="h-9 min-w-0 flex-1 gap-0.5 px-1 [&_[data-slot=tabs-trigger]]:h-8 [&_[data-slot=tabs-trigger]]:px-2.5 [&_[data-slot=tabs-trigger]]:text-[12px] [&_[data-slot=tabs-trigger]]:font-medium [&_[data-slot=tabs-trigger]]:tracking-[-0.01em] [&_[data-slot=tabs-trigger]]:after:bottom-[-4px]"
+          >
+            <TabsTrigger value="campaign">Campaign</TabsTrigger>
+            <TabsTrigger value="assets">Assets</TabsTrigger>
           </TabsList>
           {onClose ? (
             <Button
               type="button"
               size="icon-xs"
               variant="ghost"
-              className="mb-1 text-muted-foreground lg:hidden"
+              className="shrink-0 text-muted-foreground hover:text-foreground lg:hidden"
               aria-label="Close campaign settings"
               onClick={onClose}
             >
-              <XIcon className="size-3.5" />
+              <XIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           ) : null}
         </div>
-        <TabsContent value="campaign" className="min-h-0 overflow-y-auto">
+
+        <TabsContent value="campaign" className={cn('mt-0 flex-1', SIDEBAR_SCROLL)}>
           <CampaignTab
             workspaceId={workspaceId}
             project={project}
@@ -117,7 +127,8 @@ export function UgcSettingsSidebar({
             onApplyPreset={onApplyPreset}
           />
         </TabsContent>
-        <TabsContent value="assets" className="min-h-0 overflow-y-auto px-3 py-3">
+
+        <TabsContent value="assets" className={cn('mt-0 flex-1 px-3 py-3', SIDEBAR_SCROLL)}>
           <UgcAssetsPanel
             workspaceId={workspaceId}
             project={project}
@@ -147,12 +158,56 @@ function PropertyRow({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-md px-1 py-1.5 text-left transition-colors hover:bg-muted/60"
+      className={cn(
+        'group flex w-full items-center gap-2.5 rounded-[10px] px-2 py-2 text-left outline-none transition-colors duration-150',
+        'hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset',
+      )}
     >
-      <span className="w-[68px] shrink-0 text-[12px] text-muted-foreground">{label}</span>
-      <span className={cn('min-w-0 flex-1 overflow-hidden', empty && 'text-muted-foreground')}>{children}</span>
-      <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground" />
+      <span className="w-[62px] shrink-0 text-[11px] font-medium leading-none text-muted-foreground">
+        {label}
+      </span>
+      <span
+        className={cn(
+          'min-w-0 flex-1 overflow-hidden text-[13px] leading-snug tracking-[-0.01em]',
+          empty && 'text-muted-foreground',
+        )}
+      >
+        {children}
+      </span>
+      <ChevronRightIcon
+        className="size-3.5 shrink-0 text-muted-foreground/35 transition-colors duration-150 group-hover:text-muted-foreground"
+        strokeWidth={1.75}
+      />
     </button>
+  )
+}
+
+function PropertyAvatar({
+  src,
+  alt = '',
+  rounded = 'rounded-md',
+  fallback,
+}: {
+  src?: string
+  alt?: string
+  rounded?: string
+  fallback: ReactNode
+}) {
+  return (
+    <span
+      className={cn(
+        'relative size-6 shrink-0 overflow-hidden bg-muted ring-1 ring-black/[0.06] dark:ring-white/[0.08]',
+        rounded,
+      )}
+    >
+      {src ? (
+        <Image alt={alt} className="object-cover" fill sizes="24px" src={src} unoptimized />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+          {fallback}
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -197,54 +252,69 @@ function CampaignTab({
   const voice = ugcResolvedClipVoice(project)
 
   return (
-    <div className="px-3 py-2">
-      <PropertyRow label="Product" empty={!hasProduct} onClick={() => setProductOpen(true)}>
-        {hasProduct ? (
-          <span className="flex items-center gap-2">
-            <span className="relative size-5 shrink-0 overflow-hidden rounded bg-muted">
-              {productThumb ? (
-                <Image alt="" className="object-cover" fill sizes="20px" src={productThumb} unoptimized />
-              ) : (
-                <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                  <PackageIcon className="size-3" strokeWidth={1.5} />
+    <div className="px-2 py-2.5">
+      <p className="px-2 pb-1 text-[11px] font-medium leading-none tracking-[-0.01em] text-muted-foreground">
+        Setup
+      </p>
+
+      <div className="space-y-0.5">
+        <PropertyRow label="Product" empty={!hasProduct} onClick={() => setProductOpen(true)}>
+          {hasProduct ? (
+            <span className="flex items-center gap-2">
+              <PropertyAvatar
+                src={productThumb}
+                fallback={<PackageIcon className="size-3.5" strokeWidth={1.5} />}
+              />
+              <span className="min-w-0">
+                <span className="block truncate font-medium">
+                  {project.productName?.trim() || 'Untitled product'}
                 </span>
-              )}
+                {productKind ? (
+                  <span className="mt-0.5 block truncate text-[11px] leading-none text-muted-foreground">
+                    {UGC_PRODUCT_KIND_LABELS[productKind]}
+                  </span>
+                ) : null}
+              </span>
             </span>
-            <span className="min-w-0">
-              <span className="block truncate text-[13px]">{project.productName?.trim() || 'Untitled product'}</span>
-              {productKind ? (
-                <span className="block truncate text-[11px] text-muted-foreground">
-                  {UGC_PRODUCT_KIND_LABELS[productKind]}
+          ) : (
+            'Add a product'
+          )}
+        </PropertyRow>
+
+        <PropertyRow label="Creator" empty={!creator} onClick={() => setCreatorDialogOpen(true)}>
+          {creator ? (
+            <span className="flex items-center gap-2">
+              <PropertyAvatar
+                src={creatorSrc}
+                rounded="rounded-full"
+                fallback={<UserRoundIcon className="size-3.5" strokeWidth={1.5} />}
+              />
+              <span className="truncate font-medium">{creator.name}</span>
+            </span>
+          ) : (
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span>Pick a creator</span>
+              {needsCreator ? (
+                <span className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium leading-none text-amber-700 dark:text-amber-400">
+                  Required
                 </span>
               ) : null}
             </span>
-          </span>
-        ) : (
-          <span className="text-[13px]">Add a product</span>
-        )}
-      </PropertyRow>
+          )}
+        </PropertyRow>
 
-      <PropertyRow label="Creator" empty={!creator} onClick={() => setCreatorDialogOpen(true)}>
-        {creator ? (
+        <PropertyRow label="Voice" empty={!voice.voiceName} onClick={() => setVoiceOpen(true)}>
           <span className="flex items-center gap-2">
-            <span className="relative size-5 shrink-0 overflow-hidden rounded-full bg-muted">
-              {creatorSrc ? (
-                <Image alt="" className="object-cover" fill sizes="20px" src={creatorSrc} unoptimized />
-              ) : (
-                <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                  <UserRoundIcon className="size-3" strokeWidth={1.5} />
-                </span>
-              )}
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
+              <MicIcon className="size-3.5 text-muted-foreground" strokeWidth={1.5} />
             </span>
-            <span className="truncate text-[13px]">{creator.name}</span>
+            <span className="truncate font-medium" title={voice.voiceName}>
+              {voice.voiceName ?? 'Choose a voice'}
+            </span>
           </span>
-        ) : (
-          <span className="flex items-center gap-2 text-[13px]">
-            Pick a creator
-            {needsCreator ? <span className="text-[11px] text-amber-600 dark:text-amber-400">Required</span> : null}
-          </span>
-        )}
-      </PropertyRow>
+        </PropertyRow>
+      </div>
+
       <UgcInfluencerPicker
         workspaceId={workspaceId}
         selectedIds={project.influencerId ? [project.influencerId] : []}
@@ -255,46 +325,63 @@ function CampaignTab({
         onOpenChange={setCreatorDialogOpen}
         onChange={onInfluencerChange}
       />
-
-      <PropertyRow label="Voice" empty={!voice.voiceName} onClick={() => setVoiceOpen(true)}>
-        <span className="block truncate text-[13px]" title={voice.voiceName}>
-          {voice.voiceName ?? 'Choose a voice'}
-        </span>
-      </PropertyRow>
       <UgcVoiceDialog open={voiceOpen} value={voice} onOpenChange={setVoiceOpen} onSelect={onVoiceChange} />
 
-      <div className="flex items-center gap-3 px-1 py-1.5">
-        <span className="w-[68px] shrink-0 text-[12px] text-muted-foreground">Format</span>
-        <div className="flex min-w-0 flex-1 gap-0.5 rounded-md bg-muted/70 p-0.5" role="radiogroup" aria-label="Aspect ratio">
-          {ASPECT_RATIOS.map(ratio => (
-            <button
-              key={ratio}
-              type="button"
-              role="radio"
-              aria-checked={project.aspectRatio === ratio}
-              onClick={() => onAspectRatioChange(ratio)}
-              className={cn(
-                'h-6 flex-1 rounded-[5px] text-[11px] font-medium tabular-nums transition-colors',
-                project.aspectRatio === ratio
-                  ? 'bg-background text-foreground shadow-sm dark:bg-background/80'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {ratio}
-            </button>
-          ))}
+      <div className="mt-3 border-t border-black/[0.06] px-2 pt-3 dark:border-white/[0.08]">
+        <p className="pb-1.5 text-[11px] font-medium leading-none tracking-[-0.01em] text-muted-foreground">
+          Format
+        </p>
+        <div
+          className="flex gap-0.5 rounded-lg bg-muted/60 p-0.5 ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+          role="radiogroup"
+          aria-label="Aspect ratio"
+        >
+          {ASPECT_RATIOS.map(ratio => {
+            const active = project.aspectRatio === ratio
+            return (
+              <button
+                key={ratio}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => onAspectRatioChange(ratio)}
+                className={cn(
+                  'h-7 flex-1 rounded-[6px] text-[11px] font-medium tabular-nums tracking-[-0.01em] transition-[background-color,color,box-shadow] duration-150',
+                  active
+                    ? 'bg-background text-foreground shadow-sm ring-1 ring-black/[0.06] dark:bg-background/90 dark:ring-white/[0.08]'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {ratio}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      <div className="mt-3 px-1">
-        <Button
+      <div className="mt-3 px-2">
+        <button
           type="button"
-          variant="ghost"
-          className="h-8 w-full justify-start px-1 text-[12px] text-muted-foreground"
           onClick={() => setPresetOpen(true)}
+          className={cn(
+            'flex w-full items-center gap-2.5 rounded-[10px] border border-dashed border-black/[0.08] px-2.5 py-2.5 text-left outline-none transition-colors duration-150',
+            'hover:border-black/[0.12] hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring/30 dark:border-white/[0.1] dark:hover:border-white/[0.14]',
+          )}
         >
-          Start from a template
-        </Button>
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/80 text-muted-foreground ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+            <LayoutTemplateIcon className="size-3.5" strokeWidth={1.75} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12px] font-medium leading-snug tracking-[-0.01em]">
+              Start from a template
+            </span>
+            <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">
+              Replace scenes with a preset ad structure
+            </span>
+          </span>
+          <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground/35" strokeWidth={1.75} />
+        </button>
+
         <UgcCampaignPresets
           open={presetOpen}
           applying={applyingPreset}

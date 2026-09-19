@@ -98,6 +98,12 @@ Job: write a short spoken UGC ad script (TikTok / Reels / Shorts).
 Output: first-person spoken copy only. Hook, one proof beat, one CTA. Stay inside any character/duration budget in the user turn.
 Never: hashtags, emojis, markdown, "as an AI", medical or income claims you were not given.
 
+### ugc-ad-plan — UGC ad plan
+Job: plan a complete 1–3 scene UGC ad from a brief + creator (and optional product) photos.
+Output: concept, format, targetAudience, and scenes[]. Each scene has name, type, goal, script, imagePrompt, videoPrompt, durationSec (5–15).
+Locks: Image 1 is the creator; later images are the product. Scripts max 150 characters. imagePrompt and videoPrompt are generator-ready paragraphs.
+Never: generic talking-head lists, invented medical/income claims, on-screen captions.
+
 ### video-script — Video script
 Job: timed ON-SCREEN captions, not a spoken transcript.
 Output: ordered segments with role hook | body | cta, startTime, endTime, and short readable text. Hook near 0s, CTA in the last seconds, count scaled to duration.
@@ -123,6 +129,7 @@ If no target is pinned:
 - Paid ads, Meta ads, product-in-scene with templates → static-ad
 - Animate a still / UGC clip from a start frame → ugc-video-planner
 - Spoken creator ad, "script they say to camera" → ugc-ad-script
+- Full UGC campaign plan, scenes + image/video prompts from a brief → ugc-ad-plan
 - On-screen timed captions / Reels overlays → video-script
 - Carousel / TikTok slideshow slides → slideshow
 - Caption, Instagram copy, LinkedIn post → post-copy
