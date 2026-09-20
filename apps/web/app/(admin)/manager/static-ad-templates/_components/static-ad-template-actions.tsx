@@ -1,7 +1,7 @@
 'use client'
 
-import { CreateTemplateCategorySheet } from './create-template-category-sheet'
-import { TemplateCreateSheet } from './template-create-sheet'
+import { CreateStaticAdCategorySheet } from './create-static-ad-category-sheet'
+import { StaticAdTemplateCreateSheet } from './static-ad-template-create-sheet'
 import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,21 +12,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import type { StudioTemplateCategoryDto, StudioTemplateManagedKind } from '@socialista/types'
+import type { StaticAdTemplateCategoryDto } from '@socialista/types'
 import { ChevronDownIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 
-type TemplateActionsProps = {
-  categories: StudioTemplateCategoryDto[]
-  defaultKind?: StudioTemplateManagedKind
+type StaticAdTemplateActionsProps = {
+  categories: StaticAdTemplateCategoryDto[]
   align?: 'start' | 'center' | 'end'
 }
 
-export function TemplateActions({
-  categories,
-  defaultKind = 'image',
-  align = 'end',
-}: TemplateActionsProps) {
+export function StaticAdTemplateActions({ categories, align = 'end' }: StaticAdTemplateActionsProps) {
   const [templateOpen, setTemplateOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
 
@@ -62,13 +57,8 @@ export function TemplateActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <TemplateCreateSheet
-        open={templateOpen}
-        onOpenChange={setTemplateOpen}
-        categories={categories}
-        defaultKind={defaultKind}
-      />
-      <CreateTemplateCategorySheet open={categoryOpen} onOpenChange={setCategoryOpen} />
+      <StaticAdTemplateCreateSheet open={templateOpen} onOpenChange={setTemplateOpen} categories={categories} />
+      <CreateStaticAdCategorySheet open={categoryOpen} onOpenChange={setCategoryOpen} />
     </>
   )
 }

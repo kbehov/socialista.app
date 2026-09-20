@@ -140,10 +140,81 @@ export function isStudioSegmentPath(
   return pathname === base || pathname.startsWith(`${base}/`)
 }
 
-export const MANAGER_FILES_ROUTES = {
-  HOME: '/manager/files',
+export const MANAGER_ROUTES = {
+  ROOT: '/manager',
+  INSPIRATIONS: '/manager/inspirations',
+  INSPIRATION_CREATE: '/manager/inspirations/create',
+  INSPIRATION_CATEGORIES: '/manager/inspirations/categories',
+  INSPIRATION_NICHES: '/manager/inspirations/niches',
+  TEMPLATES: '/manager/templates',
+  TEMPLATE_CATEGORIES: '/manager/templates/categories',
+  STATIC_AD_TEMPLATES: '/manager/static-ad-templates',
+  STATIC_AD_TEMPLATE_CATEGORIES: '/manager/static-ad-templates/categories',
+  FILES: '/manager/files',
   folder: (id: string) => `/manager/files/${id}`,
+  MODELS: '/manager/models',
+  COMPANIES: '/manager/models/companies',
 } as const
+
+export const MANAGER_FILES_ROUTES = {
+  HOME: MANAGER_ROUTES.FILES,
+  folder: MANAGER_ROUTES.folder,
+} as const
+
+function isExactOrNested(pathname: string, base: string) {
+  return pathname === base || pathname.startsWith(`${base}/`)
+}
+
+export function isManagerRootPath(pathname: string) {
+  return pathname === MANAGER_ROUTES.ROOT
+}
+
+export function isManagerInspirationsPath(pathname: string) {
+  if (pathname === MANAGER_ROUTES.INSPIRATIONS) return true
+  return isExactOrNested(pathname, MANAGER_ROUTES.INSPIRATION_CREATE)
+}
+
+export function isManagerInspirationCategoriesPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.INSPIRATION_CATEGORIES)
+}
+
+export function isManagerInspirationNichesPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.INSPIRATION_NICHES)
+}
+
+export function isManagerTemplatesPath(pathname: string) {
+  if (pathname === MANAGER_ROUTES.TEMPLATES) return true
+  if (!pathname.startsWith(`${MANAGER_ROUTES.TEMPLATES}/`)) return false
+  return !pathname.startsWith(MANAGER_ROUTES.TEMPLATE_CATEGORIES)
+}
+
+export function isManagerTemplateCategoriesPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.TEMPLATE_CATEGORIES)
+}
+
+export function isManagerStaticAdTemplatesPath(pathname: string) {
+  if (pathname === MANAGER_ROUTES.STATIC_AD_TEMPLATES) return true
+  if (!pathname.startsWith(`${MANAGER_ROUTES.STATIC_AD_TEMPLATES}/`)) return false
+  return !pathname.startsWith(MANAGER_ROUTES.STATIC_AD_TEMPLATE_CATEGORIES)
+}
+
+export function isManagerStaticAdTemplateCategoriesPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.STATIC_AD_TEMPLATE_CATEGORIES)
+}
+
+export function isManagerFilesPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.FILES)
+}
+
+export function isManagerModelsPath(pathname: string) {
+  if (pathname === MANAGER_ROUTES.MODELS) return true
+  if (!pathname.startsWith(`${MANAGER_ROUTES.MODELS}/`)) return false
+  return !pathname.startsWith(MANAGER_ROUTES.COMPANIES)
+}
+
+export function isManagerCompaniesPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.COMPANIES)
+}
 
 export type FilesRoutePaths = {
   root: string

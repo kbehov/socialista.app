@@ -162,7 +162,12 @@ export const SKILL_ROUTES = {
 
 export const STATIC_AD_TEMPLATE_ROUTES = {
   LIST: '/static-ad-templates',
+  CREATE: '/static-ad-templates',
+  DELETE: (id: string) => `/static-ad-templates/${id}`,
+  UPLOAD_PREVIEW: '/static-ad-templates/upload-preview',
   CATEGORIES: '/static-ad-templates/categories',
+  CATEGORY_CREATE: '/static-ad-templates/categories',
+  CATEGORY_DELETE: (id: string) => `/static-ad-templates/categories/${id}`,
 } as const
 
 export const STUDIO_TEMPLATE_ROUTES = {

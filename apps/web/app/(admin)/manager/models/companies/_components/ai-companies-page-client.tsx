@@ -2,10 +2,12 @@
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
+import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import { CreateAiCompanySheet } from '@/components/models/create-ai-company-sheet'
 import { AiCompaniesTable } from '@/components/tables/ai-companies.table'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { deleteAiCompany } from '@/services/ai-company.service'
 import type { AiCompany } from '@socialista/types'
 import { Building2Icon, PlusIcon } from 'lucide-react'
@@ -66,7 +68,7 @@ export function AiCompaniesPageClient({ companies }: AiCompaniesPageClientProps)
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="Companies"
         description="AI labs and companies used for model logos."
@@ -76,7 +78,7 @@ export function AiCompaniesPageClient({ companies }: AiCompaniesPageClientProps)
           { label: 'Companies' },
         ]}
         actions={
-          <Button size="sm" className="h-8 gap-1.5 rounded-lg" onClick={openCreateSheet}>
+          <Button size="sm" className={cn(dashboardSurface.createCta, 'gap-1.5')} onClick={openCreateSheet}>
             <PlusIcon className="size-3.5" />
             New company
           </Button>
@@ -97,9 +99,9 @@ export function AiCompaniesPageClient({ companies }: AiCompaniesPageClientProps)
           }
         />
       ) : (
-        <div className="rounded-xl border border-border">
+        <DashboardTableShell>
           <AiCompaniesTable companies={companies} onEdit={openEditSheet} onDelete={setDeleteTarget} />
-        </div>
+        </DashboardTableShell>
       )}
 
       <CreateAiCompanySheet open={sheetOpen} onOpenChange={handleSheetOpenChange} company={editingCompany} />

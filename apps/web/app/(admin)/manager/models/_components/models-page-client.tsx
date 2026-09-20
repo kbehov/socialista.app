@@ -2,10 +2,12 @@
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
+import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import { CreateModelSheet } from '@/components/models/create-model-sheet'
 import { ModelsTable } from '@/components/tables/models.table'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { deleteModel } from '@/services/models.service'
 import type { AiCompany, Model } from '@socialista/types'
 import { BoxIcon, PlusIcon } from 'lucide-react'
@@ -67,13 +69,13 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="Models"
         description="Manage AI models and their pricing."
         breadcrumbs={[{ label: 'Manager', href: '/manager' }, { label: 'Models' }]}
         actions={
-          <Button size="sm" className="h-8 gap-1.5 rounded-lg" onClick={openCreateSheet}>
+          <Button size="sm" className={cn(dashboardSurface.createCta, 'gap-1.5')} onClick={openCreateSheet}>
             <PlusIcon className="size-3.5" />
             New model
           </Button>
@@ -94,9 +96,9 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
           }
         />
       ) : (
-        <div className="rounded-xl border border-border">
+        <DashboardTableShell>
           <ModelsTable models={models} onEdit={openEditSheet} onDelete={setDeleteTarget} />
-        </div>
+        </DashboardTableShell>
       )}
 
       <CreateModelSheet

@@ -1,22 +1,21 @@
+import { auth } from '@/auth'
+import { ManagerDirectory } from './_components/manager-directory'
+import { DashboardGreeting } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
+import { getFirstName, getGreeting } from '@/utils/greeting'
 
-export default function ManagerPage() {
+export default async function ManagerPage() {
+  const session = await auth()
+  const { text: greeting, period } = getGreeting()
+  const firstName = getFirstName(session?.user?.name)
+
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
-        title="Dashboard"
-        description="Overview of your admin workspace and content activity."
-        breadcrumbs={[{ label: 'Manager' }]}
+        title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
+        description="Catalog, templates, files, and models for the product."
       />
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {['Inspirations', 'Accounts', 'Activity'].map(label => (
-          <div key={label} className="flex min-h-28 flex-col justify-between rounded-lg border border-border p-4">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-lg font-medium tabular-nums tracking-tight">—</p>
-          </div>
-        ))}
-      </div>
-    </>
+      <ManagerDirectory />
+    </div>
   )
 }

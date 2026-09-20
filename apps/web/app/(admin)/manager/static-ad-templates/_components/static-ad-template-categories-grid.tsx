@@ -4,20 +4,20 @@ import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
 import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
-import { deleteStudioTemplateCategory } from '@/services/studio-templates.service'
-import type { StudioTemplateCategoryDto } from '@socialista/types'
+import { deleteStaticAdTemplateCategory } from '@/services/static-ad-templates.service'
+import type { StaticAdTemplateCategoryDto } from '@socialista/types'
 import { FolderTreeIcon, Trash2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-type TemplateCategoriesGridProps = {
-  categories: StudioTemplateCategoryDto[]
+type StaticAdTemplateCategoriesGridProps = {
+  categories: StaticAdTemplateCategoryDto[]
 }
 
-export function TemplateCategoriesGrid({ categories }: TemplateCategoriesGridProps) {
+export function StaticAdTemplateCategoriesGrid({ categories }: StaticAdTemplateCategoriesGridProps) {
   const router = useRouter()
-  const [deleteTarget, setDeleteTarget] = useState<StudioTemplateCategoryDto | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<StaticAdTemplateCategoryDto | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleConfirmDelete = async () => {
@@ -25,7 +25,7 @@ export function TemplateCategoriesGrid({ categories }: TemplateCategoriesGridPro
 
     setIsDeleting(true)
     try {
-      const result = await deleteStudioTemplateCategory(deleteTarget._id)
+      const result = await deleteStaticAdTemplateCategory(deleteTarget._id)
       if (!result.success) {
         toast.error(result.message ?? 'Failed to delete category')
         return
@@ -48,7 +48,7 @@ export function TemplateCategoriesGrid({ categories }: TemplateCategoriesGridPro
           minHeight="lg"
           icon={FolderTreeIcon}
           title="No categories yet"
-          description="Create a category so image and video templates can share the same filters."
+          description="Create a category so static ad templates can be filtered in the studio."
           variant="hero"
           iconClassName={dashboardSurface.emptyIcon}
         />
@@ -90,7 +90,7 @@ export function TemplateCategoriesGrid({ categories }: TemplateCategoriesGridPro
         title="Delete category?"
         description={
           deleteTarget
-            ? `"${deleteTarget.name}" will be hidden from image and video filters. Existing templates keep the category name.`
+            ? `"${deleteTarget.name}" will be hidden from gallery filters. Existing templates keep the category name.`
             : 'This category will be hidden from filters.'
         }
         confirmLabel="Delete category"

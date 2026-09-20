@@ -60,7 +60,7 @@ export default async function TemplatesPage({ searchParams }: TemplatesPageProps
   const meta = templatesResult.meta ?? defaultMeta
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="Templates"
         description="Manage image and video templates used in the studio galleries."
