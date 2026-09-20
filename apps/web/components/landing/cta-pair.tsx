@@ -2,10 +2,8 @@
 
 import { AUTH_ERROR_MESSAGES, GoogleIcon } from '@/components/forms/auth-form-shared'
 import { Button } from '@/components/ui/button'
-import { RainbowButton } from '@/components/ui/rainbow-button'
-import { WordRotate } from '@/components/ui/word-rotate'
 import { persistBrowserTimezoneCookie } from '@/utils/timezone'
-import { ImageIcon, ImagesIcon, Loader2, Video } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -14,9 +12,12 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 import { HERO } from './content'
-import { landingCtaPrimary } from './landing-classes'
-
-const PRIMARY_CTA_ICONS = [Video, ImageIcon, ImagesIcon] as const
+import {
+  landingCtaGoogle,
+  landingCtaGoogleInverted,
+  landingCtaPrimaryInverted,
+  landingCtaPrimaryLg,
+} from './landing-classes'
 
 type CtaPairProps = {
   primaryHref?: string
@@ -27,34 +28,19 @@ type CtaPairProps = {
 export function CtaPair({ primaryHref = '/auth/signup', className, inverted = false }: CtaPairProps) {
   return (
     <div className={className}>
-      <HeroGoogleButton inverted={inverted} />
       <Button
         asChild
         size="lg"
         variant={inverted ? 'secondary' : 'default'}
         className={cn(
-          landingCtaPrimary,
-          'h-12 w-full px-7 text-[0.9375rem] sm:w-auto',
-          inverted &&
-            'bg-background text-foreground hover:bg-background/90 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90',
+          landingCtaPrimaryLg,
+          'w-full sm:w-auto',
+          inverted && landingCtaPrimaryInverted,
         )}
       >
-        <Link href={primaryHref} className="min-w-0 justify-center px-7 sm:min-w-54">
-          <WordRotate
-            words={[...HERO.primaryCtaWords]}
-            icons={[...PRIMARY_CTA_ICONS]}
-            duration={2800}
-            wrapperClassName="flex w-full justify-center py-0.5"
-            className="text-[0.9375rem] font-medium"
-            motionProps={{
-              initial: { opacity: 0, y: 6 },
-              animate: { opacity: 1, y: 0 },
-              exit: { opacity: 0, y: -6 },
-              transition: { duration: 0.2, ease: 'easeOut' },
-            }}
-          />
-        </Link>
+        <Link href={primaryHref}>{HERO.primaryCta}</Link>
       </Button>
+      <HeroGoogleButton inverted={inverted} />
     </div>
   )
 }
@@ -74,19 +60,20 @@ function HeroGoogleButton({ inverted = false }: { inverted?: boolean }) {
   }
 
   return (
-    <RainbowButton
+    <Button
       type="button"
       variant="outline"
       size="lg"
       className={cn(
-        'h-12 w-full rounded-full px-7 text-[0.9375rem] sm:w-auto',
-        inverted && 'border-background/30 bg-background/10 text-background hover:bg-background/15',
+        landingCtaGoogle,
+        'w-full sm:w-auto',
+        inverted && landingCtaGoogleInverted,
       )}
       onClick={handleGoogleSignIn}
       disabled={isGoogleLoading}
     >
       {isGoogleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon className="size-4" />}
       {HERO.googleCta}
-    </RainbowButton>
+    </Button>
   )
 }

@@ -18,6 +18,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
+  --landing-canvas: #faf8f4;
+  --landing-ink: #151515;
+  --landing-muted: #5f5a52;
+  --landing-stone: #e9e4db;
+  --landing-orange: #ff5a1f;
+  --landing-charcoal: #1d1c1a;
+  --landing-peach: #ffe2d5;
+  --landing-media-radius: 1.75rem;
+  --landing-panel-radius: 2.25rem;
   /* ── Primitives ───────────────────────────────────────────────────────── */
 
   --spacing: 0.25rem;
@@ -184,6 +193,57 @@
   --color-3: oklch(69.6% 0.165 251);
   --color-4: oklch(80.2% 0.134 225);
   --color-5: oklch(90.7% 0.231 133);
+}
+
+.landing-canvas {
+  color: var(--landing-ink);
+}
+
+.landing-section-divider {
+  border-top: 1px solid color-mix(in srgb, var(--landing-stone) 72%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-media-hover {
+    transition:
+      transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .landing-media-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-ready {
+    animation: landing-ready 3.2s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+  }
+
+  @keyframes landing-ready {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pricing-badge-fire {
+    display: inline-block;
+    transform-origin: center bottom;
+    animation: pricing-badge-fire 2s cubic-bezier(0.2, 0, 0, 1) infinite;
+  }
+
+  @keyframes pricing-badge-fire {
+    0%,
+    100% {
+      transform: scale(1) translateY(0);
+    }
+    35% {
+      transform: scale(1.14) translateY(-1px);
+    }
+    55% {
+      transform: scale(1.06) translateY(0);
+    }
+  }
 }
 
 .dark {
@@ -420,32 +480,12 @@
   --ease-emphasized: var(--ease-emphasized);
 
   --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-landing: marquee-landing var(--duration) linear infinite;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
   --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
   --animate-shine: shine var(--duration) infinite linear;
   --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
   --animate-hero-badge-float: hero-badge-float var(--duration, 3.2s) ease-out forwards;
-  --animate-fire-flicker: fire-flicker 1.35s ease-in-out infinite;
-
-  @keyframes fire-flicker {
-    0%,
-    100% {
-      transform: scale(1) rotate(-4deg);
-      filter: brightness(1) saturate(1);
-    }
-    25% {
-      transform: scale(1.1) rotate(3deg) translateY(-6%);
-      filter: brightness(1.18) saturate(1.12);
-    }
-    50% {
-      transform: scale(0.94) rotate(-5deg);
-      filter: brightness(0.92) saturate(0.96);
-    }
-    75% {
-      transform: scale(1.06) rotate(2deg) translateY(-3%);
-      filter: brightness(1.1) saturate(1.06);
-    }
-  }
 
   @keyframes marquee {
     from {
@@ -462,6 +502,15 @@
     }
     to {
       transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+
+  @keyframes marquee-landing {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
     }
   }
 

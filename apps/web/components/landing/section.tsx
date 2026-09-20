@@ -4,14 +4,19 @@ import type { ReactNode } from "react";
 import {
   landingSection,
   landingSectionAlt,
+  landingSectionDivider,
   landingSectionY,
 } from "./landing-classes";
 
 type SectionProps = {
   children: ReactNode;
   className?: string;
+  /** Override the default `landingSection` width/padding */
+  containerClassName?: string;
   id?: string;
   border?: boolean;
+  /** Warm landing hairline instead of default border token */
+  landingDivider?: boolean;
   alt?: boolean;
   labelledBy?: string;
 };
@@ -23,8 +28,10 @@ export function sectionHeadingId(sectionId: string) {
 export function Section({
   children,
   className,
+  containerClassName,
   id,
   border = false,
+  landingDivider = false,
   alt = false,
   labelledBy,
 }: SectionProps) {
@@ -38,11 +45,12 @@ export function Section({
         "scroll-mt-24",
         landingSectionY,
         border && "border-t border-border",
+        landingDivider && landingSectionDivider,
         alt && landingSectionAlt,
         className,
       )}
     >
-      <div className={landingSection}>{children}</div>
+      <div className={cn(landingSection, containerClassName)}>{children}</div>
     </section>
   );
 }

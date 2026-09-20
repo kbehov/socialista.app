@@ -3,7 +3,7 @@
 import { SocialPlatformIcon } from "@/components/icons/social-platform-icon";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { LogoGlyph, LogoWordmark } from "@/components/common/logo";
 import { forwardRef, useRef, type RefObject } from "react";
 
 import {
@@ -15,9 +15,9 @@ import { FadeIn } from "./fade-in";
 import {
   landingContentGap,
   landingSection,
-  landingSectionY,
+  landingSectionDivider,
 } from "./landing-classes";
-import { SectionHeader } from "./section-header";
+import { LandingSectionIntro } from "./section-header";
 
 const platformById = Object.fromEntries(
   PLATFORMS.map((platform) => [platform.id, platform]),
@@ -124,10 +124,10 @@ function PlatformNode({
           provider={id}
           size={18}
           framed
-          className="size-9 rounded-full ring-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/platform:scale-105 sm:size-10"
+          className="size-9 rounded-full ring-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover/platform:scale-105 sm:size-10"
         />
       </BeamCircle>
-      <span className="text-[0.625rem] font-medium tracking-[-0.01em] whitespace-nowrap text-muted-foreground/80 transition-colors duration-200 group-hover/platform:text-muted-foreground sm:text-[0.6875rem]">
+      <span className="text-[0.625rem] font-medium tracking-[-0.01em] whitespace-nowrap text-[var(--landing-muted)]/90 transition-colors duration-200 group-hover/platform:text-[var(--landing-ink)] sm:text-[0.6875rem]">
         {platform.label}
       </span>
     </div>
@@ -147,40 +147,22 @@ export function LandingPlatforms() {
   const bottomCenterRef = useRef<HTMLDivElement>(null);
   const bottomRightRef = useRef<HTMLDivElement>(null);
 
-  const nodeRefs: Record<BeamSlot, RefObject<HTMLDivElement | null>> = {
-    "top-left": topLeftRef,
-    "top-center": topCenterRef,
-    "top-right": topRightRef,
-    "mid-left": midLeftRef,
-    "mid-right": midRightRef,
-    "bottom-left": bottomLeftRef,
-    "bottom-center": bottomCenterRef,
-    "bottom-right": bottomRightRef,
-  };
-
-  const beamPairs = (Object.keys(BEAM_NODES) as BeamSlot[]).map((slot) => ({
-    slot,
-    fromRef: nodeRefs[slot],
-    colors: PLATFORM_BEAM_COLORS[BEAM_NODES[slot].platformId],
-    ...BEAM_NODES[slot],
-  }));
-
   return (
     <section
       id="channels"
       aria-labelledby="channels-heading"
       className={cn(
-        "scroll-mt-24 overflow-x-clip border-t border-border",
-        landingSectionY,
+        "landing-canvas scroll-mt-24 overflow-x-clip py-16 sm:py-20 lg:py-24",
+        landingSectionDivider,
       )}
     >
       <div className={landingSection}>
         <FadeIn>
-          <SectionHeader
+          <LandingSectionIntro
             titleId="channels-heading"
             title={PLATFORMS_SECTION.title}
+            titleAccent={PLATFORMS_SECTION.titleAccent}
             description={PLATFORMS_SECTION.description}
-            align="center"
           />
         </FadeIn>
 
@@ -190,12 +172,7 @@ export function LandingPlatforms() {
               ref={containerRef}
               className="relative flex w-full items-center justify-center overflow-hidden px-2 py-4 sm:px-4 sm:py-6"
             >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-[12%] rounded-full bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_4%,transparent)_0%,transparent_68%)]"
-            />
-
-            <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17rem] sm:gap-9">
+            <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17.5rem] sm:gap-9">
               <div className="flex items-center justify-between px-1">
                 <PlatformNode id="instagram" nodeRef={topLeftRef} />
                 <PlatformNode id="youtube" nodeRef={topCenterRef} />
@@ -204,20 +181,13 @@ export function LandingPlatforms() {
 
               <div className="flex items-center justify-between gap-3 sm:gap-4">
                 <PlatformNode id="tiktok" nodeRef={midLeftRef} />
-                <BeamCircle
+                <div
                   ref={centerRef}
-                  className="size-14 rounded-[calc(var(--radius)+4px)] border-[color-mix(in_oklch,var(--foreground)_10%,var(--border))] bg-foreground shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_6%,transparent),0_16px_32px_-14px_color-mix(in_oklch,var(--foreground)_22%,transparent)] sm:size-16"
+                  className="z-10 flex min-w-[5.5rem] flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] px-4 py-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:min-w-[6.25rem] sm:gap-2.5 sm:px-5 sm:py-4"
                 >
-                  <div className="relative size-7 sm:size-8">
-                    <Image
-                      src="/socialista-logo.webp"
-                      alt="Socialista"
-                      fill
-                      sizes="32px"
-                      className="object-contain invert dark:invert-0"
-                    />
-                  </div>
-                </BeamCircle>
+                  <LogoGlyph size="hero" priority />
+                  <LogoWordmark tone="onDark" size="sm" className="text-[0.6875rem] sm:text-xs" />
+                </div>
                 <PlatformNode id="linkedin" nodeRef={midRightRef} />
               </div>
 
@@ -228,34 +198,115 @@ export function LandingPlatforms() {
               </div>
             </div>
 
-            {beamPairs.map(
-              ({
-                slot,
-                fromRef,
-                colors,
-                curvature,
-                reverse,
-                endYOffset,
-                delay,
-              }) => (
-                <AnimatedBeam
-                  key={slot}
-                  containerRef={containerRef}
-                  fromRef={fromRef}
-                  toRef={centerRef}
-                  curvature={curvature}
-                  reverse={reverse}
-                  endYOffset={endYOffset}
-                  delay={delay}
-                  duration={4.5}
-                  pathColor={colors.path}
-                  pathWidth={2}
-                  pathOpacity={0.28}
-                  gradientStartColor={colors.start}
-                  gradientStopColor={colors.stop}
-                />
-              ),
-            )}
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={topLeftRef}
+              toRef={centerRef}
+              curvature={BEAM_NODES['top-left'].curvature}
+              endYOffset={BEAM_NODES['top-left'].endYOffset}
+              delay={BEAM_NODES['top-left'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.instagram.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.instagram.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.instagram.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={topCenterRef}
+              toRef={centerRef}
+              curvature={BEAM_NODES['top-center'].curvature}
+              delay={BEAM_NODES['top-center'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.youtube.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.youtube.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.youtube.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={topRightRef}
+              toRef={centerRef}
+              curvature={BEAM_NODES['top-right'].curvature}
+              reverse={BEAM_NODES['top-right'].reverse}
+              endYOffset={BEAM_NODES['top-right'].endYOffset}
+              delay={BEAM_NODES['top-right'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.facebook.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.facebook.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.facebook.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={midLeftRef}
+              toRef={centerRef}
+              delay={BEAM_NODES['mid-left'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.tiktok.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.tiktok.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.tiktok.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={midRightRef}
+              toRef={centerRef}
+              reverse={BEAM_NODES['mid-right'].reverse}
+              delay={BEAM_NODES['mid-right'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.linkedin.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.linkedin.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.linkedin.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={bottomLeftRef}
+              toRef={centerRef}
+              curvature={BEAM_NODES['bottom-left'].curvature}
+              endYOffset={BEAM_NODES['bottom-left'].endYOffset}
+              delay={BEAM_NODES['bottom-left'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.threads.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.threads.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.threads.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={bottomCenterRef}
+              toRef={centerRef}
+              curvature={BEAM_NODES['bottom-center'].curvature}
+              delay={BEAM_NODES['bottom-center'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.pinterest.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.pinterest.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.pinterest.stop}
+            />
+            <AnimatedBeam
+              containerRef={containerRef}
+              fromRef={bottomRightRef}
+              toRef={centerRef}
+              curvature={BEAM_NODES['bottom-right'].curvature}
+              reverse={BEAM_NODES['bottom-right'].reverse}
+              endYOffset={BEAM_NODES['bottom-right'].endYOffset}
+              delay={BEAM_NODES['bottom-right'].delay}
+              duration={4.5}
+              pathColor={PLATFORM_BEAM_COLORS.twitter.path}
+              pathWidth={2}
+              pathOpacity={0.18}
+              gradientStartColor={PLATFORM_BEAM_COLORS.twitter.start}
+              gradientStopColor={PLATFORM_BEAM_COLORS.twitter.stop}
+            />
             </div>
             <figcaption className="sr-only">
               Socialista publishes to {PLATFORMS.map((platform) => platform.label).join(", ")}.
