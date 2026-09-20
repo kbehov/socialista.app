@@ -7,6 +7,7 @@ import { UgcPlanSheet } from '@/components/studio/ugc/ugc-plan-sheet'
 import { UgcRunWatcher } from '@/components/studio/ugc/ugc-run-watcher'
 import { UgcSceneWorkbench } from '@/components/studio/ugc/ugc-scene-workbench'
 import { UgcSettingsSidebar } from '@/components/studio/ugc/ugc-settings-sidebar'
+import { UgcStudioTour } from '@/components/studio/ugc/ugc-studio-tour'
 import { UgcStudioTopbar } from '@/components/studio/ugc/ugc-studio-topbar'
 import { useUgcProjectWorkspace } from '@/hooks/ugc/use-ugc-project-workspace'
 import { cn } from '@/lib/utils'
@@ -21,7 +22,9 @@ type UgcProjectWorkspaceProps = {
 export function UgcProjectWorkspace(props: UgcProjectWorkspaceProps) {
   return (
     <Suspense fallback={<div className="flex-1 bg-background" />}>
-      <UgcProjectWorkspaceInner {...props} />
+      <UgcStudioTour>
+        <UgcProjectWorkspaceInner {...props} />
+      </UgcStudioTour>
     </Suspense>
   )
 }
@@ -52,14 +55,10 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
         finishing={ws.openingProjectEditor}
         canFinish={ws.allScenesReady && !ws.anyGenerating}
         editorPrepared={Boolean(ws.project.composedProjectVideoId)}
-        generating={ws.anyGenerating || ws.generatingAudio || ws.writingScript}
         settingsIncomplete={ws.settingsIncomplete}
         onNameChange={ws.handleNameChange}
         onFinish={ws.handleOpenEditor}
         onOpenSettings={() => ws.setSettingsOpen(true)}
-        onGenerateAllPhotos={ws.generateAllPhotos}
-        onGenerateAllAudio={ws.handleGenerateAllAudio}
-        onGenerateAllVideos={() => ws.generateAllVideos(ws.project.clips)}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
@@ -74,6 +73,11 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
           onUseStarter={ws.handleStarterSequence}
           onDuplicate={ws.handleDuplicateClip}
           onDelete={ws.handleDeleteClip}
+          onExtend={clipId => {
+            const clip = ws.project.clips.find(item => item.id === clipId)
+            if (clip) ws.handleExtendClip(clip)
+          }}
+          extendingClipId={ws.extendingClipId}
           onReorder={ws.handleReorderClips}
           onApplyPreset={ws.handleApplyPreset}
           onPlan={ws.openPlanDialog}
@@ -112,6 +116,11 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
           onUseStills={ws.applyStillUrls}
           onSelectAudio={ws.applyClipAudio}
           onSelectVideo={ws.applyClipVideo}
+          onExtend={() => {
+            if (!ws.selectedClip) return
+            ws.handleExtendClip(ws.selectedClip)
+          }}
+          extending={ws.extendingClipId === ws.selectedClip?.id}
           onScriptChange={ws.handleScriptChange}
           onWriteScript={ws.handleWriteScript}
           onVoiceChange={ws.handleVoiceChange}

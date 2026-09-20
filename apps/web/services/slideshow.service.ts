@@ -5,6 +5,7 @@ import { SLIDESHOW_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
 import type {
   ApiResponse,
+  CreateSlideshowFromTemplatePayload,
   CreateSlideshowPayload,
   DuplicateSlideshowPayload,
   GetSlideshowsResponse,
@@ -26,6 +27,17 @@ export const createSlideshow = async (
   payload: CreateSlideshowPayload,
 ): Promise<ApiResponse<{ slideshow: SlideshowResponse }>> => {
   const response = await api.post<{ slideshow: SlideshowResponse }>(SLIDESHOW_ROUTES.CREATE, payload)
+  revalidateSlideshowPaths(response.data?.slideshow.id)
+  return response
+}
+
+export const createSlideshowFromTemplate = async (
+  payload: CreateSlideshowFromTemplatePayload,
+): Promise<ApiResponse<{ slideshow: SlideshowResponse }>> => {
+  const response = await api.post<{ slideshow: SlideshowResponse }>(
+    SLIDESHOW_ROUTES.FROM_TEMPLATE,
+    payload,
+  )
   revalidateSlideshowPaths(response.data?.slideshow.id)
   return response
 }

@@ -378,6 +378,7 @@ export type StudioPromptComposerProps = {
   requirePrompt?: boolean;
   hideModelSelector?: boolean;
   modelLocked?: boolean;
+  hideCost?: boolean;
   submitDisabled?: boolean;
   allowEmptyModels?: boolean;
   highlighted?: boolean;
@@ -423,6 +424,7 @@ export function StudioPromptComposer({
   requirePrompt = true,
   hideModelSelector = false,
   modelLocked = false,
+  hideCost = false,
   submitDisabled = false,
   allowEmptyModels = false,
   highlighted,
@@ -492,11 +494,12 @@ export function StudioPromptComposer({
     selectedModel?.costUnit === CostUnit.PER_SECOND
       ? (costMultiplier ?? count?.value ?? 1)
       : (count?.value ?? 1);
-  const costLabel = selectedModel
-    ? selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
-      ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
-      : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit)
-    : null;
+  const costLabel =
+    hideCost || !selectedModel
+      ? null
+      : selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
+        ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
+        : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit);
 
   const taggedIndexes = taggedAttachmentIndices(
     textInput.value,

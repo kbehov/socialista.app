@@ -33,7 +33,7 @@ import {
   UGC_CLIP_TYPE_LABELS,
   UGC_DEFAULT_CLIP_TYPE,
   UGC_MAX_CLIPS,
-  UGC_SCRIPT_MAX_CHARS,
+  ugcScriptMaxChars,
   parseUgcClipType,
   ugcClipRequiresCreator,
   ugcClipSceneCount,
@@ -380,12 +380,13 @@ export function buildNewClip(input: {
   };
 }
 
-export function parseScriptText(value: unknown): string {
+export function parseScriptText(value: unknown, clipType?: UgcClipTypeValue): string {
   if (typeof value !== "string") return "";
-  if (value.length > UGC_SCRIPT_MAX_CHARS) {
+  const max = ugcScriptMaxChars(clipType);
+  if (value.length > max) {
     throw new HttpError(
       400,
-      `Script must be ${UGC_SCRIPT_MAX_CHARS} characters or fewer`,
+      `Script must be ${max} characters or fewer`,
     );
   }
   return value;

@@ -11,16 +11,15 @@ import type {
   GenerateUgcVideoTask,
 } from "@socialista/trigger/task-types";
 import {
+  UGC_SCRIPT_MAX_CHARS,
   clampImageGenerationCount,
-  clampUgcDuration,
   CostUnit,
   TASK_IDS,
-  UGC_SCRIPT_MAX_CHARS,
-  UGC_TALKING_HEAD_MODEL_VALUE,
   ugcClipGeneratesAudio,
   ugcClipUsesTalkingHeadModel,
   ugcResolvedClipVoice,
-  ugcTalkingHeadModel,
+  ugcScriptMaxChars,
+  ugcTalkingHeadBillableDurationSec,
   videoResolutionCostMultiplier,
   type UgcClip,
   type UgcProject,
@@ -191,9 +190,9 @@ export async function startUgcVideoGeneration(input: {
     if (busy) return busy;
     const talkingHead = ugcClipUsesTalkingHeadModel(clip.type);
     const videoModelValue = talkingHead
-      ? UGC_TALKING_HEAD_MODEL_VALUE
+      ? clip.models?.video
       : clip.models?.video || project.models.video;
-    if (!videoModelValue) {
+    if (!talkingHead && !videoModelValue) {
       return fail("Choose a video model");
     }
     if (!clip.stills.some((still) => still.imageUrl)) {
@@ -203,29 +202,43 @@ export async function startUgcVideoGeneration(input: {
           : "Generate a photo first",
       );
     }
-    if (talkingHead && !clip.audioUrl) {
+    if (talkingHead && !ugcTalkingHeadBillableDurationSec(clip)) {
       return fail("Generate the voiceover before rendering this talking-head scene");
     }
 
-    const talkingModel = talkingHead ? ugcTalkingHeadModel() : null;
-    const encoded = encodeURIComponent(videoModelValue);
+    const encoded = videoModelValue
+      ? encodeURIComponent(videoModelValue)
+      : "";
+    const modelQuery = talkingHead
+      ? videoModelValue
+        ? `limit=20&modelType=lip-sync&allowedInUgc=true&value=${encoded}`
+        : "limit=1&modelType=lip-sync&allowedInUgc=true&sort=-usageCount"
+      : `limit=20&modelType=video&value=${encoded}`;
     const [balanceRes, modelsRes] = await Promise.all([
       getWorkspaceBalance(project.workspaceId),
-      talkingModel
-        ? Promise.resolve({ data: { models: [talkingModel] } })
-        : getModels(`limit=20&modelType=video&value=${encoded}`),
+      getModels(modelQuery),
     ]);
-    const model = talkingModel ?? modelsRes.data?.models[0];
-    if (!model) return fail("Model not found.");
+    let model = modelsRes.data?.models[0];
+    if (talkingHead && !model && videoModelValue) {
+      const fallback = await getModels(
+        "limit=1&modelType=lip-sync&allowedInUgc=true&sort=-usageCount",
+      );
+      model = fallback.data?.models[0];
+    }
+    if (!model) {
+      return fail(
+        talkingHead ? "No lip-sync model available." : "Model not found.",
+      );
+    }
 
     const billedDuration = talkingHead
-      ? clampUgcDuration(clip.audioDurationSec ?? clip.durationSec)
+      ? ugcTalkingHeadBillableDurationSec(clip)!
       : clip.durationSec;
     const billedCost =
       (model.costUnit === CostUnit.PER_SECOND
         ? model.cost * billedDuration
         : model.cost) *
-      (talkingHead ? 1 : videoResolutionCostMultiplier(project.videoResolution));
+      videoResolutionCostMultiplier(project.videoResolution);
     const credits = balanceRes.data?.aiCreditsBalance ?? 0;
     if (credits < billedCost) {
       return fail("Insufficient AI credits.");
@@ -261,8 +274,16 @@ export async function startUgcAudioGeneration(input: {
     if (!("ok" in loaded)) return loaded;
     const { userId, project } = loaded;
 
-    const incoming =
-      input.text?.trim().slice(0, UGC_SCRIPT_MAX_CHARS) || undefined;
+    const incoming = input.text?.trim()
+      ? input.text.trim().slice(
+          0,
+          input.clipId
+            ? ugcScriptMaxChars(
+                project.clips.find((item) => item.id === input.clipId)?.type,
+              )
+            : UGC_SCRIPT_MAX_CHARS,
+        )
+      : undefined;
     let clips: UgcClip[];
     if (input.clipId) {
       const clip = project.clips.find((item) => item.id === input.clipId);

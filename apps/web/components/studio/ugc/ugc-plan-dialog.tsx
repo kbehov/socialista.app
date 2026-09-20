@@ -94,11 +94,14 @@ function UgcPlanDialogForm({
 
         <div className="grid gap-2">
           <Label htmlFor="ugc-plan-brief">What should this video do?</Label>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            Name the angle, the hook, and one proof beat. Specifics beat adjectives.
+          </p>
           <Textarea
             id="ugc-plan-brief"
             value={description}
             onChange={event => setDescription(event.target.value)}
-            placeholder="A 15s problem-solution for our vitamin C serum. Hook on dull winter skin, then a bathroom pump demo, then a simple CTA."
+            placeholder="15s problem-solution for our vitamin C serum. Hook: grey winter skin in bathroom lighting. Proof: one pump on damp skin, no pilling under makeup. Close: link in bio before the sale ends tonight."
             className="min-h-28 text-[13px]"
           />
         </div>

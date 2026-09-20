@@ -5,6 +5,7 @@ import type { Model, Preset, VideoSummaryResponse } from '@socialista/types'
 import { RecentVideosList } from './recent-videos-list'
 import { VideoStudioHero } from './video-studio-hero'
 import VideoGenerationPromptInput from './video-prompt-input'
+import { VideoTemplatesGallery } from './video-templates-gallery'
 
 type VideoStudioWorkspaceProps = {
   models: Model[]
@@ -38,6 +39,13 @@ export function VideoStudioWorkspace({
             />
           </section>
         </VideoStudioHero>
+
+        <section
+          aria-label="Browse video templates"
+          className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
+        >
+          <VideoTemplatesGallery />
+        </section>
 
         <RecentVideosList
           workspaceId={workspaceId}

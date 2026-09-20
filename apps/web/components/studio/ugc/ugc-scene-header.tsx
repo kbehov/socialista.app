@@ -1,5 +1,6 @@
 'use client'
 
+import { UgcInfoTooltip } from '@/components/studio/ugc/ugc-info-tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +25,10 @@ type UgcSceneHeaderProps = {
 
 export function UgcSceneHeader({ clip, clipIndex, onTypeChange }: UgcSceneHeaderProps) {
   return (
-    <div className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-4 dark:border-white/[0.08] lg:px-5">
+    <div
+      id="ugc-tour-workbench"
+      className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-4 dark:border-white/[0.08] lg:px-5"
+    >
       <div className="flex min-w-0 items-center gap-2">
         <span className="text-[12px] tabular-nums text-muted-foreground">
           {String(Math.max(clipIndex, 0) + 1).padStart(2, '0')}
@@ -61,6 +65,10 @@ export function UgcSceneHeader({ clip, clipIndex, onTypeChange }: UgcSceneHeader
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        <UgcInfoTooltip
+          side="bottom"
+          label="Scene type decides which steps are needed — talking scenes need a voiceover; b-roll is video only."
+        />
       </div>
       <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
         {clip.durationSec}s

@@ -6,6 +6,8 @@ import { api } from '@/lib/api'
 import type {
   ApiResponse,
   CreateUgcClipPayload,
+  CreateUgcProjectFromTemplatePayload,
+  ExtendUgcClipPayload,
   CreateUgcProjectPayload,
   GenerateUgcScriptPayload,
   GetUgcProjectsResponse,
@@ -29,6 +31,17 @@ export const createUgcProject = async (
   payload: CreateUgcProjectPayload,
 ): Promise<ApiResponse<{ project: UgcProject }>> => {
   const response = await api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.CREATE, payload)
+  revalidateUgcList()
+  return response
+}
+
+export const createUgcProjectFromTemplate = async (
+  payload: CreateUgcProjectFromTemplatePayload,
+): Promise<ApiResponse<{ project: UgcProject }>> => {
+  const response = await api.post<{ project: UgcProject }>(
+    UGC_PROJECT_ROUTES.FROM_TEMPLATE,
+    payload,
+  )
   revalidateUgcList()
   return response
 }
@@ -91,6 +104,14 @@ export const duplicateUgcClip = async (
   clipId: string,
 ): Promise<ApiResponse<{ project: UgcProject }>> => {
   return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.DUPLICATE_CLIP(id, clipId), {})
+}
+
+export const extendUgcClip = async (
+  id: string,
+  clipId: string,
+  payload: ExtendUgcClipPayload,
+): Promise<ApiResponse<{ project: UgcProject }>> => {
+  return api.post<{ project: UgcProject }>(UGC_PROJECT_ROUTES.EXTEND_CLIP(id, clipId), payload)
 }
 
 export const generateUgcScript = async (

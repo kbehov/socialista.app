@@ -16,10 +16,9 @@ import {
 } from "@socialista/db";
 import {
   TASK_IDS,
-  UGC_TALKING_HEAD_CREDITS_PER_SECOND,
-  UGC_TALKING_HEAD_MODEL_VALUE,
   ugcClipAudioMode,
   ugcClipUsesTalkingHeadModel,
+  ugcTalkingHeadBillableDurationSec,
   type UgcClipType,
   PROMPT_KEYS,
   parseVideoResolution,
@@ -46,7 +45,7 @@ import {
   assertSufficientCredits,
   finalizeGeneration,
   loadModel,
-  loadTalkingHeadModel,
+  loadUgcLipSyncModel,
   loadWorkspace,
 } from "../shared/workspace.js";
 import {
@@ -86,29 +85,32 @@ export const generateUgcVideo = schemaTask({
 
       const clipType = clip.type as UgcClipType;
       const isTalkingHead = ugcClipUsesTalkingHeadModel(clipType);
-      if (isTalkingHead && !clip.audioUrl) {
+      const talkingHeadDuration = isTalkingHead
+        ? ugcTalkingHeadBillableDurationSec(clip)
+        : undefined;
+      if (isTalkingHead && talkingHeadDuration == null) {
         throw new Error(
           "Generate the voiceover before rendering this talking-head scene",
         );
       }
 
-      const videoModelValue = isTalkingHead
-        ? UGC_TALKING_HEAD_MODEL_VALUE
-        : clip.models?.video || project.models.video;
       const [model, workspace] = await Promise.all([
-        isTalkingHead ? loadTalkingHeadModel() : loadModel(videoModelValue),
+        isTalkingHead
+          ? loadUgcLipSyncModel(clip.models?.video)
+          : loadModel(clip.models?.video || project.models.video),
         loadWorkspace(payload.workspaceId),
       ]);
       const resolution = parseVideoResolution(project.videoResolution);
-      // When a voiceover exists, the clip length follows the audio so lip-sync durations match.
-      const renderDurationSec = clip.audioUrl
-        ? clampUgcDuration(clip.audioDurationSec ?? clip.durationSec)
-        : clip.durationSec;
-      const billedCost = isTalkingHead
-        ? UGC_TALKING_HEAD_CREDITS_PER_SECOND * renderDurationSec
-        : (model.costUnit === CostUnit.PER_SECOND
-            ? model.cost * renderDurationSec
-            : model.cost) * videoResolutionCostMultiplier(resolution);
+      // Talking-head length follows the generated voiceover. Other scenes keep clip duration.
+      const renderDurationSec: number = talkingHeadDuration
+        ?? (clip.audioUrl
+          ? clampUgcDuration(clip.audioDurationSec ?? clip.durationSec)
+          : clip.durationSec);
+      const baseCost =
+        model.costUnit === CostUnit.PER_SECOND
+          ? model.cost * renderDurationSec
+          : model.cost;
+      const billedCost = baseCost * videoResolutionCostMultiplier(resolution);
       assertSufficientCredits(workspace, billedCost);
 
       const plannerValue =
@@ -230,9 +232,12 @@ export const generateUgcVideo = schemaTask({
       const audioUrl = clip.audioUrl;
       const videoUrl = isTalkingHead
         ? await generateUgcTalkingHead({
+            model: model.value,
+            provider: model.modelProvider,
             prompt: plannedPrompt,
             imageUrl: startFrame,
             audioUrl: audioUrl!,
+            resolution,
             workspaceId: payload.workspaceId,
             userId: payload.userId,
             onProgress: setGenerationStatus,

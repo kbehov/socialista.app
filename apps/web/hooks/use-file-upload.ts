@@ -146,8 +146,7 @@ export const useFileUpload = (
       for (const file of prev.files) {
         if (
           file.preview &&
-          file.file instanceof File &&
-          file.file.type.startsWith("image/")
+          file.file instanceof File
         ) {
           URL.revokeObjectURL(file.preview)
         }

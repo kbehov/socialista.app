@@ -7,6 +7,7 @@ import {
 } from '@/hooks/ugc/use-ugc-active-runs'
 import { useUgcClipActions } from '@/hooks/ugc/use-ugc-clip-actions'
 import { useUgcClipMedia } from '@/hooks/ugc/use-ugc-clip-media'
+import { useUgcExtendClip } from '@/hooks/ugc/use-ugc-extend-clip'
 import { useUgcGeneration } from '@/hooks/ugc/use-ugc-generation'
 import { useUgcPersistence } from '@/hooks/ugc/use-ugc-persistence'
 import { useUgcPlanWorkflow } from '@/hooks/ugc/use-ugc-plan-workflow'
@@ -90,12 +91,8 @@ export function useUgcProjectWorkspace({
   }, [project.id, setProject])
 
   const {
-    handleRunSettled,
-    generateAllVideos,
     handleImageSubmit,
     handleVideoSubmit,
-    generateAllPhotos,
-    generateAllAudio,
     generateClipAudio,
   } = useUgcGeneration({
     projectId: project.id,
@@ -137,6 +134,14 @@ export function useUgcProjectWorkspace({
     patchProjectLocal,
     flushDebounced,
     onTabChange: setActiveTab,
+  })
+
+  const extend = useUgcExtendClip({
+    workspaceId,
+    project,
+    onSelectClip: setSelectedClipId,
+    onTabChange: setActiveTab,
+    onPrimeVideoAttachments: media.primeVideoAttachments,
   })
 
   useEffect(() => {
@@ -286,23 +291,10 @@ export function useUgcProjectWorkspace({
     [flushDebounced, generateClipAudio, selectedClip],
   )
 
-  const handleGenerateAllAudio = useCallback(() => {
-    startGenerateAudio(async () => {
-      try {
-        await generateAllAudio()
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : 'Could not generate audio',
-        )
-      }
-    })
-  }, [generateAllAudio])
-
   const handleRunWatcherSettled = useCallback(
     (run: (typeof activeRuns)[number]) => {
       settleRun(run)
       void refreshProject().then(latest => {
-        handleRunSettled(latest)
         if (!latest) return
         const message = run.clipId
           ? latest.clips.find(clip => clip.id === run.clipId)?.error
@@ -310,7 +302,7 @@ export function useUgcProjectWorkspace({
         if (message) toast.error(message)
       })
     },
-    [handleRunSettled, refreshProject, settleRun],
+    [refreshProject, settleRun],
   )
 
   return {
@@ -347,9 +339,6 @@ export function useUgcProjectWorkspace({
     handleWriteScript,
     handleScriptChange,
     handleGenerateClipAudio,
-    handleGenerateAllAudio,
-    generateAllPhotos,
-    generateAllVideos,
     handleImageSubmit,
     handleVideoSubmit,
     patchProject,
@@ -358,6 +347,7 @@ export function useUgcProjectWorkspace({
     scheduleProjectPatch,
     ...plan,
     ...clipActions,
+    ...extend,
     ...media,
   }
 }

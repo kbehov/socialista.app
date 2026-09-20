@@ -2,6 +2,7 @@
 
 import { UgcAddSceneMenu } from '@/components/studio/ugc/ugc-add-scene-menu'
 import { UgcCampaignPresets } from '@/components/studio/ugc/ugc-campaign-presets'
+import { UgcInfoTooltip } from '@/components/studio/ugc/ugc-info-tooltip'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ import {
   PlusIcon,
   SparklesIcon,
   Trash2Icon,
+  UnfoldHorizontalIcon,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useCallback, useState, type ReactNode } from 'react'
@@ -50,6 +52,8 @@ type UgcClipRailProps = {
   onUseStarter: () => void
   onDuplicate: (clipId: string) => void
   onDelete: (clipId: string) => void
+  onExtend: (clipId: string) => void
+  extendingClipId?: string | null
   onReorder: (clipIds: string[]) => void
   onApplyPreset: (presetId: UgcCampaignPresetId) => void
   onPlan?: () => void
@@ -66,6 +70,8 @@ export function UgcClipRail({
   onUseStarter,
   onDuplicate,
   onDelete,
+  onExtend,
+  extendingClipId,
   onReorder,
   onApplyPreset,
   onPlan,
@@ -89,12 +95,19 @@ export function UgcClipRail({
   )
 
   return (
-    <aside className="flex shrink-0 flex-col border-b border-black/[0.06] bg-background dark:border-white/[0.08] lg:h-full lg:min-h-0 lg:w-[252px] lg:border-r lg:border-b-0">
+    <aside
+      id="ugc-tour-scenes"
+      className="flex shrink-0 flex-col border-b border-black/[0.06] bg-background dark:border-white/[0.08] lg:h-full lg:min-h-0 lg:w-[252px] lg:border-r lg:border-b-0"
+    >
       <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-black/[0.06] px-3 dark:border-white/[0.08]">
-        <p className="min-w-0 text-[13px] font-medium tracking-[-0.01em]">
-          Scenes
-          <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">{clips.length}</span>
-        </p>
+        <div className="flex min-w-0 items-center gap-1 text-[13px] font-medium tracking-[-0.01em]">
+          <span>Scenes</span>
+          <span className="font-normal tabular-nums text-muted-foreground">{clips.length}</span>
+          <UgcInfoTooltip
+            side="bottom"
+            label="Your ad is a sequence of short scenes. Each scene: photo → voiceover → video. Drag to reorder."
+          />
+        </div>
         <div className="flex shrink-0 items-center -space-x-0.5">
           {onPlan ? (
             <Tooltip>
@@ -153,6 +166,9 @@ export function UgcClipRail({
               <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
                 Add a scene or start from a template.
               </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground/80">
+                Scenes play in order, top to bottom.
+              </p>
               <Button
                 type="button"
                 size="sm"
@@ -176,6 +192,8 @@ export function UgcClipRail({
                 onSelect={() => onSelect(clip.id)}
                 onDuplicate={() => onDuplicate(clip.id)}
                 onDelete={() => onDelete(clip.id)}
+                onExtend={() => onExtend(clip.id)}
+                extending={extendingClipId === clip.id}
               />
             ))
           )}
@@ -204,6 +222,8 @@ function SceneRailCard({
   onSelect,
   onDuplicate,
   onDelete,
+  onExtend,
+  extending,
 }: {
   clip: UgcClip
   index: number
@@ -213,6 +233,8 @@ function SceneRailCard({
   onSelect: () => void
   onDuplicate: () => void
   onDelete: () => void
+  onExtend: () => void
+  extending?: boolean
 }) {
   const preview = clip.thumbnailUrl ?? clip.stills.find(still => still.imageUrl)?.imageUrl
   const generating = Boolean(run) || clip.status === 'generating'
@@ -347,6 +369,16 @@ function SceneRailCard({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-36">
+          <DropdownMenuItem
+            disabled={!clip.videoUrl || extending}
+            onClick={event => {
+              event.stopPropagation()
+              onExtend()
+            }}
+          >
+            <UnfoldHorizontalIcon className="size-3.5" />
+            Extend
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={event => {
               event.stopPropagation()

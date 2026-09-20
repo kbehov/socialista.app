@@ -12,11 +12,11 @@ import {
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import type { UpdateUgcClipPayload, UgcClip, UgcClipVoice, UgcProject } from '@socialista/types'
 import {
-  UGC_SCRIPT_MAX_CHARS,
   ugcClipAudioTakeForUrl,
   ugcClipUsesTalkingHeadModel,
   ugcClipVideoTakeForUrl,
   ugcResolvedClipVoice,
+  ugcScriptMaxChars,
 } from '@socialista/types'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
@@ -59,11 +59,16 @@ export function useUgcClipMedia({
       const take = ugcClipAudioTakeForUrl([selectedClip, ...project.clips], url)
       const text = take?.scriptText?.trim()
       const script = text
-        ? { text: text.slice(0, UGC_SCRIPT_MAX_CHARS), source: 'user' as const }
+        ? { text: text.slice(0, ugcScriptMaxChars(selectedClip.type)), source: 'user' as const }
         : undefined
+      const audioDurationSec =
+        typeof take?.durationSec === 'number' && take.durationSec > 0
+          ? take.durationSec
+          : undefined
       flushDebounced()
       patchClipLocal(selectedClip.id, {
         audioUrl: url,
+        ...(audioDurationSec != null ? { audioDurationSec } : {}),
         ...(script ? { script } : {}),
       })
       void patchClip(selectedClip.id, {
@@ -180,6 +185,14 @@ export function useUgcClipMedia({
     [onTabChange, selectedClip],
   )
 
+  const primeVideoAttachments = useCallback((clipId: string, urls: string[]) => {
+    if (urls.length === 0) return
+    setPickedVideoAttachments({
+      clipId,
+      items: stillUrlsToAttachments(urls),
+    })
+  }, [])
+
   const handleVoiceChange = useCallback(
     (voice: UgcClipVoice) => {
       if (!selectedClip) return
@@ -195,6 +208,7 @@ export function useUgcClipMedia({
     applyClipVideo,
     applyStillUrls,
     applyAssetImage,
+    primeVideoAttachments,
     persistCampaignVoice,
     handleVoiceChange,
   }

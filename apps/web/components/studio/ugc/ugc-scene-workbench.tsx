@@ -44,6 +44,8 @@ type UgcSceneWorkbenchProps = {
   onUseStills: (urls: string[]) => void
   onSelectAudio?: (url: string) => void
   onSelectVideo?: (url: string) => void
+  onExtend?: () => void
+  extending?: boolean
   onPlan?: () => void
 }
 
@@ -75,6 +77,8 @@ export function UgcSceneWorkbench({
   onUseStills,
   onSelectAudio,
   onSelectVideo,
+  onExtend,
+  extending,
   onPlan,
 }: UgcSceneWorkbenchProps) {
   const influencersById = useUgcProjectStore(s => s.influencersById)
@@ -107,13 +111,15 @@ export function UgcSceneWorkbench({
 
   if (!clip) {
     return (
-      <UgcProjectEmptyState
-        clips={project.clips}
-        creating={creatingScenes}
-        onPlan={onPlan}
-        onUseStarter={onUseStarter}
-        onAddClip={onAddClip}
-      />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <UgcProjectEmptyState
+          clips={project.clips}
+          creating={creatingScenes}
+          onPlan={onPlan}
+          onUseStarter={onUseStarter}
+          onAddClip={onAddClip}
+        />
+      </div>
     )
   }
 
@@ -154,6 +160,8 @@ export function UgcSceneWorkbench({
           onUseStills={onUseStills}
           onSelectAudio={onSelectAudio}
           onSelectVideo={onSelectVideo}
+          onExtend={onExtend}
+          extending={extending}
         />
       </div>
 

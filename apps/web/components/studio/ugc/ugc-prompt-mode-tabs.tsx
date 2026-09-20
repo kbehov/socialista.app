@@ -1,13 +1,29 @@
 'use client'
 
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { UgcWorkbenchTab } from '@/types/ugc.types'
 import { AudioLinesIcon, ImageIcon, VideoIcon } from 'lucide-react'
 
 const MODES = [
-  { id: 'image' as const, label: 'Image', icon: ImageIcon },
-  { id: 'audio' as const, label: 'Audio', icon: AudioLinesIcon },
-  { id: 'video' as const, label: 'Video', icon: VideoIcon },
+  {
+    id: 'image' as const,
+    label: 'Image',
+    icon: ImageIcon,
+    hint: 'Create the photo this scene starts from.',
+  },
+  {
+    id: 'audio' as const,
+    label: 'Audio',
+    icon: AudioLinesIcon,
+    hint: 'Write the line and generate the voiceover.',
+  },
+  {
+    id: 'video' as const,
+    label: 'Video',
+    icon: VideoIcon,
+    hint: 'Animate the photo into the final clip.',
+  },
 ]
 
 const ALL_TABS: UgcWorkbenchTab[] = MODES.map(mode => mode.id)
@@ -35,23 +51,29 @@ export function UgcPromptModeTabs({
         const Icon = mode.icon
         const active = value === mode.id
         return (
-          <button
-            key={mode.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(mode.id)}
-            className={cn(
-              'inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[8px] px-2',
-              'text-[12px] font-medium tracking-[-0.015em] transition-[color,background-color,box-shadow] duration-150',
-              active
-                ? 'bg-background text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.05] dark:bg-[var(--surface-1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.28)] dark:ring-white/[0.08]'
-                : 'text-muted-foreground hover:text-foreground/85',
-            )}
-          >
-            <Icon className="size-3.5 shrink-0 opacity-80" strokeWidth={1.75} />
-            <span className="truncate">{mode.label}</span>
-          </button>
+          <div key={mode.id} className="min-w-0 flex-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => onChange(mode.id)}
+                  className={cn(
+                    'inline-flex h-7 w-full min-w-0 items-center justify-center gap-1.5 rounded-[8px] px-2',
+                    'text-[12px] font-medium tracking-[-0.015em] transition-[color,background-color,box-shadow] duration-150',
+                    active
+                      ? 'bg-background text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.05] dark:bg-[var(--surface-1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.28)] dark:ring-white/[0.08]'
+                      : 'text-muted-foreground hover:text-foreground/85',
+                  )}
+                >
+                  <Icon className="size-3.5 shrink-0 opacity-80" strokeWidth={1.75} />
+                  <span className="truncate">{mode.label}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">{mode.hint}</TooltipContent>
+            </Tooltip>
+          </div>
         )
       })}
     </div>

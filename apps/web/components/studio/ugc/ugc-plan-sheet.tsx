@@ -2,7 +2,6 @@
 
 import { UgcPlanProgress } from '@/components/studio/ugc/ugc-plan-progress'
 import { UgcPlanSceneCard } from '@/components/studio/ugc/ugc-plan-scene-card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -12,7 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import type { UgcAdPlan } from '@socialista/types'
+import { UGC_CLIP_TYPE_LABELS, type UgcAdPlan } from '@socialista/types'
 import { ClapperboardIcon, Loader2Icon } from 'lucide-react'
 
 type UgcPlanSheetProps = {
@@ -65,11 +64,11 @@ export function UgcPlanSheet({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="font-normal">
-                    {plan.format}
-                  </Badge>
                   <span className="text-[12px] text-muted-foreground">
-                    {sceneCount} scene{sceneCount === 1 ? '' : 's'} · {totalDuration}s
+                    {plan.scenes.map(scene => UGC_CLIP_TYPE_LABELS[scene.type]).join(' → ')}
+                  </span>
+                  <span className="text-[12px] text-muted-foreground">
+                    · {sceneCount} scene{sceneCount === 1 ? '' : 's'} · {totalDuration}s
                   </span>
                 </div>
                 <p className="text-[14px] leading-relaxed font-medium tracking-tight">{plan.concept}</p>
@@ -77,7 +76,7 @@ export function UgcPlanSheet({
               </div>
               <div className="space-y-3">
                 {plan.scenes.map((scene, index) => (
-                  <UgcPlanSceneCard key={`${scene.name}-${index}`} scene={scene} index={index} />
+                  <UgcPlanSceneCard key={`${scene.type}-${index}`} scene={scene} index={index} />
                 ))}
               </div>
             </div>

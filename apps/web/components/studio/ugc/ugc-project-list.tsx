@@ -17,6 +17,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { UgcTemplatesGallery } from './ugc-templates-gallery'
 
 type UgcProjectListProps = {
   workspaceId: string
@@ -72,12 +73,19 @@ export function UgcProjectList({
   )
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="UGC ads"
         description={`${projects.length === 1 ? '1 project' : `${projects.length} projects`} in ${workspaceName}`}
         actions={createAction}
       />
+
+      <section
+        aria-label="Browse UGC templates"
+        className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
+      >
+        <UgcTemplatesGallery workspaceId={workspaceId} />
+      </section>
 
       {error ? (
         <ErrorState
@@ -104,67 +112,65 @@ export function UgcProjectList({
           }
         />
       ) : projects.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
+        <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
           <span className={cn('mb-4 flex items-center justify-center', dashboardSurface.emptyIcon)}>
             <SmartphoneIcon className="text-muted-foreground" strokeWidth={1.5} />
           </span>
           <p className="text-sm font-semibold tracking-tight">Make your first UGC ad</p>
           <p className="mt-1.5 max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
-            Drop a product photo → pick a clip type → generate.
+            Recreate a template above, or start a blank project.
           </p>
           <div className="mt-5">{createAction}</div>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {projects.map(project => {
-              const href = DASHBOARD_ROUTES.STUDIO.ugcProject(project.id)
-              return (
-                <article key={project.id} className="group/card relative">
-                  <Link href={href} className="block">
-                    <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted ring-1 ring-border/60 transition group-hover/card:shadow-md">
-                      {project.previewImageUrl ? (
-                        <Image
-                          alt=""
-                          className="object-cover"
-                          fill
-                          sizes="220px"
-                          src={project.previewImageUrl}
-                          unoptimized
-                        />
-                      ) : (
-                        <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                          <SmartphoneIcon className="size-6" strokeWidth={1.5} />
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="mt-2.5 space-y-1 px-0.5">
-                    <Link href={href} className="block truncate text-sm font-medium tracking-tight">
-                      {project.name}
-                    </Link>
-                    <p className="text-[11px] text-muted-foreground">
-                      {project.clipCount === 1 ? '1 clip' : `${project.clipCount} clips`} ·{' '}
-                      {formatRelativeTime(project.updatedAt)}
-                    </p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-4 pb-10 sm:grid-cols-3 sm:px-6 lg:grid-cols-4 lg:px-8 xl:grid-cols-5">
+          {projects.map(project => {
+            const href = DASHBOARD_ROUTES.STUDIO.ugcProject(project.id)
+            return (
+              <article key={project.id} className="group/card relative">
+                <Link href={href} className="block">
+                  <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-muted ring-1 ring-border/60 transition group-hover/card:shadow-md">
+                    {project.previewImageUrl ? (
+                      <Image
+                        alt=""
+                        className="object-cover"
+                        fill
+                        sizes="220px"
+                        src={project.previewImageUrl}
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                        <SmartphoneIcon className="size-6" strokeWidth={1.5} />
+                      </span>
+                    )}
                   </div>
-                  <Button
-                    type="button"
-                    size="icon-xs"
-                    variant="ghost"
-                    className="absolute top-2 right-2 z-10 size-8 rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm group-hover/card:opacity-100 hover:bg-black/55 hover:text-white"
-                    aria-label={`Delete ${project.name}`}
-                    onClick={event => {
-                      event.preventDefault()
-                      setDeleteTarget(project)
-                    }}
-                  >
-                    <Trash2Icon className="size-3.5" />
-                  </Button>
-                </article>
-              )
-            })}
-          </div>
+                </Link>
+                <div className="mt-2.5 space-y-1 px-0.5">
+                  <Link href={href} className="block truncate text-sm font-medium tracking-tight">
+                    {project.name}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground">
+                    {project.clipCount === 1 ? '1 clip' : `${project.clipCount} clips`} ·{' '}
+                    {formatRelativeTime(project.updatedAt)}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="absolute top-2 right-2 z-10 size-8 rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm group-hover/card:opacity-100 hover:bg-black/55 hover:text-white"
+                  aria-label={`Delete ${project.name}`}
+                  onClick={event => {
+                    event.preventDefault()
+                    setDeleteTarget(project)
+                  }}
+                >
+                  <Trash2Icon className="size-3.5" />
+                </Button>
+              </article>
+            )
+          })}
         </div>
       )}
 

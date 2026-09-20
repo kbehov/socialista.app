@@ -84,6 +84,7 @@ export function UgcSettingsSidebar({
 }: UgcSettingsSidebarProps) {
   return (
     <aside
+      id="ugc-tour-settings"
       className={cn(
         'flex min-h-0 w-full shrink-0 flex-col border-t border-black/[0.06] bg-background dark:border-white/[0.08] lg:w-[268px] lg:border-t-0 lg:border-l',
         className,

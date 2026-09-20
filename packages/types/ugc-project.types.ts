@@ -1,9 +1,3 @@
-import {
-  ContextSupport,
-  CostUnit,
-  ModelType,
-  type Model,
-} from "./model.types.js";
 import type { VideoResolution } from "./video-generation.types.js";
 
 export const UGC_PROJECT_STATUSES = [
@@ -333,6 +327,16 @@ export const UGC_MAX_VARIANTS = 3;
 export const UGC_MAX_SCENES = 3;
 export const UGC_MAX_CLIPS = 12;
 export const UGC_AD_PLAN_SCENE_MAX = 3;
+export const UGC_AD_PLAN_FORMATS = [
+  "problem-solution",
+  "pov",
+  "unboxing",
+  "grwm",
+  "testimonial",
+  "hook-retain-reward",
+  "before-after",
+] as const;
+export type UgcAdPlanFormat = (typeof UGC_AD_PLAN_FORMATS)[number];
 export const UGC_MAX_STILL_VERSIONS = 24;
 export const UGC_MAX_AUDIO_TAKES = 20;
 export const UGC_MAX_VIDEO_TAKES = 12;
@@ -342,6 +346,7 @@ export const UGC_DURATION_MIN = 5;
 export const UGC_DURATION_MAX = 15;
 export const UGC_DEFAULT_DURATION = 8;
 export const UGC_SCRIPT_MAX_CHARS = 150;
+export const UGC_TALKING_HEAD_SCRIPT_MAX_CHARS = 300;
 export const UGC_SPOKEN_CHARS_PER_SEC = 12;
 
 function catalogField<K extends keyof UgcSceneDefinition>(
@@ -359,32 +364,8 @@ export const UGC_CLIP_TYPE_DESCRIPTIONS = catalogField("description");
 
 export const UGC_DEFAULT_CLIP_TYPE: UgcClipType = "talking";
 
-export const UGC_TALKING_HEAD_MODEL_VALUE =
-  "fal-ai/bytedance/omnihuman/v1.5" as const;
-export const UGC_TALKING_HEAD_MODEL_NAME = "OmniHuman 1.5";
-export const UGC_TALKING_HEAD_CREDITS_PER_SECOND = 30;
-
-const TALKING_HEAD_MODEL: Model = {
-  _id: UGC_TALKING_HEAD_MODEL_VALUE,
-  value: UGC_TALKING_HEAD_MODEL_VALUE,
-  name: UGC_TALKING_HEAD_MODEL_NAME,
-  cost: UGC_TALKING_HEAD_CREDITS_PER_SECOND,
-  costUnit: CostUnit.PER_SECOND,
-  modelType: ModelType.VIDEO,
-  contextSupports: [ContextSupport.IMAGE, ContextSupport.AUDIO],
-  allowedInUgc: true,
-  modelProvider: "fal",
-  createdAt: new Date(0),
-  updatedAt: new Date(0),
-};
-
 export function ugcClipUsesTalkingHeadModel(type: UgcClipType): boolean {
   return type === "talking";
-}
-
-/** Synthetic wire model so the composer and trigger share one descriptor without a DB row. */
-export function ugcTalkingHeadModel(): Model {
-  return TALKING_HEAD_MODEL;
 }
 
 export const UGC_STARTER_SCENE_TYPES: UgcClipType[] = [
@@ -433,16 +414,58 @@ export function parseUgcClipType(value: unknown): UgcClipType | undefined {
   return undefined;
 }
 
-export function formatUgcSceneCatalogForPrompt(): string {
-  return UGC_CLIP_TYPES.map((type) => {
+/** Map a slug, label, or short label to a catalog type. */
+export function coerceUgcClipType(value: unknown): UgcClipType | undefined {
+  const parsed = parseUgcClipType(value);
+  if (parsed) return parsed;
+  if (typeof value !== "string") return undefined;
+  const needle = value.trim().toLowerCase().replace(/[_]+/g, "-");
+  if (!needle) return undefined;
+  return UGC_CLIP_TYPES.find((type) => {
     const scene = UGC_SCENE_CATALOG[type];
-    const script = scene.requiresScript
-      ? "Spoken script required."
-      : scene.showsScript
-        ? "Optional voiceover. Empty script if silent."
-        : "Empty script.";
-    return `- ${type}: ${scene.description}. ~${scene.defaultDurationSec}s. ${script}`;
-  }).join("\n");
+    return (
+      scene.label.toLowerCase() === needle ||
+      scene.shortLabel.toLowerCase() === needle ||
+      type.replace(/-/g, " ") === needle.replace(/-/g, " ")
+    );
+  });
+}
+
+export function ugcCatalogSceneName(
+  type: UgcClipType,
+  occurrence = 1,
+): string {
+  const label = UGC_CLIP_TYPE_LABELS[type];
+  return occurrence > 1 ? `${label} ${occurrence}` : label;
+}
+
+export function ugcPlannableClipTypes(opts: {
+  hasProduct: boolean;
+  productKind?: string | null;
+}): UgcClipType[] {
+  const hasAppUi = opts.productKind === "app" || opts.productKind === "website";
+  return UGC_CLIP_TYPES.filter((type) => {
+    const scene = UGC_SCENE_CATALOG[type];
+    if (scene.requiresScreenshots && !hasAppUi) return false;
+    if (!opts.hasProduct && scene.requiresProduct) return false;
+    return true;
+  });
+}
+
+export function formatUgcSceneCatalogForPrompt(
+  types: readonly UgcClipType[] = UGC_CLIP_TYPES,
+): string {
+  return types
+    .map((type) => {
+      const scene = UGC_SCENE_CATALOG[type];
+      const script = scene.requiresScript
+        ? "Spoken script required."
+        : scene.showsScript
+          ? "Optional voiceover. Empty script if silent."
+          : "Empty script.";
+      return `- ${type} (${scene.label}): ${scene.description}. ~${scene.defaultDurationSec}s. ${script}`;
+    })
+    .join("\n");
 }
 
 export const UGC_FLOW_STEP_LABELS: Record<UgcFlowStep, string> = {
@@ -553,7 +576,19 @@ export function ugcClipAudioMode(
   return ugcClipUsesLipSync(type) ? "lip-sync" : "voiceover";
 }
 
-export function ugcScriptTargetChars(durationSec: number): number {
+export function ugcScriptMaxChars(type?: UgcClipType): number {
+  return type && ugcClipUsesTalkingHeadModel(type)
+    ? UGC_TALKING_HEAD_SCRIPT_MAX_CHARS
+    : UGC_SCRIPT_MAX_CHARS;
+}
+
+export function ugcScriptTargetChars(
+  durationSec: number,
+  type?: UgcClipType,
+): number {
+  if (type && ugcClipUsesTalkingHeadModel(type)) {
+    return UGC_TALKING_HEAD_SCRIPT_MAX_CHARS;
+  }
   const spokenWindow = Math.min(10, Math.max(UGC_DURATION_MIN, durationSec));
   return Math.min(
     UGC_SCRIPT_MAX_CHARS,
@@ -567,8 +602,28 @@ export function clampUgcDuration(value: unknown): number {
   return Math.min(UGC_DURATION_MAX, Math.max(UGC_DURATION_MIN, Math.round(n)));
 }
 
-export function clampUgcScript(text: string): string {
-  return text.slice(0, UGC_SCRIPT_MAX_CHARS);
+export function clampUgcScript(text: string, type?: UgcClipType): string {
+  return text.slice(0, ugcScriptMaxChars(type));
+}
+
+/** Seconds to bill a talking-head render. Undefined until voiceover exists. */
+export function ugcTalkingHeadBillableDurationSec(clip: {
+  audioUrl?: string;
+  audioDurationSec?: number;
+  audioTakes?: Array<{ audioUrl?: string; durationSec?: number }>;
+}): number | undefined {
+  if (!clip.audioUrl) return undefined;
+  const takeDuration = clip.audioTakes?.find(
+    (take) => take.audioUrl === clip.audioUrl,
+  )?.durationSec;
+  const n =
+    typeof clip.audioDurationSec === "number" &&
+    Number.isFinite(clip.audioDurationSec) &&
+    clip.audioDurationSec > 0
+      ? clip.audioDurationSec
+      : takeDuration;
+  if (typeof n !== "number" || !Number.isFinite(n) || n <= 0) return undefined;
+  return Math.max(1, Math.round(n));
 }
 
 export function estimateUgcSpokenDurationSec(text: string, speed = 1): number {
@@ -1153,6 +1208,10 @@ export type CreateUgcClipPayload = {
   sceneCount?: UgcSceneCount;
   influencerId?: string;
   name?: string;
+};
+
+export type ExtendUgcClipPayload = {
+  lastFrameUrl: string;
 };
 
 export type UpdateUgcClipPayload = {

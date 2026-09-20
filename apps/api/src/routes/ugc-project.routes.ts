@@ -1,9 +1,11 @@
 import {
   createUgcClip,
   createUgcProject,
+  createUgcProjectFromTemplate,
   deleteUgcClip,
   deleteUgcProject,
   duplicateUgcClip,
+  extendUgcClip,
   generateUgcClipScript,
   generateUgcProjectScript,
   getUgcProject,
@@ -26,6 +28,7 @@ ugcProjectRoutes.use('/*', authMiddleware)
 ugcProjectRoutes.get('/voices', searchUgcProjectVoices)
 ugcProjectRoutes.get('/workspace/:workspaceId', getWorkspaceUgcProjects)
 ugcProjectRoutes.post('/', createUgcProject)
+ugcProjectRoutes.post('/from-template', createUgcProjectFromTemplate)
 ugcProjectRoutes.get('/:id', getUgcProject)
 ugcProjectRoutes.patch('/:id', updateUgcProject)
 ugcProjectRoutes.delete('/:id', deleteUgcProject)
@@ -34,6 +37,7 @@ ugcProjectRoutes.post('/:id/presets', applyUgcCampaignPreset)
 ugcProjectRoutes.patch('/:id/clips/:clipId', updateUgcClipHandler)
 ugcProjectRoutes.delete('/:id/clips/:clipId', deleteUgcClip)
 ugcProjectRoutes.post('/:id/clips/:clipId/duplicate', duplicateUgcClip)
+ugcProjectRoutes.post('/:id/clips/:clipId/extend', extendUgcClip)
 ugcProjectRoutes.post('/:id/script', generateUgcProjectScript)
 ugcProjectRoutes.post('/:id/clips/:clipId/script', generateUgcClipScript)
 ugcProjectRoutes.post('/:id/clips/:clipId/open-editor', openUgcClipEditor)

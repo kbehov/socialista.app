@@ -30,6 +30,7 @@ export function ugcClipGeneratedStills(clip: UgcClip, productImageUrls: string[]
   return clip.stills.filter(still => {
     if (!still.imageUrl) return false
     if (still.generationId || still.enhancedPrompt) return true
+    if (clip.thumbnailUrl && still.imageUrl === clip.thumbnailUrl) return true
     return !campaignUrls.has(still.imageUrl)
   })
 }

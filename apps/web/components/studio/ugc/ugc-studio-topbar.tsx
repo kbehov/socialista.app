@@ -1,27 +1,17 @@
 'use client'
 
+import { useStartUgcStudioTour } from '@/components/studio/ugc/ugc-studio-tour'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
-import { useWorkspaceStore } from '@/store/workspace.store'
-import { formatCredits } from '@/utils/format'
 import {
-  AudioLinesIcon,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ClapperboardIcon,
-  ImageIcon,
+  HelpCircleIcon,
   Loader2Icon,
   SlidersHorizontalIcon,
-  VideoIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -55,14 +45,10 @@ type UgcStudioTopbarProps = {
   finishing?: boolean
   canFinish?: boolean
   editorPrepared?: boolean
-  generating?: boolean
   settingsIncomplete?: boolean
   onNameChange: (name: string) => void
   onFinish: () => void
   onOpenSettings?: () => void
-  onGenerateAllPhotos?: () => void
-  onGenerateAllAudio?: () => void
-  onGenerateAllVideos?: () => void
 }
 
 function TopbarMeta({
@@ -93,22 +79,21 @@ export function UgcStudioTopbar({
   finishing,
   canFinish,
   editorPrepared,
-  generating,
   settingsIncomplete,
   onNameChange,
   onFinish,
   onOpenSettings,
-  onGenerateAllPhotos,
-  onGenerateAllAudio,
-  onGenerateAllVideos,
 }: UgcStudioTopbarProps) {
-  const credits = useWorkspaceStore(s => s.currentWorkspace?.billing.aiCreditsBalance ?? 0)
   const statusLabel = status ? (STATUS_LABEL[status] ?? status) : undefined
   const statusDot = status ? (STATUS_DOT[status] ?? STATUS_DOT.draft) : undefined
   const statusTone = status ? (STATUS_TONE[status] ?? STATUS_TONE.draft) : undefined
+  const startTour = useStartUgcStudioTour()
 
   return (
-    <header className="flex h-10 min-w-0 shrink-0 items-center gap-2 border-b border-black/[0.06] bg-background/90 px-2 backdrop-blur-xl dark:border-white/[0.08] sm:gap-2.5 sm:px-3">
+    <header
+      id="ugc-tour-topbar"
+      className="flex h-10 min-w-0 shrink-0 items-center gap-2 border-b border-black/[0.06] bg-background/90 px-2 backdrop-blur-xl dark:border-white/[0.08] sm:gap-2.5 sm:px-3"
+    >
       <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -149,11 +134,21 @@ export function UgcStudioTopbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-        <span className="mr-0.5 hidden rounded-md bg-muted/45 px-2 py-1 text-[11px] font-medium tabular-nums leading-none text-muted-foreground ring-1 ring-black/[0.04] md:inline dark:ring-white/[0.06]">
-          {formatCredits(credits)} credits
-        </span>
-
-        <span className="mx-0.5 hidden h-4 w-px bg-black/[0.08] md:block dark:bg-white/[0.1]" aria-hidden />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon-xs"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Studio tour"
+              onClick={startTour}
+            >
+              <HelpCircleIcon className="size-3.5" strokeWidth={1.75} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">How this studio works</TooltipContent>
+        </Tooltip>
 
         {onOpenSettings ? (
           <Tooltip>
@@ -176,39 +171,11 @@ export function UgcStudioTopbar({
           </Tooltip>
         ) : null}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-7 gap-1 px-2 text-[12px] font-medium text-muted-foreground hover:text-foreground"
-              disabled={generating}
-            >
-              Generate
-              <ChevronDownIcon className="size-3 opacity-60" strokeWidth={1.75} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-44">
-            <DropdownMenuItem disabled={!onGenerateAllPhotos} onClick={onGenerateAllPhotos}>
-              <ImageIcon className="size-3.5" strokeWidth={1.75} />
-              All photos
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={!onGenerateAllAudio} onClick={onGenerateAllAudio}>
-              <AudioLinesIcon className="size-3.5" strokeWidth={1.75} />
-              All audio
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={!onGenerateAllVideos} onClick={onGenerateAllVideos}>
-              <VideoIcon className="size-3.5" strokeWidth={1.75} />
-              All videos
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="inline-flex">
               <Button
+                id="ugc-tour-finish"
                 type="button"
                 size="sm"
                 className="h-7 gap-1.5 px-2.5 text-[12px] font-medium tracking-[-0.01em]"

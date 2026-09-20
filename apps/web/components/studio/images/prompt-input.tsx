@@ -150,6 +150,7 @@ function ImagePromptComposer({
   const [enhance, setEnhance] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
+  const setInput = textInput.setInput;
 
   const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
     setAttachedImages(current => {
@@ -188,8 +189,8 @@ function ImagePromptComposer({
 
   useEffect(() => {
     if (!initialPrompt) return
-    textInput.setInput(initialPrompt)
-  }, [initialPrompt, textInput])
+    setInput(initialPrompt)
+  }, [initialPrompt, setInput])
 
   const placeholder = useMemo(() => {
     if (placeholderProp) return placeholderProp;
@@ -254,14 +255,24 @@ function ImagePromptComposer({
     textareaRef.current?.focus();
   }, []);
 
+  const setModel = useCallback(
+    (modelValue: string) => {
+      const found = models.find((model) => model.value === modelValue);
+      if (found) setSelectedModelId(found._id);
+    },
+    [models],
+  );
+
   useEffect(() => {
     studio?.registerPromptHandlers({
       insertAtCursor,
       setPrompt,
       setAttachments,
       focusPrompt,
+      setModel,
+      setAspectRatio,
     });
-  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt]);
+  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt, setModel]);
 
   useEffect(() => {
     if (hideExtras) return;
@@ -534,7 +545,7 @@ export function ImagePromptInput(props: ImagePromptInputProps) {
   }
 
   return (
-    <PromptInputProvider>
+    <PromptInputProvider initialInput={props.initialPrompt ?? ""}>
       <ImagePromptComposer {...props} />
     </PromptInputProvider>
   );

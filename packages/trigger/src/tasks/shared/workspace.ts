@@ -1,14 +1,16 @@
 import {
-  CostUnit,
   ModelType,
   deductAiCredits,
   getModelByValue,
+  getModels,
   getWorkspaceById,
   incrementModelUsage,
   type IModel,
   type IWorkspace,
 } from '@socialista/db'
-import { UGC_TALKING_HEAD_MODEL_VALUE, ugcTalkingHeadModel } from '@socialista/types'
+
+const UGC_LIP_SYNC_DEFAULT_QUERY =
+  'limit=1&modelType=lip-sync&allowedInUgc=true&sort=-usageCount'
 
 export async function loadModel(modelValue: string, notFoundMessage?: string): Promise<IModel> {
   const model = await getModelByValue(modelValue)
@@ -26,24 +28,22 @@ export async function loadWorkspace(workspaceId: string): Promise<IWorkspace> {
   return workspace
 }
 
-/** DB model when seeded in the manager; otherwise the shared synthetic descriptor. */
-export async function loadTalkingHeadModel(): Promise<IModel> {
-  const stored = await getModelByValue(UGC_TALKING_HEAD_MODEL_VALUE)
-  if (stored) return stored
-  const fallback = ugcTalkingHeadModel()
-  return {
-    value: fallback.value,
-    name: fallback.name,
-    cost: fallback.cost,
-    costUnit: CostUnit.PER_SECOND,
-    modelType: ModelType.VIDEO,
-    contextSupports: fallback.contextSupports ?? [],
-    allowedInUgc: true,
-    usageCount: 0,
-    modelProvider: fallback.modelProvider,
-    createdAt: fallback.createdAt,
-    updatedAt: fallback.updatedAt,
-  } as IModel
+function isUgcLipSyncModel(model: IModel): boolean {
+  return model.modelType === ModelType.LIP_SYNC && model.allowedInUgc
+}
+
+export async function loadUgcLipSyncModel(modelValue?: string): Promise<IModel> {
+  if (modelValue) {
+    const stored = await getModelByValue(modelValue)
+    if (stored && isUgcLipSyncModel(stored)) return stored
+  }
+
+  const { models } = await getModels(UGC_LIP_SYNC_DEFAULT_QUERY)
+  const fallback = models[0]
+  if (!fallback) {
+    throw new Error('No lip-sync model available. Add a lip-sync model allowed in UGC.')
+  }
+  return fallback
 }
 
 export async function loadModelAndWorkspace(

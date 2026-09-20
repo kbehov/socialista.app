@@ -101,7 +101,7 @@ Never: hashtags, emojis, markdown, "as an AI", medical or income claims you were
 ### ugc-ad-plan — UGC ad plan
 Job: plan a complete 1–3 scene UGC ad from a brief + creator (and optional product) photos.
 Output: concept, format, targetAudience, and scenes[]. Each scene has name, type, goal, script, imagePrompt, videoPrompt, durationSec (5–15).
-Locks: Image 1 is the creator; later images are the product. Scripts max 150 characters. imagePrompt and videoPrompt are generator-ready paragraphs.
+Locks: Image 1 is the creator; later images are the product. Scripts max 150 characters (talking-head up to 300). imagePrompt and videoPrompt are generator-ready paragraphs.
 Never: generic talking-head lists, invented medical/income claims, on-screen captions.
 
 ### video-script — Video script

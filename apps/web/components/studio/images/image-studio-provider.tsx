@@ -1,9 +1,15 @@
 'use client'
 
 import { presetToAttachedMedia } from '@/lib/studio/preset-media'
+import { templateReferencesToAttachedMedia } from '@/lib/studio/template-media'
 import { commitHaptic } from '@/utils/haptics'
 import type { AttachedMedia } from '@/components/files/attach-media/types'
-import type { Preset } from '@socialista/types'
+import {
+  StudioTemplateKind,
+  type AspectRatio,
+  type Preset,
+  type StudioTemplateDto,
+} from '@socialista/types'
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
 
 type PromptHandlers = {
@@ -11,6 +17,8 @@ type PromptHandlers = {
   setPrompt: (text: string) => void
   setAttachments: (attachments: AttachedMedia[]) => void
   focusPrompt: () => void
+  setModel?: (modelValue: string) => void
+  setAspectRatio?: (ratio: AspectRatio) => void
 }
 
 type ImageStudioContextValue = {
@@ -18,6 +26,7 @@ type ImageStudioContextValue = {
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
   applyPreset: (preset: Preset) => void
+  applyTemplate: (template: StudioTemplateDto) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -64,15 +73,33 @@ export function ImageStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
+  const applyTemplate = useCallback(
+    (template: StudioTemplateDto) => {
+      if (template.kind !== StudioTemplateKind.IMAGE) return
+      const handlers = handlersRef.current
+      const { payload } = template
+      handlers?.setPrompt(payload.prompt ?? '')
+      handlers?.setAttachments(
+        templateReferencesToAttachedMedia(template, payload.referenceImageUrls ?? []),
+      )
+      if (payload.model) handlers?.setModel?.(payload.model)
+      if (payload.aspectRatio) handlers?.setAspectRatio?.(payload.aspectRatio)
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
       setPrompt,
       applyPreset,
+      applyTemplate,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, applyPreset, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyPreset, applyTemplate, registerPromptHandlers],
   )
 
   return <ImageStudioContext.Provider value={value}>{children}</ImageStudioContext.Provider>

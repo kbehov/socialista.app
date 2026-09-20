@@ -17,13 +17,7 @@ import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { UgcWorkbenchTab } from '@/types/ugc.types'
 import { ugcSceneWorkbenchConfig } from '@/utils/ugc/scene.utils'
 import type { AspectRatio, UgcClip, UgcClipVoice, UgcProject, VideoAspectRatio } from '@socialista/types'
-import {
-  clampUgcDuration,
-  ugcResolvedClipModels,
-  ugcTalkingHeadModel,
-} from '@socialista/types'
-
-const TALKING_HEAD_MODELS = [ugcTalkingHeadModel()]
+import { ugcResolvedClipModels, ugcTalkingHeadBillableDurationSec } from '@socialista/types'
 
 type UgcScenePromptTabsProps = {
   project: UgcProject
@@ -70,12 +64,13 @@ export function UgcScenePromptTabs({
 }: UgcScenePromptTabsProps) {
   const imageModels = useUgcProjectStore(s => s.imageModels)
   const videoModels = useUgcProjectStore(s => s.videoModels)
-  const resolvedImageModel = ugcResolvedClipModels(project, clip).image
+  const lipSyncModels = useUgcProjectStore(s => s.lipSyncModels)
+  const resolvedModels = ugcResolvedClipModels(project, clip)
   const config = ugcSceneWorkbenchConfig(clip.type)
   const hasAudio = Boolean(clip.audioUrl)
-  const talkingHeadDuration = clampUgcDuration(
-    clip.audioDurationSec ?? clip.durationSec,
-  )
+  const talkingHeadBillableSec = config.talkingHead
+    ? ugcTalkingHeadBillableDurationSec(clip)
+    : undefined
 
   return (
     <div className="relative shrink-0">
@@ -100,7 +95,7 @@ export function UgcScenePromptTabs({
                 initialPrompt={clip.imagePrompt}
                 initialAttachments={imageAttachments}
                 initialAspectRatio={project.aspectRatio as AspectRatio}
-                initialModel={resolvedImageModel}
+                initialModel={resolvedModels.image}
                 placeholder="Describe the scene photo…"
                 onSubmitOverride={onImageSubmit}
               />
@@ -132,7 +127,7 @@ export function UgcScenePromptTabs({
             >
               {!hasStills && !hasVideo ? (
                 <div className="border-b border-border/35 bg-muted/12 px-3 py-2 text-[12px] leading-snug text-muted-foreground sm:px-3.5">
-                  {config.videoModelLocked
+                  {config.talkingHead
                     ? 'Attach a creator photo or generate one first, then animate it here.'
                     : 'Attach a photo or generate one first, then animate it here.'}
                 </div>
@@ -144,32 +139,36 @@ export function UgcScenePromptTabs({
               ) : null}
               <VideoPromptInput
                 key={`${clip.id}-video-${clip.audioUrl ? 'vo' : 'gen'}`}
-                models={config.videoModelLocked ? TALKING_HEAD_MODELS : videoModels}
+                models={config.talkingHead ? lipSyncModels : videoModels}
                 hideExtras
                 embedded
                 pending={generatingVideo}
-                submitDisabled={config.audioRequiredForVideo && !hasAudio}
-                modelLocked={config.videoModelLocked}
-                hideSettings={config.videoModelLocked}
-                attachSources={config.videoModelLocked ? ['influencer'] : undefined}
-                maxAttachments={config.videoModelLocked ? 1 : undefined}
-                minAttachments={config.videoModelLocked ? 1 : undefined}
-                costMultiplier={
-                  config.videoModelLocked ? talkingHeadDuration : undefined
+                submitDisabled={
+                  (config.audioRequiredForVideo && !hasAudio) ||
+                  (config.talkingHead && talkingHeadBillableSec == null)
                 }
+                hideDuration={config.talkingHead}
+                hideCost={config.talkingHead && talkingHeadBillableSec == null}
+                attachSources={config.talkingHead ? ['influencer'] : undefined}
+                maxAttachments={config.talkingHead ? 1 : undefined}
+                minAttachments={config.talkingHead ? 1 : undefined}
+                costMultiplier={talkingHeadBillableSec}
                 initialPrompt={clip.directions ?? clip.plannedPrompt}
                 initialAttachments={
-                  config.videoModelLocked
+                  config.talkingHead
                     ? videoAttachments.slice(0, 1)
                     : videoAttachments
                 }
+                initialModel={
+                  config.talkingHead ? clip.models?.video : resolvedModels.video
+                }
                 initialAspectRatio={project.aspectRatio as VideoAspectRatio}
-                initialDuration={talkingHeadDuration}
+                initialDuration={talkingHeadBillableSec}
                 initialResolution={project.videoResolution}
                 initialGenerateAudio={!clip.audioUrl}
-                audioLocked={Boolean(clip.audioUrl) || config.videoModelLocked}
+                audioLocked={Boolean(clip.audioUrl) || config.talkingHead}
                 placeholder={
-                  config.videoModelLocked
+                  config.talkingHead
                     ? 'Describe delivery — gaze, emotion, small head movement…'
                     : 'Describe the video motion…'
                 }

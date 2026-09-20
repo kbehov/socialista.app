@@ -14,10 +14,13 @@ export type UgcVideoPlannerInput = {
   audioMode?: UgcAudioMode
 }
 
-function modelBias(videoModel: string): string {
+function modelBias(videoModel: string, clipType?: UgcClipType): string {
   const id = videoModel.toLowerCase()
   if (id.includes('omnihuman')) {
     return 'Write for OmniHuman 1.5: the model lip-syncs the attached audio to the person in frame 1. Describe delivery emotion, gaze, expression, and small head movement only. Do not invent a new location, person, or spoken words — the audio is already recorded.'
+  }
+  if (clipType === 'talking') {
+    return 'Write for a talking-head lip-sync model: the model lip-syncs the attached audio to the person in frame 1. Describe delivery emotion, gaze, expression, and small head movement only. Do not invent a new location, person, or spoken words — the audio is already recorded.'
   }
   if (id.includes('kling')) {
     return 'Write for Kling image-to-video: concrete camera moves, subject motion, and what must stay locked to frame 1. Short clauses. No film-school jargon dump.'
@@ -50,8 +53,11 @@ function scriptBlock(input: UgcVideoPlannerInput): string {
   if (!script) {
     return 'No spoken script. Animate the scene only. Keep the mouth relaxed if a person is present.'
   }
-  if (input.videoModel.toLowerCase().includes('omnihuman')) {
-    return `Spoken line is already recorded as attached audio. Describe delivery only — OmniHuman lip-syncs that audio to the person in frame 1 (~${duration}s):\n${script}`
+  if (input.clipType === 'talking' || input.videoModel.toLowerCase().includes('omnihuman')) {
+    const lipSyncName = input.videoModel.toLowerCase().includes('omnihuman')
+      ? 'OmniHuman'
+      : 'The talking-head model'
+    return `Spoken line is already recorded as attached audio. Describe delivery only — ${lipSyncName} lip-syncs that audio to the person in frame 1 (~${duration}s):\n${script}`
   }
   if (input.audioMode === 'voiceover') {
     return `Voiceover added in post, NOT spoken on camera — any person keeps a relaxed, closed mouth; product motion should illustrate the line (~${duration}s):\n${script}`
@@ -69,7 +75,7 @@ export function buildUgcVideoPlannerUserPrompt(input: UgcVideoPlannerInput): str
   const durationLine = input.durationSec ? `Clip duration: ${input.durationSec} seconds.` : ''
 
   return [
-    `Video model: ${input.videoModel}. ${modelBias(input.videoModel)}`,
+    `Video model: ${input.videoModel}. ${modelBias(input.videoModel, input.clipType)}`,
     `Aspect: ${input.aspectRatio}. Scene stills attached: ${input.sceneCount}. ${durationLine}`.trim(),
     input.clipType ? `Clip type: ${input.clipType}. ${typeLine}` : '',
     input.influencerName ? `Creator: ${input.influencerName}.` : 'No on-camera creator — product or device only.',

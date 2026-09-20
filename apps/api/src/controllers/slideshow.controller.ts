@@ -15,11 +15,13 @@ import {
   createSlideshow as createSlideshowInDb,
   deleteSlideshow as deleteSlideshowInDb,
   getSlideshows,
+  getStudioTemplateById,
   toObjectId,
   updateSlideshow as updateSlideshowInDb,
   type ISlideshow,
   SlideshowStatus,
 } from '@socialista/db'
+import { StudioTemplateKind, type CreateSlideshowFromTemplatePayload, type StudioTemplateSlideshowPayload } from '@socialista/types'
 import type { Context } from 'hono'
 
 type CreateSlideshowPayload = {
@@ -61,6 +63,39 @@ export const createSlideshow = async (c: Context<AppContext>): Promise<Response>
     canvas: input.canvas ?? DEFAULT_SLIDESHOW_CANVAS,
     aspectRatioId: input.aspectRatioId ?? DEFAULT_ASPECT_RATIO_ID,
     slides: input.slides ?? [],
+  })
+
+  return successResponse(c, 201, { slideshow: serializeSlideshow(slideshow.toObject()) })
+}
+
+export const createSlideshowFromTemplate = async (c: Context<AppContext>): Promise<Response> => {
+  const userId = c.get('userId')
+  const input = (await c.req.json()) as CreateSlideshowFromTemplatePayload
+  const workspaceId = parseParamId(input.workspaceId, 'workspace ID')
+  const templateId = parseParamId(input.templateId, 'template ID')
+  await getWorkspaceAsMember(workspaceId, userId)
+  const project = await resolveProjectForWorkspace(workspaceId, input.projectId)
+
+  const template = await getStudioTemplateById(templateId)
+  if (!template || template.kind !== StudioTemplateKind.SLIDESHOW) {
+    throw new HttpError(404, 'Slideshow template not found')
+  }
+
+  const payload = template.payload as StudioTemplateSlideshowPayload
+  const name =
+    typeof input.name === 'string' && input.name.trim()
+      ? input.name.trim()
+      : template.name?.trim() || 'Untitled slideshow'
+
+  const slideshow = await createSlideshowInDb({
+    name,
+    status: SlideshowStatus.DRAFT,
+    workspace: toObjectId(workspaceId),
+    project: toObjectId(project._id.toString()),
+    createdBy: toObjectId(userId),
+    canvas: payload.canvas ?? DEFAULT_SLIDESHOW_CANVAS,
+    aspectRatioId: payload.aspectRatioId ?? DEFAULT_ASPECT_RATIO_ID,
+    slides: cloneSlides((payload.slides ?? []) as ISlideshow['slides']),
   })
 
   return successResponse(c, 201, { slideshow: serializeSlideshow(slideshow.toObject()) })

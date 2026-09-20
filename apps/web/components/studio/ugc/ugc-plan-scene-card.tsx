@@ -1,6 +1,5 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   UGC_CLIP_TYPE_DESCRIPTIONS,
@@ -19,16 +18,15 @@ function PlanBlock({ label, body }: { label: string; body: string }) {
 }
 
 export function UgcPlanSceneCard({ scene, index }: { scene: UgcAdPlanScene; index: number }) {
+  const label = UGC_CLIP_TYPE_LABELS[scene.type]
+
   return (
     <article className="rounded-xl border border-border/70 bg-background p-3.5">
       <header className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] tabular-nums text-muted-foreground">
           {String(index + 1).padStart(2, '0')}
         </span>
-        <h3 className="min-w-0 flex-1 text-[13px] font-medium tracking-tight">{scene.name}</h3>
-        <Badge variant="secondary" className="font-normal">
-          {UGC_CLIP_TYPE_LABELS[scene.type]}
-        </Badge>
+        <h3 className="min-w-0 flex-1 text-[13px] font-medium tracking-tight">{label}</h3>
         <span className="text-[11px] tabular-nums text-muted-foreground">{scene.durationSec}s</span>
       </header>
       <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">

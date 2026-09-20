@@ -1,4 +1,4 @@
-import { UGC_TALKING_HEAD_MODEL_VALUE } from "@socialista/types";
+import type { VideoResolution } from "@socialista/types";
 import { z } from "zod";
 
 import { fal } from "../fal.js";
@@ -13,17 +13,24 @@ const FalTalkingHeadResult = z
     video_url: z.string().optional(),
   })
   .refine((data) => Boolean(data.video?.url ?? data.video_url), {
-    message: "No video was returned from OmniHuman",
+    message: "No video was returned from the talking-head model",
   });
 
 export type GenerateUgcTalkingHeadInput = {
+  model: string;
+  provider: string;
   prompt: string;
   imageUrl: string;
   audioUrl: string;
+  resolution?: VideoResolution;
   workspaceId?: string;
   userId?: string;
   onProgress?: (progress: number, label: string) => void;
 };
+
+function normalizeProvider(provider: string): string {
+  return provider.toLowerCase().replace(/\s+/g, "-").replace(/\./g, "");
+}
 
 function mapQueueStatus(
   status: string | undefined,
@@ -41,18 +48,27 @@ function mapQueueStatus(
 }
 
 export async function generateUgcTalkingHead({
+  model,
+  provider,
   prompt,
   imageUrl,
   audioUrl,
+  resolution,
   workspaceId,
   userId,
   onProgress,
 }: GenerateUgcTalkingHeadInput): Promise<string> {
-  const result = await fal.subscribe(UGC_TALKING_HEAD_MODEL_VALUE, {
+  const normalized = normalizeProvider(provider);
+  if (!normalized.includes("fal")) {
+    throw new Error(`Unsupported talking-head provider: ${provider}`);
+  }
+
+  const result = await fal.subscribe(model, {
     input: {
       prompt,
       image_url: imageUrl,
       audio_url: audioUrl,
+      ...(resolution ? { resolution } : {}),
     },
     logs: true,
     onQueueUpdate: (update: unknown) => {
@@ -72,7 +88,7 @@ export async function generateUgcTalkingHead({
   const parsed = FalTalkingHeadResult.parse(result.data);
   const videoUrl = parsed.video?.url ?? parsed.video_url;
   if (!videoUrl) {
-    throw new Error("No video was returned from OmniHuman");
+    throw new Error("No video was returned from the talking-head model");
   }
 
   if (!workspaceId || !userId) {

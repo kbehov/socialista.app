@@ -13,6 +13,8 @@ import {
   UgcStillsGrid,
   UgcVideoEmptyHint,
 } from '@/components/studio/ugc/ugc-stills-grid'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import type { UgcWorkbenchTab } from '@/types/ugc.types'
 import { ugcSceneWorkbenchConfig } from '@/utils/ugc/scene.utils'
 import type { UgcClip, UgcProject } from '@socialista/types'
@@ -21,6 +23,7 @@ import {
   ugcClipShowsScript,
   ugcClipVideoTakes,
 } from '@socialista/types'
+import { UnfoldHorizontalIcon } from 'lucide-react'
 import Image from 'next/image'
 
 type UgcSceneTabContentProps = {
@@ -45,6 +48,8 @@ type UgcSceneTabContentProps = {
   onUseStills: (urls: string[]) => void
   onSelectAudio?: (url: string) => void
   onSelectVideo?: (url: string) => void
+  onExtend?: () => void
+  extending?: boolean
 }
 
 export function UgcSceneTabContent({
@@ -67,6 +72,8 @@ export function UgcSceneTabContent({
   onUseStills,
   onSelectAudio,
   onSelectVideo,
+  onExtend,
+  extending,
 }: UgcSceneTabContentProps) {
   const hasStills = stillUrls.length > 0
   const hasVideo = Boolean(clip.videoUrl)
@@ -75,6 +82,9 @@ export function UgcSceneTabContent({
   const audioTakes = ugcClipAudioTakes(clip)
   const videoTakes = ugcClipVideoTakes(clip)
   const hasAudio = Boolean(clip.audioUrl)
+  const imageStep = workbenchStepHint('image', config.tabs)
+  const audioStep = workbenchStepHint('audio', config.tabs)
+  const videoStep = workbenchStepHint('video', config.tabs)
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-5 pb-10 lg:px-6 lg:pt-6 lg:pb-12">
@@ -100,7 +110,7 @@ export function UgcSceneTabContent({
               onUseSelected={() => onUseStills(selectedStillUrls)}
             />
           ) : !generatingStill && !clip.error ? (
-            <UgcStillsEmptyHint />
+            <UgcStillsEmptyHint step={imageStep.step} next={imageStep.next} />
           ) : null}
         </>
       ) : null}
@@ -123,6 +133,8 @@ export function UgcSceneTabContent({
             />
           ) : !generatingAudio ? (
             <UgcAudioEmptyHint
+              step={audioStep.step}
+              next={audioStep.next}
               title={
                 config.voiceoverOnly ? 'Optional voiceover' : 'Write a line of dialogue'
               }
@@ -156,22 +168,43 @@ export function UgcSceneTabContent({
                 poster={clip.thumbnailUrl ?? stillUrls[0]}
                 aspectRatio={project.aspectRatio}
               />
-              <UgcClipDownloadButton url={clip.videoUrl} name={clip.name} />
+              <div className="flex items-center justify-center gap-2">
+                <UgcClipDownloadButton url={clip.videoUrl} name={clip.name} />
+                {onExtend ? (
+                  <Button
+                    className="h-8 gap-1.5 px-3 text-[12px]"
+                    disabled={extending || busy}
+                    onClick={onExtend}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    {extending ? (
+                      <Spinner className="size-3.5" />
+                    ) : (
+                      <UnfoldHorizontalIcon className="size-3.5" />
+                    )}
+                    Extend
+                  </Button>
+                ) : null}
+              </div>
             </div>
           ) : !generatingVideo && !clip.error ? (
             <>
               <UgcVideoEmptyHint
+                step={videoStep.step}
+                next={videoStep.next}
                 title={
                   config.audioRequiredForVideo && !hasAudio
                     ? 'Voiceover first'
-                    : config.videoModelLocked
+                    : config.talkingHead
                       ? 'Animate the talking head'
                       : 'Describe the motion'
                 }
                 description={
                   config.audioRequiredForVideo && !hasAudio
                     ? 'Generate the voiceover first, then render the clip.'
-                    : config.videoModelLocked
+                    : config.talkingHead
                       ? 'Use the start-frame photo and voiceover. Attach a creator photo if none is generated yet.'
                       : 'A turn, smile, or product reveal from the start frame. Preview appears here when ready.'
                 }
@@ -211,4 +244,15 @@ export function UgcSceneTabContent({
       ) : null}
     </div>
   )
+}
+
+function workbenchStepHint(tab: UgcWorkbenchTab, tabs: UgcWorkbenchTab[]) {
+  const index = tabs.indexOf(tab)
+  const step = index >= 0 ? `Step ${index + 1} of ${tabs.length}` : undefined
+  const nextTab = index >= 0 ? tabs[index + 1] : undefined
+  let next: string | undefined
+  if (nextTab === 'audio') next = 'add a voiceover in the Audio tab.'
+  else if (nextTab === 'video') next = 'animate the clip in the Video tab.'
+  else if (tab === 'video') next = 'when every scene has a video, use Finish up top.'
+  return { step, next }
 }

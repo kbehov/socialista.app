@@ -67,7 +67,7 @@ const ALL_TABS: UgcWorkbenchTab[] = ['image', 'audio', 'video']
 export type UgcSceneWorkbenchConfig = {
   tabs: UgcWorkbenchTab[]
   audioRequiredForVideo: boolean
-  videoModelLocked: boolean
+  talkingHead: boolean
   voiceoverOnly: boolean
 }
 
@@ -76,7 +76,7 @@ export function ugcSceneWorkbenchConfig(type: UgcClipType): UgcSceneWorkbenchCon
   return {
     tabs: ugcClipGeneratesAudio(type) ? ALL_TABS : ['image', 'video'],
     audioRequiredForVideo: talkingHead,
-    videoModelLocked: talkingHead,
+    talkingHead,
     voiceoverOnly: !ugcClipUsesLipSync(type),
   }
 }

@@ -20,10 +20,10 @@ import { UgcVoiceDialog } from '@/components/studio/ugc/ugc-voice-dialog'
 import { UgcVoiceSettingsDialog } from '@/components/studio/ugc/ugc-voice-settings-dialog'
 import { cn } from '@/lib/utils'
 import {
-  UGC_SCRIPT_MAX_CHARS,
   ugcClipAudioTakes,
   ugcClipShowsScript,
   ugcResolvedClipVoice,
+  ugcScriptMaxChars,
   type UgcClip,
   type UgcClipVoice,
   type UgcProject,
@@ -52,7 +52,7 @@ type UgcAudioPromptInputProps = {
 function initialScriptForClip(clip: UgcClip) {
   const takeScript =
     ugcClipAudioTakes(clip).find(take => take.audioUrl === clip.audioUrl)?.scriptText?.trim() ?? ''
-  return (takeScript || clip.script?.text || '').slice(0, UGC_SCRIPT_MAX_CHARS)
+  return (takeScript || clip.script?.text || '').slice(0, ugcScriptMaxChars(clip.type))
 }
 
 export function UgcAudioPromptInput(props: UgcAudioPromptInputProps) {
@@ -97,19 +97,20 @@ function UgcAudioPromptComposer({
   const voice = ugcResolvedClipVoice(project, clip)
   const enabled = voice.enabled !== false
   const pending = Boolean(generatingAudio || writingScript || busy)
+  const maxChars = ugcScriptMaxChars(clip.type)
   const used = textInput.value.length
-  const remaining = Math.max(0, UGC_SCRIPT_MAX_CHARS - used)
+  const remaining = Math.max(0, maxChars - used)
   const voiceLabel = voice.voiceName?.trim() || 'Choose voice'
 
   useEffect(() => {
     if (wasWritingRef.current && !writingScript && clip.script?.text) {
-      textInput.setInput(clip.script.text.slice(0, UGC_SCRIPT_MAX_CHARS))
+      textInput.setInput(clip.script.text.slice(0, maxChars))
     }
     wasWritingRef.current = Boolean(writingScript)
-  }, [clip.script?.text, textInput, writingScript])
+  }, [clip.script?.text, maxChars, textInput, writingScript])
 
   const handlePromptChange = () => {
-    const next = textInput.value.slice(0, UGC_SCRIPT_MAX_CHARS)
+    const next = textInput.value.slice(0, maxChars)
     if (next !== textInput.value) {
       textInput.setInput(next)
       return
@@ -120,7 +121,7 @@ function UgcAudioPromptComposer({
   }
 
   const handleSubmit = (message: PromptInputMessage) => {
-    const script = message.text.trim().slice(0, UGC_SCRIPT_MAX_CHARS)
+    const script = message.text.trim().slice(0, maxChars)
     if (!script) return
     if (!enabled) return
     onGenerateAudio(script)
@@ -149,7 +150,7 @@ function UgcAudioPromptComposer({
         }
         footerClassName={embedded ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS : undefined}
         embedded={embedded}
-        maxLength={UGC_SCRIPT_MAX_CHARS}
+        maxLength={maxChars}
         onPromptChange={handlePromptChange}
         onSubmit={handleSubmit}
         tools={
@@ -198,7 +199,7 @@ function UgcAudioPromptComposer({
               </PromptInputButton>
             </StudioInputActionTooltip>
 
-            <UgcScriptCharMeter used={used} remaining={remaining} />
+            <UgcScriptCharMeter used={used} remaining={remaining} max={maxChars} />
           </>
         }
       />
@@ -216,8 +217,16 @@ function UgcAudioPromptComposer({
   )
 }
 
-function UgcScriptCharMeter({ used, remaining }: { used: number; remaining: number }) {
-  const ratio = Math.min(1, used / UGC_SCRIPT_MAX_CHARS)
+function UgcScriptCharMeter({
+  used,
+  remaining,
+  max,
+}: {
+  used: number
+  remaining: number
+  max: number
+}) {
+  const ratio = Math.min(1, used / max)
   const warn = remaining <= 20
   const empty = remaining <= 0
   const offset = CHAR_RING_CIRCUMFERENCE * (1 - ratio)
@@ -226,7 +235,7 @@ function UgcScriptCharMeter({ used, remaining }: { used: number; remaining: numb
     <span
       role="meter"
       aria-valuemin={0}
-      aria-valuemax={UGC_SCRIPT_MAX_CHARS}
+      aria-valuemax={max}
       aria-valuenow={used}
       aria-label={`${remaining} characters left`}
       title={`${remaining} characters left`}

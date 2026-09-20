@@ -1,5 +1,6 @@
 import {
   createSlideshow,
+  createSlideshowFromTemplate,
   deleteSlideshow,
   duplicateSlideshow,
   getSlideshow,
@@ -15,6 +16,7 @@ const slideshowRoutes = new Hono<AppContext>()
 slideshowRoutes.use('/*', authMiddleware)
 
 slideshowRoutes.post('/', createSlideshow)
+slideshowRoutes.post('/from-template', createSlideshowFromTemplate)
 slideshowRoutes.get('/workspace/:workspaceId', getWorkspaceSlideshows)
 slideshowRoutes.post('/:id/duplicate', duplicateSlideshow)
 slideshowRoutes.get('/:id', getSlideshow)

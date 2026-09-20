@@ -2,6 +2,7 @@
 
 import { UgcAddSceneMenu } from "@/components/studio/ugc/ugc-add-scene-menu";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   UGC_CLIP_TYPE_LABELS,
@@ -88,7 +89,7 @@ export function UgcProjectEmptyState({
       <div className="flex w-full max-w-[28rem] flex-col items-center sm:max-w-[32rem]">
         <SceneStillRow />
 
-        <div className="mt-8 text-center">
+        <div id="ugc-tour-workbench" className="mt-8 text-center">
           <h2 className="text-[15px] font-medium tracking-[-0.01em] text-foreground">
             Start with a scene
           </h2>
@@ -100,29 +101,57 @@ export function UgcProjectEmptyState({
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           {onPlan ? (
-            <Button type="button" onClick={onPlan}>
-              Plan new UGC video
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type="button" onClick={onPlan}>
+                  Plan new UGC video
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Answer a few questions — AI drafts scenes, script, and shots for
+                you.
+              </TooltipContent>
+            </Tooltip>
           ) : null}
-          <Button
-            type="button"
-            variant={onPlan ? "outline" : "default"}
-            disabled={creating}
-            onClick={onUseStarter}
-          >
-            Use a 3-scene ad
-          </Button>
-          <UgcAddSceneMenu
-            clips={clips}
-            creating={creating}
-            align="center"
-            onAdd={onAddClip}
-          >
-            <Button type="button" variant="outline" disabled={creating}>
-              Add a scene
-            </Button>
-          </UgcAddSceneMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Button
+                  type="button"
+                  variant={onPlan ? "outline" : "default"}
+                  disabled={creating}
+                  onClick={onUseStarter}
+                >
+                  Use a 3-scene ad
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              Ready-made hook → product → call-to-action sequence you can edit.
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <UgcAddSceneMenu
+                  clips={clips}
+                  creating={creating}
+                  align="center"
+                  onAdd={onAddClip}
+                >
+                  <Button type="button" variant="outline" disabled={creating}>
+                    Add a scene
+                  </Button>
+                </UgcAddSceneMenu>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              Start from a single blank scene and build it manually.
+            </TooltipContent>
+          </Tooltip>
         </div>
+
+        <HowItWorksStrip />
 
         <UgcGuideVideoSection />
       </div>
@@ -225,6 +254,37 @@ function SceneStillArt({ type }: { type: UgcClipType }) {
       <div className="absolute inset-x-[24%] top-[54%] h-[18%] rounded-full bg-white/18 blur-[0.5px]" />
       <div className="absolute inset-x-[20%] bottom-[20%] h-[12%] rounded-lg bg-black/10" />
     </>
+  );
+}
+
+const HOW_IT_WORKS = [
+  { n: "1", label: "Add scenes" },
+  { n: "2", label: "Generate photo + voiceover" },
+  { n: "3", label: "Animate & finish" },
+] as const;
+
+function HowItWorksStrip() {
+  return (
+    <ol className="mt-8 flex w-full max-w-[22rem] flex-col items-center gap-2 sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-0">
+      {HOW_IT_WORKS.map((step, index) => (
+        <li key={step.n} className="flex items-center">
+          {index > 0 ? (
+            <span
+              className="mx-2 hidden text-muted-foreground/40 sm:inline"
+              aria-hidden
+            >
+              →
+            </span>
+          ) : null}
+          <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <span className="flex size-4 items-center justify-center rounded-full bg-muted text-[10px] font-medium tabular-nums text-foreground/80">
+              {step.n}
+            </span>
+            {step.label}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 

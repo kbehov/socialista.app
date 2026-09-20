@@ -15,14 +15,11 @@ import type {
   UgcProject,
 } from '@socialista/types'
 import {
-  UGC_SCRIPT_MAX_CHARS,
-  UGC_TALKING_HEAD_MODEL_VALUE,
-  clampUgcDuration,
-  ugcClipGeneratesAudio,
+  ugcTalkingHeadBillableDurationSec,
   ugcClipUsesTalkingHeadModel,
-  ugcResolvedClipVoice,
+  ugcScriptMaxChars,
 } from '@socialista/types'
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 import { toast } from 'sonner'
 
 type StartRun = (
@@ -30,21 +27,6 @@ type StartRun = (
   pipeline: UgcPipeline,
   clipId?: string,
 ) => void
-
-function clipNeedsVoiceover(project: UgcProject, clip: UgcClip): boolean {
-  if (!ugcClipGeneratesAudio(clip.type)) return false
-  if (!clip.script?.text.trim()) return false
-  if (clip.audioUrl) return false
-  return ugcResolvedClipVoice(project, clip).enabled !== false
-}
-
-function clipsMissingVideo(clips: UgcClip[]): UgcClip[] {
-  return clips.filter(clip => {
-    if (!clip.stills.some(still => still.imageUrl) || clip.videoUrl) return false
-    if (ugcClipUsesTalkingHeadModel(clip.type) && !clip.audioUrl) return false
-    return true
-  })
-}
 
 function toastError(error: unknown, fallback: string) {
   toast.error(error instanceof Error ? error.message : fallback)
@@ -67,8 +49,6 @@ export function useUgcGeneration({
   patchClipLocal: (clipId: string, patch: Partial<UgcClip>) => void
   startRun: StartRun
 }) {
-  const renderAfterAudioRef = useRef(false)
-
   const markClipGenerating = useCallback(
     (
       clipId: string,
@@ -89,42 +69,6 @@ export function useUgcGeneration({
       }
     },
     [patchClipLocal, patchProjectLocal],
-  )
-
-  const startMissingVideos = useCallback(
-    async (clips: UgcClip[]) => {
-      const missing = clipsMissingVideo(clips)
-      if (missing.length === 0) return
-      try {
-        for (const clip of missing) {
-          const result = await startUgcVideoGeneration({
-            projectId,
-            clipId: clip.id,
-          })
-          if (!result.success) {
-            toast.error(result.error)
-            renderAfterAudioRef.current = false
-            return
-          }
-          markClipGenerating(clip.id, 'video', result.runId)
-          startRun(result, 'video', clip.id)
-        }
-      } catch (error) {
-        renderAfterAudioRef.current = false
-        toastError(error, 'Could not render video')
-      }
-    },
-    [markClipGenerating, projectId, startRun],
-  )
-
-  const handleRunSettled = useCallback(
-    (latest: UgcProject | null) => {
-      if (!latest) return
-      if (!renderAfterAudioRef.current) return
-      renderAfterAudioRef.current = false
-      void startMissingVideos(latest.clips)
-    },
-    [startMissingVideos],
   )
 
   const startClipStills = useCallback(
@@ -184,37 +128,6 @@ export function useUgcGeneration({
     [markClipGenerating, projectId, startRun],
   )
 
-  const generateAllVideos = useCallback(
-    (clips: UgcClip[]) => {
-      const missingVideo = clipsMissingVideo(clips)
-      if (missingVideo.length === 0) return
-      const missingAudio = missingVideo.filter(clip => clipNeedsVoiceover(project, clip))
-      if (missingAudio.length > 0) {
-        renderAfterAudioRef.current = true
-        void (async () => {
-          try {
-            const result = await startUgcAudioGeneration({ projectId })
-            if (!result.success) {
-              toast.error(result.error)
-              renderAfterAudioRef.current = false
-              await startMissingVideos(clips)
-              return
-            }
-            patchProjectLocal({ error: undefined })
-            startRun(result, 'audio')
-          } catch (error) {
-            toastError(error, 'Could not generate audio')
-            renderAfterAudioRef.current = false
-            await startMissingVideos(clips)
-          }
-        })()
-        return
-      }
-      void startMissingVideos(clips)
-    },
-    [patchProjectLocal, project, projectId, startMissingVideos, startRun],
-  )
-
   const handleImageSubmit = useCallback(
     (selectedClip: UgcClip, result: ImagePromptSubmitResult) => {
       void (async () => {
@@ -250,7 +163,7 @@ export function useUgcGeneration({
             patchProjectLocal({ aspectRatio: result.aspectRatio })
             await patchProject({ aspectRatio: result.aspectRatio })
           }
-          if (!talkingHead && result.resolution !== project.videoResolution) {
+          if (result.resolution !== project.videoResolution) {
             patchProjectLocal({ videoResolution: result.resolution })
             await patchProject({ videoResolution: result.resolution })
           }
@@ -264,7 +177,7 @@ export function useUgcGeneration({
           }
           const enhance = result.enhance !== false
           const durationSec = talkingHead
-            ? clampUgcDuration(selectedClip.audioDurationSec ?? selectedClip.durationSec)
+            ? ugcTalkingHeadBillableDurationSec(selectedClip)
             : result.duration
           const persistAttachedStill =
             Boolean(attachedUrl) && persistedStartFrame?.imageUrl !== attachedUrl
@@ -284,9 +197,9 @@ export function useUgcGeneration({
           await patchClip(selectedClip.id, {
             directions: result.prompt,
             plannedPrompt: enhance ? null : result.prompt,
-            durationSec,
+            ...(durationSec != null ? { durationSec } : {}),
             models: {
-              video: talkingHead ? UGC_TALKING_HEAD_MODEL_VALUE : result.model,
+              video: result.model,
             },
             ...(nextStills ? { stills: nextStills } : {}),
           })
@@ -315,57 +228,22 @@ export function useUgcGeneration({
     ],
   )
 
-  const generateAllPhotos = useCallback(async () => {
-    try {
-      const result = await startUgcStillsGeneration({ projectId })
-      if (!result.success) {
-        toast.error(result.error)
-        return
-      }
-      patchProjectLocal({
-        status: 'generating',
-        error: undefined,
-        clips: project.clips.map(clip => ({
-          ...clip,
-          status: 'generating' as const,
-          stillsRunId: result.runId,
-          error: undefined,
-        })),
-      })
-      startRun(result, 'stills')
-    } catch (error) {
-      toastError(error, 'Could not generate photos')
-    }
-  }, [patchProjectLocal, project.clips, projectId, startRun])
-
-  const generateAllAudio = useCallback(async () => {
-    try {
-      const result = await startUgcAudioGeneration({ projectId })
-      if (!result.success) {
-        toast.error(result.error)
-        return
-      }
-      patchProjectLocal({
-        error: undefined,
-        clips: project.clips.map(clip =>
-          ugcClipGeneratesAudio(clip.type)
-            ? { ...clip, audioRunId: result.runId, error: undefined }
-            : clip,
-        ),
-      })
-      startRun(result, 'audio')
-    } catch (error) {
-      toastError(error, 'Could not generate audio')
-    }
-  }, [patchProjectLocal, project.clips, projectId, startRun])
-
   const generateClipAudio = useCallback(
     async (clipId: string, script?: string) => {
       try {
         const result = await startUgcAudioGeneration({
           projectId,
           clipId,
-          ...(script ? { text: script.slice(0, UGC_SCRIPT_MAX_CHARS) } : {}),
+          ...(script
+            ? {
+                text: script.slice(
+                  0,
+                  ugcScriptMaxChars(
+                    project.clips.find(clip => clip.id === clipId)?.type,
+                  ),
+                ),
+              }
+            : {}),
         })
         if (!result.success) {
           toast.error(result.error)
@@ -377,18 +255,12 @@ export function useUgcGeneration({
         toastError(error, 'Could not generate audio')
       }
     },
-    [markClipGenerating, projectId, startRun],
+    [markClipGenerating, project.clips, projectId, startRun],
   )
 
   return {
-    handleRunSettled,
-    startClipStills,
-    startClipVideo,
-    generateAllVideos,
     handleImageSubmit,
     handleVideoSubmit,
-    generateAllPhotos,
-    generateAllAudio,
     generateClipAudio,
   }
 }

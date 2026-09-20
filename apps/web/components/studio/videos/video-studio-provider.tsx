@@ -2,8 +2,15 @@
 
 import type { AttachedMedia } from '@/components/files/attach-media/types'
 import { presetToAttachedMedia } from '@/lib/studio/preset-media'
+import { templateReferencesToAttachedMedia } from '@/lib/studio/template-media'
 import { commitHaptic } from '@/utils/haptics'
-import type { Preset } from '@socialista/types'
+import {
+  StudioTemplateKind,
+  type Preset,
+  type StudioTemplateDto,
+  type VideoAspectRatio,
+  type VideoResolution,
+} from '@socialista/types'
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
 
 type PromptHandlers = {
@@ -11,6 +18,11 @@ type PromptHandlers = {
   setPrompt: (text: string) => void
   setAttachments: (attachments: AttachedMedia[]) => void
   focusPrompt: () => void
+  setModel?: (modelValue: string) => void
+  setAspectRatio?: (ratio: VideoAspectRatio) => void
+  setDuration?: (seconds: number) => void
+  setResolution?: (resolution: VideoResolution) => void
+  setGenerateAudio?: (enabled: boolean) => void
 }
 
 type VideoStudioContextValue = {
@@ -18,6 +30,7 @@ type VideoStudioContextValue = {
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
   applyPreset: (preset: Preset) => void
+  applyTemplate: (template: StudioTemplateDto) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -64,15 +77,39 @@ export function VideoStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
+  const applyTemplate = useCallback(
+    (template: StudioTemplateDto) => {
+      if (template.kind !== StudioTemplateKind.VIDEO) return
+      const handlers = handlersRef.current
+      const { payload } = template
+      handlers?.setPrompt(payload.prompt ?? '')
+      handlers?.setAttachments(
+        templateReferencesToAttachedMedia(
+          template,
+          payload.referenceImageUrl ? [payload.referenceImageUrl] : [],
+        ),
+      )
+      if (payload.model) handlers?.setModel?.(payload.model)
+      if (payload.aspectRatio) handlers?.setAspectRatio?.(payload.aspectRatio)
+      if (payload.durationSec) handlers?.setDuration?.(payload.durationSec)
+      if (payload.resolution) handlers?.setResolution?.(payload.resolution)
+      if (payload.generateAudio !== undefined) handlers?.setGenerateAudio?.(payload.generateAudio)
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
       setPrompt,
       applyPreset,
+      applyTemplate,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, applyPreset, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyPreset, applyTemplate, registerPromptHandlers],
   )
 
   return <VideoStudioContext.Provider value={value}>{children}</VideoStudioContext.Provider>
