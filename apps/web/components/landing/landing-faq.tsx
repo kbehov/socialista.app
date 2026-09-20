@@ -4,37 +4,50 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 import { FAQ_ITEMS, FAQ_SECTION } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingBodySm, landingContentGap } from "./landing-classes";
+import { landingBodySm, landingContentGap, landingH3 } from "./landing-classes";
 import { Section } from "./section";
-import { SectionHeader } from "./section-header";
+import { LandingSectionIntro } from "./section-header";
 
 export function LandingFaq() {
   return (
-    <Section id="faq" border>
+    <Section id="faq" landingDivider>
       <FadeIn>
-        <SectionHeader
+        <LandingSectionIntro
           titleId="faq-heading"
           title={FAQ_SECTION.title}
           description={FAQ_SECTION.description}
-          align="center"
         />
       </FadeIn>
 
-      <FadeIn delay={0.06} className={`mx-auto max-w-2xl ${landingContentGap}`}>
-        <Accordion type="single" collapsible className="divide-y divide-border">
+      <FadeIn delay={0.06} className={cn("mx-auto max-w-2xl", landingContentGap)}>
+        <Accordion
+          type="single"
+          collapsible
+          className="divide-y divide-[color-mix(in_srgb,var(--landing-stone)_78%,transparent)]"
+        >
           {FAQ_ITEMS.map((item, index) => (
             <AccordionItem
               key={item.question}
               value={`faq-${index}`}
               className="border-none"
             >
-              <AccordionTrigger className="py-5 text-[1.0625rem] font-medium tracking-[-0.015em] hover:no-underline">
+              <AccordionTrigger
+                className={cn(
+                  landingH3,
+                  "py-5 text-left text-[var(--landing-ink)] hover:no-underline data-[state=open]:text-[var(--landing-ink)]",
+                  "[&_[data-slot=accordion-trigger-icon]:last-child]:hidden",
+                  "[&_[data-slot=accordion-trigger-icon]:first-child]:transition-transform",
+                  "[&_[data-slot=accordion-trigger-icon]:first-child]:duration-200",
+                  "data-[state=open]:[&_[data-slot=accordion-trigger-icon]:first-child]:rotate-180",
+                )}
+              >
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className={landingBodySm}>
+              <AccordionContent className={cn(landingBodySm, "pb-5 text-[var(--landing-muted)]")}>
                 <p>{item.answer}</p>
               </AccordionContent>
             </AccordionItem>

@@ -6,7 +6,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import {
@@ -14,13 +15,16 @@ import {
   type InfluencerFeatureId,
 } from "./content";
 import { FadeIn } from "./fade-in";
-import { InfluencerPhoneMockup } from "./influencer-phone-mockup";
+import { InfluencerSwipeCarousel } from "./influencer-swipe-carousel";
 import {
   landingBody,
   landingContentGap,
-  landingH2,
+  landingCtaPrimary,
+  landingFeatureCaptionTitle,
+  landingInfluencerGlow,
 } from "./landing-classes";
 import { Section } from "./section";
+import { LandingSectionIntro } from "./section-header";
 
 const FEATURE_ICONS: Record<InfluencerFeatureId, LucideIcon> = {
   quality: Smartphone,
@@ -32,7 +36,7 @@ const FEATURE_ICONS: Record<InfluencerFeatureId, LucideIcon> = {
 function FeatureIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <span
-      className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground text-background sm:size-10"
+      className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--landing-stone)_70%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_28%,white)] text-[var(--landing-ink)] sm:size-10"
       aria-hidden="true"
     >
       <Icon className="size-[1.125rem] sm:size-5" strokeWidth={1.75} />
@@ -61,13 +65,38 @@ function InfluencerFeature({
       )}
     >
       <FeatureIcon icon={icon} />
-      <h3 className="text-xl font-semibold leading-[1.25] tracking-[-0.02em] sm:text-2xl">
-        {title}
-      </h3>
+      <h3 className={landingFeatureCaptionTitle}>{title}</h3>
       <p className={cn(landingBody, "max-w-none text-[0.9375rem] sm:text-base")}>
         {description}
       </p>
     </article>
+  );
+}
+
+function FeatureList({
+  features,
+  align,
+  baseDelay,
+}: {
+  features: (typeof INFLUENCER_SECTION.features)[number][];
+  align: "left" | "right";
+  baseDelay: number;
+}) {
+  return (
+    <ul className="flex list-none flex-col gap-8 p-0 sm:gap-10 lg:gap-14 xl:gap-16">
+      {features.map((feature, index) => (
+        <li key={feature.id}>
+          <FadeIn delay={baseDelay + index * 0.06}>
+            <InfluencerFeature
+              title={feature.title}
+              description={feature.description}
+              icon={FEATURE_ICONS[feature.id]}
+              align={align}
+            />
+          </FadeIn>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -80,67 +109,55 @@ export function LandingInfluencer() {
   );
 
   return (
-    <Section id="influencers" border>
+    <Section id="influencers" landingDivider>
       <FadeIn>
-        <hgroup className="mx-auto max-w-3xl text-center">
-          <h2 id="influencers-heading" className={landingH2}>
-            {INFLUENCER_SECTION.title}
-          </h2>
-          <p className={cn(landingBody, "mx-auto mt-4 max-w-2xl sm:mt-5")}>
-            {INFLUENCER_SECTION.eyebrow}
-          </p>
-        </hgroup>
+        <LandingSectionIntro
+          titleId="influencers-heading"
+          title={INFLUENCER_SECTION.title}
+          titleAccent={INFLUENCER_SECTION.titleAccent}
+          description={INFLUENCER_SECTION.eyebrow}
+        />
       </FadeIn>
 
       <div className={cn(landingContentGap, "relative")}>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-[10%] top-[18%] bottom-[8%] rounded-full bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_3%,transparent)_0%,transparent_72%)]"
+          className={cn(
+            "pointer-events-none absolute inset-x-[6%] top-[12%] bottom-[6%] rounded-full",
+            landingInfluencerGlow,
+          )}
         />
 
-        <div className="relative mx-auto grid w-full max-w-5xl justify-items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-8 xl:gap-12">
-          <ul className="order-2 grid w-full list-none justify-items-start gap-8 p-0 sm:grid-cols-2 lg:order-1 lg:grid-cols-1 lg:justify-items-end lg:gap-14 xl:gap-16">
-            {leftFeatures.map((feature, index) => (
-              <li key={feature.id}>
-                <FadeIn delay={index * 0.06}>
-                  <InfluencerFeature
-                    title={feature.title}
-                    description={feature.description}
-                    icon={FEATURE_ICONS[feature.id]}
-                    align="right"
-                  />
-                </FadeIn>
-              </li>
-            ))}
-          </ul>
+        <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-8 xl:gap-12">
+          <div className="hidden min-w-0 flex-1 lg:flex lg:justify-end">
+            <FeatureList features={leftFeatures} align="right" baseDelay={0} />
+          </div>
 
-          <FadeIn
-            delay={0.08}
-            className="order-1 flex flex-col items-center justify-self-center gap-6 sm:gap-7 lg:order-2"
-          >
-            <InfluencerPhoneMockup />
-            <ShimmerButton
-              href="/auth/signup"
-              className="h-11 px-6 text-sm font-medium"
-            >
-              {INFLUENCER_SECTION.cta}
-            </ShimmerButton>
-          </FadeIn>
+          <div className="flex w-full flex-col items-center gap-6 sm:gap-7 lg:w-auto lg:shrink-0">
+            <InfluencerSwipeCarousel />
+            <FadeIn delay={0.08}>
+              <Button asChild size="lg" className={cn(landingCtaPrimary, "h-11 px-7")}>
+                <Link href="/auth/signup">{INFLUENCER_SECTION.cta}</Link>
+              </Button>
+            </FadeIn>
+          </div>
 
-          <ul className="order-3 grid w-full list-none justify-items-start gap-8 p-0 sm:grid-cols-2 lg:grid-cols-1 lg:justify-items-start lg:gap-14 xl:gap-16">
-            {rightFeatures.map((feature, index) => (
-              <li key={feature.id}>
-                <FadeIn delay={0.12 + index * 0.06}>
-                  <InfluencerFeature
-                    title={feature.title}
-                    description={feature.description}
-                    icon={FEATURE_ICONS[feature.id]}
-                    align="left"
-                  />
-                </FadeIn>
-              </li>
-            ))}
-          </ul>
+          <div className="hidden min-w-0 flex-1 lg:flex lg:justify-start">
+            <FeatureList features={rightFeatures} align="left" baseDelay={0.12} />
+          </div>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 lg:hidden">
+          {INFLUENCER_SECTION.features.map((feature, index) => (
+            <FadeIn key={feature.id} delay={0.06 + index * 0.05}>
+              <InfluencerFeature
+                title={feature.title}
+                description={feature.description}
+                icon={FEATURE_ICONS[feature.id]}
+                align="left"
+              />
+            </FadeIn>
+          ))}
         </div>
       </div>
     </Section>

@@ -1,30 +1,21 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
+import { landingCtaPress, landingPricingCardSurface } from '@/components/landing/landing-classes'
 import { Button } from '@/components/ui/button'
+import { ShimmerBorder } from '@/components/ui/shimmer-border'
 import {
-  formatPlanLimitValue,
   formatProductPrice,
   getDefaultCtaLabel,
   getDefaultPricingFootnote,
-  getProductBenefitItems,
-  getProductPlanLimits,
-  type ProductBenefitItem,
-  type ProductPlanLimit,
+  getProductFeatureLines,
+  type ProductFeatureLine,
 } from '@/lib/pricing'
 import { cn } from '@/lib/utils'
 import type { PolarProduct } from '@socialista/types'
-import {
-  ArrowRightIcon,
-  AtSignIcon,
-  CalendarDaysIcon,
-  CheckIcon,
-  CoinsIcon,
-  SparklesIcon,
-  UsersIcon,
-} from 'lucide-react'
+import { CheckIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
-import type { ComponentType } from 'react'
+
+export type PricingCardAppearance = 'light' | 'dark'
 
 export type PricingCardProps = {
   product: PolarProduct
@@ -35,84 +26,88 @@ export type PricingCardProps = {
   isCurrentPlan?: boolean
   isFeatured?: boolean
   badge?: string
+  tierIndex?: number
   onSelect?: (product: PolarProduct) => void
   disabled?: boolean
+  /** @deprecated Landing uses light cards; kept for paywall compatibility */
+  appearance?: PricingCardAppearance
   className?: string
 }
 
-const PLAN_LIMIT_ICONS: Record<ProductPlanLimit['key'], ComponentType<{ className?: string }>> = {
-  posts: CalendarDaysIcon,
-  members: UsersIcon,
-  accounts: AtSignIcon,
-}
+const FEATURE_ICON_BASE =
+  'flex size-[1.125rem] shrink-0 items-center justify-center rounded-full mt-0.5'
 
-function PricingPlanLimits({ limits }: { limits: ProductPlanLimit[] }) {
-  if (limits.length === 0) return null
+function featureIconClass(included: boolean, appearance: PricingCardAppearance) {
+  if (!included) {
+    return cn(
+      FEATURE_ICON_BASE,
+      appearance === 'dark'
+        ? 'bg-white/[0.05] text-white/30 ring-1 ring-white/[0.07]'
+        : 'bg-[color-mix(in_srgb,var(--landing-stone)_40%,white)] text-[var(--landing-muted)] ring-1 ring-[color-mix(in_srgb,var(--landing-stone)_50%,transparent)]',
+    )
+  }
 
-  return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/25">
-      <div
-        className={cn(
-          'grid divide-x divide-border/60',
-          limits.length === 1 && 'grid-cols-1',
-          limits.length === 2 && 'grid-cols-2',
-          limits.length >= 3 && 'grid-cols-3',
-        )}
-      >
-        {limits.map(limit => {
-          const Icon = PLAN_LIMIT_ICONS[limit.key]
-
-          return (
-            <div
-              key={limit.key}
-              className="flex flex-col items-center px-2 py-3.5 text-center"
-              aria-label={`${formatPlanLimitValue(limit.value)} ${limit.label}`}
-            >
-              <span className="flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border/50">
-                <Icon className="size-3.5" />
-              </span>
-              <p className="mt-2 text-xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatPlanLimitValue(limit.value)}
-              </p>
-              <p className="mt-0.5 text-[11px] leading-4 font-medium text-muted-foreground">{limit.shortLabel}</p>
-            </div>
-          )
-        })}
-      </div>
-    </div>
+  return cn(
+    FEATURE_ICON_BASE,
+    appearance === 'dark'
+      ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-400/25'
+      : 'bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-600/18',
   )
 }
 
-function PricingBenefitIcon({ type }: { type: string }) {
-  if (type === 'meter_credit') {
-    return <CoinsIcon className="size-3 stroke-[2.5]" />
+function PricingFeatureStatusIcon({
+  included,
+  appearance,
+}: {
+  included: boolean
+  appearance: PricingCardAppearance
+}) {
+  if (included) {
+    return (
+      <span className={featureIconClass(true, appearance)}>
+        <CheckIcon className="size-2.5 stroke-[3]" aria-hidden />
+      </span>
+    )
   }
 
-  return <CheckIcon className="size-2.5 stroke-3" />
+  return (
+    <span className={featureIconClass(false, appearance)}>
+      <XIcon className="size-2.5 stroke-[2.5]" aria-hidden />
+    </span>
+  )
 }
 
-function PricingBenefitsList({ benefits }: { benefits: ProductBenefitItem[] }) {
-  if (benefits.length === 0) return null
+function PricingFeatureList({
+  features,
+  appearance,
+}: {
+  features: ProductFeatureLine[]
+  appearance: PricingCardAppearance
+}) {
+  if (features.length === 0) return null
 
   return (
-    <ul className="space-y-2.5">
-      {benefits.map(benefit => {
-        const isCredit = benefit.type === 'meter_credit'
-
-        return (
-          <li key={benefit.id} className="flex items-start gap-3 text-sm leading-5 text-foreground/90">
-            <span
-              className={cn(
-                'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full',
-                isCredit ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary',
-              )}
-            >
-              <PricingBenefitIcon type={benefit.type} />
-            </span>
-            <span className="min-w-0 pt-px">{benefit.description}</span>
-          </li>
-        )
-      })}
+    <ul className="mt-3.5 space-y-2.5">
+      {features.map(feature => (
+        <li key={feature.id} className="flex items-start gap-2.5">
+          <PricingFeatureStatusIcon included={feature.included} appearance={appearance} />
+          <span
+            className={cn(
+              'min-w-0 pt-px text-pretty text-[0.875rem] font-normal leading-5 tracking-[-0.011em]',
+              appearance === 'dark'
+                ? feature.included
+                  ? 'text-white/82'
+                  : 'text-white/38'
+                : feature.included
+                  ? 'text-[color-mix(in_oklch,var(--landing-ink)_92%,transparent)]'
+                  : 'text-[var(--landing-muted)]',
+            )}
+          >
+            <span className="sr-only">{feature.included ? 'Included:' : 'Not included:'}</span>
+            {feature.text}
+          </span>
+        </li>
+      ))}
     </ul>
   )
 }
@@ -122,28 +117,33 @@ function PricingCardCta({
   ctaLabel,
   disabled,
   isCurrentPlan,
-  isFeatured,
   onSelect,
   product,
+  appearance,
 }: Pick<
   PricingCardProps,
-  'checkoutUrl' | 'ctaLabel' | 'disabled' | 'isCurrentPlan' | 'isFeatured' | 'onSelect' | 'product'
+  'checkoutUrl' | 'ctaLabel' | 'disabled' | 'isCurrentPlan' | 'onSelect' | 'product' | 'appearance'
 >) {
-  const label = ctaLabel ?? getDefaultCtaLabel(product, { isCurrentPlan, isFeatured })
+  const label = ctaLabel ?? getDefaultCtaLabel(product, { isCurrentPlan })
   const isDisabled = disabled || isCurrentPlan
 
   const buttonClassName = cn(
-    'h-11 w-full rounded-[min(var(--radius-md),12px)] text-sm font-medium',
-    isFeatured && !isCurrentPlan && 'shadow-sm',
+    'h-11 w-full rounded-full text-sm font-semibold tracking-[-0.02em]',
+    landingCtaPress,
+    !isCurrentPlan &&
+      appearance === 'dark' &&
+      'border-0 !bg-white !text-[var(--landing-charcoal)] shadow-[0_1px_0_0_rgba(255,255,255,0.35)_inset,0_10px_28px_-16px_rgba(0,0,0,0.55)] hover:!bg-[color-mix(in_oklch,white,black_5%)] hover:!text-[var(--landing-charcoal)]',
+    !isCurrentPlan &&
+      appearance !== 'dark' &&
+      'border-0 !bg-[var(--landing-charcoal)] !text-white shadow-none hover:!bg-[color-mix(in_oklch,var(--landing-charcoal),white_10%)] hover:!text-white',
   )
+
+  const variant = isCurrentPlan ? 'secondary' : 'default'
 
   if (checkoutUrl && !isDisabled) {
     return (
-      <Button asChild size="lg" variant={isFeatured ? 'default' : 'outline'} className={buttonClassName}>
-        <Link href={checkoutUrl}>
-          {label}
-          <ArrowRightIcon className="size-4 opacity-80" />
-        </Link>
+      <Button asChild size="lg" variant={variant} className={buttonClassName}>
+        <Link href={checkoutUrl}>{label}</Link>
       </Button>
     )
   }
@@ -152,16 +152,47 @@ function PricingCardCta({
     <Button
       type="button"
       size="lg"
-      variant={isCurrentPlan ? 'secondary' : isFeatured ? 'default' : 'outline'}
+      variant={variant}
       className={buttonClassName}
       disabled={isDisabled}
       onClick={() => onSelect?.(product)}
     >
       {label}
-      {!isCurrentPlan ? <ArrowRightIcon className="size-4 opacity-80" /> : null}
     </Button>
   )
 }
+
+function PricingPopularBadge({ label }: { label: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[0.6875rem] font-medium tracking-[-0.01em]',
+        'border-[color-mix(in_oklch,var(--accent-orange)_32%,var(--border))] bg-[color-mix(in_oklch,var(--accent-orange)_8%,white)] text-[var(--landing-ink)]',
+      )}
+    >
+      <span className="pricing-badge-fire text-[0.75rem] leading-none" aria-hidden="true">
+        🔥
+      </span>
+      {label}
+    </span>
+  )
+}
+
+const cardShellClass = (featured: boolean) =>
+  cn(
+    'group/pricing relative flex h-full flex-col overflow-hidden rounded-2xl border',
+    landingPricingCardSurface,
+    'transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.2,0,0,1)]',
+    'shadow-[0_1px_2px_oklch(0_0_0/0.04),0_12px_40px_-24px_oklch(0_0_0/0.1)]',
+    featured
+      ? 'border-transparent shadow-[0_8px_40px_-20px_color-mix(in_oklch,var(--accent-orange)_22%,transparent)]'
+      : [
+          'border-[color-mix(in_srgb,var(--landing-stone)_55%,var(--border))]',
+          'ring-1 ring-inset ring-[oklch(0_0_0/0.04)]',
+          '[@media(hover:hover)_and_(pointer:fine)]:hover:border-[color-mix(in_srgb,var(--landing-stone)_68%,var(--border))]',
+          '[@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_1px_2px_oklch(0_0_0/0.05),0_16px_44px_-26px_oklch(0_0_0/0.12)]',
+        ],
+  )
 
 export function PricingCard({
   product,
@@ -171,116 +202,165 @@ export function PricingCard({
   footnote,
   isCurrentPlan = false,
   isFeatured = false,
-  badge,
   onSelect,
   disabled = false,
+  appearance = 'light',
   className,
+  badge,
 }: PricingCardProps) {
   const pricing = formatProductPrice(product)
-  const planLimits = getProductPlanLimits(product)
-  const benefits = getProductBenefitItems(product, features)
-  const hasPlanContent = planLimits.length > 0 || benefits.length > 0
+  const featureLines = getProductFeatureLines(product, features)
   const resolvedFeatured = isFeatured || product.metadata.featured === true
+  const resolvedFootnote = footnote === undefined ? getDefaultPricingFootnote(product) : footnote
   const resolvedBadge =
     badge ??
     (typeof product.metadata.badge === 'string' ? product.metadata.badge : undefined) ??
-    (resolvedFeatured ? 'Most popular' : undefined)
-  const resolvedFootnote = footnote === undefined ? getDefaultPricingFootnote(product) : footnote
+    (resolvedFeatured ? 'Popular' : undefined)
+  const tagline =
+    product.description?.trim() ||
+    (typeof product.metadata.tagline === 'string' ? product.metadata.tagline.trim() : '')
 
-  return (
-    <article
-      className={cn(
-        'relative flex h-full flex-col rounded-2xl bg-card p-6 text-card-foreground',
-        resolvedFeatured
-          ? 'z-10 shadow-lg ring-2 ring-primary/70'
-          : 'shadow-xs ring-1 ring-foreground/10 transition-[box-shadow,ring-color,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15',
-        isCurrentPlan && 'ring-primary/30',
-        className,
-      )}
-    >
-      {resolvedFeatured ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent"
-        />
-      ) : null}
+  const intervalLabel = pricing.intervalLabel?.replace(/^per\s+/i, '') ?? null
+  const showPopularBadge = resolvedFeatured && resolvedBadge
+  const isDark = appearance === 'dark'
+  const useLightLandingShell = !isDark
 
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            {resolvedFeatured ? <SparklesIcon className="size-4 shrink-0 text-amber-500" /> : null}
-            <h3 className="truncate text-lg font-semibold tracking-tight">{product.name}</h3>
-          </div>
-          {product.description ? (
-            <p className="text-sm leading-5 text-muted-foreground">{product.description}</p>
-          ) : null}
-        </div>
-
+  const article = (
+    <article className="relative flex h-full flex-col px-6 py-8 sm:px-8 sm:py-9">
+      <header className="flex items-start justify-between gap-3">
+        <h3
+          className={cn(
+            'text-base font-semibold tracking-[-0.02em]',
+            isDark ? 'text-white' : 'text-[var(--landing-ink)]',
+          )}
+        >
+          {product.name}
+        </h3>
         {resolvedBadge ? (
-          <Badge
-            variant={resolvedFeatured ? 'default' : 'secondary'}
+          showPopularBadge ? (
+            <PricingPopularBadge label={resolvedBadge} />
+          ) : (
+            <span
+              className={cn(
+                'shrink-0 rounded-full border px-2.5 py-1 text-[0.6875rem] font-medium tracking-[-0.01em]',
+                isDark
+                  ? 'border-white/12 bg-white/[0.06] text-white/55'
+                  : 'border-[color-mix(in_srgb,var(--landing-stone)_60%,var(--border))] bg-[color-mix(in_srgb,var(--landing-stone)_28%,white)] text-[var(--landing-muted)]',
+              )}
+            >
+              {resolvedBadge}
+            </span>
+          )
+        ) : null}
+      </header>
+
+      <div className="mt-6 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+        <p
+          className={cn(
+            'text-[clamp(2.375rem,2rem+1.25vw,3rem)] font-semibold leading-none tracking-[-0.04em] tabular-nums',
+            isDark ? 'text-white' : 'text-[var(--landing-ink)]',
+          )}
+        >
+          {pricing.amount}
+        </p>
+        {intervalLabel ? (
+          <span
             className={cn(
-              'shrink-0 px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase',
-              resolvedFeatured && 'bg-primary text-primary-foreground',
+              'text-[0.9375rem] font-normal leading-6',
+              isDark ? 'text-white/45' : 'text-[var(--landing-muted)]',
             )}
           >
-            {resolvedBadge}
-          </Badge>
+            / {intervalLabel}
+          </span>
         ) : null}
       </div>
 
-      <div className="mt-6 border-b border-border/70 pb-6">
-        <div className="flex items-end gap-2">
-          <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{pricing.amount}</p>
-          {pricing.intervalLabel ? (
-            <p className="pb-1 text-sm font-medium text-muted-foreground">
-              /{pricing.intervalLabel.replace('per ', '')}
-            </p>
-          ) : null}
-        </div>
-        {pricing.billingNote ? <p className="mt-2 text-xs text-muted-foreground">{pricing.billingNote}</p> : null}
-      </div>
+      {tagline ? (
+        <p
+          className={cn(
+            'mt-3 max-w-[32ch] text-pretty text-[0.9375rem] leading-6',
+            isDark ? 'text-white/52' : 'text-[var(--landing-muted)]',
+          )}
+        >
+          {tagline}
+        </p>
+      ) : null}
 
-      {hasPlanContent ? (
-        <div className="mt-6 flex-1 space-y-5">
-          {planLimits.length > 0 ? (
-            <div className="space-y-2.5">
-              <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-                Plan capacity
-              </p>
-              <PricingPlanLimits limits={planLimits} />
-            </div>
-          ) : null}
-
-          {benefits.length > 0 ? (
-            <div className="space-y-2.5">
-              {planLimits.length > 0 ? (
-                <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-                  Also included
-                </p>
-              ) : null}
-              <PricingBenefitsList benefits={benefits} />
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div className="mt-6 flex-1" />
-      )}
-
-      <div className="mt-8 space-y-2">
+      <div className="mt-8">
         <PricingCardCta
           checkoutUrl={checkoutUrl}
           ctaLabel={ctaLabel}
           disabled={disabled}
           isCurrentPlan={isCurrentPlan}
-          isFeatured={resolvedFeatured}
           onSelect={onSelect}
           product={product}
+          appearance={appearance}
         />
-        {resolvedFootnote ? (
-          <p className="text-center text-[11px] leading-4 text-muted-foreground">{resolvedFootnote}</p>
-        ) : null}
       </div>
+
+      {featureLines.length > 0 ? (
+        <div
+          className={cn(
+            'mt-8 flex-1 border-t pt-8',
+            isDark ? 'border-white/[0.1]' : 'border-[color-mix(in_srgb,var(--landing-stone)_55%,var(--border))]',
+          )}
+        >
+          <p
+            className={cn(
+              'text-[0.8125rem] font-medium tracking-[-0.02em]',
+              isDark ? 'text-white/45' : 'text-[var(--landing-muted)]',
+            )}
+          >
+            What&apos;s included
+          </p>
+          <PricingFeatureList features={featureLines} appearance={appearance} />
+        </div>
+      ) : (
+        <div className="flex-1" />
+      )}
+
+      {resolvedFootnote ? (
+        <p
+          className={cn(
+            'mt-6 text-xs leading-5',
+            isDark ? 'text-white/38' : 'text-[var(--landing-muted)]',
+          )}
+        >
+          {resolvedFootnote}
+        </p>
+      ) : null}
     </article>
+  )
+
+  if (useLightLandingShell && resolvedFeatured) {
+    return (
+      <ShimmerBorder
+        className={cn('h-full', className)}
+        contentClassName="h-full"
+        borderRadius="1rem"
+        borderWidth="1.5px"
+        shimmerColor="color-mix(in oklch, var(--landing-orange) 65%, white)"
+        shimmerDuration="4.5s"
+        background="#ffffff"
+      >
+        <div className={cardShellClass(true)}>{article}</div>
+      </ShimmerBorder>
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        cardShellClass(false),
+        isDark && [
+          'border-white/[0.1] bg-[#0c0c0c] text-white dark:bg-[#0c0c0c]',
+          'shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_28px_56px_-32px_rgba(0,0,0,0.75)]',
+          'ring-1 ring-inset ring-white/[0.06]',
+        ],
+        className,
+      )}
+    >
+      {article}
+    </div>
   )
 }

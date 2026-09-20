@@ -1,56 +1,59 @@
-import { HERO } from './content'
 import { CtaPair } from './cta-pair'
-import { FadeIn, Stagger, StaggerItem } from './fade-in'
-import { HeroCarousel } from './hero-carousel'
-import { HeroDoodles } from './hero-doodles'
-import { HeroEyebrow } from './hero-eyebrow'
-import { HeroHeading } from './hero-heading'
+import { HERO, HERO_SLIDES } from './content'
+import { FadeIn } from './fade-in'
+import { HeroEngagementOrbs } from './hero-engagement-orbs'
+import { HeroMarquee } from './hero-marquee'
 import { HeroSocialProof } from './hero-social-proof'
+import { cn } from '@/lib/utils'
 import { SectionInner } from './section'
+import {
+  landingCtaStack,
+  landingHeroDisplay,
+  landingHeroEyebrow,
+  landingHeroHeadingGlow,
+  landingHeroLead,
+} from './landing-classes'
+
+const HERO_FLOAT_STATS = HERO_SLIDES[0]
 
 export function LandingHero() {
   return (
-    <section aria-labelledby="hero-heading" className="relative pt-8 pb-0 sm:pt-10 lg:pt-12">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 left-1/2 h-[min(28rem,60vh)] w-full max-w-3xl -translate-x-1/2 bg-[radial-gradient(ellipse_68%_58%_at_50%_42%,color-mix(in_oklch,var(--foreground)_4%,transparent),transparent_74%)]"
-        aria-hidden="true"
-      />
-
-      <HeroDoodles />
-
-      <SectionInner className="max-w-6xl">
-        <Stagger
-          className="relative z-1 mx-auto flex w-full max-w-4xl flex-col items-center text-center"
-          delay={0.02}
-          immediate
-        >
-          <StaggerItem>
-            <HeroEyebrow />
-          </StaggerItem>
-          <hgroup className="mt-6 flex w-full flex-col items-center">
-            <StaggerItem className="w-full">
-              <HeroHeading />
-            </StaggerItem>
-            <StaggerItem>
-              <p className="mx-auto mt-5 max-w-82 text-[0.9375rem] leading-[1.55] text-pretty text-muted-foreground sm:mt-6 sm:max-w-lg sm:text-sm sm:leading-[1.65] lg:text-md lg:leading-[1.6]">
-                {HERO.description}
-              </p>
-            </StaggerItem>
-          </hgroup>
-          <StaggerItem className="flex w-full justify-center">
-            <CtaPair className="mt-8 flex w-full max-w-70 flex-col items-stretch gap-2.5 sm:mt-8 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3" />
-          </StaggerItem>
-        </Stagger>
-      </SectionInner>
-
-      <FadeIn delay={0.14} immediate className="relative z-1 mt-12 w-full min-w-0 sm:mt-14 lg:mt-16">
-        <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-clip">
-          <HeroCarousel />
+    <section
+      aria-labelledby="hero-heading"
+      className="landing-canvas relative overflow-x-clip pb-12 pt-12 sm:pb-16 sm:pt-[4.75rem]"
+    >
+      <SectionInner className="max-w-7xl">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className={landingHeroEyebrow}>{HERO.eyebrow}</p>
+          <div className="relative mx-auto mt-4 w-full max-w-[min(100%,52rem)] px-1 sm:mt-5 sm:px-0">
+            <div
+              className={`pointer-events-none absolute inset-x-[-8%] top-[-20%] bottom-[-28%] -z-10 ${landingHeroHeadingGlow}`}
+              aria-hidden="true"
+            />
+            <HeroEngagementOrbs
+              likes={HERO_FLOAT_STATS.likes}
+              views={HERO_FLOAT_STATS.views}
+            />
+            <h1 id="hero-heading" className={landingHeroDisplay}>
+              {HERO.title}{' '}
+              <span className="font-serif text-[1.02em] font-normal italic tracking-[-0.02em]">
+                {HERO.titleAccent}
+              </span>
+            </h1>
+          </div>
+          <p className={cn(landingHeroLead, 'mt-6 sm:mt-7')}>{HERO.description}</p>
+          <CtaPair className={cn(landingCtaStack, 'mt-8 sm:mt-9')} />
         </div>
-        <FadeIn delay={0.22} immediate className="my-7 flex justify-center sm:my-8 ">
-          <HeroSocialProof />
+
+        <FadeIn delay={0.14} immediate className="relative z-1 mt-12 w-full min-w-0 sm:mt-14 lg:mt-16">
+          <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-clip">
+            <HeroMarquee />
+          </div>
+          <FadeIn delay={0.22} immediate className="mt-8 flex justify-center sm:mt-10">
+            <HeroSocialProof />
+          </FadeIn>
         </FadeIn>
-      </FadeIn>
+      </SectionInner>
     </section>
   )
 }

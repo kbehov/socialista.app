@@ -91,6 +91,8 @@ export interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
   videoSrc?: string
   variant?: IphoneVariant
   bezel?: IphoneBezel
+  /** When true, children receive pointer events (e.g. swipe stacks inside the screen). */
+  screenInteractive?: boolean
   children?: ReactNode
 }
 
@@ -99,6 +101,7 @@ export function Iphone({
   videoSrc,
   variant = "default",
   bezel = "default",
+  screenInteractive = false,
   className,
   style,
   children,
@@ -155,7 +158,10 @@ export function Iphone({
 
       {children ? (
         <div
-          className="@container-size pointer-events-none absolute z-[1] overflow-hidden"
+          className={cn(
+            "@container-size absolute z-[1] overflow-hidden",
+            screenInteractive ? "pointer-events-auto" : "pointer-events-none",
+          )}
           style={{
             left: `${leftPct}%`,
             top: `${topPct}%`,
