@@ -109,7 +109,7 @@ function UgcStillTile({
         <button
           type="button"
           aria-pressed={active}
-          aria-label={active ? 'Deselect photo' : 'Select photo for video'}
+          aria-label={active ? 'Selected as start frame' : 'Use this photo as the start frame'}
           onClick={event => {
             event.preventDefault()
             event.stopPropagation()

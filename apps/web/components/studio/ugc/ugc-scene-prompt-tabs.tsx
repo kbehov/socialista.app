@@ -17,7 +17,7 @@ import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { UgcWorkbenchTab } from '@/types/ugc.types'
 import { ugcSceneWorkbenchConfig } from '@/utils/ugc/scene.utils'
 import type { AspectRatio, UgcClip, UgcClipVoice, UgcProject, VideoAspectRatio } from '@socialista/types'
-import { ugcResolvedClipModels, ugcTalkingHeadBillableDurationSec } from '@socialista/types'
+import { ugcResolvedClipModels, ugcClipRenderDurationSec } from '@socialista/types'
 
 type UgcScenePromptTabsProps = {
   project: UgcProject
@@ -68,9 +68,7 @@ export function UgcScenePromptTabs({
   const resolvedModels = ugcResolvedClipModels(project, clip)
   const config = ugcSceneWorkbenchConfig(clip.type)
   const hasAudio = Boolean(clip.audioUrl)
-  const talkingHeadBillableSec = config.talkingHead
-    ? ugcTalkingHeadBillableDurationSec(clip)
-    : undefined
+  const audioLockedSec = ugcClipRenderDurationSec(clip, clip.type)
 
   return (
     <div className="relative shrink-0">
@@ -145,14 +143,14 @@ export function UgcScenePromptTabs({
                 pending={generatingVideo}
                 submitDisabled={
                   (config.audioRequiredForVideo && !hasAudio) ||
-                  (config.talkingHead && talkingHeadBillableSec == null)
+                  (config.talkingHead && audioLockedSec == null)
                 }
-                hideDuration={config.talkingHead}
-                hideCost={config.talkingHead && talkingHeadBillableSec == null}
+                hideDuration={config.talkingHead && audioLockedSec == null}
+                hideCost={config.talkingHead && audioLockedSec == null}
                 attachSources={config.talkingHead ? ['influencer'] : undefined}
                 maxAttachments={config.talkingHead ? 1 : undefined}
                 minAttachments={config.talkingHead ? 1 : undefined}
-                costMultiplier={talkingHeadBillableSec}
+                costMultiplier={audioLockedSec}
                 initialPrompt={clip.directions ?? clip.plannedPrompt}
                 initialAttachments={
                   config.talkingHead
@@ -163,7 +161,8 @@ export function UgcScenePromptTabs({
                   config.talkingHead ? clip.models?.video : resolvedModels.video
                 }
                 initialAspectRatio={project.aspectRatio as VideoAspectRatio}
-                initialDuration={talkingHeadBillableSec}
+                initialDuration={audioLockedSec ?? clip.durationSec}
+                lockedDurationSec={audioLockedSec}
                 initialResolution={project.videoResolution}
                 initialGenerateAudio={!clip.audioUrl}
                 audioLocked={Boolean(clip.audioUrl) || config.talkingHead}

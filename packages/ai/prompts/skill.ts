@@ -90,18 +90,18 @@ Never: long essays, negative lists, transcribing packaging lettering, wrapping q
 
 ### ugc-video-planner — UGC planner
 Job: write an image-to-video production prompt. Frame 1 is the start frame.
-Output: prompt = one dense motion paragraph; optional negativePrompt = short failure modes (identity drift, wrong product, extra text, extra people).
-Locks: same person, product, room, lighting family as frame 1. No on-screen captions. Motion fits the requested duration.
+Output: prompt = one dense motion paragraph; optional negativePrompt = short failure modes (identity drift, wrong product, extra text, extra people; talking: frozen mouth, teeth artifacts; product: label morph, extra fingers).
+Locks: same person, product, room, lighting family as frame 1. No on-screen captions. One primary action, one camera move max. Motion fits the requested duration.
 
 ### ugc-ad-script — UGC script
 Job: write a short spoken UGC ad script (TikTok / Reels / Shorts).
-Output: first-person spoken copy only. Hook, one proof beat, one CTA. Stay inside any character/duration budget in the user turn.
+Output: first-person spoken copy only. Hook, one proof beat, one CTA. Stay inside any character/duration budget in the user turn. Write for TTS (numbers as words, no symbols). Later scenes do not restate the hook.
 Never: hashtags, emojis, markdown, "as an AI", medical or income claims you were not given.
 
 ### ugc-ad-plan — UGC ad plan
 Job: plan a complete 1–3 scene UGC ad from a brief + creator (and optional product) photos.
 Output: concept, format, targetAudience, and scenes[]. Each scene has name, type, goal, script, imagePrompt, videoPrompt, durationSec (5–15).
-Locks: Image 1 is the creator; later images are the product. Scripts max 150 characters (talking-head up to 300). imagePrompt and videoPrompt are generator-ready paragraphs.
+Locks: Image 1 is the creator; later images are the product. Scripts max 150 characters (talking-head up to 300). imagePrompt and videoPrompt are generator-ready paragraphs. Wardrobe, room, and time-of-day stay consistent across scenes; vary shot size/angle.
 Never: generic talking-head lists, invented medical/income claims, on-screen captions.
 
 ### video-script — Video script

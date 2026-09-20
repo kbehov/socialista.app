@@ -143,27 +143,33 @@ export function useUgcClipMedia({
         ? urls.slice(0, 1)
         : urls
       const selectedSet = new Set(nextUrls)
-      const picked = nextUrls.map((url, index) => {
-        const existing = selectedClip.stills.find(still => still.imageUrl === url)
-        return {
-          index,
-          imageUrl: url,
-          generationId: existing?.generationId,
-          enhancedPrompt: existing?.enhancedPrompt,
-        }
-      })
-      const rest = selectedClip.stills.filter(
-        still => still.imageUrl && !selectedSet.has(still.imageUrl),
+      const leading = selectedClip.stills.flatMap(still =>
+        still.imageUrl ? [still.imageUrl] : [],
       )
-      void patchClip(selectedClip.id, {
-        stills: [
-          ...picked,
-          ...rest.map((still, index) => ({
-            ...still,
-            index: picked.length + index,
-          })),
-        ],
-      })
+      const alreadyOrdered = nextUrls.every((url, index) => leading[index] === url)
+      if (!alreadyOrdered) {
+        const picked = nextUrls.map((url, index) => {
+          const existing = selectedClip.stills.find(still => still.imageUrl === url)
+          return {
+            index,
+            imageUrl: url,
+            generationId: existing?.generationId,
+            enhancedPrompt: existing?.enhancedPrompt,
+          }
+        })
+        const rest = selectedClip.stills.filter(
+          still => still.imageUrl && !selectedSet.has(still.imageUrl),
+        )
+        void patchClip(selectedClip.id, {
+          stills: [
+            ...picked,
+            ...rest.map((still, index) => ({
+              ...still,
+              index: picked.length + index,
+            })),
+          ],
+        })
+      }
       setPickedVideoAttachments({
         clipId: selectedClip.id,
         items: stillUrlsToAttachments(nextUrls),

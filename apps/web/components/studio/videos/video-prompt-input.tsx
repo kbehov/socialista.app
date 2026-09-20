@@ -58,6 +58,7 @@ import {
 } from "@socialista/types";
 import {
   ChevronDownIcon,
+  LockIcon,
   SparklesIcon,
   Volume2Icon,
   VolumeXIcon,
@@ -146,6 +147,8 @@ export type VideoPromptInputProps = {
   hideSettings?: boolean;
   /** Hide the duration picker when length is driven by attached audio. */
   hideDuration?: boolean;
+  /** Lock duration to this value (voiceover length) and disable the picker. */
+  lockedDurationSec?: number;
   /** Hide the credit estimate until billable duration is known (talking-head audio). */
   hideCost?: boolean;
   disabled?: boolean;
@@ -177,6 +180,7 @@ function VideoPromptComposer({
   modelLocked = false,
   hideSettings = false,
   hideDuration = false,
+  lockedDurationSec,
   hideCost = false,
   disabled,
   submitDisabled,
@@ -211,12 +215,16 @@ function VideoPromptComposer({
     return [];
   });
   const dismissedAttachmentUrls = useRef(new Set<string>());
+  const seededAttachmentUrls = useRef(
+    new Set((initialAttachments ?? []).map((item) => item.url)),
+  );
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>(
     initialAspectRatio ?? "9:16",
   );
   const [duration, setDuration] = useState(() =>
     clampVideoDuration(initialDuration ?? VIDEO_DURATION_DEFAULT),
   );
+  const effectiveDuration = lockedDurationSec ?? duration;
   const [resolution, setResolution] = useState<VideoResolution>(
     initialResolution ?? VIDEO_RESOLUTION_DEFAULT,
   );
@@ -247,14 +255,33 @@ function VideoPromptComposer({
   useEffect(() => {
     if (!initialAttachments) return;
     setAttachedImages((current) => {
-      const currentUrls = new Set(current.map((item) => item.url));
-      const missing = initialAttachments.filter(
-        (item) =>
-          !currentUrls.has(item.url) &&
-          !dismissedAttachmentUrls.current.has(item.url),
+      const nextSeed = initialAttachments.filter(
+        (item) => !dismissedAttachmentUrls.current.has(item.url),
       );
-      if (missing.length === 0) return current;
-      return [...current, ...missing].slice(0, maxAttachments);
+      const nextSeedUrls = new Set(nextSeed.map((item) => item.url));
+      const extras = current.filter(
+        (item) =>
+          !seededAttachmentUrls.current.has(item.url) &&
+          !nextSeedUrls.has(item.url),
+      );
+      seededAttachmentUrls.current = nextSeedUrls;
+      const merged: AttachedMedia[] = [];
+      const seen = new Set<string>();
+      for (const item of [...nextSeed, ...extras]) {
+        if (seen.has(item.url)) continue;
+        seen.add(item.url);
+        merged.push(item);
+        if (merged.length >= maxAttachments) break;
+      }
+      const currentUrls = current.map((item) => item.url);
+      const mergedUrls = merged.map((item) => item.url);
+      if (
+        currentUrls.length === mergedUrls.length &&
+        currentUrls.every((url, index) => url === mergedUrls[index])
+      ) {
+        return current;
+      }
+      return merged;
     });
   }, [initialAttachments, maxAttachments]);
 
@@ -430,7 +457,7 @@ function VideoPromptComposer({
           prompt,
           model: selectedModel.value,
           aspectRatio,
-          duration,
+          duration: effectiveDuration,
           generateAudio: audioEnabled,
           resolution,
           imageUrls,
@@ -444,7 +471,7 @@ function VideoPromptComposer({
         model: selectedModel.value,
         workspaceId: currentWorkspace._id,
         aspectRatio,
-        duration,
+        duration: effectiveDuration,
         generateAudio: audioEnabled,
         resolution,
         userId: "",
@@ -589,7 +616,24 @@ function VideoPromptComposer({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {hideDuration ? null : (
+      {hideDuration ? null : lockedDurationSec != null ? (
+        <StudioInputActionTooltip label="Matches the voiceover length">
+          <span className="inline-flex">
+            <PromptInputButton
+              aria-label={`Duration ${lockedDurationSec} seconds, locked to voiceover`}
+              className={STUDIO_TOOL_BUTTON_CLASS}
+              disabled
+              size="xs"
+              type="button"
+            >
+              <span className="text-[12px] font-medium leading-none tracking-[-0.015em] tabular-nums">
+                {lockedDurationSec}s
+              </span>
+              <LockIcon className="size-3 opacity-60" strokeWidth={1.75} />
+            </PromptInputButton>
+          </span>
+        </StudioInputActionTooltip>
+      ) : (
         <DropdownMenu>
           <StudioInputActionTooltip label="Clip duration">
             <DropdownMenuTrigger asChild>
@@ -700,7 +744,7 @@ function VideoPromptComposer({
         costMultiplier={
           hideCost
             ? undefined
-            : (costMultiplierProp ?? duration) *
+            : (costMultiplierProp ?? effectiveDuration) *
               videoResolutionCostMultiplier(resolution)
         }
         hideCost={hideCost}

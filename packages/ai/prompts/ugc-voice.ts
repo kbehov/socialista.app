@@ -1,10 +1,10 @@
 export const UGC_SCRIPT_VOICE = `
 SCRIPT VOICE
-Read every line out loud. If it sounds like an ad, rewrite it. Contractions are required. Sentence fragments are fine. One concrete sensory or situational detail per talking scene. No exclamation marks.
+Read every line out loud. If it sounds like an ad, rewrite it. Contractions are required. Sentence fragments are fine. One concrete sensory or situational detail per talking scene. No exclamation marks. Write for TTS: numbers as words, no abbreviations, symbols, or slashes; punctuation marks the pauses; no tongue twisters. Never open two scenes with the same word — do not tic on "okay" or "so."
 
 Never write: game-changer, unlock, in today's fast-paced world, as an AI, delve, tapestry, scroll-stopping, authentic content, high-quality UGC, obsessed, elevate, honestly, let's be real, I was skeptical but, amazing, incredible, must-have, holy grail, life-changing, trust me.
 
-Never open a hook with an ad question ("Tired of X?", "Does your skin...?") or a command ("Stop scrolling", "Wait wait wait"). Pattern interrupt is a specific situation they are already in.
+Never open a hook with an ad question ("Tired of X?", "Does your skin...?"), a command ("Stop scrolling", "Wait wait wait"), or a format tag ("POV:", "storytime", "get ready with me"). Pattern interrupt is a specific situation they are already in.
 
 Copy the GOOD voice, never the BAD:
 

@@ -10,9 +10,10 @@ import type { VideoPromptSubmitResult } from '@/components/studio/videos/video-p
 import { ugcClipGeneratedStills } from '@/lib/studio/ugc/ugc-stage'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
 import type { UgcWorkbenchTab } from '@/types/ugc.types'
-import { ugcCampaignAttachments } from '@/utils/ugc/attachments.utils'
+import { stillUrlsToAttachments, ugcCampaignAttachments } from '@/utils/ugc/attachments.utils'
+import { ugcSceneWorkbenchConfig } from '@/utils/ugc/scene.utils'
 import type { UgcClip, UgcClipType, UgcClipVoice, UgcProject } from '@socialista/types'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export type { UgcWorkbenchTab }
 
@@ -82,7 +83,7 @@ export function UgcSceneWorkbench({
   onPlan,
 }: UgcSceneWorkbenchProps) {
   const influencersById = useUgcProjectStore(s => s.influencersById)
-  const [selectedStillUrls, setSelectedStillUrls] = useState<string[]>([])
+  const [selectedStillUrlsState, setSelectedStillUrls] = useState<string[]>([])
 
   const imageAttachments = useMemo(() => {
     if (!clip) return []
@@ -100,14 +101,24 @@ export function UgcSceneWorkbench({
     [generatedStills],
   )
 
-  useEffect(() => {
-    setSelectedStillUrls(current => {
-      const kept = current.filter(url => stillUrls.includes(url))
-      if (kept.length > 0) return kept
-      const newest = stillUrls[0]
-      return newest ? [newest] : []
-    })
-  }, [stillUrls])
+  const selectedStillUrls = useMemo(() => {
+    const kept = selectedStillUrlsState.filter(url => stillUrls.includes(url))
+    if (kept.length > 0) return kept
+    const newest = stillUrls[0]
+    return newest ? [newest] : []
+  }, [selectedStillUrlsState, stillUrls])
+
+  const startFrameAttachments = useMemo(() => {
+    if (!clip) return videoAttachments
+    const stillSet = new Set(stillUrls)
+    const hasNonStill = videoAttachments.some(item => !stillSet.has(item.url))
+    if (hasNonStill) return videoAttachments
+    const selected = ugcSceneWorkbenchConfig(clip.type).talkingHead
+      ? selectedStillUrls.slice(0, 1)
+      : selectedStillUrls
+    if (selected.length === 0) return videoAttachments
+    return stillUrlsToAttachments(selected)
+  }, [clip, selectedStillUrls, stillUrls, videoAttachments])
 
   if (!clip) {
     return (
@@ -128,11 +139,15 @@ export function UgcSceneWorkbench({
   const clipIndex = project.clips.findIndex(item => item.id === clip.id)
 
   const toggleStill = (url: string) => {
-    setSelectedStillUrls(current =>
-      current.includes(url)
-        ? current.filter(item => item !== url)
-        : [...current, url],
-    )
+    setSelectedStillUrls([url])
+  }
+
+  const handleTabChange = (next: UgcWorkbenchTab) => {
+    if (next === 'video' && selectedStillUrls.length > 0) {
+      onUseStills(selectedStillUrls)
+      return
+    }
+    onTabChange(next)
   }
 
   return (
@@ -147,7 +162,7 @@ export function UgcSceneWorkbench({
           generatedStills={generatedStills}
           stillUrls={stillUrls}
           selectedStillUrls={selectedStillUrls}
-          videoAttachments={videoAttachments}
+          videoAttachments={startFrameAttachments}
           generatingStill={generatingStill}
           generatingAudio={generatingAudio}
           generatingVideo={generatingVideo}
@@ -170,7 +185,7 @@ export function UgcSceneWorkbench({
         clip={clip}
         tab={tab}
         imageAttachments={imageAttachments}
-        videoAttachments={videoAttachments}
+        videoAttachments={startFrameAttachments}
         hasStills={hasStills}
         hasVideo={hasVideo}
         writingScript={writingScript}
@@ -178,7 +193,7 @@ export function UgcSceneWorkbench({
         generatingStill={generatingStill}
         generatingVideo={generatingVideo}
         busy={busy}
-        onTabChange={onTabChange}
+        onTabChange={handleTabChange}
         onImageSubmit={onImageSubmit}
         onVideoSubmit={onVideoSubmit}
         onScriptChange={onScriptChange}

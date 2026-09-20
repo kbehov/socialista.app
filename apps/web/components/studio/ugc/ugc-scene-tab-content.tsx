@@ -211,7 +211,7 @@ export function UgcSceneTabContent({
               />
               {hasStills && videoAttachments.length > 0 ? (
                 <div className="flex items-center justify-center gap-2">
-                  {videoAttachments.map(item => (
+                  {videoAttachments.slice(0, 1).map(item => (
                     <div
                       key={item.id}
                       className="relative size-11 shrink-0 overflow-hidden rounded-md bg-muted"

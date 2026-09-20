@@ -15,7 +15,7 @@ import type {
   UgcProject,
 } from '@socialista/types'
 import {
-  ugcTalkingHeadBillableDurationSec,
+  ugcClipRenderDurationSec,
   ugcClipUsesTalkingHeadModel,
   ugcScriptMaxChars,
 } from '@socialista/types'
@@ -176,15 +176,20 @@ export function useUgcGeneration({
             return
           }
           const enhance = result.enhance !== false
-          const durationSec = talkingHead
-            ? ugcTalkingHeadBillableDurationSec(selectedClip)
-            : result.duration
+          const durationSec =
+            ugcClipRenderDurationSec(selectedClip, selectedClip.type) ??
+            result.duration
           const persistAttachedStill =
             Boolean(attachedUrl) && persistedStartFrame?.imageUrl !== attachedUrl
+          const matchingStill = attachedUrl
+            ? selectedClip.stills.find(still => still.imageUrl === attachedUrl)
+            : undefined
           const nextStills =
-            talkingHead && persistAttachedStill && attachedUrl
+            persistAttachedStill && attachedUrl
               ? [
-                  { index: 0, imageUrl: attachedUrl },
+                  matchingStill
+                    ? { ...matchingStill, index: 0 }
+                    : { index: 0, imageUrl: attachedUrl },
                   ...selectedClip.stills
                     .filter(
                       still => still.imageUrl && still.imageUrl !== attachedUrl,

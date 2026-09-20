@@ -606,12 +606,16 @@ export function clampUgcScript(text: string, type?: UgcClipType): string {
   return text.slice(0, ugcScriptMaxChars(type));
 }
 
-/** Seconds to bill a talking-head render. Undefined until voiceover exists. */
-export function ugcTalkingHeadBillableDurationSec(clip: {
+type UgcClipDurationSource = {
   audioUrl?: string;
   audioDurationSec?: number;
   audioTakes?: Array<{ audioUrl?: string; durationSec?: number }>;
-}): number | undefined {
+  durationSec?: number;
+};
+
+function ugcClipAudioDurationSec(
+  clip: UgcClipDurationSource,
+): number | undefined {
   if (!clip.audioUrl) return undefined;
   const takeDuration = clip.audioTakes?.find(
     (take) => take.audioUrl === clip.audioUrl,
@@ -623,7 +627,32 @@ export function ugcTalkingHeadBillableDurationSec(clip: {
       ? clip.audioDurationSec
       : takeDuration;
   if (typeof n !== "number" || !Number.isFinite(n) || n <= 0) return undefined;
+  return n;
+}
+
+/** Seconds to bill a talking-head render. Undefined until voiceover exists. */
+export function ugcTalkingHeadBillableDurationSec(
+  clip: UgcClipDurationSource,
+): number | undefined {
+  const n = ugcClipAudioDurationSec(clip);
+  if (n == null) return undefined;
   return Math.max(1, Math.round(n));
+}
+
+/**
+ * Duration the clip will actually render at when audio is attached.
+ * Undefined means "auto" — callers should fall back to `clip.durationSec`.
+ */
+export function ugcClipRenderDurationSec(
+  clip: UgcClipDurationSource,
+  type?: UgcClipType,
+): number | undefined {
+  if (!clip.audioUrl) return undefined;
+  if (type && ugcClipUsesTalkingHeadModel(type)) {
+    return ugcTalkingHeadBillableDurationSec(clip);
+  }
+  const n = ugcClipAudioDurationSec(clip) ?? clip.durationSec;
+  return clampUgcDuration(n);
 }
 
 export function estimateUgcSpokenDurationSec(text: string, speed = 1): number {

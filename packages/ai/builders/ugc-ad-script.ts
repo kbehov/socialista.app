@@ -87,7 +87,7 @@ export function buildUgcAdScriptSegmentsUserPrompt(input: {
     creator ? `The on-camera creator is ${creator}.` : '',
     input.directions?.trim() ? `Extra notes: ${input.directions.trim()}` : '',
     `Each segment must stay within its character budget (talking-head max ${ugcScriptMaxChars('talking')}, other talking scenes max ${ugcScriptMaxChars()}). Contractions. No hashtags, emojis, or markdown.`,
-    'The segments should feel like one continuous ad: hook, proof, close.',
+    'The segments should feel like one continuous ad: hook, proof, close. Later scenes do not restate the hook.',
     'Return one object per scene with that scene id and its spoken text (empty string if no talking).',
     sceneLines.join('\n\n'),
   ]

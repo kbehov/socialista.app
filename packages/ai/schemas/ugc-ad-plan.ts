@@ -51,7 +51,7 @@ export function ugcAdPlanSchema(allowedTypes: readonly UgcClipType[]) {
     imagePrompt: z
       .string()
       .describe(
-        'One paragraph of comma-delimited visual clauses for the start-frame still. Subject first, camera/lens early, then pose, product placement, setting, light, palette. Lock the attached creator and product. No markdown, no negatives, no model names, no on-screen text.',
+        'One paragraph of comma-delimited visual clauses for the start-frame still. Subject first, camera/lens early, then pose, product placement, setting, light, palette. Lock the attached creator and product. Restate the shared look (outfit, room, time-of-day) for continuity. Vary framing from other scenes. No markdown, no negatives, no model names, no on-screen text.',
       ),
     videoPrompt: z
       .string()

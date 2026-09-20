@@ -17,13 +17,12 @@ import {
 import {
   TASK_IDS,
   ugcClipAudioMode,
+  ugcClipRenderDurationSec,
   ugcClipUsesTalkingHeadModel,
-  ugcTalkingHeadBillableDurationSec,
   type UgcClipType,
   PROMPT_KEYS,
   parseVideoResolution,
   videoResolutionCostMultiplier,
-  clampUgcDuration,
   appendUgcVideoTakes,
 } from "@socialista/types";
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
@@ -85,10 +84,8 @@ export const generateUgcVideo = schemaTask({
 
       const clipType = clip.type as UgcClipType;
       const isTalkingHead = ugcClipUsesTalkingHeadModel(clipType);
-      const talkingHeadDuration = isTalkingHead
-        ? ugcTalkingHeadBillableDurationSec(clip)
-        : undefined;
-      if (isTalkingHead && talkingHeadDuration == null) {
+      const audioRenderDurationSec = ugcClipRenderDurationSec(clip, clipType);
+      if (isTalkingHead && audioRenderDurationSec == null) {
         throw new Error(
           "Generate the voiceover before rendering this talking-head scene",
         );
@@ -101,11 +98,9 @@ export const generateUgcVideo = schemaTask({
         loadWorkspace(payload.workspaceId),
       ]);
       const resolution = parseVideoResolution(project.videoResolution);
-      // Talking-head length follows the generated voiceover. Other scenes keep clip duration.
-      const renderDurationSec: number = talkingHeadDuration
-        ?? (clip.audioUrl
-          ? clampUgcDuration(clip.audioDurationSec ?? clip.durationSec)
-          : clip.durationSec);
+      // Talking-head and voiceover length follow the attached audio. Other scenes keep clip duration.
+      const renderDurationSec: number =
+        audioRenderDurationSec ?? clip.durationSec;
       const baseCost =
         model.costUnit === CostUnit.PER_SECOND
           ? model.cost * renderDurationSec
