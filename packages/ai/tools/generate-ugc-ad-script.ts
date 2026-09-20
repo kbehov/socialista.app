@@ -1,6 +1,6 @@
 import { generateObject, generateText } from 'ai'
 import { z } from 'zod'
-import { UGC_SCRIPT_MAX_CHARS, clampUgcScript, PROMPT_KEYS } from '@socialista/types'
+import { clampUgcScript, PROMPT_KEYS } from '@socialista/types'
 
 import { resolvePrompt } from '../registry.js'
 import {
@@ -52,7 +52,7 @@ export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Prom
     throw new Error('Script model returned empty text')
   }
 
-  return clampUgcScript(text.replace(/^["']|["']$/g, '').slice(0, UGC_SCRIPT_MAX_CHARS))
+  return clampUgcScript(text.replace(/^["']|["']$/g, ''), input.clipType)
 }
 
 export async function generateUgcAdScriptSegments(
@@ -72,6 +72,6 @@ export async function generateUgcAdScriptSegments(
   const byId = new Map(result.object.segments.map(segment => [segment.id, segment.text]))
   return input.scenes.map(scene => ({
     clipId: scene.id,
-    text: clampUgcScript((byId.get(scene.id) ?? '').replace(/^["']|["']$/g, '')),
+    text: clampUgcScript((byId.get(scene.id) ?? '').replace(/^["']|["']$/g, ''), scene.type),
   }))
 }

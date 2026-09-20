@@ -89,6 +89,15 @@ const OBJECT_ID_KEYS = new Set([
   'resultInfluencerId',
 ])
 
+/** Query keys stored as booleans in MongoDB. Query strings like `true`/`false` are coerced. */
+const BOOLEAN_KEYS = new Set(['allowedInUgc'])
+
+const parseBoolean = (value: string): boolean | null => {
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return null
+}
+
 const tryToObjectId = (value: string) => {
   try {
     return toObjectId(value)
@@ -109,6 +118,13 @@ export const buildFilters = (query: FilterQuery | string): ParsedFilters => {
     if (key === 'id') {
       const objectId = tryToObjectId(value)
       if (objectId) match['_id'] = objectId
+    } else if (BOOLEAN_KEYS.has(key)) {
+      const bools = value
+        .split(',')
+        .map(part => parseBoolean(part.trim()))
+        .filter((part): part is boolean => part !== null)
+      if (bools.length === 1) match[key] = bools[0]
+      else if (bools.length > 1) match[key] = { $in: bools }
     } else if (value.includes(',')) {
       const parts = value
         .split(',')

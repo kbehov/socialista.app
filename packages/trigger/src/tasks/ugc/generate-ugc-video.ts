@@ -1,4 +1,5 @@
 import {
+  generateUgcTalkingHead,
   generateUgcVideo as generateUgcVideoClip,
   lipSync,
   planUgcVideoPrompt,
@@ -16,11 +17,12 @@ import {
 import {
   TASK_IDS,
   ugcClipAudioMode,
+  ugcClipRenderDurationSec,
+  ugcClipUsesTalkingHeadModel,
   type UgcClipType,
   PROMPT_KEYS,
   parseVideoResolution,
   videoResolutionCostMultiplier,
-  clampUgcDuration,
   appendUgcVideoTakes,
 } from "@socialista/types";
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
@@ -42,7 +44,8 @@ import {
   assertSufficientCredits,
   finalizeGeneration,
   loadModel,
-  loadModelAndWorkspace,
+  loadUgcLipSyncModel,
+  loadWorkspace,
 } from "../shared/workspace.js";
 import {
   fallbackUgcVideoPrompt,
@@ -79,20 +82,30 @@ export const generateUgcVideo = schemaTask({
         throw new Error("Generate photos before video");
       }
 
-      const videoModelValue = clip.models?.video || project.models.video;
-      const { model, workspace } = await loadModelAndWorkspace(
-        videoModelValue,
-        payload.workspaceId,
-      );
+      const clipType = clip.type as UgcClipType;
+      const isTalkingHead = ugcClipUsesTalkingHeadModel(clipType);
+      const audioRenderDurationSec = ugcClipRenderDurationSec(clip, clipType);
+      if (isTalkingHead && audioRenderDurationSec == null) {
+        throw new Error(
+          "Generate the voiceover before rendering this talking-head scene",
+        );
+      }
+
+      const [model, workspace] = await Promise.all([
+        isTalkingHead
+          ? loadUgcLipSyncModel(clip.models?.video)
+          : loadModel(clip.models?.video || project.models.video),
+        loadWorkspace(payload.workspaceId),
+      ]);
       const resolution = parseVideoResolution(project.videoResolution);
-      // When a voiceover exists, the clip length follows the audio so lip-sync durations match.
-      const renderDurationSec = clip.audioUrl
-        ? clampUgcDuration(clip.audioDurationSec ?? clip.durationSec)
-        : clip.durationSec;
-      const billedCost =
-        (model.costUnit === CostUnit.PER_SECOND
+      // Talking-head and voiceover length follow the attached audio. Other scenes keep clip duration.
+      const renderDurationSec: number =
+        audioRenderDurationSec ?? clip.durationSec;
+      const baseCost =
+        model.costUnit === CostUnit.PER_SECOND
           ? model.cost * renderDurationSec
-          : model.cost) * videoResolutionCostMultiplier(resolution);
+          : model.cost;
+      const billedCost = baseCost * videoResolutionCostMultiplier(resolution);
       assertSufficientCredits(workspace, billedCost);
 
       const plannerValue =
@@ -124,10 +137,8 @@ export const generateUgcVideo = schemaTask({
       let negativePrompt = clip.negativePrompt;
       const script = clip.script?.text ?? "";
       const directions = clip.directions || clip.scenePrompt;
-      const clipType = clip.type as UgcClipType;
       const audioMode = ugcClipAudioMode(clipType, Boolean(clip.audioUrl));
-      const influencerId =
-        clipType === "hook" ? undefined : resolveUgcInfluencerId(project, clip);
+      const influencerId = resolveUgcInfluencerId(project, clip);
       const influencer = influencerId
         ? await getInfluencerById(influencerId)
         : null;
@@ -213,24 +224,36 @@ export const generateUgcVideo = schemaTask({
         influencer ? `Rendering ${influencer.name}` : "Rendering clip",
       );
 
-      const videoUrl = await generateUgcVideoClip({
-        model: model.value,
-        provider: model.modelProvider,
-        prompt: plannedPrompt,
-        imageUrl: startFrame,
-        aspectRatio: project.aspectRatio,
-        negativePrompt,
-        duration: renderDurationSec,
-        generateAudio: payload.generateAudio ?? !clip.audioUrl,
-        resolution,
-        workspaceId: payload.workspaceId,
-        userId: payload.userId,
-        onProgress: setGenerationStatus,
-      });
-
       const audioUrl = clip.audioUrl;
+      const videoUrl = isTalkingHead
+        ? await generateUgcTalkingHead({
+            model: model.value,
+            provider: model.modelProvider,
+            prompt: plannedPrompt,
+            imageUrl: startFrame,
+            audioUrl: audioUrl!,
+            resolution,
+            workspaceId: payload.workspaceId,
+            userId: payload.userId,
+            onProgress: setGenerationStatus,
+          })
+        : await generateUgcVideoClip({
+            model: model.value,
+            provider: model.modelProvider,
+            prompt: plannedPrompt,
+            imageUrl: startFrame,
+            aspectRatio: project.aspectRatio,
+            negativePrompt,
+            duration: renderDurationSec,
+            generateAudio: payload.generateAudio ?? !clip.audioUrl,
+            resolution,
+            workspaceId: payload.workspaceId,
+            userId: payload.userId,
+            onProgress: setGenerationStatus,
+          });
+
       let finalVideoUrl = videoUrl;
-      if (audioUrl) {
+      if (!isTalkingHead && audioUrl) {
         const muxVoiceover = () =>
           muxUgcVoiceover({
             videoUrl,

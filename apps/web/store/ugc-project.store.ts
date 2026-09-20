@@ -2,6 +2,7 @@
 
 import {
   UGC_IMAGE_MODELS_QUERY,
+  UGC_LIP_SYNC_MODELS_QUERY,
   UGC_SCRIPT_MODELS_QUERY,
   UGC_VIDEO_MODELS_QUERY,
 } from '@/lib/studio/ugc/model-filters'
@@ -19,6 +20,7 @@ type UgcProjectData = {
   imageModels: Model[]
   scriptModels: Model[]
   videoModels: Model[]
+  lipSyncModels: Model[]
   modelsLoaded: boolean
   modelsLoading: boolean
   products: Product[]
@@ -49,6 +51,7 @@ const initialData: UgcProjectData = {
   imageModels: [],
   scriptModels: [],
   videoModels: [],
+  lipSyncModels: [],
   modelsLoaded: false,
   modelsLoading: false,
   products: [],
@@ -129,14 +132,16 @@ export const useUgcProjectStore = create<UgcProjectState>((set, get) => ({
       getModels(UGC_IMAGE_MODELS_QUERY),
       getModels(UGC_SCRIPT_MODELS_QUERY),
       getModels(UGC_VIDEO_MODELS_QUERY),
+      getModels(UGC_LIP_SYNC_MODELS_QUERY),
     ])
-      .then(([imageResponse, scriptResponse, videoResponse]) => {
+      .then(([imageResponse, scriptResponse, videoResponse, lipSyncResponse]) => {
         set({
           imageModels: (imageResponse.data?.models ?? []).filter(model =>
             model.contextSupports?.includes(ContextSupport.IMAGE),
           ),
           scriptModels: scriptResponse.data?.models ?? [],
           videoModels: videoResponse.data?.models ?? [],
+          lipSyncModels: lipSyncResponse.data?.models ?? [],
           modelsLoaded: true,
           modelsLoading: false,
         })

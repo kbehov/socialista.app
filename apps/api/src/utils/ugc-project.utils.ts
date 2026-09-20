@@ -31,13 +31,14 @@ import {
   ugcClipAudioTakes,
   ugcClipVideoTakes,
   UGC_CLIP_TYPE_LABELS,
-  UGC_CLIP_TYPES,
   UGC_DEFAULT_CLIP_TYPE,
-  UGC_DEFAULT_DURATION,
   UGC_MAX_CLIPS,
-  UGC_SCRIPT_MAX_CHARS,
+  ugcScriptMaxChars,
+  parseUgcClipType,
+  ugcClipRequiresCreator,
   ugcClipSceneCount,
   ugcClipShowsScript,
+  ugcSceneDefaultDurationSec,
   type UgcClipType as UgcClipTypeValue,
   type UgcSceneCount,
 } from "@socialista/types";
@@ -48,14 +49,10 @@ export function emptyStills(sceneCount: number): IUgcSceneStill[] {
 }
 
 export function parseClipType(value: unknown): UgcClipType {
+  const parsed = parseUgcClipType(value ?? UGC_DEFAULT_CLIP_TYPE);
+  if (parsed) return parsed as UgcClipType;
   if (value === undefined || value === null || value === "") {
     return UGC_DEFAULT_CLIP_TYPE as UgcClipType;
-  }
-  if (
-    typeof value === "string" &&
-    (UGC_CLIP_TYPES as readonly string[]).includes(value)
-  ) {
-    return value as UgcClipType;
   }
   throw new HttpError(400, "Choose a clip type");
 }
@@ -225,6 +222,7 @@ export function serializeClip(clip: IUgcClip): UgcClip {
       : undefined,
     scenePrompt: clip.scenePrompt,
     directions: clip.directions,
+    imagePrompt: clip.imagePrompt,
     referenceImageUrls: clip.referenceImageUrls ?? [],
     stills: stills.map((still, index) => ({ ...still, index })),
     plannedPrompt: clip.plannedPrompt,
@@ -363,10 +361,9 @@ export function buildNewClip(input: {
   const resolvedType = input.type ?? parseClipType(UGC_DEFAULT_CLIP_TYPE);
   const type = clipTypeValue(resolvedType);
   const durationSec = clampUgcDuration(
-    input.durationSec ?? UGC_DEFAULT_DURATION,
+    input.durationSec ?? ugcSceneDefaultDurationSec(type),
   );
   const sceneCount = 1;
-  const skipInfluencer = type === "b-roll" || type === "hook";
   return {
     id: randomUUID(),
     type: resolvedType,
@@ -374,7 +371,7 @@ export function buildNewClip(input: {
     status: UgcClipStatus.IDLE,
     durationSec,
     sceneCount,
-    ...(input.influencerId && !skipInfluencer
+    ...(input.influencerId && ugcClipRequiresCreator(type)
       ? { influencerId: toObjectId(input.influencerId) }
       : {}),
     script: { text: "", source: UgcScriptSource.USER },
@@ -383,12 +380,13 @@ export function buildNewClip(input: {
   };
 }
 
-export function parseScriptText(value: unknown): string {
+export function parseScriptText(value: unknown, clipType?: UgcClipTypeValue): string {
   if (typeof value !== "string") return "";
-  if (value.length > UGC_SCRIPT_MAX_CHARS) {
+  const max = ugcScriptMaxChars(clipType);
+  if (value.length > max) {
     throw new HttpError(
       400,
-      `Script must be ${UGC_SCRIPT_MAX_CHARS} characters or fewer`,
+      `Script must be ${max} characters or fewer`,
     );
   }
   return value;

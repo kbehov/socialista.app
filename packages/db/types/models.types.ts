@@ -7,6 +7,7 @@ export enum ModelType {
   VIDEO = 'video',
   AUDIO = 'audio',
   TRANSCRIBE = 'transcribe',
+  LIP_SYNC = 'lip-sync',
 }
 
 export enum CostUnit {
@@ -33,6 +34,7 @@ export interface IModel {
   costUnit: CostUnit
   modelType: ModelType
   contextSupports: ContextSupport[]
+  allowedInUgc: boolean
   usageCount: number
   modelProvider: string
   /** AI lab/company that owns the model. Populated as `{ name, logo }` on reads. */

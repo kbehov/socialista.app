@@ -37,6 +37,7 @@ import {
 import {
   addUgcClip,
   addUgcClips,
+  insertUgcClipAt,
   createUgcProject as createUgcProjectInDb,
   createVideo as createVideoInDb,
   deleteUgcProject as deleteUgcProjectInDb,
@@ -44,6 +45,7 @@ import {
   getModels,
   getProductById,
   getSkillById,
+  getStudioTemplateById,
   getUgcProjects,
   getVideoById,
   incrementSkillUsage,
@@ -69,17 +71,22 @@ import {
   parseUgcProductKind,
   parseVideoResolution,
   PROMPT_KEYS,
+  StudioTemplateKind,
   UGC_CAMPAIGN_PRESETS,
   UGC_CLIP_TYPE_LABELS,
   UGC_DEFAULT_ASPECT_RATIO,
   UGC_DEFAULT_DURATION,
   UGC_MAX_CLIPS,
   VIDEO_RESOLUTION_DEFAULT,
+  ugcClipRequiresCreator,
   ugcClipShowsScript,
   type ApplyUgcCampaignPresetPayload,
   type CreateUgcClipPayload,
+  type CreateUgcProjectFromTemplatePayload,
+  type ExtendUgcClipPayload,
   type CreateUgcProjectPayload,
   type SearchUgcVoicesQuery,
+  type StudioTemplateUgcPayload,
   type UpdateUgcClipPayload,
   type UpdateUgcProjectPayload,
 } from "@socialista/types";
@@ -189,6 +196,82 @@ export const createUgcProject = async (c: Context<AppContext>) => {
   });
 };
 
+export const createUgcProjectFromTemplate = async (c: Context<AppContext>) => {
+  const userId = c.get("userId");
+  const input = (await c.req.json()) as CreateUgcProjectFromTemplatePayload;
+  const workspaceId = parseParamId(input.workspaceId, "workspace ID");
+  const templateId = parseParamId(input.templateId, "template ID");
+  await getWorkspaceAsMember(workspaceId, userId);
+  const studioProject = await resolveProjectForWorkspace(
+    workspaceId,
+    input.projectId,
+  );
+
+  const template = await getStudioTemplateById(templateId);
+  if (!template || template.kind !== StudioTemplateKind.UGC) {
+    throw new HttpError(404, "UGC template not found");
+  }
+
+  const payload = template.payload as StudioTemplateUgcPayload;
+  const defaults = await resolveDefaultModels();
+  const models: IUgcProjectModels = {
+    image: payload.models?.image || defaults.image,
+    video: payload.models?.video || defaults.video,
+    script: payload.models?.script || defaults.script,
+    planner: payload.models?.planner || defaults.planner,
+  };
+
+  const clips = (payload.clips ?? []).slice(0, UGC_MAX_CLIPS).map((item) => {
+    const clip = buildNewClip({
+      type: parseClipType(item.type),
+      durationSec: item.durationSec,
+      sceneCount: item.sceneCount,
+      name: item.name,
+    });
+    if (item.sceneCount) {
+      clip.sceneCount = item.sceneCount;
+      clip.stills = emptyStills(item.sceneCount);
+    }
+    if (item.script) {
+      clip.script = {
+        text: parseScriptText(item.script, clipTypeValue(clip.type)),
+        source: UgcScriptSource.AI,
+      };
+    }
+    if (item.scenePrompt) clip.scenePrompt = item.scenePrompt;
+    if (item.directions) clip.directions = item.directions;
+    if (item.imagePrompt) clip.imagePrompt = item.imagePrompt;
+    return clip;
+  });
+
+  const name =
+    typeof input.name === "string" && input.name.trim()
+      ? input.name.trim()
+      : template.name?.trim() || "Untitled UGC ad";
+
+  const project = await createUgcProjectInDb({
+    name,
+    status: UgcProjectStatus.DRAFT,
+    workspace: toObjectId(workspaceId),
+    project: toObjectId(studioProject._id.toString()),
+    createdBy: toObjectId(userId),
+    productImageUrls: [],
+    aspectRatio: payload.aspectRatio || UGC_DEFAULT_ASPECT_RATIO,
+    videoResolution: VIDEO_RESOLUTION_DEFAULT,
+    models,
+    flowStep: UgcFlowStep.PRODUCT,
+    clips,
+    ...(payload.script
+      ? { script: { text: payload.script, source: UgcScriptSource.AI } }
+      : {}),
+    ...(payload.directions ? { directions: payload.directions } : {}),
+  });
+
+  return successResponse(c, 201, {
+    project: serializeUgcProject(project.toObject() as IUgcProject),
+  });
+};
+
 export const getWorkspaceUgcProjects = async (c: Context<AppContext>) => {
   const userId = c.get("userId");
   const workspaceId = parseParamId(c.req.param("workspaceId"), "workspace ID");
@@ -257,11 +340,7 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
     updates.influencerId = nextId;
     const previousId = project.influencerId?.toString();
     updates.clips = (project.clips ?? []).map((clip) => {
-      if (
-        clipTypeValue(clip.type) === "b-roll" ||
-        clipTypeValue(clip.type) === "hook"
-      )
-        return clip;
+      if (!ugcClipRequiresCreator(clipTypeValue(clip.type))) return clip;
       const currentId = clip.influencerId?.toString();
       if (!currentId || currentId === previousId) {
         return { ...clip, influencerId: nextId };
@@ -423,7 +502,7 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
     clipUpdates.script = {
       text:
         typeof input.script.text === "string"
-          ? parseScriptText(input.script.text)
+          ? parseScriptText(input.script.text, clipTypeValue(clip.type))
           : (clip.script?.text ?? ""),
       source:
         input.script.source === "ai"
@@ -451,6 +530,9 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   if (typeof input.directions === "string")
     clipUpdates.directions = input.directions;
   if (input.directions === null) clipUpdates.directions = undefined;
+  if (typeof input.imagePrompt === "string")
+    clipUpdates.imagePrompt = input.imagePrompt;
+  if (input.imagePrompt === null) clipUpdates.imagePrompt = undefined;
   if (Array.isArray(input.referenceImageUrls)) {
     clipUpdates.referenceImageUrls = input.referenceImageUrls.filter(
       (url) => typeof url === "string",
@@ -486,6 +568,12 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
     clipUpdates.audioDurationSec = undefined;
   } else if (typeof input.audioUrl === "string" && input.audioUrl) {
     clipUpdates.audioUrl = input.audioUrl;
+    const take = (clip.audioTakes ?? []).find(
+      (item) => item.audioUrl === input.audioUrl,
+    );
+    if (typeof take?.durationSec === "number" && take.durationSec > 0) {
+      clipUpdates.audioDurationSec = take.durationSec;
+    }
   }
 
   if (typeof input.videoUrl === "string" && input.videoUrl) {
@@ -537,11 +625,58 @@ export const duplicateUgcClip = async (c: Context<AppContext>) => {
   copy.script = clip.script ? { ...clip.script } : copy.script;
   copy.scenePrompt = clip.scenePrompt;
   copy.directions = clip.directions;
+  copy.imagePrompt = clip.imagePrompt;
   copy.voice = clip.voice ? { ...clip.voice } : copy.voice;
   copy.referenceImageUrls = [...(clip.referenceImageUrls ?? [])];
   copy.stills = emptyStills(1);
 
   const updated = await addUgcClip(id, copy);
+  if (!updated) throw new HttpError(404, "UGC project not found");
+  return successResponse(c, 201, { project: serializeUgcProject(updated) });
+};
+
+export const extendUgcClip = async (c: Context<AppContext>) => {
+  const userId = c.get("userId");
+  const id = parseParamId(c.req.param("id"), "project ID");
+  const clipId = c.req.param("clipId");
+  const input = (await c.req.json()) as ExtendUgcClipPayload;
+  const lastFrameUrl =
+    typeof input.lastFrameUrl === "string" ? input.lastFrameUrl.trim() : "";
+  if (!lastFrameUrl) throw new HttpError(400, "Last frame URL is required");
+
+  const project = await getUgcProjectForMember(id, userId);
+  const clip = requireClip(project, clipId);
+  assertClipNotGenerating(clip);
+  assertClipLimit(project);
+  if (!clip.videoUrl) {
+    throw new HttpError(400, "Generate a video before extending this scene");
+  }
+
+  const sourceIndex = (project.clips ?? []).findIndex(
+    (item) => item.id === clip.id,
+  );
+  const continuation = buildNewClip({
+    type: clip.type,
+    durationSec: clip.durationSec,
+    influencerId:
+      clip.influencerId?.toString() ?? project.influencerId?.toString(),
+    name: clip.name
+      ? `${clip.name} (cont.)`
+      : `${UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)]} (cont.)`,
+  });
+  continuation.voice = clip.voice ? { ...clip.voice } : continuation.voice;
+  continuation.models = clip.models ? { ...clip.models } : continuation.models;
+  continuation.stills = [{ index: 0, imageUrl: lastFrameUrl }];
+  continuation.referenceImageUrls = (clip.referenceImageUrls ?? []).filter(
+    (url) => url !== lastFrameUrl,
+  );
+  continuation.thumbnailUrl = lastFrameUrl;
+
+  const updated = await insertUgcClipAt(
+    id,
+    continuation,
+    sourceIndex < 0 ? (project.clips?.length ?? 0) : sourceIndex + 1,
+  );
   if (!updated) throw new HttpError(404, "UGC project not found");
   return successResponse(c, 201, { project: serializeUgcProject(updated) });
 };

@@ -27,11 +27,17 @@ export enum UgcScriptSource {
 export enum UgcClipType {
   HOOK = "hook",
   TALKING = "talking",
+  PRODUCT_HOLD = "product-hold",
   B_ROLL = "b-roll",
   UNBOXING = "unboxing",
+  CTA = "cta",
+  DEMO = "demo",
   TRY_ON = "try-on",
-  PRODUCT_HOLD = "product-hold",
+  REVIEW = "review",
+  REACTION = "reaction",
+  BEFORE_AFTER = "before-after",
   APP_SHOWCASE = "app-showcase",
+  CUSTOM = "custom",
 }
 
 export enum UgcVoiceProvider {
@@ -122,6 +128,7 @@ export interface IUgcClip {
   models?: IUgcClipModels;
   scenePrompt?: string;
   directions?: string;
+  imagePrompt?: string;
   referenceImageUrls?: string[];
   stills: IUgcSceneStill[];
   plannedPrompt?: string;

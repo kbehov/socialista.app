@@ -82,6 +82,15 @@ export const addUgcClip = async (projectId: string, clip: IUgcClip) => {
   return await UgcProjectModel.findByIdAndUpdate(projectId, { $push: { clips: clip } }, { new: true }).lean()
 }
 
+export const insertUgcClipAt = async (projectId: string, clip: IUgcClip, position: number) => {
+  const index = Math.max(0, Math.floor(position))
+  return await UgcProjectModel.findByIdAndUpdate(
+    projectId,
+    { $push: { clips: { $each: [clip], $position: index } } },
+    { new: true },
+  ).lean()
+}
+
 export const addUgcClips = async (projectId: string, clips: IUgcClip[]) => {
   if (clips.length === 0) return getUgcProjectById(projectId)
   return await UgcProjectModel.findByIdAndUpdate(

@@ -1,5 +1,5 @@
 import { ModelType } from '@socialista/types'
-import { AudioLinesIcon, CaptionsIcon, ImageIcon, TypeIcon, VideoIcon, type LucideIcon } from 'lucide-react'
+import { AudioLinesIcon, CaptionsIcon, ImageIcon, MicIcon, TypeIcon, VideoIcon, type LucideIcon } from 'lucide-react'
 
 export type ModelTypeOption = {
   value: ModelType
@@ -13,6 +13,7 @@ export const MODEL_TYPE_OPTIONS: ModelTypeOption[] = [
   { value: ModelType.VIDEO, label: 'Video', icon: VideoIcon },
   { value: ModelType.AUDIO, label: 'Audio', icon: AudioLinesIcon },
   { value: ModelType.TRANSCRIBE, label: 'Transcribe', icon: CaptionsIcon },
+  { value: ModelType.LIP_SYNC, label: 'Lip sync', icon: MicIcon },
 ]
 
 export function getModelTypeOption(type: ModelType) {

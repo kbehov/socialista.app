@@ -377,6 +377,9 @@ export type StudioPromptComposerProps = {
   canSubmit?: boolean;
   requirePrompt?: boolean;
   hideModelSelector?: boolean;
+  modelLocked?: boolean;
+  hideCost?: boolean;
+  submitDisabled?: boolean;
   allowEmptyModels?: boolean;
   highlighted?: boolean;
   textareaRef?: (node: HTMLTextAreaElement | null) => void;
@@ -392,6 +395,7 @@ export type StudioPromptComposerProps = {
   submitAppearance?: "labeled" | "send";
   submitClassName?: string;
   compact?: boolean;
+  embedded?: boolean;
 };
 
 export function StudioPromptComposer({
@@ -419,6 +423,9 @@ export function StudioPromptComposer({
   canSubmit: canSubmitProp,
   requirePrompt = true,
   hideModelSelector = false,
+  modelLocked = false,
+  hideCost = false,
+  submitDisabled = false,
   allowEmptyModels = false,
   highlighted,
   textareaRef: textareaRefProp,
@@ -434,6 +441,7 @@ export function StudioPromptComposer({
   submitAppearance = "labeled",
   submitClassName,
   compact = false,
+  embedded = false,
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController();
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
@@ -476,7 +484,7 @@ export function StudioPromptComposer({
     canSubmitProp === undefined
       ? meetsPromptRequirement && meetsAttachmentRequirement
       : canSubmitProp || (meetsPromptRequirement && meetsAttachmentRequirement);
-  const canSubmit = ready && (hideModelSelector || allowEmptyModels || !!selectedModel) && !disabled && !pending;
+  const canSubmit = ready && (hideModelSelector || allowEmptyModels || !!selectedModel) && !disabled && !pending && !submitDisabled;
   const attachDisabled =
     disabled ||
     pending ||
@@ -486,11 +494,12 @@ export function StudioPromptComposer({
     selectedModel?.costUnit === CostUnit.PER_SECOND
       ? (costMultiplier ?? count?.value ?? 1)
       : (count?.value ?? 1);
-  const costLabel = selectedModel
-    ? selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
-      ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
-      : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit)
-    : null;
+  const costLabel =
+    hideCost || !selectedModel
+      ? null
+      : selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
+        ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
+        : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit);
 
   const taggedIndexes = taggedAttachmentIndices(
     textInput.value,
@@ -705,6 +714,27 @@ export function StudioPromptComposer({
 
   const modelSelector =
     !hideModelSelector && selectedModel ? (
+    modelLocked ? (
+      <StudioInputActionTooltip label={selectedModel.name}>
+        <span className="inline-flex">
+          <PromptInputButton
+            aria-label={selectedModel.name}
+            className={cn(
+              STUDIO_TOOL_BUTTON_CLASS,
+              "cursor-default [&_svg]:text-foreground/70",
+            )}
+            size="xs"
+            tabIndex={-1}
+            type="button"
+          >
+            <ModelLogo className="size-3.5 shrink-0" model={selectedModel} size={14} />
+            <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+              {selectedModel.name}
+            </span>
+          </PromptInputButton>
+        </span>
+      </StudioInputActionTooltip>
+    ) : (
     <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
       <StudioInputActionTooltip label="Choose generation model">
         <ModelSelectorTrigger asChild>
@@ -831,6 +861,7 @@ export function StudioPromptComposer({
         </ModelSelectorList>
       </ModelSelectorContent>
     </ModelSelector>
+    )
   ) : null;
 
   const textMetrics = compact ? PROMPT_TEXT_METRICS_COMPACT : PROMPT_TEXT_METRICS;
@@ -846,22 +877,26 @@ export function StudioPromptComposer({
       onDragOver={handleStudioImageDragOver}
       onDrop={handleStudioImageDrop}
       className={cn(
-        "relative mx-auto w-full scroll-mt-10 transition-[transform,opacity] duration-300",
-        STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS,
+        "relative w-full scroll-mt-10 transition-[transform,opacity] duration-300",
+        !embedded && cn("mx-auto", STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS),
         highlighted && "animate-in fade-in-0 duration-300",
         className,
       )}
     >
       <PromptInput
         className={cn(
-          "rounded-2xl border-black/10 bg-background transition-[border-color,box-shadow,ring-color] duration-200",
-          "has-[[data-slot=input-group-control]:focus-visible]:border-black/18",
-          "has-[[data-slot=input-group-control]:focus-visible]:ring-2",
-          "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6",
-          "dark:border-white/12",
-          "dark:has-[[data-slot=input-group-control]:focus-visible]:border-white/20",
-          highlighted && "border-foreground/15 ring-2 ring-foreground/8",
-          dropActive && "border-foreground/25 ring-2 ring-foreground/12",
+          !embedded &&
+            cn(
+              "rounded-2xl border-black/10 bg-background transition-[border-color,box-shadow,ring-color] duration-200",
+              "has-[[data-slot=input-group-control]:focus-visible]:border-black/18",
+              "has-[[data-slot=input-group-control]:focus-visible]:ring-2",
+              "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/6",
+              "dark:border-white/12",
+              "dark:has-[[data-slot=input-group-control]:focus-visible]:border-white/20",
+            ),
+          embedded && "rounded-none border-0 bg-transparent shadow-none",
+          highlighted && !embedded && "border-foreground/15 ring-2 ring-foreground/8",
+          dropActive && !embedded && "border-foreground/25 ring-2 ring-foreground/12",
           surfaceClassName,
         )}
         onSubmit={onSubmit}
@@ -942,7 +977,10 @@ export function StudioPromptComposer({
         {mentionOpen && attachments.length === 0 ? (
           <div
             id="studio-reference-attachments"
-            className="border-t border-border/35 bg-muted/12 px-3.5 py-2.5 text-[12px] leading-snug tracking-[-0.01em] text-muted-foreground"
+            className={cn(
+              "border-t border-border/35 bg-muted/12 py-2.5 text-[12px] leading-snug tracking-[-0.01em] text-muted-foreground",
+              embedded ? "px-3 sm:px-3.5" : "px-3.5",
+            )}
             role="status"
           >
             Attach a reference first, then tag it with{" "}
@@ -955,7 +993,11 @@ export function StudioPromptComposer({
             id="studio-reference-attachments"
             className={cn(
               "flex w-full items-end gap-2.5 overflow-x-auto border-t border-border/35 bg-muted/12 scrollbar-none",
-              compact ? "px-2.5 pt-2 pb-1.5" : "px-3 pt-2.5 pb-2 sm:px-3.5",
+              embedded
+                ? "px-3 pt-2.5 pb-2 sm:px-3.5"
+                : compact
+                  ? "px-2.5 pt-2 pb-1.5 sm:px-3"
+                  : "px-3 pt-2.5 pb-2 sm:px-3.5",
               mentionOpen && "bg-muted/18",
             )}
             role={mentionOpen ? "listbox" : "list"}

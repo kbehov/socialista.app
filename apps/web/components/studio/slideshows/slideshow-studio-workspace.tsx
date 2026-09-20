@@ -4,6 +4,7 @@ import { SlideshowList } from '@/components/carousel/slideshow-list'
 import { SlideshowPromptComposer } from '@/components/carousel/slideshow-prompt-composer'
 import { SlideshowStudioHero } from '@/components/studio/slideshows/slideshow-studio-hero'
 import { SlideshowStudioProvider } from '@/components/studio/slideshows/slideshow-studio-provider'
+import { SlideshowTemplatesGallery } from '@/components/studio/slideshows/slideshow-templates-gallery'
 import type { Model, Preset, SlideshowSummaryResponse } from '@socialista/types'
 
 type SlideshowStudioWorkspaceProps = {
@@ -33,6 +34,13 @@ export function SlideshowStudioWorkspace({
             <SlideshowPromptComposer models={models} textModels={textModels} presets={presets} />
           </section>
         </SlideshowStudioHero>
+
+        <section
+          aria-label="Browse slideshow templates"
+          className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
+        >
+          <SlideshowTemplatesGallery workspaceId={workspaceId} />
+        </section>
 
         <SlideshowList
           workspaceId={workspaceId}

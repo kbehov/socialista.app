@@ -80,6 +80,7 @@ export const FILES_API_ROUTES = {
 
 export const SLIDESHOW_ROUTES = {
   CREATE: '/slideshows',
+  FROM_TEMPLATE: '/slideshows/from-template',
   GET_BY_ID: (id: string) => `/slideshows/${id}`,
   UPDATE: (id: string) => `/slideshows/${id}`,
   DELETE: (id: string) => `/slideshows/${id}`,
@@ -164,6 +165,16 @@ export const STATIC_AD_TEMPLATE_ROUTES = {
   CATEGORIES: '/static-ad-templates/categories',
 } as const
 
+export const STUDIO_TEMPLATE_ROUTES = {
+  LIST: '/studio-templates',
+  CREATE: '/studio-templates',
+  DELETE: (id: string) => `/studio-templates/${id}`,
+  UPLOAD_PREVIEW: '/studio-templates/upload-preview',
+  CATEGORIES: '/studio-templates/categories',
+  CATEGORY_CREATE: '/studio-templates/categories',
+  CATEGORY_DELETE: (id: string) => `/studio-templates/categories/${id}`,
+} as const
+
 export const PROJECT_ROUTES = {
   GET_WORKSPACE_PROJECTS: (workspaceId: string) => `/projects/workspace/${workspaceId}`,
   CREATE: '/projects',
@@ -211,6 +222,7 @@ export const NOTIFICATION_ROUTES = {
 
 export const UGC_PROJECT_ROUTES = {
   CREATE: '/ugc-projects',
+  FROM_TEMPLATE: '/ugc-projects/from-template',
   GET_BY_ID: (id: string) => `/ugc-projects/${id}`,
   UPDATE: (id: string) => `/ugc-projects/${id}`,
   DELETE: (id: string) => `/ugc-projects/${id}`,
@@ -220,6 +232,7 @@ export const UGC_PROJECT_ROUTES = {
   UPDATE_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}`,
   DELETE_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}`,
   DUPLICATE_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/duplicate`,
+  EXTEND_CLIP: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/extend`,
   GENERATE_SCRIPT: (id: string) => `/ugc-projects/${id}/script`,
   GENERATE_CLIP_SCRIPT: (id: string, clipId: string) => `/ugc-projects/${id}/clips/${clipId}/script`,
   APPLY_PRESET: (id: string) => `/ugc-projects/${id}/presets`,

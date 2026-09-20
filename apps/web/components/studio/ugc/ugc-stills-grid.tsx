@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { cn } from '@/lib/utils'
 import { getAspectRatioClass } from '@/utils/aspect-ratio'
 import type { UgcSceneStill } from '@socialista/types'
-import { AudioLinesIcon, CheckIcon, ImageIcon, TypeIcon, VideoIcon } from 'lucide-react'
+import { AudioLinesIcon, CheckIcon, ImageIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useState, type ReactNode } from 'react'
 
@@ -109,7 +109,7 @@ function UgcStillTile({
         <button
           type="button"
           aria-pressed={active}
-          aria-label={active ? 'Deselect photo' : 'Select photo for video'}
+          aria-label={active ? 'Selected as start frame' : 'Use this photo as the start frame'}
           onClick={event => {
             event.preventDefault()
             event.stopPropagation()
@@ -156,61 +156,95 @@ function EmptyHint({
   icon,
   title,
   description,
+  step,
+  next,
   className,
 }: {
   icon: ReactNode
   title: string
   description: string
+  step?: string
+  next?: string
   className?: string
 }) {
   return (
     <div className={cn('flex flex-col items-center justify-center py-12 text-center', className)}>
       <span className="mb-3 text-muted-foreground/70">{icon}</span>
+      {step ? (
+        <p className="mb-1.5 text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+          {step}
+        </p>
+      ) : null}
       <p className="text-[13px] font-medium tracking-tight">{title}</p>
       <p className="mt-1 max-w-[16rem] text-[12px] leading-relaxed text-muted-foreground">{description}</p>
+      {next ? (
+        <p className="mt-2 max-w-[18rem] text-[12px] leading-relaxed text-muted-foreground/80">
+          Next: {next}
+        </p>
+      ) : null}
     </div>
   )
 }
 
-export function UgcStillsEmptyHint({ className }: { className?: string }) {
+type EmptyHintExtras = {
+  className?: string
+  step?: string
+  next?: string
+}
+
+export function UgcStillsEmptyHint({ className, step, next }: EmptyHintExtras) {
   return (
     <EmptyHint
       className={className}
       icon={<ImageIcon className="size-5" strokeWidth={1.5} />}
       title="Describe the scene photo"
       description="Framing, light, and what the creator is doing. Each take is kept so you can pick one."
+      step={step}
+      next={next}
     />
   )
 }
 
-export function UgcAudioEmptyHint({ className, hook }: { className?: string; hook?: boolean }) {
-  if (hook) {
-    return (
-      <EmptyHint
-        className={className}
-        icon={<TypeIcon className="size-5" strokeWidth={1.5} />}
-        title="Write the on-screen hook"
-        description="A 3–8 word line that will be painted in the photo and video. No voiceover on this scene."
-      />
-    )
-  }
+export function UgcAudioEmptyHint({
+  className,
+  step,
+  next,
+  title = 'Write a line of dialogue',
+  description = 'One short line they would say on camera. Generate the voiceover below.',
+}: EmptyHintExtras & {
+  title?: string
+  description?: string
+}) {
   return (
     <EmptyHint
       className={className}
       icon={<AudioLinesIcon className="size-5" strokeWidth={1.5} />}
-      title="Write a line of dialogue"
-      description="One short line they would say on camera. Generate the voiceover below."
+      title={title}
+      description={description}
+      step={step}
+      next={next}
     />
   )
 }
 
-export function UgcVideoEmptyHint({ className }: { className?: string }) {
+export function UgcVideoEmptyHint({
+  className,
+  step,
+  next,
+  title = 'Describe the motion',
+  description = 'A turn, smile, or product reveal from the start frame. Preview appears here when ready.',
+}: EmptyHintExtras & {
+  title?: string
+  description?: string
+}) {
   return (
     <EmptyHint
       className={className}
       icon={<VideoIcon className="size-5" strokeWidth={1.5} />}
-      title="Describe the motion"
-      description="A turn, smile, or product reveal from the start frame. Preview appears here when ready."
+      title={title}
+      description={description}
+      step={step}
+      next={next}
     />
   )
 }

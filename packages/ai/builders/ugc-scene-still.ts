@@ -1,4 +1,5 @@
-import type { UgcClipType } from '@socialista/types'
+import { ugcClipIsFreeform, ugcClipRequiresCreator, ugcClipRequiresProduct, type UgcClipType } from '@socialista/types'
+
 export type UgcSceneStillPromptInput = {
   clipType: UgcClipType
   sceneIndex: number
@@ -7,12 +8,11 @@ export type UgcSceneStillPromptInput = {
   identityFragment?: string
   productName?: string
   scenePrompt?: string
-  hookText?: string
 }
 
 const BEATS: Record<UgcClipType, Record<number, string>> = {
   hook: {
-    0: 'Vertical UGC hook card: one short punchy line of on-screen typography is the hero. Large, readable, high-contrast type. Lifestyle or product-in-background is OK. No face talking. The hook line must appear verbatim as text in the image.',
+    0: 'Spoken-hook start frame: the creator faces the phone camera, mid-shot, high-energy opener mid-sentence. Lived-in room. Pattern-interrupt energy, not a smile-and-wave. No on-screen text.',
   },
   talking: {
     0: 'Talking-head start frame: the creator faces the phone camera, mid-shot, natural expression mid-sentence. Lived-in room. Product may be nearby but does not have to be in hand.',
@@ -29,11 +29,29 @@ const BEATS: Record<UgcClipType, Record<number, string>> = {
     0: 'Unboxing start frame: the creator sits with the sealed box or mailer in their lap or on a table, looking at camera, about to open it. Same product packaging as the reference.',
     1: 'Reveal beat: the product is coming out of the box in their hands. Same person, same room, same outfit. SKU clearly visible.',
   },
+  cta: {
+    0: 'CTA start frame: the creator faces the phone camera, mid-shot, about to make a clear ask. Direct eye contact, lived-in room, not a studio smile. Product may be nearby. No on-screen text or buttons.',
+  },
+  demo: {
+    0: 'Demo start frame: the creator is mid-use of the product — hands doing the action, SKU readable, face in frame when possible. Casual phone capture of a how-it-works moment, not a catalog pose.',
+  },
   'try-on': {
     0: 'Try-on start frame: the creator is wearing or using the product on their body (apparel, jewelry, beauty, wearable). Face and product both readable. Casual phone selfie energy, not a lookbook pose.',
   },
+  review: {
+    0: 'Review start frame: the creator faces the phone camera, mid-shot, talking through a specific take. Lived-in room. Product can sit nearby or in hand. Honest, not a press-kit pose.',
+  },
+  reaction: {
+    0: 'First-reaction start frame: the creator has just seen or used the product, mid-reaction — surprise, laugh, or a real look. Product in frame. Phone UGC, not a staged smile.',
+  },
+  'before-after': {
+    0: 'Before-after start frame: the creator and product in a clear “after” or side-by-side setup the video will contrast. Face and SKU readable. Lived-in room, not a split-screen graphic or on-image text.',
+  },
   'app-showcase': {
     0: 'App showcase start frame: a phone or device in frame showing the attached UI screenshot on the screen. If a creator is present they hold the phone naturally. The screen content must match the screenshot, not a generic fake UI.',
+  },
+  custom: {
+    0: 'Freeform UGC still: follow the user scene look if they wrote one. Otherwise a natural phone-captured still from the attached refs. Keep the same person and product when those photos exist. Do not invent a new format, captions, or logos.',
   },
 }
 
@@ -41,25 +59,21 @@ export const UGC_STILL_LOCK_FOOTER = `
 Keep the exact same person as the attached creator photos (face, hair, age, body, skin — do not beautify into someone else). Keep the exact same product as the product photos (silhouette, label, color, materials — do not swap the SKU). No watermarks, captions, logos, or AI-generated text labels.
 `.trim()
 
-export const UGC_HOOK_STILL_LOCK_FOOTER = `
-Render the hook line as real on-image typography, spelled exactly. High contrast, large, fully readable. Do not misspell. No extra slogans. Keep any product in the photo matching the product references. No watermarks or extra logos.
-`.trim()
-
 export function buildUgcSceneStillPrompt(input: UgcSceneStillPromptInput): string {
   const typeBeats = BEATS[input.clipType]
   const beat = typeBeats[input.sceneIndex] ?? typeBeats[0] ?? BEATS['product-hold'][0]!
-  const isHook = input.clipType === 'hook'
-  const hook = input.hookText?.trim()
   const productLine = input.productName?.trim()
     ? `Product: ${input.productName.trim()}. The attached product photos are ground truth.`
-    : input.clipType === 'talking' || isHook
-      ? ''
-      : 'Product: the item in the product reference photo. Match it exactly.'
+    : ugcClipRequiresProduct(input.clipType)
+      ? 'Product: the item in the product reference photo. Match it exactly.'
+      : ''
   const creatorLine = input.influencerName?.trim()
     ? `Creator: ${input.influencerName.trim()}. The attached person photos ARE this creator.`
-    : input.clipType === 'b-roll' || isHook
-      ? 'No person in frame unless the user scene look asks for hands only.'
-      : ''
+    : ugcClipRequiresCreator(input.clipType)
+      ? ''
+      : ugcClipIsFreeform(input.clipType)
+        ? 'A person may be in frame if the user scene look asks for one, or if creator photos are attached.'
+        : 'No person in frame unless the user scene look asks for hands only.'
   const look = input.scenePrompt?.trim() ? `User scene look: ${input.scenePrompt.trim()}.` : ''
 
   return [
@@ -67,11 +81,8 @@ export function buildUgcSceneStillPrompt(input: UgcSceneStillPromptInput): strin
     input.identityFragment?.trim() ?? '',
     productLine,
     `Clip type: ${input.clipType}. Scene ${input.sceneIndex + 1} of ${input.sceneCount}. ${beat}`,
-    isHook && hook ? `HOOK LINE (paint this exact text in the image):\n${hook}` : '',
     look,
-    isHook
-      ? 'Photoreal UGC still with the hook as large readable type in frame.'
-      : 'Photoreal UGC still. Describe only what is in the frame. No on-image text.',
+    'Photoreal UGC still. Describe only what is in the frame. No on-image text.',
   ]
     .filter(Boolean)
     .join('\n')

@@ -125,6 +125,7 @@ const clipSchema = new Schema<IUgcClip>(
     models: { type: clipModelsSchema },
     scenePrompt: { type: String },
     directions: { type: String },
+    imagePrompt: { type: String },
     referenceImageUrls: { type: [String], default: [] },
     stills: { type: [stillSchema], default: [] },
     plannedPrompt: { type: String },

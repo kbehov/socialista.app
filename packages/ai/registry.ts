@@ -5,6 +5,7 @@ import { POST_COPY_SYSTEM } from './prompts/post-copy.js'
 import { IMAGE_PROMPT_SYSTEM } from './prompts/image.js'
 import { SLIDESHOW_SYSTEM } from './prompts/slideshow.js'
 import { STATIC_AD_VISION_SYSTEM } from './prompts/static-ad.js'
+import { UGC_AD_PLAN_SYSTEM } from './prompts/ugc-ad-plan.js'
 import { UGC_AD_SCRIPT_SYSTEM } from './prompts/ugc-ad-script.js'
 import { UGC_VIDEO_PLANNER_SYSTEM } from './prompts/ugc-video-planner.js'
 import { VIDEO_PROMPT_SYSTEM } from './prompts/video.js'
@@ -18,6 +19,7 @@ export const PROMPT_REGISTRY: Record<PromptKey, PromptDefinition> = {
   [PROMPT_KEYS.staticAd]: { system: STATIC_AD_VISION_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.staticAd] },
   [PROMPT_KEYS.ugcVideoPlanner]: { system: UGC_VIDEO_PLANNER_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcVideoPlanner] },
   [PROMPT_KEYS.ugcAdScript]: { system: UGC_AD_SCRIPT_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcAdScript] },
+  [PROMPT_KEYS.ugcAdPlan]: { system: UGC_AD_PLAN_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcAdPlan] },
   [PROMPT_KEYS.videoScript]: { system: VIDEO_SCRIPT_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.videoScript] },
   [PROMPT_KEYS.slideshow]: { system: SLIDESHOW_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.slideshow] },
   [PROMPT_KEYS.postCopy]: { system: POST_COPY_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.postCopy] },

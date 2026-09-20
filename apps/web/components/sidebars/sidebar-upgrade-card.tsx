@@ -1,44 +1,35 @@
 'use client'
 
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceStore } from '@/store/workspace.store'
-import { ArrowUpRightIcon } from 'lucide-react'
 import Link from 'next/link'
 
 function UpgradeSummary() {
   return (
-    <Link
-      href={DASHBOARD_ROUTES.UPGRADE}
-      className="sidebar-upgrade-card group-data-[collapsible=icon]:hidden block"
-    >
-      <p className="text-[13px] font-medium leading-tight tracking-tight text-sidebar-foreground">Upgrade to Pro</p>
-      <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Growth charts, more seats, and AI credits.</p>
+    <Link href={DASHBOARD_ROUTES.UPGRADE} className="sidebar-upgrade-card group-data-[collapsible=icon]:hidden">
+      <span className="sidebar-upgrade-card-title">Upgrade to Pro</span>
+      <span className="sidebar-upgrade-card-copy">Growth charts, more seats, and AI credits.</span>
+      <span className="sidebar-upgrade-card-action">View plans</span>
     </Link>
   )
 }
 
 function UpgradeCollapsed() {
   return (
-    <SidebarMenu className="hidden group-data-[collapsible=icon]:flex">
-      <SidebarMenuItem>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <SidebarMenuButton asChild size="sm">
-              <Link href={DASHBOARD_ROUTES.UPGRADE}>
-                <ArrowUpRightIcon strokeWidth={1.5} />
-                <span className="sr-only">Upgrade to Pro</span>
-              </Link>
-            </SidebarMenuButton>
-          </TooltipTrigger>
-          <TooltipContent side="right" align="center" className="text-xs">
-            <p className="font-medium">Upgrade to Pro</p>
-            <p className="text-muted-foreground">View plans</p>
-          </TooltipContent>
-        </Tooltip>
-      </SidebarMenuItem>
-    </SidebarMenu>
+    <div className="hidden justify-center group-data-[collapsible=icon]:flex">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link href={DASHBOARD_ROUTES.UPGRADE} className="sidebar-upgrade-mark" aria-label="Upgrade to Pro">
+            Pro
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right" align="center" className="text-xs">
+          <p className="font-medium">Upgrade to Pro</p>
+          <p className="text-muted-foreground">View plans</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
   )
 }
 

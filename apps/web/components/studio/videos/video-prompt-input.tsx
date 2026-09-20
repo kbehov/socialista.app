@@ -13,7 +13,9 @@ import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-inpu
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_HERO_SUBMIT_CLASS,
+  STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
@@ -22,6 +24,7 @@ import {
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
 import { useOptionalVideoStudio } from "@/components/studio/videos/video-studio-provider";
+import type { StudioAttachSource } from "@/components/studio/prompt/studio-attach-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +58,7 @@ import {
 } from "@socialista/types";
 import {
   ChevronDownIcon,
+  LockIcon,
   SparklesIcon,
   Volume2Icon,
   VolumeXIcon,
@@ -75,6 +79,12 @@ import { VideoPromptAnatomy } from "./video-prompt-anatomy";
 import { StudioPreset } from "@/components/studio/prompt/studio-preset";
 
 const MAX_REFERENCE_IMAGES = 3;
+const DEFAULT_ATTACH_SOURCES: StudioAttachSource[] = [
+  "upload",
+  "library",
+  "influencer",
+  "product",
+];
 const DEFAULT_PLACEHOLDER =
   "Slow push-in on a matte serum, hard side light, steam in the beam…";
 
@@ -125,12 +135,28 @@ export type VideoPromptInputProps = {
   placeholder?: string;
   pending?: boolean;
   initialPrompt?: string;
+  initialModel?: string;
   initialAspectRatio?: VideoAspectRatio;
   initialDuration?: number;
   initialResolution?: VideoResolution;
   initialGenerateAudio?: boolean;
   /** When true, force audio off and disable the toggle (e.g. UGC scene with a lip-synced voiceover). */
   audioLocked?: boolean;
+  embedded?: boolean;
+  modelLocked?: boolean;
+  hideSettings?: boolean;
+  /** Hide the duration picker when length is driven by attached audio. */
+  hideDuration?: boolean;
+  /** Lock duration to this value (voiceover length) and disable the picker. */
+  lockedDurationSec?: number;
+  /** Hide the credit estimate until billable duration is known (talking-head audio). */
+  hideCost?: boolean;
+  disabled?: boolean;
+  submitDisabled?: boolean;
+  costMultiplier?: number;
+  attachSources?: readonly StudioAttachSource[];
+  maxAttachments?: number;
+  minAttachments?: number;
 };
 
 function VideoPromptComposer({
@@ -144,11 +170,24 @@ function VideoPromptComposer({
   placeholder: placeholderProp,
   pending: pendingProp,
   initialPrompt,
+  initialModel,
   initialAspectRatio,
   initialDuration,
   initialResolution,
   initialGenerateAudio,
   audioLocked,
+  embedded = false,
+  modelLocked = false,
+  hideSettings = false,
+  hideDuration = false,
+  lockedDurationSec,
+  hideCost = false,
+  disabled,
+  submitDisabled,
+  costMultiplier: costMultiplierProp,
+  attachSources = DEFAULT_ATTACH_SOURCES,
+  maxAttachments = MAX_REFERENCE_IMAGES,
+  minAttachments = 0,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -160,7 +199,7 @@ function VideoPromptComposer({
   const [isPending, startTransition] = useTransition();
   const pending = pendingProp || isPending;
   const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() => {
-    if (initialAttachments?.length) return initialAttachments;
+    if (initialAttachments?.length) return initialAttachments.slice(0, maxAttachments);
     if (initialAttachmentUrl) {
       return [
         {
@@ -176,12 +215,16 @@ function VideoPromptComposer({
     return [];
   });
   const dismissedAttachmentUrls = useRef(new Set<string>());
+  const seededAttachmentUrls = useRef(
+    new Set((initialAttachments ?? []).map((item) => item.url)),
+  );
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>(
     initialAspectRatio ?? "9:16",
   );
   const [duration, setDuration] = useState(() =>
     clampVideoDuration(initialDuration ?? VIDEO_DURATION_DEFAULT),
   );
+  const effectiveDuration = lockedDurationSec ?? duration;
   const [resolution, setResolution] = useState<VideoResolution>(
     initialResolution ?? VIDEO_RESOLUTION_DEFAULT,
   );
@@ -193,6 +236,7 @@ function VideoPromptComposer({
   const [skillId, setSkillId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
+  const setInput = textInput.setInput;
 
   const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
     setAttachedImages((current) => {
@@ -211,25 +255,46 @@ function VideoPromptComposer({
   useEffect(() => {
     if (!initialAttachments) return;
     setAttachedImages((current) => {
-      const currentUrls = new Set(current.map((item) => item.url));
-      const missing = initialAttachments.filter(
-        (item) =>
-          !currentUrls.has(item.url) &&
-          !dismissedAttachmentUrls.current.has(item.url),
+      const nextSeed = initialAttachments.filter(
+        (item) => !dismissedAttachmentUrls.current.has(item.url),
       );
-      if (missing.length === 0) return current;
-      return [...current, ...missing].slice(0, MAX_REFERENCE_IMAGES);
+      const nextSeedUrls = new Set(nextSeed.map((item) => item.url));
+      const extras = current.filter(
+        (item) =>
+          !seededAttachmentUrls.current.has(item.url) &&
+          !nextSeedUrls.has(item.url),
+      );
+      seededAttachmentUrls.current = nextSeedUrls;
+      const merged: AttachedMedia[] = [];
+      const seen = new Set<string>();
+      for (const item of [...nextSeed, ...extras]) {
+        if (seen.has(item.url)) continue;
+        seen.add(item.url);
+        merged.push(item);
+        if (merged.length >= maxAttachments) break;
+      }
+      const currentUrls = current.map((item) => item.url);
+      const mergedUrls = merged.map((item) => item.url);
+      if (
+        currentUrls.length === mergedUrls.length &&
+        currentUrls.every((url, index) => url === mergedUrls[index])
+      ) {
+        return current;
+      }
+      return merged;
     });
-  }, [initialAttachments]);
+  }, [initialAttachments, maxAttachments]);
 
   useEffect(() => {
     if (!initialPrompt) return;
-    textInput.setInput(initialPrompt);
-  }, [initialPrompt, textInput]);
+    setInput(initialPrompt);
+  }, [initialPrompt, setInput]);
 
   const visibleModels = useMemo(() => {
     const videoModels = models.filter(
-      (model) => model.modelType === ModelType.VIDEO,
+      (model) =>
+        model.modelType === ModelType.VIDEO ||
+        model.modelType === ModelType.LIP_SYNC,
     );
     const pool = videoModels.length > 0 ? videoModels : models;
     if (attachedImages.length === 0) {
@@ -246,13 +311,22 @@ function VideoPromptComposer({
   }, [attachedImages.length, models]);
 
   const [selectedModelId, setSelectedModelId] = useState(
-    visibleModels[0]?._id ?? "",
+    () =>
+      models.find((model) => model.value === initialModel)?._id ??
+      visibleModels[0]?._id ??
+      "",
   );
 
   useEffect(() => {
-    if (visibleModels.some((model) => model._id === selectedModelId)) return;
-    setSelectedModelId(visibleModels[0]?._id ?? "");
-  }, [selectedModelId, visibleModels]);
+    setSelectedModelId((current) => {
+      if (visibleModels.some((model) => model._id === current)) return current;
+      return (
+        visibleModels.find((model) => model.value === initialModel)?._id ??
+        visibleModels[0]?._id ??
+        ""
+      );
+    });
+  }, [initialModel, visibleModels]);
 
   const placeholder = useMemo(() => {
     if (placeholderProp) return placeholderProp;
@@ -310,11 +384,23 @@ function VideoPromptComposer({
 
   const setAttachments = useCallback((attachments: AttachedMedia[]) => {
     dismissedAttachmentUrls.current.clear();
-    setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES));
-  }, []);
+    setAttachedImages(attachments.slice(0, maxAttachments));
+  }, [maxAttachments]);
 
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
+  }, []);
+
+  const setModel = useCallback(
+    (modelValue: string) => {
+      const found = models.find((model) => model.value === modelValue);
+      if (found) setSelectedModelId(found._id);
+    },
+    [models],
+  );
+
+  const setDurationParam = useCallback((seconds: number) => {
+    setDuration(clampVideoDuration(seconds));
   }, []);
 
   useEffect(() => {
@@ -323,8 +409,21 @@ function VideoPromptComposer({
       setPrompt,
       setAttachments,
       focusPrompt,
+      setModel,
+      setAspectRatio,
+      setDuration: setDurationParam,
+      setResolution,
+      setGenerateAudio,
     });
-  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt]);
+  }, [
+    studio,
+    insertAtCursor,
+    setPrompt,
+    setAttachments,
+    focusPrompt,
+    setModel,
+    setDurationParam,
+  ]);
 
   useEffect(() => {
     if (hideExtras) return;
@@ -334,6 +433,7 @@ function VideoPromptComposer({
   }, [hideExtras]);
 
   const handleSubmit = (message: PromptInputMessage) => {
+    if (disabled || submitDisabled) return;
     const prompt = message.text.trim();
     if (!prompt) return;
 
@@ -357,7 +457,7 @@ function VideoPromptComposer({
           prompt,
           model: selectedModel.value,
           aspectRatio,
-          duration,
+          duration: effectiveDuration,
           generateAudio: audioEnabled,
           resolution,
           imageUrls,
@@ -371,7 +471,7 @@ function VideoPromptComposer({
         model: selectedModel.value,
         workspaceId: currentWorkspace._id,
         aspectRatio,
-        duration,
+        duration: effectiveDuration,
         generateAudio: audioEnabled,
         resolution,
         userId: "",
@@ -398,7 +498,37 @@ function VideoPromptComposer({
   const selectedResolution =
     RESOLUTIONS.find((option) => option.id === resolution) ?? RESOLUTIONS[0];
 
-  const tools = (
+  const tools = hideSettings ? (
+    <>
+      <PromptInputButton
+        aria-label={
+          enhance ? "Prompt enhancement on" : "Prompt enhancement off"
+        }
+        aria-pressed={enhance}
+        className={cn(
+          STUDIO_TOOL_ICON_BUTTON_CLASS,
+          enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+        )}
+        disabled={pending || disabled}
+        onClick={() => setEnhance((value) => !value)}
+        size="icon-xs"
+        tooltip={
+          enhance
+            ? "Enhance on — AI refines your prompt before generating"
+            : "Raw prompt — send exactly what you typed"
+        }
+        type="button"
+      >
+        <WandSparklesIcon className="size-3.5 shrink-0" />
+      </PromptInputButton>
+      <StudioSkillPicker
+        target={PROMPT_KEYS.videoPrompt}
+        value={skillId}
+        onChange={setSkillId}
+        disabled={pending || disabled || !enhance}
+      />
+    </>
+  ) : (
     <>
       <DropdownMenu>
         <StudioInputActionTooltip label="Output aspect ratio">
@@ -486,42 +616,61 @@ function VideoPromptComposer({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DropdownMenu>
-        <StudioInputActionTooltip label="Clip duration">
-          <DropdownMenuTrigger asChild>
+      {hideDuration ? null : lockedDurationSec != null ? (
+        <StudioInputActionTooltip label="Matches the voiceover length">
+          <span className="inline-flex">
             <PromptInputButton
-              aria-label={`Duration ${duration} seconds`}
+              aria-label={`Duration ${lockedDurationSec} seconds, locked to voiceover`}
               className={STUDIO_TOOL_BUTTON_CLASS}
-              disabled={pending}
+              disabled
               size="xs"
               type="button"
             >
               <span className="text-[12px] font-medium leading-none tracking-[-0.015em] tabular-nums">
-                {duration}s
+                {lockedDurationSec}s
               </span>
-              <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+              <LockIcon className="size-3 opacity-60" strokeWidth={1.75} />
             </PromptInputButton>
-          </DropdownMenuTrigger>
+          </span>
         </StudioInputActionTooltip>
-        <DropdownMenuContent align="start" className="min-w-36 w-36">
-          <DropdownMenuRadioGroup
-            value={String(duration)}
-            onValueChange={(value) => setDuration(Number(value))}
-          >
-            {VIDEO_DURATIONS.map((seconds) => (
-              <DropdownMenuRadioItem
-                key={seconds}
-                className="rounded-lg"
-                value={String(seconds)}
+      ) : (
+        <DropdownMenu>
+          <StudioInputActionTooltip label="Clip duration">
+            <DropdownMenuTrigger asChild>
+              <PromptInputButton
+                aria-label={`Duration ${duration} seconds`}
+                className={STUDIO_TOOL_BUTTON_CLASS}
+                disabled={pending}
+                size="xs"
+                type="button"
               >
-                <span className="text-[13px] font-medium tracking-[-0.015em] tabular-nums">
-                  {seconds} seconds
+                <span className="text-[12px] font-medium leading-none tracking-[-0.015em] tabular-nums">
+                  {duration}s
                 </span>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+                <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+              </PromptInputButton>
+            </DropdownMenuTrigger>
+          </StudioInputActionTooltip>
+          <DropdownMenuContent align="start" className="min-w-36 w-36">
+            <DropdownMenuRadioGroup
+              value={String(duration)}
+              onValueChange={(value) => setDuration(Number(value))}
+            >
+              {VIDEO_DURATIONS.map((seconds) => (
+                <DropdownMenuRadioItem
+                  key={seconds}
+                  className="rounded-lg"
+                  value={String(seconds)}
+                >
+                  <span className="text-[13px] font-medium tracking-[-0.015em] tabular-nums">
+                    {seconds} seconds
+                  </span>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       <PromptInputButton
         aria-label={audioEnabled ? "Audio on" : "Audio off"}
@@ -589,22 +738,34 @@ function VideoPromptComposer({
         onSelectedModelChange={setSelectedModelId}
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
-        attachSources={["upload", "library", "influencer", "product"]}
-        maxAttachments={MAX_REFERENCE_IMAGES}
-        costMultiplier={duration * videoResolutionCostMultiplier(resolution)}
+        attachSources={attachSources}
+        maxAttachments={maxAttachments}
+        minAttachments={minAttachments}
+        costMultiplier={
+          hideCost
+            ? undefined
+            : (costMultiplierProp ?? effectiveDuration) *
+              videoResolutionCostMultiplier(resolution)
+        }
+        hideCost={hideCost}
         workspaceId={currentWorkspace?._id}
         placeholder={placeholder}
         animatedPlaceholderWords={animatedPlaceholderWords}
         pending={pending}
+        disabled={disabled}
+        submitDisabled={submitDisabled}
+        modelLocked={modelLocked}
         onSubmit={handleSubmit}
         submitLabel={homeHero ? "Create video" : "Generate"}
         submitTitle={homeHero ? "Create video" : "Generate"}
         submitAppearance={homeHero ? "labeled" : "send"}
         submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
         footerClassName={
-          hideExtras || homeHero
-            ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
-            : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+          embedded
+            ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
+            : hideExtras || homeHero
+              ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
+              : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         }
         tools={tools}
         textareaRef={(node) => {
@@ -614,12 +775,17 @@ function VideoPromptComposer({
         emptyTitle="No video models yet"
         emptyDescription="Add a text-to-video or image-to-video model in the manager to start creating clips."
         surfaceClassName={
-          homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+          embedded
+            ? STUDIO_NESTED_COMPOSER_SURFACE_CLASS
+            : homeHero
+              ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
+              : STUDIO_HOME_COMPOSER_SURFACE_CLASS
         }
-        compact={hideExtras || homeHero}
+        compact={hideExtras || homeHero || embedded}
+        embedded={embedded}
       />
 
-      {attachedImages.length > 0 ? (
+      {attachedImages.length > 0 && !embedded ? (
         <div className={hideExtras || homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
@@ -673,7 +839,7 @@ export function VideoPromptInput(props: VideoPromptInputProps) {
   }
 
   return (
-    <PromptInputProvider>
+    <PromptInputProvider initialInput={props.initialPrompt ?? ""}>
       <VideoPromptComposer {...props} />
     </PromptInputProvider>
   );

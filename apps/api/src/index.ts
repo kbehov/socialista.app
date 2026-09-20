@@ -20,6 +20,7 @@ import productRoutes from '@/routes/product.routes.js'
 import projectRoutes from '@/routes/project.routes.js'
 import skillRoutes from '@/routes/skill.routes.js'
 import staticAdTemplateRoutes from '@/routes/static-ad-templates.routes.js'
+import studioTemplateRoutes from '@/routes/studio-templates.routes.js'
 import postRoutes from '@/routes/post.routes.js'
 import { slideshowRoutes } from '@/routes/slideshow.routes.js'
 import userRoutes from '@/routes/user.routes.js'
@@ -71,6 +72,7 @@ app.route('/products', productRoutes)
 app.route('/projects', projectRoutes)
 app.route('/skills', skillRoutes)
 app.route('/static-ad-templates', staticAdTemplateRoutes)
+app.route('/studio-templates', studioTemplateRoutes)
 app.route('/posts', postRoutes)
 app.route('/accounts', accountRoutes)
 app.route('/cron', cronRoutes)

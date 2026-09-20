@@ -10,17 +10,27 @@ type ModelLogoProps = {
 }
 
 export function ModelLogo({ model, className, size = 14 }: ModelLogoProps) {
-  if (model.company?.logo) {
-    return (
-      <ModelSelectorLogo
-        alt={`${model.company.name} logo`}
-        className={cn('object-contain', className)}
-        height={size}
-        src={model.company.logo}
-        width={size}
-      />
-    )
-  }
+  const provider = model.value.toLowerCase().includes('omnihuman')
+    ? 'bytedance'
+    : model.modelProvider
+  const icon = model.company?.logo ? (
+    <ModelSelectorLogo
+      alt={`${model.company.name} logo`}
+      className="size-full object-contain"
+      height={size}
+      src={model.company.logo}
+      width={size}
+    />
+  ) : (
+    <ModelProviderIcon className="size-full" provider={provider} size={size} />
+  )
 
-  return <ModelProviderIcon className={className} provider={model.modelProvider} size={size} />
+  return (
+    <span
+      className={cn('inline-flex shrink-0 items-center justify-center', className)}
+      style={{ width: size, height: size }}
+    >
+      {icon}
+    </span>
+  )
 }

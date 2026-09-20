@@ -25,6 +25,8 @@ export { ProjectModel } from "./models/project.model.js";
 export { SkillModel } from "./models/skill.model.js";
 export { StaticAdTemplateModel } from "./models/static-ad-template.model.js";
 export { StaticAdTemplateCategoryModel } from "./models/static-ad-template-category.model.js";
+export { StudioTemplateModel } from "./models/studio-template.model.js";
+export { StudioTemplateCategoryModel } from "./models/studio-template-category.model.js";
 export { SlideshowModel } from "./models/slideshow.model.js";
 export { UgcProjectModel } from "./models/ugc-project.model.js";
 export { UserModel } from "./models/user.model.js";
@@ -46,6 +48,7 @@ export * from "./repo/product.repo.js";
 export * from "./repo/project.repo.js";
 export * from "./repo/skill.repo.js";
 export * from "./repo/static-ad-template.repo.js";
+export * from "./repo/studio-template.repo.js";
 export * from "./repo/slideshow.repo.js";
 export * from "./repo/ugc-project.repo.js";
 export * from "./repo/user.repo.js";
@@ -110,6 +113,13 @@ export {
   type StaticAdTemplateCategoryDocument,
   type StaticAdTemplateDocument,
 } from "./types/static-ad-template.types.js";
+export {
+  type CreateStudioTemplateInput,
+  type IStudioTemplate,
+  type IStudioTemplateCategory,
+  type StudioTemplateCategoryDocument,
+  type StudioTemplateDocument,
+} from "./types/studio-template.types.js";
 export {
   buildFilters,
   buildPaginationMeta,

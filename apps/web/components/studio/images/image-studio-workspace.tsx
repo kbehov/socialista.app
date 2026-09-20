@@ -3,6 +3,7 @@
 import { ImageStudioProvider } from '@/components/studio/images/image-studio-provider'
 import type { Generation, Model, Preset } from '@socialista/types'
 import { ImageStudioHero } from './image-studio-hero'
+import { ImageTemplatesGallery } from './image-templates-gallery'
 import ImageGenerationPromptInput from './prompt-input'
 import { RecentImagesStrip } from './recent-images-strip'
 
@@ -25,6 +26,13 @@ export function ImageStudioWorkspace({
             <ImageGenerationPromptInput models={models} presets={presets} />
           </section>
         </ImageStudioHero>
+
+        <section
+          aria-label="Browse image templates"
+          className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
+        >
+          <ImageTemplatesGallery />
+        </section>
 
         <RecentImagesStrip generations={recentGenerations} />
       </div>

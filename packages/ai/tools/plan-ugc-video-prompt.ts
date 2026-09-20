@@ -23,7 +23,9 @@ const plannedPromptSchema = z.object({
   negativePrompt: z
     .string()
     .optional()
-    .describe('Short comma-separated negatives: identity drift, wrong product, on-screen text, extra people.'),
+    .describe(
+        'Short comma-separated negatives: identity drift, wrong product, extra text, extra people; talking clips: frozen mouth, teeth artifacts; product clips: label morph, warped text, extra fingers.',
+      ),
 })
 
 const DEFAULT_ASPECT: AspectRatio = '9:16'

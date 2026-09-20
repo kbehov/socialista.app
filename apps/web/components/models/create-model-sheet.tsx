@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { COST_UNIT_OPTIONS, createModelSchema, type CreateModelFormValues } from '@/lib/zod/model.schema'
 import { createModel, updateModel } from '@/services/models.service'
@@ -42,6 +43,7 @@ const emptyFormValues: CreateModelFormValues = {
   costUnit: CostUnit.TOKENS,
   modelType: ModelType.TEXT,
   contextSupports: [ContextSupport.TEXT],
+  allowedInUgc: false,
   modelProvider: '',
   company: '',
 }
@@ -53,6 +55,7 @@ function toFormValues(model: Model): CreateModelFormValues {
     costUnit: model.costUnit,
     modelType: model.modelType,
     contextSupports: model.contextSupports?.length ? model.contextSupports : [ContextSupport.TEXT],
+    allowedInUgc: model.allowedInUgc ?? false,
     modelProvider: model.modelProvider,
     value: model.value,
     company: model.company?._id ?? '',
@@ -104,6 +107,7 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
       costUnit: values.costUnit,
       modelType: values.modelType,
       contextSupports: values.contextSupports,
+      allowedInUgc: values.allowedInUgc,
       modelProvider: values.modelProvider,
       company: values.company,
     }
@@ -253,6 +257,29 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
               </p>
               <FieldError message={errors.contextSupports?.message} />
             </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-md border border-input px-3 py-2">
+              <div className="space-y-1">
+                <FieldLabel htmlFor="model-allowed-in-ugc">Allow in UGC studio</FieldLabel>
+                <p className="text-xs text-muted-foreground">
+                  Only enabled models can be selected in UGC studio.
+                </p>
+              </div>
+              <Controller
+                name="allowedInUgc"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="model-allowed-in-ugc"
+                    checked={field.value}
+                    disabled={isSubmitting}
+                    onCheckedChange={field.onChange}
+                    aria-invalid={Boolean(errors.allowedInUgc)}
+                  />
+                )}
+              />
+            </div>
+            <FieldError message={errors.allowedInUgc?.message} />
 
             <div className="space-y-2">
               <FieldLabel htmlFor="model-cost-unit">Cost unit</FieldLabel>

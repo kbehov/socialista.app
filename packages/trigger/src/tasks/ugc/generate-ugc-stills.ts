@@ -3,7 +3,6 @@ import {
   buildUgcSceneStillPrompt,
   buildUgcStillRefUrls,
   generateImage,
-  UGC_HOOK_STILL_LOCK_FOOTER,
   UGC_STILL_LOCK_FOOTER,
 } from '@socialista/ai'
 import {
@@ -23,6 +22,7 @@ import {
   type AspectRatio,
   type UgcClipType,
   PROMPT_KEYS,
+  ugcClipRequiresScreenshots,
 } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
@@ -128,7 +128,9 @@ export const generateUgcStills = schemaTask({
             thumbnailUrl: undefined,
             approved: false,
             sceneCount: 1,
-            ...(payload.prompt?.trim() ? { scenePrompt: payload.prompt.trim() } : {}),
+            ...(payload.prompt?.trim()
+              ? { scenePrompt: payload.prompt.trim(), imagePrompt: payload.prompt.trim() }
+              : {}),
             ...(payload.model ? { models: { ...clip.models, image: payload.model } } : {}),
           },
           {
@@ -141,7 +143,7 @@ export const generateUgcStills = schemaTask({
           },
         )
 
-        const influencerId = clipType === 'hook' ? undefined : resolveUgcInfluencerId(project, clip)
+        const influencerId = resolveUgcInfluencerId(project, clip)
         const influencer = influencerId ? await getInfluencerById(influencerId) : null
         if (influencerId && !influencer) {
           await updateUgcClip(
@@ -154,11 +156,12 @@ export const generateUgcStills = schemaTask({
         }
 
         const previousStillUrl = previousSceneStillUrl(liveClips, clip.id)
-        const hasSceneProduct = clipType !== 'app-showcase' && (clip.referenceImageUrls?.length ?? 0) > 0
+        const usesScreenshots = ugcClipRequiresScreenshots(clipType)
+        const hasSceneProduct = !usesScreenshots && (clip.referenceImageUrls?.length ?? 0) > 0
         const autoRefs = buildUgcStillRefUrls({
           influencerReferenceUrls: influencer ? influencerRefs(influencer) : [],
           productImageUrls: hasSceneProduct ? clip.referenceImageUrls : project.productImageUrls,
-          extraReferenceUrls: clipType === 'app-showcase' ? clip.referenceImageUrls : undefined,
+          extraReferenceUrls: usesScreenshots ? clip.referenceImageUrls : undefined,
           previousStillUrl,
           sceneIndex: 0,
         })
@@ -169,16 +172,17 @@ export const generateUgcStills = schemaTask({
 
         const seed = payload.prompt?.trim()
           ? payload.prompt.trim()
-          : buildUgcSceneStillPrompt({
-              clipType,
-              sceneIndex: 0,
-              sceneCount: 1,
-              influencerName: influencer?.name,
-              identityFragment: influencer?.identity?.basePromptFragment,
-              productName: project.productName,
-              scenePrompt: clip.scenePrompt,
-              hookText: clipType === 'hook' ? clip.script?.text : undefined,
-            })
+          : clip.imagePrompt?.trim()
+            ? clip.imagePrompt.trim()
+            : buildUgcSceneStillPrompt({
+                clipType,
+                sceneIndex: 0,
+                sceneCount: 1,
+                influencerName: influencer?.name,
+                identityFragment: influencer?.identity?.basePromptFragment,
+                productName: project.productName,
+                scenePrompt: clip.scenePrompt,
+              })
 
         let nextStills = [...existingStills]
         try {
@@ -223,8 +227,7 @@ export const generateUgcStills = schemaTask({
                 await setGenerationEnhancedPrompt(triggerRunId, enhanced)
               }
 
-              const lockFooter = clipType === 'hook' ? UGC_HOOK_STILL_LOCK_FOOTER : UGC_STILL_LOCK_FOOTER
-              const finalPrompt = `${enhanced}\n\n${lockFooter}`
+              const finalPrompt = `${enhanced}\n\n${UGC_STILL_LOCK_FOOTER}`
               setGenerationStatus(
                 40 + Math.round((completed / totalShots) * 50),
                 `Generating photo ${completed + 1} of ${totalShots}`,

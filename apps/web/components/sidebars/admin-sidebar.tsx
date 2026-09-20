@@ -1,4 +1,4 @@
-import { BoxIcon, FolderArchive, LayoutDashboardIcon, LightbulbIcon } from 'lucide-react'
+import { BoxIcon, FolderArchive, LayoutDashboardIcon, LayoutTemplateIcon, LightbulbIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import {
@@ -35,6 +35,21 @@ const items = [
       {
         title: 'Niches',
         url: '/manager/inspirations/niches',
+      },
+    ],
+  },
+  {
+    title: 'Templates',
+    url: '/manager/templates',
+    icon: <LayoutTemplateIcon />,
+    items: [
+      {
+        title: 'All templates',
+        url: '/manager/templates',
+      },
+      {
+        title: 'Categories',
+        url: '/manager/templates/categories',
       },
     ],
   },

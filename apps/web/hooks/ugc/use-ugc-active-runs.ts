@@ -1,84 +1,17 @@
 'use client'
 
+import type { UgcActiveRun, UgcPipeline } from '@/types/ugc.types'
 import {
+  clearStoredUgcRun,
   readGenerationAccessToken,
-  storeGenerationAccessToken,
-} from '@/lib/image-generation/session'
+  readStoredUgcRunId,
+  rememberUgcRun,
+  ugcPipelineLabel,
+} from '@/utils/ugc/run-storage.utils'
 import type { UgcProject } from '@socialista/types'
 import { useCallback, useMemo, useState } from 'react'
 
-export type UgcPipeline = 'stills' | 'video' | 'audio'
-
-export type UgcActiveRun = {
-  key: string
-  clipId?: string
-  runId: string
-  accessToken: string
-  pipeline: UgcPipeline
-  progress: number
-  progressLabel: string
-}
-
-const RUN_STORAGE_PREFIX = 'ugc-run:'
-const LEGACY_CLIP_RUN = 'ugc-clip-run:'
-const LEGACY_CLIP_AUDIO_RUN = 'ugc-clip-audio-run:'
-const LEGACY_STILLS_RUN = 'ugc-stills-run:'
-const LEGACY_AUDIO_RUN = 'ugc-audio-run:'
-
-function runStorageKey(projectId: string, pipeline: UgcPipeline, clipId?: string) {
-  const scope = clipId ? `${clipId}:${pipeline}` : pipeline
-  return `${RUN_STORAGE_PREFIX}${projectId}:${scope}`
-}
-
-function pipelineLabel(pipeline: UgcPipeline) {
-  switch (pipeline) {
-    case 'audio':
-      return 'Generating voiceover…'
-    case 'video':
-      return 'Rendering…'
-    case 'stills':
-      return 'Generating photos…'
-  }
-}
-
-function rememberRun(projectId: string, runId: string, token: string, pipeline: UgcPipeline, clipId?: string) {
-  storeGenerationAccessToken(runId, token)
-  sessionStorage.setItem(runStorageKey(projectId, pipeline, clipId), runId)
-}
-
-function readStoredRunId(projectId: string, pipeline: UgcPipeline, clipId?: string): string | null {
-  const key = runStorageKey(projectId, pipeline, clipId)
-  const stored = sessionStorage.getItem(key)
-  if (stored) return stored
-
-  if (clipId) {
-    if (pipeline === 'audio') {
-      return sessionStorage.getItem(`${LEGACY_CLIP_AUDIO_RUN}${clipId}`)
-    }
-    if (pipeline === 'stills' || pipeline === 'video') {
-      return sessionStorage.getItem(`${LEGACY_CLIP_RUN}${clipId}`)
-    }
-  } else if (pipeline === 'stills') {
-    return sessionStorage.getItem(`${LEGACY_STILLS_RUN}${projectId}`)
-  } else if (pipeline === 'audio') {
-    return sessionStorage.getItem(`${LEGACY_AUDIO_RUN}${projectId}`)
-  }
-
-  return null
-}
-
-function clearStoredRun(projectId: string, pipeline: UgcPipeline, clipId?: string) {
-  sessionStorage.removeItem(runStorageKey(projectId, pipeline, clipId))
-  if (clipId && pipeline === 'audio') {
-    sessionStorage.removeItem(`${LEGACY_CLIP_AUDIO_RUN}${clipId}`)
-  } else if (clipId) {
-    sessionStorage.removeItem(`${LEGACY_CLIP_RUN}${clipId}`)
-  } else if (pipeline === 'stills') {
-    sessionStorage.removeItem(`${LEGACY_STILLS_RUN}${projectId}`)
-  } else if (pipeline === 'audio') {
-    sessionStorage.removeItem(`${LEGACY_AUDIO_RUN}${projectId}`)
-  }
-}
+export type { UgcActiveRun, UgcPipeline }
 
 function makeRun(
   runId: string,
@@ -93,7 +26,7 @@ function makeRun(
     accessToken,
     pipeline,
     progress: 8,
-    progressLabel: pipelineLabel(pipeline),
+    progressLabel: ugcPipelineLabel(pipeline),
   }
 }
 
@@ -107,7 +40,7 @@ export function restoreUgcActiveRuns(project: UgcProject): UgcActiveRun[] {
     next.push(run)
   }
 
-  const stillsRunId = readStoredRunId(project.id, 'stills')
+  const stillsRunId = readStoredUgcRunId(project.id, 'stills')
   if (stillsRunId) {
     const token = readGenerationAccessToken(stillsRunId)
     if (token && project.clips.some(clip => clip.status === 'generating')) {
@@ -115,14 +48,14 @@ export function restoreUgcActiveRuns(project: UgcProject): UgcActiveRun[] {
     }
   }
 
-  const audioRunId = readStoredRunId(project.id, 'audio')
+  const audioRunId = readStoredUgcRunId(project.id, 'audio')
   if (audioRunId) {
     const token = readGenerationAccessToken(audioRunId)
     if (token) push(makeRun(audioRunId, token, 'audio'))
   }
 
   for (const clip of project.clips) {
-    const clipAudioRunId = readStoredRunId(project.id, 'audio', clip.id)
+    const clipAudioRunId = readStoredUgcRunId(project.id, 'audio', clip.id)
     if (clipAudioRunId) {
       const token = readGenerationAccessToken(clipAudioRunId)
       if (token) push(makeRun(clipAudioRunId, token, 'audio', clip.id))
@@ -130,7 +63,7 @@ export function restoreUgcActiveRuns(project: UgcProject): UgcActiveRun[] {
 
     if (clip.status !== 'generating') continue
 
-    const storedRunId = readStoredRunId(project.id, 'stills', clip.id)
+    const storedRunId = readStoredUgcRunId(project.id, 'stills', clip.id)
     const candidates = [storedRunId, clip.videoRunId, clip.stillsRunId].filter(
       (id): id is string => Boolean(id),
     )
@@ -156,7 +89,7 @@ export function useUgcActiveRuns({ project }: { project: UgcProject }) {
       pipeline: UgcPipeline,
       clipId?: string,
     ) => {
-      rememberRun(project.id, handle.runId, handle.publicAccessToken, pipeline, clipId)
+      rememberUgcRun(project.id, handle.runId, handle.publicAccessToken, pipeline, clipId)
       setActiveRuns(current => {
         const without = current.filter(run => {
           if (run.runId === handle.runId) return false
@@ -202,7 +135,7 @@ export function useUgcActiveRuns({ project }: { project: UgcProject }) {
   const settleRun = useCallback(
     (run: UgcActiveRun) => {
       if (run.pipeline === 'audio') {
-        clearStoredRun(project.id, 'audio', run.clipId)
+        clearStoredUgcRun(project.id, 'audio', run.clipId)
       }
       setActiveRuns(current => current.filter(item => item.key !== run.key))
     },
