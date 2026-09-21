@@ -15,24 +15,19 @@ import {
 import { ProductPickerDialog } from "@/components/studio/static-ads/product-picker-dialog";
 import { InfluencerPickerDialog } from "@/components/studio/influencers/influencer-picker-dialog";
 import { cn } from "@/lib/utils";
-import {
-  STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-  STUDIO_TOOL_BUTTON_CLASS,
-  STUDIO_TOOL_ICON_BUTTON_CLASS,
-} from "@/components/studio/prompt/studio-composer-surface";
+import { STUDIO_ATTACH_PLUS_BUTTON_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { getWorkspaceProducts } from "@/services/product.service";
 import { getProjectId, useProjectStore } from "@/store/project.store";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import type { Product } from "@socialista/types";
 import type { SelectedProductImage } from "@/types/static-ads.types";
 import {
-  FolderIcon,
-  ImagePlusIcon,
+  FilesIcon,
   PackageIcon,
-  UploadIcon,
+  PlusIcon,
   UserRoundIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export type StudioAttachSource =
@@ -41,20 +36,14 @@ export type StudioAttachSource =
   | "influencer"
   | "product";
 
-const SOURCE_ITEMS: Record<
-  StudioAttachSource,
-  { label: string; description: string; icon: typeof UploadIcon }
+type StudioAttachMenuItem =
+  | { kind: "files" }
+  | { kind: StudioAttachSource };
+
+const PICKER_ITEMS: Record<
+  Exclude<StudioAttachSource, "upload" | "library">,
+  { label: string; description: string; icon: typeof PackageIcon }
 > = {
-  upload: {
-    label: "Upload",
-    description: "From your device",
-    icon: UploadIcon,
-  },
-  library: {
-    label: "Library",
-    description: "Workspace files",
-    icon: FolderIcon,
-  },
   influencer: {
     label: "Influencer",
     description: "Ready creator",
@@ -67,12 +56,11 @@ const SOURCE_ITEMS: Record<
   },
 };
 
-function coverUrl(influencer: {
-  coverImageUrl?: string;
-  galleryImageUrls: string[];
-}) {
-  return influencer.coverImageUrl || influencer.galleryImageUrls[0];
-}
+const FILES_ITEM = {
+  label: "Files",
+  description: "Upload or browse library",
+  icon: FilesIcon,
+} as const;
 
 const MACHINE_NAME_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -91,6 +79,13 @@ export function attachmentChipLabel(file: AttachedMedia): string {
   return humanFileName(file.name) ?? "Reference";
 }
 
+function coverUrl(influencer: {
+  coverImageUrl?: string;
+  galleryImageUrls: string[];
+}) {
+  return influencer.coverImageUrl || influencer.galleryImageUrls[0];
+}
+
 type StudioAttachMenuProps = {
   sources: readonly StudioAttachSource[];
   attachments: AttachedMedia[];
@@ -101,6 +96,23 @@ type StudioAttachMenuProps = {
   disabledReason?: string;
   className?: string;
 };
+
+function buildMenuItems(sources: readonly StudioAttachSource[]): StudioAttachMenuItem[] {
+  const hasUpload = sources.includes("upload");
+  const hasLibrary = sources.includes("library");
+  const items: StudioAttachMenuItem[] = [];
+
+  if (hasUpload || hasLibrary) {
+    items.push({ kind: "files" });
+  }
+
+  for (const source of sources) {
+    if (source === "upload" || source === "library") continue;
+    items.push({ kind: source });
+  }
+
+  return items;
+}
 
 export function StudioAttachMenu({
   sources,
@@ -123,6 +135,10 @@ export function StudioAttachMenu({
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsTruncated, setProductsTruncated] = useState(false);
+
+  const menuItems = useMemo(() => buildMenuItems(sources), [sources]);
+  const hasFilesSource =
+    sources.includes("upload") || sources.includes("library");
 
   useEffect(() => {
     setProducts([]);
@@ -185,13 +201,13 @@ export function StudioAttachMenu({
     setProductsTruncated((response.meta?.total ?? next.length) > next.length);
   }, [products.length, workspaceId, projectId]);
 
-  const handleSource = (source: StudioAttachSource) => {
-    if (source === "upload" || source === "library") {
-      setMediaTab(source);
+  const handleMenuItem = (item: StudioAttachMenuItem) => {
+    if (item.kind === "files") {
+      setMediaTab("upload");
       setMediaOpen(true);
       return;
     }
-    if (source === "influencer") {
+    if (item.kind === "influencer") {
       setInfluencerOpen(true);
       return;
     }
@@ -206,103 +222,122 @@ export function StudioAttachMenu({
       productId: file.productId,
     }));
 
-  const attachButtonClass = cn(
-    STUDIO_TOOL_ICON_BUTTON_CLASS,
-    attachments.length > 0 && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-    className,
-  );
+  const attachButtonClass = cn(STUDIO_ATTACH_PLUS_BUTTON_CLASS, className);
 
   const attachTooltip = disabled
-    ? (disabledReason ?? "Attach references")
+    ? (disabledReason ?? "Add references")
     : attachments.length > 0
-      ? `Attach references (${attachments.length} attached)`
-      : "Attach reference images";
+      ? `Add references (${attachments.length} attached)`
+      : "Add references";
 
   const trigger = (
     <StudioInputActionTooltip label={attachTooltip}>
       <PromptInputActionMenuTrigger
         aria-label={
           attachments.length > 0
-            ? `Attach references, ${attachments.length} attached`
-            : "Attach references"
+            ? `Add references, ${attachments.length} attached`
+            : "Add references"
         }
         className={attachButtonClass}
         disabled={disabled}
         size="icon-xs"
         type="button"
       >
-        <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+        <PlusIcon className="size-4 shrink-0" strokeWidth={2} />
       </PromptInputActionMenuTrigger>
     </StudioInputActionTooltip>
   );
 
-  if (sources.length === 0) {
+  if (menuItems.length === 0) {
     return (
       <PromptInputButton
-        aria-label="Attach references"
+        aria-label="Add references"
         className={attachButtonClass}
         disabled
         size="icon-xs"
         tooltip="No attach sources"
         type="button"
       >
-        <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+        <PlusIcon className="size-4 shrink-0" strokeWidth={2} />
       </PromptInputButton>
     );
   }
 
-  const singleSource = sources.length === 1 ? sources[0] : null;
+  const singleItem = menuItems.length === 1 ? menuItems[0] : null;
+
   const singleDisabled =
     disabled ||
-    (atMax &&
-      singleSource !== "upload" &&
-      singleSource !== "library") ||
-    ((singleSource === "upload" || singleSource === "library") &&
-      mediaSlots === 0);
+    (singleItem?.kind === "influencer" && atMax) ||
+    (singleItem?.kind === "product" && atMax) ||
+    (singleItem?.kind === "files" && mediaSlots === 0 && atMax);
 
-  const triggerButton = singleSource ? (
+  const triggerButton = singleItem ? (
     <StudioInputActionTooltip
       label={
-        singleSource === "influencer"
+        singleItem.kind === "influencer"
           ? atMax
             ? "Only one photo can be attached"
             : "Attach a creator photo"
-          : attachTooltip
+          : singleItem.kind === "files"
+            ? "Files — upload or library"
+            : attachTooltip
       }
     >
       <PromptInputButton
         aria-label={
-          singleSource === "influencer"
-            ? "Attach a creator photo"
-            : "Attach references"
+          singleItem.kind === "files"
+            ? "Open files"
+            : singleItem.kind === "influencer"
+              ? "Attach a creator photo"
+              : "Add references"
         }
         className={attachButtonClass}
         disabled={singleDisabled}
-        onClick={() => handleSource(singleSource)}
+        onClick={() => handleMenuItem(singleItem)}
         size="icon-xs"
         type="button"
       >
-        <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+        <PlusIcon className="size-4 shrink-0" strokeWidth={2} />
       </PromptInputButton>
     </StudioInputActionTooltip>
   ) : (
     <PromptInputActionMenu>
       {trigger}
       <PromptInputActionMenuContent className="w-52 p-1">
-        {sources.map((source) => {
-          const item = SOURCE_ITEMS[source];
-          const Icon = item.icon;
+        {menuItems.map((item) => {
+          if (item.kind === "files") {
+            const Icon = FILES_ITEM.icon;
+            return (
+              <PromptInputActionMenuItem
+                key="files"
+                className="gap-2.5 rounded-lg px-2 py-1.5"
+                disabled={disabled || (atMax && mediaSlots === 0)}
+                onSelect={() => handleMenuItem(item)}
+              >
+                <Icon
+                  className="size-3.5 text-muted-foreground"
+                  strokeWidth={1.75}
+                />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[13px] font-medium leading-none">
+                    {FILES_ITEM.label}
+                  </span>
+                  <span className="mt-0.5 text-[11px] leading-none text-muted-foreground">
+                    {FILES_ITEM.description}
+                  </span>
+                </span>
+              </PromptInputActionMenuItem>
+            );
+          }
+
+          const meta = PICKER_ITEMS[item.kind];
+          const Icon = meta.icon;
           return (
             <PromptInputActionMenuItem
-              key={source}
+              key={item.kind}
               className="gap-2.5 rounded-lg px-2 py-1.5"
-              disabled={
-                disabled ||
-                (atMax && source !== "upload" && source !== "library") ||
-                ((source === "upload" || source === "library") &&
-                  mediaSlots === 0)
-              }
-              onSelect={() => handleSource(source)}
+              disabled={disabled || atMax}
+              onSelect={() => handleMenuItem(item)}
             >
               <Icon
                 className="size-3.5 text-muted-foreground"
@@ -310,10 +345,10 @@ export function StudioAttachMenu({
               />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[13px] font-medium leading-none">
-                  {item.label}
+                  {meta.label}
                 </span>
                 <span className="mt-0.5 text-[11px] leading-none text-muted-foreground">
-                  {item.description}
+                  {meta.description}
                 </span>
               </span>
             </PromptInputActionMenuItem>
@@ -327,7 +362,7 @@ export function StudioAttachMenu({
     <>
       {triggerButton}
 
-      {sources.includes("upload") || sources.includes("library") ? (
+      {hasFilesSource ? (
         <AttachImagesDialog
           open={mediaOpen}
           accept="image"
@@ -336,8 +371,8 @@ export function StudioAttachMenu({
           initialSelected={mediaAttachments}
           defaultTab={mediaTab}
           workspaceId={workspaceId}
-          title="Attach reference images"
-          description="Guide the model with product shots, mood boards, or style references."
+          title="Files"
+          description="Upload from your device or pick from your workspace library."
           onSelect={mergeMedia}
         />
       ) : null}

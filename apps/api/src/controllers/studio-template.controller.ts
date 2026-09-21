@@ -55,27 +55,27 @@ function serializeTemplate(template: IStudioTemplate): StudioTemplateDto {
     return {
       ...base,
       kind: StudioTemplateKind.VIDEO,
-      payload: template.payload as StudioTemplateVideoPayload,
+      payload: (template.payload ?? {}) as StudioTemplateVideoPayload,
     }
   }
   if (template.kind === StudioTemplateKind.SLIDESHOW) {
     return {
       ...base,
       kind: StudioTemplateKind.SLIDESHOW,
-      payload: template.payload as StudioTemplateSlideshowPayload,
+      payload: (template.payload ?? {}) as StudioTemplateSlideshowPayload,
     }
   }
   if (template.kind === StudioTemplateKind.UGC) {
     return {
       ...base,
       kind: StudioTemplateKind.UGC,
-      payload: template.payload as StudioTemplateUgcPayload,
+      payload: (template.payload ?? {}) as StudioTemplateUgcPayload,
     }
   }
   return {
     ...base,
     kind: StudioTemplateKind.IMAGE,
-    payload: template.payload as StudioTemplateImagePayload,
+    payload: (template.payload ?? {}) as StudioTemplateImagePayload,
   }
 }
 

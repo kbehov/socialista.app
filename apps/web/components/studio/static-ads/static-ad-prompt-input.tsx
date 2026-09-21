@@ -8,8 +8,8 @@ import {
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
-import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
+import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
@@ -355,6 +355,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
           <>
             {aspectTools}
             <StudioSkillPicker
+              appearance="icon"
               target={PROMPT_KEYS.staticAd}
               value={skillId}
               onChange={setSkillId}

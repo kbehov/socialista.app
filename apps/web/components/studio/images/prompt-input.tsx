@@ -16,7 +16,6 @@ import {
 } from "@/components/skills/studio-skill-picker";
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
-  STUDIO_HERO_SUBMIT_CLASS,
   STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
@@ -50,7 +49,6 @@ import {
   PROMPT_KEYS,
   type AspectRatio,
   type Model,
-  type Preset,
   type Skill,
 } from "@socialista/types";
 import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
@@ -64,8 +62,6 @@ import {
   useTransition,
 } from "react";
 import { toast } from "sonner";
-import { StudioPreset } from "@/components/studio/prompt/studio-preset";
-import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
 import { ImagePromptAnatomy } from "./prompt-anatomy";
 
 const MAX_REFERENCE_IMAGES = 3;
@@ -90,7 +86,6 @@ export type ImagePromptSubmitResult = {
 
 export type ImagePromptInputProps = {
   models: Model[]
-  presets?: Preset[]
   onSubmitOverride?: (result: ImagePromptSubmitResult) => void
   initialAttachments?: AttachedMedia[]
   initialAspectRatio?: AspectRatio
@@ -101,6 +96,9 @@ export type ImagePromptInputProps = {
   pending?: boolean
   initialPrompt?: string
   embedded?: boolean
+  bindStudio?: boolean
+  autoFocus?: boolean
+  surfaceClassName?: string
 }
 
 const ASPECT_RATIOS = [
@@ -116,7 +114,6 @@ const ASPECT_RATIOS = [
 
 function ImagePromptComposer({
   models,
-  presets = [],
   onSubmitOverride,
   initialAttachments,
   initialAspectRatio,
@@ -127,10 +124,14 @@ function ImagePromptComposer({
   pending: pendingProp,
   initialPrompt,
   embedded = false,
+  bindStudio = true,
+  autoFocus,
+  surfaceClassName: surfaceClassNameProp,
 }: ImagePromptInputProps) {
   const [submitShortcut] = useState(getSubmitShortcutLabel);
   const router = useRouter();
-  const studio = useOptionalImageStudio();
+  const studioContext = useOptionalImageStudio();
+  const studio = bindStudio ? studioContext : null;
   const localComposerRef = useRef<HTMLDivElement>(null);
   const composerRef = studio?.composerRef ?? localComposerRef;
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
@@ -203,12 +204,6 @@ function ImagePromptComposer({
     return DEFAULT_PLACEHOLDER;
   }, [attachedImages.length, placeholderProp]);
 
-  const animatedPlaceholderWords = useMemo(() => {
-    if (!homeHero || placeholderProp || attachedImages.length > 0) return undefined;
-    const examples = buildPresetPlaceholderExamples(presets);
-    return examples.length > 0 ? examples : undefined;
-  }, [attachedImages.length, homeHero, placeholderProp, presets]);
-
   const insertAtCursor = useCallback(
     (snippet: string) => {
       const el = textareaRef.current;
@@ -275,11 +270,12 @@ function ImagePromptComposer({
   }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt, setModel]);
 
   useEffect(() => {
-    if (hideExtras) return;
+    const shouldFocus = autoFocus ?? !hideExtras;
+    if (!shouldFocus) return;
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
     textareaRef.current?.focus();
-  }, [hideExtras]);
+  }, [autoFocus, hideExtras]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim();
@@ -388,6 +384,8 @@ function ImagePromptComposer({
         models={models}
         selectedModelId={selectedModelId}
         onSelectedModelChange={setSelectedModelId}
+        modelPickerVariant="image"
+        modelPickerHeading="Image models"
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
         attachSources={["upload", "library", "influencer", "product"]}
@@ -401,7 +399,6 @@ function ImagePromptComposer({
           label: "Number of images",
         }}
         placeholder={placeholder}
-        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={pending}
         onSubmit={handleSubmit}
         submitLabel={
@@ -422,8 +419,7 @@ function ImagePromptComposer({
               ? "Generate"
               : `Generate ${numImages}`
         }
-        submitAppearance={homeHero ? "labeled" : "send"}
-        submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
+        submitAppearance="send"
         footerClassName={
           embedded
             ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
@@ -464,6 +460,7 @@ function ImagePromptComposer({
               <WandSparklesIcon className="size-3.5 shrink-0" />
             </PromptInputButton>
             <StudioSkillPicker
+              appearance="icon"
               target={PROMPT_KEYS.imagePrompt}
               value={attachedSkill?._id}
               onChange={(skillId) => {
@@ -481,28 +478,25 @@ function ImagePromptComposer({
         emptyTitle="No image models yet"
         emptyDescription="Add a text-to-image model in the manager to start making campaign stills."
         surfaceClassName={
-          embedded
+          surfaceClassNameProp ??
+          (embedded
             ? STUDIO_NESTED_COMPOSER_SURFACE_CLASS
             : homeHero
               ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
-              : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+              : STUDIO_HOME_COMPOSER_SURFACE_CLASS)
         }
         compact={hideExtras || homeHero || embedded}
         embedded={embedded}
       />
 
-      {attachedImages.length > 0 && !embedded ? (
-        <div className={hideExtras || homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
+      {attachedImages.length > 0 && !embedded && !hideExtras ? (
+        <div className={homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
       ) : null}
 
       {homeHero || hideExtras ? null : (
         <div className="mt-4 flex flex-col items-center gap-4">
-          {studio ? (
-            <StudioPreset presets={presets} disabled={pending} onApply={studio.applyPreset} />
-          ) : null}
-
           <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
               /
@@ -551,14 +545,8 @@ export function ImagePromptInput(props: ImagePromptInputProps) {
   );
 }
 
-const ImageGenerationPromptInput = ({
-  models,
-  presets = [],
-}: {
-  models: Model[]
-  presets?: Preset[]
-}) => {
-  return <ImagePromptInput models={models} presets={presets} homeHero />;
+const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
+  return <ImagePromptInput models={models} homeHero />;
 };
 
 export default ImageGenerationPromptInput;

@@ -5,6 +5,7 @@ import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-inpu
 import {
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
+  STUDIO_TOOL_ICON_BUTTON_CLASS,
 } from '@/components/studio/prompt/studio-composer-surface'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +24,7 @@ import { getWorkspaceSkills } from '@/services/skill.service'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCount } from '@/utils/format'
 import { PROMPT_KEY_LABELS, type PromptKey, type Skill } from '@socialista/types'
-import { BrainIcon, CheckIcon, SearchIcon, XIcon } from 'lucide-react'
+import { BookOpenIcon, BrainIcon, CheckIcon, SearchIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -35,6 +36,8 @@ type StudioSkillPickerProps = {
   onSelect?: (skill: Skill | undefined) => void
   disabled?: boolean
   className?: string
+  /** Icon-only toolbar control (open book). Default shows label + brain icon. */
+  appearance?: 'labeled' | 'icon'
 }
 
 type StudioAttachedSkillProps = {
@@ -152,36 +155,33 @@ export function StudioAttachedSkill({
   )
 }
 
-export function StudioSkillPicker({
+export type StudioSkillPickerDialogProps = StudioSkillPickerProps & {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function StudioSkillPickerDialog({
   target,
   value,
   onChange,
   onSelect,
-  disabled,
-  className,
-}: StudioSkillPickerProps) {
+  open,
+  onOpenChange,
+}: StudioSkillPickerDialogProps) {
   const workspaceId = useWorkspaceStore(s => s.currentWorkspace?._id)
-  const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedSkill, setSelectedSkill] = useState<Skill | undefined>()
 
   const targetLabel = PROMPT_KEY_LABELS[target]
-  const selected = value
-    ? selectedSkill?._id === value
-      ? selectedSkill
-      : (skills.find(skill => skill._id === value) ?? selectedSkill)
-    : undefined
 
   const applySkill = useCallback(
     (skill: Skill | undefined) => {
       onChange(skill?._id)
       onSelect?.(skill)
-      setSelectedSkill(skill)
-      setOpen(false)
+      onOpenChange(false)
     },
-    [onChange, onSelect],
+    [onChange, onOpenChange, onSelect],
   )
 
   const load = useCallback(async () => {
@@ -215,137 +215,181 @@ export function StudioSkillPicker({
   }, [load, open, query])
 
   return (
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (next) setQuery('')
+        onOpenChange(next)
+      }}
+    >
+      <DialogContent className="gap-0 overflow-hidden bg-background p-0 sm:max-w-md">
+        <DialogHeader className="border-b border-black/[0.08] px-4 py-3 dark:border-white/[0.09]">
+          <DialogTitle className="text-[13px] font-medium tracking-[-0.015em]">
+            Override Socialista brain
+          </DialogTitle>
+          <DialogDescription className="text-[12px] leading-snug text-black/48 dark:text-white/48">
+            Choose how Socialista thinks about {targetLabel.toLowerCase()}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="border-b border-black/[0.08] px-3 py-2 dark:border-white/[0.09]">
+          <div className="relative">
+            <SearchIcon
+              className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-black/36 dark:text-white/36"
+              strokeWidth={1.75}
+            />
+            <Input
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+              placeholder="Search skills…"
+              className="h-8 rounded-lg border-black/10 bg-transparent pl-8 text-[12px] shadow-none dark:border-white/10 dark:bg-transparent"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <ScrollArea className="max-h-[min(50vh,20rem)]" scrollbarGutter>
+          <div className="space-y-px p-1.5">
+            {!workspaceId ? (
+              <p className="px-2 py-8 text-center text-[12px] text-black/48 dark:text-white/48">
+                Select a workspace to attach a skill.
+              </p>
+            ) : loading ? (
+              <>
+                <SkillRowSkeleton />
+                <SkillRowSkeleton />
+                <SkillRowSkeleton />
+              </>
+            ) : (
+              <>
+                {!query.trim() ? (
+                  <SkillPickerRow
+                    selected={!value}
+                    name="Socialista brain"
+                    description="How we enhance your prompt"
+                    onSelect={() => applySkill(undefined)}
+                  />
+                ) : null}
+
+                {skills.map(skill => (
+                  <SkillPickerRow
+                    key={skill._id}
+                    selected={value === skill._id}
+                    icon={skill.icon}
+                    name={skill.name}
+                    description={skill.description}
+                    meta={
+                      skill.usageCount > 0
+                        ? `${formatCount(skill.usageCount)} ${skill.usageCount === 1 ? 'use' : 'uses'}`
+                        : undefined
+                    }
+                    onSelect={() => applySkill(skill)}
+                  />
+                ))}
+
+                {skills.length === 0 ? (
+                  query.trim() ? (
+                    <p className="px-2 py-8 text-center text-[12px] text-black/48 dark:text-white/48">
+                      No skills match your search.
+                    </p>
+                  ) : (
+                    <div className="px-2 py-6 text-center">
+                      <p className="text-[12px] font-medium tracking-[-0.01em] text-foreground">
+                        No {targetLabel.toLowerCase()} skills yet
+                      </p>
+                      <p className="mt-1 text-[12px] leading-snug text-black/48 dark:text-white/48">
+                        Create a skill to change how Socialista thinks.
+                      </p>
+                      <Button asChild size="sm" variant="outline" className="mt-3 h-7 rounded-md px-2.5 text-[12px]">
+                        <Link href={DASHBOARD_ROUTES.createSkill}>Create skill</Link>
+                      </Button>
+                    </div>
+                  )
+                ) : null}
+              </>
+            )}
+          </div>
+        </ScrollArea>
+
+        {skills.length > 0 ? (
+          <div className="border-t border-black/[0.08] px-4 py-2 dark:border-white/[0.09]">
+            <Link
+              href={DASHBOARD_ROUTES.createSkill}
+              className="text-[12px] font-medium text-black/48 transition-colors hover:text-foreground dark:text-white/48"
+            >
+              Create skill
+            </Link>
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function StudioSkillPicker({
+  target,
+  value,
+  onChange,
+  onSelect,
+  disabled,
+  className,
+  appearance = 'labeled',
+}: StudioSkillPickerProps) {
+  const [open, setOpen] = useState(false)
+  const [selectedSkill, setSelectedSkill] = useState<Skill | undefined>()
+
+  const selected =
+    value && selectedSkill?._id === value ? selectedSkill : undefined
+  const isIcon = appearance === 'icon'
+  const tooltipLabel = selected
+    ? `Skill: ${selected.name}`
+    : value
+      ? 'Custom skill active'
+      : 'Skill — override Socialista brain'
+
+  return (
     <>
-      <StudioInputActionTooltip
-        label={selected ? selected.name : 'Override Socialista brain'}
-      >
+      <StudioInputActionTooltip label={tooltipLabel}>
         <PromptInputButton
-          aria-label={selected ? `Skill: ${selected.name}` : 'Override Socialista brain'}
+          aria-label={tooltipLabel}
           aria-haspopup="dialog"
           aria-expanded={open}
+          aria-pressed={Boolean(value)}
           className={cn(
-            STUDIO_TOOL_BUTTON_CLASS,
-            'max-w-36 min-w-0 overflow-hidden',
-            selected && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+            isIcon ? STUDIO_TOOL_ICON_BUTTON_CLASS : STUDIO_TOOL_BUTTON_CLASS,
+            !isIcon && 'max-w-36 min-w-0 overflow-hidden',
+            value && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
             className,
           )}
           disabled={disabled}
-          onClick={() => {
-            setQuery('')
-            setOpen(true)
-          }}
-          size="xs"
+          onClick={() => setOpen(true)}
+          size={isIcon ? 'icon-xs' : 'xs'}
           type="button"
         >
-          <BrainIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
-          <span className="min-w-0 truncate text-[12px] font-medium leading-none tracking-[-0.015em]">
-            {selected?.name ?? 'Skill'}
-          </span>
+          {isIcon ? (
+            <BookOpenIcon className="size-4 shrink-0" strokeWidth={1.75} />
+          ) : (
+            <>
+              <BrainIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+              <span className="min-w-0 truncate text-[12px] font-medium leading-none tracking-[-0.015em]">
+                {selected?.name ?? 'Skill'}
+              </span>
+            </>
+          )}
         </PromptInputButton>
       </StudioInputActionTooltip>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="gap-0 overflow-hidden bg-background p-0 sm:max-w-md">
-          <DialogHeader className="border-b border-black/[0.08] px-4 py-3 dark:border-white/[0.09]">
-            <DialogTitle className="text-[13px] font-medium tracking-[-0.015em]">
-              Override Socialista brain
-            </DialogTitle>
-            <DialogDescription className="text-[12px] leading-snug text-black/48 dark:text-white/48">
-              Choose how Socialista thinks about {targetLabel.toLowerCase()}.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="border-b border-black/[0.08] px-3 py-2 dark:border-white/[0.09]">
-            <div className="relative">
-              <SearchIcon
-                className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-black/36 dark:text-white/36"
-                strokeWidth={1.75}
-              />
-              <Input
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                placeholder="Search skills…"
-                className="h-8 rounded-lg border-black/10 bg-transparent pl-8 text-[12px] shadow-none dark:border-white/10 dark:bg-transparent"
-                autoFocus
-              />
-            </div>
-          </div>
-
-          <ScrollArea className="max-h-[min(50vh,20rem)]" scrollbarGutter>
-            <div className="space-y-px p-1.5">
-              {!workspaceId ? (
-                <p className="px-2 py-8 text-center text-[12px] text-black/48 dark:text-white/48">
-                  Select a workspace to attach a skill.
-                </p>
-              ) : loading ? (
-                <>
-                  <SkillRowSkeleton />
-                  <SkillRowSkeleton />
-                  <SkillRowSkeleton />
-                </>
-              ) : (
-                <>
-                  {!query.trim() ? (
-                    <SkillPickerRow
-                      selected={!value}
-                      name="Socialista brain"
-                      description="How we enhance your prompt"
-                      onSelect={() => applySkill(undefined)}
-                    />
-                  ) : null}
-
-                  {skills.map(skill => (
-                    <SkillPickerRow
-                      key={skill._id}
-                      selected={value === skill._id}
-                      icon={skill.icon}
-                      name={skill.name}
-                      description={skill.description}
-                      meta={
-                        skill.usageCount > 0
-                          ? `${formatCount(skill.usageCount)} ${skill.usageCount === 1 ? 'use' : 'uses'}`
-                          : undefined
-                      }
-                      onSelect={() => applySkill(skill)}
-                    />
-                  ))}
-
-                  {skills.length === 0 ? (
-                    query.trim() ? (
-                      <p className="px-2 py-8 text-center text-[12px] text-black/48 dark:text-white/48">
-                        No skills match your search.
-                      </p>
-                    ) : (
-                      <div className="px-2 py-6 text-center">
-                        <p className="text-[12px] font-medium tracking-[-0.01em] text-foreground">
-                          No {targetLabel.toLowerCase()} skills yet
-                        </p>
-                        <p className="mt-1 text-[12px] leading-snug text-black/48 dark:text-white/48">
-                          Create a skill to change how Socialista thinks.
-                        </p>
-                        <Button asChild size="sm" variant="outline" className="mt-3 h-7 rounded-md px-2.5 text-[12px]">
-                          <Link href={DASHBOARD_ROUTES.createSkill}>Create skill</Link>
-                        </Button>
-                      </div>
-                    )
-                  ) : null}
-                </>
-              )}
-            </div>
-          </ScrollArea>
-
-          {skills.length > 0 ? (
-            <div className="border-t border-black/[0.08] px-4 py-2 dark:border-white/[0.09]">
-              <Link
-                href={DASHBOARD_ROUTES.createSkill}
-                className="text-[12px] font-medium text-black/48 transition-colors hover:text-foreground dark:text-white/48"
-              >
-                Create skill
-              </Link>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <StudioSkillPickerDialog
+        target={target}
+        value={value}
+        onChange={onChange}
+        onSelect={skill => {
+          onSelect?.(skill)
+          setSelectedSkill(skill)
+        }}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </>
   )
 }

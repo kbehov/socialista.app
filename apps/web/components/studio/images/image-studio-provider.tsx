@@ -1,13 +1,11 @@
 'use client'
 
-import { presetToAttachedMedia } from '@/lib/studio/preset-media'
 import { templateReferencesToAttachedMedia } from '@/lib/studio/template-media'
 import { commitHaptic } from '@/utils/haptics'
 import type { AttachedMedia } from '@/components/files/attach-media/types'
 import {
   StudioTemplateKind,
   type AspectRatio,
-  type Preset,
   type StudioTemplateDto,
 } from '@socialista/types'
 import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
@@ -25,7 +23,6 @@ type ImageStudioContextValue = {
   composerRef: React.RefObject<HTMLDivElement | null>
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
-  applyPreset: (preset: Preset) => void
   applyTemplate: (template: StudioTemplateDto) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
@@ -63,27 +60,17 @@ export function ImageStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
-  const applyPreset = useCallback(
-    (preset: Preset) => {
-      handlersRef.current?.setPrompt(preset.prompt)
-      handlersRef.current?.setAttachments(presetToAttachedMedia(preset))
-      commitHaptic({ vibrateDuration: 8 })
-      focusComposer()
-    },
-    [focusComposer],
-  )
-
   const applyTemplate = useCallback(
     (template: StudioTemplateDto) => {
       if (template.kind !== StudioTemplateKind.IMAGE) return
       const handlers = handlersRef.current
       const { payload } = template
-      handlers?.setPrompt(payload.prompt ?? '')
+      handlers?.setPrompt(payload?.prompt ?? '')
       handlers?.setAttachments(
-        templateReferencesToAttachedMedia(template, payload.referenceImageUrls ?? []),
+        templateReferencesToAttachedMedia(template, payload?.referenceImageUrls ?? []),
       )
-      if (payload.model) handlers?.setModel?.(payload.model)
-      if (payload.aspectRatio) handlers?.setAspectRatio?.(payload.aspectRatio)
+      if (payload?.model) handlers?.setModel?.(payload.model)
+      if (payload?.aspectRatio) handlers?.setAspectRatio?.(payload.aspectRatio)
       commitHaptic({ vibrateDuration: 8 })
       focusComposer()
     },
@@ -95,11 +82,10 @@ export function ImageStudioProvider({ children }: { children: ReactNode }) {
       composerRef,
       insertSnippet,
       setPrompt,
-      applyPreset,
       applyTemplate,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, applyPreset, applyTemplate, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyTemplate, registerPromptHandlers],
   )
 
   return <ImageStudioContext.Provider value={value}>{children}</ImageStudioContext.Provider>

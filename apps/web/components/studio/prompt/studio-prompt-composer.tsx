@@ -1,20 +1,6 @@
 "use client";
 
 import {
-  ModelSelector,
-  ModelSelectorContent,
-  ModelSelectorEmpty,
-  ModelSelectorGroup,
-  ModelSelectorHeader,
-  ModelSelectorInput,
-  ModelSelectorItem,
-  ModelSelectorList,
-  ModelSelectorLogoBadge,
-  ModelSelectorName,
-  ModelSelectorShortcut,
-  ModelSelectorTrigger,
-} from "@/components/ai-elements/model-selector";
-import {
   PromptInput,
   PromptInputBody,
   PromptInputButton,
@@ -36,15 +22,26 @@ import {
   type StudioAttachSource,
 } from "@/components/studio/prompt/studio-attach-menu";
 import { StudioAnimatedPlaceholder } from "@/components/studio/prompt/studio-animated-placeholder";
+import {
+  StudioComposerModelSelector,
+  type StudioModelPickerVariant,
+} from "@/components/studio/prompt/studio-composer-model-selector";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
+  STUDIO_COMPOSER_SEND_BUTTON_CLASS,
   STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS,
-  STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
 } from "@/components/studio/prompt/studio-composer-surface";
 import { StudioPromptHighlight, PROMPT_FIELD_STYLE, PROMPT_FIELD_STYLE_COMPACT } from "@/components/studio/prompt/studio-prompt-highlight";
-import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Kbd } from "@/components/ui/kbd";
 import {
   getActiveMention,
@@ -55,7 +52,6 @@ import {
   replaceMentionWithTag,
   taggedAttachmentIndices,
 } from "@/lib/studio/prompt/reference-tags";
-import { getModelCompanyName } from "@/lib/model-company";
 import {
   attachedMediaFromStudioDrag,
   isStudioImageDrag,
@@ -66,19 +62,11 @@ import { formatCredits, formatModelCost } from "@/utils/format";
 import { toast } from "sonner";
 import { ContextSupport, CostUnit, type Model } from "@socialista/types";
 import {
-  ArrowUpIcon,
-  CheckIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
   CoinsIcon,
-  FileIcon,
-  ImageIcon,
-  MinusIcon,
-  MusicIcon,
-  PlusIcon,
+  ImagesIcon,
   SparklesIcon,
-  TypeIcon,
-  VideoIcon,
-  type LucideIcon,
 } from "lucide-react";
 import {
   useCallback,
@@ -95,89 +83,7 @@ import {
 
 export type { StudioAttachSource };
 
-type ModelHighlight = "cheapest" | "newest" | "mostUsed";
-
-const MODEL_HIGHLIGHT_CONFIG = {
-  cheapest: {
-    label: "Cheapest",
-    className: "border-success/20 bg-success/10 text-success",
-  },
-  newest: {
-    label: "New",
-    className: "border-info/20 bg-info/10 text-info",
-  },
-  mostUsed: {
-    label: "Popular",
-    className: "border-warning/20 bg-warning/10 text-warning-foreground",
-  },
-} as const satisfies Record<
-  ModelHighlight,
-  { label: string; className: string }
->;
-
-const SUPPORT_LABELS: Record<
-  ContextSupport,
-  { label: string; icon: LucideIcon }
-> = {
-  [ContextSupport.IMAGE]: { label: "Image", icon: ImageIcon },
-  [ContextSupport.VIDEO]: { label: "Video", icon: VideoIcon },
-  [ContextSupport.AUDIO]: { label: "Audio", icon: MusicIcon },
-  [ContextSupport.TEXT]: { label: "Text", icon: TypeIcon },
-  [ContextSupport.FILE]: { label: "File", icon: FileIcon },
-};
-
-
-function getModelUsageCount(model: Model): number {
-  if ("usageCount" in model && typeof model.usageCount === "number") {
-    return model.usageCount;
-  }
-  return 0;
-}
-
-function buildModelHighlights(models: Model[]): Map<string, ModelHighlight[]> {
-  const highlights = new Map<string, ModelHighlight[]>();
-  if (models.length === 0) return highlights;
-
-  const newestId = [...models].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  )[0]?._id;
-  const cheapestId = [...models].sort((a, b) => a.cost - b.cost)[0]?._id;
-  const mostUsedModel = [...models].sort(
-    (a, b) => getModelUsageCount(b) - getModelUsageCount(a),
-  )[0];
-  const mostUsedId =
-    mostUsedModel && getModelUsageCount(mostUsedModel) > 0
-      ? mostUsedModel._id
-      : undefined;
-
-  for (const model of models) {
-    const modelHighlights: ModelHighlight[] = [];
-    if (model._id === newestId) modelHighlights.push("newest");
-    if (model._id === cheapestId) modelHighlights.push("cheapest");
-    if (mostUsedId && model._id === mostUsedId)
-      modelHighlights.push("mostUsed");
-    if (modelHighlights.length > 0) highlights.set(model._id, modelHighlights);
-  }
-
-  return highlights;
-}
-
-function ModelHighlightBadge({ highlight }: { highlight: ModelHighlight }) {
-  const config = MODEL_HIGHLIGHT_CONFIG[highlight];
-
-  return (
-    <Badge
-      className={cn(
-        config.className,
-        "h-4 shrink-0 rounded-full border-0 px-1.5 py-0 text-[9px] font-medium leading-none tracking-[-0.01em]",
-      )}
-    >
-      {config.label}
-    </Badge>
-  );
-}
-
-function StudioCountStepper({
+function StudioBatchCountMenu({
   value,
   min,
   max,
@@ -186,6 +92,8 @@ function StudioCountStepper({
   label,
   auto = false,
   onAutoChange,
+  unitSingular = "image",
+  unitPlural = "images",
 }: {
   value: number;
   min: number;
@@ -195,69 +103,84 @@ function StudioCountStepper({
   label?: string;
   auto?: boolean;
   onAutoChange?: () => void;
+  unitSingular?: string;
+  unitPlural?: string;
 }) {
-  const allowAuto = Boolean(onAutoChange);
-  const atMin = !auto && value <= min;
-  const decreaseDisabled = disabled || (auto ? true : !allowAuto && value <= min);
-  const increaseDisabled = disabled || (!auto && value >= max);
+  const options = useMemo(() => {
+    const items: number[] = [];
+    for (let n = min; n <= max; n += 1) items.push(n);
+    return items;
+  }, [min, max]);
+
+  const menuValue = auto ? "auto" : String(value);
+  const tooltip =
+    label ??
+    (auto ? "Slide count — automatic" : `Generate ${value} ${value === 1 ? unitSingular : unitPlural}`);
 
   return (
-    <div
-      className="flex h-6 items-center"
-      role="group"
-      aria-label={label ?? "Number of images"}
-    >
-      <PromptInputButton
-        aria-label={allowAuto && atMin ? "Auto" : "Decrease"}
-        className={cn(STUDIO_TOOL_BUTTON_CLASS, "size-6 px-0")}
-        disabled={decreaseDisabled}
-        onClick={() => {
-          if (allowAuto && atMin) {
-            onAutoChange?.();
-            return;
-          }
-          onChange(Math.max(min, value - 1));
-        }}
-        size="icon-xs"
-        tooltip={
-          allowAuto && atMin
-            ? "Auto — match the prompt"
-            : allowAuto
-              ? "Fewer slides"
-              : "Generate fewer images"
-        }
-        type="button"
-      >
-        <MinusIcon className="size-3" strokeWidth={1.75} />
-      </PromptInputButton>
-      <span
-        className={cn(
-          "text-center text-[12px] font-medium tracking-[-0.015em] text-foreground/80",
-          auto ? "min-w-8" : "min-w-4 tabular-nums",
-        )}
-      >
-        {auto ? "Auto" : value}
-      </span>
-      <PromptInputButton
-        aria-label="Increase"
-        className={cn(STUDIO_TOOL_BUTTON_CLASS, "size-6 px-0")}
-        disabled={increaseDisabled}
-        onClick={() => onChange(auto ? min : Math.min(max, value + 1))}
-        size="icon-xs"
-        tooltip={auto ? "Set a slide count" : allowAuto ? "More slides" : "Generate more images"}
-        type="button"
-      >
-        <PlusIcon className="size-3" strokeWidth={1.75} />
-      </PromptInputButton>
-    </div>
+    <DropdownMenu>
+      <StudioInputActionTooltip label={tooltip}>
+        <DropdownMenuTrigger asChild>
+          <PromptInputButton
+            aria-label={tooltip}
+            className={STUDIO_TOOL_BUTTON_CLASS}
+            disabled={disabled}
+            size="xs"
+            type="button"
+          >
+            <ImagesIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+            <span className="text-[12px] font-medium leading-none tracking-[-0.015em] tabular-nums">
+              {auto ? "Auto" : `×${value}`}
+            </span>
+            <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+          </PromptInputButton>
+        </DropdownMenuTrigger>
+      </StudioInputActionTooltip>
+      <DropdownMenuContent align="start" className="min-w-40 w-40">
+        <DropdownMenuRadioGroup
+          value={menuValue}
+          onValueChange={(next) => {
+            if (next === "auto") {
+              onAutoChange?.();
+              return;
+            }
+            onChange(Number(next));
+          }}
+        >
+          {onAutoChange ? (
+            <DropdownMenuRadioItem className="rounded-lg" value="auto">
+              <span className="text-[13px] font-medium tracking-[-0.015em]">Auto</span>
+              <DropdownMenuShortcut>Prompt</DropdownMenuShortcut>
+            </DropdownMenuRadioItem>
+          ) : null}
+          {options.map((n) => (
+            <DropdownMenuRadioItem
+              key={n}
+              className="rounded-lg"
+              value={String(n)}
+            >
+              <span className="text-[13px] font-medium tracking-[-0.015em] tabular-nums">
+                {n} {n === 1 ? unitSingular : unitPlural}
+              </span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
 const PROMPT_TEXT_METRICS =
-  "box-border w-full whitespace-pre-wrap break-words px-4 pt-4 pb-10 font-normal leading-[25px]";
+  "box-border w-full whitespace-pre-wrap break-words px-4 pt-3 pb-10 font-normal leading-[25px]";
 
 const PROMPT_TEXT_METRICS_COMPACT =
-  "box-border w-full whitespace-pre-wrap break-words px-3 pt-2.5 pb-7 text-[13px] font-normal leading-[22px]";
+  "box-border w-full whitespace-pre-wrap break-words px-3 pt-2 pb-7 text-[13px] font-normal leading-[22px]";
+
+const PROMPT_TEXT_METRICS_WITH_ATTACHMENTS =
+  "box-border w-full whitespace-pre-wrap break-words px-4 pt-1 pb-10 font-normal leading-[25px]";
+
+const PROMPT_TEXT_METRICS_COMPACT_WITH_ATTACHMENTS =
+  "box-border w-full whitespace-pre-wrap break-words px-3 pt-0.5 pb-7 text-[13px] font-normal leading-[22px]";
 
 const PROMPT_TEXTAREA_CLASS = cn(
   PROMPT_TEXT_METRICS,
@@ -377,6 +300,8 @@ export type StudioPromptComposerProps = {
   canSubmit?: boolean;
   requirePrompt?: boolean;
   hideModelSelector?: boolean;
+  modelPickerVariant?: StudioModelPickerVariant;
+  modelPickerHeading?: string;
   modelLocked?: boolean;
   hideCost?: boolean;
   submitDisabled?: boolean;
@@ -423,6 +348,8 @@ export function StudioPromptComposer({
   canSubmit: canSubmitProp,
   requirePrompt = true,
   hideModelSelector = false,
+  modelPickerVariant = "default",
+  modelPickerHeading = "Models",
   modelLocked = false,
   hideCost = false,
   submitDisabled = false,
@@ -438,13 +365,12 @@ export function StudioPromptComposer({
   emptyDescription = "Add a text-to-image model in the manager to start creating.",
   submitTitle,
   footerClassName,
-  submitAppearance = "labeled",
+  submitAppearance = "send",
   submitClassName,
   compact = false,
   embedded = false,
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController();
-  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [cursor, setCursor] = useState(0);
   const [mentionOptionIndex, setMentionOptionIndex] = useState(0);
   const [suppressedMentionStart, setSuppressedMentionStart] = useState<
@@ -470,12 +396,6 @@ export function StudioPromptComposer({
     () => models.find((model) => model._id === selectedModelId) ?? models[0],
     [models, selectedModelId],
   );
-
-  const companyNames = useMemo(
-    () => [...new Set(models.map((model) => getModelCompanyName(model)))].sort(),
-    [models],
-  );
-  const modelHighlights = useMemo(() => buildModelHighlights(models), [models]);
 
   const hasPrompt = textInput.value.trim().length > 0;
   const meetsAttachmentRequirement = attachments.length >= minAttachments;
@@ -735,139 +655,75 @@ export function StudioPromptComposer({
         </span>
       </StudioInputActionTooltip>
     ) : (
-    <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
-      <StudioInputActionTooltip label="Choose generation model">
-        <ModelSelectorTrigger asChild>
-          <PromptInputButton
-          aria-expanded={modelSelectorOpen}
-          aria-haspopup="dialog"
-          className={cn(
-            STUDIO_TOOL_BUTTON_CLASS,
-            "max-w-[min(100%,12rem)] min-w-0 [&_svg]:text-foreground/70",
-            modelSelectorOpen && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-          )}
-          disabled={disabled || pending}
-          size="xs"
-          type="button"
-        >
-          <ModelLogo className="size-3.5 shrink-0" model={selectedModel} size={14} />
-          <ModelSelectorName className="min-w-0 text-[12px] font-medium leading-none tracking-[-0.015em]">
-            {selectedModel.name}
-          </ModelSelectorName>
-          <ChevronDownIcon
-            className={cn(
-              STUDIO_TOOL_CHEVRON_CLASS,
-              "transition-transform duration-150",
-              modelSelectorOpen && "rotate-180",
-            )}
-          />
-        </PromptInputButton>
-        </ModelSelectorTrigger>
-      </StudioInputActionTooltip>
-
-      <ModelSelectorContent className="sm:max-w-104" title="Choose model">
-        <ModelSelectorHeader
-          heading="Models"
-          description={
-            <>
-              {models.length} available
-              {companyNames.length > 1 ? ` · ${companyNames.length} companies` : null}
-            </>
-          }
-        />
-        <ModelSelectorInput placeholder="Search by name or provider…" />
-        <ModelSelectorList>
-          <ModelSelectorEmpty>No models match your search.</ModelSelectorEmpty>
-          {companyNames.map((companyName) => (
-            <ModelSelectorGroup heading={companyName} key={companyName}>
-              {models
-                .filter((model) => getModelCompanyName(model) === companyName)
-                .map((model) => {
-                  const isSelected = selectedModelId === model._id;
-                  const highlights = modelHighlights.get(model._id) ?? [];
-                  const supports = model.contextSupports ?? [];
-
-                  return (
-                    <ModelSelectorItem
-                      key={model._id}
-                      data-checked={isSelected ? true : undefined}
-                      onSelect={() => {
-                        onSelectedModelChange(model._id);
-                        setModelSelectorOpen(false);
-                      }}
-                      value={`${model.name} ${model.modelProvider} ${getModelCompanyName(model)}`}
-                    >
-                      <ModelSelectorLogoBadge>
-                        <ModelLogo className="size-3.5" model={model} size={14} />
-                      </ModelSelectorLogoBadge>
-
-                      <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          <ModelSelectorName className="min-w-0 flex-1 text-[13px] font-medium leading-none tracking-[-0.016em]">
-                            {model.name}
-                          </ModelSelectorName>
-                          {highlights.length > 0 ? (
-                            <span className="flex shrink-0 items-center gap-1">
-                              {highlights.map((highlight) => (
-                                <ModelHighlightBadge
-                                  key={highlight}
-                                  highlight={highlight}
-                                />
-                              ))}
-                            </span>
-                          ) : null}
-                        </span>
-
-                        {supports.length > 0 ? (
-                          <span className="flex items-center gap-1.5">
-                            {supports.map((support) => {
-                              const { icon: Icon, label } =
-                                SUPPORT_LABELS[support];
-                              return (
-                                <Icon
-                                  key={support}
-                                  aria-label={label}
-                                  className="size-3 text-muted-foreground/40"
-                                  strokeWidth={1.75}
-                                />
-                              );
-                            })}
-                          </span>
-                        ) : null}
-                      </span>
-
-                      <span className="flex shrink-0 items-center gap-2.5">
-                        <ModelSelectorShortcut>
-                          {formatModelCost(model.cost, model.costUnit)}
-                        </ModelSelectorShortcut>
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "flex size-4 items-center justify-center transition-opacity duration-150",
-                            isSelected ? "opacity-100" : "opacity-0",
-                          )}
-                        >
-                          <CheckIcon
-                            className="size-3.5 text-foreground"
-                            strokeWidth={2.25}
-                          />
-                        </span>
-                      </span>
-                    </ModelSelectorItem>
-                  );
-                })}
-            </ModelSelectorGroup>
-          ))}
-        </ModelSelectorList>
-      </ModelSelectorContent>
-    </ModelSelector>
+      <StudioComposerModelSelector
+        disabled={disabled || pending}
+        heading={modelPickerHeading}
+        models={models}
+        onSelectedModelChange={onSelectedModelChange}
+        selectedModelId={selectedModelId}
+        tooltip="Choose generation model"
+        variant={modelPickerVariant}
+      />
     )
   ) : null;
 
-  const textMetrics = compact ? PROMPT_TEXT_METRICS_COMPACT : PROMPT_TEXT_METRICS;
+  const hasAttachmentStrip = attachments.length > 0;
+  const textMetrics = compact
+    ? hasAttachmentStrip
+      ? PROMPT_TEXT_METRICS_COMPACT_WITH_ATTACHMENTS
+      : PROMPT_TEXT_METRICS_COMPACT
+    : hasAttachmentStrip
+      ? PROMPT_TEXT_METRICS_WITH_ATTACHMENTS
+      : PROMPT_TEXT_METRICS;
   const textareaClass = compact ? PROMPT_TEXTAREA_CLASS_COMPACT : PROMPT_TEXTAREA_CLASS;
   const showAnimatedPlaceholder =
     Boolean(animatedPlaceholderWords?.length) && textInput.value.length === 0;
+
+  const attachmentStrip =
+    attachments.length > 0 ? (
+      <div
+        id="studio-reference-attachments"
+        className={cn(
+          "flex w-full items-end gap-2 overflow-x-auto scrollbar-none",
+          embedded
+            ? "px-3 pt-3 pb-0.5 sm:px-3.5"
+            : compact
+              ? "px-2.5 pt-2.5 pb-0 sm:px-3"
+              : "px-3.5 pt-3.5 pb-0 sm:px-4",
+          mentionOpen && "bg-muted/8",
+        )}
+        role={mentionOpen ? "listbox" : "list"}
+        aria-label="Reference images"
+      >
+        {attachments.map((file, index) => (
+          <StudioAttachmentChip
+            key={file.id}
+            file={file}
+            index={index}
+            tagged={taggedIndexes.has(index)}
+            picking={
+              mentionOpen &&
+              filteredMentionIndexes[selectedMentionIndex] === index
+            }
+            dimmed={mentionOpen && !filteredMentionIndexes.includes(index)}
+            selectable={mentionOpen}
+            disabled={disabled || pending}
+            onInsert={(attachmentIndex) =>
+              insertReference(attachmentIndex, activeMention?.start)
+            }
+            onHover={(index) => {
+              setHoveredAttachmentIndex(index);
+              if (index === null || !mentionOpen) return;
+              const optionIndex = filteredMentionIndexes.indexOf(index);
+              if (optionIndex >= 0) setMentionOptionIndex(optionIndex);
+            }}
+            onRemove={(id) =>
+              onAttachmentsChange(attachments.filter((item) => item.id !== id))
+            }
+          />
+        ))}
+      </div>
+    ) : null;
 
   return (
     <div
@@ -913,6 +769,7 @@ export function StudioPromptComposer({
         ) : null}
 
         <PromptInputBody>
+          {attachmentStrip}
           <div className="relative w-full min-w-0 self-stretch">
             <StudioPromptHighlight
               value={textInput.value}
@@ -988,102 +845,58 @@ export function StudioPromptComposer({
           </div>
         ) : null}
 
-        {attachments.length > 0 ? (
-          <div
-            id="studio-reference-attachments"
-            className={cn(
-              "flex w-full items-end gap-2.5 overflow-x-auto border-t border-border/35 bg-muted/12 scrollbar-none",
-              embedded
-                ? "px-3 pt-2.5 pb-2 sm:px-3.5"
-                : compact
-                  ? "px-2.5 pt-2 pb-1.5 sm:px-3"
-                  : "px-3 pt-2.5 pb-2 sm:px-3.5",
-              mentionOpen && "bg-muted/18",
-            )}
-            role={mentionOpen ? "listbox" : "list"}
-            aria-label="Reference images"
-          >
-            {attachments.map((file, index) => (
-              <StudioAttachmentChip
-                key={file.id}
-                file={file}
-                index={index}
-                tagged={taggedIndexes.has(index)}
-                picking={
-                  mentionOpen &&
-                  filteredMentionIndexes[selectedMentionIndex] === index
-                }
-                dimmed={
-                  mentionOpen && !filteredMentionIndexes.includes(index)
-                }
-                selectable={mentionOpen}
-                disabled={disabled || pending}
-                onInsert={(attachmentIndex) =>
-                  insertReference(attachmentIndex, activeMention?.start)
-                }
-                onHover={(index) => {
-                  setHoveredAttachmentIndex(index);
-                  if (index === null || !mentionOpen) return;
-                  const optionIndex = filteredMentionIndexes.indexOf(index);
-                  if (optionIndex >= 0) setMentionOptionIndex(optionIndex);
-                }}
-                onRemove={(id) =>
-                  onAttachmentsChange(
-                    attachments.filter((item) => item.id !== id),
-                  )
-                }
-              />
-            ))}
-          </div>
-        ) : null}
-
         <PromptInputFooter
           className={cn(
-            compact ? "border-t border-border/35 bg-muted/12 px-2 py-1.5 sm:px-2.5" : "border-t border-border/35 bg-muted/12 px-2.5 py-2 sm:px-3",
-            attachments.length > 0 && "border-t-0 pt-2",
+            compact
+              ? "border-t-0 bg-transparent px-2.5 py-2 sm:px-3"
+              : "border-t-0 bg-transparent px-3 py-2.5 sm:px-3.5",
             footerClassName,
           )}
         >
-          <PromptInputTools className="min-w-0 flex-nowrap gap-1 overflow-x-auto scrollbar-none">
+          <PromptInputTools className="min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-none">
             {attachSources.length > 0 ? (
-              <StudioAttachMenu
-                sources={attachSources}
-                attachments={attachments}
-                onAttachmentsChange={onAttachmentsChange}
-                maxAttachments={maxAttachments}
-                workspaceId={workspaceId}
-                disabled={attachDisabled}
-                className={attachClassName}
-                disabledReason={
-                  selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
-                    ? "Attach references"
-                    : "This model does not support image references"
-                }
-              />
-            ) : null}
-
-            {count ? (
-              <StudioInputActionTooltip
-                label={
-                  count.auto
-                    ? "Auto — matches how many slides the prompt needs"
-                    : (count.label ?? "Number of images to generate")
-                }
-              >
-                <StudioCountStepper
-                  value={count.value}
-                  min={count.min}
-                  max={count.max}
-                  onChange={count.onChange}
-                  disabled={disabled || pending}
-                  label={count.label}
-                  auto={count.auto}
-                  onAutoChange={count.onAutoChange}
+              <>
+                <StudioAttachMenu
+                  sources={attachSources}
+                  attachments={attachments}
+                  onAttachmentsChange={onAttachmentsChange}
+                  maxAttachments={maxAttachments}
+                  workspaceId={workspaceId}
+                  disabled={attachDisabled}
+                  className={attachClassName}
+                  disabledReason={
+                    selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
+                      ? "Add references"
+                      : "This model does not support image references"
+                  }
                 />
-              </StudioInputActionTooltip>
+                <span
+                  aria-hidden
+                  className="mx-0.5 hidden h-4 w-px shrink-0 bg-black/10 dark:bg-white/12 sm:block"
+                />
+              </>
             ) : null}
 
             {tools}
+
+            {count ? (
+              <StudioBatchCountMenu
+                value={count.value}
+                min={count.min}
+                max={count.max}
+                onChange={count.onChange}
+                disabled={disabled || pending}
+                label={count.label}
+                auto={count.auto}
+                onAutoChange={count.onAutoChange}
+                unitSingular={
+                  count.label?.toLowerCase().includes("slide") ? "slide" : "image"
+                }
+                unitPlural={
+                  count.label?.toLowerCase().includes("slide") ? "slides" : "images"
+                }
+              />
+            ) : null}
 
             {modelSelector}
           </PromptInputTools>
@@ -1101,12 +914,13 @@ export function StudioPromptComposer({
             >
               <PromptInputSubmit
                 aria-label={submitTitle ?? submitLabel}
+                variant={submitAppearance === "send" ? "ghost" : "default"}
                 className={cn(
-                  "transition-[transform,opacity] duration-150 active:scale-[0.98] motion-reduce:active:scale-100",
+                  "transition-[transform,opacity] duration-150 active:scale-[0.96] motion-reduce:active:scale-100",
                   submitAppearance === "send"
-                    ? "rounded-md"
-                    : "rounded-md px-2 text-[12px] font-medium tracking-[-0.015em]",
-                  !canSubmit && "opacity-40",
+                    ? STUDIO_COMPOSER_SEND_BUTTON_CLASS
+                    : "rounded-xl px-2 text-[12px] font-medium tracking-[-0.015em]",
+                  submitAppearance !== "send" && !canSubmit && "opacity-40",
                   submitClassName,
                 )}
                 disabled={!canSubmit}
@@ -1115,7 +929,10 @@ export function StudioPromptComposer({
               >
                 {submitAppearance === "send" ? (
                   pending ? null : (
-                    <ArrowUpIcon className="size-3.5" strokeWidth={2.25} />
+                    <ChevronUpIcon
+                      className="size-3.5 text-background"
+                      strokeWidth={2.5}
+                    />
                   )
                 ) : (
                   <>

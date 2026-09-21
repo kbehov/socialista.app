@@ -12,7 +12,6 @@ import { StudioSkillPicker } from "@/components/skills/studio-skill-picker";
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
-  STUDIO_HERO_SUBMIT_CLASS,
   STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
@@ -522,6 +521,7 @@ function VideoPromptComposer({
         <WandSparklesIcon className="size-3.5 shrink-0" />
       </PromptInputButton>
       <StudioSkillPicker
+        appearance="icon"
         target={PROMPT_KEYS.videoPrompt}
         value={skillId}
         onChange={setSkillId}
@@ -722,6 +722,7 @@ function VideoPromptComposer({
         <WandSparklesIcon className="size-3.5 shrink-0" />
       </PromptInputButton>
       <StudioSkillPicker
+        appearance="icon"
         target={PROMPT_KEYS.videoPrompt}
         value={skillId}
         onChange={setSkillId}
@@ -758,8 +759,7 @@ function VideoPromptComposer({
         onSubmit={handleSubmit}
         submitLabel={homeHero ? "Create video" : "Generate"}
         submitTitle={homeHero ? "Create video" : "Generate"}
-        submitAppearance={homeHero ? "labeled" : "send"}
-        submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
+        submitAppearance="send"
         footerClassName={
           embedded
             ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
