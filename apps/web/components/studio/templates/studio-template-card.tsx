@@ -1,6 +1,7 @@
 'use client'
 
 import { StudioTemplatePreviewMedia } from '@/components/studio/templates/studio-template-preview-media'
+import { CoverCard } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import type { StudioTemplateDto } from '@socialista/types'
 
@@ -27,47 +28,40 @@ export function StudioTemplateCard({
   const recreateAriaLabel = isVisual ? 'Recreate this inspiration' : `Recreate ${label}`
 
   return (
-    <article className="group/card">
-      <div className="relative">
-        <button
-          type="button"
-          aria-label={previewAriaLabel}
+    <CoverCard
+      ariaLabel={previewAriaLabel}
+      onClick={() => onPreview(template)}
+      coverClassName={cn(
+        isVisual ? 'rounded-2xl' : 'rounded-xl',
+        isVisual &&
+          'hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45),0_0_0_1px_rgba(255,255,255,0.1)]',
+        !isVisual && 'ring-1 ring-black/8 hover:ring-black/16 dark:ring-white/10 dark:hover:ring-white/18',
+      )}
+      media={
+        <StudioTemplatePreviewMedia
+          url={template.previewImageUrl}
+          alt=""
           className={cn(
-            'relative aspect-[4/5] w-full overflow-hidden bg-black/[0.04] text-left dark:bg-white/[0.04]',
-            isVisual ? 'rounded-2xl' : 'rounded-xl',
-            'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.06)]',
-            'dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.08)]',
-            'transition-[box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]',
-            isVisual &&
-              'hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45),0_0_0_1px_rgba(255,255,255,0.1)]',
-            !isVisual && 'ring-1 ring-black/8 hover:ring-black/16 dark:ring-white/10 dark:hover:ring-white/18',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
-            'active:scale-[0.98] motion-reduce:active:scale-100',
+            'size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10',
+            'transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]',
+            'group-hover/card:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100',
+            isVisual && 'group-hover/card:scale-[1.03]',
           )}
-          onClick={() => onPreview(template)}
-        >
-          <StudioTemplatePreviewMedia
-            url={template.previewImageUrl}
-            alt=""
-            className={cn(
-              'size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10',
-              'transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]',
-              'group-hover/card:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100',
-              isVisual && 'group-hover/card:scale-[1.03]',
-            )}
-          />
-          <span
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/50 via-black/20 to-transparent',
-              isVisual ? 'h-20 opacity-70' : 'h-16 opacity-0',
-              'transition-opacity duration-200',
-              !isVisual && 'group-hover/card:opacity-100',
-              'group-focus-within/card:opacity-100 motion-reduce:transition-none',
-            )}
-          />
-        </button>
-
+        />
+      }
+      gradient={
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/50 via-black/20 to-transparent',
+            isVisual ? 'h-20 opacity-70' : 'h-16 opacity-0',
+            'transition-opacity duration-200',
+            !isVisual && 'group-hover/card:opacity-100',
+            'group-focus-within/card:opacity-100 motion-reduce:transition-none',
+          )}
+        />
+      }
+      overlay={
         <button
           type="button"
           aria-label={recreateAriaLabel}
@@ -76,7 +70,7 @@ export function StudioTemplateCard({
             onRecreate(template)
           }}
           className={cn(
-            'absolute z-10 inline-flex items-center justify-center gap-1.5',
+            'absolute z-10 inline-flex cursor-pointer items-center justify-center gap-1.5',
             isVisual ? 'inset-x-2.5 bottom-2.5 h-8 rounded-xl px-3' : 'inset-x-2 bottom-2 h-7 rounded-lg px-2.5',
             'bg-black/60 text-[12px] font-medium tracking-[-0.015em] text-white backdrop-blur-md',
             'shadow-[0_2px_8px_rgba(0,0,0,0.2)]',
@@ -94,14 +88,15 @@ export function StudioTemplateCard({
         >
           Recreate
         </button>
-      </div>
-
-      {!isVisual && template.name ? (
-        <p className="mt-2 truncate px-0.5 text-[13px] font-medium leading-snug tracking-[-0.015em] text-foreground">
-          {template.name}
-        </p>
-      ) : null}
-    </article>
+      }
+      title={
+        !isVisual && template.name ? (
+          <p className="mt-2 truncate px-0.5 text-[13px] font-medium leading-snug tracking-[-0.015em] text-foreground">
+            {template.name}
+          </p>
+        ) : null
+      }
+    />
   )
 }
 

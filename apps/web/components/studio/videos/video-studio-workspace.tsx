@@ -1,7 +1,7 @@
 'use client'
 
 import { VideoStudioProvider } from '@/components/studio/videos/video-studio-provider'
-import type { Model, Preset, VideoSummaryResponse } from '@socialista/types'
+import type { Model, Preset, StudioTemplateCategoryDto, VideoSummaryResponse } from '@socialista/types'
 import { RecentVideosList } from './recent-videos-list'
 import { VideoStudioHero } from './video-studio-hero'
 import VideoGenerationPromptInput from './video-prompt-input'
@@ -16,6 +16,7 @@ type VideoStudioWorkspaceProps = {
   initialError?: string | null
   initialHasMore?: boolean
   initialAttachmentUrl?: string
+  templateCategories: StudioTemplateCategoryDto[]
 }
 
 export function VideoStudioWorkspace({
@@ -26,6 +27,7 @@ export function VideoStudioWorkspace({
   initialError = null,
   initialHasMore = false,
   initialAttachmentUrl,
+  templateCategories,
 }: VideoStudioWorkspaceProps) {
   return (
     <VideoStudioProvider>
@@ -44,7 +46,7 @@ export function VideoStudioWorkspace({
           aria-label="Browse video templates"
           className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
         >
-          <VideoTemplatesGallery />
+          <VideoTemplatesGallery templateCategories={templateCategories} />
         </section>
 
         <RecentVideosList

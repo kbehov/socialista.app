@@ -6,6 +6,7 @@ import type {
   ApiResponse,
   CreateStudioTemplateBody,
   CreateStudioTemplateCategoryBody,
+  UpdateStudioTemplateCategoryBody,
   StudioTemplateCategoriesListResponse,
   StudioTemplateCategoryDto,
   StudioTemplateDto,
@@ -59,12 +60,9 @@ export const getStudioTemplateCategories = async (
   kind: StudioTemplateKind,
 ): Promise<ApiResponse<StudioTemplateCategoriesListResponse>> => {
   return api.get<StudioTemplateCategoriesListResponse>(
-    `${STUDIO_TEMPLATE_ROUTES.CATEGORIES}?kind=${kind}`,
+    `${STUDIO_TEMPLATE_ROUTES.CATEGORIES}?kind=${encodeURIComponent(kind)}`,
     {
-      next: {
-        revalidate: 3600,
-        tags: [`studio-template-categories-${kind}`],
-      },
+      cache: 'no-store',
     },
   )
 }
@@ -98,6 +96,20 @@ export const createStudioTemplateCategory = async (
 ): Promise<ApiResponse<{ category: StudioTemplateCategoryDto }>> => {
   const response = await api.post<{ category: StudioTemplateCategoryDto }>(
     STUDIO_TEMPLATE_ROUTES.CATEGORY_CREATE,
+    body,
+  )
+  if (response.success) {
+    revalidateStudioTemplateCaches()
+  }
+  return response
+}
+
+export const updateStudioTemplateCategory = async (
+  id: string,
+  body: UpdateStudioTemplateCategoryBody,
+): Promise<ApiResponse<{ category: StudioTemplateCategoryDto }>> => {
+  const response = await api.put<{ category: StudioTemplateCategoryDto }>(
+    STUDIO_TEMPLATE_ROUTES.CATEGORY_UPDATE(id),
     body,
   )
   if (response.success) {

@@ -96,6 +96,64 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+type CoverCardProps = {
+  media: React.ReactNode
+  title?: React.ReactNode
+  overlay?: React.ReactNode
+  gradient?: React.ReactNode
+  onClick?: () => void
+  ariaLabel: string
+  className?: string
+  coverClassName?: string
+}
+
+function CoverCard({
+  media,
+  title,
+  overlay,
+  gradient,
+  onClick,
+  ariaLabel,
+  className,
+  coverClassName,
+}: CoverCardProps) {
+  return (
+    <article className={cn('group/card cursor-pointer', className)}>
+      <div className="relative">
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          onClick={onClick}
+          className={cn(
+            'relative aspect-[4/5] w-full cursor-pointer overflow-hidden bg-black/[0.04] text-left dark:bg-white/[0.04]',
+            'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.06)]',
+            'dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.08)]',
+            'transition-[box-shadow,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
+            'active:scale-[0.96] motion-reduce:active:scale-100',
+            coverClassName,
+          )}
+        >
+          {media}
+          {gradient}
+        </button>
+        {overlay}
+      </div>
+      {title ? (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden
+          onClick={onClick}
+          className="cursor-pointer w-full text-left"
+        >
+          {title}
+        </button>
+      ) : null}
+    </article>
+  )
+}
+
 type PresetCardProps = {
   title: string
   description: string
@@ -123,7 +181,7 @@ function PresetCard({
         commitHaptic({ vibrateDuration: 8 })
       }}
       className={cn(
-        "group flex w-[7.25rem] shrink-0 flex-col text-left sm:w-[7.75rem]",
+        "group flex w-[7.25rem] shrink-0 cursor-pointer flex-col text-left sm:w-[7.75rem]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         className
       )}
@@ -170,6 +228,7 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  CoverCard,
   PresetCard,
 }
-export type { PresetCardProps }
+export type { CoverCardProps, PresetCardProps }

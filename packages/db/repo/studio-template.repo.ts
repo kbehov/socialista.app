@@ -142,6 +142,57 @@ export const deactivateStudioTemplateCategoriesByName = async (name: string) => 
   return result.modifiedCount
 }
 
+export const renameStudioTemplateCategory = async (
+  id: string,
+  newName: string,
+): Promise<IStudioTemplateCategory | null> => {
+  const source = await StudioTemplateCategoryModel.findById(id).lean()
+  if (!source || !source.active) {
+    return null
+  }
+
+  const oldName = source.name
+  const trimmed = newName.trim()
+  if (trimmed === oldName) {
+    return source
+  }
+
+  const conflict = await StudioTemplateCategoryModel.findOne({
+    kind: { $in: STUDIO_TEMPLATE_MANAGED_KIND_VALUES },
+    name: trimmed,
+    active: true,
+  }).lean()
+  if (conflict) {
+    throw new Error('STUDIO_TEMPLATE_CATEGORY_NAME_CONFLICT')
+  }
+
+  const slug = slugifyCategoryName(trimmed)
+
+  await StudioTemplateCategoryModel.updateMany(
+    {
+      name: oldName,
+      kind: { $in: STUDIO_TEMPLATE_MANAGED_KIND_VALUES },
+      active: true,
+    },
+    { $set: { name: trimmed, slug } },
+  )
+
+  await StudioTemplateModel.updateMany(
+    {
+      kind: { $in: STUDIO_TEMPLATE_MANAGED_KIND_VALUES },
+      categories: oldName,
+    },
+    { $set: { 'categories.$[elem]': trimmed } },
+    { arrayFilters: [{ elem: oldName }] },
+  )
+
+  await Promise.all(
+    STUDIO_TEMPLATE_MANAGED_KIND_VALUES.map(kind => syncStudioTemplateCategoryTemplatesCount(kind, trimmed)),
+  )
+
+  return StudioTemplateCategoryModel.findById(id).lean()
+}
+
 export const syncStudioTemplateCategoryTemplatesCount = async (
   kind: StudioTemplateKind,
   categoryName: string,

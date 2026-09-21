@@ -16,7 +16,7 @@ type DashboardHeaderProps = {
   className?: string
 }
 
-const headerIconClassName = 'dashboard-header-icon size-7 rounded-[6px]'
+const headerIconClassName = 'dashboard-header-icon size-7 rounded-[var(--control-radius)]'
 const headerTextBtnClassName = 'dashboard-header-text-btn'
 
 function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) {

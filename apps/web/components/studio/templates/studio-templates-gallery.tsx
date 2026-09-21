@@ -189,6 +189,7 @@ function TemplateCategoryFilter({
 
 type StudioTemplatesGalleryProps = {
   kind: StudioTemplateKind
+  initialCategories?: StudioTemplateCategoryDto[]
   onRecreate: (template: StudioTemplateDto) => void
   onPreview?: (template: StudioTemplateDto) => void
   sectionTitle?: string
@@ -201,8 +202,13 @@ type StudioTemplatesGalleryProps = {
 const GRID_CLASS =
   'grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-3.5 sm:gap-y-7 lg:grid-cols-4 lg:gap-x-4'
 
+function sortCategories(categories: StudioTemplateCategoryDto[]) {
+  return [...categories].toSorted((a, b) => b.templatesCount - a.templatesCount)
+}
+
 export function StudioTemplatesGallery({
   kind,
+  initialCategories = [],
   onRecreate,
   onPreview,
   sectionTitle = 'Templates',
@@ -211,7 +217,9 @@ export function StudioTemplatesGallery({
   emptyTitle = 'No templates yet',
   emptyDescription = 'Import templates to start recreating content from a reference.',
 }: StudioTemplatesGalleryProps) {
-  const [categories, setCategories] = useState<StudioTemplateCategoryDto[]>([])
+  const [categories, setCategories] = useState<StudioTemplateCategoryDto[]>(() =>
+    sortCategories(initialCategories),
+  )
   const [templates, setTemplates] = useState<StudioTemplateDto[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [page, setPage] = useState(1)
@@ -251,14 +259,20 @@ export function StudioTemplatesGallery({
   )
 
   useEffect(() => {
+    setSelectedCategory(null)
+    setCategories(sortCategories(initialCategories))
     startTransition(async () => {
-      const categoriesRes = await getStudioTemplateCategories(kind)
-      if (categoriesRes.success && categoriesRes.data) {
-        setCategories([...categoriesRes.data.categories].toSorted((a, b) => b.templatesCount - a.templatesCount))
+      try {
+        const categoriesRes = await getStudioTemplateCategories(kind)
+        if (categoriesRes.success && categoriesRes.data) {
+          setCategories(sortCategories(categoriesRes.data.categories))
+        }
+      } catch {
+        // Keep server-provided initialCategories when the client refresh fails.
       }
       await fetchPage(1, null, false)
     })
-  }, [fetchPage, kind])
+  }, [fetchPage, initialCategories, kind])
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category)

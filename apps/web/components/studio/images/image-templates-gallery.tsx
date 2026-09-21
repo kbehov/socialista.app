@@ -2,16 +2,27 @@
 
 import { ImageTemplateRecreateDialog } from '@/components/studio/images/image-template-recreate-dialog'
 import { StudioTemplatesGallery } from '@/components/studio/templates/studio-templates-gallery'
-import { StudioTemplateKind, type Model, type StudioTemplateDto } from '@socialista/types'
+import {
+  StudioTemplateKind,
+  type Model,
+  type StudioTemplateCategoryDto,
+  type StudioTemplateDto,
+} from '@socialista/types'
 import { useState } from 'react'
 
-export function ImageTemplatesGallery({ models }: { models: Model[] }) {
+type ImageTemplatesGalleryProps = {
+  models: Model[]
+  templateCategories: StudioTemplateCategoryDto[]
+}
+
+export function ImageTemplatesGallery({ models, templateCategories }: ImageTemplatesGalleryProps) {
   const [recreateTemplate, setRecreateTemplate] = useState<StudioTemplateDto | null>(null)
 
   return (
     <>
       <StudioTemplatesGallery
         kind={StudioTemplateKind.IMAGE}
+        initialCategories={templateCategories}
         sectionTitle="Inspirations"
         cardVariant="visual"
         onRecreate={setRecreateTemplate}

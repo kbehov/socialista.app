@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "import:templates": "tsx --env-file=.env scripts/import-static-ad-templates.ts",
-    "import:studio-templates": "tsx --env-file=.env scripts/import-studio-templates.ts"
+    "import:studio-templates": "tsx --env-file=.env scripts/import-studio-templates.ts",
+    "seed:studio-template-categories": "tsx --env-file=.env scripts/seed-studio-template-categories.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1072.0",

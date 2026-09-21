@@ -177,6 +177,7 @@ export const STUDIO_TEMPLATE_ROUTES = {
   UPLOAD_PREVIEW: '/studio-templates/upload-preview',
   CATEGORIES: '/studio-templates/categories',
   CATEGORY_CREATE: '/studio-templates/categories',
+  CATEGORY_UPDATE: (id: string) => `/studio-templates/categories/${id}`,
   CATEGORY_DELETE: (id: string) => `/studio-templates/categories/${id}`,
 } as const
 
