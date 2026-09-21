@@ -19,7 +19,6 @@ import { buildPresetPlaceholderExamples } from '@/lib/studio/preset-media'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
-  STUDIO_HERO_SUBMIT_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
@@ -301,8 +300,7 @@ function SlideshowPromptComposerInner({
         onSubmit={handleSubmit}
         submitLabel={submitLabel}
         submitTitle={submitLabel}
-        submitAppearance={homeHero ? 'labeled' : 'send'}
-        submitClassName={homeHero ? STUDIO_HERO_SUBMIT_CLASS : undefined}
+        submitAppearance="send"
         footerClassName={
           homeHero
             ? 'border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5'

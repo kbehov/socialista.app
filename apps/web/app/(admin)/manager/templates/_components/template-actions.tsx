@@ -2,6 +2,7 @@
 
 import { CreateTemplateCategorySheet } from './create-template-category-sheet'
 import { TemplateCreateSheet } from './template-create-sheet'
+import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 import type { StudioTemplateCategoryDto, StudioTemplateManagedKind } from '@socialista/types'
 import { ChevronDownIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
@@ -32,7 +34,7 @@ export function TemplateActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" className="h-8 gap-1.5 rounded-lg">
+          <Button size="sm" className={cn(dashboardSurface.createCta, 'gap-1.5')}>
             <PlusIcon className="size-3.5" />
             New
             <ChevronDownIcon className="size-3.5 opacity-60" />

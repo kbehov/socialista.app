@@ -59,12 +59,38 @@ export const listStaticAdTemplateCategories = async (): Promise<IStaticAdTemplat
   return StaticAdTemplateCategoryModel.find({ active: true }).sort({ name: 1 }).lean()
 }
 
+export const deactivateStaticAdTemplate = async (id: string) => {
+  return StaticAdTemplateModel.findOneAndUpdate(
+    { _id: id, active: true },
+    { $set: { active: false } },
+    { returnDocument: 'after' },
+  ).lean()
+}
+
+export const getStaticAdTemplateCategoryById = async (id: string) => {
+  return StaticAdTemplateCategoryModel.findById(id).lean()
+}
+
+export const deactivateStaticAdTemplateCategory = async (id: string) => {
+  return StaticAdTemplateCategoryModel.findOneAndUpdate(
+    { _id: id, active: true },
+    { $set: { active: false } },
+    { returnDocument: 'after' },
+  ).lean()
+}
+
 export const upsertStaticAdTemplateCategoryByName = async (
   name: string,
 ): Promise<IStaticAdTemplateCategory> => {
   const trimmed = name.trim()
-  const existing = await StaticAdTemplateCategoryModel.findOne({ name: trimmed }).lean()
-  if (existing) return existing
+  const existing = await StaticAdTemplateCategoryModel.findOne({ name: trimmed })
+  if (existing) {
+    if (!existing.active) {
+      existing.active = true
+      await existing.save()
+    }
+    return existing.toObject()
+  }
 
   const created = await StaticAdTemplateCategoryModel.create({
     name: trimmed,

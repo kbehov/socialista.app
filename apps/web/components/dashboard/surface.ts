@@ -21,7 +21,7 @@ export const dashboardSurface = {
   segment:
     'inline-flex items-center gap-0.5 rounded-lg border border-border/55 bg-muted/20 p-0.5 dark:border-border/70 dark:bg-muted/15',
   segmentItem:
-    'rounded-md text-[11px] font-medium transition-colors duration-150 active:scale-[0.97] motion-reduce:active:scale-100',
+    'rounded-md text-[11px] font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.96] motion-reduce:active:scale-100',
   segmentItemActive: 'bg-foreground text-background',
   segmentItemInactive: 'text-muted-foreground hover:text-foreground',
 
@@ -38,11 +38,11 @@ export const dashboardSurface = {
 
   /** Primary page-header CTA — compact, rounded-xl to match studio headers */
   createCta:
-    'h-8 rounded-xl px-3 text-[13px] font-medium shadow-none transition-colors active:scale-[0.98] motion-reduce:active:scale-100',
+    'h-8 rounded-xl px-3 text-[13px] font-medium shadow-none transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.96] motion-reduce:active:scale-100',
 
   /** Compact outline control — filters, refresh, export */
   toolbarControl:
-    'h-7 rounded-xl border border-border/55 bg-background px-2.5 text-[12px] font-medium shadow-none dark:border-border/70 hover:bg-muted/40 hover:text-foreground active:scale-[0.98] motion-reduce:active:scale-100',
+    'h-7 rounded-xl border border-border/55 bg-background px-2.5 text-[12px] font-medium shadow-none dark:border-border/70 hover:bg-muted/40 hover:text-foreground active:scale-[0.96] motion-reduce:active:scale-100',
 
   metricLabel: 'text-[11px] font-medium text-muted-foreground',
   metricValue: 'text-xl font-medium tracking-[-0.022em] tabular-nums text-foreground',

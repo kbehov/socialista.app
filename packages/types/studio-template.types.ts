@@ -146,6 +146,10 @@ export type CreateStudioTemplateCategoryBody = {
   name: string
 }
 
+export type UpdateStudioTemplateCategoryBody = {
+  name: string
+}
+
 export type UploadStudioTemplatePreviewResponse = {
   url: string
 }

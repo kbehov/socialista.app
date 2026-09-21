@@ -1,10 +1,13 @@
 import { auth } from '@/auth'
-import { UserDropdown } from '@/components/common/user-dropdown'
+import { dashboardMainClassName } from '@/components/dashboard/studio-shell'
+import { ManagerHeader } from '@/components/headers/manager-header'
+import { PageScrollCompactProvider } from '@/components/headers/page-scroll-compact'
 import { AdminSidebar } from '@/components/sidebars/admin-sidebar'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { WorkspaceProvider } from '@/context/workspace-provider'
 import { getUserWorkspaces } from '@/services/workspace.service'
 import { redirect } from 'next/navigation'
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) {
@@ -16,22 +19,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const workspaces = await getUserWorkspaces()
-  console.log(workspaces)
 
   return (
     <WorkspaceProvider workspaces={workspaces.data ?? []}>
-      <SidebarProvider>
+      <SidebarProvider className="dashboard-shell h-svh max-h-svh overflow-hidden">
         <AdminSidebar />
-        <SidebarInset className="flex min-h-svh flex-col bg-background">
-          <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background px-4  flex-row justify-between">
-            <SidebarTrigger className="-ml-1" />
-            <UserDropdown />
-          </header>
-
-          <main id="manager-scroll" className="flex w-full flex-1 flex-col overflow-auto px-6 py-4 lg:py-5">
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10">
-              {children}
-            </div>
+        <SidebarInset className="dashboard-inset flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden">
+          <ManagerHeader />
+          <main id="manager-scroll" data-dashboard-scroll className={dashboardMainClassName}>
+            <PageScrollCompactProvider>
+              <div className="dashboard-page">{children}</div>
+            </PageScrollCompactProvider>
           </main>
         </SidebarInset>
       </SidebarProvider>

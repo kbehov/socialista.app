@@ -1,3 +1,5 @@
+export const STATIC_AD_TEMPLATE_PAGE_SIZE = 24
+
 export type StaticAdTemplateCategoryDto = {
   _id: string
   name: string
@@ -20,4 +22,18 @@ export type StaticAdTemplateListResponse = {
 
 export type StaticAdTemplateCategoriesListResponse = {
   categories: StaticAdTemplateCategoryDto[]
+}
+
+export type CreateStaticAdTemplateBody = {
+  categories: string[]
+  imageUrl: string
+  name?: string
+}
+
+export type CreateStaticAdTemplateCategoryBody = {
+  name: string
+}
+
+export type UploadStaticAdTemplatePreviewResponse = {
+  url: string
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { dashboardSurface } from '@/components/dashboard'
 import { CreateCategorySheet } from '@/components/inspirations/create-category-sheet'
 import { CreateNicheSheet } from '@/components/inspirations/create-niche-sheet'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { MANAGER_ROUTES } from '@/constants/app-routes'
+import { cn } from '@/lib/utils'
 import { ChevronDownIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -26,7 +29,7 @@ export function InspirationActions({ align = 'end' }: InspirationActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" className="h-8 gap-1.5 rounded-lg">
+          <Button size="sm" className={cn(dashboardSurface.createCta, 'gap-1.5')}>
             <PlusIcon className="size-3.5" />
             New
             <ChevronDownIcon className="size-3.5 opacity-60" />
@@ -35,7 +38,7 @@ export function InspirationActions({ align = 'end' }: InspirationActionsProps) {
 
         <DropdownMenuContent align={align} className="w-44">
           <DropdownMenuItem asChild>
-            <Link href="/manager/inspirations/create">Inspiration</Link>
+            <Link href={MANAGER_ROUTES.INSPIRATION_CREATE}>Inspiration</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

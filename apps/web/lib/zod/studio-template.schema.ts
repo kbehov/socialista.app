@@ -29,5 +29,8 @@ export const createStudioTemplateCategorySchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(50, 'Name must be 50 characters or less'),
 })
 
+export const updateStudioTemplateCategorySchema = createStudioTemplateCategorySchema
+
 export type CreateStudioTemplateFormValues = z.infer<typeof createStudioTemplateSchema>
 export type CreateStudioTemplateCategoryFormValues = z.infer<typeof createStudioTemplateCategorySchema>
+export type UpdateStudioTemplateCategoryFormValues = z.infer<typeof updateStudioTemplateCategorySchema>

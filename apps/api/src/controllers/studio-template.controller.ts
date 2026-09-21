@@ -13,6 +13,7 @@ import {
   isDuplicateKeyError,
   listStudioTemplateCategories as listCategoriesFromDb,
   listStudioTemplates as listTemplatesFromDb,
+  renameStudioTemplateCategory,
   syncStudioTemplateCategoryTemplatesCount,
   upsertStudioTemplateCategoryForManagedKinds,
   type IStudioTemplate,
@@ -55,27 +56,27 @@ function serializeTemplate(template: IStudioTemplate): StudioTemplateDto {
     return {
       ...base,
       kind: StudioTemplateKind.VIDEO,
-      payload: template.payload as StudioTemplateVideoPayload,
+      payload: (template.payload ?? {}) as StudioTemplateVideoPayload,
     }
   }
   if (template.kind === StudioTemplateKind.SLIDESHOW) {
     return {
       ...base,
       kind: StudioTemplateKind.SLIDESHOW,
-      payload: template.payload as StudioTemplateSlideshowPayload,
+      payload: (template.payload ?? {}) as StudioTemplateSlideshowPayload,
     }
   }
   if (template.kind === StudioTemplateKind.UGC) {
     return {
       ...base,
       kind: StudioTemplateKind.UGC,
-      payload: template.payload as StudioTemplateUgcPayload,
+      payload: (template.payload ?? {}) as StudioTemplateUgcPayload,
     }
   }
   return {
     ...base,
     kind: StudioTemplateKind.IMAGE,
-    payload: template.payload as StudioTemplateImagePayload,
+    payload: (template.payload ?? {}) as StudioTemplateImagePayload,
   }
 }
 
@@ -343,6 +344,28 @@ export const createStudioTemplateCategory = async (c: Context<AppContext>) => {
     const category = await upsertStudioTemplateCategoryForManagedKinds(name)
     return successResponse(c, 201, { category: serializeCategory(category) })
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      throw new HttpError(409, 'A category with this name already exists')
+    }
+    throw error
+  }
+}
+
+export const updateStudioTemplateCategory = async (c: Context<AppContext>) => {
+  const id = parseParamId(c.req.param('id'), 'category ID')
+  const body = (await c.req.json()) as Record<string, unknown>
+  const name = requireTrimmedString(body.name, 'name')
+
+  try {
+    const category = await renameStudioTemplateCategory(id, name)
+    if (!category) {
+      throw new HttpError(404, 'Category not found')
+    }
+    return successResponse(c, 200, { category: serializeCategory(category) })
+  } catch (error) {
+    if (error instanceof Error && error.message === 'STUDIO_TEMPLATE_CATEGORY_NAME_CONFLICT') {
+      throw new HttpError(409, 'A category with this name already exists')
+    }
     if (isDuplicateKeyError(error)) {
       throw new HttpError(409, 'A category with this name already exists')
     }

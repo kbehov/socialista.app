@@ -16,6 +16,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { formatBytes, useFileUpload } from '@/hooks/use-file-upload'
+import { IMAGE_TEMPLATE_RECREATE_IDEAS } from '@/lib/studio/image-recreate'
 import { isVideoPreviewUrl } from '@/lib/studio/template-media'
 import { cn } from '@/lib/utils'
 import {
@@ -77,6 +78,7 @@ export function TemplateCreateSheet({
   const imageSource = useWatch({ control, name: 'imageSource' }) ?? 'upload'
   const imageUrl = useWatch({ control, name: 'imageUrl' }) ?? ''
   const selectedCategories = useWatch({ control, name: 'categories' }) ?? []
+  const prompt = useWatch({ control, name: 'prompt' }) ?? ''
   const isVideoKind = kind === 'video'
   const mediaAccept = isVideoKind ? VIDEO_ACCEPT : IMAGE_ACCEPT
   const mediaMaxSize = isVideoKind ? VIDEO_MAX_SIZE : IMAGE_MAX_SIZE
@@ -348,6 +350,40 @@ export function TemplateCreateSheet({
 
           <div className="space-y-2">
             <FieldLabel htmlFor="template-prompt">Prompt (optional)</FieldLabel>
+            {kind === 'image' ? (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[12px] font-medium tracking-[-0.01em] text-muted-foreground">
+                  Try these ideas
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {IMAGE_TEMPLATE_RECREATE_IDEAS.map(idea => {
+                    const active = prompt === idea.prompt
+
+                    return (
+                      <button
+                        key={idea.id}
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() =>
+                          setValue('prompt', idea.prompt, { shouldDirty: true, shouldValidate: true })
+                        }
+                        className={cn(
+                          'rounded-full border px-2.5 py-1 text-xs font-medium',
+                          'transition-[background-color,color,transform] duration-150',
+                          'active:scale-[0.97] motion-reduce:active:scale-100',
+                          'disabled:pointer-events-none disabled:opacity-50',
+                          active
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background text-foreground hover:bg-muted',
+                        )}
+                      >
+                        {idea.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
             <Textarea
               id="template-prompt"
               placeholder="The prompt used to generate this template"

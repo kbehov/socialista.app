@@ -19,7 +19,7 @@ export const STUDIO_SHELL_CLASSES = EDGE_TO_EDGE_STUDIO_CLASSES
 export const dashboardMainClassName = [
   'flex min-h-0 w-full min-w-0 flex-1 flex-col gap-(--spacing-dashboard-gap)',
   'overflow-y-auto overflow-x-hidden overscroll-y-contain sidebar-scrollbar',
-  'px-(--spacing-dashboard-x) pt-1 pb-(--spacing-dashboard-y) sm:px-6 lg:px-8 lg:pb-10',
+  'px-(--spacing-dashboard-x) pt-3 pb-(--spacing-dashboard-y) sm:px-6 lg:px-8 lg:pt-4 lg:pb-10',
   // Complete literals — Tailwind does not emit classes built with ${}.
   '[&:has(.image-studio)]:gap-0 [&:has(.studio-shell)]:gap-0 [&:has(.video-studio)]:gap-0 [&:has(.slideshow-studio)]:gap-0 [&:has(.ugc-studio)]:gap-0 [&:has(.post-composer)]:gap-0',
   '[&:has(.studio-shell)]:overflow-hidden [&:has(.video-studio)]:overflow-hidden [&:has(.slideshow-studio)]:overflow-hidden [&:has(.ugc-studio)]:overflow-hidden [&:has(.post-composer)]:overflow-hidden',

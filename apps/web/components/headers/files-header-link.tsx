@@ -1,22 +1,24 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { DASHBOARD_ROUTES, isDashboardFilesPath } from '@/constants/app-routes'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { FolderIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export function FilesHeaderLink({ className }: { className?: string }) {
+export function FilesHeaderLink({
+  className,
+  href = DASHBOARD_ROUTES.FILES,
+}: {
+  className?: string
+  href?: string
+}) {
   const pathname = usePathname()
-  const isActive = isDashboardFilesPath(pathname)
+  const isActive = pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <Button variant="ghost" size="icon-sm" className={className} asChild>
-      <Link
-        href={DASHBOARD_ROUTES.FILES}
-        aria-label="Files"
-        aria-current={isActive ? 'page' : undefined}
-      >
+      <Link href={href} aria-label="Files" aria-current={isActive ? 'page' : undefined}>
         <FolderIcon strokeWidth={1.5} />
       </Link>
     </Button>

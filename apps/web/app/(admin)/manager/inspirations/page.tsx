@@ -6,6 +6,7 @@ import type { MetaResponse } from '@socialista/types'
 import { InspirationsList } from './_components/inspirations-list'
 import { SmartPagination } from '@/components/common/smart-pagination'
 import { InspirationsToolbar } from './_components/inspirations-toolbar'
+import { MANAGER_ROUTES } from '@/constants/app-routes'
 
 type InspirationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -50,10 +51,11 @@ export default async function InspirationsPage({ searchParams }: InspirationsPag
   const meta = inspirationsResult.meta ?? defaultMeta
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="Inspirations"
-        breadcrumbs={[{ label: 'Manager', href: '/manager' }, { label: 'Inspirations' }]}
+        description="Import TikTok posts and keep the studio library current."
+        breadcrumbs={[{ label: 'Manager', href: MANAGER_ROUTES.ROOT }, { label: 'Inspirations' }]}
         actions={<InspirationActions />}
       />
 

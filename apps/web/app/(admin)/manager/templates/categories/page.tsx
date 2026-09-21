@@ -17,7 +17,7 @@ export default async function TemplateCategoriesPage() {
   ])
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="Categories"
         description="Shared groups for image and video templates."
