@@ -44,13 +44,7 @@ function ProjectAvatar({ project, className }: SwitcherAvatarProps) {
       style={!project.icon && project.color ? { backgroundColor: project.color } : undefined}
     >
       {project.icon ? (
-        <Image
-          src={project.icon}
-          alt=""
-          width={20}
-          height={20}
-          className="size-full object-cover"
-        />
+        <Image src={project.icon} alt="" width={22} height={22} className="size-full object-cover" />
       ) : (
         <span className="font-medium">{project.name.charAt(0).toUpperCase()}</span>
       )}
@@ -96,7 +90,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
         <SidebarMenuItem>
           <SidebarMenuButton
             tooltip="Add project"
-            className="h-7 gap-1.5 px-1.5 group-data-[collapsible=icon]:justify-center"
+            className="h-9 gap-1.5 px-1.5 group-data-[collapsible=icon]:justify-center"
             onClick={() => setCreateOpen(true)}
           >
             <div className="sidebar-switcher-avatar">
@@ -119,7 +113,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               tooltip={currentProject.name}
-              className="h-7 gap-1.5 px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+              className="h-9 gap-1.5 px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
               <ProjectAvatar project={currentProject} />
               <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">

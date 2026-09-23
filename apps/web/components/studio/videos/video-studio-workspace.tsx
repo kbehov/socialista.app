@@ -1,17 +1,14 @@
 'use client'
 
 import { VideoStudioProvider } from '@/components/studio/videos/video-studio-provider'
-import type { Model, Preset, StudioTemplateCategoryDto, VideoSummaryResponse } from '@socialista/types'
-import { RecentVideosList } from './recent-videos-list'
+import type { Model, StudioTemplateCategoryDto, VideoSummaryResponse } from '@socialista/types'
 import { VideoStudioHero } from './video-studio-hero'
 import VideoGenerationPromptInput from './video-prompt-input'
 import { VideoTemplatesGallery } from './video-templates-gallery'
 
 type VideoStudioWorkspaceProps = {
   models: Model[]
-  presets: Preset[]
   workspaceId: string
-  workspaceName: string
   initialVideos: VideoSummaryResponse[]
   initialError?: string | null
   initialHasMore?: boolean
@@ -21,7 +18,6 @@ type VideoStudioWorkspaceProps = {
 
 export function VideoStudioWorkspace({
   models,
-  presets,
   workspaceId,
   initialVideos,
   initialError = null,
@@ -32,29 +28,26 @@ export function VideoStudioWorkspace({
   return (
     <VideoStudioProvider>
       <div className="image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col">
-        <VideoStudioHero presets={presets}>
+        <VideoStudioHero
+          workspaceId={workspaceId}
+          initialVideos={initialVideos}
+          initialError={initialError}
+          initialHasMore={initialHasMore}
+        >
           <section id="video-studio-composer" aria-label="Create a video">
             <VideoGenerationPromptInput
               initialAttachmentUrl={initialAttachmentUrl}
               models={models}
-              presets={presets}
             />
           </section>
         </VideoStudioHero>
 
         <section
-          aria-label="Browse video templates"
-          className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
+          aria-label="Browse video inspirations"
+          className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-12 pt-3 sm:px-6 sm:pb-14 sm:pt-5 lg:px-8"
         >
-          <VideoTemplatesGallery templateCategories={templateCategories} />
+          <VideoTemplatesGallery models={models} templateCategories={templateCategories} />
         </section>
-
-        <RecentVideosList
-          workspaceId={workspaceId}
-          initialVideos={initialVideos}
-          initialError={initialError}
-          initialHasMore={initialHasMore}
-        />
       </div>
     </VideoStudioProvider>
   )

@@ -19,11 +19,13 @@ import type {
 import { revalidatePath } from 'next/cache'
 
 const STUDIO_VIDEOS_PATH = DASHBOARD_ROUTES.STUDIO.VIDEOS
+const STUDIO_VIDEOS_ALL_PATH = DASHBOARD_ROUTES.STUDIO.VIDEOS_ALL
 
 function revalidateVideoPaths() {
   // Only the videos list. Revalidating the editor route remounts the client studio
   // and wipes in-progress timeline work (voiceover runs, unsaved clips).
   revalidatePath(STUDIO_VIDEOS_PATH)
+  revalidatePath(STUDIO_VIDEOS_ALL_PATH)
 }
 
 export const createVideo = async (

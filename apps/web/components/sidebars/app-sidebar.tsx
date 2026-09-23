@@ -1,11 +1,11 @@
 'use client'
 
+import { ProjectSwitcher } from '@/components/project-switcher'
 import { NavMain } from '@/components/sidebars/nav-main'
 import { SidebarCreateAction } from '@/components/sidebars/sidebar-create-action'
 import { SidebarStorageFooter } from '@/components/sidebars/sidebar-storage-footer'
 import { SidebarUpgradeCard } from '@/components/sidebars/sidebar-upgrade-card'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
-import { ProjectSwitcher } from '@/components/project-switcher'
 import { TeamSwitcher } from '@/components/workspace-switcher'
 import {
   DASHBOARD_ROUTES,
@@ -28,8 +28,8 @@ import {
   Link2Icon,
   MegaphoneIcon,
   SendIcon,
-  SparklesIcon,
   SmartphoneIcon,
+  SparklesIcon,
   UserRoundIcon,
   VideoIcon,
   type LucideIcon,
@@ -157,7 +157,7 @@ export function AppSidebar({ workspaces, projects, className, ...props }: AppSid
         <SidebarCreateAction compact />
       </SidebarHeader>
 
-      <SidebarContent className="sidebar-scrollbar gap-3 overflow-x-hidden px-2 pt-2.5 pb-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:py-2">
+      <SidebarContent className=" gap-3 overflow-x-hidden px-2 pt-2.5 pb-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:py-2">
         <NavMain items={platformItems} sectionTitle="Platform" collapsible={false} />
         <NavMain items={studioItems} sectionTitle="Studio" />
         <NavMain items={workspaceItems} sectionTitle="Workspace" />

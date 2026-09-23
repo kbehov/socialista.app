@@ -19,8 +19,7 @@ export function NotificationBell({ className }: { className?: string }) {
   const router = useRouter()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const workspaceId = getWorkspaceId(currentWorkspace)
-  const { notifications, unreadCount, isLoading, refresh, markRead, markAllRead } =
-    useNotificationsInbox(workspaceId)
+  const { notifications, unreadCount, isLoading, refresh, markRead, markAllRead } = useNotificationsInbox(workspaceId)
   const [open, setOpen] = useState(false)
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -38,24 +37,16 @@ export function NotificationBell({ className }: { className?: string }) {
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon-sm"
-          aria-label={
-            unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
-          }
+          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           className={cn('relative', className)}
         >
           <BellIcon strokeWidth={1.5} />
-          {unreadCount > 0 ? (
-            <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary" />
-          ) : null}
+          {unreadCount > 0 ? <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary" /> : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        side="bottom"
-        align="end"
-        className="flex w-80 flex-col overflow-hidden p-0 sm:w-96"
-      >
+      <PopoverContent side="bottom" align="end" className="flex w-80 flex-col overflow-hidden p-0 sm:w-96">
         <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2.5">
           <p className="text-sm font-medium">Notifications</p>
           {unreadCount > 0 ? (
@@ -79,18 +70,14 @@ export function NotificationBell({ className }: { className?: string }) {
                 <Skeleton className="h-14 rounded-lg" />
               </>
             ) : notifications.length === 0 ? (
-              <p className="px-3 py-8 text-center text-xs text-muted-foreground">
-                You are all caught up.
-              </p>
+              <p className="px-3 py-8 text-center text-xs text-muted-foreground">You are all caught up.</p>
             ) : (
               notifications.map(notification => (
                 <NotificationItem
                   key={notification._id}
                   notification={notification}
                   compact
-                  onSelect={item =>
-                    handleSelect(item._id, notificationHref(item), item.readAt == null)
-                  }
+                  onSelect={item => handleSelect(item._id, notificationHref(item), item.readAt == null)}
                 />
               ))
             )}

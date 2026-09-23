@@ -1,28 +1,28 @@
 'use client'
 
-import { ImagePromptInput } from '@/components/studio/images/prompt-input'
 import { STUDIO_HERO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import {
   StudioTemplateRecreateDialog,
   useStudioTemplateRecreate,
 } from '@/components/studio/templates/studio-template-recreate-dialog'
-import { IMAGE_TEMPLATE_RECREATE_IDEAS, templateRecreatePrompt } from '@/lib/studio/image-recreate'
+import { VideoPromptInput } from '@/components/studio/videos/video-prompt-input'
+import { VIDEO_TEMPLATE_RECREATE_IDEAS, videoTemplateRecreatePrompt } from '@/lib/studio/video-recreate'
 import { StudioTemplateKind, type Model, type StudioTemplateDto } from '@socialista/types'
 
-type ImageTemplateRecreateDialogProps = {
+type VideoTemplateRecreateDialogProps = {
   template: StudioTemplateDto | null
   open: boolean
   onOpenChange: (open: boolean) => void
   models: Model[]
 }
 
-function ImageTemplateRecreateComposer({ models }: { models: Model[] }) {
+function VideoTemplateRecreateComposer({ models }: { models: Model[] }) {
   const { state } = useStudioTemplateRecreate()
   const payload =
-    state.template.kind === StudioTemplateKind.IMAGE ? state.template.payload : undefined
+    state.template.kind === StudioTemplateKind.VIDEO ? state.template.payload : undefined
 
   return (
-    <ImagePromptInput
+    <VideoPromptInput
       models={models}
       hideExtras
       bindStudio={false}
@@ -31,29 +31,32 @@ function ImageTemplateRecreateComposer({ models }: { models: Model[] }) {
       initialAttachments={state.attachments}
       initialAspectRatio={payload?.aspectRatio}
       initialModel={payload?.model}
-      placeholder="Describe how to recreate this image…"
+      initialDuration={payload?.durationSec}
+      initialResolution={payload?.resolution}
+      initialGenerateAudio={payload?.generateAudio}
+      placeholder="Describe how to recreate this video…"
       surfaceClassName={STUDIO_HERO_COMPOSER_SURFACE_CLASS}
     />
   )
 }
 
-export function ImageTemplateRecreateDialog({
+export function VideoTemplateRecreateDialog({
   template,
   open,
   onOpenChange,
   models,
-}: ImageTemplateRecreateDialogProps) {
+}: VideoTemplateRecreateDialogProps) {
   return (
     <StudioTemplateRecreateDialog
       template={template}
       open={open}
       onOpenChange={onOpenChange}
-      ideas={IMAGE_TEMPLATE_RECREATE_IDEAS}
-      resolveInitialPrompt={templateRecreatePrompt}
-      title="Recreate image"
-      description="Recreate this template. The reference image is already attached."
+      ideas={VIDEO_TEMPLATE_RECREATE_IDEAS}
+      resolveInitialPrompt={videoTemplateRecreatePrompt}
+      title="Recreate video"
+      description="Recreate this template. The reference is already attached."
     >
-      <ImageTemplateRecreateComposer models={models} />
+      <VideoTemplateRecreateComposer models={models} />
     </StudioTemplateRecreateDialog>
   )
 }

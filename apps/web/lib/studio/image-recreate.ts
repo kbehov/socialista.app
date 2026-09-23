@@ -1,4 +1,5 @@
-import { StudioTemplateKind, type StudioTemplateDto } from '@socialista/types'
+import { resolveTemplateRecreatePrompt } from '@/lib/studio/template-recreate'
+import type { StudioTemplateDto } from '@socialista/types'
 
 export const IMAGE_TEMPLATE_RECREATE_IDEAS = [
   {
@@ -29,17 +30,6 @@ export const IMAGE_TEMPLATE_RECREATE_IDEAS = [
 
 export type ImageTemplateRecreateIdea = (typeof IMAGE_TEMPLATE_RECREATE_IDEAS)[number]
 
-export function randomImageTemplateRecreatePrompt(): string {
-  const index = Math.floor(Math.random() * IMAGE_TEMPLATE_RECREATE_IDEAS.length)
-  return IMAGE_TEMPLATE_RECREATE_IDEAS[index]?.prompt ?? IMAGE_TEMPLATE_RECREATE_IDEAS[0]!.prompt
-}
-
-export function storedImageTemplatePrompt(template: StudioTemplateDto): string | undefined {
-  if (template.kind !== StudioTemplateKind.IMAGE) return undefined
-  const stored = template.payload?.prompt?.trim()
-  return stored || undefined
-}
-
 export function templateRecreatePrompt(template: StudioTemplateDto): string {
-  return storedImageTemplatePrompt(template) ?? randomImageTemplateRecreatePrompt()
+  return resolveTemplateRecreatePrompt(template, IMAGE_TEMPLATE_RECREATE_IDEAS)
 }

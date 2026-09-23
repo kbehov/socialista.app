@@ -152,6 +152,9 @@ export type VideoPromptInputProps = {
   hideCost?: boolean;
   disabled?: boolean;
   submitDisabled?: boolean;
+  bindStudio?: boolean;
+  autoFocus?: boolean;
+  surfaceClassName?: string;
   costMultiplier?: number;
   attachSources?: readonly StudioAttachSource[];
   maxAttachments?: number;
@@ -183,6 +186,9 @@ function VideoPromptComposer({
   hideCost = false,
   disabled,
   submitDisabled,
+  bindStudio = true,
+  autoFocus,
+  surfaceClassName: surfaceClassNameProp,
   costMultiplier: costMultiplierProp,
   attachSources = DEFAULT_ATTACH_SOURCES,
   maxAttachments = MAX_REFERENCE_IMAGES,
@@ -190,7 +196,8 @@ function VideoPromptComposer({
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
-  const studio = useOptionalVideoStudio();
+  const studioContext = useOptionalVideoStudio();
+  const studio = bindStudio ? studioContext : null;
   const localComposerRef = useRef<HTMLDivElement>(null);
   const composerRef = studio?.composerRef ?? localComposerRef;
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
@@ -425,11 +432,12 @@ function VideoPromptComposer({
   ]);
 
   useEffect(() => {
-    if (hideExtras) return;
+    const shouldFocus = autoFocus ?? !hideExtras;
+    if (!shouldFocus) return;
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
     textareaRef.current?.focus();
-  }, [hideExtras]);
+  }, [autoFocus, hideExtras]);
 
   const handleSubmit = (message: PromptInputMessage) => {
     if (disabled || submitDisabled) return;
@@ -775,17 +783,18 @@ function VideoPromptComposer({
         emptyTitle="No video models yet"
         emptyDescription="Add a text-to-video or image-to-video model in the manager to start creating clips."
         surfaceClassName={
-          embedded
+          surfaceClassNameProp ??
+          (embedded
             ? STUDIO_NESTED_COMPOSER_SURFACE_CLASS
             : homeHero
               ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
-              : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+              : STUDIO_HOME_COMPOSER_SURFACE_CLASS)
         }
         compact={hideExtras || homeHero || embedded}
         embedded={embedded}
       />
 
-      {attachedImages.length > 0 && !embedded ? (
+      {attachedImages.length > 0 && !embedded && !hideExtras ? (
         <div className={hideExtras || homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
@@ -847,18 +856,15 @@ export function VideoPromptInput(props: VideoPromptInputProps) {
 
 const VideoGenerationPromptInput = ({
   models,
-  presets = [],
   initialAttachmentUrl,
 }: {
   models: Model[];
-  presets?: Preset[];
   initialAttachmentUrl?: string;
 }) => {
   return (
     <VideoPromptInput
       initialAttachmentUrl={initialAttachmentUrl}
       models={models}
-      presets={presets}
       homeHero
     />
   );

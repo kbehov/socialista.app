@@ -124,9 +124,7 @@ function PaletteItemRow({ item }: { item: CommandPaletteItem }) {
     <>
       <Icon className="size-4 shrink-0 text-foreground/45" strokeWidth={1.5} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-medium tracking-[-0.01em] text-foreground">
-          {item.title}
-        </span>
+        <span className="block truncate text-[13px] font-medium tracking-[-0.01em] text-foreground">{item.title}</span>
         <span className="mt-0.5 block truncate text-[11px] leading-tight text-muted-foreground/75">
           {item.subtitle}
         </span>
@@ -229,9 +227,7 @@ export function CommandPalette({ className }: CommandPaletteProps) {
             className="text-[13px] tracking-[-0.012em] placeholder:text-muted-foreground/50"
           />
           <CommandList className="max-h-[min(22rem,52vh)] scroll-py-1.5 px-2 py-2">
-            <CommandEmpty className="py-10 text-[13px] text-muted-foreground/75">
-              No results found.
-            </CommandEmpty>
+            <CommandEmpty className="py-10 text-[13px] text-muted-foreground/75">No results found.</CommandEmpty>
 
             {COMMAND_PALETTE_SECTIONS.map(section => (
               <CommandGroup key={section.heading} heading={section.heading} className={paletteGroupClassName}>
@@ -251,9 +247,7 @@ export function CommandPalette({ className }: CommandPaletteProps) {
             {(loadingRecent || recentGenerations.length > 0) && (
               <CommandGroup heading="Recent" className={paletteGroupClassName}>
                 {loadingRecent && recentGenerations.length === 0 ? (
-                  <div className="px-2.5 py-3 text-[12px] text-muted-foreground/70">
-                    Loading recent generations…
-                  </div>
+                  <div className="px-2.5 py-3 text-[12px] text-muted-foreground/70">Loading recent generations…</div>
                 ) : null}
 
                 {recentGenerations.map(generation => {

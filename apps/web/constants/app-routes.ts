@@ -37,6 +37,7 @@ export const DASHBOARD_ROUTES = {
     SLIDESHOW_CREATE: '/dashboard/studio/slideshows/create',
     slideshowRun: (runId: string) => `/dashboard/studio/slideshows/run/${runId}`,
     VIDEOS: '/dashboard/studio/videos',
+    VIDEOS_ALL: '/dashboard/studio/videos/all',
     createVideo: (opts?: { generationId?: string }) => {
       const params = new URLSearchParams()
       if (opts?.generationId) params.set('generationId', opts.generationId)

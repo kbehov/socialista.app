@@ -169,14 +169,9 @@
 
   /* Depth — hairlines for structure. Layered lift for elevation. Specular rim for material. */
   --shadow-color: oklch(0.145 0.006 var(--neutral-hue));
-  --shadow-border:
-    0 0 0 1px oklch(0 0 0 / 0.06),
-    0 1px 2px -1px oklch(0 0 0 / 0.05),
-    0 2px 4px 0 oklch(0 0 0 / 0.03);
+  --shadow-border: 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px -1px oklch(0 0 0 / 0.05), 0 2px 4px 0 oklch(0 0 0 / 0.03);
   --shadow-border-hover:
-    0 0 0 1px oklch(0 0 0 / 0.08),
-    0 1px 2px -1px oklch(0 0 0 / 0.07),
-    0 2px 6px 0 oklch(0 0 0 / 0.05);
+    0 0 0 1px oklch(0 0 0 / 0.08), 0 1px 2px -1px oklch(0 0 0 / 0.07), 0 2px 6px 0 oklch(0 0 0 / 0.05);
   --shadow-2xs: 0 1px 1px 0 oklch(0.145 0.006 var(--neutral-hue) / 0.04);
   --shadow-xs: 0 1px 2px 0 oklch(0.145 0.006 var(--neutral-hue) / 0.05);
   --shadow-sm: 0 1px 4px -1px oklch(0.145 0.006 var(--neutral-hue) / 0.07);
@@ -269,8 +264,14 @@
   }
 
   @keyframes landing-ready {
-    from { opacity: 0; transform: translateY(0.5rem); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .pricing-badge-fire {
@@ -620,25 +621,26 @@
 
   --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
 
-  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear
-;
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
   @keyframes shimmer-slide {
-  to {
-    transform: translate(calc(100cqw - 100%), 0);
+    to {
+      transform: translate(calc(100cqw - 100%), 0);
     }
   }
   @keyframes spin-around {
-  0% {
-    transform: translateZ(0) rotate(0);
+    0% {
+      transform: translateZ(0) rotate(0);
     }
-  15%, 35% {
-    transform: translateZ(0) rotate(90deg);
+    15%,
+    35% {
+      transform: translateZ(0) rotate(90deg);
     }
-  65%, 85% {
-    transform: translateZ(0) rotate(270deg);
+    65%,
+    85% {
+      transform: translateZ(0) rotate(270deg);
     }
-  100% {
-    transform: translateZ(0) rotate(360deg);
+    100% {
+      transform: translateZ(0) rotate(360deg);
     }
   }
   --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
@@ -648,13 +650,14 @@
   --color-color-2: var(--color-2);
   --color-color-1: var(--color-1);
   @keyframes rainbow {
-  0% {
-    background-position: 0%;
+    0% {
+      background-position: 0%;
     }
-  100% {
-    background-position: 200%;
+    100% {
+      background-position: 200%;
     }
-  }}
+  }
+}
 
 @layer base {
   *,
@@ -936,10 +939,7 @@
 
   .surface-raised {
     background-color: var(--surface-1);
-    box-shadow:
-      var(--highlight-inset),
-      var(--shadow-border),
-      var(--shadow-sm);
+    box-shadow: var(--highlight-inset), var(--shadow-border), var(--shadow-sm);
   }
 
   .surface-interactive {
@@ -1120,7 +1120,7 @@
 
   .dashboard-shell {
     --sidebar-width: 240px;
-    --dashboard-chrome-height: 3rem;
+    --dashboard-chrome-height: 3.3rem;
   }
 
   .dashboard-inset {
@@ -1151,11 +1151,11 @@
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-    height: var(--control-height);
+    height: calc(var(--dashboard-chrome-height) - 1.1rem);
     padding-inline: 0.75rem;
-    border-radius: 9999px;
-    border: 1px solid color-mix(in oklch, var(--foreground) 8%, transparent);
-    background-color: color-mix(in oklch, var(--foreground) 3.5%, transparent);
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklch, var(--foreground) 6%, transparent);
+    background-color: color-mix(in oklch, var(--foreground) 2.5%, transparent);
     font-size: 0.8125rem;
     letter-spacing: -0.01em;
     color: color-mix(in oklch, var(--foreground) 42%, transparent);
@@ -1437,9 +1437,7 @@
     --upgrade-sheen: oklch(1 0 0 / 0.8);
     --upgrade-chip: oklch(0 0 0);
     --upgrade-chip-ink: oklch(1 0 0);
-    --upgrade-depth:
-      0 1px 1px oklch(0 0 0 / 0.16),
-      0 8px 18px -10px oklch(0 0 0 / 0.48);
+    --upgrade-depth: 0 1px 1px oklch(0 0 0 / 0.16), 0 8px 18px -10px oklch(0 0 0 / 0.48);
   }
 
   .sidebar-upgrade-card {

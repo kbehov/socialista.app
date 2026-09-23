@@ -28,6 +28,15 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
 const SCROLL_TARGET_ID = 'dashboard-scroll'
+const EMPTY_TEMPLATE_CATEGORIES: StudioTemplateCategoryDto[] = []
+
+function categorySeedKey(categories: readonly StudioTemplateCategoryDto[]) {
+  let key = ''
+  for (const category of categories) {
+    key += `${category._id}\0${category.templatesCount}\0${category.name}\0`
+  }
+  return key
+}
 
 function ScrollLoader() {
   return (
@@ -208,7 +217,7 @@ function sortCategories(categories: StudioTemplateCategoryDto[]) {
 
 export function StudioTemplatesGallery({
   kind,
-  initialCategories = [],
+  initialCategories = EMPTY_TEMPLATE_CATEGORIES,
   onRecreate,
   onPreview,
   sectionTitle = 'Templates',
@@ -217,6 +226,8 @@ export function StudioTemplatesGallery({
   emptyTitle = 'No templates yet',
   emptyDescription = 'Import templates to start recreating content from a reference.',
 }: StudioTemplatesGalleryProps) {
+  const nextSeedKey = categorySeedKey(initialCategories)
+  const [seedKey, setSeedKey] = useState(nextSeedKey)
   const [categories, setCategories] = useState<StudioTemplateCategoryDto[]>(() =>
     sortCategories(initialCategories),
   )
@@ -259,20 +270,28 @@ export function StudioTemplatesGallery({
   )
 
   useEffect(() => {
-    setSelectedCategory(null)
-    setCategories(sortCategories(initialCategories))
+    let ignore = false
     startTransition(async () => {
       try {
         const categoriesRes = await getStudioTemplateCategories(kind)
-        if (categoriesRes.success && categoriesRes.data) {
+        if (!ignore && categoriesRes.success && categoriesRes.data) {
           setCategories(sortCategories(categoriesRes.data.categories))
         }
       } catch {
-        // Keep server-provided initialCategories when the client refresh fails.
+        // Keep server-provided categories when the client refresh fails.
       }
-      await fetchPage(1, null, false)
+      if (!ignore) await fetchPage(1, null, false)
     })
-  }, [fetchPage, initialCategories, kind])
+    return () => {
+      ignore = true
+    }
+  }, [fetchPage, kind])
+
+  if (nextSeedKey !== seedKey) {
+    setSeedKey(nextSeedKey)
+    setCategories(sortCategories(initialCategories))
+    setSelectedCategory(null)
+  }
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category)

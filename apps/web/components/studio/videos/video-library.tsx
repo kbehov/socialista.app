@@ -2,44 +2,65 @@
 
 import { VideoCard } from '@/components/cards/video-card'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
+import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
+import { LoadingState } from '@/components/common/loading-state'
+import { dashboardSurface } from '@/components/dashboard'
+import { PageHeader } from '@/components/headers/page-header'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useVideosList } from '@/hooks/use-videos-list'
-import { cn } from '@/lib/utils'
 import type { VideoSummaryResponse } from '@socialista/types'
-import { ArrowRightIcon, Loader2Icon } from 'lucide-react'
+import { Loader2Icon, PlusIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
+/** Matches `id` on dashboard `<main>` — same scroll root as files infinite scroll. */
 const SCROLL_TARGET_ID = 'dashboard-scroll'
+
+function CreateVideoButton() {
+  return (
+    <Button asChild size="sm" className={dashboardSurface.createCta}>
+      <Link href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}>
+        <PlusIcon className="size-4" strokeWidth={1.75} />
+        Create video
+      </Link>
+    </Button>
+  )
+}
+
+type VideoLibraryProps = {
+  workspaceId: string
+  workspaceName: string
+  initialVideos: VideoSummaryResponse[]
+  initialError?: string | null
+  initialHasMore?: boolean
+  initialTotal?: number
+}
 
 function ScrollLoader() {
   return (
-    <div className="flex items-center justify-center py-10">
-      <Loader2Icon className="size-3.5 animate-spin text-black/36 dark:text-white/36" />
+    <div className="flex items-center justify-center gap-2 py-10 text-[12px] text-muted-foreground">
+      <Loader2Icon className="size-3.5 animate-spin" />
+      Loading more
     </div>
   )
 }
 
-type RecentVideosListProps = {
-  workspaceId: string
-  initialVideos: VideoSummaryResponse[]
-  initialError?: string | null
-  initialHasMore?: boolean
-}
-
-export function RecentVideosList({
+export function VideoLibrary({
   workspaceId,
+  workspaceName,
   initialVideos,
   initialError = null,
   initialHasMore = false,
-}: RecentVideosListProps) {
+  initialTotal,
+}: VideoLibraryProps) {
   const {
     videos,
     error,
     isLoading,
     hasMore,
+    total,
     deleteTarget,
     isDeleting,
     duplicatingId,
@@ -48,46 +69,51 @@ export function RecentVideosList({
     fetchMore,
     handleDelete,
     handleDuplicate,
-  } = useVideosList({ workspaceId, initialVideos, initialError, initialHasMore })
+  } = useVideosList({
+    workspaceId,
+    initialVideos,
+    initialError,
+    initialHasMore,
+    initialTotal,
+  })
 
-  if (!error && videos.length === 0 && !isLoading) {
-    return null
-  }
+  const headerDescription =
+    isLoading && videos.length === 0
+      ? 'Loading drafts…'
+      : `${total === 1 ? '1 video' : `${total.toLocaleString()} videos`} in ${workspaceName}`
 
   return (
-    <section
-      className="mx-auto w-full max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8"
-      aria-labelledby="recent-videos-heading"
-    >
-      <div className="mb-3.5 flex items-end justify-between gap-3">
-        <h2
-          id="recent-videos-heading"
-          className="text-[13px] font-medium tracking-[-0.015em] text-foreground/80"
-        >
-          Recent clips
-        </h2>
-        <div className="flex items-center gap-3">
-          {isLoading ? <Loader2Icon className="size-3.5 animate-spin text-black/36 dark:text-white/36" /> : null}
-          <Link
-            href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}
-            className="inline-flex items-center gap-1 text-[12px] font-medium tracking-[-0.01em] text-black/44 transition-colors hover:text-foreground dark:text-white/44"
-          >
-            Open editor
-            <ArrowRightIcon className="size-3" strokeWidth={1.75} />
-          </Link>
-        </div>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PageHeader
+        title="All videos"
+        description={headerDescription}
+        backHref={DASHBOARD_ROUTES.STUDIO.VIDEOS}
+        actions={<CreateVideoButton />}
+      />
 
-      {error ? (
+      {error && videos.length === 0 ? (
         <ErrorState
           title={error}
           description="Try again or refresh the page."
-          className="rounded-xl"
+          className="flex-1 rounded-xl"
           action={
             <Button size="sm" variant="outline" onClick={() => void loadVideos()}>
               Retry
             </Button>
           }
+        />
+      ) : isLoading && videos.length === 0 ? (
+        <LoadingState message="Loading videos…" className="flex-1" />
+      ) : videos.length === 0 ? (
+        <EmptyState
+          icon={VideoIcon}
+          title="Start your first video"
+          description="Build short-form videos entirely in your browser — import, trim, overlay text, export MP4."
+          minHeight="lg"
+          variant="hero"
+          className="flex-1"
+          iconClassName={dashboardSurface.emptyIcon}
+          action={<CreateVideoButton />}
         />
       ) : (
         <InfiniteScroll
@@ -97,15 +123,10 @@ export function RecentVideosList({
           loader={<ScrollLoader />}
           scrollableTarget={SCROLL_TARGET_ID}
           scrollThreshold={0.9}
-          className="!overflow-visible"
+          className="!overflow-visible pb-10"
           style={{ overflow: 'visible' }}
         >
-          <div
-            className={cn(
-              'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
-              isLoading && 'opacity-60',
-            )}
-          >
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {videos.map(video => (
               <VideoCard
                 key={video.id}
@@ -134,6 +155,6 @@ export function RecentVideosList({
         isDeleting={isDeleting}
         onConfirm={() => void handleDelete()}
       />
-    </section>
+    </div>
   )
 }

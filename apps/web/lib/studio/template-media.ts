@@ -41,11 +41,19 @@ export function templateToRecreateAttachments(
     urls.push(url)
   }
 
-  push(template.previewImageUrl)
+  const pushImage = (url: string | undefined) => {
+    if (url && isVideoPreviewUrl(url)) return
+    push(url)
+  }
+
+  pushImage(template.previewImageUrl)
   if (template.kind === StudioTemplateKind.IMAGE) {
     for (const url of template.payload.referenceImageUrls ?? []) {
-      push(url)
+      pushImage(url)
     }
+  }
+  if (template.kind === StudioTemplateKind.VIDEO) {
+    pushImage(template.payload.referenceImageUrl)
   }
 
   return urls.slice(0, max).map((url, index) => ({

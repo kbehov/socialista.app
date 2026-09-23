@@ -1,10 +1,7 @@
 'use client'
 
-import {
-  StudioHomeCreateButton,
-  StudioHomeHeaderActions,
-} from '@/components/studio/studio-home-hero-actions'
 import { StudioHomeHero } from '@/components/studio/studio-home-hero'
+import { StudioHomeCreateButton, StudioHomeHeaderActions } from '@/components/studio/studio-home-hero-actions'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import type { ReactNode } from 'react'
 
@@ -17,16 +14,13 @@ export function ImageStudioHero({ children }: ImageStudioHeroProps) {
     <StudioHomeHero
       title="Images"
       gradient="image"
-      backgroundSrc="/socialista-image.webp"
-      backgroundPosition="object-[50%_30%]"
+      backgroundSrc="/studio-image.png"
+      backgroundPosition="object-[50%_53%]"
       featureCards={[]}
       onFeatureSelect={() => {}}
       headerActions={
         <StudioHomeHeaderActions>
-          <StudioHomeCreateButton
-            href={DASHBOARD_ROUTES.GENERATIONS}
-            label="View gallery"
-          />
+          <StudioHomeCreateButton href={DASHBOARD_ROUTES.GENERATIONS} label="View gallery" />
         </StudioHomeHeaderActions>
       }
     >

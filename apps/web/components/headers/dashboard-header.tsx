@@ -1,7 +1,7 @@
 'use client'
 
-import { UserDropdown } from '@/components/common/user-dropdown'
 import { CommandPalette } from '@/components/command-palette'
+import { UserDropdown } from '@/components/common/user-dropdown'
 import { FeedbackButton } from '@/components/headers/feedback-button'
 import { FilesHeaderLink } from '@/components/headers/files-header-link'
 import { HeaderTooltip } from '@/components/headers/header-tooltip'
@@ -16,8 +16,8 @@ type DashboardHeaderProps = {
   className?: string
 }
 
-const headerIconClassName = 'dashboard-header-icon size-7 rounded-[var(--control-radius)]'
-const headerTextBtnClassName = 'dashboard-header-text-btn'
+const headerIconClassName = 'dashboard-header-icon size-9 rounded-[var(--control-radius)]'
+const headerTextBtnClassName = 'bg-foreground text-background text-xs'
 
 function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) {
   return (
@@ -39,7 +39,7 @@ function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) 
           </HeaderTooltip>
           <div className="dashboard-header-actions-divider" aria-hidden />
           <HeaderTooltip label="Feedback">
-            <FeedbackButton className={headerTextBtnClassName} />
+            <FeedbackButton />
           </HeaderTooltip>
           <HeaderTooltip label="Files">
             <FilesHeaderLink className={headerIconClassName} />
