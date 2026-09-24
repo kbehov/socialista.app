@@ -11,6 +11,7 @@ import {
 import { HttpError, successResponse } from "@/utils/http-response.js";
 import {
   collectInfluencerMediaUrls,
+  collectInfluencerSourceImageUrls,
   getCloneRequestForMember,
   getInfluencerForMember,
   getInfluencerForViewer,
@@ -25,6 +26,7 @@ import {
   serializeCloneRequest,
   serializeInfluencer,
   resolveInfluencerGenerationModel,
+  resolveInfluencerHookVideoModel,
 } from "@/utils/influencer.utils.js";
 import { getWorkspaceAsMember, resolveProjectForWorkspace } from "@/utils/workspace.utils.js";
 import { buildInfluencerBasePromptFragment } from "@socialista/ai";
@@ -47,11 +49,19 @@ import {
 import { createPublicAccessToken } from "@socialista/trigger";
 import type {
   CloneInfluencerTask,
+  GenerateInfluencerHookVideoTask,
+  GenerateInfluencerImageTask,
   GenerateInfluencerTask,
 } from "@socialista/trigger/task-types";
 import {
+  ASPECT_RATIOS,
+  clampImageGenerationCount,
+  clampInfluencerHookVideoCount,
   clampInfluencerShotCount,
+  clampVideoDuration,
+  type AspectRatio,
   INFLUENCER_MAX_USER_REFERENCE_IMAGES,
+  isInfluencerHookPresetId,
   TASK_IDS,
   type CreateInfluencerPayload,
   type UpdateInfluencerPayload,
@@ -421,6 +431,127 @@ export const updateInfluencer = async (c: Context<AppContext>) => {
   }
 
   return successResponse(c, 200, { influencer: serializeInfluencer(updated) });
+};
+
+export const createInfluencerHookVideo = async (c: Context<AppContext>) => {
+  const userId = c.get("userId");
+  const id = parseParamId(c.req.param("id"), "influencer ID");
+  const influencer = await getInfluencerForMember(id, userId);
+
+  if (influencer.status !== InfluencerStatus.READY) {
+    throw new HttpError(400, "Influencer must be ready before generating hook videos");
+  }
+
+  const workspaceId = influencer.workspace?.toString();
+  if (!workspaceId) {
+    throw new HttpError(403, "Cannot generate hook videos for library influencers");
+  }
+
+  const body = (await c.req.json()) as Record<string, unknown>;
+  const sourceImageUrl = requireTrimmedString(body.sourceImageUrl, "Source image");
+  if (!isValidHttpUrl(sourceImageUrl)) {
+    throw new HttpError(400, "Source image must be a valid URL");
+  }
+  if (!collectInfluencerSourceImageUrls(influencer).includes(sourceImageUrl)) {
+    throw new HttpError(400, "Source image does not belong to this influencer");
+  }
+
+  const prompt = requireTrimmedString(body.prompt, "Prompt");
+  const model = await resolveInfluencerHookVideoModel(body.model);
+  const duration = clampVideoDuration(body.duration);
+  const count = clampInfluencerHookVideoCount(body.count);
+  const presetId =
+    body.presetId === undefined || body.presetId === null || body.presetId === ""
+      ? undefined
+      : typeof body.presetId === "string" && isInfluencerHookPresetId(body.presetId)
+        ? body.presetId
+        : undefined;
+
+  if (body.presetId && !presetId) {
+    throw new HttpError(400, "Invalid hook preset");
+  }
+
+  const projectId = influencer.project?.toString();
+
+  const handle = await tasks.trigger<GenerateInfluencerHookVideoTask>(
+    TASK_IDS.generateInfluencerHookVideo,
+    {
+      influencerId: influencer._id.toString(),
+      workspaceId,
+      userId,
+      sourceImageUrl,
+      prompt,
+      model,
+      duration,
+      count,
+      ...(presetId ? { presetId } : {}),
+      ...(projectId ? { projectId } : {}),
+    },
+  );
+
+  const publicAccessToken = await createPublicAccessToken(handle.id);
+
+  return successResponse(c, 202, {
+    runId: handle.id,
+    publicAccessToken,
+  });
+};
+
+function parseInfluencerImageAspectRatio(raw: unknown): AspectRatio {
+  if (raw === undefined || raw === null || raw === "") return "9:16";
+  if (typeof raw === "string" && (ASPECT_RATIOS as readonly string[]).includes(raw)) {
+    return raw as AspectRatio;
+  }
+  throw new HttpError(400, "Invalid aspect ratio");
+}
+
+export const createInfluencerImage = async (c: Context<AppContext>) => {
+  const userId = c.get("userId");
+  const id = parseParamId(c.req.param("id"), "influencer ID");
+  const influencer = await getInfluencerForMember(id, userId);
+
+  if (influencer.status !== InfluencerStatus.READY) {
+    throw new HttpError(400, "Influencer must be ready before generating scenes");
+  }
+
+  const workspaceId = influencer.workspace?.toString();
+  if (!workspaceId) {
+    throw new HttpError(403, "Cannot generate scenes for library influencers");
+  }
+
+  const body = (await c.req.json()) as Record<string, unknown>;
+  const sourceImageUrl = requireTrimmedString(body.sourceImageUrl, "Source image");
+  if (!isValidHttpUrl(sourceImageUrl)) {
+    throw new HttpError(400, "Source image must be a valid URL");
+  }
+  if (!collectInfluencerSourceImageUrls(influencer).includes(sourceImageUrl)) {
+    throw new HttpError(400, "Source image does not belong to this influencer");
+  }
+
+  const prompt = requireTrimmedString(body.prompt, "Prompt");
+  const model = await resolveInfluencerGenerationModel(body.model);
+  const aspectRatio = parseInfluencerImageAspectRatio(body.aspectRatio);
+  const count = clampImageGenerationCount(body.count);
+  const projectId = influencer.project?.toString();
+
+  const handle = await tasks.trigger<GenerateInfluencerImageTask>(TASK_IDS.generateInfluencerImage, {
+    influencerId: influencer._id.toString(),
+    workspaceId,
+    userId,
+    sourceImageUrl,
+    prompt,
+    model,
+    aspectRatio,
+    count,
+    ...(projectId ? { projectId } : {}),
+  });
+
+  const publicAccessToken = await createPublicAccessToken(handle.id);
+
+  return successResponse(c, 202, {
+    runId: handle.id,
+    publicAccessToken,
+  });
 };
 
 export const deleteInfluencer = async (c: Context<AppContext>) => {

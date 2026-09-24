@@ -5,6 +5,8 @@ import type { realtimeImageGeneration } from './tasks/image/generate-image-realt
 import type { realtimeStaticAdGeneration } from './tasks/image/generate-static-ad-realtime.js'
 import type { cloneInfluencer } from './tasks/influencer/clone-influencer.js'
 import type { generateInfluencer } from './tasks/influencer/generate-influencer.js'
+import type { generateInfluencerHookVideo } from './tasks/influencer/generate-influencer-hook-video.js'
+import type { generateInfluencerImage } from './tasks/influencer/generate-influencer-image.js'
 import type { publishPost } from './tasks/posts/publish-post.js'
 import type { generateUgcStills } from './tasks/ugc/generate-ugc-stills.js'
 import type { generateUgcVideo } from './tasks/ugc/generate-ugc-video.js'
@@ -18,6 +20,8 @@ import type { realtimeSlideshowGeneration } from './tasks/slideshow/generate-sli
 export type RealtimeImageGenerationTask = typeof realtimeImageGeneration
 export type RealtimeStaticAdGenerationTask = typeof realtimeStaticAdGeneration
 export type GenerateInfluencerTask = typeof generateInfluencer
+export type GenerateInfluencerHookVideoTask = typeof generateInfluencerHookVideo
+export type GenerateInfluencerImageTask = typeof generateInfluencerImage
 export type CloneInfluencerTask = typeof cloneInfluencer
 export type GenerateUgcStillsTask = typeof generateUgcStills
 export type GenerateUgcVideoTask = typeof generateUgcVideo

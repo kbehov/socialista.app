@@ -23,6 +23,11 @@ export function ImageTemplatesGallery({ models, templateCategories }: ImageTempl
       <StudioInspirationsGallery
         kind={StudioTemplateKind.IMAGE}
         templateCategories={templateCategories}
+        sectionTitle="Templates"
+        headingTone="quiet"
+        chipTone="studio"
+        emptyTitle="No templates yet"
+        emptyDescription="When templates are added, they show up here so you can recreate one in a tap."
         onRecreate={setRecreateTemplate}
         onPreview={setRecreateTemplate}
       />

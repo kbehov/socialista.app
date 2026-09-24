@@ -60,6 +60,8 @@ export const TASK_IDS = {
   fetchAccountAnalytics: 'fetch-account-analytics',
   videoExport: 'export-video',
   generateInfluencer: 'generate-influencer',
+  generateInfluencerHookVideo: 'generate-influencer-hook-video',
+  generateInfluencerImage: 'generate-influencer-image',
   cloneInfluencer: 'clone-influencer',
   generateUgcStills: 'generate-ugc-stills',
   generateUgcVideo: 'generate-ugc-video',

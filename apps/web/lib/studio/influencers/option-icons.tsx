@@ -237,7 +237,6 @@ export const ACCESSORY_ICONS: Record<string, LucideIcon> = {
 export const GENDER_ICONS: Record<string, LucideIcon> = {
   female: CircleUserRound,
   male: CircleUser,
-  'non-binary': UserRound,
 }
 
 export const HEIGHT_ICONS: Record<string, LucideIcon> = {

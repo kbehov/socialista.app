@@ -7,6 +7,10 @@ import type {
   ApiResponse,
   CloneInfluencerPayload,
   CloneInfluencerResponse,
+  CreateInfluencerHookVideoPayload,
+  CreateInfluencerHookVideoResponse,
+  CreateInfluencerImagePayload,
+  CreateInfluencerImageResponse,
   CreateInfluencerPayload,
   CreateInfluencerResponse,
   DeleteInfluencerResponse,
@@ -55,6 +59,7 @@ function appendInfluencerQuery(params: URLSearchParams, query?: ExploreInfluence
   }
 
   if (query.photoStyle) params.set('photoStyle', query.photoStyle)
+  if (query.ethnicity) params.set('ethnicity', query.ethnicity)
 
   if ('visibility' in query && query.visibility) {
     params.set('visibility', query.visibility)
@@ -90,6 +95,20 @@ export const getWorkspaceInfluencers = async (
 
 export const getInfluencer = async (id: string): Promise<ApiResponse<{ influencer: Influencer }>> => {
   return api.get<{ influencer: Influencer }>(INFLUENCER_ROUTES.GET_BY_ID(id))
+}
+
+export const createInfluencerHookVideo = async (
+  id: string,
+  payload: CreateInfluencerHookVideoPayload,
+): Promise<ApiResponse<CreateInfluencerHookVideoResponse>> => {
+  return api.post<CreateInfluencerHookVideoResponse>(INFLUENCER_ROUTES.CREATE_HOOK_VIDEO(id), payload)
+}
+
+export const createInfluencerScene = async (
+  id: string,
+  payload: CreateInfluencerImagePayload,
+): Promise<ApiResponse<CreateInfluencerImageResponse>> => {
+  return api.post<CreateInfluencerImageResponse>(INFLUENCER_ROUTES.CREATE_IMAGE(id), payload)
 }
 
 export const createInfluencer = async (

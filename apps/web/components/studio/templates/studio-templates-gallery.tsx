@@ -46,10 +46,21 @@ function ScrollLoader() {
   )
 }
 
-function CategoryCarouselNav() {
+function CategoryCarouselNav({ size = 'sm' }: { size?: 'sm' | 'md' }) {
   const { canScrollPrev, canScrollNext, scrollPrev, scrollNext } = useCarousel()
 
   if (!canScrollPrev && !canScrollNext) return null
+
+  const buttonClass = cn(
+    'inline-flex items-center justify-center',
+    'text-black/44 dark:text-white/44',
+    'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+    'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+    'active:scale-[0.96] motion-reduce:active:scale-100',
+    'disabled:pointer-events-none disabled:opacity-30',
+    size === 'md' ? 'size-8 rounded-full' : 'size-6 rounded-md',
+  )
 
   return (
     <div className="flex shrink-0 items-center gap-0.5">
@@ -58,14 +69,7 @@ function CategoryCarouselNav() {
         aria-label="Scroll categories left"
         disabled={!canScrollPrev}
         onClick={scrollPrev}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md',
-          'text-black/44 dark:text-white/44',
-          'transition-colors duration-150',
-          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          'disabled:pointer-events-none disabled:opacity-30',
-        )}
+        className={buttonClass}
       >
         <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
       </button>
@@ -74,20 +78,15 @@ function CategoryCarouselNav() {
         aria-label="Scroll categories right"
         disabled={!canScrollNext}
         onClick={scrollNext}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md',
-          'text-black/44 dark:text-white/44',
-          'transition-colors duration-150',
-          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          'disabled:pointer-events-none disabled:opacity-30',
-        )}
+        className={buttonClass}
       >
         <ChevronRightIcon className="size-3.5" strokeWidth={1.75} />
       </button>
     </div>
   )
 }
+
+type CategoryChipTone = 'outline' | 'studio'
 
 type TemplateCategoryFilterProps = {
   categories: StudioTemplateCategoryDto[]
@@ -97,19 +96,38 @@ type TemplateCategoryFilterProps = {
   sectionTitle: string
   sectionDescription?: string
   accentFilters?: boolean
+  headingTone?: 'display' | 'quiet'
+  chipTone?: CategoryChipTone
 }
 
-function categoryTabClass(active: boolean, accentFilters: boolean) {
-  return cn(
-    'inline-flex shrink-0 items-center',
-    accentFilters ? 'h-8 rounded-full px-3.5' : 'h-7 rounded-lg px-2.5',
-    'text-[12px] font-medium leading-none tracking-[-0.015em]',
+function categoryTabClass(active: boolean, accentFilters: boolean, chipTone: CategoryChipTone) {
+  const shared = cn(
+    'inline-flex shrink-0 items-center font-medium leading-none tracking-[-0.015em]',
     'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
-    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-    'active:scale-[0.97] motion-reduce:active:scale-100',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+    'active:scale-[0.96] motion-reduce:active:scale-100',
     'disabled:pointer-events-none disabled:opacity-50',
+  )
+
+  if (chipTone === 'studio') {
+    return cn(
+      shared,
+      'h-8 rounded-full px-3.5 text-[13px]',
+      active
+        ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+        : cn(
+            'bg-black/[0.045] text-foreground/72',
+            'hover:bg-black/[0.08] hover:text-foreground',
+            'dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
+          ),
+    )
+  }
+
+  return cn(
+    shared,
+    accentFilters ? 'h-8 rounded-full px-3.5 text-[12px]' : 'h-7 rounded-lg px-2.5 text-[12px]',
     active
-      ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.08)] ring-1 ring-inset ring-transparent'
+      ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.08)]'
       : cn(
           'bg-transparent text-black/58 ring-1 ring-inset ring-black/10',
           'hover:bg-black/[0.03] hover:text-foreground hover:ring-black/14',
@@ -126,7 +144,49 @@ function TemplateCategoryFilter({
   sectionTitle,
   sectionDescription,
   accentFilters = false,
+  headingTone = 'display',
+  chipTone = 'outline',
 }: TemplateCategoryFilterProps) {
+  const quiet = headingTone === 'quiet'
+  const studio = chipTone === 'studio'
+  const chipGap = studio ? 'pl-2' : 'pl-1.5'
+
+  const chips = (
+    <CarouselContent className="ml-0" role="tablist" aria-label="Template categories">
+      <CarouselItem className="basis-auto self-stretch pl-0">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={selectedCategory === null}
+          disabled={disabled}
+          onClick={() => onCategoryChange(null)}
+          className={categoryTabClass(selectedCategory === null, accentFilters, chipTone)}
+        >
+          All
+        </button>
+      </CarouselItem>
+
+      {categories.map(category => {
+        const active = selectedCategory === category.name
+
+        return (
+          <CarouselItem key={category._id} className={cn('basis-auto self-stretch', chipGap)}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={active}
+              disabled={disabled}
+              onClick={() => onCategoryChange(category.name)}
+              className={categoryTabClass(active, accentFilters, chipTone)}
+            >
+              <span className="whitespace-nowrap">{category.name}</span>
+            </button>
+          </CarouselItem>
+        )
+      })}
+    </CarouselContent>
+  )
+
   return (
     <Carousel
       className="w-full min-w-0"
@@ -136,9 +196,20 @@ function TemplateCategoryFilter({
         containScroll: 'trimSnaps',
       }}
     >
-      <div className="mb-4 flex items-start justify-between gap-4 sm:mb-5">
+      <div
+        className={cn(
+          'flex justify-between gap-4',
+          quiet ? 'mb-3 items-center' : 'mb-4 items-start sm:mb-5',
+        )}
+      >
         <div className="min-w-0 flex-1 space-y-1">
-          <h2 className="text-[17px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-[18px]">
+          <h2
+            className={cn(
+              quiet
+                ? 'text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56'
+                : 'text-[17px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-[18px]',
+            )}
+          >
             {sectionTitle}
           </h2>
           {sectionDescription ? (
@@ -147,50 +218,30 @@ function TemplateCategoryFilter({
             </p>
           ) : null}
         </div>
-        <CategoryCarouselNav />
+        {studio ? null : <CategoryCarouselNav />}
       </div>
 
       {categories.length > 0 ? (
-        <div className={cn('relative pb-0.5', accentFilters && 'pt-0.5')}>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
-          />
-
-          <CarouselContent className="ml-0" role="tablist" aria-label="Template categories">
-            <CarouselItem className="basis-auto self-stretch pl-0">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selectedCategory === null}
-                disabled={disabled}
-                onClick={() => onCategoryChange(null)}
-                className={categoryTabClass(selectedCategory === null, accentFilters)}
-              >
-                All
-              </button>
-            </CarouselItem>
-
-            {categories.map(category => {
-              const active = selectedCategory === category.name
-
-              return (
-                <CarouselItem key={category._id} className="basis-auto self-stretch pl-1.5">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    disabled={disabled}
-                    onClick={() => onCategoryChange(category.name)}
-                    className={categoryTabClass(active, accentFilters)}
-                  >
-                    <span className="whitespace-nowrap">{category.name}</span>
-                  </button>
-                </CarouselItem>
-              )
-            })}
-          </CarouselContent>
-        </div>
+        studio ? (
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+              />
+              {chips}
+            </div>
+            <CategoryCarouselNav size="md" />
+          </div>
+        ) : (
+          <div className={cn('relative pb-0.5', accentFilters && 'pt-0.5')}>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
+            />
+            {chips}
+          </div>
+        )
       ) : null}
     </Carousel>
   )
@@ -203,9 +254,13 @@ type StudioTemplatesGalleryProps = {
   onPreview?: (template: StudioTemplateDto) => void
   sectionTitle?: string
   sectionDescription?: string
+  headingTone?: 'display' | 'quiet'
+  chipTone?: CategoryChipTone
   cardVariant?: StudioTemplateCardVariant
   emptyTitle?: string
   emptyDescription?: string
+  hideWhenEmpty?: boolean
+  className?: string
 }
 
 const GRID_CLASS =
@@ -222,9 +277,13 @@ export function StudioTemplatesGallery({
   onPreview,
   sectionTitle = 'Templates',
   sectionDescription,
+  headingTone = 'display',
+  chipTone = 'outline',
   cardVariant = 'default',
   emptyTitle = 'No templates yet',
   emptyDescription = 'Import templates to start recreating content from a reference.',
+  hideWhenEmpty = false,
+  className,
 }: StudioTemplatesGalleryProps) {
   const nextSeedKey = categorySeedKey(initialCategories)
   const [seedKey, setSeedKey] = useState(nextSeedKey)
@@ -306,8 +365,12 @@ export function StudioTemplatesGallery({
     void fetchPage(page + 1, selectedCategory, true).finally(() => setLoadingMore(false))
   }
 
+  if (hideWhenEmpty && selectedCategory === null && !error && templates.length === 0) {
+    return null
+  }
+
   return (
-    <div className="flex w-full flex-col">
+    <div className={cn('flex w-full flex-col', className)}>
       <TemplateCategoryFilter
         categories={categories}
         selectedCategory={selectedCategory}
@@ -315,6 +378,8 @@ export function StudioTemplatesGallery({
         disabled={pending}
         sectionTitle={sectionTitle}
         sectionDescription={sectionDescription}
+        headingTone={headingTone}
+        chipTone={chipTone}
         accentFilters={cardVariant === 'visual'}
       />
 

@@ -22,6 +22,10 @@ type StudioInspirationsGalleryProps = {
   onRecreate: (template: StudioTemplateDto) => void
   onPreview?: (template: StudioTemplateDto) => void
   emptyDescription?: string
+  emptyTitle?: string
+  sectionTitle?: string
+  headingTone?: 'display' | 'quiet'
+  chipTone?: 'outline' | 'studio'
 }
 
 export function StudioInspirationsGallery({
@@ -30,16 +34,22 @@ export function StudioInspirationsGallery({
   onRecreate,
   onPreview,
   emptyDescription,
+  emptyTitle = 'No inspirations yet',
+  sectionTitle = 'Inspirations',
+  headingTone = 'display',
+  chipTone = 'outline',
 }: StudioInspirationsGalleryProps) {
   return (
     <StudioTemplatesGallery
       kind={kind}
       initialCategories={templateCategories}
-      sectionTitle="Inspirations"
+      sectionTitle={sectionTitle}
+      headingTone={headingTone}
+      chipTone={chipTone}
       cardVariant="visual"
       onRecreate={onRecreate}
       onPreview={onPreview}
-      emptyTitle="No inspirations yet"
+      emptyTitle={emptyTitle}
       emptyDescription={emptyDescription ?? EMPTY_DESCRIPTION[kind]}
     />
   )

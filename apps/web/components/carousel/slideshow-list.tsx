@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { SLIDESHOW_LIST_PAGE_SIZE } from '@/constants/studio'
-import { getAspectRatioPreset } from '@/lib/carousel/aspect-ratios'
 import { cn } from '@/lib/utils'
 import { deleteSlideshow, duplicateSlideshow, getWorkspaceSlideshows } from '@/services/slideshow.service'
 import { getProjectId, useProjectStore } from '@/store/project.store'
@@ -32,6 +31,44 @@ function ScrollLoader() {
   )
 }
 
+const CARD_ACTION_CLASS = cn(
+  'size-8 rounded-full border-0 bg-black/55 text-white shadow-none backdrop-blur-md',
+  'hover:bg-black/75 hover:text-white',
+  'transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+  'active:scale-[0.96] motion-reduce:active:scale-100',
+)
+
+const MASONRY_GAP_CLASS = 'flex items-start gap-3'
+
+function masonryColumnCount(width: number) {
+  if (width >= 1024) return 4
+  if (width >= 640) return 3
+  return 2
+}
+
+function useMasonryColumnCount() {
+  const [count, setCount] = useState(2)
+
+  useEffect(() => {
+    const update = () => setCount(masonryColumnCount(window.innerWidth))
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  return count
+}
+
+function toColumns<T>(items: readonly T[], count: number) {
+  const columns: T[][] = Array.from({ length: count }, () => [])
+  for (let index = 0; index < items.length; index++) {
+    columns[index % count].push(items[index]!)
+  }
+  return columns
+}
+
+const SKELETON_RATIOS = ['3 / 4', '1 / 1', '4 / 5', '9 / 16'] as const
+
 function SlideshowCard({
   slideshow,
   onDelete,
@@ -43,119 +80,106 @@ function SlideshowCard({
   onDuplicate: (slideshow: SlideshowSummaryResponse) => void
   isDuplicating: boolean
 }) {
-  const preset = getAspectRatioPreset(slideshow.aspectRatioId)
   const href = DASHBOARD_ROUTES.STUDIO.slideshow(slideshow.id)
   const aspectRatio = slideshow.canvas.width / slideshow.canvas.height
-  const stacked = slideshow.slideCount > 1
+  const pageLabel = slideshow.slideCount === 1 ? '1 page' : `${slideshow.slideCount} pages`
 
   return (
-    <article className="group/card relative">
-      <div className={cn('relative', stacked && 'pr-1.5 pb-1.5')}>
-        {stacked ? (
-          <span
-            aria-hidden
-            className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-xl bg-black/[0.04] ring-1 ring-black/8 dark:bg-white/[0.05] dark:ring-white/10"
-          />
-        ) : null}
-
-        <div className="relative z-10">
-          <Link
-            href={href}
-            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <div
-              className={cn(
-                'relative w-full overflow-hidden rounded-xl bg-black ring-1 ring-black/10',
-                'transition-[box-shadow,ring-color] duration-200',
-                'group-hover/card:ring-black/18 group-hover/card:shadow-[0_10px_24px_-16px_rgba(0,0,0,0.45)]',
-                'dark:ring-white/12 dark:group-hover/card:ring-white/20',
-              )}
-              style={{ aspectRatio }}
-            >
+    <article className="group/card">
+      <div className="relative">
+        <Link
+          href={href}
+          aria-label={`${slideshow.name}, ${pageLabel}`}
+          className={cn(
+            'block overflow-hidden rounded-2xl bg-black outline outline-1 -outline-offset-1 outline-black/10',
+            'transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+            'active:scale-[0.96] motion-reduce:active:scale-100',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45',
+            'dark:outline-white/10',
+          )}
+        >
+          <div className="relative w-full" style={{ aspectRatio }}>
+            <div className="size-full origin-center transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] pointer-fine:group-hover/card:scale-[1.02] motion-reduce:transition-none motion-reduce:pointer-fine:group-hover/card:scale-100">
               <SlideshowCardPreview slide={slideshow.previewSlide} canvas={slideshow.canvas} />
-              <SlideshowCardStoryBars slideCount={slideshow.slideCount} />
             </div>
-          </Link>
-
-          <div className="absolute top-2 right-2 z-30 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  size="icon-xs"
-                  variant="ghost"
-                  className="size-7 rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60 hover:text-white"
-                  aria-label={`Duplicate ${slideshow.name}`}
-                  disabled={isDuplicating}
-                  onClick={event => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onDuplicate(slideshow)
-                  }}
-                >
-                  {isDuplicating ? (
-                    <Loader2Icon className="size-3.5 animate-spin" />
-                  ) : (
-                    <CopyIcon className="size-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Duplicate</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  size="icon-xs"
-                  variant="ghost"
-                  className="size-7 rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60 hover:text-white"
-                  aria-label={`Delete ${slideshow.name}`}
-                  onClick={event => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onDelete(slideshow)
-                  }}
-                >
-                  <Trash2Icon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Delete</TooltipContent>
-            </Tooltip>
+            <SlideshowCardStoryBars slideCount={slideshow.slideCount} />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/75 via-black/35 to-transparent px-3 pt-10 pb-2.5">
+              <p className="truncate text-[13px] font-medium leading-snug tracking-[-0.015em] text-white">
+                {slideshow.name}
+              </p>
+              <p className="mt-0.5 truncate text-[11px] tabular-nums tracking-[-0.01em] text-white/72">
+                {pageLabel}
+                <span aria-hidden> · </span>
+                {formatRelativeTime(slideshow.updatedAt)}
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="mt-2.5 space-y-1 px-0.5">
-        <Link href={href} className="block min-w-0 focus-visible:underline focus-visible:outline-none">
-          <h3 className="truncate text-[13px] font-medium leading-snug tracking-[-0.015em] text-foreground">
-            {slideshow.name}
-          </h3>
         </Link>
-        <div className="flex items-center gap-1.5 text-[11px] tabular-nums tracking-[-0.01em] text-black/44 dark:text-white/44">
-          <span>{slideshow.slideCount === 1 ? '1 page' : `${slideshow.slideCount} pages`}</span>
-          <span aria-hidden className="text-black/16 dark:text-white/16">
-            ·
-          </span>
-          <span className="truncate">{preset.label}</span>
-          <span aria-hidden className="text-black/16 dark:text-white/16">
-            ·
-          </span>
-          <span className="shrink-0">{formatRelativeTime(slideshow.updatedAt)}</span>
+
+        <div
+          className={cn(
+            'absolute top-5 right-2.5 z-30 flex items-center gap-1',
+            'transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+            'pointer-fine:translate-y-0.5 pointer-fine:opacity-0',
+            'pointer-fine:group-hover/card:translate-y-0 pointer-fine:group-hover/card:opacity-100',
+            'pointer-fine:group-focus-within/card:translate-y-0 pointer-fine:group-focus-within/card:opacity-100',
+          )}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                className={CARD_ACTION_CLASS}
+                aria-label={`Duplicate ${slideshow.name}`}
+                disabled={isDuplicating}
+                onClick={event => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onDuplicate(slideshow)
+                }}
+              >
+                {isDuplicating ? (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                ) : (
+                  <CopyIcon className="size-3.5" strokeWidth={1.75} />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Duplicate</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                className={CARD_ACTION_CLASS}
+                aria-label={`Delete ${slideshow.name}`}
+                onClick={event => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onDelete(slideshow)
+                }}
+              >
+                <Trash2Icon className="size-3.5" strokeWidth={1.75} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Delete</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </article>
   )
 }
 
-function SlideshowCardSkeleton() {
+function SlideshowCardSkeleton({ ratio }: { ratio: string }) {
   return (
-    <div className="animate-pulse">
-      <div className="aspect-[4/5] w-full rounded-xl bg-black/[0.04] ring-1 ring-black/8 dark:bg-white/[0.04] dark:ring-white/10" />
-      <div className="mt-2.5 space-y-1.5 px-0.5">
-        <div className="h-3.5 w-3/4 rounded-md bg-black/[0.06] dark:bg-white/[0.06]" />
-        <div className="h-2.5 w-1/2 rounded-md bg-black/[0.04] dark:bg-white/[0.04]" />
-      </div>
-    </div>
+    <div
+      className="animate-pulse rounded-2xl bg-black/[0.04] outline outline-1 -outline-offset-1 outline-black/10 dark:bg-white/[0.04] dark:outline-white/10"
+      style={{ aspectRatio: ratio }}
+    />
   )
 }
 
@@ -184,6 +208,7 @@ export function SlideshowList({
   const skipInitialSync = useRef(true)
   const requestIdRef = useRef(0)
   const loadingMoreRef = useRef(false)
+  const columnCount = useMasonryColumnCount()
 
   useEffect(() => {
     if (skipInitialSync.current) {
@@ -289,7 +314,7 @@ export function SlideshowList({
       <div className="mb-3.5 flex items-end justify-between gap-3">
         <h2
           id="recent-slideshows-heading"
-          className="text-[13px] font-medium tracking-[-0.015em] text-foreground/80"
+          className="text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56"
         >
           Recent carousels
         </h2>
@@ -319,9 +344,13 @@ export function SlideshowList({
           }
         />
       ) : isLoading && slideshows.length === 0 ? (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <SlideshowCardSkeleton key={index} />
+        <div className={MASONRY_GAP_CLASS}>
+          {toColumns(SKELETON_RATIOS, columnCount).map((column, columnIndex) => (
+            <div key={columnIndex} className="flex min-w-0 flex-1 flex-col gap-3">
+              {column.map(ratio => (
+                <SlideshowCardSkeleton key={ratio} ratio={ratio} />
+              ))}
+            </div>
           ))}
         </div>
       ) : (
@@ -335,20 +364,19 @@ export function SlideshowList({
           className="!overflow-visible"
           style={{ overflow: 'visible' }}
         >
-          <div
-            className={cn(
-              'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4',
-              isLoading && 'opacity-60',
-            )}
-          >
-            {slideshows.map(slideshow => (
-              <SlideshowCard
-                key={slideshow.id}
-                slideshow={slideshow}
-                onDelete={setDeleteTarget}
-                onDuplicate={item => void handleDuplicate(item)}
-                isDuplicating={duplicatingId === slideshow.id}
-              />
+          <div className={cn(MASONRY_GAP_CLASS, isLoading && 'opacity-60')}>
+            {toColumns(slideshows, columnCount).map((column, columnIndex) => (
+              <div key={columnIndex} className="flex min-w-0 flex-1 flex-col gap-3">
+                {column.map(slideshow => (
+                  <SlideshowCard
+                    key={slideshow.id}
+                    slideshow={slideshow}
+                    onDelete={setDeleteTarget}
+                    onDuplicate={item => void handleDuplicate(item)}
+                    isDuplicating={duplicatingId === slideshow.id}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         </InfiniteScroll>

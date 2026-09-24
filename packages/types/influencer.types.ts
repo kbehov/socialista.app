@@ -1,11 +1,14 @@
-export const INFLUENCER_GENDERS = ["female", "male", "non-binary"] as const;
+import type { AspectRatio } from "./image-generation.types.js";
+
+export const INFLUENCER_GENDERS = ["female", "male"] as const;
 export type InfluencerGender = (typeof INFLUENCER_GENDERS)[number];
 
 export const INFLUENCER_AGE_RANGES = [
   "18-24",
   "25-34",
   "35-44",
-  "45+",
+  "45-55",
+  "65+",
 ] as const;
 export type InfluencerAgeRange = (typeof INFLUENCER_AGE_RANGES)[number];
 
@@ -59,12 +62,10 @@ export const INFLUENCER_NICHES = [
 export type InfluencerNiche = (typeof INFLUENCER_NICHES)[number];
 
 export const INFLUENCER_ETHNICITIES = [
-  "east-asian",
+  "asian",
   "south-asian",
-  "southeast-asian",
   "black",
-  "latina",
-  "latino",
+  "latin",
   "middle-eastern",
   "white",
   "mixed",
@@ -197,6 +198,193 @@ export const INFLUENCER_GENERATION_SHOT_COUNT = 3;
 export const INFLUENCER_GENERATION_BILLED = INFLUENCER_GENERATION_SHOT_COUNT;
 export const INFLUENCER_MAX_USER_REFERENCE_IMAGES = 3;
 
+export const INFLUENCER_HOOK_VIDEO_COUNT_MIN = 1;
+export const INFLUENCER_HOOK_VIDEO_COUNT_MAX = 3;
+export const INFLUENCER_HOOK_VIDEO_COUNT_DEFAULT = 1;
+export const INFLUENCER_HOOK_VIDEO_ASPECT_RATIO = "9:16" as const;
+export const INFLUENCER_HOOK_VIDEO_RESOLUTION = "720p" as const;
+
+export function clampInfluencerHookVideoCount(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return INFLUENCER_HOOK_VIDEO_COUNT_DEFAULT;
+  return Math.min(
+    INFLUENCER_HOOK_VIDEO_COUNT_MAX,
+    Math.max(INFLUENCER_HOOK_VIDEO_COUNT_MIN, Math.round(n)),
+  );
+}
+
+/** Short seed prompts the hook-video enhancer expands into a start-frame reaction. */
+export const INFLUENCER_HOOK_PRESETS = [
+  {
+    id: "shocked-reaction",
+    label: "Shocked reaction",
+    prompt:
+      "soft inhale, head eases a few degrees toward camera, brows lift, eyelids widen, lips part just enough for a silent oh, shoulders rise a little then settle, blinks once and holds the look like a real phone reaction",
+  },
+  {
+    id: "wait-for-it",
+    label: "Wait for it",
+    prompt:
+      "holds the start pose a beat too long, almost still, then the face finally lands, brows lift a few millimeters, a small inhale, eyes find camera, the delay is the joke, not a jump-cut or snap",
+  },
+  {
+    id: "pov-lean",
+    label: "POV lean",
+    prompt:
+      "leans a couple centimeters toward camera like the viewer is in the room, eyes soften and lock, a tiny head tilt, holds the look the way a POV clip invites you in, breathing stays visible",
+  },
+  {
+    id: "hot-take",
+    label: "Hot take",
+    prompt:
+      "chin lifts a touch, weight settles, a small confident inhale as if about to drop a take, brows set, one slow blink, holds the here's-the-truth face without speaking",
+  },
+  {
+    id: "skeptical-squint",
+    label: "Skeptical squint",
+    prompt:
+      "eyes narrow just a little, head tips back a degree, mouth presses, the I-wanted-this-to-fail skeptic look, one unimpressed blink, holds, never a cartoon glare",
+  },
+  {
+    id: "sad-snob",
+    label: "Sad snob",
+    prompt:
+      "slow weight shift, chin tips up a touch, eyes drop then look down the nose with a tired unimpressed pout, one lazy blink, mouth presses soft to the side, the kind of sad-snob face people make on TikTok not a costume",
+  },
+  {
+    id: "hand-on-mouth",
+    label: "Hand on mouth",
+    prompt:
+      "a small delay, then the near hand lifts naturally to cover the lips, fingers relaxed not clawed, eyes widen after the hand arrives, a tiny head tilt, holds the silent gasp like they just saw the comments",
+  },
+  {
+    id: "finger-point",
+    label: "Finger point",
+    prompt:
+      "leans in a little, one finger rises and points toward camera with a loose wrist, eyebrows lift in a playful know-it-all beat, a small nod, holds the point the way a creator teases a reveal",
+  },
+  {
+    id: "side-eye",
+    label: "Side-eye",
+    prompt:
+      "eyes slide to the side first, head follows half a beat later, a judging glance with a tiny smirk, then eases back to camera still side-eyeing, soft and natural not a cartoon cut",
+  },
+  {
+    id: "double-take",
+    label: "Double-take",
+    prompt:
+      "looks just off camera as if something passed, a short pause, then turns back with a second quieter look of disbelief, mouth barely opens, one blink, the recatch feels human not a whip-pan gag",
+  },
+  {
+    id: "eye-roll",
+    label: "Eye roll",
+    prompt:
+      "eyes drift up first, lids lazy, head follows a half beat later, a tiny exhale through the nose, comes back to camera still unimpressed, never a full cartoon roll",
+  },
+  {
+    id: "knowing-smirk",
+    label: "Knowing smirk",
+    prompt:
+      "one corner of the mouth lifts, eyes stay on camera, a small nod like I told you so, holds the smirk without breaking into a grin",
+  },
+  {
+    id: "whisper-tea",
+    label: "Whisper tea",
+    prompt:
+      "leans in, nearest shoulder rises a little, eyes widen just enough, lips almost part as if sharing a secret, holds the lean, no spoken words",
+  },
+  {
+    id: "stitch-glance",
+    label: "Stitch glance",
+    prompt:
+      "looks just off-camera like a stitch or quote-post is playing, a beat, then turns to camera with a reply face, brows set, a small head shake or nod, the anyway look creators use on X",
+  },
+  {
+    id: "look-down-up",
+    label: "Look down, up",
+    prompt:
+      "eyes drop as if reading a phone or a comment, a short still, then looks back up to camera with a quieter second expression, mouth barely moves, the recatch is the hook",
+  },
+  {
+    id: "eyebrow-raise",
+    label: "Eyebrow raise",
+    prompt:
+      "one brow lifts first, the other follows a little, eyes widen a millimeter, a silent oh-really, holds, face stays soft not theatrical",
+  },
+  {
+    id: "cringe-wince",
+    label: "Cringe wince",
+    prompt:
+      "shoulders tighten, eyes squeeze halfway, teeth catch the lip, a tiny head tuck, then eases back still wincing, secondhand embarrassment not a scream",
+  },
+  {
+    id: "plot-twist",
+    label: "Plot twist",
+    prompt:
+      "starts with a tiny almost-smile, then the smile fades as the thought lands, brows knit a little, a swallow, holds the new face, one continuous beat",
+  },
+  {
+    id: "soft-laugh",
+    label: "Soft laugh",
+    prompt:
+      "tries to hold it together, mouth tightens, then a silent laugh breaks, shoulders bounce once, eyes crinkle, settles still smiling, no spoken line",
+  },
+  {
+    id: "knowing-nod",
+    label: "Knowing nod",
+    prompt:
+      "a small yes nod, two beats, eyes lock, the this-is-it confirmation, then holds still like a talking-head open",
+  },
+  {
+    id: "head-shake-no",
+    label: "Head shake no",
+    prompt:
+      "slow small no, two short shakes, lips press, eyes stay on camera, disappointed more than angry, eases back to still",
+  },
+  {
+    id: "peek-fingers",
+    label: "Peek",
+    prompt:
+      "near hand rises to cover the eyes, fingers part just enough to peek, a cringe smile, holds like they cannot watch, wrist stays loose",
+  },
+  {
+    id: "chefs-kiss",
+    label: "Chef's kiss",
+    prompt:
+      "near hand lifts, fingertips gather and kiss away from the lips in a small chef's kiss, eyes close half a beat, then looks back at camera pleased, loose wrist not a pose",
+  },
+  {
+    id: "come-closer",
+    label: "Watch this",
+    prompt:
+      "leans in and beckons with the nearest hand or a small come-here flick, brows lift, a playful watch-this face, then holds the invite toward camera",
+  },
+  {
+    id: "unimpressed-blink",
+    label: "Unimpressed blink",
+    prompt:
+      "one long slow blink, mouth flat, head barely moves, the tired and? look, holds like a muted Reels reaction",
+  },
+  {
+    id: "slow-realize",
+    label: "Slow realize",
+    prompt:
+      "eyes widen gradually, lips part on a quiet inhale, head eases back a few degrees, the realization lands in pieces, not a cartoon mind-blown",
+  },
+] as const;
+
+export type InfluencerHookPresetId =
+  (typeof INFLUENCER_HOOK_PRESETS)[number]["id"];
+
+export function isInfluencerHookPresetId(
+  value: unknown,
+): value is InfluencerHookPresetId {
+  return (
+    typeof value === "string" &&
+    INFLUENCER_HOOK_PRESETS.some((preset) => preset.id === value)
+  );
+}
+
 export function clampInfluencerShotCount(value: unknown): number {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return INFLUENCER_GENERATION_SHOT_COUNT;
@@ -256,6 +444,34 @@ export type InfluencerAppearance = {
   accessories?: string[];
 };
 
+/** Compact photographic spec for cover shot; reused on follow-ups with shot-specific canvas/pose. */
+export type InfluencerLookSpec = {
+  canvas: { crop: string; subject_scale: string };
+  pose: {
+    head: string;
+    torso: string;
+    arms: string;
+    gaze: string;
+    expression: string;
+  };
+  wardrobe: { garment: string; material: string; color: string; fit: string };
+  environment: { location: string; surfaces: string; light_props: string };
+  lighting: {
+    source: string;
+    direction: string;
+    quality: string;
+    color_temperature: string;
+  };
+  camera: {
+    device: string;
+    focal_length: string;
+    height: string;
+    depth_of_field: string;
+    processing: string;
+  };
+  texture: { skin: string; hair: string; fabric: string; background: string };
+};
+
 /** LLM-authored identity lock reused on every subsequent generation. */
 export type InfluencerCharacterSheet = {
   identityLock: string;
@@ -263,12 +479,41 @@ export type InfluencerCharacterSheet = {
   wardrobe: { casual: string; onCamera: string; active: string };
   environments: string[];
   expressionRange: string[];
+  /** Physical face facts for prompt lock (optional — older sheets omit). */
+  face?: {
+    shape: string;
+    eyes: string;
+    brows: string;
+    nose: string;
+    lips: string;
+    makeup: string;
+  };
+  skin?: { tone: string; texture: string; retouching: string };
+  hair?: { length: string; texture: string; part: string; shine: string };
+  /** Derived from photoStyle — phone UGC vs creator vs studio polish. */
+  cameraFamily?: string;
+  lightingFamily?: string;
+  /** Cover-shot photographic JSON; follow-ups reuse with shot overrides. */
+  lookSpec?: InfluencerLookSpec;
 };
 
 export type InfluencerGalleryShot = {
   shotId: InfluencerShotId | string;
   url: string;
   aspectRatio: string;
+};
+
+export type InfluencerHookVideo = {
+  _id: string;
+  sourceImageUrl: string;
+  videoUrl: string;
+  videoId: string;
+  generationId: string;
+  prompt: string;
+  presetId?: string;
+  model: string;
+  durationSec: number;
+  createdAt: Date;
 };
 
 export type InfluencerIdentity = {
@@ -312,6 +557,8 @@ export type Influencer = {
   galleryImageUrls: string[];
   /** Labeled gallery entries for pack shots (preferred over galleryImageUrls alone). */
   galleryShots?: InfluencerGalleryShot[];
+  /** Short hook / reaction clips keyed to a gallery still. */
+  hookVideos?: InfluencerHookVideo[];
   usageCount: number;
   error?: string;
   createdAt: Date;
@@ -436,6 +683,29 @@ export type DeleteInfluencerResponse = {
   deleted: boolean;
 };
 
+export type CreateInfluencerHookVideoPayload = {
+  sourceImageUrl: string;
+  prompt: string;
+  model: string;
+  duration: number;
+  count?: number;
+  presetId?: InfluencerHookPresetId;
+  projectId?: string;
+};
+
+export type CreateInfluencerHookVideoResponse = InfluencerJobResponse;
+
+export type CreateInfluencerImagePayload = {
+  sourceImageUrl: string;
+  prompt: string;
+  model: string;
+  aspectRatio: AspectRatio;
+  count?: number;
+  projectId?: string;
+};
+
+export type CreateInfluencerImageResponse = InfluencerJobResponse;
+
 export type ExploreInfluencersQuery = {
   page?: number;
   limit?: number;
@@ -454,6 +724,8 @@ export type ExploreInfluencersQuery = {
   /** Single value or comma-separated list for `$in` matching. */
   scenes?: string | string[];
   photoStyle?: InfluencerPhotoStyle | string;
+  /** Single value or comma-separated list for `$in` matching. */
+  ethnicity?: string;
   /** Single value or comma-separated list for `$in` matching. */
   status?: InfluencerStatus | string;
 };

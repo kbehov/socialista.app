@@ -14,6 +14,7 @@ import {
 import { AttachedMediaThumb, type AttachedMedia } from '@/components/files/attach-images-dialog'
 import { ModelLogo } from '@/components/icons/model-logo'
 import { StudioAnimatedPlaceholder } from '@/components/studio/prompt/studio-animated-placeholder'
+import type { InfluencerPickerMediaType } from '@/components/studio/influencers/influencer-picker-dialog'
 import {
   StudioAttachMenu,
   attachmentChipLabel,
@@ -195,7 +196,7 @@ function StudioAttachmentChip({
   dimmed?: boolean
   selectable?: boolean
   disabled?: boolean
-  onRemove: (id: string) => void
+  onRemove?: (id: string) => void
   onInsert: (index: number) => void
   onHover: (index: number | null) => void
 }) {
@@ -264,6 +265,8 @@ export type StudioPromptComposerProps = {
   attachments: AttachedMedia[]
   onAttachmentsChange: (files: AttachedMedia[]) => void
   attachSources: readonly StudioAttachSource[]
+  influencerMediaType?: InfluencerPickerMediaType
+  attachmentsLocked?: boolean
   maxAttachments?: number
   minAttachments?: number
   workspaceId?: string
@@ -312,6 +315,8 @@ export function StudioPromptComposer({
   attachments,
   onAttachmentsChange,
   attachSources,
+  influencerMediaType,
+  attachmentsLocked = false,
   maxAttachments = 3,
   minAttachments = 0,
   workspaceId,
@@ -360,7 +365,7 @@ export function StudioPromptComposer({
   const innerTextareaRef = useRef<HTMLTextAreaElement>(null)
   const dropDepthRef = useRef(0)
   const [dropActive, setDropActive] = useState(false)
-  const acceptsImageDrop = attachSources.length > 0 && !disabled && !pending
+  const acceptsImageDrop = attachSources.length > 0 && !attachmentsLocked && !disabled && !pending
 
   const setTextareaRef = useCallback(
     (node: HTMLTextAreaElement | null) => {
@@ -644,7 +649,11 @@ export function StudioPromptComposer({
               const optionIndex = filteredMentionIndexes.indexOf(index)
               if (optionIndex >= 0) setMentionOptionIndex(optionIndex)
             }}
-            onRemove={id => onAttachmentsChange(attachments.filter(item => item.id !== id))}
+            onRemove={
+              attachmentsLocked
+                ? undefined
+                : id => onAttachmentsChange(attachments.filter(item => item.id !== id))
+            }
           />
         ))}
       </div>
@@ -779,6 +788,7 @@ export function StudioPromptComposer({
                   onAttachmentsChange={onAttachmentsChange}
                   maxAttachments={maxAttachments}
                   workspaceId={workspaceId}
+                  influencerMediaType={influencerMediaType}
                   disabled={attachDisabled}
                   className={attachClassName}
                   disabledReason={
@@ -803,8 +813,20 @@ export function StudioPromptComposer({
                 label={count.label}
                 auto={count.auto}
                 onAutoChange={count.onAutoChange}
-                unitSingular={count.label?.toLowerCase().includes('slide') ? 'slide' : 'image'}
-                unitPlural={count.label?.toLowerCase().includes('slide') ? 'slides' : 'images'}
+                unitSingular={
+                  count.label?.toLowerCase().includes('slide')
+                    ? 'slide'
+                    : count.label?.toLowerCase().includes('video')
+                      ? 'video'
+                      : 'image'
+                }
+                unitPlural={
+                  count.label?.toLowerCase().includes('slide')
+                    ? 'slides'
+                    : count.label?.toLowerCase().includes('video')
+                      ? 'videos'
+                      : 'images'
+                }
               />
             ) : null}
 

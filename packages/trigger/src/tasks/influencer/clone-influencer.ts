@@ -118,7 +118,7 @@ export const cloneInfluencer = schemaTask({
           {
             model: model.value,
             provider: model.modelProvider,
-            prompt: `${coverPrompts[i]}\n\nNo watermarks, or ai generated text and labels`,
+            prompt: coverPrompts[i]!,
             aspectRatio: '1:1',
             workspaceId: payload.workspaceId,
             userId: payload.userId,

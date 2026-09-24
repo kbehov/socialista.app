@@ -20,6 +20,7 @@ import {
   STUDIO_TOOL_CHEVRON_CLASS,
   STUDIO_TOOL_ICON_BUTTON_CLASS,
 } from "@/components/studio/prompt/studio-composer-surface";
+import type { InfluencerPickerMediaType } from "@/components/studio/influencers/influencer-picker-dialog";
 import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
 import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
 import { useOptionalVideoStudio } from "@/components/studio/videos/video-studio-provider";
@@ -121,6 +122,7 @@ export type VideoPromptSubmitResult = {
   resolution: VideoResolution;
   imageUrls: string[];
   enhance: boolean;
+  count: number;
 };
 
 export type VideoPromptInputProps = {
@@ -157,8 +159,15 @@ export type VideoPromptInputProps = {
   surfaceClassName?: string;
   costMultiplier?: number;
   attachSources?: readonly StudioAttachSource[];
+  influencerMediaType?: InfluencerPickerMediaType;
   maxAttachments?: number;
   minAttachments?: number;
+  attachmentsLocked?: boolean;
+  hideAspectRatio?: boolean;
+  hideResolution?: boolean;
+  hideAudio?: boolean;
+  hideEnhance?: boolean;
+  countOptions?: { min: number; max: number; initial?: number };
 };
 
 function VideoPromptComposer({
@@ -191,8 +200,15 @@ function VideoPromptComposer({
   surfaceClassName: surfaceClassNameProp,
   costMultiplier: costMultiplierProp,
   attachSources = DEFAULT_ATTACH_SOURCES,
+  influencerMediaType = "media",
   maxAttachments = MAX_REFERENCE_IMAGES,
   minAttachments = 0,
+  attachmentsLocked = false,
+  hideAspectRatio = false,
+  hideResolution = false,
+  hideAudio = false,
+  hideEnhance = false,
+  countOptions,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -244,7 +260,12 @@ function VideoPromptComposer({
   const { textInput } = usePromptInputController();
   const setInput = textInput.setInput;
 
+  const [count, setCount] = useState(
+    () => countOptions?.initial ?? countOptions?.min ?? 1,
+  );
+  const effectiveAttachSources = attachmentsLocked ? [] : attachSources;
   const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
+    if (attachmentsLocked) return;
     setAttachedImages((current) => {
       const nextUrls = new Set(next.map((item) => item.url));
       for (const item of current) {
@@ -256,7 +277,7 @@ function VideoPromptComposer({
       }
       return next;
     });
-  }, []);
+  }, [attachmentsLocked]);
 
   useEffect(() => {
     if (!initialAttachments) return;
@@ -458,7 +479,9 @@ function VideoPromptComposer({
     }
 
     startTransition(async () => {
-      const imageUrls = attachedImages.map((image) => image.url);
+      const imageUrls = attachedImages
+        .filter((file) => file.kind === "image")
+        .map((file) => file.url);
       if (onSubmitOverride) {
         onSubmitOverride({
           prompt,
@@ -469,6 +492,7 @@ function VideoPromptComposer({
           resolution,
           imageUrls,
           enhance,
+          count,
         });
         return;
       }
@@ -505,7 +529,7 @@ function VideoPromptComposer({
   const selectedResolution =
     RESOLUTIONS.find((option) => option.id === resolution) ?? RESOLUTIONS[0];
 
-  const tools = hideSettings ? (
+  const enhanceTools = hideEnhance ? null : (
     <>
       <PromptInputButton
         aria-label={
@@ -536,51 +560,58 @@ function VideoPromptComposer({
         disabled={pending || disabled || !enhance}
       />
     </>
+  );
+
+  const tools = hideSettings ? (
+    enhanceTools
   ) : (
     <>
-      <DropdownMenu>
-        <StudioInputActionTooltip label="Output aspect ratio">
-          <DropdownMenuTrigger asChild>
-            <PromptInputButton
-              aria-label={`Aspect ratio ${selectedAspect.id}`}
-              className={STUDIO_TOOL_BUTTON_CLASS}
-              disabled={pending}
-              size="xs"
-              type="button"
-            >
-              <AspectRatioIcon active ratio={selectedAspect.ratio} />
-              <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-                {selectedAspect.id}
-              </span>
-              <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
-            </PromptInputButton>
-          </DropdownMenuTrigger>
-        </StudioInputActionTooltip>
-        <DropdownMenuContent align="start" className="min-w-44 w-44">
-          <DropdownMenuRadioGroup
-            value={aspectRatio}
-            onValueChange={(value) => setAspectRatio(value as VideoAspectRatio)}
-          >
-            {ASPECT_RATIOS.map((option) => (
-              <DropdownMenuRadioItem
-                key={option.id}
-                className="gap-2.5 rounded-lg"
-                value={option.id}
+      {hideAspectRatio ? null : (
+        <DropdownMenu>
+          <StudioInputActionTooltip label="Output aspect ratio">
+            <DropdownMenuTrigger asChild>
+              <PromptInputButton
+                aria-label={`Aspect ratio ${selectedAspect.id}`}
+                className={STUDIO_TOOL_BUTTON_CLASS}
+                disabled={pending}
+                size="xs"
+                type="button"
               >
-                <AspectRatioIcon
-                  active={aspectRatio === option.id}
-                  ratio={option.ratio}
-                />
-                <span className="text-[13px] font-medium tracking-[-0.015em]">
-                  {option.label}
+                <AspectRatioIcon active ratio={selectedAspect.ratio} />
+                <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+                  {selectedAspect.id}
                 </span>
-                <DropdownMenuShortcut>{option.id}</DropdownMenuShortcut>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+                <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
+              </PromptInputButton>
+            </DropdownMenuTrigger>
+          </StudioInputActionTooltip>
+          <DropdownMenuContent align="start" className="min-w-44 w-44">
+            <DropdownMenuRadioGroup
+              value={aspectRatio}
+              onValueChange={(value) => setAspectRatio(value as VideoAspectRatio)}
+            >
+              {ASPECT_RATIOS.map((option) => (
+                <DropdownMenuRadioItem
+                  key={option.id}
+                  className="gap-2.5 rounded-lg"
+                  value={option.id}
+                >
+                  <AspectRatioIcon
+                    active={aspectRatio === option.id}
+                    ratio={option.ratio}
+                  />
+                  <span className="text-[13px] font-medium tracking-[-0.015em]">
+                    {option.label}
+                  </span>
+                  <DropdownMenuShortcut>{option.id}</DropdownMenuShortcut>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
+      {hideResolution ? null : (
       <DropdownMenu>
         <StudioInputActionTooltip label="Output resolution">
           <DropdownMenuTrigger asChild>
@@ -623,6 +654,7 @@ function VideoPromptComposer({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      )}
 
       {hideDuration ? null : lockedDurationSec != null ? (
         <StudioInputActionTooltip label="Matches the voiceover length">
@@ -680,62 +712,37 @@ function VideoPromptComposer({
         </DropdownMenu>
       )}
 
-      <PromptInputButton
-        aria-label={audioEnabled ? "Audio on" : "Audio off"}
-        aria-pressed={audioEnabled}
-        className={cn(
-          STUDIO_TOOL_BUTTON_CLASS,
-          audioEnabled && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-        )}
-        disabled={pending || audioLocked}
-        onClick={() => setGenerateAudio((current) => !current)}
-        size="xs"
-        tooltip={
-          audioLocked
-            ? "Voiceover selected — audio will be lip-synced"
-            : audioEnabled
-              ? "Audio on — generate sound with the clip"
-              : "Muted — video only, no generated audio"
-        }
-        type="button"
-      >
-        {audioEnabled ? (
-          <Volume2Icon className="size-3.5" />
-        ) : (
-          <VolumeXIcon className="size-3.5" />
-        )}
-        <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-          {audioEnabled ? "Audio" : "Muted"}
-        </span>
-      </PromptInputButton>
-      <PromptInputButton
-        aria-label={
-          enhance ? "Prompt enhancement on" : "Prompt enhancement off"
-        }
-        aria-pressed={enhance}
-        className={cn(
-          STUDIO_TOOL_ICON_BUTTON_CLASS,
-          enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-        )}
-        disabled={pending}
-        onClick={() => setEnhance((value) => !value)}
-        size="icon-xs"
-        tooltip={
-          enhance
-            ? "Enhance on — AI refines your prompt before generating"
-            : "Raw prompt — send exactly what you typed"
-        }
-        type="button"
-      >
-        <WandSparklesIcon className="size-3.5 shrink-0" />
-      </PromptInputButton>
-      <StudioSkillPicker
-        appearance="icon"
-        target={PROMPT_KEYS.videoPrompt}
-        value={skillId}
-        onChange={setSkillId}
-        disabled={pending || !enhance}
-      />
+      {hideAudio ? null : (
+        <PromptInputButton
+          aria-label={audioEnabled ? "Audio on" : "Audio off"}
+          aria-pressed={audioEnabled}
+          className={cn(
+            STUDIO_TOOL_BUTTON_CLASS,
+            audioEnabled && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
+          )}
+          disabled={pending || audioLocked}
+          onClick={() => setGenerateAudio((current) => !current)}
+          size="xs"
+          tooltip={
+            audioLocked
+              ? "Voiceover selected — audio will be lip-synced"
+              : audioEnabled
+                ? "Audio on — generate sound with the clip"
+                : "Muted — video only, no generated audio"
+          }
+          type="button"
+        >
+          {audioEnabled ? (
+            <Volume2Icon className="size-3.5" />
+          ) : (
+            <VolumeXIcon className="size-3.5" />
+          )}
+          <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
+            {audioEnabled ? "Audio" : "Muted"}
+          </span>
+        </PromptInputButton>
+      )}
+      {enhanceTools}
     </>
   );
 
@@ -747,14 +754,28 @@ function VideoPromptComposer({
         onSelectedModelChange={setSelectedModelId}
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
-        attachSources={attachSources}
-        maxAttachments={maxAttachments}
+        attachSources={effectiveAttachSources}
+        influencerMediaType={influencerMediaType}
+        attachmentsLocked={attachmentsLocked}
+        maxAttachments={attachmentsLocked ? 1 : maxAttachments}
         minAttachments={minAttachments}
+        count={
+          countOptions
+            ? {
+                value: count,
+                min: countOptions.min,
+                max: countOptions.max,
+                onChange: setCount,
+                label: "Number of videos",
+              }
+            : undefined
+        }
         costMultiplier={
           hideCost
             ? undefined
             : (costMultiplierProp ?? effectiveDuration) *
-              videoResolutionCostMultiplier(resolution)
+              videoResolutionCostMultiplier(resolution) *
+              count
         }
         hideCost={hideCost}
         workspaceId={currentWorkspace?._id}
@@ -771,7 +792,7 @@ function VideoPromptComposer({
         footerClassName={
           embedded
             ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
-            : hideExtras || homeHero
+            : hideExtras
               ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
               : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         }
@@ -790,7 +811,7 @@ function VideoPromptComposer({
               ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
               : STUDIO_HOME_COMPOSER_SURFACE_CLASS)
         }
-        compact={hideExtras || homeHero || embedded}
+        compact={hideExtras || embedded}
         embedded={embedded}
       />
 

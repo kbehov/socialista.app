@@ -251,6 +251,8 @@ export const INFLUENCER_ROUTES = {
   CREATE: '/influencers',
   CLONE: '/influencers/clone',
   GET_BY_ID: (id: string) => `/influencers/${id}`,
+  CREATE_HOOK_VIDEO: (id: string) => `/influencers/${id}/hook-videos`,
+  CREATE_IMAGE: (id: string) => `/influencers/${id}/images`,
   UPDATE: (id: string) => `/influencers/${id}`,
   DELETE: (id: string) => `/influencers/${id}`,
   GET_WORKSPACE_INFLUENCERS: (workspaceId: string) => `/influencers/workspace/${workspaceId}`,

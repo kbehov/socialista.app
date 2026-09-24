@@ -2,6 +2,7 @@ import { ErrorState } from '@/components/common/error-state'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { InfluencerDetail } from '@/components/studio/influencers/influencer-detail'
 import { getInfluencer } from '@/services/influencer.service'
+import { getModels } from '@/services/models.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 
 type InfluencerPageProps = {
@@ -15,7 +16,11 @@ export default async function InfluencerPage({ params }: InfluencerPageProps) {
   }
 
   const { id } = await params
-  const response = await getInfluencer(id)
+  const [response, videoModelsRes, imageModelsRes] = await Promise.all([
+    getInfluencer(id),
+    getModels('limit=20&modelType=video&sort=-usageCount'),
+    getModels('limit=20&modelType=image&sort=-usageCount'),
+  ])
 
   if (!response.success || !response.data?.influencer) {
     return (
@@ -29,5 +34,11 @@ export default async function InfluencerPage({ params }: InfluencerPageProps) {
     )
   }
 
-  return <InfluencerDetail initialInfluencer={response.data.influencer} />
+  return (
+    <InfluencerDetail
+      initialInfluencer={response.data.influencer}
+      videoModels={videoModelsRes.data?.models ?? []}
+      imageModels={imageModelsRes.data?.models ?? []}
+    />
+  )
 }

@@ -9,21 +9,51 @@ import {
 import { generateObject } from 'ai'
 import { z } from 'zod'
 
-import { INFLUENCER_ACCESSORY_PROMPTS, INFLUENCER_SCENE_PROMPTS } from '../builders/influencer.js'
+import { INFLUENCER_ACCESSORY_PROMPTS, INFLUENCER_SCENE_PROMPTS } from '../influencer/catalog.js'
 
-const CHARACTER_SHEET_MODEL = 'anthropic/claude-sonnet-4.6'
+const CHARACTER_SHEET_MODEL = 'openai/gpt-6-astra'
+
+const faceBlockSchema = z.object({
+  shape: z
+    .string()
+    .describe(
+      'Specific bone structure: long oval, square, heart, angular, narrow, or wide jaw — a distinct structure, not a default round face.',
+    ),
+  eyes: z.string().describe('Eye shape, color, lashes — physical only.'),
+  brows: z.string().describe('Brow shape and color.'),
+  nose: z.string().describe('Nose bridge and tip — physical facts.'),
+  lips: z.string().describe('Lip shape in one short physical fact. Do not say full, plump, or sensual.'),
+  makeup: z.string().describe('Makeup as visible facts (liner, blush, base) — not brand names.'),
+})
+
+const skinBlockSchema = z.object({
+  tone: z.string().describe('Skin tone and undertone.'),
+  texture: z.string().describe('Complexion: pores and fine lines as short facts. No sheen, wetness, or bare skin.'),
+  retouching: z
+    .string()
+    .describe('Light social retouch with visible pores and natural asymmetry — not plastic, not a beauty filter.'),
+})
+
+const hairBlockSchema = z.object({
+  length: z.string().describe('Hair length relative to the shoulders or back. Never say chest.'),
+  texture: z.string().describe('Straight, wavy, curl pattern, volume.'),
+  part: z.string().describe('Part placement and front sections.'),
+  shine: z.string().describe('Sheen and highlight behavior on strands.'),
+})
 
 const characterSheetSchema = z.object({
   identityLock: z
     .string()
     .describe(
-      '2-3 sentences of physical facts only: face shape, bone structure, brow, nose, lips, jaw, eye set, skin character. No beauty adjectives.',
+      '2-3 sentences pasted verbatim into the image prompt. First sentence names one specific face shape and jaw. Do not default to a round face, soft cheeks, or a generic beauty oval. No beauty adjectives.',
     ),
   signatureDetails: z
     .array(z.string())
     .min(2)
     .max(3)
-    .describe('2-3 memorable physical specifics reused verbatim in every generation.'),
+    .describe(
+      '2-3 bone-structure facts reused verbatim in the image prompt. Name a specific jaw, brow, or feature. Do not default to a soft chin, round cheeks, or full lips.',
+    ),
   wardrobe: z.object({
     casual: z.string().describe('Everyday outfit that matches niche, scenes, and aesthetic.'),
     onCamera: z.string().describe('Outfit for talking-head / selfie content, still on-brand.'),
@@ -34,7 +64,7 @@ const characterSheetSchema = z.object({
     .min(3)
     .max(3)
     .describe(
-      'Exactly 3 concrete, vibe-rich locations with light/atmosphere — never blank walls or studio seamless. When user scenes are provided, each environment must be a concrete variation of those situations (same place family, different angle/light). Otherwise match niche.',
+      'Exactly 3 places this creator already films, each with one light source and one in-use prop. Instagram, TikTok, or Pinterest frame — lived-in and styled, never a blank wall or stock backdrop. When user scenes are provided, vary those situations. Otherwise match niche.',
     ),
   expressionRange: z
     .array(z.string())
@@ -42,6 +72,19 @@ const characterSheetSchema = z.object({
     .max(4)
     .describe(
       'Natural expressions this person commonly shows on camera. When vibe tags are provided, expressionRange must reflect that energy.',
+    ),
+  face: faceBlockSchema.describe('Decomposed face lock from form + inferred detail.'),
+  skin: skinBlockSchema,
+  hair: hairBlockSchema,
+  cameraFamily: z
+    .string()
+    .describe(
+      'From photoStyle: ugc-phone is slight wide-angle phone HDR, creator-camera is mirrorless shallow DOF, studio-polish is a flattering key in a real set. Cover portraits lean eye-level 50–85mm.',
+    ),
+  lightingFamily: z
+    .string()
+    .describe(
+      'Practical light that fits the creator’s places: window sidelight, gym daylight, warm interior, car daylight. Lived-in, not a passport studio.',
     ),
 })
 
@@ -78,15 +121,18 @@ const SYSTEM_INSTRUCTIONS =
   'You author locked identity sheets for photoreal AI influencers used in Instagram, TikTok, and Pinterest UGC. ' +
   'Rules: (1) physical facts only — never beautiful/stunning/gorgeous; ' +
   '(2) never contradict supplied form attributes; ' +
-  '(3) add specific bone structure, face shape, brow/nose/lip/jaw detail where silent; ' +
+  '(3) add a specific, distinct bone structure and jaw where the form is silent — long, square, heart, angular, narrow, or wide; do not default every person to a round face, soft cheeks, or the words rounded, soft, or full; ' +
   '(4) no celebrity likeness; (5) plausibly real person with natural asymmetry; ' +
-  '(6) wardrobe and environments must scream scroll-stopping creator UGC — lived-in, atmospheric, specific light and place; ' +
+  '(6) wardrobe and environments must feel like scroll-stopping creator UGC — lived-in, specific light and place, clothes that fit the niche; ' +
   'never blank walls, passport studios, or sterile seamless backdrops; ' +
-  '(7) identityLock must be reusable byte-for-byte across many image prompts; ' +
+  '(7) identityLock must be reusable byte-for-byte across many image prompts and must not include the person\'s name; ' +
   '(8) when scenes are provided, the 3 environments MUST be concrete variations of those situations (same place family, different angles/light/props); ' +
   '(9) when accessories are provided, weave wearable/holdable ones into wardrobe and onCamera descriptions naturally; ' +
   '(10) prefer scroll-stopping creator photography over sterile headshots; keep it photoreal, not fashion-editorial extremes; ' +
-  '(11) when vibe tags are provided, expressionRange must match that on-camera energy.'
+  '(11) when vibe tags are provided, expressionRange must match that on-camera energy; ' +
+  '(12) face, skin, and hair blocks must decompose materials and structure as physical facts — pores stay visible in skin.retouching; ' +
+  '(13) cameraFamily and lightingFamily must match photoStyle when provided (ugc-phone → smartphone HDR; creator-camera → mirrorless; studio-polish → flattering key in a real set). ' +
+  '(14) Clothed everyday creator. identityLock describes face shape, jaw, brows, eyes, nose, and hair. Do not mention chest, neckline, cleavage, bare skin, lingerie, or revealing clothes. Hair length is shoulders or back, never chest. Wardrobe is everyday outfits.'
 
 const LOOKALIKE_REF_SYSTEM_ADDENDUM =
   ' STYLE REFERENCE MODE: reference photos are the creative template for scene, colors, and photographic world — NOT identity. ' +
@@ -96,9 +142,6 @@ const LOOKALIKE_REF_SYSTEM_ADDENDUM =
   'Environments: describe exactly 3 concrete variations of the reference setting (same place family, different angles/light/props) — do NOT invent unrelated generic locations. ' +
   'Do NOT reproduce faces, bodies, or distinctive marks from the references. ' +
   'Do not copy watermarks, logos, UI chrome, or celebrity likeness.'
-
-/** @deprecated Use LOOKALIKE_REF_SYSTEM_ADDENDUM */
-const HYBRID_REF_SYSTEM_ADDENDUM = LOOKALIKE_REF_SYSTEM_ADDENDUM
 
 function formatSceneHints(scenes: string[] | undefined): string | null {
   if (!scenes?.length) return null
@@ -124,7 +167,6 @@ function formatAccessoryHints(accessories: string[] | undefined): string | null 
 
 function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): string {
   const lines = [
-    `Name: ${input.name}`,
     `Gender: ${input.gender}`,
     `Age range: ${input.ageRange}`,
     input.ethnicity?.trim() ? `Ethnicity / heritage: ${input.ethnicity.trim()}` : null,
@@ -141,9 +183,7 @@ function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): st
     input.appearance.facialHair && input.appearance.facialHair !== 'none'
       ? `Facial hair: ${input.appearance.facialHair}`
       : null,
-    input.appearance.makeup && input.appearance.makeup !== 'none'
-      ? `Makeup: ${input.appearance.makeup}`
-      : null,
+    input.appearance.makeup && input.appearance.makeup !== 'none' ? `Makeup: ${input.appearance.makeup}` : null,
     formatAccessoryHints(input.appearance.accessories),
     input.niche?.length ? `Niche: ${input.niche.join(', ')}` : null,
     formatSceneHints(input.scenes),
@@ -161,17 +201,12 @@ function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): st
       'identityLock + signatureDetails: from form fields only (never copy reference faces). ' +
       'Wardrobe: equivalent color palette and styling vibe from references, fitted to the new person. ' +
       'Environments: exactly 3 concrete variations of the reference scene/setting (same location family, different angles/light) — read from the attached photos, not generic niche defaults. ' +
-      'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, and expressionRange.'
-    : 'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, and expressionRange. ' +
+      'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, expressionRange, face, skin, hair, cameraFamily, and lightingFamily.'
+    : 'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, expressionRange, face, skin, hair, cameraFamily, and lightingFamily. ' +
       'Environments must feel like this creator’s world (selected scenes when present, else niche + aesthetic), with concrete props/light — not empty rooms. ' +
       'Wardrobe must fit the scenes and include selected accessories when wearable or holdable.'
 
-  return (
-    'Build a character sheet from this influencer form:\n' +
-    lines.join('\n') +
-    '\n\n' +
-    hybridTail
-  )
+  return 'Build a character sheet from this influencer form:\n' + lines.join('\n') + '\n\n' + hybridTail
 }
 
 /** LLM character sheet — runs once at generation start; cached on identity. */
@@ -190,15 +225,12 @@ export async function buildInfluencerCharacterSheet(
   const result = await generateObject({
     model: CHARACTER_SHEET_MODEL,
     schema: characterSheetSchema,
+    instructions: system,
     messages: [
-      { role: 'system', content: system },
       {
         role: 'user',
         content: hasRefs
-          ? [
-              { type: 'text' as const, text: userText },
-              ...refs.map(image => ({ type: 'image' as const, image })),
-            ]
+          ? [{ type: 'text' as const, text: userText }, ...refs.map(image => ({ type: 'image' as const, image }))]
           : userText,
       },
     ],

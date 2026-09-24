@@ -3,14 +3,14 @@ import { HydratedDocument, Types } from 'mongoose'
 export enum InfluencerGender {
   FEMALE = 'female',
   MALE = 'male',
-  NON_BINARY = 'non-binary',
 }
 
 export enum InfluencerAgeRange {
   AGE_18_24 = '18-24',
   AGE_25_34 = '25-34',
   AGE_35_44 = '35-44',
-  AGE_45_PLUS = '45+',
+  AGE_45_55 = '45-55',
+  AGE_65_PLUS = '65+',
 }
 
 export enum InfluencerHeight {
@@ -73,18 +73,89 @@ export interface InfluencerAppearance {
   accessories?: string[]
 }
 
+export interface InfluencerLookSpec {
+  canvas: { crop: string; subject_scale: string }
+  pose: {
+    head: string
+    torso: string
+    arms: string
+    gaze: string
+    expression: string
+  }
+  wardrobe: { garment: string; material: string; color: string; fit: string }
+  environment: { location: string; surfaces: string; light_props: string }
+  lighting: {
+    source: string
+    direction: string
+    quality: string
+    color_temperature: string
+  }
+  camera: {
+    device: string
+    focal_length: string
+    height: string
+    depth_of_field: string
+    processing: string
+  }
+  texture: { skin: string; hair: string; fabric: string; background: string }
+}
+
 export interface InfluencerCharacterSheet {
   identityLock: string
   signatureDetails: string[]
   wardrobe: { casual: string; onCamera: string; active: string }
   environments: string[]
   expressionRange: string[]
+  face?: {
+    shape: string
+    eyes: string
+    brows: string
+    nose: string
+    lips: string
+    makeup: string
+  }
+  skin?: { tone: string; texture: string; retouching: string }
+  hair?: { length: string; texture: string; part: string; shine: string }
+  cameraFamily?: string
+  lightingFamily?: string
+  lookSpec?: InfluencerLookSpec
 }
 
 export interface InfluencerGalleryShot {
   shotId: string
   url: string
   aspectRatio: string
+}
+
+export interface InfluencerHookVideo {
+  _id: Types.ObjectId
+  sourceImageUrl: string
+  videoUrl: string
+  videoId: string
+  generationId: string
+  prompt: string
+  presetId?: string
+  model: string
+  durationSec: number
+  createdAt: Date
+}
+
+export type AppendInfluencerHookVideoInput = {
+  sourceImageUrl: string
+  videoUrl: string
+  videoId: string
+  generationId: string
+  prompt: string
+  presetId?: string
+  model: string
+  durationSec: number
+  createdAt?: Date
+}
+
+export type AppendInfluencerGalleryImageInput = {
+  url: string
+  aspectRatio: string
+  shotId?: string
 }
 
 export interface InfluencerIdentity {
@@ -128,6 +199,7 @@ export interface IInfluencer {
   coverImageUrl?: string
   galleryImageUrls: string[]
   galleryShots?: InfluencerGalleryShot[]
+  hookVideos?: InfluencerHookVideo[]
   usageCount: number
   error?: string
   createdAt: Date

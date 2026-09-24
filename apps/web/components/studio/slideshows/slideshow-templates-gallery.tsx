@@ -34,6 +34,11 @@ export function SlideshowTemplatesGallery({ workspaceId }: { workspaceId: string
   return (
     <StudioTemplatesGallery
       kind={StudioTemplateKind.SLIDESHOW}
+      className="relative z-10 mx-auto mt-8 w-full max-w-5xl px-4 pb-10 sm:px-6 lg:px-8"
+      sectionTitle="Templates"
+      headingTone="quiet"
+      chipTone="studio"
+      hideWhenEmpty
       onRecreate={handleRecreate}
       emptyDescription="Import slideshow templates to start recreating carousels from a reference."
     />

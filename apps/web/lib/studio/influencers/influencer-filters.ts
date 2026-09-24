@@ -2,6 +2,7 @@ import type { Filter, FilterFieldConfig } from '@/components/reui/filters'
 import {
   AGE_RANGE_OPTIONS,
   BODY_SHAPE_OPTIONS,
+  ETHNICITY_OPTIONS,
   EYE_COLOR_OPTIONS,
   GENDER_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -30,6 +31,7 @@ const FILTER_FIELDS = [
   'niche',
   'scene',
   'ageRange',
+  'ethnicity',
   'hairColor',
   'hairStyle',
   'eyeColor',
@@ -43,6 +45,20 @@ export type InfluencerFilterField = (typeof FILTER_FIELDS)[number]
 
 function toOptions(items: ReadonlyArray<{ id: string; label: string }>) {
   return items.map(item => ({ value: item.id, label: item.label }))
+}
+
+/** Match both stored ids (`asian`) and create-form labels (`Asian`). */
+function expandEthnicityQuery(values: string[]) {
+  const expanded = new Set<string>()
+  for (const value of values) {
+    expanded.add(value)
+    const option = ETHNICITY_OPTIONS.find(item => item.id === value || item.label === value)
+    if (option) {
+      expanded.add(option.id)
+      expanded.add(option.label)
+    }
+  }
+  return [...expanded].join(',')
 }
 
 export function buildInfluencerFilterFields(options?: {
@@ -78,6 +94,13 @@ export function buildInfluencerFilterFields(options?: {
       type: 'multiselect',
       defaultOperator: 'is_any_of',
       options: toOptions(AGE_RANGE_OPTIONS),
+    },
+    {
+      key: 'ethnicity',
+      label: 'Background',
+      type: 'multiselect',
+      defaultOperator: 'is_any_of',
+      options: toOptions(ETHNICITY_OPTIONS),
     },
     {
       key: 'hairColor',
@@ -162,6 +185,7 @@ export function filtersToInfluencerQuery(
   | 'niche'
   | 'scenes'
   | 'ageRange'
+  | 'ethnicity'
   | 'hairColor'
   | 'hairStyle'
   | 'eyeColor'
@@ -189,6 +213,9 @@ export function filtersToInfluencerQuery(
         break
       case 'ageRange':
         query.ageRange = joined
+        break
+      case 'ethnicity':
+        query.ethnicity = expandEthnicityQuery(filter.values)
         break
       case 'hairColor':
         query.hairColor = joined

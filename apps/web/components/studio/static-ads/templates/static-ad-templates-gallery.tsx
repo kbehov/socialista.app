@@ -38,41 +38,39 @@ function CategoryCarouselNav() {
 
   if (!canScrollPrev && !canScrollNext) return null
 
+  const buttonClass = cn(
+    'inline-flex size-8 items-center justify-center rounded-full',
+    'text-black/50 dark:text-white/50',
+    'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+    'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+    'active:scale-[0.96] motion-reduce:active:scale-100',
+    'disabled:pointer-events-none disabled:opacity-30',
+  )
+
   return (
     <div className="flex shrink-0 items-center gap-0.5">
-      <button
-        type="button"
-        aria-label="Scroll categories left"
-        disabled={!canScrollPrev}
-        onClick={scrollPrev}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md',
-          'text-black/44 dark:text-white/44',
-          'transition-colors duration-150',
-          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          'disabled:pointer-events-none disabled:opacity-30',
-        )}
-      >
+      <button type="button" aria-label="Scroll categories left" disabled={!canScrollPrev} onClick={scrollPrev} className={buttonClass}>
         <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
       </button>
-      <button
-        type="button"
-        aria-label="Scroll categories right"
-        disabled={!canScrollNext}
-        onClick={scrollNext}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md',
-          'text-black/44 dark:text-white/44',
-          'transition-colors duration-150',
-          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          'disabled:pointer-events-none disabled:opacity-30',
-        )}
-      >
+      <button type="button" aria-label="Scroll categories right" disabled={!canScrollNext} onClick={scrollNext} className={buttonClass}>
         <ChevronRightIcon className="size-3.5" strokeWidth={1.75} />
       </button>
     </div>
+  )
+}
+
+function categoryTabClass(active: boolean) {
+  return cn(
+    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5',
+    'text-[13px] font-medium leading-none tracking-[-0.015em]',
+    'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+    'active:scale-[0.96] motion-reduce:active:scale-100',
+    'disabled:pointer-events-none disabled:opacity-50',
+    active
+      ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+      : 'bg-black/[0.045] text-foreground/72 hover:bg-black/[0.08] hover:text-foreground dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
   )
 }
 
@@ -98,83 +96,61 @@ function TemplateCategoryFilter({
         containScroll: 'trimSnaps',
       }}
     >
-      <div className="mb-3.5 flex items-end justify-between gap-3">
-        <h2 className="text-[13px] font-medium tracking-[-0.015em] text-foreground/80">Templates</h2>
-        <CategoryCarouselNav />
-      </div>
+      <h2 className="mb-3 text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
+        Templates
+      </h2>
 
       {categories.length > 0 ? (
-        <div className="relative">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-linear-to-r from-background to-transparent"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+            />
 
-          <CarouselContent className="ml-0" role="tablist" aria-label="Template categories">
-            <CarouselItem className="basis-auto self-stretch pl-0">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selectedCategory === null}
-                disabled={disabled}
-                onClick={() => onCategoryChange(null)}
-                className={cn(
-                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg px-2.5',
-                  'text-[12px] font-medium leading-none tracking-[-0.015em]',
-                  'transition-[background-color,color,transform] duration-150',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-                  'active:scale-[0.97] motion-reduce:active:scale-100',
-                  'disabled:pointer-events-none disabled:opacity-50',
-                  selectedCategory === null
-                    ? 'bg-foreground text-background'
-                    : 'text-black/56 hover:bg-black/[0.05] hover:text-foreground dark:text-white/56 dark:hover:bg-white/[0.08]',
-                )}
-              >
-                All
-              </button>
-            </CarouselItem>
+            <CarouselContent className="ml-0" role="tablist" aria-label="Template categories">
+              <CarouselItem className="basis-auto self-stretch pl-0">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedCategory === null}
+                  disabled={disabled}
+                  onClick={() => onCategoryChange(null)}
+                  className={categoryTabClass(selectedCategory === null)}
+                >
+                  All
+                </button>
+              </CarouselItem>
 
-            {categories.map(category => {
-              const active = selectedCategory === category.name
+              {categories.map(category => {
+                const active = selectedCategory === category.name
 
-              return (
-                <CarouselItem key={category._id} className="basis-auto self-stretch pl-1.5">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    disabled={disabled}
-                    onClick={() => onCategoryChange(category.name)}
-                    className={cn(
-                      'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg px-2.5',
-                      'text-[12px] font-medium leading-none tracking-[-0.015em]',
-                      'transition-[background-color,color,transform] duration-150',
-                      'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-                      'active:scale-[0.97] motion-reduce:active:scale-100',
-                      'disabled:pointer-events-none disabled:opacity-50',
-                      active
-                        ? 'bg-foreground text-background'
-                        : 'text-black/56 hover:bg-black/[0.05] hover:text-foreground dark:text-white/56 dark:hover:bg-white/[0.08]',
-                    )}
-                  >
-                    <span className="whitespace-nowrap">{category.name}</span>
-                    <span
-                      className={cn(
-                        'tabular-nums text-[11px] font-normal',
-                        active ? 'text-background/70' : 'text-black/36 dark:text-white/36',
-                      )}
+                return (
+                  <CarouselItem key={category._id} className="basis-auto self-stretch pl-2">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      disabled={disabled}
+                      onClick={() => onCategoryChange(category.name)}
+                      className={categoryTabClass(active)}
                     >
-                      {category.templatesCount}
-                    </span>
-                  </button>
-                </CarouselItem>
-              )
-            })}
-          </CarouselContent>
+                      <span className="whitespace-nowrap">{category.name}</span>
+                      <span
+                        className={cn(
+                          'tabular-nums text-[11px] font-normal',
+                          active ? 'text-background/70' : 'text-black/40 dark:text-white/40',
+                        )}
+                      >
+                        {category.templatesCount}
+                      </span>
+                    </button>
+                  </CarouselItem>
+                )
+              })}
+            </CarouselContent>
+          </div>
+          <CategoryCarouselNav />
         </div>
       ) : null}
     </Carousel>
@@ -245,8 +221,12 @@ export function StaticAdTemplatesGallery() {
     applyTemplate({ imageUrl: template.imageUrl, name: template.name })
   }
 
+  if (selectedCategory === null && !error && templates.length === 0) {
+    return null
+  }
+
   return (
-    <div className="flex w-full flex-col">
+    <div className="relative z-10 mx-auto mt-8 flex w-full max-w-5xl flex-col px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8">
       <TemplateCategoryFilter
         categories={categories}
         selectedCategory={selectedCategory}

@@ -15,8 +15,8 @@ import {
   StudioSkillPicker,
 } from "@/components/skills/studio-skill-picker";
 import {
-  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
+  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_NESTED_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
@@ -88,6 +88,8 @@ export type ImagePromptInputProps = {
   models: Model[]
   onSubmitOverride?: (result: ImagePromptSubmitResult) => void
   initialAttachments?: AttachedMedia[]
+  initialAttachmentUrl?: string
+  attachmentsLocked?: boolean
   initialAspectRatio?: AspectRatio
   initialModel?: string
   hideExtras?: boolean
@@ -116,6 +118,8 @@ function ImagePromptComposer({
   models,
   onSubmitOverride,
   initialAttachments,
+  initialAttachmentUrl,
+  attachmentsLocked = false,
   initialAspectRatio,
   initialModel,
   hideExtras,
@@ -138,9 +142,22 @@ function ImagePromptComposer({
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
   const [isPending, startTransition] = useTransition();
   const pending = pendingProp || isPending;
-  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(
-    () => initialAttachments ?? [],
-  );
+  const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() => {
+    if (initialAttachments?.length) return initialAttachments.slice(0, MAX_REFERENCE_IMAGES);
+    if (initialAttachmentUrl) {
+      return [
+        {
+          id: "influencer-identity",
+          url: initialAttachmentUrl,
+          kind: "image",
+          source: "library",
+          label: "Identity",
+          name: "Identity reference",
+        },
+      ];
+    }
+    return [];
+  });
   const dismissedAttachmentUrls = useRef(new Set<string>());
   const [selectedModelId, setSelectedModelId] = useState(
     () => models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? "",
@@ -154,6 +171,7 @@ function ImagePromptComposer({
   const setInput = textInput.setInput;
 
   const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
+    if (attachmentsLocked) return;
     setAttachedImages(current => {
       const nextUrls = new Set(next.map(item => item.url));
       for (const item of current) {
@@ -164,7 +182,7 @@ function ImagePromptComposer({
       }
       return next;
     });
-  }, []);
+  }, [attachmentsLocked]);
 
   useEffect(() => {
     if (!initialAttachments) return;
@@ -388,8 +406,10 @@ function ImagePromptComposer({
         modelPickerHeading="Image models"
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
-        attachSources={["upload", "library", "influencer", "product"]}
-        maxAttachments={MAX_REFERENCE_IMAGES}
+        attachSources={attachmentsLocked ? [] : ["upload", "library", "influencer", "product"]}
+        attachmentsLocked={attachmentsLocked}
+        maxAttachments={attachmentsLocked ? 1 : MAX_REFERENCE_IMAGES}
+        minAttachments={attachmentsLocked ? 1 : 0}
         workspaceId={currentWorkspace?._id}
         count={{
           value: numImages,
@@ -423,7 +443,7 @@ function ImagePromptComposer({
         footerClassName={
           embedded
             ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
-            : hideExtras || homeHero
+            : hideExtras
               ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
               : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         }
@@ -485,7 +505,7 @@ function ImagePromptComposer({
               ? STUDIO_HERO_COMPOSER_SURFACE_CLASS
               : STUDIO_HOME_COMPOSER_SURFACE_CLASS)
         }
-        compact={hideExtras || homeHero || embedded}
+        compact={hideExtras || embedded}
         embedded={embedded}
       />
 
