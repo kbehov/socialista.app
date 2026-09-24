@@ -301,17 +301,12 @@ function SlideshowPromptComposerInner({
         submitLabel={submitLabel}
         submitTitle={submitLabel}
         submitAppearance="send"
-        footerClassName={
-          homeHero
-            ? 'border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5'
-            : 'border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3'
-        }
+        footerClassName="border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
         emptyTitle="Describe a slideshow"
         emptyDescription="Stock photos work without an image model. Pick a text model to write the slides, then add a text-to-image model for AI images."
         surfaceClassName={
           homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
         }
-        compact={homeHero}
         composerRef={composerRef}
         textareaRef={node => {
           textareaRef.current = node

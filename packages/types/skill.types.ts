@@ -1,6 +1,8 @@
 export const PROMPT_KEYS = {
   imagePrompt: 'image-prompt',
+  influencerPrompt: 'influencer-prompt',
   videoPrompt: 'video-prompt',
+  influencerHookVideo: 'influencer-hook-video',
   staticAd: 'static-ad',
   ugcVideoPlanner: 'ugc-video-planner',
   ugcAdScript: 'ugc-ad-script',
@@ -27,7 +29,9 @@ export function countWords(text: string): number {
 
 export const PROMPT_KEY_LABELS: Record<PromptKey, string> = {
   'image-prompt': 'Image generation',
+  'influencer-prompt': 'Influencer UGC',
   'video-prompt': 'Video generation',
+  'influencer-hook-video': 'Influencer hook video',
   'static-ad': 'Static ads',
   'ugc-video-planner': 'UGC planner',
   'ugc-ad-script': 'UGC script',

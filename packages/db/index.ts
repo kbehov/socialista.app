@@ -260,7 +260,10 @@ export {
   type InfluencerCloneRequestDocument,
   type InfluencerDocument,
   type InfluencerGalleryShot,
+  type InfluencerHookVideo,
   type InfluencerIdentity,
+  type AppendInfluencerGalleryImageInput,
+  type AppendInfluencerHookVideoInput,
   type UpdateInfluencerCloneRequestInput,
   type UpdateInfluencerInput,
 } from "./types/influencer.types.js";

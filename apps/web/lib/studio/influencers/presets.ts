@@ -1,11 +1,14 @@
-import type {
-  InfluencerAgeRange,
-  InfluencerFacialHair,
-  InfluencerGender,
-  InfluencerHeight,
-  InfluencerMakeupStyle,
-  InfluencerPhotoStyle,
+import {
+  INFLUENCER_HOOK_PRESETS,
+  type InfluencerAgeRange,
+  type InfluencerFacialHair,
+  type InfluencerGender,
+  type InfluencerHeight,
+  type InfluencerHookPresetId,
+  type InfluencerMakeupStyle,
+  type InfluencerPhotoStyle,
 } from '@socialista/types'
+import { randomInfluencerName } from './names'
 import {
   AESTHETIC_OPTIONS,
   AGE_RANGE_OPTIONS,
@@ -107,7 +110,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       ageRange: '18-24',
       niche: ['beauty', 'fashion'],
       scenes: ['bathroom-vanity', 'bedroom-morning', 'product-hook'],
-      ethnicity: 'latina',
+      ethnicity: 'latin',
       appearance: {
         hairColor: 'jet-black',
         hairStyle: 'straight long',
@@ -135,11 +138,11 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       name: 'Riley Park',
       bio: 'Strength training, recovery tips, and showing up every day.',
       directions: 'Motivating coach energy between sets — sweaty, real, camera-confident gym light.',
-      gender: 'non-binary',
+      gender: 'female',
       ageRange: '25-34',
       niche: ['fitness', 'wellness'],
       scenes: ['gym', 'outdoor-run', 'yoga'],
-      ethnicity: 'east-asian',
+      ethnicity: 'asian',
       appearance: {
         hairColor: 'dark-brown',
         hairStyle: 'pixie',
@@ -171,7 +174,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       ageRange: '25-34',
       niche: ['fashion', 'lifestyle'],
       scenes: ['mirror-ootd', 'street', 'coffee-shop'],
-      ethnicity: 'east-asian',
+      ethnicity: 'asian',
       appearance: {
         hairColor: 'dark-brown',
         hairStyle: 'wavy',
@@ -267,7 +270,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       ageRange: '25-34',
       niche: ['lifestyle', 'comedy'],
       scenes: ['car', 'street', 'pointing-reveal'],
-      ethnicity: 'latino',
+      ethnicity: 'latin',
       appearance: {
         hairColor: 'dark-brown',
         hairStyle: 'wavy',
@@ -395,7 +398,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
       ageRange: '18-24',
       niche: ['fashion', 'lifestyle'],
       scenes: ['store', 'product-hook', 'mirror-ootd'],
-      ethnicity: 'east-asian',
+      ethnicity: 'asian',
       appearance: {
         hairColor: 'jet-black',
         hairStyle: 'straight long',
@@ -489,32 +492,6 @@ function pickRandomSubset(items: ReadonlyArray<{ id: string }>, max: number): st
   return shuffled.slice(0, count).map(item => item.id)
 }
 
-const FIRST_NAMES = [
-  'Ava',
-  'Noah',
-  'Mia',
-  'Leo',
-  'Zoe',
-  'Kai',
-  'Luna',
-  'Omar',
-  'Iris',
-  'Sam',
-] as const
-
-const LAST_NAMES = [
-  'Brooks',
-  'Nguyen',
-  'Patel',
-  'Kim',
-  'Garcia',
-  'Walsh',
-  'Singh',
-  'Adeyemi',
-  'Costa',
-  'Laurent',
-] as const
-
 type Archetype = {
   gender: InfluencerGender
   ageRange: InfluencerAgeRange
@@ -542,7 +519,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     ageRange: '25-34',
     niche: ['wellness', 'lifestyle'],
     scenes: ['bedroom-morning', 'yoga', 'home'],
-    ethnicity: 'east-asian',
+    ethnicity: 'asian',
     hairColor: 'dark-brown',
     hairStyle: 'wavy',
     eyeColor: 'brown',
@@ -580,7 +557,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     ageRange: '18-24',
     niche: ['beauty', 'fashion'],
     scenes: ['bathroom-vanity', 'bedroom-morning', 'product-hook'],
-    ethnicity: 'latina',
+    ethnicity: 'latin',
     hairColor: 'jet-black',
     hairStyle: 'straight long',
     eyeColor: 'hazel',
@@ -633,7 +610,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     photoStyle: 'ugc-phone',
   },
   {
-    gender: 'non-binary',
+    gender: 'female',
     ageRange: '25-34',
     niche: ['fashion', 'lifestyle'],
     scenes: ['mirror-ootd', 'street', 'coffee-shop'],
@@ -656,7 +633,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
     ageRange: '25-34',
     niche: ['lifestyle', 'comedy'],
     scenes: ['car', 'street', 'pointing-reveal'],
-    ethnicity: 'latino',
+    ethnicity: 'latin',
     hairColor: 'dark-brown',
     hairStyle: 'wavy',
     eyeColor: 'brown',
@@ -714,7 +691,7 @@ const ARCHETYPES: ReadonlyArray<Archetype> = [
 export function randomizeInfluencerForm(): InfluencerCreateFormState {
   const base = pickRandom(ARCHETYPES)
   const showFacialHair = base.gender === 'male'
-  const showMakeup = base.gender === 'female' || base.gender === 'non-binary'
+  const showMakeup = base.gender === 'female'
 
   // Light jitter: occasionally swap a compatible field within the same archetype feel.
   // Keep scenes/accessories coherent — do not randomize into unrelated UGC situations.
@@ -726,7 +703,7 @@ export function randomizeInfluencerForm(): InfluencerCreateFormState {
     Math.random() > 0.55 ? [pickRandom(FEATURE_SUGGESTIONS)] : ([] as string[])
 
   return {
-    name: `${pickRandom(FIRST_NAMES)} ${pickRandom(LAST_NAMES)}`,
+    name: randomInfluencerName(base.gender),
     bio: '',
     directions: '',
     gender: base.gender,
@@ -775,6 +752,52 @@ export function cloneDefaultForm(): InfluencerCreateFormState {
     },
   }
 }
+
+export type InfluencerHookFormat = {
+  id: InfluencerHookPresetId
+  label: string
+  description: string
+  prompt: string
+  trending: boolean
+}
+
+const HOOK_FORMAT_META: Record<InfluencerHookPresetId, { description: string; trending: boolean }> = {
+  'shocked-reaction': { description: 'The classic scroll-stop gasp', trending: true },
+  'wait-for-it': { description: 'Hold still, then the face lands', trending: true },
+  'pov-lean': { description: 'Lean in like the viewer is in the scene', trending: true },
+  'hot-take': { description: 'Chin up, about to drop an opinion', trending: true },
+  'skeptical-squint': { description: 'I wanted this to fail', trending: true },
+  'sad-snob': { description: 'Tired, unimpressed, a little above it', trending: true },
+  'hand-on-mouth': { description: 'Silent gasp after the comments', trending: true },
+  'finger-point': { description: 'Tease a reveal at camera', trending: true },
+  'side-eye': { description: 'Judging glance, then back', trending: true },
+  'double-take': { description: 'Look away, recatch, disbelief', trending: true },
+  'eye-roll': { description: 'Lazy lids, muted Reels energy', trending: true },
+  'knowing-smirk': { description: 'I told you so, held', trending: true },
+  'whisper-tea': { description: 'Lean in like sharing a secret', trending: true },
+  'stitch-glance': { description: 'Off-frame reply, then camera', trending: true },
+  'look-down-up': { description: 'Read it, then look at us', trending: true },
+  'eyebrow-raise': { description: 'Silent oh-really', trending: false },
+  'cringe-wince': { description: 'Secondhand embarrassment', trending: true },
+  'plot-twist': { description: 'Smile fades as it lands', trending: true },
+  'soft-laugh': { description: 'Tries to hold it, then breaks', trending: false },
+  'knowing-nod': { description: 'This-is-it talking-head open', trending: false },
+  'head-shake-no': { description: 'Slow disappointed no', trending: false },
+  'peek-fingers': { description: 'Cannot watch, peeks anyway', trending: true },
+  'chefs-kiss': { description: 'Small kiss-away, pleased', trending: false },
+  'come-closer': { description: 'Playful watch-this invite', trending: true },
+  'unimpressed-blink': { description: 'One long blink. And?', trending: true },
+  'slow-realize': { description: 'The thought lands in pieces', trending: true },
+}
+
+export const INFLUENCER_HOOK_FORMATS: ReadonlyArray<InfluencerHookFormat> = INFLUENCER_HOOK_PRESETS.map(
+  preset => ({
+    id: preset.id,
+    label: preset.label,
+    prompt: preset.prompt,
+    ...HOOK_FORMAT_META[preset.id],
+  }),
+)
 
 export function clonePresetForm(preset: InfluencerPreset): InfluencerCreateFormState {
   return {

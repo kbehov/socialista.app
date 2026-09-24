@@ -1,7 +1,7 @@
 'use client'
 
 import { ImageTemplateRecreateDialog } from '@/components/studio/images/image-template-recreate-dialog'
-import { StudioTemplatesGallery } from '@/components/studio/templates/studio-templates-gallery'
+import { StudioInspirationsGallery } from '@/components/studio/templates/studio-inspirations-gallery'
 import {
   StudioTemplateKind,
   type Model,
@@ -20,15 +20,16 @@ export function ImageTemplatesGallery({ models, templateCategories }: ImageTempl
 
   return (
     <>
-      <StudioTemplatesGallery
+      <StudioInspirationsGallery
         kind={StudioTemplateKind.IMAGE}
-        initialCategories={templateCategories}
-        sectionTitle="Inspirations"
-        cardVariant="visual"
+        templateCategories={templateCategories}
+        sectionTitle="Templates"
+        headingTone="quiet"
+        chipTone="studio"
+        emptyTitle="No templates yet"
+        emptyDescription="When templates are added, they show up here so you can recreate one in a tap."
         onRecreate={setRecreateTemplate}
         onPreview={setRecreateTemplate}
-        emptyTitle="No inspirations yet"
-        emptyDescription="When image inspirations are added, they will show up here so you can recreate them in one tap."
       />
       <ImageTemplateRecreateDialog
         template={recreateTemplate}

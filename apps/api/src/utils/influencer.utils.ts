@@ -5,6 +5,7 @@ import {
   getInfluencerCloneRequestById,
   getModelByValue,
   ContextSupport,
+  ModelType,
   InfluencerAgeRange as DbInfluencerAgeRange,
   InfluencerGender as DbInfluencerGender,
   InfluencerHeight as DbInfluencerHeight,
@@ -67,6 +68,18 @@ export function serializeInfluencer(doc: IInfluencer): Influencer {
       shotId: shot.shotId,
       url: shot.url,
       aspectRatio: shot.aspectRatio,
+    })),
+    hookVideos: (doc.hookVideos ?? []).map(video => ({
+      _id: video._id?.toString() ?? video.videoId,
+      sourceImageUrl: video.sourceImageUrl,
+      videoUrl: video.videoUrl,
+      videoId: video.videoId,
+      generationId: video.generationId,
+      prompt: video.prompt,
+      ...(video.presetId ? { presetId: video.presetId } : {}),
+      model: video.model,
+      durationSec: video.durationSec,
+      createdAt: video.createdAt,
     })),
     usageCount: doc.usageCount ?? 0,
     error: doc.error,
@@ -316,6 +329,15 @@ export function collectInfluencerMediaUrls(influencer: IInfluencer): string[] {
   for (const url of influencer.galleryImageUrls ?? []) urls.add(url)
   for (const url of influencer.identity?.referenceImageUrls ?? []) urls.add(url)
   for (const url of influencer.identity?.userReferenceImageUrls ?? []) urls.add(url)
+  for (const video of influencer.hookVideos ?? []) urls.add(video.videoUrl)
+  return [...urls]
+}
+
+export function collectInfluencerSourceImageUrls(influencer: IInfluencer): string[] {
+  const urls = new Set<string>()
+  if (influencer.coverImageUrl) urls.add(influencer.coverImageUrl)
+  for (const url of influencer.galleryImageUrls ?? []) urls.add(url)
+  for (const shot of influencer.galleryShots ?? []) urls.add(shot.url)
   return [...urls]
 }
 
@@ -338,6 +360,30 @@ export async function resolveInfluencerGenerationModel(raw: unknown): Promise<st
       400,
       'Influencer generation requires a model with image context support',
     )
+  }
+
+  return model.value
+}
+
+export async function resolveInfluencerHookVideoModel(raw: unknown): Promise<string> {
+  if (typeof raw !== 'string' || !raw.trim()) {
+    throw new HttpError(400, 'Video model is required')
+  }
+
+  const value = raw.trim()
+  const model = await getModelByValue(value)
+  if (!model) {
+    throw new HttpError(400, `Model not found: ${value}`)
+  }
+
+  const isVideo = model.modelType === ModelType.VIDEO || model.modelType === ModelType.LIP_SYNC
+  if (!isVideo) {
+    throw new HttpError(400, 'Hook videos require a video model')
+  }
+
+  const supports = model.contextSupports ?? []
+  if (!supports.includes(ContextSupport.IMAGE)) {
+    throw new HttpError(400, 'Hook videos require a model with image context support')
   }
 
   return model.value

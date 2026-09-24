@@ -13,7 +13,10 @@ import {
   type AttachedMedia,
 } from "@/components/files/attach-images-dialog";
 import { ProductPickerDialog } from "@/components/studio/static-ads/product-picker-dialog";
-import { InfluencerPickerDialog } from "@/components/studio/influencers/influencer-picker-dialog";
+import {
+  InfluencerPickerDialog,
+  type InfluencerPickerMediaType,
+} from "@/components/studio/influencers/influencer-picker-dialog";
 import { cn } from "@/lib/utils";
 import { STUDIO_ATTACH_PLUS_BUTTON_CLASS } from "@/components/studio/prompt/studio-composer-surface";
 import { getWorkspaceProducts } from "@/services/product.service";
@@ -79,13 +82,6 @@ export function attachmentChipLabel(file: AttachedMedia): string {
   return humanFileName(file.name) ?? "Reference";
 }
 
-function coverUrl(influencer: {
-  coverImageUrl?: string;
-  galleryImageUrls: string[];
-}) {
-  return influencer.coverImageUrl || influencer.galleryImageUrls[0];
-}
-
 type StudioAttachMenuProps = {
   sources: readonly StudioAttachSource[];
   attachments: AttachedMedia[];
@@ -95,6 +91,7 @@ type StudioAttachMenuProps = {
   disabled?: boolean;
   disabledReason?: string;
   className?: string;
+  influencerMediaType?: InfluencerPickerMediaType;
 };
 
 function buildMenuItems(sources: readonly StudioAttachSource[]): StudioAttachMenuItem[] {
@@ -123,6 +120,7 @@ export function StudioAttachMenu({
   disabled,
   disabledReason,
   className,
+  influencerMediaType = "image",
 }: StudioAttachMenuProps) {
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
@@ -382,23 +380,19 @@ export function StudioAttachMenu({
           open={influencerOpen}
           onOpenChange={setInfluencerOpen}
           workspaceId={workspaceId}
+          selectMediaType={influencerMediaType}
           selectedIds={attachments.flatMap((file) =>
             file.influencerId ? [file.influencerId] : [],
           )}
-          excludeIds={attachments.flatMap((file) =>
-            file.influencerId ? [file.influencerId] : [],
+          selectedUrls={attachments.flatMap((file) =>
+            file.source === "influencer" ? [file.url] : [],
           )}
-          onSelect={(influencer) => {
-            const url = coverUrl(influencer);
-            if (!url) {
-              toast.error("That creator has no portrait yet");
-              return;
-            }
+          onSelect={({ influencer, url, kind }) => {
             addAttachment({
-              id: `influencer:${influencer._id}`,
+              id: `influencer:${influencer._id}:${kind}:${url}`,
               url,
               name: influencer.name,
-              kind: "image",
+              kind,
               source: "influencer",
               label: influencer.name,
               influencerId: influencer._id,

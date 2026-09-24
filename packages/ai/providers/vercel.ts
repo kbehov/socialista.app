@@ -56,11 +56,13 @@ export async function generateImageVercel({
       ? { text: prompt, images: referenceImages }
       : prompt;
 
+  const promptText = typeof promptArg === "string" ? promptArg : promptArg.text;
   console.log("Submitting to Vercel AI", {
     model,
     aspectRatio,
     numImages,
     referenceCount: referenceImages.length,
+    prompt: promptText,
   });
 
   const { images } = await generateImage(

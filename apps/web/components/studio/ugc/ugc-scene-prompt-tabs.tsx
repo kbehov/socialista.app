@@ -148,6 +148,7 @@ export function UgcScenePromptTabs({
                 hideDuration={config.talkingHead && audioLockedSec == null}
                 hideCost={config.talkingHead && audioLockedSec == null}
                 attachSources={config.talkingHead ? ['influencer'] : undefined}
+                influencerMediaType={config.talkingHead ? 'image' : undefined}
                 maxAttachments={config.talkingHead ? 1 : undefined}
                 minAttachments={config.talkingHead ? 1 : undefined}
                 costMultiplier={audioLockedSec}

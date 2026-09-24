@@ -2,9 +2,12 @@ import {
   buildInfluencerAnchorPrompt,
   buildInfluencerBasePromptFragment,
   buildInfluencerCharacterSheet,
+  buildInfluencerImagePrompt,
   evaluateAnchorPortrait,
   generateImage,
   getInfluencerGenerationShots,
+  INFLUENCER_SKIN_LOCK_FOOTER,
+  type InfluencerReferenceMode,
   type InfluencerShot,
 } from "@socialista/ai";
 import {
@@ -36,6 +39,11 @@ import {
 
 const SHOT_MAX_ATTEMPTS = 2;
 const SHOT_RETRY_DELAY_MS = 1500;
+
+function isSexualSafetyError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /safety_violations=\[sexual\]/i.test(message);
+}
 /** Cover QA on by default; set INFLUENCER_COVER_QUALITY_GATE=false to skip. */
 const COVER_QUALITY_GATE_ENABLED =
   process.env.INFLUENCER_COVER_QUALITY_GATE !== "false";
@@ -150,7 +158,6 @@ export const generateInfluencer = schemaTask({
           ethnicity: influencer.ethnicity,
           appearance: influencer.appearance,
           characterSheet,
-          preferReferenceAppearance: hasUserRefs,
         });
         await updateInfluencer(payload.influencerId, {
           identity: {
@@ -158,10 +165,10 @@ export const generateInfluencer = schemaTask({
             basePromptFragment: baseFragment,
           },
         });
-        metadata.set("character_sheet", {
-          ...characterSheet,
-          wardrobe: { ...characterSheet.wardrobe },
-        });
+        metadata.set(
+          "character_sheet",
+          JSON.parse(JSON.stringify(characterSheet)),
+        );
       } catch (sheetError) {
         logger.warn(
           "Character sheet unavailable, using deterministic fragment",
@@ -178,9 +185,21 @@ export const generateInfluencer = schemaTask({
           ageRange: influencer.ageRange,
           ethnicity: influencer.ethnicity,
           appearance: influencer.appearance,
-          preferReferenceAppearance: hasUserRefs,
         });
       }
+
+      const coverShot = shots[0]!;
+      const promptCtxBase = {
+        niche: influencer.niche,
+        scenes: influencer.scenes,
+        accessories: influencer.appearance.accessories,
+        aestheticTags: influencer.aestheticTags,
+        vibeTags: influencer.vibeTags,
+        characterSheet,
+        photoStyle: influencer.photoStyle,
+        directions: influencer.directions,
+        referenceCount: userReferenceImageUrls.length,
+      };
 
       logger.info("Generating influencer gallery", {
         influencerId: payload.influencerId,
@@ -195,27 +214,16 @@ export const generateInfluencer = schemaTask({
         metadata.set("reference_chain", "cover-only-followups");
       }
 
-      const promptCtxBase = {
-        niche: influencer.niche,
-        scenes: influencer.scenes,
-        accessories: influencer.appearance.accessories,
-        aestheticTags: influencer.aestheticTags,
-        vibeTags: influencer.vibeTags,
-        characterSheet,
-        photoStyle: influencer.photoStyle,
-        directions: influencer.directions,
-        ...(hasUserRefs
-          ? { userReferenceCount: userReferenceImageUrls.length }
-          : {}),
+      const referenceModeForShot = (shotIndex: number): InfluencerReferenceMode => {
+        if (!hasUserRefs) return "none";
+        return shotIndex === 0 ? "user" : "cover";
       };
 
-      const buildShotPromptCtx = (shotIndex: number) => {
-        if (shotIndex > 0 && hasUserRefs) {
-          const { userReferenceCount: _omit, ...rest } = promptCtxBase;
-          return { ...rest, shotIndex, coverChainOnly: true as const };
-        }
-        return { ...promptCtxBase, shotIndex };
-      };
+      const buildShotPromptCtx = (shotIndex: number) => ({
+        ...promptCtxBase,
+        shotIndex,
+        referenceMode: referenceModeForShot(shotIndex),
+      });
 
       const seedBase = model.modelProvider.toLowerCase().includes("fal")
         ? influencer.identity.seed
@@ -237,32 +245,71 @@ export const generateInfluencer = schemaTask({
         seedOffset = 0,
       ): Promise<string> => {
         let prompt = "";
+        let omitRefsAfterSafety = false;
         const { imageUrl, attempts } = await generateShotWithRetry(
           async (attempt) => {
-            prompt = buildInfluencerAnchorPrompt(
+            const referenceMode = omitRefsAfterSafety
+              ? "none"
+              : referenceModeForShot(shotIndex);
+            const assembled = buildInfluencerAnchorPrompt(
               baseFragment,
               shot,
-              buildShotPromptCtx(shotIndex),
+              { ...buildShotPromptCtx(shotIndex), referenceMode },
             );
-            return generateImage(
-              {
-                model: model.value,
-                provider: model.modelProvider,
-                prompt,
+            const imageUrls = omitRefsAfterSafety ? undefined : referenceUrls;
+            let enhanced = assembled;
+            try {
+              enhanced = await buildInfluencerImagePrompt({
+                prompt: assembled,
+                media: imageUrls?.map((imageUrl) => ({ imageUrl })),
                 aspectRatio: shot.aspectRatio,
-                workspaceId: payload.workspaceId,
-                userId: payload.userId,
-                imageUrls: referenceUrls,
-                seed:
-                  seedBase !== undefined
-                    ? seedBase +
-                      shotIndex * 1000 +
-                      seedOffset * 100 +
-                      (attempt - 1)
-                    : undefined,
-              },
-              shotIndex === 0 ? setGenerationStatus : undefined,
-            );
+                targetModel: model.value,
+                referenceMode,
+              });
+            } catch (enhanceError) {
+              logger.warn("Influencer prompt enhance failed, using assembled prompt", {
+                shotId: shot.id,
+                error:
+                  enhanceError instanceof Error
+                    ? enhanceError.message
+                    : String(enhanceError),
+              });
+            }
+            prompt = `${enhanced}\n\n${INFLUENCER_SKIN_LOCK_FOOTER}`;
+            logger.info("Influencer image prompt", {
+              shotId: shot.id,
+              attempt,
+              assembled,
+              enhanced,
+              prompt,
+              referenceCount: imageUrls?.length ?? 0,
+            });
+            try {
+              return await generateImage(
+                {
+                  model: model.value,
+                  provider: model.modelProvider,
+                  prompt,
+                  aspectRatio: shot.aspectRatio,
+                  workspaceId: payload.workspaceId,
+                  userId: payload.userId,
+                  imageUrls,
+                  seed:
+                    seedBase !== undefined
+                      ? seedBase + shotIndex * 1000 + seedOffset * 100 + (attempt - 1)
+                      : undefined,
+                },
+                shotIndex === 0 ? setGenerationStatus : undefined,
+              );
+            } catch (error) {
+              if (!omitRefsAfterSafety && (imageUrls?.length ?? 0) > 0 && isSexualSafetyError(error)) {
+                omitRefsAfterSafety = true;
+                logger.warn("Image safety rejected the reference photos; retrying without them", {
+                  shotId: shot.id,
+                });
+              }
+              throw error;
+            }
           },
           shot.id,
         );
@@ -273,7 +320,6 @@ export const generateInfluencer = schemaTask({
       };
 
       // ── Cover: user style ref on first shot only ───────────────────────────
-      const coverShot = shots[0]!;
       const coverRefs = hasUserRefs ? userReferenceImageUrls : undefined;
       setGenerationStatus(
         12,

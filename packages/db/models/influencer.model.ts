@@ -14,6 +14,7 @@ import {
   type InfluencerAppearance,
   type InfluencerCharacterSheet,
   type InfluencerGalleryShot,
+  type InfluencerHookVideo,
   type InfluencerIdentity,
 } from '../types/influencer.types.js'
 
@@ -29,6 +30,92 @@ const appearanceSchema = new Schema<InfluencerAppearance>(
     facialHair: { type: String },
     makeup: { type: String },
     accessories: { type: [String], default: undefined },
+  },
+  { _id: false },
+)
+
+const lookSpecSchema = new Schema(
+  {
+    canvas: {
+      type: new Schema(
+        { crop: { type: String, required: true }, subject_scale: { type: String, required: true } },
+        { _id: false },
+      ),
+      required: true,
+    },
+    pose: {
+      type: new Schema(
+        {
+          head: { type: String, required: true },
+          torso: { type: String, required: true },
+          arms: { type: String, required: true },
+          gaze: { type: String, required: true },
+          expression: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
+    wardrobe: {
+      type: new Schema(
+        {
+          garment: { type: String, required: true },
+          material: { type: String, required: true },
+          color: { type: String, required: true },
+          fit: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
+    environment: {
+      type: new Schema(
+        {
+          location: { type: String, required: true },
+          surfaces: { type: String, required: true },
+          light_props: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
+    lighting: {
+      type: new Schema(
+        {
+          source: { type: String, required: true },
+          direction: { type: String, required: true },
+          quality: { type: String, required: true },
+          color_temperature: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
+    camera: {
+      type: new Schema(
+        {
+          device: { type: String, required: true },
+          focal_length: { type: String, required: true },
+          height: { type: String, required: true },
+          depth_of_field: { type: String, required: true },
+          processing: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
+    texture: {
+      type: new Schema(
+        {
+          skin: { type: String, required: true },
+          hair: { type: String, required: true },
+          fabric: { type: String, required: true },
+          background: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: true,
+    },
   },
   { _id: false },
 )
@@ -50,6 +137,46 @@ const characterSheetSchema = new Schema<InfluencerCharacterSheet>(
     },
     environments: { type: [String], default: [] },
     expressionRange: { type: [String], default: [] },
+    face: {
+      type: new Schema(
+        {
+          shape: { type: String, required: true },
+          eyes: { type: String, required: true },
+          brows: { type: String, required: true },
+          nose: { type: String, required: true },
+          lips: { type: String, required: true },
+          makeup: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: false,
+    },
+    skin: {
+      type: new Schema(
+        {
+          tone: { type: String, required: true },
+          texture: { type: String, required: true },
+          retouching: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: false,
+    },
+    hair: {
+      type: new Schema(
+        {
+          length: { type: String, required: true },
+          texture: { type: String, required: true },
+          part: { type: String, required: true },
+          shine: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: false,
+    },
+    cameraFamily: { type: String },
+    lightingFamily: { type: String },
+    lookSpec: { type: lookSpecSchema, required: false },
   },
   { _id: false },
 )
@@ -80,6 +207,20 @@ const galleryShotSchema = new Schema<InfluencerGalleryShot>(
     aspectRatio: { type: String, required: true },
   },
   { _id: false },
+)
+
+const hookVideoSchema = new Schema<InfluencerHookVideo>(
+  {
+    sourceImageUrl: { type: String, required: true },
+    videoUrl: { type: String, required: true },
+    videoId: { type: String, required: true },
+    generationId: { type: String, required: true },
+    prompt: { type: String, required: true },
+    presetId: { type: String },
+    model: { type: String, required: true },
+    durationSec: { type: Number, required: true },
+    createdAt: { type: Date, required: true, default: Date.now },
+  },
 )
 
 const influencerSchema = new Schema<IInfluencer>(
@@ -135,6 +276,7 @@ const influencerSchema = new Schema<IInfluencer>(
     coverImageUrl: { type: String },
     galleryImageUrls: { type: [String], default: [] },
     galleryShots: { type: [galleryShotSchema], default: undefined },
+    hookVideos: { type: [hookVideoSchema], default: [] },
     usageCount: { type: Number, default: 0 },
     error: { type: String },
   },

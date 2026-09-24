@@ -1,22 +1,18 @@
 'use client'
 
-import {
-  DitherImage,
-  DitherImageContent,
-  DitherImageFrame,
-  DitherImageOverlay,
-  DitherImageReveal,
-} from '@/components/dither'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  useCarousel,
-} from '@/components/ui/carousel'
-import { PresetCard } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+// import {
+//   DitherImage,
+//   DitherImageContent,
+//   DitherImageFrame,
+//   DitherImageOverlay,
+//   DitherImageReveal,
+// } from '@/components/dither'
 import { STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS } from '@/components/studio/prompt/studio-composer-surface'
+import { PresetCard } from '@/components/ui/card'
+import { Carousel, CarouselContent, CarouselItem, useCarousel } from '@/components/ui/carousel'
+import { cn } from '@/lib/utils'
 import { ChevronRightIcon } from 'lucide-react'
+import Image from 'next/image'
 import type { ReactNode } from 'react'
 
 const HERO_SIZES = '(max-width: 768px) 100vw, 1024px'
@@ -42,6 +38,7 @@ export type StudioHomeHeroProps = {
   featureCards: StudioHomeFeatureCard[]
   onFeatureSelect: (card: StudioHomeFeatureCard) => void
   headerActions?: ReactNode
+  afterBanner?: ReactNode
   children: ReactNode
 }
 
@@ -85,47 +82,66 @@ function StudioHomeHeroBackground({
   src: string
   imagePosition?: string
 }) {
+  // Dither background (disabled — pure image + banner overlays/noise above)
+  // return (
+  //   <div aria-hidden className="pointer-events-none absolute inset-0">
+  //     <DitherImage className="h-full w-full">
+  //       <DitherImageReveal className="h-full w-full overflow-hidden">
+  //         <div className="absolute inset-0">
+  //           <DitherImageFrame
+  //             invertOnDark
+  //             size="md"
+  //             rounded={false}
+  //             grayscale={0.02}
+  //             contrast={14}
+  //             brightness={1}
+  //             opacity={0.52}
+  //             className="h-full w-full"
+  //           >
+  //             <DitherImageContent
+  //               src={src}
+  //               alt=""
+  //               fill
+  //               priority
+  //               quality={88}
+  //               sizes={HERO_SIZES}
+  //               className={cn('select-none object-cover', imagePosition)}
+  //             />
+  //           </DitherImageFrame>
+  //         </div>
+  //         <DitherImageOverlay
+  //           src={src}
+  //           alt=""
+  //           fill
+  //           priority
+  //           quality={88}
+  //           sizes={HERO_SIZES}
+  //           direction="tl-br"
+  //           from={0}
+  //           to={62}
+  //           className={imagePosition}
+  //         />
+  //       </DitherImageReveal>
+  //     </DitherImage>
+  //   </div>
+  // )
+
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
-      <DitherImage className="h-full w-full">
-        <DitherImageReveal className="h-full w-full overflow-hidden">
-          <div className="absolute inset-0">
-            <DitherImageFrame
-              invertOnDark
-              size="md"
-              rounded={false}
-              grayscale={0.08}
-              contrast={14}
-              brightness={1.04}
-              opacity={0.52}
-              className="h-full w-full"
-            >
-              <DitherImageContent
-                src={src}
-                alt=""
-                fill
-                priority
-                quality={88}
-                sizes={HERO_SIZES}
-                className={cn('select-none object-cover', imagePosition)}
-              />
-            </DitherImageFrame>
-          </div>
-
-          <DitherImageOverlay
-            src={src}
-            alt=""
-            fill
-            priority
-            quality={88}
-            sizes={HERO_SIZES}
-            direction="tl-br"
-            from={0}
-            to={72}
-            className={imagePosition}
-          />
-        </DitherImageReveal>
-      </DitherImage>
+      <Image
+        src={src}
+        alt=""
+        fill
+        priority
+        quality={88}
+        sizes={HERO_SIZES}
+        className={cn('select-none object-cover saturate-[1.04] contrast-[1.03]', imagePosition)}
+      />
+      <div className="absolute inset-0 bg-black/[0.04] dark:bg-black/[0.12]" />
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_85%_75%_at_50%_32%,transparent_35%,rgba(0,0,0,0.22)_100%)] dark:bg-[radial-gradient(ellipse_85%_75%_at_50%_32%,transparent_25%,rgba(0,0,0,0.38)_100%)]"
+      />
+      <div className="absolute inset-0 bg-linear-to-b from-white/[0.06] via-transparent to-black/[0.08]" />
     </div>
   )
 }
@@ -138,6 +154,7 @@ export function StudioHomeHero({
   featureCards,
   onFeatureSelect,
   headerActions,
+  afterBanner,
   children,
 }: StudioHomeHeroProps) {
   return (
@@ -147,9 +164,7 @@ export function StudioHomeHero({
           <h1 className="text-[26px] font-semibold leading-none tracking-[-0.03em] text-foreground sm:text-[28px]">
             {title}
           </h1>
-          {headerActions ? (
-            <div className="flex shrink-0 items-center gap-2">{headerActions}</div>
-          ) : null}
+          {headerActions ? <div className="flex shrink-0 items-center gap-2">{headerActions}</div> : null}
         </div>
 
         <div className="studio-home-hero-banner relative min-h-[12rem] overflow-hidden rounded-[1.5rem] ring-1 ring-black/10 dark:ring-white/12 sm:min-h-[13rem]">
@@ -173,6 +188,8 @@ export function StudioHomeHero({
             <div className={cn('w-full', STUDIO_PROMPT_COMPOSER_MAX_WIDTH_CLASS)}>{children}</div>
           </div>
         </div>
+
+        {afterBanner ? <div className="relative mt-6 sm:mt-7">{afterBanner}</div> : null}
 
         {featureCards.length > 0 ? (
           <div className="relative mt-6 sm:mt-7">

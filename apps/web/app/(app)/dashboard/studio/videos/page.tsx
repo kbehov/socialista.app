@@ -3,10 +3,9 @@ import { VideoStudioWorkspace } from '@/components/studio/videos/video-studio-wo
 import { VIDEO_LIST_PAGE_SIZE } from '@/constants/studio'
 import { getGeneration } from '@/services/generation.service'
 import { getModels } from '@/services/models.service'
-import { getPresets } from '@/services/preset.service'
 import { getStudioTemplateCategories } from '@/services/studio-templates.service'
 import { getWorkspaceVideos } from '@/services/video.service'
-import { PresetKind, StudioTemplateKind } from '@socialista/types'
+import { StudioTemplateKind } from '@socialista/types'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import { preload } from 'react-dom'
 
@@ -38,15 +37,9 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
     return <WorkspaceRequired message="Select a workspace to view videos." />
   }
 
-  const [modelsRes, presetsRes, videosResponse, initialAttachmentUrl, templateCategoriesRes] =
+  const [modelsRes, videosResponse, initialAttachmentUrl, templateCategoriesRes] =
     await Promise.all([
       getModels('limit=20&modelType=video&sort=-usageCount'),
-      getPresets({
-        kind: PresetKind.VIDEO,
-        active: true,
-        limit: 20,
-        sort: 'sortOrder',
-      }),
       getWorkspaceVideos(workspace.id, {
         status: 'draft',
         page: 1,
@@ -64,9 +57,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   return (
     <VideoStudioWorkspace
       models={models}
-      presets={presetsRes.success ? (presetsRes.data?.presets ?? []) : []}
       workspaceId={workspace.id}
-      workspaceName={workspace.name}
       initialVideos={videos}
       initialError={error}
       initialHasMore={Boolean(videosResponse.meta?.hasNextPage)}

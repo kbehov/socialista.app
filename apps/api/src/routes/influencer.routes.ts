@@ -1,6 +1,8 @@
 import {
   cloneInfluencer,
   createInfluencer,
+  createInfluencerHookVideo,
+  createInfluencerImage,
   deleteInfluencer,
   exploreInfluencers,
   getCloneRequest,
@@ -22,6 +24,8 @@ influencerRoutes.post('/clone', cloneInfluencer)
 influencerRoutes.get('/clone-requests/:id', getCloneRequest)
 influencerRoutes.post('/', createInfluencer)
 influencerRoutes.get('/:id', getInfluencer)
+influencerRoutes.post('/:id/hook-videos', createInfluencerHookVideo)
+influencerRoutes.post('/:id/images', createInfluencerImage)
 influencerRoutes.patch('/:id', updateInfluencer)
 influencerRoutes.delete('/:id', deleteInfluencer)
 

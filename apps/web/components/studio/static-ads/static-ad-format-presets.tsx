@@ -77,38 +77,22 @@ function PresetCarouselNav() {
 
   if (!canScrollPrev && !canScrollNext) return null
 
+  const buttonClass = cn(
+    'inline-flex size-8 items-center justify-center rounded-full',
+    'text-black/50 dark:text-white/50',
+    'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+    'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+    'active:scale-[0.96] motion-reduce:active:scale-100',
+    'disabled:pointer-events-none disabled:opacity-30',
+  )
+
   return (
     <div className="flex shrink-0 items-center gap-0.5">
-      <button
-        type="button"
-        aria-label="Scroll formats left"
-        disabled={!canScrollPrev}
-        onClick={scrollPrev}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md',
-          'text-black/44 dark:text-white/44',
-          'transition-colors duration-150',
-          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          'disabled:pointer-events-none disabled:opacity-30',
-        )}
-      >
+      <button type="button" aria-label="Scroll formats left" disabled={!canScrollPrev} onClick={scrollPrev} className={buttonClass}>
         <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
       </button>
-      <button
-        type="button"
-        aria-label="Scroll formats right"
-        disabled={!canScrollNext}
-        onClick={scrollNext}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md',
-          'text-black/44 dark:text-white/44',
-          'transition-colors duration-150',
-          'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          'disabled:pointer-events-none disabled:opacity-30',
-        )}
-      >
+      <button type="button" aria-label="Scroll formats right" disabled={!canScrollNext} onClick={scrollNext} className={buttonClass}>
         <ChevronRightIcon className="size-3.5" strokeWidth={1.75} />
       </button>
     </div>
@@ -127,58 +111,58 @@ export function StaticAdFormatPresets() {
         containScroll: 'trimSnaps',
       }}
     >
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-[12px] font-medium tracking-[-0.015em] text-foreground/80">Formats</p>
-        <PresetCarouselNav />
+      <div className="mb-3">
+        <p className="text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
+          Formats
+        </p>
       </div>
 
-      <div className="relative w-full min-w-0">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-linear-to-r from-background to-transparent"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+          />
 
-        <CarouselContent className="ml-0" role="listbox" aria-label="Format starters">
-          {STATIC_AD_FORMAT_PRESETS.map((preset, index) => {
-            const Icon = PRESET_ICONS[preset.id] ?? SparklesIcon
-            const isActive = activePresetId === preset.id
+          <CarouselContent className="ml-0" role="listbox" aria-label="Format starters">
+            {STATIC_AD_FORMAT_PRESETS.map((preset, index) => {
+              const Icon = PRESET_ICONS[preset.id] ?? SparklesIcon
+              const isActive = activePresetId === preset.id
 
-            return (
-              <CarouselItem
-                key={preset.id}
-                className={cn('basis-auto self-stretch pl-0', index > 0 && 'pl-1.5')}
-              >
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  title={preset.description}
-                  onClick={() => {
-                    applyFormatPreset(preset)
-                    commitHaptic({ vibrateDuration: 8 })
-                  }}
-                  className={cn(
-                    'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2.5',
-                    'text-[11px] font-medium leading-none tracking-[-0.015em]',
-                    'transition-[background-color,border-color,color,transform] duration-150',
-                    'active:scale-[0.97] motion-reduce:active:scale-100',
-                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-                    isActive
-                      ? 'border-black/18 bg-black/[0.06] text-foreground dark:border-white/18 dark:bg-white/[0.08]'
-                      : 'border-black/10 bg-black/[0.02] text-black/56 hover:border-black/18 hover:bg-black/[0.05] hover:text-foreground dark:border-white/12 dark:bg-white/[0.03] dark:text-white/56 dark:hover:border-white/18 dark:hover:bg-white/[0.06]',
-                  )}
+              return (
+                <CarouselItem
+                  key={preset.id}
+                  className={cn('basis-auto self-stretch pl-0', index > 0 && 'pl-2')}
                 >
-                  <Icon className="size-3 shrink-0 opacity-70" strokeWidth={1.75} aria-hidden />
-                  <span className="whitespace-nowrap">{preset.label}</span>
-                </button>
-              </CarouselItem>
-            )
-          })}
-        </CarouselContent>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    title={preset.description}
+                    onClick={() => {
+                      applyFormatPreset(preset)
+                      commitHaptic({ vibrateDuration: 8 })
+                    }}
+                    className={cn(
+                      'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5',
+                      'text-[13px] font-medium leading-none tracking-[-0.015em]',
+                      'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+                      'active:scale-[0.96] motion-reduce:active:scale-100',
+                      isActive
+                        ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+                        : 'bg-black/[0.045] text-foreground/72 hover:bg-black/[0.08] hover:text-foreground dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
+                    )}
+                  >
+                    <Icon className="size-3.5 shrink-0 opacity-70" strokeWidth={1.75} aria-hidden />
+                    <span className="whitespace-nowrap">{preset.label}</span>
+                  </button>
+                </CarouselItem>
+              )
+            })}
+          </CarouselContent>
+        </div>
+        <PresetCarouselNav />
       </div>
     </Carousel>
   )

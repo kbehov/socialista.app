@@ -8,6 +8,7 @@ type StudioTemplatePreviewMediaProps = {
   alt?: string
   className?: string
   controls?: boolean
+  autoPlay?: boolean
 }
 
 export function StudioTemplatePreviewMedia({
@@ -15,6 +16,7 @@ export function StudioTemplatePreviewMedia({
   alt = '',
   className,
   controls = false,
+  autoPlay = false,
 }: StudioTemplatePreviewMediaProps) {
   if (isVideoPreviewUrl(url)) {
     return (
@@ -22,7 +24,9 @@ export function StudioTemplatePreviewMedia({
         src={url}
         muted
         playsInline
-        preload="metadata"
+        autoPlay={autoPlay}
+        loop={autoPlay}
+        preload={autoPlay ? 'auto' : 'metadata'}
         controls={controls}
         className={cn('bg-black object-cover', className)}
       />

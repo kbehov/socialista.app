@@ -53,7 +53,6 @@ export const GENDER_OPTIONS: ReadonlyArray<{
 }> = [
   { id: "female", label: "Female" },
   { id: "male", label: "Male" },
-  { id: "non-binary", label: "Non-binary" },
 ];
 
 export const AGE_RANGE_OPTIONS: ReadonlyArray<{
@@ -98,12 +97,10 @@ export const NICHE_OPTIONS: ReadonlyArray<{
 }));
 
 const ETHNICITY_LABELS: Record<InfluencerEthnicity, string> = {
-  "east-asian": "East Asian",
+  asian: "Asian",
   "south-asian": "South Asian",
-  "southeast-asian": "Southeast Asian",
   black: "Black",
-  latina: "Latina",
-  latino: "Latino",
+  latin: "Latin",
   "middle-eastern": "Middle Eastern",
   white: "White",
   mixed: "Mixed",

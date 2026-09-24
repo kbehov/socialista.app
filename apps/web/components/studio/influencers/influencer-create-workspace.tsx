@@ -14,6 +14,7 @@ import {
   SKIN_TONE_OPTIONS,
   labelForSwatch,
 } from '@/lib/studio/influencers/options'
+import { randomInfluencerName } from '@/lib/studio/influencers/names'
 import {
   cloneDefaultForm,
   clonePresetForm,
@@ -68,18 +69,6 @@ const SHOT_OPTIONS = Array.from(
   },
 )
 
-function suggestNameFromPrompt(prompt: string): string {
-  const trimmed = prompt.trim()
-  if (!trimmed) return 'My Influencer'
-  const words = trimmed.split(/\s+/).slice(0, 3)
-  const candidate = words
-    .map(w => w.replace(/[^a-zA-Z'-]/g, ''))
-    .filter(Boolean)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ')
-  return candidate.length >= 2 ? candidate : 'My Influencer'
-}
-
 export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: InfluencerCreateWorkspaceProps) {
   const router = useRouter()
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
@@ -101,7 +90,7 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
   )
 
   const showFacialHair = form.gender === 'male'
-  const showMakeup = form.gender === 'female' || form.gender === 'non-binary'
+  const showMakeup = form.gender === 'female'
   const canSubmit = Boolean(selectedModel) && !pending
   const costLabel = selectedModel
     ? formatModelCost(selectedModel.cost * shotCount, selectedModel.costUnit)
@@ -169,7 +158,7 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
 
     const promptText = form.directions.trim()
     const hasReferences = referenceImages.length > 0
-    const trimmedName = form.name.trim() || (promptText ? suggestNameFromPrompt(promptText) : 'My Influencer')
+    const trimmedName = form.name.trim() || randomInfluencerName(form.gender)
     const niche = form.niche.length > 0 ? form.niche : ['lifestyle']
 
     startTransition(async () => {

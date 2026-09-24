@@ -12,14 +12,12 @@ import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
-  STUDIO_HOME_COMPOSER_SURFACE_CLASS,
+  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
 } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
-import { StaticAdFormatPresets } from '@/components/studio/static-ads/static-ad-format-presets'
-import { StaticAdPromptAnatomy } from '@/components/studio/static-ads/static-ad-prompt-anatomy'
 import { useStaticAdStudio } from '@/components/studio/static-ads/static-ad-studio-provider'
 import {
   DropdownMenu,
@@ -29,7 +27,6 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Kbd } from '@/components/ui/kbd'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
@@ -69,11 +66,6 @@ const ASPECT_RATIOS = [
 const DEFAULT_PLACEHOLDER =
   'Optional brief — tone, audience, or headline. Leave empty and we invent from your references.'
 
-function getSubmitShortcutLabel() {
-  if (typeof navigator === 'undefined') return '⌘↵'
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent) ? '⌘↵' : 'Ctrl↵'
-}
-
 type StaticAdPromptComposerProps = {
   workspaceId: string
   models: Model[]
@@ -81,7 +73,6 @@ type StaticAdPromptComposerProps = {
 
 function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerProps) {
   const router = useRouter()
-  const [submitShortcut] = useState(getSubmitShortcutLabel)
   const { textInput } = usePromptInputController()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
@@ -409,7 +400,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
         }}
         composerRef={composerRef}
         onPromptChange={clearActivePreset}
-        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={STUDIO_HERO_COMPOSER_SURFACE_CLASS}
         emptyTitle="No image-input models yet"
         emptyDescription="Add a text-to-image model with image input support in the manager to start generating product ads."
       />
@@ -419,36 +410,6 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
           <StudioReferenceTagHint attachmentCount={attachments.length} variant="static-ad" />
         </div>
       ) : null}
-
-      <div className="mt-4 flex flex-col items-center gap-4">
-        <StaticAdFormatPresets />
-
-        {!hasReferences ? (
-          <p className="text-center text-[12px] leading-[1.5] tracking-[-0.01em] text-black/40 dark:text-white/40">
-            {templateReference
-              ? 'Add your product or creator to map onto this template.'
-              : 'Add a product, creator, or template to generate.'}
-          </p>
-        ) : (
-          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
-            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-              /
-            </Kbd>
-            <span>to focus</span>
-            <span aria-hidden className="text-black/16 dark:text-white/16">
-              ·
-            </span>
-            <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
-              {submitShortcut}
-            </Kbd>
-            <span>to generate</span>
-          </p>
-        )}
-
-        <div className="w-full">
-          <StaticAdPromptAnatomy />
-        </div>
-      </div>
     </div>
   )
 }

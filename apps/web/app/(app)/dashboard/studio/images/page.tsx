@@ -2,11 +2,8 @@ import { ImageStudioWorkspace } from '@/components/studio/images/image-studio-wo
 import { getModels } from '@/services/models.service'
 import { getStudioTemplateCategories } from '@/services/studio-templates.service'
 import { StudioTemplateKind } from '@socialista/types'
-import { preload } from 'react-dom'
 
 const ImagesPage = async () => {
-  preload('/socialista-image.webp', { as: 'image' })
-
   const [modelsRes, categoriesRes] = await Promise.all([
     getModels('limit=20&modelType=image&sort=-usageCount'),
     getStudioTemplateCategories(StudioTemplateKind.IMAGE),

@@ -12,6 +12,7 @@ type UseVideosListOptions = {
   initialVideos: VideoSummaryResponse[]
   initialError?: string | null
   initialHasMore?: boolean
+  initialTotal?: number
 }
 
 export function useVideosList({
@@ -19,17 +20,20 @@ export function useVideosList({
   initialVideos,
   initialError = null,
   initialHasMore = false,
+  initialTotal,
 }: UseVideosListOptions) {
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [videos, setVideos] = useState(initialVideos)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(initialHasMore)
+  const [total, setTotal] = useState(initialTotal ?? initialVideos.length)
   const [error, setError] = useState<string | null>(initialError)
   const [isLoading, setIsLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<VideoSummaryResponse | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
   const skipInitialSync = useRef(true)
+  const skipProjectReload = useRef(true)
   const requestIdRef = useRef(0)
   const loadingMoreRef = useRef(false)
 
@@ -42,7 +46,8 @@ export function useVideosList({
     setError(initialError)
     setPage(1)
     setHasMore(initialHasMore)
-  }, [initialVideos, initialError, initialHasMore])
+    setTotal(initialTotal ?? initialVideos.length)
+  }, [initialVideos, initialError, initialHasMore, initialTotal])
 
   const fetchPage = useCallback(
     async (nextPage: number, append: boolean) => {
@@ -65,14 +70,21 @@ export function useVideosList({
         setError(message)
         setVideos([])
         setHasMore(false)
+        setTotal(0)
         return
       }
 
       const nextVideos = response.data.videos
+      const nextTotal = response.meta?.total
       setError(null)
       setVideos(current => (append ? [...current, ...nextVideos] : nextVideos))
       setPage(nextPage)
       setHasMore(Boolean(response.meta?.hasNextPage))
+      if (typeof nextTotal === 'number') {
+        setTotal(nextTotal)
+      } else if (!append) {
+        setTotal(nextVideos.length)
+      }
     },
     [workspaceId, projectId],
   )
@@ -82,6 +94,14 @@ export function useVideosList({
     await fetchPage(1, false)
     setIsLoading(false)
   }, [fetchPage])
+
+  useEffect(() => {
+    if (skipProjectReload.current) {
+      skipProjectReload.current = false
+      return
+    }
+    void loadVideos()
+  }, [projectId, loadVideos])
 
   const fetchMore = useCallback(() => {
     if (isLoading || loadingMoreRef.current || !hasMore) return
@@ -103,6 +123,7 @@ export function useVideosList({
     toast.success('Video deleted')
     const deletedId = deleteTarget.id
     setVideos(current => current.filter(video => video.id !== deletedId))
+    setTotal(current => Math.max(0, current - 1))
     setDeleteTarget(null)
     return true
   }, [deleteTarget, isDeleting])
@@ -128,6 +149,7 @@ export function useVideosList({
     error,
     isLoading,
     hasMore,
+    total,
     deleteTarget,
     isDeleting,
     duplicatingId,

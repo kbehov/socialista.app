@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 import { FEEDBACK_MESSAGE_MAX_LENGTH } from '@socialista/types'
 import { Loader2Icon } from 'lucide-react'
 import { useState, useTransition } from 'react'
@@ -42,7 +43,7 @@ export function FeedbackButton({ className }: { className?: string }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
+        <Button variant="outline" size="sm" className={cn('text-xs', className)}>
           Feedback
         </Button>
       </PopoverTrigger>

@@ -72,6 +72,16 @@ export {
 } from './schemas/generate-influencer.schema.js'
 
 export {
+  generateInfluencerHookVideoPayloadSchema,
+  type GenerateInfluencerHookVideoPayload,
+} from './schemas/generate-influencer-hook-video.schema.js'
+
+export {
+  generateInfluencerImagePayloadSchema,
+  type GenerateInfluencerImagePayload,
+} from './schemas/generate-influencer-image.schema.js'
+
+export {
   generateUgcStillsPayloadSchema,
   type GenerateUgcStillsPayload,
 } from './schemas/generate-ugc-stills.schema.js'

@@ -99,6 +99,14 @@ export async function generateImageFal({
     input.seed = seed
   }
 
+  console.log('Submitting to Fal', {
+    model,
+    aspectRatio,
+    numImages,
+    referenceCount: referenceImages.length,
+    prompt,
+  })
+
   const result = await fal.subscribe(model, {
     input,
     onQueueUpdate: (update: unknown) => {

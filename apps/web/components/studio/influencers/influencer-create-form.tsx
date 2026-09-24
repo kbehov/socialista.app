@@ -190,7 +190,7 @@ export function InfluencerCreateForm({
   const { bio, gender, ageRange, niche, scenes, ethnicity, appearance, aestheticTags, vibeTags, photoStyle } = form
 
   const showFacialHair = gender === 'male'
-  const showMakeup = gender === 'female' || gender === 'non-binary'
+  const showMakeup = gender === 'female'
 
   const photoStyleLabel = PHOTO_STYLE_OPTIONS.find(o => o.id === photoStyle)?.label ?? photoStyle
   const appearanceSummary = [

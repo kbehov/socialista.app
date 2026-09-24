@@ -12,7 +12,7 @@ type ManagerHeaderProps = {
   className?: string
 }
 
-const headerIconClassName = 'dashboard-header-icon size-7 rounded-[6px]'
+const headerIconClassName = 'dashboard-header-icon size-8 rounded-[var(--control-radius)]'
 
 export function ManagerHeader({ className }: ManagerHeaderProps) {
   return (

@@ -1,5 +1,7 @@
 import { InfluencerModel } from '../models/influencer.model.js'
 import {
+  type AppendInfluencerGalleryImageInput,
+  type AppendInfluencerHookVideoInput,
   type CreateInfluencerInput,
   type IInfluencer,
   type UpdateInfluencerInput,
@@ -119,6 +121,48 @@ export const deleteInfluencer = async (id: string) => {
 
 export const incrementInfluencerUsageCount = async (id: string, count = 1) => {
   return InfluencerModel.findByIdAndUpdate(id, { $inc: { usageCount: count } }, { new: true }).lean()
+}
+
+export const appendInfluencerHookVideo = async (id: string, video: AppendInfluencerHookVideoInput) => {
+  return InfluencerModel.findByIdAndUpdate(
+    id,
+    {
+      $push: {
+        hookVideos: {
+          sourceImageUrl: video.sourceImageUrl,
+          videoUrl: video.videoUrl,
+          videoId: video.videoId,
+          generationId: video.generationId,
+          prompt: video.prompt,
+          ...(video.presetId ? { presetId: video.presetId } : {}),
+          model: video.model,
+          durationSec: video.durationSec,
+          createdAt: video.createdAt ?? new Date(),
+        },
+      },
+    },
+    { new: true },
+  ).lean()
+}
+
+export const appendInfluencerGalleryImage = async (
+  id: string,
+  image: AppendInfluencerGalleryImageInput,
+) => {
+  return InfluencerModel.findByIdAndUpdate(
+    id,
+    {
+      $push: {
+        galleryImageUrls: image.url,
+        galleryShots: {
+          shotId: image.shotId ?? 'scene',
+          url: image.url,
+          aspectRatio: image.aspectRatio,
+        },
+      },
+    },
+    { new: true },
+  ).lean()
 }
 
 export const listInfluencers = async (query: string) => {
