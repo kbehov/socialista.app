@@ -16,13 +16,11 @@ const CHARACTER_SHEET_MODEL = 'openai/gpt-6-astra'
 const faceBlockSchema = z.object({
   shape: z
     .string()
-    .describe(
-      'Specific bone structure: long oval, square, heart, angular, narrow, or wide jaw — a distinct structure, not a default round face.',
-    ),
-  eyes: z.string().describe('Eye shape, color, lashes — physical only.'),
-  brows: z.string().describe('Brow shape and color.'),
-  nose: z.string().describe('Nose bridge and tip — physical facts.'),
-  lips: z.string().describe('Lip shape in one short physical fact. Do not say full, plump, or sensual.'),
+    .describe('Write "open". Do not assign a face shape, jaw, or cheek structure.'),
+  eyes: z.string().describe('Eye color from the form only. Do not invent eye shape or lashes.'),
+  brows: z.string().describe('Write "open". Do not invent brow shape.'),
+  nose: z.string().describe('Write "open". Do not invent nose shape.'),
+  lips: z.string().describe('Write "open". Do not invent lip shape.'),
   makeup: z.string().describe('Makeup as visible facts (liner, blush, base) — not brand names.'),
 })
 
@@ -45,14 +43,14 @@ const characterSheetSchema = z.object({
   identityLock: z
     .string()
     .describe(
-      '2-3 sentences pasted verbatim into the image prompt. First sentence names one specific face shape and jaw. Do not default to a round face, soft cheeks, or a generic beauty oval. No beauty adjectives.',
+      '2-3 sentences on hair, complexion, build, and features the form already listed. Do not name face shape, jaw, cheeks, brows, nose, or lips. No beauty adjectives. Do not include the person\'s name.',
     ),
   signatureDetails: z
     .array(z.string())
     .min(2)
     .max(3)
     .describe(
-      '2-3 bone-structure facts reused verbatim in the image prompt. Name a specific jaw, brow, or feature. Do not default to a soft chin, round cheeks, or full lips.',
+      '2-3 short facts from the form: hair, complexion, build, or a listed feature such as freckles. Do not invent bone structure, jaw, brows, nose, or lips.',
     ),
   wardrobe: z.object({
     casual: z.string().describe('Everyday outfit that matches niche, scenes, and aesthetic.'),
@@ -113,7 +111,7 @@ export type BuildCharacterSheetInput = {
   directions?: string
   bio?: string
   photoStyle?: InfluencerPhotoStyle
-  /** Optional hybrid refs — face cues + aesthetic; form attributes win on conflicts. */
+  /** Optional style refs — scene, palette, and light only. Form attributes own the person. */
   referenceImageUrls?: string[]
 }
 
@@ -121,7 +119,7 @@ const SYSTEM_INSTRUCTIONS =
   'You author locked identity sheets for photoreal AI influencers used in Instagram, TikTok, and Pinterest UGC. ' +
   'Rules: (1) physical facts only — never beautiful/stunning/gorgeous; ' +
   '(2) never contradict supplied form attributes; ' +
-  '(3) add a specific, distinct bone structure and jaw where the form is silent — long, square, heart, angular, narrow, or wide; do not default every person to a round face, soft cheeks, or the words rounded, soft, or full; ' +
+  '(3) do not invent face shape, jaw, cheeks, brow shape, nose, or lip shape — the image model varies the face; only repeat features the form already listed; ' +
   '(4) no celebrity likeness; (5) plausibly real person with natural asymmetry; ' +
   '(6) wardrobe and environments must feel like scroll-stopping creator UGC — lived-in, specific light and place, clothes that fit the niche; ' +
   'never blank walls, passport studios, or sterile seamless backdrops; ' +
@@ -130,13 +128,14 @@ const SYSTEM_INSTRUCTIONS =
   '(9) when accessories are provided, weave wearable/holdable ones into wardrobe and onCamera descriptions naturally; ' +
   '(10) prefer scroll-stopping creator photography over sterile headshots; keep it photoreal, not fashion-editorial extremes; ' +
   '(11) when vibe tags are provided, expressionRange must match that on-camera energy; ' +
-  '(12) face, skin, and hair blocks must decompose materials and structure as physical facts — pores stay visible in skin.retouching; ' +
+  '(12) skin and hair stay physical facts from the form, with visible pores in skin.retouching; leave face shape, brows, nose, and lips open; ' +
   '(13) cameraFamily and lightingFamily must match photoStyle when provided (ugc-phone → smartphone HDR; creator-camera → mirrorless; studio-polish → flattering key in a real set). ' +
-  '(14) Clothed everyday creator. identityLock describes face shape, jaw, brows, eyes, nose, and hair. Do not mention chest, neckline, cleavage, bare skin, lingerie, or revealing clothes. Hair length is shoulders or back, never chest. Wardrobe is everyday outfits.'
+  '(14) Clothed everyday creator. identityLock covers hair, complexion, build, and listed features. Do not describe face shape or bone structure. Do not mention chest, neckline, cleavage, bare skin, lingerie, or revealing clothes. Hair length is shoulders or back, never chest. Wardrobe is everyday outfits.'
 
 const LOOKALIKE_REF_SYSTEM_ADDENDUM =
   ' STYLE REFERENCE MODE: reference photos are the creative template for scene, colors, and photographic world — NOT identity. ' +
-  'Author identityLock and signatureDetails entirely from the form fields (face, hair, skin, body). ' +
+  'Author identityLock and signatureDetails entirely from the form fields (hair, complexion, build, listed features). ' +
+  'Do not invent face shape or bone structure, and do not copy faces from the references. ' +
   'From references, extract and echo: setting/location, dominant color palette, lighting direction, lens/DOF character, and Pinterest-ready polish. ' +
   'Wardrobe slots: match reference outfit COLOR FAMILY and styling vibe in equivalent garments for the new person — not a pixel copy. ' +
   'Environments: describe exactly 3 concrete variations of the reference setting (same place family, different angles/light/props) — do NOT invent unrelated generic locations. ' +
@@ -198,7 +197,7 @@ function buildUserPayload(input: BuildCharacterSheetInput, hasRefs: boolean): st
 
   const hybridTail = hasRefs
     ? ' Reference images are attached — PERSON REPLACEMENT mode. ' +
-      'identityLock + signatureDetails: from form fields only (never copy reference faces). ' +
+      'identityLock + signatureDetails: hair, complexion, build, and listed features from the form only. Do not invent a face, and never copy reference faces. ' +
       'Wardrobe: equivalent color palette and styling vibe from references, fitted to the new person. ' +
       'Environments: exactly 3 concrete variations of the reference scene/setting (same location family, different angles/light) — read from the attached photos, not generic niche defaults. ' +
       'Return identityLock, signatureDetails, wardrobe slots, exactly 3 environments, expressionRange, face, skin, hair, cameraFamily, and lightingFamily.'

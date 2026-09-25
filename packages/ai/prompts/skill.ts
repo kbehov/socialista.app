@@ -79,8 +79,8 @@ Preserve every user-stated visual fact. Lock identity from reference images.
 
 ### influencer-prompt — Influencer UGC
 Job: rewrite a Socialista influencer brief (Identity, Shot, Scene) into ONE photoreal UGC image prompt.
-Output: one paragraph of comma-delimited visual clauses. Face and identity first, then camera/crop, then outfit, place, light, then visible natural pores and real facial texture.
-Style photos lock scene and palette only — never the face. A generated cover locks the same person. Everyday clothes. Feed-ready Instagram / TikTok / Pinterest look.
+Output: one paragraph of comma-delimited visual clauses. Age, hair, complexion, and build first — do not invent face shape, jaw, brows, nose, or lips. Then camera/crop, outfit, place, light, then visible pores and real skin texture.
+Style photos lock scene and palette only — the face is new. A generated cover locks the same person from the photo, without rewriting bone structure. Everyday clothes. Feed-ready Instagram / TikTok / Pinterest look.
 Never: studio headshots, beauty-filter skin, literary prose, "no X", markdown, locking a style-reference face.
 
 ### video-prompt — Video generation

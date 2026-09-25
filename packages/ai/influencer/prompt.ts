@@ -36,8 +36,6 @@ export type BuildInfluencerBasePromptInput = {
   ageRange: InfluencerAgeRange
   ethnicity?: string
   appearance: InfluencerPromptAppearance
-  /** When present, identityLock + signatureDetails drive the fragment. */
-  characterSheet?: InfluencerCharacterSheet
 }
 
 export type InfluencerReferenceMode = 'none' | 'user' | 'cover'
@@ -101,12 +99,12 @@ const PHOTO_STYLE_CUE: Record<InfluencerPhotoStyle, string> = {
 /** Positive photoreal footer. Camera and place come from Shot, Scene, or the reference — not from this line. */
 export const INFLUENCER_EXCLUSIONS_BASE =
   'Photoreal photo from a creator who already posts on Instagram, TikTok, and Pinterest. ' +
-  'Visible natural pores on the nose and inner cheeks, real facial texture, natural asymmetry, light social retouch. ' +
-  'Practical light, real depth, feed-ready color. Close portraits keep a sharp face.'
+  'Real skin with visible pores, slight natural asymmetry, light social retouch. ' +
+  'Practical light, real depth, feed-ready color. A clear, believable face.'
 
-/** Appended after enhance so pore texture cannot be dropped. */
+/** Appended after enhance so skin texture cannot be dropped. */
 export const INFLUENCER_SKIN_LOCK_FOOTER =
-  'Visible natural pores on the nose and inner cheeks, real facial texture, natural asymmetry, light social retouch only.'
+  'Real skin with visible pores, slight natural asymmetry, light social retouch only.'
 
 export const INFLUENCER_EXCLUSIONS_REF_ADDENDUM =
   ' Attached photos own the scene, palette, framing, and light. Identity owns the person.'
@@ -137,61 +135,31 @@ function featuresWithoutAccessoryOverlap(
 }
 
 /**
- * Locked identity prose — reused byte-identical on every shot.
- * Scene / camera / wardrobe / accessories belong in the shot prompt, not here.
+ * Identity prose reused on every shot.
+ * Face shape, jaw, brows, nose, and lips stay out of this text so the image model can invent them.
+ * Scene, camera, wardrobe, and accessories belong in the shot prompt.
  */
 export function buildInfluencerBasePromptFragment(input: BuildInfluencerBasePromptInput): string {
-  const { gender, ageRange, ethnicity, appearance, characterSheet } = input
+  const { gender, ageRange, ethnicity, appearance } = input
   const person = GENDER_LABEL[gender]
   const age = AGE_REPRESENTATIVE[ageRange]
+  const heritage = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
   const height = appearance.height ? `, ${HEIGHT_LABEL[appearance.height]}` : ''
-  const ethnicityClause = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
-  const featureList = featuresWithoutAccessoryOverlap(appearance.distinguishingFeatures, appearance.accessories)
-  const features = featureList.length > 0 ? `, ${featureList.join(', ')}` : ''
-
+  const features = featuresWithoutAccessoryOverlap(appearance.distinguishingFeatures, appearance.accessories)
+  const featureClause = features.length > 0 ? ` Features: ${features.join(', ')}.` : ''
   const facialHair =
     appearance.facialHair && appearance.facialHair !== 'none' ? ` Facial hair: ${appearance.facialHair}.` : ''
-  const makeup =
+  const makeupLabel =
     appearance.makeup && appearance.makeup !== 'none'
-      ? ` ${MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`}.`
+      ? (MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`)
       : ''
-
-  const subject = `A ${age}-year-old ${person}${ethnicityClause}, a real social-media creator.`
-  const faceStructure = [
-    characterSheet?.face?.shape,
-    characterSheet?.face?.brows,
-    characterSheet?.face?.nose,
-  ]
-    .map(part => part?.trim())
-    .filter((part): part is string => Boolean(part))
-  const faceDetail = faceStructure.length > 0 ? `, ${faceStructure.join(', ')}` : ''
-  const hairLength = characterSheet?.hair?.length?.trim()
-  const hairPart = characterSheet?.hair?.part?.trim()
-  const hairDetail = [hairLength, hairPart].filter(Boolean).join(', ')
-  const hairLine = hairDetail
-    ? ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}, ${hairDetail}.`
-    : ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.`
-
-  if (characterSheet) {
-    const signatures =
-      characterSheet.signatureDetails.length > 0
-        ? ` Signature: ${characterSheet.signatureDetails.join('; ')}.`
-        : ''
-    return (
-      `${subject} ${characterSheet.identityLock}${signatures}` +
-      hairLine +
-      ` Face: ${appearance.skinTone} complexion, ${appearance.eyeColor} eyes${faceDetail}${features}.${facialHair}${makeup}` +
-      ` Build: ${appearance.bodyShape}${height}.` +
-      ` Believable real-world light.`
-    )
-  }
+  const makeup = makeupLabel ? ` ${makeupLabel}.` : ''
 
   return (
-    `${subject}` +
-    ` Face: ${appearance.skinTone} complexion, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
+    `A ${age}-year-old ${person}${heritage}, a real social-media creator.` +
     ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
-    ` Build: ${appearance.bodyShape}${height}.` +
-    ` Believable real-world light.`
+    ` Complexion: ${appearance.skinTone}. Eyes: ${appearance.eyeColor}.${featureClause}${facialHair}${makeup}` +
+    ` Build: ${appearance.bodyShape}${height}.`
   )
 }
 
@@ -263,7 +231,7 @@ function resolveInfluencerPromptScene(
 function buildLookalikeRefInstructions(referenceCount: number, mode: InfluencerReferenceMode, shotIndex: number): string {
   if (mode === 'cover' || shotIndex > 0) {
     return (
-      'The attached cover is this same person: same face structure, hair, and complexion. ' +
+      'The attached cover is this same person. Keep their face, hair, and complexion from that photo. ' +
       'Keep the cover color grade and light. Use the angle and crop in Shot.'
     )
   }
@@ -272,7 +240,7 @@ function buildLookalikeRefInstructions(referenceCount: number, mode: InfluencerR
   const imageLabel = n === 1 ? 'Image 1' : n === 2 ? 'Images 1–2' : 'Images 1–3'
   return (
     `${imageLabel} sets the scene, palette, wardrobe colors, framing, pose, props, and light. ` +
-    'Render the Identity person in that frame, in equivalent unbranded clothing and props.'
+    'The person is the Identity subject, with a new face. Equivalent unbranded clothing and props.'
   )
 }
 
@@ -395,9 +363,6 @@ export function softenInfluencerImagePrompt(prompt: string): string {
     [/\bintimate\b/gi, 'close'],
     [/\b(below|past|to) (?:her |his |their )?chest\b/gi, '$1 the shoulders'],
     [/\bchest\b/gi, 'shoulders'],
-    [/\bfuller lower lip\b/gi, 'lower lip'],
-    [/\bfull lips\b/gi, 'lips'],
-    [/\bcupid['’]s bow\b/gi, 'lip line'],
     [/\b(glistening|dewy|wet) skin\b/gi, 'natural complexion'],
   ]
 
@@ -436,7 +401,7 @@ export function buildCloneCoverPrompt(input: BuildCloneCoverPromptInput): string
 
   return softenInfluencerImagePrompt(
     [
-      'Identity: The person in the reference photos — same face structure, jaw, complexion, and hair. Light matches those photos.',
+      'Identity: The person in the reference photos — same face, complexion, and hair. Light matches those photos.',
       `Shot: ${suffix}`,
       `Quality: ${INFLUENCER_EXCLUSIONS_BASE}`,
     ].join('\n'),
