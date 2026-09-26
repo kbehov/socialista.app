@@ -53,6 +53,7 @@ import {
   videoResolutionCostMultiplier,
   type Model,
   type Preset,
+  type PromptKey,
   type VideoAspectRatio,
   type VideoResolution,
 } from "@socialista/types";
@@ -72,6 +73,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type ReactNode,
 } from "react";
 import { toast } from "sonner";
 import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
@@ -122,6 +124,7 @@ export type VideoPromptSubmitResult = {
   resolution: VideoResolution;
   imageUrls: string[];
   enhance: boolean;
+  skillId?: string;
   count: number;
 };
 
@@ -168,6 +171,11 @@ export type VideoPromptInputProps = {
   hideAudio?: boolean;
   hideEnhance?: boolean;
   countOptions?: { min: number; max: number; initial?: number };
+  skillTarget?: PromptKey;
+  /** Extra composer tools, rendered before enhance. Used by UGC to write a prompt. */
+  extraTools?: ReactNode;
+  /** Bump after an AI write so the next Generate sends the prompt as written. */
+  rawPromptToken?: number;
 };
 
 function VideoPromptComposer({
@@ -209,6 +217,9 @@ function VideoPromptComposer({
   hideAudio = false,
   hideEnhance = false,
   countOptions,
+  skillTarget = PROMPT_KEYS.videoPrompt,
+  extraTools,
+  rawPromptToken,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -254,7 +265,7 @@ function VideoPromptComposer({
     initialGenerateAudio ?? true,
   );
   const audioEnabled = audioLocked ? false : generateAudio;
-  const [enhance, setEnhance] = useState(true);
+  const [enhance, setEnhance] = useState(() => !rawPromptToken);
   const [skillId, setSkillId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
@@ -492,6 +503,7 @@ function VideoPromptComposer({
           resolution,
           imageUrls,
           enhance,
+          ...(enhance && skillId ? { skillId } : {}),
           count,
         });
         return;
@@ -554,7 +566,7 @@ function VideoPromptComposer({
       </PromptInputButton>
       <StudioSkillPicker
         appearance="icon"
-        target={PROMPT_KEYS.videoPrompt}
+        target={skillTarget}
         value={skillId}
         onChange={setSkillId}
         disabled={pending || disabled || !enhance}
@@ -742,6 +754,7 @@ function VideoPromptComposer({
           </span>
         </PromptInputButton>
       )}
+      {extraTools}
       {enhanceTools}
     </>
   );

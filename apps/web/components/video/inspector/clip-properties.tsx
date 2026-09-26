@@ -13,6 +13,7 @@ import { InspectorSlider as Slider } from '@/components/media/inspector-slider'
 import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { TransitionPicker } from './transition-picker'
 import { cn } from '@/lib/utils'
+import { isMediaAssetAvailable } from '@/lib/video/types'
 
 export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const clip = useVideoEditorStore(s => s.project.clips[clipId])
@@ -232,7 +233,11 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
         <>
           <FilterControls
             filters={clip.filters}
-            previewImageUrl={asset?.thumbnails?.[0] ?? (asset?.type === 'image' ? asset.objectUrl : null)}
+            previewImageUrl={
+              asset && isMediaAssetAvailable(asset)
+                ? (asset.thumbnails?.[0] ?? (asset.type === 'image' ? asset.objectUrl : null))
+                : null
+            }
             onChange={f => setClipFilterLive(clip.id, f)}
             onCommit={f => setClipFilter(clip.id, f)}
             onRemove={t => removeClipFilterLive(clip.id, t)}

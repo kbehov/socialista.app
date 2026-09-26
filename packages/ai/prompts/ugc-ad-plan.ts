@@ -20,7 +20,7 @@ format must be one of: ${UGC_AD_PLAN_FORMATS.join(', ')}. That is the campaign a
 Never default to "person smiles at camera and lists features."
 
 SCENE TYPES
-type is a catalog slug from the user-message list only — never a creative title ("Bathroom confession", "text tread chaos"). Mix types. Default mix: hook → product-hold, demo, unboxing, try-on, or app-showcase → cta. Use custom only when nothing else fits, and at most once.
+type is a catalog slug from the user-message list only — never a creative title ("Bathroom confession", "text tread chaos"). Mix types. Default mix: talking → product-hold, demo, unboxing, try-on, or app-showcase → cta. Use custom only when nothing else fits, and at most once.
 
 CONTINUITY
 Each scene is a still generated independently, then animated. Wardrobe, hairstyle, room, and time-of-day stay the same across scenes unless the brief says otherwise. Every imagePrompt restates the shared look in one clause, e.g. "same creator from Image 1, same grey hoodie, same kitchen, morning light."

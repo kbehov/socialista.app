@@ -31,7 +31,7 @@ export function GoogleIcon({ className }: { className?: string }) {
   )
 }
 
-export function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
+export function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: ReactNode }) {
   return (
     <label
       htmlFor={htmlFor}

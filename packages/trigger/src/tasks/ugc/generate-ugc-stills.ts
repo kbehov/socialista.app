@@ -1,9 +1,12 @@
 import {
-  buildImagePrompt,
   buildUgcSceneStillPrompt,
-  buildUgcStillRefUrls,
+  buildUgcStillEnhanceUserPrompt,
+  buildUgcStillPrompt,
+  buildUgcStillRefs,
   generateImage,
+  labelUgcStillRefs,
   UGC_STILL_LOCK_FOOTER,
+  type UgcStillRefCategories,
 } from '@socialista/ai'
 import {
   connectDb,
@@ -22,6 +25,7 @@ import {
   type AspectRatio,
   type UgcClipType,
   PROMPT_KEYS,
+  ugcClipRequiresProduct,
   ugcClipRequiresScreenshots,
 } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
@@ -103,7 +107,7 @@ export const generateUgcStills = schemaTask({
       const aspectRatio = resolveAspectRatio(project.aspectRatio)
       const systemOverride = await loadSkillOverride({
         skillId: payload.skillId,
-        target: PROMPT_KEYS.imagePrompt,
+        target: PROMPT_KEYS.ugcStillPrompt,
         workspaceId: payload.workspaceId,
       })
 
@@ -158,17 +162,31 @@ export const generateUgcStills = schemaTask({
         const previousStillUrl = previousSceneStillUrl(liveClips, clip.id)
         const usesScreenshots = ugcClipRequiresScreenshots(clipType)
         const hasSceneProduct = !usesScreenshots && (clip.referenceImageUrls?.length ?? 0) > 0
-        const autoRefs = buildUgcStillRefUrls({
+        const refCategories: UgcStillRefCategories = {
           influencerReferenceUrls: influencer ? influencerRefs(influencer) : [],
-          productImageUrls: hasSceneProduct ? clip.referenceImageUrls : project.productImageUrls,
-          extraReferenceUrls: usesScreenshots ? clip.referenceImageUrls : undefined,
+          productImageUrls: usesScreenshots
+            ? undefined
+            : hasSceneProduct
+              ? clip.referenceImageUrls
+              : ugcClipRequiresProduct(clipType)
+                ? project.productImageUrls
+                : undefined,
+          extraReferenceUrls: usesScreenshots
+            ? [
+                ...(clip.referenceImageUrls ?? []),
+                ...(project.productKind === 'app' || project.productKind === 'website'
+                  ? project.productImageUrls
+                  : []),
+              ]
+            : undefined,
+          extraRole: usesScreenshots ? 'screenshot' : 'user-upload',
           previousStillUrl,
-          sceneIndex: 0,
-        })
-        const imageUrls =
+        }
+        const refs =
           payload.referenceImageUrls && payload.referenceImageUrls.length > 0
-            ? [...new Set(payload.referenceImageUrls)]
-            : autoRefs
+            ? labelUgcStillRefs(payload.referenceImageUrls, refCategories)
+            : buildUgcStillRefs(refCategories)
+        const imageUrls = refs.map(ref => ref.url)
 
         const seed = payload.prompt?.trim()
           ? payload.prompt.trim()
@@ -216,9 +234,16 @@ export const generateUgcStills = schemaTask({
                   Math.round((completed / totalShots) * 40),
                   'Preparing your prompt',
                 )
-                const media = imageUrls.slice(0, 4).map(imageUrl => ({ imageUrl }))
-                enhanced = await buildImagePrompt({
-                  prompt: seed,
+                const media = imageUrls.map(imageUrl => ({ imageUrl }))
+                enhanced = await buildUgcStillPrompt({
+                  prompt: buildUgcStillEnhanceUserPrompt({
+                    brief: seed,
+                    clipType,
+                    influencerName: influencer?.name,
+                    identityFragment: influencer?.identity?.basePromptFragment,
+                    productName: project.productName,
+                    refs,
+                  }),
                   media: media.length > 0 ? media : undefined,
                   aspectRatio,
                   systemOverride,

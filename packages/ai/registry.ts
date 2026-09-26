@@ -8,6 +8,7 @@ import { SLIDESHOW_SYSTEM } from './prompts/slideshow.js'
 import { STATIC_AD_VISION_SYSTEM } from './prompts/static-ad.js'
 import { UGC_AD_PLAN_SYSTEM } from './prompts/ugc-ad-plan.js'
 import { UGC_AD_SCRIPT_SYSTEM } from './prompts/ugc-ad-script.js'
+import { UGC_STILL_PROMPT_SYSTEM } from './prompts/ugc-still.js'
 import { UGC_VIDEO_PLANNER_SYSTEM } from './prompts/ugc-video-planner.js'
 import { VIDEO_PROMPT_SYSTEM } from './prompts/video.js'
 import { INFLUENCER_HOOK_VIDEO_PROMPT_SYSTEM } from './prompts/influencer-hook-video.js'
@@ -24,6 +25,7 @@ export const PROMPT_REGISTRY: Record<PromptKey, PromptDefinition> = {
     model: AI_PROMPT_MODELS[PROMPT_KEYS.influencerHookVideo],
   },
   [PROMPT_KEYS.staticAd]: { system: STATIC_AD_VISION_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.staticAd] },
+  [PROMPT_KEYS.ugcStillPrompt]: { system: UGC_STILL_PROMPT_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcStillPrompt] },
   [PROMPT_KEYS.ugcVideoPlanner]: { system: UGC_VIDEO_PLANNER_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcVideoPlanner] },
   [PROMPT_KEYS.ugcAdScript]: { system: UGC_AD_SCRIPT_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcAdScript] },
   [PROMPT_KEYS.ugcAdPlan]: { system: UGC_AD_PLAN_SYSTEM, model: AI_PROMPT_MODELS[PROMPT_KEYS.ugcAdPlan] },

@@ -89,6 +89,7 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
           videoAttachments={ws.videoAttachments}
           creatingScenes={ws.creatingScenes}
           writingScript={ws.writingScript}
+          writingVideoPrompt={ws.writingVideoPrompt}
           generatingAudio={ws.generatingAudio}
           generatingStill={ws.generatingStill}
           generatingVideo={ws.generatingVideo}
@@ -123,6 +124,7 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
           extending={ws.extendingClipId === ws.selectedClip?.id}
           onScriptChange={ws.handleScriptChange}
           onWriteScript={ws.handleWriteScript}
+          onWriteVideoPrompt={ws.handleWriteVideoPrompt}
           onVoiceChange={ws.handleVoiceChange}
           onGenerateAudio={ws.handleGenerateClipAudio}
         />

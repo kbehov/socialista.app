@@ -1,7 +1,8 @@
 import { generateObject, generateText } from 'ai'
 import { z } from 'zod'
-import { clampUgcScript, PROMPT_KEYS } from '@socialista/types'
+import { clampUgcScript, PROMPT_KEYS, type SanitizedMedia } from '@socialista/types'
 
+import { buildImagePromptMessages } from '../builders/image.js'
 import { resolvePrompt } from '../registry.js'
 import {
   buildUgcAdScriptSegmentsUserPrompt,
@@ -12,6 +13,7 @@ import {
 
 export type GenerateUgcAdScriptInput = UgcAdScriptPromptInput & {
   systemOverride?: string
+  media?: SanitizedMedia[]
 }
 
 export type GenerateUgcAdScriptSegmentsInput = {
@@ -40,11 +42,15 @@ const segmentsSchema = z.object({
 
 export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Promise<string> {
   const { model, system } = resolvePrompt(PROMPT_KEYS.ugcAdScript, input.systemOverride)
+  const media = input.media?.filter(item => item.imageUrl)
   const result = await generateText({
     model,
     system,
     temperature: 0.85,
-    prompt: buildUgcAdScriptUserPrompt(input),
+    messages: buildImagePromptMessages(
+      buildUgcAdScriptUserPrompt(input),
+      media && media.length > 0 ? media : undefined,
+    ),
   })
 
   const text = result.text.trim()

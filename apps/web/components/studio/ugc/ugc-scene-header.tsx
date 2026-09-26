@@ -9,7 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { UGC_SCENE_ICONS, UGC_SCENE_MENU_GROUPS } from '@/utils/ugc/scene.utils'
+import {
+  UGC_SCENE_ICONS,
+  UGC_SCENE_MENU_GROUPS,
+  ugcSceneAudioHint,
+  ugcSceneAudioLabel,
+} from '@/utils/ugc/scene.utils'
 import {
   UGC_CLIP_TYPE_LABELS,
   type UgcClip,
@@ -65,14 +70,12 @@ export function UgcSceneHeader({ clip, clipIndex, onTypeChange }: UgcSceneHeader
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <UgcInfoTooltip
-          side="bottom"
-          label="Scene type decides which steps are needed — talking scenes need a voiceover; b-roll is video only."
-        />
+        <UgcInfoTooltip side="bottom" label={ugcSceneAudioHint(clip.type)} />
       </div>
-      <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
-        {clip.durationSec}s
-      </span>
+      <div className="flex shrink-0 items-center gap-2 text-[12px] text-muted-foreground">
+        <span>{ugcSceneAudioLabel(clip.type)}</span>
+        <span className="tabular-nums">{clip.durationSec}s</span>
+      </div>
     </div>
   )
 }

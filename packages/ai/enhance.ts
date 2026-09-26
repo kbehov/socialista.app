@@ -7,6 +7,28 @@ import { buildVideoPromptMessages } from './builders/video.js'
 import { softenInfluencerImagePrompt, type InfluencerReferenceMode } from './influencer/prompt.js'
 import { resolvePrompt } from './registry.js'
 
+export const buildUgcStillPrompt = async (payload: {
+  prompt: string
+  media?: SanitizedMedia[]
+  aspectRatio?: AspectRatio
+  systemOverride?: string
+  targetModel?: string
+}) => {
+  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcStillPrompt, payload.systemOverride)
+  const { text } = await generateText({
+    model,
+    system,
+    temperature: 0.4,
+    messages: buildImagePromptMessages(
+      payload.prompt,
+      payload.media,
+      payload.aspectRatio,
+      payload.targetModel,
+    ),
+  })
+  return text
+}
+
 export const buildImagePrompt = async (payload: {
   prompt: string
   media?: SanitizedMedia[]

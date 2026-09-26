@@ -16,9 +16,11 @@ import {
   STUDIO_TOOL_CHEVRON_CLASS,
 } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
+import { UgcScriptDialog } from '@/components/studio/ugc/ugc-script-dialog'
 import { UgcVoiceDialog } from '@/components/studio/ugc/ugc-voice-dialog'
 import { UgcVoiceSettingsDialog } from '@/components/studio/ugc/ugc-voice-settings-dialog'
 import { cn } from '@/lib/utils'
+import type { UgcWriteScriptOptions } from '@/types/ugc.types'
 import {
   ugcClipAudioTakes,
   ugcClipShowsScript,
@@ -43,7 +45,7 @@ type UgcAudioPromptInputProps = {
   generatingAudio?: boolean
   busy?: boolean
   onScriptChange: (text: string) => void
-  onWriteScript: () => void
+  onWriteScript: (options?: UgcWriteScriptOptions) => Promise<boolean>
   onVoiceChange: (voice: UgcClipVoice) => void
   onGenerateAudio: (script: string) => void
   embedded?: boolean
@@ -93,6 +95,8 @@ function UgcAudioPromptComposer({
   const { textInput } = usePromptInputController()
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [scriptOpen, setScriptOpen] = useState(false)
+  const stillUrl = clip.stills.find(still => still.imageUrl)?.imageUrl
   const wasWritingRef = useRef(false)
   const voice = ugcResolvedClipVoice(project, clip)
   const enabled = voice.enabled !== false
@@ -155,7 +159,7 @@ function UgcAudioPromptComposer({
         onSubmit={handleSubmit}
         tools={
           <>
-            <StudioInputActionTooltip label="Choose ElevenLabs voice">
+            <StudioInputActionTooltip label="Campaign voice — used on every scene">
               <PromptInputButton
                 type="button"
                 size="xs"
@@ -188,7 +192,7 @@ function UgcAudioPromptComposer({
                 size="xs"
                 disabled={pending}
                 className={STUDIO_TOOL_BUTTON_CLASS}
-                onClick={onWriteScript}
+                onClick={() => setScriptOpen(true)}
               >
                 {writingScript ? (
                   <AudioLinesIcon className="size-3.5 shrink-0 animate-pulse" />
@@ -204,6 +208,13 @@ function UgcAudioPromptComposer({
         }
       />
 
+      <UgcScriptDialog
+        open={scriptOpen}
+        stillUrl={stillUrl}
+        pending={writingScript}
+        onOpenChange={setScriptOpen}
+        onWrite={onWriteScript}
+      />
       <UgcVoiceDialog open={voiceOpen} value={voice} onOpenChange={setVoiceOpen} onSelect={onVoiceChange} />
       <UgcVoiceSettingsDialog
         key={`${clip.id}:${voice.voiceId ?? ''}`}

@@ -12,7 +12,7 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { UgcClipVoice } from '@socialista/types'
+import { UGC_DEFAULT_VOICE, type UgcClipVoice } from '@socialista/types'
 import { useMemo, useState } from 'react'
 
 type UgcVoiceSettingsDialogProps = {
@@ -37,10 +37,22 @@ export function UgcVoiceSettingsDialog({
     if (open) setDraft(value)
   }
 
-  const speedValue = useMemo(() => [draft.speed ?? 1], [draft.speed])
-  const stabilityValue = useMemo(() => [draft.stability ?? 45], [draft.stability])
-  const similarityValue = useMemo(() => [draft.similarity ?? 75], [draft.similarity])
-  const styleValue = useMemo(() => [draft.style ?? 15], [draft.style])
+  const speedValue = useMemo(
+    () => [draft.speed ?? UGC_DEFAULT_VOICE.speed ?? 1.05],
+    [draft.speed],
+  )
+  const stabilityValue = useMemo(
+    () => [draft.stability ?? UGC_DEFAULT_VOICE.stability ?? 40],
+    [draft.stability],
+  )
+  const similarityValue = useMemo(
+    () => [draft.similarity ?? UGC_DEFAULT_VOICE.similarity ?? 80],
+    [draft.similarity],
+  )
+  const styleValue = useMemo(
+    () => [draft.style ?? UGC_DEFAULT_VOICE.style ?? 8],
+    [draft.style],
+  )
 
   return (
     <Dialog
@@ -80,7 +92,7 @@ export function UgcVoiceSettingsDialog({
             max={100}
             step={1}
             value={stabilityValue}
-            display={Math.round(draft.stability ?? 45)}
+            display={Math.round(draft.stability ?? UGC_DEFAULT_VOICE.stability ?? 40)}
             disabled={disabled || draft.enabled === false}
             onChange={next => setDraft(current => ({ ...current, stability: next }))}
           />
@@ -91,7 +103,7 @@ export function UgcVoiceSettingsDialog({
             max={100}
             step={1}
             value={similarityValue}
-            display={Math.round(draft.similarity ?? 75)}
+            display={Math.round(draft.similarity ?? UGC_DEFAULT_VOICE.similarity ?? 80)}
             disabled={disabled || draft.enabled === false}
             onChange={next => setDraft(current => ({ ...current, similarity: next }))}
           />
@@ -102,7 +114,7 @@ export function UgcVoiceSettingsDialog({
             max={100}
             step={1}
             value={styleValue}
-            display={Math.round(draft.style ?? 15)}
+            display={Math.round(draft.style ?? UGC_DEFAULT_VOICE.style ?? 8)}
             disabled={disabled || draft.enabled === false}
             onChange={next => setDraft(current => ({ ...current, style: next }))}
           />
@@ -113,7 +125,7 @@ export function UgcVoiceSettingsDialog({
             max={1.2}
             step={0.05}
             value={speedValue}
-            display={(draft.speed ?? 1).toFixed(2)}
+            display={(draft.speed ?? UGC_DEFAULT_VOICE.speed ?? 1.05).toFixed(2)}
             disabled={disabled || draft.enabled === false}
             onChange={next => setDraft(current => ({ ...current, speed: next }))}
           />

@@ -4,14 +4,13 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  type TooltipContentProps,
 } from '@/components/ui/tooltip'
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 
 type StudioInputActionTooltipProps = {
   label: ReactNode
   children: ReactNode
-  side?: TooltipContentProps['side']
+  side?: ComponentProps<typeof TooltipContent>['side']
   shortcut?: string
 }
 

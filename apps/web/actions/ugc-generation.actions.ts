@@ -65,6 +65,7 @@ async function triggerStills(payload: {
   userId: string;
   clipId?: string;
   skipEnhance?: boolean;
+  skillId?: string;
   prompt?: string;
   model?: string;
   referenceImageUrls?: string[];
@@ -85,6 +86,7 @@ async function triggerVideo(payload: {
   clipId: string;
   plannedPrompt?: string;
   skipPlanner?: boolean;
+  skillId?: string;
   generateAudio?: boolean;
 }): Promise<StartUgcGenerationResult> {
   const handle = await tasks.trigger<GenerateUgcVideoTask>(
@@ -114,6 +116,7 @@ export async function startUgcStillsGeneration(input: {
   projectId: string;
   clipId?: string;
   skipEnhance?: boolean;
+  skillId?: string;
   prompt?: string;
   model?: string;
   referenceImageUrls?: string[];
@@ -158,6 +161,7 @@ export async function startUgcStillsGeneration(input: {
       userId,
       ...(input.clipId ? { clipId: input.clipId } : {}),
       ...(input.skipEnhance ? { skipEnhance: true } : {}),
+      ...(input.skillId ? { skillId: input.skillId } : {}),
       ...(prompt ? { prompt } : {}),
       ...(model ? { model } : {}),
       ...(referenceImageUrls && referenceImageUrls.length > 0
@@ -177,6 +181,7 @@ export async function startUgcVideoGeneration(input: {
   clipId: string;
   plannedPrompt?: string;
   skipPlanner?: boolean;
+  skillId?: string;
   generateAudio?: boolean;
 }): Promise<StartUgcGenerationResult> {
   try {
@@ -253,6 +258,7 @@ export async function startUgcVideoGeneration(input: {
       clipId: clip.id,
       ...(plannedPrompt ? { plannedPrompt } : {}),
       ...(input.skipPlanner ? { skipPlanner: true } : {}),
+      ...(input.skillId ? { skillId: input.skillId } : {}),
       ...(input.generateAudio !== undefined
         ? { generateAudio: input.generateAudio }
         : {}),

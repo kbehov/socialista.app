@@ -19,7 +19,6 @@ const ROWS = [
 function rotateImages(offset: number) {
   const images = STATIC_AD_MARQUEE_IMAGES
   const len = images.length
-  if (len === 0) return []
   const start = offset % len
   return [...images.slice(start), ...images.slice(0, start)]
 }

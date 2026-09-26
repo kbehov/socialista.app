@@ -65,7 +65,7 @@ export function useUgcClipActions({
           return
         }
         setProject(response.data.project)
-        const created = response.data.project.clips.at(-1)
+        const created = response.data.project.clips[0]
         if (created) onSelectClip(created.id)
       })
     },

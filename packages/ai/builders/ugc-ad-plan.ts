@@ -55,7 +55,7 @@ export function buildUgcAdPlanMessages(input: PlanUgcAdInput): ModelMessage[] {
 
   const catalogBlock = allowedTypes?.length
     ? [
-        'Available scene types — type must be one of these slugs. Never invent a new type or a creative scene title (not "text thread chaos", not "bathroom confession"). The UI labels them Talking head, App on screen, etc.',
+        'Available scene types — type must be one of these slugs. Never invent a new type or a creative scene title (not "text thread chaos", not "bathroom confession"). The UI labels them Talking head, App / web on screen, etc.',
         formatUgcSceneCatalogForPrompt(allowedTypes),
       ].join('\n')
     : ''
@@ -73,7 +73,7 @@ export function buildUgcAdPlanMessages(input: PlanUgcAdInput): ModelMessage[] {
     catalogBlock,
     constraintLine,
     `User brief:\n${brief}`,
-    'Plan the campaign now. Default to 3 scenes using catalog slugs only: hook → proof/demo → cta. Every on-camera talking scene must have a spoken script (talking-head max 300 chars, other talking scenes max 150, sized to duration). Product b-roll, app-on-screen, and custom scenes may have an empty script.',
+    'Plan the campaign now. Default to 3 scenes using catalog slugs only: talking → proof/demo → cta. Every on-camera talking scene must have a spoken script (talking-head max 300 chars, other talking scenes max 150, sized to duration). Product b-roll, product demo, app/web on screen, and custom scenes may have an empty script.',
   ]
     .filter(Boolean)
     .join('\n\n')

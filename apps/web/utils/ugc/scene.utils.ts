@@ -25,11 +25,9 @@ import {
   SmileIcon,
   SparklesIcon,
   StarIcon,
-  ZapIcon,
 } from 'lucide-react'
 
 export const UGC_SCENE_ICONS: Record<UgcClipType, LucideIcon> = {
-  hook: ZapIcon,
   talking: MicIcon,
   'product-hold': HandIcon,
   'b-roll': PackageIcon,
@@ -79,4 +77,14 @@ export function ugcSceneWorkbenchConfig(type: UgcClipType): UgcSceneWorkbenchCon
     talkingHead,
     voiceoverOnly: !ugcClipUsesLipSync(type),
   }
+}
+
+export function ugcSceneAudioLabel(type: UgcClipType): 'Voiceover' | 'Lip-sync' {
+  return ugcClipUsesLipSync(type) ? 'Lip-sync' : 'Voiceover'
+}
+
+export function ugcSceneAudioHint(type: UgcClipType): string {
+  return ugcClipUsesLipSync(type)
+    ? 'They say the line on camera. The video is lip-synced to the voiceover.'
+    : 'Any spoken line is mixed over the clip. Nobody talks to camera.'
 }

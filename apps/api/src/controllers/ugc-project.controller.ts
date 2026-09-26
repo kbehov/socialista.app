@@ -54,6 +54,7 @@ import {
   updateUgcClip,
   updateUgcProject as updateUgcProjectInDb,
   updateVideo,
+  UgcClipStatus,
   UgcFlowStep,
   UgcProductKind,
   UgcProjectStatus,
@@ -432,17 +433,16 @@ export const applyUgcCampaignPreset = async (c: Context<AppContext>) => {
   const preset = UGC_CAMPAIGN_PRESETS.find((item) => item.id === presetId);
   if (!preset) throw new HttpError(400, "Unknown campaign preset");
 
-  const remaining = UGC_MAX_CLIPS - (project.clips?.length ?? 0);
-  if (remaining <= 0) {
+  const existing = project.clips ?? [];
+  if (existing.some((clip) => clip.status === UgcClipStatus.GENERATING)) {
     throw new HttpError(
-      400,
-      `You can add at most ${UGC_MAX_CLIPS} clips in a project`,
+      409,
+      "Wait for scenes to finish generating before replacing them",
     );
   }
 
-  const beats = preset.beats.slice(0, remaining);
   const influencerId = project.influencerId?.toString();
-  const clips = beats.map((beat) =>
+  const clips = preset.beats.map((beat) =>
     buildNewClip({
       type: parseClipType(beat.type),
       durationSec: beat.durationSec,
@@ -451,7 +451,10 @@ export const applyUgcCampaignPreset = async (c: Context<AppContext>) => {
     }),
   );
 
-  const updated = await addUgcClips(id, clips);
+  const updated =
+    existing.length === 0
+      ? await addUgcClips(id, clips)
+      : await updateUgcProjectInDb(id, { clips });
   if (!updated) throw new HttpError(404, "UGC project not found");
   return successResponse(c, 201, { project: serializeUgcProject(updated) });
 };
@@ -477,7 +480,11 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
       clipUpdates.sceneCount = 1;
       clipUpdates.stills = emptyStills(1);
     }
-    if (nextTypeValue === "b-roll" || nextTypeValue === "hook") {
+    if (ugcClipRequiresCreator(nextTypeValue)) {
+      if (!clip.influencerId && project.influencerId) {
+        clipUpdates.influencerId = project.influencerId;
+      }
+    } else {
       clipUpdates.influencerId = undefined;
     }
     const previousLabel = UGC_CLIP_TYPE_LABELS[clipTypeValue(clip.type)];
@@ -541,6 +548,9 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   if (typeof input.plannedPrompt === "string")
     clipUpdates.plannedPrompt = input.plannedPrompt;
   if (input.plannedPrompt === null) clipUpdates.plannedPrompt = undefined;
+  if (typeof input.negativePrompt === "string")
+    clipUpdates.negativePrompt = input.negativePrompt;
+  if (input.negativePrompt === null) clipUpdates.negativePrompt = undefined;
   if (Array.isArray(input.stills)) {
     clipUpdates.stills = input.stills.flatMap((still, index) => {
       if (!still || typeof still !== "object") return [];

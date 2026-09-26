@@ -36,6 +36,7 @@ import {
   ugcScriptMaxChars,
   parseUgcClipType,
   ugcClipRequiresCreator,
+  ugcResolvedInfluencerId,
   ugcClipSceneCount,
   ugcClipShowsScript,
   ugcSceneDefaultDurationSec,
@@ -170,14 +171,21 @@ export function resolveClipInfluencerId(
   project: IUgcProject,
   clip: IUgcClip,
 ): string | undefined {
-  return clip.influencerId?.toString() ?? project.influencerId?.toString();
+  return ugcResolvedInfluencerId(
+    { influencerId: project.influencerId?.toString() },
+    {
+      influencerId: clip.influencerId?.toString(),
+      type: parseUgcClipType(clip.type),
+    },
+  );
 }
 
 export function serializeClip(clip: IUgcClip): UgcClip {
   const stills = (clip.stills ?? [])
     .filter((still) => still.imageUrl)
     .map(serializeStill);
-  const type = clipTypeValue(clip.type);
+  const type =
+    parseUgcClipType(clip.type) ?? UGC_DEFAULT_CLIP_TYPE;
   const sceneCount = ugcClipSceneCount({
     type,
     stills,

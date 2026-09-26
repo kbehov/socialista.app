@@ -2,6 +2,7 @@ import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import { ugcClipGeneratedStills } from '@/lib/studio/ugc/ugc-stage'
 import {
   ugcClipRequiresProduct,
+  ugcClipRequiresScreenshots,
   ugcResolvedInfluencerId,
   type UgcClip,
   type UgcProject,
@@ -53,7 +54,26 @@ export function ugcCampaignAttachments(
       influencerId,
     })
   }
-  if (ugcClipRequiresProduct(clip.type)) {
+  if (ugcClipRequiresScreenshots(clip.type)) {
+    const screenUrls = [
+      ...(clip.referenceImageUrls ?? []),
+      ...(project.productKind === 'app' || project.productKind === 'website'
+        ? project.productImageUrls
+        : []),
+    ]
+    const seen = new Set<string>()
+    for (const url of screenUrls) {
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      items.push({
+        id: `screen-${url}`,
+        url,
+        kind: 'image',
+        source: 'library',
+        label: 'Screenshot',
+      })
+    }
+  } else if (ugcClipRequiresProduct(clip.type)) {
     const productSrc = project.productImageUrls[0]
     if (productSrc) {
       items.push({

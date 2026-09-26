@@ -50,10 +50,7 @@ const SCENE_CARD_LAYOUT = [
   },
 ] as const;
 
-const SCENE_VISUALS: Record<
-  (typeof UGC_STARTER_SCENE_TYPES)[number],
-  { gradient: string; accent: string }
-> = {
+const SCENE_VISUALS = {
   talking: {
     gradient:
       "from-[#f4d9c8] via-[#e8b89a] to-[#c9856a] dark:from-[#3d2a24] dark:via-[#5c3d32] dark:to-[#2a1814]",
@@ -69,7 +66,9 @@ const SCENE_VISUALS: Record<
       "from-[#e8dfd4] via-[#cfc0ad] to-[#a89278] dark:from-[#2a2620] dark:via-[#3d352c] dark:to-[#1a1612]",
     accent: "bg-[#f5f0ea]/80 dark:bg-white/10",
   },
-};
+} as const;
+
+type StarterSceneType = keyof typeof SCENE_VISUALS;
 
 export function UgcProjectEmptyState({
   clips,
@@ -166,7 +165,7 @@ function SceneStillRow() {
       style={{ perspective: "900px" }}
       aria-hidden
     >
-      {UGC_STARTER_SCENE_TYPES.map((type, index) => (
+      {(UGC_STARTER_SCENE_TYPES as StarterSceneType[]).map((type, index) => (
         <SceneStillCard
           key={type}
           type={type}
@@ -183,7 +182,7 @@ function SceneStillCard({
   index,
   layout,
 }: {
-  type: (typeof UGC_STARTER_SCENE_TYPES)[number];
+  type: StarterSceneType;
   index: number;
   layout: (typeof SCENE_CARD_LAYOUT)[number];
 }) {

@@ -39,12 +39,14 @@ export type StudioAttachSource =
   | "influencer"
   | "product";
 
+type StudioAttachPickerSource = Exclude<StudioAttachSource, "upload" | "library">;
+
 type StudioAttachMenuItem =
   | { kind: "files" }
-  | { kind: StudioAttachSource };
+  | { kind: StudioAttachPickerSource };
 
 const PICKER_ITEMS: Record<
-  Exclude<StudioAttachSource, "upload" | "library">,
+  StudioAttachPickerSource,
   { label: string; description: string; icon: typeof PackageIcon }
 > = {
   influencer: {

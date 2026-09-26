@@ -1,9 +1,11 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -14,10 +16,12 @@ import {
   type UgcCampaignPreset,
   type UgcCampaignPresetId,
 } from '@socialista/types'
+import { useState } from 'react'
 
 type UgcCampaignPresetsProps = {
   open: boolean
   applying?: boolean
+  hasGeneratedWork?: boolean
   onOpenChange: (open: boolean) => void
   onApply: (presetId: UgcCampaignPresetId) => void
 }
@@ -56,24 +60,83 @@ function PresetCard({
   )
 }
 
-export function UgcCampaignPresets({ open, applying, onOpenChange, onApply }: UgcCampaignPresetsProps) {
+export function UgcCampaignPresets({
+  open,
+  applying,
+  hasGeneratedWork,
+  onOpenChange,
+  onApply,
+}: UgcCampaignPresetsProps) {
+  const [pendingId, setPendingId] = useState<UgcCampaignPresetId | null>(null)
+
+  const apply = (presetId: UgcCampaignPresetId) => {
+    if (hasGeneratedWork) {
+      setPendingId(presetId)
+      return
+    }
+    onApply(presetId)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (!next) setPendingId(null)
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Templates</DialogTitle>
-          <DialogDescription>Adds a 3-scene sequence. You can still edit every scene after.</DialogDescription>
-        </DialogHeader>
-        <div className="-mx-1 grid">
-          {UGC_CAMPAIGN_PRESETS.map(preset => (
-            <PresetCard
-              key={preset.id}
-              preset={preset}
-              disabled={applying}
-              onApply={() => onApply(preset.id)}
-            />
-          ))}
-        </div>
+        {pendingId ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Replace current scenes?</DialogTitle>
+              <DialogDescription>
+                Photos, voiceovers, and videos on those scenes will be removed.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPendingId(null)}
+                disabled={applying}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={applying}
+                onClick={() => {
+                  onApply(pendingId)
+                  setPendingId(null)
+                }}
+              >
+                Replace
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Templates</DialogTitle>
+              <DialogDescription>
+                Replaces your scenes with this sequence. You can still edit every scene after.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="-mx-1 grid">
+              {UGC_CAMPAIGN_PRESETS.map(preset => (
+                <PresetCard
+                  key={preset.id}
+                  preset={preset}
+                  disabled={applying}
+                  onApply={() => apply(preset.id)}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )

@@ -58,7 +58,9 @@ export function getTikTokConfig() {
   return {
     clientKey: process.env.TIKTOK_CLIENT_KEY ?? '',
     clientSecret: process.env.TIKTOK_CLIENT_SECRET ?? '',
-    scopes: ['user.info.basic', 'user.info.profile', 'video.publish'],
+    // video.publish posts directly. video.upload sends a draft to the TikTok inbox,
+    // which is the path TikTok allows for a public account before the app is audited.
+    scopes: ['user.info.basic', 'user.info.profile', 'video.publish', 'video.upload'],
   }
 }
 

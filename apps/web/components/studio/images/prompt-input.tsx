@@ -49,6 +49,7 @@ import {
   PROMPT_KEYS,
   type AspectRatio,
   type Model,
+  type PromptKey,
   type Skill,
 } from "@socialista/types";
 import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
@@ -82,6 +83,8 @@ export type ImagePromptSubmitResult = {
   aspectRatio: AspectRatio
   imageUrls: string[]
   numImages: number
+  enhance: boolean
+  skillId?: string
 }
 
 export type ImagePromptInputProps = {
@@ -101,6 +104,7 @@ export type ImagePromptInputProps = {
   bindStudio?: boolean
   autoFocus?: boolean
   surfaceClassName?: string
+  skillTarget?: PromptKey
 }
 
 const ASPECT_RATIOS = [
@@ -131,6 +135,7 @@ function ImagePromptComposer({
   bindStudio = true,
   autoFocus,
   surfaceClassName: surfaceClassNameProp,
+  skillTarget = PROMPT_KEYS.imagePrompt,
 }: ImagePromptInputProps) {
   const [submitShortcut] = useState(getSubmitShortcutLabel);
   const router = useRouter();
@@ -320,6 +325,8 @@ function ImagePromptComposer({
           aspectRatio,
           imageUrls,
           numImages,
+          enhance,
+          ...(enhance && attachedSkill ? { skillId: attachedSkill._id } : {}),
         });
         return;
       }
@@ -481,7 +488,7 @@ function ImagePromptComposer({
             </PromptInputButton>
             <StudioSkillPicker
               appearance="icon"
-              target={PROMPT_KEYS.imagePrompt}
+              target={skillTarget}
               value={attachedSkill?._id}
               onChange={(skillId) => {
                 if (!skillId) setAttachedSkill(undefined);

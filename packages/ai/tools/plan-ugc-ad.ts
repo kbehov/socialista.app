@@ -94,7 +94,7 @@ function sceneIssues(
   const onlyType = scenes[0]?.type
   if (scenes.length >= 2 && onlyType && scenes.every(scene => scene.type === onlyType)) {
     issues.push(
-      `Do not repeat the same catalog type (${onlyType}) for every scene. Mix types — e.g. hook → demo → cta.`,
+      `Do not repeat the same catalog type (${onlyType}) for every scene. Mix types — e.g. talking → demo → cta.`,
     )
   }
 

@@ -79,6 +79,8 @@ export function useUgcGeneration({
         model?: string
         referenceImageUrls?: string[]
         count?: number
+        skipEnhance?: boolean
+        skillId?: string
       },
     ) => {
       try {
@@ -106,6 +108,7 @@ export function useUgcGeneration({
       extra?: {
         plannedPrompt?: string
         skipPlanner?: boolean
+        skillId?: string
         generateAudio?: boolean
       },
     ) => {
@@ -141,6 +144,8 @@ export function useUgcGeneration({
             model: result.model,
             referenceImageUrls: result.imageUrls,
             count: Math.min(result.numImages, 3),
+            ...(result.enhance ? {} : { skipEnhance: true }),
+            ...(result.enhance && result.skillId ? { skillId: result.skillId } : {}),
           })
         } catch (error) {
           toastError(error, 'Could not generate photos')
@@ -211,7 +216,10 @@ export function useUgcGeneration({
           await startClipVideo(
             selectedClip.id,
             enhance
-              ? { generateAudio: talkingHead ? false : result.generateAudio }
+              ? {
+                  generateAudio: talkingHead ? false : result.generateAudio,
+                  ...(result.skillId ? { skillId: result.skillId } : {}),
+                }
               : {
                   plannedPrompt: result.prompt,
                   skipPlanner: true,

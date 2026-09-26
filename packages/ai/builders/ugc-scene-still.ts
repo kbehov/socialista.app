@@ -11,9 +11,6 @@ export type UgcSceneStillPromptInput = {
 }
 
 const BEATS: Record<UgcClipType, Record<number, string>> = {
-  hook: {
-    0: 'Spoken-hook start frame: the creator faces the phone camera, mid-shot, high-energy opener mid-sentence. Lived-in room. Pattern-interrupt energy, not a smile-and-wave. No on-screen text.',
-  },
   talking: {
     0: 'Talking-head start frame: the creator faces the phone camera, mid-shot, natural expression mid-sentence. Lived-in room. Product may be nearby but does not have to be in hand.',
   },
@@ -33,7 +30,7 @@ const BEATS: Record<UgcClipType, Record<number, string>> = {
     0: 'CTA start frame: the creator faces the phone camera, mid-shot, about to make a clear ask. Direct eye contact, lived-in room, not a studio smile. Product may be nearby. No on-screen text or buttons.',
   },
   demo: {
-    0: 'Demo start frame: the creator is mid-use of the product — hands doing the action, SKU readable, face in frame when possible. Casual phone capture of a how-it-works moment, not a catalog pose.',
+    0: 'Demo start frame: the creator is mid-use of the product — hands doing the action, SKU readable, face in frame when possible. Mouth relaxed, not mid-speech. Casual phone capture of a how-it-works moment, not a catalog pose.',
   },
   'try-on': {
     0: 'Try-on start frame: the creator is wearing or using the product on their body (apparel, jewelry, beauty, wearable). Face and product both readable. Casual phone selfie energy, not a lookbook pose.',
@@ -48,7 +45,7 @@ const BEATS: Record<UgcClipType, Record<number, string>> = {
     0: 'Before-after start frame: the creator and product in a clear “after” or side-by-side setup the video will contrast. Face and SKU readable. Lived-in room, not a split-screen graphic or on-image text.',
   },
   'app-showcase': {
-    0: 'App showcase start frame: a phone or device in frame showing the attached UI screenshot on the screen. If a creator is present they hold the phone naturally. The screen content must match the screenshot, not a generic fake UI.',
+    0: 'App or website start frame: a phone or laptop in frame showing the attached UI screenshot on the screen. If a creator is present they hold the device naturally. The screen content must match the screenshot, not a generic fake UI.',
   },
   custom: {
     0: 'Freeform UGC still: follow the user scene look if they wrote one. Otherwise a natural phone-captured still from the attached refs. Keep the same person and product when those photos exist. Do not invent a new format, captions, or logos.',
@@ -98,30 +95,146 @@ export const UGC_STILL_REF_STRATEGY = 'sequential' as const
 
 const MAX_STILL_REFS = 6
 
-export function buildUgcStillRefUrls(input: {
+export type UgcStillRefRole =
+  | 'previous-still'
+  | 'creator'
+  | 'product'
+  | 'screenshot'
+  | 'user-upload'
+
+export type UgcStillRef = {
+  url: string
+  role: UgcStillRefRole
+}
+
+export type UgcStillRefCategories = {
   influencerReferenceUrls?: string[]
   productImageUrls?: string[]
   extraReferenceUrls?: string[]
+  extraRole?: UgcStillRefRole
   previousStillUrl?: string
-  sceneIndex: number
-}): string[] {
-  const urls: string[] = []
+}
 
-  if (input.previousStillUrl) {
-    urls.push(input.previousStillUrl)
+const ROLE_LINES: Record<UgcStillRefRole, string> = {
+  'previous-still':
+    'previous still — lock the same person, room, wardrobe, and SKU; new angle of this scene',
+  creator: 'creator — lock face, hair, age, body, skin, and clothes from this photo',
+  product: 'product — lock silhouette, label, color, and materials; exact SKU',
+  screenshot: 'screenshot — the device screen must match this UI, not a generic fake',
+  'user-upload': 'user reference — lock the visible subject; do not redesign it',
+}
+
+function uniqueUrls(urls?: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const url of urls ?? []) {
+    if (!url || seen.has(url)) continue
+    seen.add(url)
+    out.push(url)
+  }
+  return out
+}
+
+export function buildUgcStillRefs(
+  input: UgcStillRefCategories & { sceneIndex?: number },
+): UgcStillRef[] {
+  const creators = uniqueUrls(input.influencerReferenceUrls)
+  const products = uniqueUrls(input.productImageUrls)
+  const extras = uniqueUrls(input.extraReferenceUrls)
+  const extraRole = input.extraRole ?? 'user-upload'
+  const refs: UgcStillRef[] = []
+  const used = new Set<string>()
+
+  const push = (url: string | undefined, role: UgcStillRefRole) => {
+    if (!url || used.has(url) || refs.length >= MAX_STILL_REFS) return false
+    used.add(url)
+    refs.push({ url, role })
+    return true
   }
 
-  for (const url of input.influencerReferenceUrls ?? []) {
-    if (url && !urls.includes(url)) urls.push(url)
+  push(input.previousStillUrl, 'previous-still')
+  push(
+    products.find(url => !used.has(url)),
+    'product',
+  )
+  push(
+    creators.find(url => !used.has(url)),
+    'creator',
+  )
+
+  let productCount = refs.filter(ref => ref.role === 'product').length
+  let creatorCount = refs.filter(ref => ref.role === 'creator').length
+  for (const url of products) {
+    if (productCount >= 2) break
+    if (push(url, 'product')) productCount += 1
+  }
+  for (const url of creators) {
+    if (creatorCount >= 3) break
+    if (push(url, 'creator')) creatorCount += 1
+  }
+  for (const url of extras) push(url, extraRole)
+  for (const url of products) push(url, 'product')
+  for (const url of creators) push(url, 'creator')
+
+  return refs
+}
+
+export function labelUgcStillRefs(
+  urls: string[],
+  categories: UgcStillRefCategories,
+): UgcStillRef[] {
+  const previous = categories.previousStillUrl
+  const creators = new Set(uniqueUrls(categories.influencerReferenceUrls))
+  const products = new Set(uniqueUrls(categories.productImageUrls))
+  const extras = new Set(uniqueUrls(categories.extraReferenceUrls))
+  const extraRole = categories.extraRole ?? 'user-upload'
+  const seen = new Set<string>()
+  const refs: UgcStillRef[] = []
+
+  for (const url of urls) {
+    if (!url || seen.has(url) || refs.length >= MAX_STILL_REFS) continue
+    seen.add(url)
+    const role: UgcStillRefRole =
+      url === previous
+        ? 'previous-still'
+        : products.has(url)
+          ? 'product'
+          : creators.has(url)
+            ? 'creator'
+            : extras.has(url)
+              ? extraRole
+              : 'user-upload'
+    refs.push({ url, role })
   }
 
-  for (const url of input.productImageUrls ?? []) {
-    if (url && !urls.includes(url)) urls.push(url)
-  }
+  return refs
+}
 
-  for (const url of input.extraReferenceUrls ?? []) {
-    if (url && !urls.includes(url)) urls.push(url)
-  }
+export function buildUgcStillRefUrls(input: UgcStillRefCategories & { sceneIndex?: number }): string[] {
+  return buildUgcStillRefs(input).map(ref => ref.url)
+}
 
-  return urls.slice(0, MAX_STILL_REFS)
+export function buildUgcStillEnhanceUserPrompt(input: {
+  brief: string
+  clipType: UgcClipType
+  influencerName?: string
+  identityFragment?: string
+  productName?: string
+  refs: UgcStillRef[]
+}): string {
+  const legend = input.refs
+    .map((ref, index) => `Image ${index + 1}: ${ROLE_LINES[ref.role]}`)
+    .join('\n')
+
+  return [
+    `User brief:\n${input.brief.trim()}`,
+    `Clip type: ${input.clipType}.`,
+    input.influencerName?.trim() ? `Creator: ${input.influencerName.trim()}.` : '',
+    input.identityFragment?.trim() ?? '',
+    input.productName?.trim() ? `Product: ${input.productName.trim()}.` : '',
+    legend ? `Attached references:\n${legend}` : 'No reference images attached.',
+    'Look at every attached image. Rewrite the brief into one photoreal UGC still prompt now.',
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }

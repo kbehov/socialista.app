@@ -140,7 +140,7 @@ export function UgcSceneTabContent({
               }
               description={
                 config.voiceoverOnly
-                  ? 'Add a line to mix over the product clip, or skip and generate video only.'
+                  ? 'Add a line to mix over the clip, or skip and generate video only. Nobody talks to camera.'
                   : 'One short line they would say on camera. Generate the voiceover below.'
               }
             />
@@ -206,7 +206,9 @@ export function UgcSceneTabContent({
                     ? 'Generate the voiceover first, then render the clip.'
                     : config.talkingHead
                       ? 'Use the start-frame photo and voiceover. Attach a creator photo if none is generated yet.'
-                      : 'A turn, smile, or product reveal from the start frame. Preview appears here when ready.'
+                      : config.voiceoverOnly
+                        ? 'Animate the start frame. If there is a voiceover, it is mixed over the picture — they do not talk to camera.'
+                        : 'A turn, smile, or product reveal from the start frame. Preview appears here when ready.'
                 }
               />
               {hasStills && videoAttachments.length > 0 ? (

@@ -35,8 +35,8 @@ export function useNotificationsInbox(workspaceId: string | undefined) {
   const [inbox, setInbox] = useState<InboxState | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const notifications = inbox?.workspaceId === workspaceId ? inbox.notifications : []
-  const unreadCount = inbox?.workspaceId === workspaceId ? inbox.unreadCount : 0
+  const notifications = inbox && inbox.workspaceId === workspaceId ? inbox.notifications : []
+  const unreadCount = inbox && inbox.workspaceId === workspaceId ? inbox.unreadCount : 0
 
   const refresh = useCallback(async () => {
     if (!workspaceId) return

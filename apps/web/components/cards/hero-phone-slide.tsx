@@ -127,7 +127,6 @@ export function HeroPhoneSlide({
       ) : null}
 
       <Iphone
-        instanceId={`hero-slide-${slide.id}-${index}`}
         variant="black"
         bezel="minimal"
         className="size-full drop-shadow-[0_25px_50px_-12px_rgb(0_0_0/0.28)] dark:drop-shadow-[0_28px_56px_-16px_rgb(0_0_0/0.55)]"
