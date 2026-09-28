@@ -722,7 +722,7 @@ export const generateUgcClipScript = async (c: Context<AppContext>) => {
       if (
         skill &&
         skill.workspaceId.toString() === workspaceId &&
-        skill.target === PROMPT_KEYS.ugcAdScript
+        skill.target === PROMPT_KEYS.videoScript
       ) {
         systemOverride = skill.content;
         await incrementSkillUsage(skill._id.toString()).catch(() => undefined);
@@ -781,7 +781,7 @@ export const generateUgcProjectScript = async (c: Context<AppContext>) => {
       if (
         skill &&
         skill.workspaceId.toString() === workspaceId &&
-        skill.target === PROMPT_KEYS.ugcAdScript
+        skill.target === PROMPT_KEYS.videoScript
       ) {
         systemOverride = skill.content;
         await incrementSkillUsage(skill._id.toString()).catch(() => undefined);

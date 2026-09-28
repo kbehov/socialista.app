@@ -133,7 +133,7 @@ export function UgcScenePromptTabs({
                 initialAspectRatio={project.aspectRatio as AspectRatio}
                 initialModel={resolvedModels.image}
                 placeholder="Describe the scene photo…"
-                skillTarget={PROMPT_KEYS.ugcStillPrompt}
+                skillTarget={PROMPT_KEYS.imagePrompt}
                 onSubmitOverride={onImageSubmit}
               />
             </div>
@@ -228,7 +228,7 @@ export function UgcScenePromptTabs({
                     ? 'Describe delivery — gaze, emotion, small head movement…'
                     : 'Describe the video motion…'
                 }
-                skillTarget={PROMPT_KEYS.ugcVideoPlanner}
+                skillTarget={PROMPT_KEYS.videoPrompt}
                 onSubmitOverride={onVideoSubmit}
               />
             </div>

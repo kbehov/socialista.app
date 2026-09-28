@@ -3,7 +3,6 @@
 import { generateSlideshowSlides } from '@/actions/slideshow.actions'
 import { StudioPanelScrollArea, StudioPanelSection } from '@/components/carousel/studio-segmented-tabs'
 import { SkillModelSelector } from '@/components/skills/skill-model-selector'
-import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,7 +11,7 @@ import { useEditorStore } from '@/lib/carousel/store'
 import { cn } from '@/lib/utils'
 import { getModels } from '@/services/models.service'
 import { formatCredits } from '@/utils/format'
-import { ModelType, PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, type Model } from '@socialista/types'
+import { ModelType, SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, type Model } from '@socialista/types'
 import { Loader2Icon, MinusIcon, PlusIcon, SquarePenIcon } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -26,7 +25,6 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
 
   const [prompt, setPrompt] = useState('')
   const [slideCount, setSlideCount] = useState<number | 'auto'>('auto')
-  const [skillId, setSkillId] = useState<string | undefined>()
   const [textModels, setTextModels] = useState<Model[]>([])
   const [selectedTextModelId, setSelectedTextModelId] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -62,7 +60,6 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
       const result = await generateSlideshowSlides(
         trimmed,
         slideCount === 'auto' ? undefined : slideCount,
-        skillId,
         selectedTextModel?.value,
       )
       if (!result.success) {
@@ -260,12 +257,6 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
       </StudioPanelScrollArea>
 
       <div className="shrink-0 space-y-2 border-t border-border/40 bg-background p-3.5">
-        <StudioSkillPicker
-          target={PROMPT_KEYS.slideshow}
-          value={skillId}
-          onChange={setSkillId}
-          disabled={isPending}
-        />
         {textModels.length > 0 ? (
           <SkillModelSelector
             models={textModels}

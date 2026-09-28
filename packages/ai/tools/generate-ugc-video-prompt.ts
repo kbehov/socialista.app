@@ -42,7 +42,7 @@ export async function generateUgcVideoPrompt(
   input: GenerateUgcVideoPromptInput,
 ): Promise<GeneratedUgcVideoPrompt> {
   const media = input.media?.filter(item => item.imageUrl)
-  const { model } = resolvePrompt(PROMPT_KEYS.ugcVideoPlanner)
+  const { model } = resolvePrompt(PROMPT_KEYS.videoPrompt)
   const userText = buildUgcVideoPromptUserPrompt(input)
 
   const result = await generateObject({

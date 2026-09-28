@@ -37,6 +37,14 @@
       "types": "./dist/schemas/analytics-sweep.schema.d.ts",
       "import": "./dist/schemas/analytics-sweep.schema.js"
     },
+    "./schemas/post-analytics-sweep": {
+      "types": "./dist/schemas/post-analytics-sweep.schema.d.ts",
+      "import": "./dist/schemas/post-analytics-sweep.schema.js"
+    },
+    "./schemas/fetch-post-analytics": {
+      "types": "./dist/schemas/fetch-post-analytics.schema.d.ts",
+      "import": "./dist/schemas/fetch-post-analytics.schema.js"
+    },
     "./schemas/static-ad": {
       "types": "./dist/schemas/static-ad.schema.d.ts",
       "import": "./dist/schemas/static-ad.schema.js"

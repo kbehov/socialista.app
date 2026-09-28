@@ -19,6 +19,7 @@ import {
 import { TASK_IDS } from '@socialista/types'
 import type {
   AnalyticsSweepTask,
+  PostAnalyticsSweepTask,
   PublishPostTask,
   RefreshAccountTokenTask,
 } from '@socialista/trigger/task-types'
@@ -214,6 +215,28 @@ export const sweepAccountAnalytics = async (c: Context) => {
     slotCount: ANALYTICS_SLOT_COUNT,
     forceAll,
     includeFlows,
+    runId: handle.id,
+  })
+}
+
+/**
+ * Kick off the hourly post-analytics sweep.
+ * Call **once an hour** via external cron with `x-internal-api-secret`.
+ * Each tick claims a bounded set of due IG/FB checkpoints (1h → 30d) for
+ * premium workspaces and batch-enqueues fetch workers.
+ */
+export const sweepPostAnalytics = async (c: Context) => {
+  const now = new Date()
+  const hourKey = now.toISOString().slice(0, 13)
+
+  const handle = await tasks.trigger<PostAnalyticsSweepTask>(
+    TASK_IDS.postAnalyticsSweep,
+    { timestamp: now.toISOString() },
+    { idempotencyKey: `post-analytics-sweep:${hourKey}` },
+  )
+
+  return successResponse(c, 200, {
+    hourKey,
     runId: handle.id,
   })
 }

@@ -1,11 +1,7 @@
 import type { ImportedSkillDraft } from './parse-skill-markdown'
-import { PROMPT_KEY_VALUES, type PromptKey } from '@socialista/types'
+import { normalizeSkillTarget } from '@socialista/types'
 
 export const SKILL_IMPORT_STORAGE_KEY = 'socialista:skill-import:v1'
-
-function isPromptKey(value: unknown): value is PromptKey {
-  return typeof value === 'string' && (PROMPT_KEY_VALUES as readonly string[]).includes(value)
-}
 
 export function storeImportedSkillDraft(draft: ImportedSkillDraft) {
   try {
@@ -25,7 +21,10 @@ export function consumeImportedSkillDraft(): ImportedSkillDraft | null {
     return {
       name: typeof parsed.name === 'string' ? parsed.name : '',
       description: typeof parsed.description === 'string' ? parsed.description : '',
-      target: isPromptKey(parsed.target) ? parsed.target : 'image-prompt',
+      target:
+        typeof parsed.target === 'string'
+          ? (normalizeSkillTarget(parsed.target) ?? 'image-prompt')
+          : 'image-prompt',
       icon: typeof parsed.icon === 'string' ? parsed.icon : '',
       content: parsed.content,
     }

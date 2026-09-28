@@ -1,10 +1,10 @@
 import { getSkillById, incrementSkillUsage } from '@socialista/db'
-import type { PromptKey } from '@socialista/types'
+import type { SkillTarget } from '@socialista/types'
 
 /** Returns the skill's content to use as the system prompt, or undefined for the default. */
 export async function loadSkillOverride(input: {
   skillId?: string
-  target: PromptKey
+  target: SkillTarget
   workspaceId: string
 }): Promise<string | undefined> {
   if (!input.skillId) return undefined

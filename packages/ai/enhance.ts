@@ -1,10 +1,11 @@
 import type { AspectRatio, SanitizedMedia } from '@socialista/types'
-import { PROMPT_KEYS } from '@socialista/types'
+import { PROMPT_KEYS, REGISTRY_PROMPT_KEYS } from '@socialista/types'
 import { generateText } from 'ai'
 
 import { buildImagePromptMessages } from './builders/image.js'
 import { buildVideoPromptMessages } from './builders/video.js'
 import { softenInfluencerImagePrompt, type InfluencerReferenceMode } from './influencer/prompt.js'
+import { UGC_STILL_PROMPT_SYSTEM } from './prompts/ugc-still.js'
 import { resolvePrompt } from './registry.js'
 
 export const buildUgcStillPrompt = async (payload: {
@@ -14,7 +15,8 @@ export const buildUgcStillPrompt = async (payload: {
   systemOverride?: string
   targetModel?: string
 }) => {
-  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcStillPrompt, payload.systemOverride)
+  const { model } = resolvePrompt(PROMPT_KEYS.imagePrompt)
+  const system = payload.systemOverride?.trim() || UGC_STILL_PROMPT_SYSTEM
   const { text } = await generateText({
     model,
     system,
@@ -59,7 +61,10 @@ export const buildInfluencerImagePrompt = async (payload: {
   targetModel?: string
   referenceMode?: InfluencerReferenceMode
 }) => {
-  const { model, system } = resolvePrompt(PROMPT_KEYS.influencerPrompt, payload.systemOverride)
+  const { model, system } = resolvePrompt(
+    REGISTRY_PROMPT_KEYS.influencerPrompt,
+    payload.systemOverride,
+  )
   const modeNote =
     payload.referenceMode === 'user'
       ? 'Reference mode: style photos. Identity is the Identity section. Attached images set scene, palette, framing, and light only — do not copy those faces.'
@@ -114,7 +119,10 @@ export const buildInfluencerHookVideoPrompt = async (payload: {
   systemOverride?: string
   targetModel?: string
 }) => {
-  const { model, system } = resolvePrompt(PROMPT_KEYS.influencerHookVideo, payload.systemOverride)
+  const { model, system } = resolvePrompt(
+    REGISTRY_PROMPT_KEYS.influencerHookVideo,
+    payload.systemOverride,
+  )
   const { text } = await generateText({
     model,
     system,

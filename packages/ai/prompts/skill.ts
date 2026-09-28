@@ -76,64 +76,26 @@ Job: rewrite the user request (+ optional refs) into ONE image-generation prompt
 Output: one paragraph of comma-delimited visual clauses. Subject first, camera/lens early, then pose, placement, setting, light, palette, medium.
 Never: literary prose, "no X" negatives, aspect ratio / model names, wrapping quotes, markdown, multiple options.
 Preserve every user-stated visual fact. Lock identity from reference images.
-
-### influencer-prompt — Influencer UGC
-Job: rewrite a Socialista influencer brief (Identity, Shot, Scene) into ONE photoreal UGC image prompt.
-Output: one paragraph of comma-delimited visual clauses. Age, hair, complexion, and build first — do not invent face shape, jaw, brows, nose, or lips. Then camera/crop, outfit, place, light, then visible pores and real skin texture.
-Style photos lock scene and palette only — the face is new. A generated cover locks the same person from the photo, without rewriting bone structure. Everyday clothes. Feed-ready Instagram / TikTok / Pinterest look.
-Never: studio headshots, beauty-filter skin, literary prose, "no X", markdown, locking a style-reference face.
+Use for studio images, UGC scene stills, influencer shots, and any photoreal still.
 
 ### video-prompt — Video generation
 Job: rewrite into ONE text-to-video prompt sent verbatim to Kling / Veo / Seedance and similar.
 Output: one paragraph of comma-delimited clauses. Subject first, camera (angle + lens + move) early, then action-in-time that fits the clip length, placement, setting, light, palette.
 Never: literary prose, on-screen captions/logos, aspect ratio / model names, markdown.
-One continuous beat. Lock identity from refs.
-
-### influencer-hook-video — Influencer hook video
-Job: rewrite a hook or reaction seed + Image 1 still into ONE image-to-video prompt.
-Output: one paragraph of comma-delimited clauses. Same person and room as Image 1. One slow, small reaction. Camera holds. Do not add blinks, shrugs, or a second gesture.
-Never: snap/jerk motion, cartoon faces, new location, new wardrobe, invented speech, on-screen captions, literary prose, markdown.
-Spoken lines in quotes only when the user explicitly wrote dialogue.
+One continuous beat. Lock identity from refs. Use for studio video, UGC clip motion, and image-to-video from a start frame.
 
 ### static-ad — Static ads
 Job: turn product / person / template refs + notes into ONE SHORT image-edit prompt for a paid-social static ad.
 Output: dense visual facts only. Short. Identity locks via "exact product from Image N" / person from Image N. Template layout may be reused; never copy the template's SKU, brand, or face when the user supplied their own.
 Never: long essays, negative lists, transcribing packaging lettering, wrapping quotes.
 
-### ugc-still-prompt — UGC stills
-Job: rewrite a short UGC scene note + labeled refs (previous still, creator, product, screenshot) into ONE photoreal phone-UGC image prompt.
-Output: one paragraph of comma-delimited visual clauses. Subject first (creator from Image N / product from Image N). Camera/lens early. Pose decomposed. Product placement. Lived-in room, available light, phone grain, real skin.
-Look at every attached image. Pixels win over the text note. Lock face and clothes from the creator photo, SKU from the product photo, room from a previous still. A thin note may fill missing axes from the photos; a dense spec is tightened, not replaced.
-Never: literary prose, "no X" negatives, catalog/beauty-campaign lighting, on-image captions, aspect ratio / model names, markdown.
-
-### ugc-video-planner — UGC planner
-Job: rewrite a short motion note + the start-frame still into ONE image-to-video prompt. Image 1 is the start frame — look at it first.
-Output: prompt = one dense motion paragraph the video model receives verbatim; optional negativePrompt = short failure modes (identity drift, wrong product, extra text, extra people; talking: frozen mouth, teeth artifacts; product: label morph, extra fingers).
-Name only what is visible in Image 1 (person, wardrobe, room, product grip, screen, light), then animate that scene. Extra images are the same subject, not a new story. A thin note is filled from the still; a dense direction is tightened.
-Locks: same person, product, room, lighting family as Image 1. No on-screen captions. One primary action, one camera move max. Motion fits the requested duration. Mouth moves only when the user turn asks for a spoken / lip-synced line.
-
-### ugc-ad-script — UGC script
-Job: write a short spoken UGC ad script (TikTok / Reels / Shorts). When stills or product/creator photos are attached, look at them first and write a line that belongs in that frame.
-Output: first-person spoken copy only. A specific situation, one proof beat, CTA if it fits. 100 to 150 characters. Write for TTS (numbers as words, no symbols). Later scenes do not restate the hook. Do not describe the photos.
-Never: "I just tried X", "feels so clean/good", hashtags, emojis, markdown, "as an AI", medical or income claims you were not given.
-
-### ugc-ad-plan — UGC ad plan
-Job: plan a complete 1–3 scene UGC ad from a brief + creator (and optional product) photos.
-Output: concept, format, targetAudience, and scenes[]. Each scene has name, type, goal, script, imagePrompt, videoPrompt, durationSec (5–15).
-Locks: Image 1 is the creator; later images are the product. Scripts max 150 characters (talking-head up to 300). imagePrompt and videoPrompt are generator-ready paragraphs. Wardrobe, room, and time-of-day stay consistent across scenes; vary shot size/angle.
-Never: generic talking-head lists, invented medical/income claims, on-screen captions.
-
 ### video-script — Video script
-Job: timed ON-SCREEN captions, not a spoken transcript.
-Output: ordered segments with role hook | body | cta, startTime, endTime, and short readable text. Hook near 0s, CTA in the last seconds, count scaled to duration.
-Never: spoken narration, hashtags, emojis, markdown in caption text.
+Job: timed ON-SCREEN captions and spoken UGC lines, depending on where the skill is attached.
+For studio video scripts: ordered segments with role hook | body | cta, startTime, endTime, and short readable on-screen text. Hook near 0s, CTA in the last seconds, count scaled to duration.
+For UGC voiceover: first-person spoken copy for TikTok / Reels / Shorts. Specific situation, one proof beat, CTA if it fits. Write for TTS (numbers as words, no symbols).
+Never: hashtags, emojis, markdown in output. Do not invent medical or income claims you were not given.
 
-### slideshow — Slideshow
-Job: turn a hook/topic into swipe-through slide copy.
-Output: classified content type (story | guide | list | routine | comparison | myth) plus one short line per slide, hook first. CTA last only when it belongs — skip for lists, quotes, and "no CTA."
-Never: hashtags, emojis, markdown in slide text. Max ~12–14 words on the hook.
-
-### post-copy — Post copy
+### post-copy — Post copywriting
 Job: write ONE caption ready to post.
 Output: caption text only. No preamble, labels, or wrapping quotes. Match the brief's language. Stay under any character limit.
 Never: invent facts, stats, or launches. Never engagement-bait. Caption should not narrate attached visuals — add what the image cannot.
@@ -143,17 +105,10 @@ INFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 If no target is pinned:
-- Photography, stills, product shots, portraits, "generate an image" → image-prompt
-- AI influencer, creator identity, UGC portrait pack → influencer-prompt
-- Motion, camera moves, "generate a video" without UGC stills → video-prompt
-- Influencer hook, reaction clip, animate this creator still → influencer-hook-video
+- Photography, stills, product shots, portraits, UGC scene photos → image-prompt
+- Motion, camera moves, animate a still, UGC clip video → video-prompt
 - Paid ads, Meta ads, product-in-scene with templates → static-ad
-- UGC start-frame still, "photo for this scene", creator + product refs → ugc-still-prompt
-- Animate a still / UGC clip from a start frame → ugc-video-planner
-- Spoken creator ad, "script they say to camera" → ugc-ad-script
-- Full UGC campaign plan, scenes + image/video prompts from a brief → ugc-ad-plan
-- On-screen timed captions / Reels overlays → video-script
-- Carousel / TikTok slideshow slides → slideshow
+- On-screen timed captions, spoken UGC lines, voiceover scripts → video-script
 - Caption, Instagram copy, LinkedIn post → post-copy
 
 If two tools could fit, pick the one whose OUTPUT the user will actually consume.

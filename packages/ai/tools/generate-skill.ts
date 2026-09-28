@@ -1,5 +1,5 @@
-import type { GenerateSkillInput, GenerateSkillResult, PromptKey } from '@socialista/types'
-import { PROMPT_KEY_VALUES } from '@socialista/types'
+import type { GenerateSkillInput, GenerateSkillResult, SkillTarget } from '@socialista/types'
+import { SKILL_TARGET_VALUES } from '@socialista/types'
 import { generateObject } from 'ai'
 
 import { buildSkillGenerationUserPrompt } from '../builders/skill.js'
@@ -7,16 +7,16 @@ import { SKILL_GENERATION_SYSTEM } from '../prompts/skill.js'
 import { skillGeneratedSchema } from '../schemas/skill-generation.js'
 
 const SKILL_GENERATION_MODEL = 'anthropic/claude-sonnet-4.6'
-const DEFAULT_TARGET: PromptKey = 'image-prompt'
+const DEFAULT_TARGET: SkillTarget = 'image-prompt'
 const MAX_NAME = 80
 const MAX_DESCRIPTION = 400
 const MAX_ICON = 16
 
-const TARGETS = new Set<PromptKey>(PROMPT_KEY_VALUES)
+const TARGETS = new Set<SkillTarget>(SKILL_TARGET_VALUES)
 const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/
 
-function asTarget(value: string): PromptKey {
-  if (TARGETS.has(value as PromptKey)) return value as PromptKey
+function asTarget(value: string): SkillTarget {
+  if (TARGETS.has(value as SkillTarget)) return value as SkillTarget
   return DEFAULT_TARGET
 }
 

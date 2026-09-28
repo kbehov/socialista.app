@@ -107,7 +107,7 @@ export const generateUgcStills = schemaTask({
       const aspectRatio = resolveAspectRatio(project.aspectRatio)
       const systemOverride = await loadSkillOverride({
         skillId: payload.skillId,
-        target: PROMPT_KEYS.ugcStillPrompt,
+        target: PROMPT_KEYS.imagePrompt,
         workspaceId: payload.workspaceId,
       })
 

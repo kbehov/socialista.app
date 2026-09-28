@@ -1,5 +1,6 @@
 import type { HydratedDocument, Types } from 'mongoose'
 import type { SocialProvider } from './account.types.js'
+import type { PostAnalyticsState } from './post-analytics.types.js'
 
 export enum PostType {
   TEXT = 'text',
@@ -108,6 +109,8 @@ export interface IPost {
   providerOperationId?: string
   providerPostId?: string
   providerPermalink?: string
+  /** Checkpoint schedule for per-post insights. Absent on unpublished / unsupported posts. */
+  postAnalytics?: PostAnalyticsState
   createdAt: Date
   updatedAt: Date
 }

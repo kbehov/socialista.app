@@ -6,13 +6,11 @@ import { getModels } from '@/services/models.service'
 import { createSlideshow } from '@/services/slideshow.service'
 import { searchUnsplashPhotos, trackUnsplashDownload } from '@/services/unsplash.service'
 import { deductWorkspaceAiCredits, getWorkspaceBalance } from '@/services/workspace.service'
-import { loadSkillOverride } from '@/services/skill.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import { createPublicAccessToken } from '@socialista/trigger'
 import type { RealtimeSlideshowGenerationTask } from '@socialista/trigger/task-types'
 import { buildSlideshowSlides, planSlideshow } from '@socialista/ai'
 import {
-  PROMPT_KEYS,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
   SLIDESHOW_PLAN_CREDIT_COST,
@@ -28,7 +26,6 @@ export type GenerateSlideshowFromPromptInput = {
   prompt: string
   slideCount?: number
   aspectRatioId?: string
-  skillId?: string
   textModel?: string
 }
 
@@ -157,10 +154,8 @@ export async function generateSlideshowFromPrompt(
       return { success: false, error: 'Insufficient AI credits.' }
     }
 
-    const systemOverride = await loadSkillOverride(workspace.id, PROMPT_KEYS.slideshow, input.skillId)
     const plan = await planSlideshow({
       hook: trimmed,
-      systemOverride,
       ...(slideCount != null ? { slideCount } : {}),
       ...(textModelRes.model ? { model: textModelRes.model.value } : {}),
     })
@@ -265,7 +260,6 @@ export async function startSlideshowGeneration(
       canvas: preset.dimensions,
       ...(slideCount != null ? { slideCount } : {}),
       ...(project?.id ? { projectId: project.id } : {}),
-      ...(input.skillId ? { skillId: input.skillId } : {}),
       ...(textModelRes.model ? { textModel: textModelRes.model.value } : {}),
     })
 

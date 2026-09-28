@@ -3,10 +3,9 @@
 import { auth } from '@/auth'
 import { getModels } from '@/services/models.service'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
-import { loadSkillOverride } from '@/services/skill.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { generateSlideshow } from '@socialista/ai'
-import { ModelType, PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, type Model, type SlideshowContentType } from '@socialista/types'
+import { ModelType, SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, type Model, type SlideshowContentType } from '@socialista/types'
 
 export type GenerateSlideshowActionResult =
   | { success: true; texts: string[]; contentType: SlideshowContentType }
@@ -31,7 +30,6 @@ async function resolveTextModel(
 export async function generateSlideshowSlides(
   hook: string,
   slideCount: number | undefined,
-  skillId?: string,
   textModel?: string,
 ): Promise<GenerateSlideshowActionResult> {
   const trimmed = hook.trim()
@@ -64,10 +62,8 @@ export async function generateSlideshowSlides(
       return { success: false, error: textModelRes.error }
     }
 
-    const systemOverride = await loadSkillOverride(workspaceId._id, PROMPT_KEYS.slideshow, skillId)
     const result = await generateSlideshow({
       hook: trimmed,
-      systemOverride,
       ...(slideCount != null ? { slideCount } : {}),
       ...(textModelRes.model ? { model: textModelRes.model.value } : {}),
     })

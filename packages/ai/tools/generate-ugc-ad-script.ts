@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { clampUgcScript, PROMPT_KEYS, type SanitizedMedia } from '@socialista/types'
 
 import { buildImagePromptMessages } from '../builders/image.js'
+import { UGC_AD_SCRIPT_SYSTEM } from '../prompts/ugc-ad-script.js'
 import { resolvePrompt } from '../registry.js'
 import {
   buildUgcAdScriptSegmentsUserPrompt,
@@ -41,7 +42,8 @@ const segmentsSchema = z.object({
 })
 
 export async function generateUgcAdScript(input: GenerateUgcAdScriptInput): Promise<string> {
-  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcAdScript, input.systemOverride)
+  const { model } = resolvePrompt(PROMPT_KEYS.videoScript)
+  const system = input.systemOverride?.trim() || UGC_AD_SCRIPT_SYSTEM
   const media = input.media?.filter(item => item.imageUrl)
   const result = await generateText({
     model,
@@ -66,7 +68,8 @@ export async function generateUgcAdScriptSegments(
 ): Promise<UgcAdScriptSegmentResult[]> {
   if (input.scenes.length === 0) return []
 
-  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcAdScript, input.systemOverride)
+  const { model } = resolvePrompt(PROMPT_KEYS.videoScript)
+  const system = input.systemOverride?.trim() || UGC_AD_SCRIPT_SYSTEM
   const result = await generateObject({
     model,
     schema: segmentsSchema,

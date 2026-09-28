@@ -1,6 +1,6 @@
 import type { PlanSlideshowInput, SlideshowPlan } from '@socialista/types'
 import {
-  PROMPT_KEYS,
+  REGISTRY_PROMPT_KEYS,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
 } from '@socialista/types'
@@ -34,7 +34,7 @@ export async function planSlideshow({
         )
       : undefined
   const schema = createSlideshowPlanSchema(resolvedCount)
-  const { model: defaultModel, system } = resolvePrompt(PROMPT_KEYS.slideshow, systemOverride)
+  const { model: defaultModel, system } = resolvePrompt(REGISTRY_PROMPT_KEYS.slideshow, systemOverride)
   const model = modelOverride?.trim() || defaultModel
 
   const result = await generateObject({

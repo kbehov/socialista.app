@@ -19,11 +19,11 @@ import {
 } from '@socialista/db'
 import {
   countWords,
-  PROMPT_KEY_VALUES,
   SKILL_CONTENT_MAX_WORDS,
+  SKILL_TARGET_VALUES,
   type CreateSkillPayload,
-  type PromptKey,
   type Skill,
+  type SkillTarget,
   type UpdateSkillPayload,
 } from '@socialista/types'
 import type { Context } from 'hono'
@@ -65,8 +65,8 @@ async function uniqueWorkspaceSlug(workspaceId: string, base: string, exceptId?:
   return slug
 }
 
-function isPromptKey(value: unknown): value is PromptKey {
-  return typeof value === 'string' && (PROMPT_KEY_VALUES as readonly string[]).includes(value)
+function isSkillTarget(value: unknown): value is SkillTarget {
+  return typeof value === 'string' && (SKILL_TARGET_VALUES as readonly string[]).includes(value)
 }
 
 function assertSkillContentWordLimit(content: string) {
@@ -85,7 +85,7 @@ function parseCreateSkillInput(body: Record<string, unknown>): CreateSkillPayloa
   const name = requireTrimmedString(body.name, 'Skill name')
   const content = requireTrimmedString(body.content, 'Skill content')
   assertSkillContentWordLimit(content)
-  if (!isPromptKey(body.target)) {
+  if (!isSkillTarget(body.target)) {
     throw new HttpError(400, 'Invalid skill target')
   }
   return {
@@ -120,7 +120,7 @@ function parseUpdateSkillInput(body: Record<string, unknown>): UpdateSkillPayloa
     updates.icon = optionalTrimmedString(body.icon) ?? null
   }
   if (body.target !== undefined) {
-    if (!isPromptKey(body.target)) throw new HttpError(400, 'Invalid skill target')
+    if (!isSkillTarget(body.target)) throw new HttpError(400, 'Invalid skill target')
     updates.target = body.target
   }
   const content = optionalTrimmedString(body.content)

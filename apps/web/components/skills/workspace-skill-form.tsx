@@ -1,6 +1,6 @@
 'use client'
 
-import { PROMPT_KEY_VALUES, PROMPT_KEY_LABELS, type PromptKey } from '@socialista/types'
+import { SKILL_TARGET_LABELS, SKILL_TARGET_VALUES, type SkillTarget } from '@socialista/types'
 import { FieldError } from '@/components/forms/auth-form-shared'
 import { SkillMarkdownEditor } from '@/components/markdown-editor/skill-markdown-editor'
 import { WorkspaceSkillFormTopbar } from '@/components/skills/workspace-skill-form-topbar'
@@ -238,9 +238,9 @@ export function WorkspaceSkillForm({ workspaceId, skill }: WorkspaceSkillFormPro
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" align="start">
-                    {PROMPT_KEY_VALUES.map(target => (
+                    {SKILL_TARGET_VALUES.map(target => (
                       <SelectItem key={target} value={target}>
-                        {PROMPT_KEY_LABELS[target as PromptKey]}
+                        {SKILL_TARGET_LABELS[target as SkillTarget]}
                       </SelectItem>
                     ))}
                   </SelectContent>

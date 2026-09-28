@@ -1,6 +1,8 @@
 import type { refreshAccountToken } from './tasks/accounts/refresh-account-token.js'
 import type { analyticsSweep } from './tasks/analytics/sweep-account-analytics.js'
 import type { fetchAccountAnalyticsTask } from './tasks/analytics/fetch-account-analytics.js'
+import type { postAnalyticsSweep } from './tasks/analytics/sweep-post-analytics.js'
+import type { fetchPostAnalyticsTask } from './tasks/analytics/fetch-post-analytics.js'
 import type { realtimeImageGeneration } from './tasks/image/generate-image-realtime.js'
 import type { realtimeStaticAdGeneration } from './tasks/image/generate-static-ad-realtime.js'
 import type { cloneInfluencer } from './tasks/influencer/clone-influencer.js'
@@ -30,6 +32,8 @@ export type RefreshAccountTokenTask = typeof refreshAccountToken
 export type PublishPostTask = typeof publishPost
 export type AnalyticsSweepTask = typeof analyticsSweep
 export type FetchAccountAnalyticsTask = typeof fetchAccountAnalyticsTask
+export type PostAnalyticsSweepTask = typeof postAnalyticsSweep
+export type FetchPostAnalyticsTask = typeof fetchPostAnalyticsTask
 export type ExportVideoTask = typeof exportVideo
 export type GenerateVideoCaptionsTask = typeof generateVideoCaptions
 export type GenerateAudioTask = typeof generateAudio

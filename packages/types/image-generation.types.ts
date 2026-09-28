@@ -58,6 +58,8 @@ export const TASK_IDS = {
   publishPost: 'publish-post',
   analyticsSweep: 'analytics-sweep',
   fetchAccountAnalytics: 'fetch-account-analytics',
+  postAnalyticsSweep: 'post-analytics-sweep',
+  fetchPostAnalytics: 'fetch-post-analytics',
   videoExport: 'export-video',
   generateInfluencer: 'generate-influencer',
   generateInfluencerHookVideo: 'generate-influencer-hook-video',

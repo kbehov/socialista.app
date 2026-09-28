@@ -2,7 +2,7 @@ import {
   clampUgcDuration,
   clampUgcScript,
   coerceUgcClipType,
-  PROMPT_KEYS,
+  REGISTRY_PROMPT_KEYS,
   ugcCatalogSceneName,
   ugcClipRequiresProduct,
   ugcClipRequiresScript,
@@ -120,7 +120,7 @@ export async function planUgcAd(input: PlanUgcAdInput): Promise<UgcAdPlan> {
   const allowed = new Set(allowedTypes)
   const schema = ugcAdPlanSchema(allowedTypes)
 
-  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcAdPlan, input.systemOverride)
+  const { model, system } = resolvePrompt(REGISTRY_PROMPT_KEYS.ugcAdPlan, input.systemOverride)
   const baseMessages = buildUgcAdPlanMessages({
     ...input,
     description,

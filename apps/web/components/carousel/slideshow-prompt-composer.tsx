@@ -11,7 +11,6 @@ import {
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
-import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { SlideshowPromptAnatomy } from '@/components/studio/slideshows/slideshow-prompt-anatomy'
 import { useSlideshowStudio } from '@/components/studio/slideshows/slideshow-studio-provider'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
@@ -41,7 +40,6 @@ import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCredits } from '@/utils/format'
 import { commitHaptic } from '@/utils/haptics'
 import {
-  PROMPT_KEYS,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MAX,
   SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
   SLIDESHOW_PLAN_CREDIT_COST,
@@ -87,7 +85,6 @@ function SlideshowPromptComposerInner({
   const [aspectRatioId, setAspectRatioId] = useState(DEFAULT_ASPECT_RATIO_ID)
   const [selectedModelId, setSelectedModelId] = useState(models[0]?._id ?? '')
   const [selectedTextModelId, setSelectedTextModelId] = useState(textModels[0]?._id ?? '')
-  const [skillId, setSkillId] = useState<string | undefined>()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const selectedPreset =
@@ -187,7 +184,6 @@ function SlideshowPromptComposerInner({
         const result = await startSlideshowGeneration({
           prompt,
           aspectRatioId,
-          skillId,
           model: selectedModel.value,
           workspaceId: currentWorkspace._id,
           ...(isAutoSlideCount ? {} : { slideCount }),
@@ -206,7 +202,6 @@ function SlideshowPromptComposerInner({
       const result = await generateSlideshowFromPrompt({
         prompt,
         aspectRatioId,
-        skillId,
         ...(isAutoSlideCount ? {} : { slideCount }),
         ...(selectedTextModel ? { textModel: selectedTextModel.value } : {}),
       })
@@ -331,12 +326,6 @@ function SlideshowPromptComposerInner({
                 {useAiImages ? 'AI images' : 'Stock'}
               </span>
             </PromptInputButton>
-            <StudioSkillPicker
-              target={PROMPT_KEYS.slideshow}
-              value={skillId}
-              onChange={setSkillId}
-              disabled={isPending}
-            />
             {textModels.length > 0 ? (
               <StudioComposerModelSelector
                 models={textModels}
