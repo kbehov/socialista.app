@@ -7,6 +7,7 @@ import type {
   ApiResponse,
   BrandResponse,
   CreateBrandPayload,
+  ExtractBrandResponse,
   GetBrandsResponse,
   UpdateBrandPayload,
 } from '@socialista/types'
@@ -14,6 +15,10 @@ import { revalidatePath } from 'next/cache'
 
 function revalidateBrandPaths() {
   revalidatePath(DASHBOARD_ROUTES.BRANDS)
+}
+
+export const extractBrand = async (url: string): Promise<ApiResponse<ExtractBrandResponse>> => {
+  return api.post<ExtractBrandResponse>(BRAND_ROUTES.EXTRACT, { url })
 }
 
 export const createBrand = async (payload: CreateBrandPayload): Promise<ApiResponse<BrandResponse>> => {

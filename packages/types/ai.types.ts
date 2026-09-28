@@ -92,6 +92,19 @@ export type SkillBrandContext = {
   colors?: string[]
 }
 
+/** Scraped page facts sent to the brand-from-URL extractor. Not a persisted document. */
+export type SiteBrandContextInput = {
+  url: string
+  title?: string
+  metaDescription?: string
+  siteName?: string
+  headings?: string[]
+  text: string
+  jsonLd?: string
+  logoUrl?: string
+  colors?: string[]
+}
+
 export type GenerateSkillInput = {
   description: string
   target?: PromptKey

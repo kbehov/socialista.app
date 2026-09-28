@@ -121,6 +121,7 @@ export const AI_COMPANY_ROUTES = {
 
 export const BRAND_ROUTES = {
   CREATE: '/brands',
+  EXTRACT: '/brands/extract',
   GET_BY_ID: (id: string) => `/brands/${id}`,
   UPDATE: (id: string) => `/brands/${id}`,
   DELETE: (id: string) => `/brands/${id}`,
