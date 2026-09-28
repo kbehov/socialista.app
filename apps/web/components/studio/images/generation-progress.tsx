@@ -14,10 +14,9 @@ export function GenerationProgress({ runId, models }: GenerationProgressProps) {
     <GenerationRunView
       backHref={DASHBOARD_ROUTES.STUDIO.IMAGES}
       contentKind="image"
-      generatingTitle="Generating"
       models={models}
-      previewHeadingId="generation-preview-heading"
-      progressHeadingId="generation-progress-heading"
+      previewHeadingId="image-generation-preview-heading"
+      progressHeadingId="image-generation-progress-heading"
       retryLabel="Try another prompt"
       runId={runId}
       studioLabel="Image studio"

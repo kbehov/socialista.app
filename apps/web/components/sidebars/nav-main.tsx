@@ -54,7 +54,7 @@ function NavItems({ items }: { items: NavMainItem[] }) {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton tooltip={item.title} isActive={isItemActive(pathname, item)}>
                   {item.icon}
-                  <span className="text-sm">{item.title}</span>
+                  <span>{item.title}</span>
                   <ChevronRightIcon
                     className="ml-auto size-3! text-muted-foreground transition-transform duration-150 group-data-[state=open]/collapsible:rotate-90"
                     strokeWidth={2}
@@ -67,7 +67,7 @@ function NavItems({ items }: { items: NavMainItem[] }) {
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild isActive={isSubItemActive(pathname, subItem.url)}>
                         <Link href={subItem.url}>
-                          <span className="text-sm">{subItem.title}</span>
+                          <span>{subItem.title}</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
@@ -77,11 +77,11 @@ function NavItems({ items }: { items: NavMainItem[] }) {
             </SidebarMenuItem>
           </Collapsible>
         ) : (
-          <SidebarMenuItem key={item.title} className="py-0.5">
+          <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild tooltip={item.title} isActive={isItemActive(pathname, item)}>
               <Link href={item.url}>
                 {item.icon}
-                <span className="text-sm">{item.title}</span>
+                <span>{item.title}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

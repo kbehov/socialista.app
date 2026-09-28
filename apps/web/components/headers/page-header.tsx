@@ -14,7 +14,6 @@ import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Fragment } from 'react'
-import { Separator } from '../ui/separator'
 
 export type PageHeaderBreadcrumb = {
   label: string
@@ -48,18 +47,13 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'sticky top-0 z-20 -mx-(--spacing-dashboard-x) shrink-0 bg-background/95 px-(--spacing-dashboard-x) pt-7 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8',
-        compact ? 'mb-3 space-y-2 pb-2' : 'mb-4 space-y-6 pb-2',
+        'sticky top-0 z-20 -mx-(--spacing-dashboard-x) mb-4 shrink-0 border-b border-sidebar-border bg-background px-(--spacing-dashboard-x) pt-6 pb-3',
+        compact ? 'space-y-2' : 'space-y-3',
         className,
       )}
     >
-      {hasBreadcrumbs ? (
-        <Breadcrumb
-          className={cn(
-            'transition-opacity duration-200',
-            compact && 'pointer-events-none h-0 overflow-hidden opacity-0',
-          )}
-        >
+      {hasBreadcrumbs && !compact ? (
+        <Breadcrumb>
           <BreadcrumbList className="gap-1.5 text-[11px] font-medium text-muted-foreground sm:gap-2">
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1
@@ -85,63 +79,33 @@ export function PageHeader({
         </Breadcrumb>
       ) : null}
 
-      <div
-        className={cn(
-          'flex flex-col sm:flex-row sm:items-center sm:justify-between',
-          compact ? 'gap-2' : 'gap-4',
-        )}
-      >
-        <div className="flex min-w-0 items-start gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           {backHref ? (
             <Link
               href={backHref}
               aria-label="Go back"
-              className={cn(
-                'inline-flex shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background text-muted-foreground shadow-xs transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground',
-                compact ? 'mt-0 size-8' : 'mt-0.5 size-9',
-              )}
+              className="dashboard-header-icon inline-flex shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
             >
-              <ChevronLeftIcon className="size-4" strokeWidth={1.75} />
+              <ChevronLeftIcon className="size-4" strokeWidth={1.5} />
               <span className="sr-only">Back</span>
             </Link>
           ) : null}
 
           <div className="min-w-0">
-            <h1
-              className={cn(
-                'truncate font-semibold tracking-[-0.025em] text-foreground transition-[font-size,line-height] duration-200 ease-out',
-                compact ? 'text-lg leading-snug sm:text-xl' : 'text-2xl leading-tight sm:text-[1.75rem]',
-              )}
-            >
+            <h1 className="truncate text-[1.375rem] leading-tight font-[590] tracking-tight text-foreground">
               {title}
             </h1>
-            {description ? (
-              <p
-                className={cn(
-                  'max-w-2xl text-sm leading-5 text-muted-foreground',
-                  compact
-                    ? 'pointer-events-none mt-0 hidden'
-                    : 'mt-1',
-                )}
-              >
-                {description}
-              </p>
+            {description && !compact ? (
+              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">{description}</p>
             ) : null}
           </div>
         </div>
 
         {actions ? (
-          <div
-            className={cn(
-              'flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end',
-              compact && '[&_button]:h-8 [&_button]:px-3 [&_button]:text-xs',
-            )}
-          >
-            {actions}
-          </div>
+          <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
         ) : null}
       </div>
-      <Separator className={cn('bg-border/70', compact && 'opacity-60')} />
     </div>
   )
 }

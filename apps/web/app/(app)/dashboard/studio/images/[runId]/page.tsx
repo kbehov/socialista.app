@@ -1,3 +1,4 @@
+import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
 import { GenerationProgress } from '@/components/studio/images/generation-progress'
 import { getModels } from '@/services/models.service'
 
@@ -14,7 +15,7 @@ export default async function ImageGenerationRunPage({ params }: ImageGeneration
   const models = modelsRes.success ? (modelsRes.data?.models ?? []) : []
 
   return (
-    <div className="image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className={lockedStudioShellRootClassName}>
       <GenerationProgress models={models} runId={runId} />
     </div>
   )

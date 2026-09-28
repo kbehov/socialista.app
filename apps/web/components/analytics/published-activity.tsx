@@ -56,7 +56,7 @@ function PublishedActivity({ data, className }: PublishedActivityProps) {
       title="Publishing activity"
       action={
         timeSaved ? (
-          <span className="text-[11px] text-muted-foreground">{timeSaved}</span>
+          <span className="text-[11px] font-[510] text-accent-orange/90">{timeSaved}</span>
         ) : null
       }
       metrics={[
@@ -77,7 +77,6 @@ function PublishedActivity({ data, className }: PublishedActivityProps) {
         data: data.activity,
         days: data.days,
         endDate: data.end,
-        colorScheme: 'neutral',
         size: 'sm',
         weekStartsOn: 1,
         hideTotal: true,

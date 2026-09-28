@@ -1,12 +1,11 @@
 'use client'
 
+import { imageStudioHomeRootClassName } from '@/components/dashboard/studio-shell'
 import { ImageStudioProvider } from '@/components/studio/images/image-studio-provider'
 import type { Model, StudioTemplateCategoryDto } from '@socialista/types'
-import Image from 'next/image'
+import { useTheme } from 'next-themes'
 import { ImageTemplatesGallery } from './image-templates-gallery'
 import ImageGenerationPromptInput from './prompt-input'
-
-const STAGE_IMAGE_SIZES = '(max-width: 768px) 100vw, 1200px'
 
 type ImageStudioWorkspaceProps = {
   models: Model[]
@@ -14,17 +13,18 @@ type ImageStudioWorkspaceProps = {
 }
 
 export function ImageStudioWorkspace({ models, templateCategories }: ImageStudioWorkspaceProps) {
+  useTheme()
   return (
     <ImageStudioProvider>
-      <div className="image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col">
+      <div className={imageStudioHomeRootClassName}>
         <section
           id="image-studio-composer"
           aria-label="Create an image"
-          className="relative px-4 pt-8 pb-7 sm:px-6 sm:pt-10 sm:pb-9 lg:px-8"
+          className="relative px-4 pt-5 pb-7 sm:px-6 sm:pt-6 sm:pb-9 lg:px-8"
         >
-          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
             <Image
-              src="/studio-image.png"
+              src={heroImage}
               alt=""
               fill
               priority
@@ -33,11 +33,11 @@ export function ImageStudioWorkspace({ models, templateCategories }: ImageStudio
               className="object-cover object-[50%_42%] select-none"
             />
             <div className="image-studio-prompt-stage-scrim absolute inset-0" />
-          </div>
+          </div> */}
 
-          <div className="relative z-10 mx-auto flex w-full max-w-[48rem] flex-col items-center">
-            <h1 className="mb-5 text-center text-[1.625rem] font-semibold leading-none tracking-[-0.035em] text-white [text-shadow:0_1px_18px_rgb(0_0_0/0.45)] sm:mb-6 sm:text-[1.75rem]">
-              Make the image.
+          <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center">
+            <h1 className="mb-5 text-center text-xl font-medium tracking-[-0.02em] text-foreground">
+              🖼️ Imagine it, create it.
             </h1>
             <div className="w-full">
               <ImageGenerationPromptInput models={models} />
@@ -49,7 +49,7 @@ export function ImageStudioWorkspace({ models, templateCategories }: ImageStudio
           aria-label="Templates"
           className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-1 pb-16 sm:px-6 sm:pb-20 lg:px-8"
         >
-          <ImageTemplatesGallery models={models} templateCategories={templateCategories} />
+          <ImageTemplatesGallery models={models} templateCategories={templateCategories} hideTitle={true} />
         </section>
       </div>
     </ImageStudioProvider>

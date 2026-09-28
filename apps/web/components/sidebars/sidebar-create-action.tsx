@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
-import { ImagesIcon, LayersIcon, SquarePenIcon, UserRoundIcon, VideoIcon } from 'lucide-react'
+import { ImagesIcon, LayersIcon, PlusIcon, UserRoundIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 
 const createOptions = [
@@ -50,8 +50,12 @@ export function SidebarCreateAction({ compact = false }: { compact?: boolean }) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="sidebar-header-icon group-data-[collapsible=icon]:hidden" aria-label="Create">
-          <SquarePenIcon />
+        <button
+          type="button"
+          className="sidebar-create-primary group-data-[collapsible=icon]:hidden"
+          aria-label="Create"
+        >
+          <PlusIcon />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side="bottom" sideOffset={4} className="w-44">

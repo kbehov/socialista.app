@@ -44,21 +44,21 @@ function PlatformSummary({ overview, growth, provider = 'all', className }: Plat
                 <div className="flex items-center gap-2">
                   <SocialPlatformIcon provider={row.provider} size={14} className="size-5 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-medium text-foreground">
+                    <p className="truncate text-[13px] font-[510] text-foreground">
                       {getSocialPlatformLabel(row.provider)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       {row.accounts} account{row.accounts === 1 ? '' : 's'}
                     </p>
                   </div>
-                  <p className="text-[13px] font-medium tabular-nums tracking-[-0.02em] text-foreground">
+                  <p className="text-[13px] font-[590] tabular-nums tracking-tight text-foreground">
                     {formatCount(followers)}
                   </p>
                 </div>
                 <Progress
                   value={pct}
-                  className="h-px rounded-none bg-muted"
-                  indicatorClassName="rounded-none bg-foreground/55"
+                  className="h-0.5 rounded-none bg-muted"
+                  indicatorClassName="rounded-none bg-foreground/50"
                   aria-label={`${getSocialPlatformLabel(row.provider)} share of audience`}
                 />
               </li>

@@ -27,7 +27,7 @@ export function StudioReferenceTagHint({
   const hasAttachments = attachmentCount > 0;
 
   return (
-    <p className="px-0.5 text-[12px] leading-[1.55] tracking-[-0.01em] text-black/56 dark:text-white/56">
+    <p className="px-0.5 text-[12px] leading-normal tracking-[-0.01em] text-muted-foreground/80">
       {hasAttachments ? (
         <>
           Type <span className="font-medium text-foreground/70">@</span> or tap

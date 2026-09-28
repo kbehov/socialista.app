@@ -69,7 +69,7 @@ export function ContextHubHeader({ workspaceId }: ContextHubHeaderProps) {
   const meta = onSkills ? pageMeta.skills : onProducts ? pageMeta.products : onBrands ? pageMeta.brands : null
 
   return (
-    <header className="sticky top-0 z-20 -mx-(--spacing-dashboard-x) shrink-0 bg-background/95 px-(--spacing-dashboard-x) backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <header className="sticky top-0 z-20 -mx-(--spacing-dashboard-x) shrink-0 bg-background px-(--spacing-dashboard-x)">
       <div className="flex items-center gap-5 border-b border-border/50 py-2.5">
         <span className="shrink-0 text-[13px] font-semibold tracking-tight text-foreground">Context</span>
 

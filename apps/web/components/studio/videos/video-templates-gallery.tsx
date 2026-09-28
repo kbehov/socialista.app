@@ -13,9 +13,14 @@ import { useState } from 'react'
 type VideoTemplatesGalleryProps = {
   models: Model[]
   templateCategories: StudioTemplateCategoryDto[]
+  hideTitle?: boolean
 }
 
-export function VideoTemplatesGallery({ models, templateCategories }: VideoTemplatesGalleryProps) {
+export function VideoTemplatesGallery({
+  models,
+  templateCategories,
+  hideTitle = false,
+}: VideoTemplatesGalleryProps) {
   const [recreateTemplate, setRecreateTemplate] = useState<StudioTemplateDto | null>(null)
 
   return (
@@ -24,6 +29,7 @@ export function VideoTemplatesGallery({ models, templateCategories }: VideoTempl
         kind={StudioTemplateKind.VIDEO}
         templateCategories={templateCategories}
         sectionTitle="Templates"
+        hideTitle={hideTitle}
         headingTone="quiet"
         chipTone="studio"
         emptyTitle="No templates yet"

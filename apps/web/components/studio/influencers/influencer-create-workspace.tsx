@@ -2,6 +2,7 @@
 
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import { dashboardSurface } from '@/components/dashboard'
+import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
 import { StudioComposerModelSelector } from '@/components/studio/prompt/studio-composer-model-selector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -224,7 +225,7 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
   }
 
   return (
-    <div className="image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className={lockedStudioShellRootClassName}>
       <form
         className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
         onSubmit={handleSubmit}

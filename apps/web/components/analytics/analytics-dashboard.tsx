@@ -55,9 +55,9 @@ function AnalyticsDashboard({
   const showToolbar = showAccountFilter || showPlatformFilter || isPremium
 
   return (
-    <div className="flex w-full flex-col gap-5 pb-8">
+    <div className="flex w-full flex-col gap-(--spacing-dashboard-gap)">
       {showToolbar ? (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           {showAccountFilter ? (
             <AccountFilter
               accounts={accounts}
@@ -129,7 +129,7 @@ function ProjectAnalyticsPanels({
       <OverviewMetrics overview={overview} />
 
       {isPremium ? (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
+        <div className="grid gap-(--spacing-dashboard-gap) xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
           <Suspense
             fallback={
               <AnalyticsSkeleton
@@ -182,7 +182,7 @@ function ProjectAnalyticsPanels({
       </Suspense>
 
       {isPremium ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-(--spacing-dashboard-gap)">
           <Suspense
             fallback={
               <AnalyticsSkeleton

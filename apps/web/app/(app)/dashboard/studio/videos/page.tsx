@@ -61,6 +61,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
       initialVideos={videos}
       initialError={error}
       initialHasMore={Boolean(videosResponse.meta?.hasNextPage)}
+      initialTotal={videosResponse.meta?.total}
       initialAttachmentUrl={initialAttachmentUrl}
       templateCategories={
         templateCategoriesRes.success ? (templateCategoriesRes.data?.categories ?? []) : []

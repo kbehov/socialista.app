@@ -14,8 +14,6 @@ import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { SlideshowPromptAnatomy } from '@/components/studio/slideshows/slideshow-prompt-anatomy'
 import { useSlideshowStudio } from '@/components/studio/slideshows/slideshow-studio-provider'
-import { StudioPreset } from '@/components/studio/prompt/studio-preset'
-import { buildPresetPlaceholderExamples } from '@/lib/studio/preset-media'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
@@ -48,7 +46,6 @@ import {
   SLIDESHOW_GENERATION_SLIDE_COUNT_MIN,
   SLIDESHOW_PLAN_CREDIT_COST,
   type Model,
-  type Preset,
 } from '@socialista/types'
 import { ChevronDownIcon, ImagesIcon, SparklesIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -73,17 +70,15 @@ function getSubmitShortcutLabel() {
 function SlideshowPromptComposerInner({
   models,
   textModels,
-  presets = [],
   homeHero = false,
 }: {
   models: Model[]
   textModels: Model[]
-  presets?: Preset[]
   homeHero?: boolean
 }) {
   const router = useRouter()
   const [submitShortcut] = useState(getSubmitShortcutLabel)
-  const { composerRef, registerPromptHandlers, applyPreset } = useSlideshowStudio()
+  const { composerRef, registerPromptHandlers } = useSlideshowStudio()
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const { textInput } = usePromptInputController()
   const [isPending, startTransition] = useTransition()
@@ -172,12 +167,6 @@ function SlideshowPromptComposerInner({
     if (isAutoSlideCount) return useAiImages ? 'Generate' : 'Create'
     return useAiImages ? `Generate ${slideCount}` : `Create ${slideCount}`
   }, [homeHero, isPending, isAutoSlideCount, slideCount, useAiImages])
-
-  const animatedPlaceholderWords = useMemo(() => {
-    if (!homeHero) return undefined
-    const examples = buildPresetPlaceholderExamples(presets)
-    return examples.length > 0 ? examples : undefined
-  }, [homeHero, presets])
 
   const handleSubmit = (message: PromptInputMessage) => {
     const prompt = message.text.trim()
@@ -295,7 +284,6 @@ function SlideshowPromptComposerInner({
           label: 'Number of slides',
         }}
         placeholder={DEFAULT_PLACEHOLDER}
-        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={submitLabel}
@@ -363,9 +351,7 @@ function SlideshowPromptComposerInner({
 
       {homeHero ? null : (
         <div className="mt-4 flex flex-col items-center gap-4">
-          <StudioPreset presets={presets} disabled={isPending} onApply={applyPreset} />
-
-          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-sidebar-label tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
               /
             </Kbd>
@@ -379,7 +365,7 @@ function SlideshowPromptComposerInner({
             <span>to generate</span>
           </p>
 
-          <p className="text-[11px] tabular-nums tracking-[-0.01em] text-black/32 dark:text-white/32">
+          <p className="text-sidebar-label tabular-nums tracking-[-0.01em] text-black/32 dark:text-white/32">
             {useAiImages && isAutoSlideCount ? 'from' : '≈'} {formatCredits(estimatedCost)} credits
           </p>
 
@@ -395,22 +381,15 @@ function SlideshowPromptComposerInner({
 export function SlideshowPromptComposer({
   models,
   textModels,
-  presets = [],
   homeHero = true,
 }: {
   models: Model[]
   textModels: Model[]
-  presets?: Preset[]
   homeHero?: boolean
 }) {
   return (
     <PromptInputProvider>
-      <SlideshowPromptComposerInner
-        models={models}
-        textModels={textModels}
-        presets={presets}
-        homeHero={homeHero}
-      />
+      <SlideshowPromptComposerInner models={models} textModels={textModels} homeHero={homeHero} />
     </PromptInputProvider>
   )
 }

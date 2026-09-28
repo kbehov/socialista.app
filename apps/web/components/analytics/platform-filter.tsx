@@ -40,7 +40,7 @@ function PlatformFilter({
     <div
       data-slot="platform-filter"
       className={cn(
-        'flex items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
+        'flex items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
         className,
       )}
       role="tablist"
@@ -67,7 +67,7 @@ function PlatformFilter({
         href={DASHBOARD_ROUTES.ACCOUNTS}
         className={cn(
           dashboardSurface.toolbarControl,
-          'inline-flex size-7 shrink-0 items-center justify-center px-0 text-muted-foreground',
+          'inline-flex size-[var(--control-height)] shrink-0 items-center justify-center px-0 text-muted-foreground',
         )}
         aria-label="Connect another platform"
       >

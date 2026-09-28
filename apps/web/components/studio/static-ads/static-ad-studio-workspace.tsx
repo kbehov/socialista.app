@@ -1,5 +1,6 @@
 'use client'
 
+import { imageStudioHomeRootClassName } from '@/components/dashboard/studio-shell'
 import { StaticAdFormatPresets } from '@/components/studio/static-ads/static-ad-format-presets'
 import { StaticAdPromptInput } from './static-ad-prompt-input'
 import { StaticAdStudioProvider } from './static-ad-studio-provider'
@@ -16,7 +17,7 @@ type StaticAdStudioWorkspaceProps = {
 
 function StaticAdStudioBody({ workspaceId, models }: StaticAdStudioWorkspaceProps) {
   return (
-    <div className="image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col">
+    <div className={imageStudioHomeRootClassName}>
       <section
         id="static-ad-studio-composer"
         aria-label="Create a static ad"

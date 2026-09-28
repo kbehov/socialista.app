@@ -66,15 +66,13 @@ export default async function CreatePostPage({ searchParams }: CreatePostPagePro
   }
 
   return (
-    <div className="px-1 sm:px-0">
-      <PostComposer
-        workspaceId={workspace.id}
-        accounts={accounts}
-        accountsTotal={accountsTotal}
-        initialMedia={initialMedia}
-        slideshowId={slideshowId}
-      />
-    </div>
+    <PostComposer
+      workspaceId={workspace.id}
+      accounts={accounts}
+      accountsTotal={accountsTotal}
+      initialMedia={initialMedia}
+      slideshowId={slideshowId}
+    />
   )
 }
 
