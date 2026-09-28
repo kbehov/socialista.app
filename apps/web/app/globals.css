@@ -2149,7 +2149,7 @@
   }
 
   .slideshow-editor-rail {
-    background-color: var(--background);
+    background-color: color-mix(in oklch, var(--foreground) 2.5%, var(--background));
   }
 
   .video-editor-panel,

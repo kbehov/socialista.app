@@ -9,7 +9,6 @@ import { SlidePagesStrip } from '@/components/carousel/slide-pages-strip'
 import { SlideshowPreviewDialog } from '@/components/carousel/slideshow-preview-dialog'
 import { SlideshowSaveBar } from '@/components/carousel/slideshow-save-bar'
 import { SlideshowStudioMobileSheet } from '@/components/carousel/slideshow-studio-sidebar'
-import { TikTokIcon } from '@/components/icons/tiktok-icon'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,39 +22,44 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useEditorShortcuts } from '@/hooks/carousel/use-editor-shortcuts'
 import type { SidebarTab } from '@/hooks/carousel/use-sidebar-tab'
-import { isBlankSlide } from '@/lib/carousel/defaults'
 import { exportSlidesAsZip } from '@/lib/carousel/export'
 import { useEditorStore } from '@/lib/carousel/store'
 import {
+  ChevronDownIcon,
   ChevronLeftIcon,
   DownloadIcon,
   ImageIcon,
-  LayersIcon,
   Loader2Icon,
   MoreHorizontalIcon,
   PaletteIcon,
   PlayIcon,
   Redo2Icon,
   SendIcon,
+  SlidersHorizontalIcon,
   SparklesIcon,
+  SquareIcon,
   TypeIcon,
   Undo2Icon,
   VideoIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { SlideImageEditProvider, useSlideImageEdit } from './slide-image-edit-provider'
 import { SlidePreviewStack } from './slide-preview-stack'
 
 export function CarouselEditor({ panels }: { panels?: ReactNode }) {
+  const activeLayerId = useEditorStore(s => s.activeLayerId)
+
   return (
     <SlideImageEditProvider>
       <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {panels}
         <CarouselEditorMain />
-        <EditorInspector className="hidden w-72 shrink-0 lg:flex xl:w-80" embedded />
+        {activeLayerId ? (
+          <EditorInspector className="hidden w-72 shrink-0 lg:flex xl:w-80" embedded />
+        ) : null}
       </div>
     </SlideImageEditProvider>
   )
@@ -64,14 +68,13 @@ export function CarouselEditor({ panels }: { panels?: ReactNode }) {
 function CarouselEditorMain() {
   const slides = useEditorStore(s => s.slides)
   const activeSlideId = useEditorStore(s => s.activeSlideId)
-  const activeLayerId = useEditorStore(s => s.activeLayerId)
-  const slideshowId = useEditorStore(s => s.slideshowId)
   const undo = useEditorStore(s => s.undo)
   const redo = useEditorStore(s => s.redo)
   const clearLayerSelection = useEditorStore(s => s.clearLayerSelection)
   const past = useEditorStore(s => s.past)
   const future = useEditorStore(s => s.future)
   const setStudioPanelTab = useEditorStore(s => s.setStudioPanelTab)
+  const studioPanelTab = useEditorStore(s => s.studioPanelTab)
 
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
@@ -79,20 +82,26 @@ function CarouselEditorMain() {
   const [mobileSheetTab, setMobileSheetTab] = useState<SidebarTab>('create')
   const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [hintDismissed, setHintDismissed] = useState(false)
 
   const workspaceRef = useRef<HTMLDivElement>(null)
   const { deselectBackgroundEdit } = useSlideImageEdit()
 
   const activeSlide = slides.find(s => s.id === activeSlideId) ?? slides[0]
+  const activeLayerType = useEditorStore(s => {
+    const slide = s.slides.find(sl => sl.id === s.activeSlideId)
+    return slide?.layers.find(l => l.id === s.activeLayerId)?.type ?? null
+  })
   const canUndo = past.length > 0
   const canRedo = future.length > 0
 
-  const showStarterHint = useMemo(() => {
-    if (hintDismissed) return false
-    if (slides.length !== 1 || !slides[0]) return false
-    return isBlankSlide(slides[0])
-  }, [hintDismissed, slides])
+  const layerChipLabel =
+    activeLayerType === 'text'
+      ? 'Text'
+      : activeLayerType === 'image'
+        ? 'Image'
+        : activeLayerType === 'overlay'
+          ? 'Overlay'
+          : null
 
   useEditorShortcuts({
     onSave: () => {
@@ -107,26 +116,13 @@ function CarouselEditorMain() {
     }
   }, [slides, activeSlideId])
 
-  useEffect(() => {
-    if (!showStarterHint) return
-    const timer = window.setTimeout(() => setHintDismissed(true), 12_000)
-    return () => window.clearTimeout(timer)
-  }, [showStarterHint])
-
-  const openMobileSheet = useCallback((tab: SidebarTab) => {
-    setMobileSheetTab(tab)
-    setMobileSheetOpen(true)
-    setStudioPanelTab(tab)
-  }, [setStudioPanelTab])
-
-  const openCreateSource = useCallback(
-    (source: 'ai' | 'tiktok') => {
-      setHintDismissed(true)
-      openMobileSheet('create')
-      setStudioPanelTab('create')
-      window.dispatchEvent(new CustomEvent('slideshow:create-source', { detail: source }))
+  const openMobileSheet = useCallback(
+    (tab: SidebarTab) => {
+      setMobileSheetTab(tab)
+      setMobileSheetOpen(true)
+      setStudioPanelTab(tab)
     },
-    [openMobileSheet, setStudioPanelTab],
+    [setStudioPanelTab],
   )
 
   const handleExport = useCallback(async () => {
@@ -186,7 +182,6 @@ function CarouselEditorMain() {
       for (const file of files) {
         useEditorStore.getState().addImageLayer(slideId, URL.createObjectURL(file))
       }
-      setHintDismissed(true)
       toast.success(files.length === 1 ? 'Image added' : `${files.length} images added`)
     },
     [],
@@ -260,34 +255,29 @@ function CarouselEditorMain() {
             size="sm"
             variant="ghost"
             className="h-7 gap-1 px-2 text-[12px] font-medium"
-            onClick={() => openMobileSheet('create')}
-            aria-label="Open create panel"
+            onClick={() => openMobileSheet(studioPanelTab)}
+            aria-label="Open studio tools"
           >
-            <SparklesIcon className="size-3.5" strokeWidth={1.75} />
-            Create
+            <SlidersHorizontalIcon className="size-3.5" strokeWidth={1.75} />
+            Tools
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-7 gap-1 px-2 text-[12px] font-medium"
-            onClick={() => openMobileSheet('design')}
-            aria-label="Open design panel"
-          >
-            <PaletteIcon className="size-3.5" strokeWidth={1.75} />
-            Design
-          </Button>
-          {activeLayerId ? (
+          {layerChipLabel ? (
             <Button
               type="button"
               size="sm"
               variant="secondary"
               className="h-7 gap-1 px-2 text-[12px] font-medium"
               onClick={() => setMobileInspectorOpen(true)}
-              aria-label="Open inspector"
+              aria-label={`Edit ${layerChipLabel.toLowerCase()} layer`}
             >
-              <LayersIcon className="size-3.5" strokeWidth={1.75} />
-              Edit
+              {activeLayerType === 'text' ? (
+                <TypeIcon className="size-3.5" strokeWidth={1.75} />
+              ) : activeLayerType === 'image' ? (
+                <ImageIcon className="size-3.5" strokeWidth={1.75} />
+              ) : (
+                <SquareIcon className="size-3.5" strokeWidth={1.75} />
+              )}
+              {layerChipLabel}
             </Button>
           ) : null}
         </div>
@@ -351,56 +341,56 @@ function CarouselEditorMain() {
                 <PaletteIcon className="size-3.5" />
                 Design slide
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
-                <SendIcon className="size-3.5" />
-                Post now
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={handleCreateVideo}>
-                <VideoIcon className="size-3.5" />
-                Create video
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                variant={slideshowId && slides.length > 0 ? 'default' : 'outline'}
-                className="h-7 gap-1.5 px-2.5 text-[12px] font-medium"
-                disabled={exporting || slides.length === 0}
-                aria-label={exporting ? `Exporting ${exportProgress.current} of ${exportProgress.total}` : 'Export'}
-                aria-busy={exporting}
-              >
-                {exporting ? (
-                  <Loader2Icon className="size-3.5 animate-spin" />
-                ) : (
-                  <DownloadIcon className="size-3.5" strokeWidth={1.75} />
-                )}
-                <span className="hidden sm:inline">
-                  {exporting ? `${exportProgress.current} of ${exportProgress.total}` : 'Export'}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                disabled={exporting || slides.length === 0}
-                onSelect={() => void handleExport()}
-              >
-                <DownloadIcon className="size-3.5" />
-                Download images
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
-                <SendIcon className="size-3.5" />
-                Post now
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={handleCreateVideo}>
-                <VideoIcon className="size-3.5" />
-                Create video
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex shrink-0 items-center">
+            <Button
+              size="sm"
+              variant={slides.length > 0 ? 'default' : 'outline'}
+              className="h-7 gap-1.5 rounded-r-none border-r border-primary-foreground/20 px-2.5 text-[12px] font-medium"
+              disabled={exporting || slides.length === 0}
+              onClick={() => void handleExport()}
+              aria-label={
+                exporting
+                  ? `Exporting ${exportProgress.current} of ${exportProgress.total}`
+                  : 'Download images'
+              }
+              aria-busy={exporting}
+            >
+              {exporting ? (
+                <Loader2Icon className="size-3.5 animate-spin" />
+              ) : (
+                <DownloadIcon className="size-3.5" strokeWidth={1.75} />
+              )}
+              <span className="hidden sm:inline">
+                {exporting ? `${exportProgress.current} of ${exportProgress.total}` : 'Export'}
+              </span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant={slides.length > 0 ? 'default' : 'outline'}
+                  className="h-7 rounded-l-none px-1.5"
+                  disabled={slides.length === 0}
+                  aria-label="More export options"
+                >
+                  <ChevronDownIcon className="size-3.5" strokeWidth={1.75} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onSelect={handlePostNow} disabled={slides.length === 0}>
+                  <SendIcon className="size-3.5" />
+                  Post now
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleCreateVideo}>
+                  <VideoIcon className="size-3.5" />
+                  Create video
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -415,27 +405,12 @@ function CarouselEditorMain() {
           >
             <CarouselPreviewLayoutProvider>
               {activeSlide ? (
-                <SlidePreviewStack
-                  emptyState={
-                    showStarterHint ? (
-                      <EmptyCanvasState
-                        onGenerate={() => openCreateSource('ai')}
-                        onImport={() => openCreateSource('tiktok')}
-                        onDesign={() => {
-                          setHintDismissed(true)
-                          openMobileSheet('design')
-                          setStudioPanelTab('design')
-                        }}
-                        onDismiss={() => setHintDismissed(true)}
-                      />
-                    ) : null
-                  }
-                />
+                <SlidePreviewStack />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6">
                   <p className="text-sm font-medium text-foreground">No slides yet</p>
                   <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-                    Use Create to generate carousels with AI, import from TikTok, or add a blank slide.
+                    Use Create to generate carousels with AI or add a blank slide from Design.
                   </p>
                   <Button
                     size="sm"
@@ -479,61 +454,5 @@ function CarouselEditorMain() {
         onExport={() => void handleExport()}
       />
     </main>
-  )
-}
-
-function EmptyCanvasState({
-  onGenerate,
-  onImport,
-  onDesign,
-  onDismiss,
-}: {
-  onGenerate: () => void
-  onImport: () => void
-  onDesign: () => void
-  onDismiss: () => void
-}) {
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-4 sm:bottom-5">
-      <div className="pointer-events-auto w-full max-w-sm rounded-xl border border-border/50 bg-background p-3.5">
-        <div>
-          <p className="text-[13px] font-medium tracking-tight text-foreground">Start this carousel</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-            Generate copy with AI, import a TikTok slideshow, or design a blank slide.
-          </p>
-        </div>
-        <div className="mt-3 flex flex-col gap-1">
-          <Button size="sm" className="h-8 w-full justify-start text-[12px] font-medium" onClick={onGenerate}>
-            <SparklesIcon className="size-3.5" strokeWidth={1.75} />
-            Generate with AI
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 w-full justify-start text-[12px] font-medium"
-            onClick={onImport}
-          >
-            <TikTokIcon size={14} />
-            Import from TikTok
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 w-full justify-start text-[12px] font-medium"
-            onClick={onDesign}
-          >
-            <PaletteIcon className="size-3.5" strokeWidth={1.75} />
-            Start blank
-          </Button>
-        </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="mt-2 text-left text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Dismiss
-        </button>
-      </div>
-    </div>
   )
 }

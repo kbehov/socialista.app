@@ -7,8 +7,6 @@ import { SheetFooter } from '@/components/ui/sheet'
 import { formatCredits } from '@/utils/format'
 import { CheckIcon, PlusIcon, RefreshCwIcon, SparklesIcon, SquareIcon } from 'lucide-react'
 
-const priceLabel = `~${formatCredits(COPYWRITER_GENERATION_CREDITS)} credits per generation`
-
 type CopywriterFooterProps = {
   isLoading: boolean
   hasResult: boolean
@@ -16,6 +14,7 @@ type CopywriterFooterProps = {
   canGenerate: boolean
   overLimit: boolean
   completion: string
+  creditCost?: number
   onClose: () => void
   onStop: () => void
   onGenerate: () => void
@@ -29,6 +28,7 @@ export function CopywriterFooter({
   canGenerate,
   overLimit,
   completion,
+  creditCost = COPYWRITER_GENERATION_CREDITS,
   onClose,
   onStop,
   onGenerate,
@@ -103,7 +103,7 @@ export function CopywriterFooter({
             Cancel
           </Button>
           <span className="min-w-0 flex-1 truncate text-center text-[11px] tracking-tight text-muted-foreground/55 tabular-nums">
-            {priceLabel}
+            ~{formatCredits(creditCost)} credits per generation
           </span>
           <Button
             type="button"

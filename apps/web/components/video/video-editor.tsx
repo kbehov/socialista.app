@@ -12,6 +12,7 @@ import {
   MIN_TIMELINE_HEIGHT,
   TIMELINE_HEIGHT_STOPS,
 } from '@/lib/video/defaults'
+import { canSplitAtPlayhead, splitDisabledReason } from '@/lib/video/split-at-playhead'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { useCallback, useRef, useState } from 'react'
 import { ExportModal } from './export/export-modal'
@@ -57,6 +58,10 @@ function VideoEditorContent() {
   const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
+  const playhead = useVideoEditorStore(s => s.playhead)
+  const clips = useVideoEditorStore(s => s.project.clips)
+  const tracks = useVideoEditorStore(s => s.project.tracks)
+  const textOverlays = useVideoEditorStore(s => s.project.textOverlays)
   const splitClip = useVideoEditorStore(s => s.splitClip)
   const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
   const timelineHeight = useVideoEditorStore(s => s.timelineHeight)
@@ -64,17 +69,37 @@ function VideoEditorContent() {
   const [exportOpen, setExportOpen] = useState(false)
   const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null)
 
-  const canSplit = Boolean(selectedClipId || selectedOverlayId)
+  const splitInput = {
+    playhead,
+    selectedClipId,
+    selectedOverlayId,
+    clips,
+    tracks,
+    textOverlays,
+  }
+  const canSplit = canSplitAtPlayhead(splitInput)
+  const splitTooltip = canSplit
+    ? 'Split at playhead'
+    : (splitDisabledReason(splitInput) ?? 'Split at playhead')
   const canExport = duration > 0
 
   const handleSplit = useCallback(() => {
-    const playhead = useVideoEditorStore.getState().playhead
-    if (selectedClipId) {
-      splitClip(selectedClipId, playhead)
-    } else if (selectedOverlayId) {
-      splitOverlay(selectedOverlayId, playhead)
+    const state = useVideoEditorStore.getState()
+    const input = {
+      playhead: state.playhead,
+      selectedClipId: state.selectedClipId,
+      selectedOverlayId: state.selectedOverlayId,
+      clips: state.project.clips,
+      tracks: state.project.tracks,
+      textOverlays: state.project.textOverlays,
     }
-  }, [selectedClipId, selectedOverlayId, splitClip, splitOverlay])
+    if (!canSplitAtPlayhead(input)) return
+    if (state.selectedClipId) {
+      splitClip(state.selectedClipId, state.playhead)
+    } else if (state.selectedOverlayId) {
+      splitOverlay(state.selectedOverlayId, state.playhead)
+    }
+  }, [splitClip, splitOverlay])
 
   const handleAddText = useCallback(() => {
     const playhead = useVideoEditorStore.getState().playhead
@@ -152,7 +177,7 @@ function VideoEditorContent() {
         role="separator"
         aria-orientation="horizontal"
         aria-label="Resize timeline"
-        className="video-studio-timeline-resize group relative z-10 flex h-2.5 shrink-0 cursor-ns-resize items-center justify-center bg-background"
+        className="video-studio-timeline-resize group relative z-10 flex h-5 shrink-0 cursor-ns-resize items-center justify-center bg-background"
         onPointerDown={handleResizePointerDown}
       >
         <span className="h-0.5 w-8 rounded-full bg-border/80 transition-colors group-hover:bg-muted-foreground/45 group-active:bg-muted-foreground/70" />
@@ -164,6 +189,7 @@ function VideoEditorContent() {
           onAddText={handleAddText}
           onSplit={handleSplit}
           canSplit={canSplit}
+          splitTooltip={splitTooltip}
         />
         <div
           data-tour-anchor="timeline"

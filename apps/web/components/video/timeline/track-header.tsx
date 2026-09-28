@@ -35,7 +35,7 @@ export function TrackHeader({ track, width, height }: TrackHeaderProps) {
           type="button"
           onClick={() => toggleMute(track.id)}
           className={cn(
-            'flex size-5 items-center justify-center rounded-md transition-colors hover:bg-muted',
+            'flex size-7 items-center justify-center rounded-md transition-colors hover:bg-muted',
             track.muted ? 'text-red-500' : 'text-muted-foreground',
           )}
           aria-label={track.muted ? 'Unmute' : 'Mute'}
@@ -46,7 +46,7 @@ export function TrackHeader({ track, width, height }: TrackHeaderProps) {
           type="button"
           onClick={() => toggleLock(track.id)}
           className={cn(
-            'flex size-5 items-center justify-center rounded-md transition-colors hover:bg-muted',
+            'flex size-7 items-center justify-center rounded-md transition-colors hover:bg-muted',
             track.locked ? 'text-foreground' : 'text-muted-foreground',
           )}
           aria-label={track.locked ? 'Unlock' : 'Lock'}
@@ -56,7 +56,7 @@ export function TrackHeader({ track, width, height }: TrackHeaderProps) {
         <button
           type="button"
           onClick={() => removeTrack(track.id)}
-          className="flex size-5 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-red-500"
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-red-500"
           aria-label="Delete track"
         >
           <Trash2Icon className="size-3" strokeWidth={1.75} />

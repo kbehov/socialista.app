@@ -13,57 +13,12 @@ import { cn } from '@/lib/utils'
 import { getModels } from '@/services/models.service'
 import { formatCredits } from '@/utils/format'
 import { ModelType, PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MAX, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, SLIDESHOW_PLAN_CREDIT_COST, type Model } from '@socialista/types'
-import { Loader2Icon, MinusIcon, PlusIcon, SparklesIcon } from 'lucide-react'
+import { Loader2Icon, MinusIcon, PlusIcon, SquarePenIcon } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 const PROMPT_MAX_LENGTH = 800
 const TEXT_MODELS_QUERY = `limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`
-
-const PROMPT_EXAMPLES = [
-  {
-    label: 'Hot take',
-    prompt: 'Unpopular opinion: consistency is overrated — here’s what actually grows accounts',
-  },
-  {
-    label: 'POV',
-    prompt: 'POV: you finally stopped posting random content and built a system that prints views',
-  },
-  {
-    label: 'Glow-up',
-    prompt: 'How I went from 0 to a content brand people actually save and share',
-  },
-  {
-    label: 'Red flags',
-    prompt: '5 creator red flags that quietly kill your reach (and what to do instead)',
-  },
-  {
-    label: 'Money talk',
-    prompt: 'How creators actually make money in 2026 — no fluff, just the real paths',
-  },
-  {
-    label: 'Save this',
-    prompt: 'Save this if you’re tired of posting into the void: the carousel formula that converts',
-  },
-  {
-    label: 'Before/after',
-    prompt: 'Before vs after I fixed my hooks — the exact shift that changed everything',
-  },
-  {
-    label: 'Algorithm',
-    prompt: 'What the algorithm actually rewards right now (and what it’s quietly killing)',
-  },
-  {
-    label: 'Art breakdown',
-    prompt:
-      'Explain the painting “The Chess Players” (The Devil’s Checkmate) by Friedrich Moritz August Retzsch. Each slide focuses on one visual detail. Keep every slide to 5–6 words. Only the most interesting finds — no CTA.',
-  },
-  {
-    label: 'Detail hunt',
-    prompt:
-      'Break down a viral product photo: one hidden detail per slide, ultra-short captions (max 6 words), curiosity first, no fluff, end with a save CTA',
-  },
-] as const
 
 export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boolean }) {
   const applyGeneratedContent = useEditorStore(s => s.applyGeneratedContent)
@@ -135,16 +90,6 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
     })
   }
 
-  const applyExample = (example: (typeof PROMPT_EXAMPLES)[number]) => {
-    setPrompt(example.prompt)
-    requestAnimationFrame(() => {
-      const el = textareaRef.current
-      if (!el) return
-      el.focus()
-      el.setSelectionRange(example.prompt.length, example.prompt.length)
-    })
-  }
-
   return (
     <aside
       className={
@@ -157,7 +102,7 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
         <div className="shrink-0 border-b border-border/50 px-3.5 py-3">
           <div className="flex items-start gap-2.5">
             <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground/6 text-foreground">
-              <SparklesIcon className="size-3.5" strokeWidth={1.9} />
+              <SquarePenIcon className="size-3.5" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
               <h2 className="text-[13px] font-medium tracking-[-0.01em] text-foreground">AI generator</h2>
@@ -210,32 +155,6 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
                 {charCount > 0 ? `${charCount}` : null}
               </span>
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5" role="list" aria-label="Example prompts">
-            {PROMPT_EXAMPLES.map(example => {
-              const active = prompt === example.prompt
-              return (
-                <button
-                  key={example.label}
-                  type="button"
-                  role="listitem"
-                  disabled={isPending}
-                  onClick={() => applyExample(example)}
-                  className={cn(
-                    'rounded-full border px-2.5 py-1 text-[11px] tracking-tight transition-all duration-150',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                    'disabled:pointer-events-none disabled:opacity-50',
-                    'active:scale-[0.97]',
-                    active
-                      ? 'border-foreground/15 bg-foreground/6 font-medium text-foreground'
-                      : 'border-border/50 bg-muted/15 text-muted-foreground hover:border-border hover:bg-muted/35 hover:text-foreground',
-                  )}
-                >
-                  {example.label}
-                </button>
-              )
-            })}
           </div>
         </StudioPanelSection>
 
@@ -360,12 +279,8 @@ export function SlideshowGeneratorPanel({ embedded = false }: { embedded?: boole
           onClick={handleGenerate}
           disabled={!canGenerate}
         >
-          {isPending ? (
-            <Loader2Icon className="size-3.5 animate-spin" strokeWidth={2} />
-          ) : (
-            <SparklesIcon className="size-3.5" strokeWidth={2} />
-          )}
-          {isPending ? 'Generating…' : slideCount === 'auto' ? 'Generate pages' : `Generate ${slideCount} pages`}
+          {isPending ? <Loader2Icon className="size-3.5 animate-spin" strokeWidth={2} /> : null}
+          {isPending ? 'Generating…' : slideCount === 'auto' ? 'Generate slides' : `Generate ${slideCount} slides`}
         </Button>
         <div className="flex items-center justify-between gap-2 px-0.5 text-[11px] text-muted-foreground">
           <p>

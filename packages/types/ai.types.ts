@@ -75,6 +75,8 @@ export type GenerateVideoScriptInput = {
   description: string
   duration: number
   tone?: VideoScriptTone
+  /** Catalog `Model.value`. Falls back to the video-script registry default. */
+  model?: string
 }
 
 export type GenerateVideoScriptResult = {

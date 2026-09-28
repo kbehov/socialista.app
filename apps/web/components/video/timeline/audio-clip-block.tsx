@@ -73,26 +73,34 @@ export const AudioClipBlock = memo(function AudioClipBlock({
             onPointerDown={e =>
               beginTrim(clip.id, 'in', clip.trimIn, clip.trimOut, clip.duration, e, clip.startTime)
             }
-            className={cn(
-              'absolute left-0 top-0 h-full w-2.5 cursor-ew-resize transition-opacity',
-              selected
-                ? 'bg-primary/80 opacity-100 hover:bg-primary'
-                : 'bg-emerald-300/30 opacity-0 group-hover/clip:opacity-100 hover:bg-emerald-300/60',
-            )}
+            className="absolute left-0 top-0 z-20 flex h-full w-5 cursor-ew-resize items-stretch justify-start"
             aria-label="Trim start"
-          />
+          >
+            <div
+              className={cn(
+                'h-full w-2.5 transition-opacity',
+                selected
+                  ? 'bg-primary/80 opacity-100 hover:bg-primary'
+                  : 'bg-emerald-300/30 opacity-0 group-hover/clip:opacity-100 hover:bg-emerald-300/60',
+              )}
+            />
+          </div>
           <div
             onPointerDown={e =>
               beginTrim(clip.id, 'out', clip.trimIn, clip.trimOut, clip.duration, e, clip.startTime)
             }
-            className={cn(
-              'absolute right-0 top-0 h-full w-2.5 cursor-ew-resize transition-opacity',
-              selected
-                ? 'bg-primary/80 opacity-100 hover:bg-primary'
-                : 'bg-emerald-300/30 opacity-0 group-hover/clip:opacity-100 hover:bg-emerald-300/60',
-            )}
+            className="absolute right-0 top-0 z-20 flex h-full w-5 cursor-ew-resize items-stretch justify-end"
             aria-label="Trim end"
-          />
+          >
+            <div
+              className={cn(
+                'h-full w-2.5 transition-opacity',
+                selected
+                  ? 'bg-primary/80 opacity-100 hover:bg-primary'
+                  : 'bg-emerald-300/30 opacity-0 group-hover/clip:opacity-100 hover:bg-emerald-300/60',
+              )}
+            />
+          </div>
         </>
       ) : null}
     </div>
@@ -127,7 +135,11 @@ const WaveformSvg = memo(function WaveformSvg({
   const d = useMemo(() => (peaks && peaks.length > 0 ? buildWaveformPath(peaks) : null), [peaks])
 
   if (!d) {
-    return <div className={className} />
+    return (
+      <div className={cn(className, 'flex items-center justify-center text-[9px] text-emerald-800/50 dark:text-emerald-100/40')}>
+        No waveform
+      </div>
+    )
   }
 
   return (

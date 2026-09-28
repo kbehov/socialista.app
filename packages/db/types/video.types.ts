@@ -91,6 +91,8 @@ export interface DbTextOverlay {
   rotation: number
   zIndex: number
   style: DbTextOverlayStyle
+  /** Timeline clip these captions were generated for. */
+  clipId?: string
 }
 
 export interface DbSerializedMediaAsset {

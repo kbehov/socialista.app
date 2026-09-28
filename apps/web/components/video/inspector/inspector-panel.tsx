@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, TypeIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -10,14 +10,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import {
-  EditorEmptyState,
-  EditorPanelHeader,
-  EditorPanelScrollArea,
-} from '@/components/editor/panel-shell'
+import { EditorPanelHeader, EditorPanelScrollArea } from '@/components/editor/panel-shell'
 import { ClipProperties } from '@/components/video/inspector/clip-properties'
 import { OverlayProperties } from '@/components/video/inspector/overlay-properties'
-import { ProjectProperties } from '@/components/video/inspector/project-properties'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -26,35 +21,43 @@ const INSPECTOR_OPEN_KEY = 'video-inspector-open'
 const PANEL_EASE = 'cubic-bezier(0.32,0.72,0,1)'
 
 function readInspectorOpen(): boolean {
-  if (typeof window === 'undefined') return true
+  if (typeof window === 'undefined') return false
   try {
     const stored = sessionStorage.getItem(INSPECTOR_OPEN_KEY)
-    return stored === null ? true : stored === 'true'
+    return stored === 'true'
   } catch {
-    return true
+    return false
   }
 }
 
-function InspectorBody({ showPanelHeader = true }: { showPanelHeader?: boolean }) {
+function useInspectorMeta() {
   const selectedClipId = useVideoEditorStore(s => s.selectedClipId)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
-  const playhead = useVideoEditorStore(s => s.playhead)
-  const duration = useVideoEditorStore(s => s.project.duration)
-  const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
 
-  const mode = selectedClipId ? 'clip' : selectedOverlayId ? 'overlay' : 'project'
-
-  const handleAddText = () => {
-    const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
-    addTextOverlay(playhead, Math.max(playhead + 0.5, end))
+  if (selectedClipId) {
+    return {
+      mode: 'clip' as const,
+      title: 'Clip',
+      description: 'Timing, volume, filters, and transform',
+      clipId: selectedClipId,
+      overlayId: null,
+    }
   }
+  if (selectedOverlayId) {
+    return {
+      mode: 'overlay' as const,
+      title: 'Text',
+      description: 'Style the selected overlay',
+      clipId: null,
+      overlayId: selectedOverlayId,
+    }
+  }
+  return null
+}
 
-  const meta =
-    mode === 'clip'
-      ? { title: 'Clip', description: 'Timing, volume, filters, and transform' }
-      : mode === 'overlay'
-        ? { title: 'Text', description: 'Style the selected overlay' }
-        : { title: 'Project', description: 'Format, frame rate, and duration' }
+function InspectorBody({ showPanelHeader = true }: { showPanelHeader?: boolean }) {
+  const meta = useInspectorMeta()
+  if (!meta) return null
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -63,31 +66,13 @@ function InspectorBody({ showPanelHeader = true }: { showPanelHeader?: boolean }
           <EditorPanelHeader title={meta.title} description={meta.description} />
         </div>
       ) : null}
-      <EditorPanelScrollArea key={mode} contentClassName="animate-in fade-in-0 duration-150">
-        {mode === 'clip' && selectedClipId ? (
-          <ClipProperties key={selectedClipId} clipId={selectedClipId} />
+      <EditorPanelScrollArea key={meta.mode + (meta.clipId ?? meta.overlayId)} contentClassName="animate-in fade-in-0 duration-150">
+        {meta.mode === 'clip' && meta.clipId ? (
+          <ClipProperties key={meta.clipId} clipId={meta.clipId} />
         ) : null}
-
-        {mode === 'overlay' && selectedOverlayId ? (
-          <OverlayProperties overlayId={selectedOverlayId} />
-        ) : mode === 'overlay' ? (
-          <EditorEmptyState
-            title="No text overlay selected"
-            description="Add a text layer at the playhead, or select one on the canvas or timeline."
-          >
-            <Button
-              type="button"
-              size="sm"
-              className="mt-3 h-8 gap-1.5 text-[12px] font-medium"
-              onClick={handleAddText}
-            >
-              <TypeIcon className="size-3.5" strokeWidth={1.75} />
-              Add text
-            </Button>
-          </EditorEmptyState>
+        {meta.mode === 'overlay' && meta.overlayId ? (
+          <OverlayProperties overlayId={meta.overlayId} />
         ) : null}
-
-        {mode === 'project' ? <ProjectProperties /> : null}
       </EditorPanelScrollArea>
     </div>
   )
@@ -101,9 +86,16 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
   const prevSelection = useRef<string | null>(null)
 
   const selectionKey = selectedClipId ?? selectedOverlayId
+  const meta = useInspectorMeta()
 
   useEffect(() => {
-    if (selectionKey && selectionKey !== prevSelection.current) {
+    if (!selectionKey) {
+      setOpen(false)
+      setMobileOpen(false)
+      prevSelection.current = null
+      return
+    }
+    if (selectionKey !== prevSelection.current) {
       setOpen(true)
       const isMobileViewport =
         typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
@@ -137,6 +129,10 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
       }
       return next
     })
+  }
+
+  if (!selectionKey) {
+    return null
   }
 
   return (
@@ -191,9 +187,11 @@ export function VideoInspectorPanel({ className }: { className?: string }) {
           <SheetHeader className="shrink-0 space-y-0 border-b border-border/40 px-4 pt-1 pb-3.5 text-left">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <SheetTitle className="text-[13px] font-medium tracking-tight">Properties</SheetTitle>
+                <SheetTitle className="text-[13px] font-medium tracking-tight">
+                  {meta?.title ?? 'Properties'}
+                </SheetTitle>
                 <SheetDescription className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/80">
-                  Edit the selected clip, overlay, or project.
+                  {meta?.description ?? 'Edit the selected layer.'}
                 </SheetDescription>
               </div>
               <Button

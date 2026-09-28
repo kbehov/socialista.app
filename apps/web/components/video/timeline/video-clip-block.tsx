@@ -92,26 +92,34 @@ export function VideoClipBlock({ clip, left, width, height, pxPerSec, track }: P
             onPointerDown={e =>
               beginTrim(clip.id, 'in', clip.trimIn, clip.trimOut, clip.duration, e, clip.startTime)
             }
-            className={cn(
-              'absolute left-0 top-0 h-full w-2.5 cursor-ew-resize transition-opacity',
-              selected
-                ? 'bg-primary/80 opacity-100 hover:bg-primary'
-                : 'bg-white/25 opacity-0 group-hover/clip:opacity-100 hover:bg-white/50',
-            )}
+            className="absolute left-0 top-0 z-20 flex h-full w-5 cursor-ew-resize items-stretch justify-start"
             aria-label="Trim start"
-          />
+          >
+            <div
+              className={cn(
+                'h-full w-2.5 transition-opacity',
+                selected
+                  ? 'bg-primary/80 opacity-100 hover:bg-primary'
+                  : 'bg-white/25 opacity-0 group-hover/clip:opacity-100 hover:bg-white/50',
+              )}
+            />
+          </div>
           <div
             onPointerDown={e =>
               beginTrim(clip.id, 'out', clip.trimIn, clip.trimOut, clip.duration, e, clip.startTime)
             }
-            className={cn(
-              'absolute right-0 top-0 h-full w-2.5 cursor-ew-resize transition-opacity',
-              selected
-                ? 'bg-primary/80 opacity-100 hover:bg-primary'
-                : 'bg-white/25 opacity-0 group-hover/clip:opacity-100 hover:bg-white/50',
-            )}
+            className="absolute right-0 top-0 z-20 flex h-full w-5 cursor-ew-resize items-stretch justify-end"
             aria-label="Trim end"
-          />
+          >
+            <div
+              className={cn(
+                'h-full w-2.5 transition-opacity',
+                selected
+                  ? 'bg-primary/80 opacity-100 hover:bg-primary'
+                  : 'bg-white/25 opacity-0 group-hover/clip:opacity-100 hover:bg-white/50',
+              )}
+            />
+          </div>
         </>
       ) : null}
       {clip.speed !== 1 ? (

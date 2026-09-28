@@ -100,6 +100,7 @@ const textOverlaySchema = new Schema<DbTextOverlay>(
     rotation: { type: Number, required: true },
     zIndex: { type: Number, required: true },
     style: { type: textOverlayStyleSchema, required: true },
+    clipId: { type: String },
   },
   { _id: false },
 )

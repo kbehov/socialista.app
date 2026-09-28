@@ -9,7 +9,7 @@ import { usePostFilters } from '@/hooks/use-post-filters'
 import { buildPostFilterFields, hasActivePostFilters, type PostViewMode } from '@/lib/posts/post-filters'
 import { cn } from '@/lib/utils'
 import type { AccountSummary } from '@socialista/types'
-import { CalendarDaysIcon, ListIcon, ListFilterIcon, Loader2Icon } from 'lucide-react'
+import { CalendarDaysIcon, LayoutGridIcon, ListIcon, ListFilterIcon, Loader2Icon } from 'lucide-react'
 import { useMemo } from 'react'
 
 const VIEW_OPTIONS: Array<{
@@ -19,6 +19,7 @@ const VIEW_OPTIONS: Array<{
   Icon: typeof ListIcon
 }> = [
   { value: 'list', label: 'List', shortLabel: 'List', Icon: ListIcon },
+  { value: 'grid', label: 'Grid', shortLabel: 'Grid', Icon: LayoutGridIcon },
   { value: 'calendar', label: 'Calendar', shortLabel: 'Cal', Icon: CalendarDaysIcon },
 ]
 

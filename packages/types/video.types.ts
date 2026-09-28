@@ -141,6 +141,8 @@ export interface TextOverlay {
   rotation: number
   zIndex: number
   style: TextOverlayStyle
+  /** Timeline clip these captions were generated for. */
+  clipId?: string
 }
 
 export interface Project {

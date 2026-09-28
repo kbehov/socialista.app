@@ -110,8 +110,10 @@ export function cloneVideoTimeline(source: IVideo): {
     clips: [],
   }))
 
+  const clipIdMap = new Map<string, string>()
   const clonedClips: DbClip[] = source.clips.map(clip => {
     const newClipId = createEntityId('clip')
+    clipIdMap.set(clip.id, newClipId)
     const newTrackId =
       clonedTracks.find(t => t.type === (clip.type === 'audio' ? 'audio' : 'video'))?.id ?? clip.trackId
     return { ...clip, id: newClipId, trackId: newTrackId } as DbClip
@@ -121,10 +123,14 @@ export function cloneVideoTimeline(source: IVideo): {
     track.clips = clonedClips.filter(clip => clip.trackId === track.id).map(clip => clip.id)
   }
 
-  const clonedOverlays: DbTextOverlay[] = source.textOverlays.map(overlay => ({
-    ...overlay,
-    id: createEntityId('overlay'),
-  }))
+  const clonedOverlays: DbTextOverlay[] = source.textOverlays.map(overlay => {
+    const remappedClipId = overlay.clipId ? clipIdMap.get(overlay.clipId) : undefined
+    return {
+      ...overlay,
+      id: createEntityId('overlay'),
+      ...(remappedClipId ? { clipId: remappedClipId } : { clipId: undefined }),
+    }
+  })
 
   return { tracks: clonedTracks, clips: clonedClips, textOverlays: clonedOverlays }
 }

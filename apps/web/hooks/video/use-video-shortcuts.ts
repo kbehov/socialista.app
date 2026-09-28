@@ -30,8 +30,8 @@ export function useVideoShortcuts(): void {
         target?.tagName === 'TEXTAREA' ||
         target?.tagName === 'SELECT'
 
-      // Undo/redo work even from within editable inputs (Cmd/Ctrl+Z) — let those happen
       if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'z') {
+        if (isEditable) return
         e.preventDefault()
         if (e.shiftKey) redo()
         else undo()
@@ -39,6 +39,7 @@ export function useVideoShortcuts(): void {
       }
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        if (isEditable) return
         e.preventDefault()
         redo()
         return

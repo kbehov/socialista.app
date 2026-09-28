@@ -17,13 +17,15 @@ import {
   ArrowUpIcon,
   CopyIcon,
   HelpCircleIcon,
+  ImageIcon,
   PencilIcon,
+  TypeIcon,
   RotateCcwIcon,
   ScissorsIcon,
   Trash2Icon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { openVideoShortcutsHelp } from '@/lib/video/editor-events'
+import { openVideoShortcutsHelp, openVideoStudioPanel } from '@/lib/video/editor-events'
 
 export type CanvasContextTarget =
   | { kind: 'clip'; clipId: ClipId }
@@ -83,6 +85,8 @@ function CanvasContextMenuContent({
   const resetOverlayTransform = useVideoEditorStore(s => s.resetOverlayTransform)
   const bringOverlayToFront = useVideoEditorStore(s => s.bringOverlayToFront)
   const sendOverlayToBack = useVideoEditorStore(s => s.sendOverlayToBack)
+  const duration = useVideoEditorStore(s => s.project.duration)
+  const addTextOverlay = useVideoEditorStore(s => s.addTextOverlay)
 
   if (!target) return null
 
@@ -181,6 +185,33 @@ function CanvasContextMenuContent({
           <Trash2Icon />
           Delete
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>
+          <HelpCircleIcon />
+          Shortcuts
+          <ContextMenuShortcut>?</ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    )
+  }
+
+  if (target.kind === 'empty') {
+    const handleAddText = () => {
+      const end = Math.min(duration > 0 ? duration : playhead + 3, playhead + 3)
+      addTextOverlay(playhead, Math.max(playhead + 0.5, end))
+      openVideoStudioPanel('text')
+    }
+
+    return (
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onSelect={() => openVideoStudioPanel('media')}>
+          <ImageIcon />
+          Add media
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={handleAddText}>
+          <TypeIcon />
+          Add text at playhead
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => openVideoShortcutsHelp()}>

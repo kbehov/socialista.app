@@ -22,6 +22,7 @@ type TimelineTransportProps = {
   onAddText: () => void
   onSplit: () => void
   canSplit: boolean
+  splitTooltip: string
 }
 
 export function TimelineTransport({
@@ -29,6 +30,7 @@ export function TimelineTransport({
   onAddText,
   onSplit,
   canSplit,
+  splitTooltip,
 }: TimelineTransportProps) {
   const zoom = useVideoEditorStore(s => s.zoom)
   const setZoom = useVideoEditorStore(s => s.setZoom)
@@ -142,7 +144,7 @@ export function TimelineTransport({
               <ScissorsIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{canSplit ? 'Split at playhead' : 'Select a clip to split'}</TooltipContent>
+          <TooltipContent>{splitTooltip}</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -162,7 +164,9 @@ export function TimelineTransport({
               <MagnetIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{snapEnabled ? 'Magnet snapping on' : 'Magnet snapping off'}</TooltipContent>
+          <TooltipContent>
+            {snapEnabled ? 'Snap clips on the timeline: on' : 'Snap clips on the timeline: off'}
+          </TooltipContent>
         </Tooltip>
       </div>
 
@@ -188,7 +192,7 @@ export function TimelineTransport({
         </span>
       ) : null}
 
-      <div className="hidden shrink-0 items-center gap-1 sm:flex">
+      <div className="flex shrink-0 items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -200,7 +204,7 @@ export function TimelineTransport({
               disabled={zoom <= MIN_ZOOM}
               aria-label="Zoom timeline out"
             >
-              <ZoomOutIcon className="size-3.5" />
+              <ZoomOutIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Zoom out</TooltipContent>
@@ -217,7 +221,7 @@ export function TimelineTransport({
             const level = ZOOM_LEVELS[idx]
             if (level !== undefined) setZoom(level)
           }}
-          className="video-scrubber w-16 sm:w-20"
+          className="video-scrubber hidden w-16 sm:block sm:w-20"
           aria-label="Timeline zoom"
         />
 
@@ -232,7 +236,7 @@ export function TimelineTransport({
               disabled={zoom >= MAX_ZOOM}
               aria-label="Zoom timeline in"
             >
-              <ZoomInIcon className="size-3.5" />
+              <ZoomInIcon className="size-3.5" strokeWidth={1.75} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Zoom in</TooltipContent>
@@ -244,7 +248,7 @@ export function TimelineTransport({
               type="button"
               size="sm"
               variant="ghost"
-              className="h-7 px-2 text-[11px] font-medium text-muted-foreground"
+              className="video-studio-press h-7 px-2 text-[11px] font-medium text-muted-foreground"
               onClick={fitToProject}
             >
               Fit

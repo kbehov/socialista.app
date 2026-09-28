@@ -64,7 +64,10 @@ function SlideStackActions({
   }, [canvas.width, exporting, slide, slideIndex])
 
   return (
-    <div data-slide-actions className="pointer-events-auto flex w-full items-center justify-end gap-0.5 px-1">
+    <div
+      data-slide-actions
+      className="video-studio-glass pointer-events-none absolute top-2 right-2 z-20 flex items-center gap-0.5 rounded-full p-0.5 opacity-0 transition-opacity duration-150 group-focus-within/slide:pointer-events-auto group-focus-within/slide:opacity-100 group-hover/slide:pointer-events-auto group-hover/slide:opacity-100"
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -149,21 +152,9 @@ function SlideStackItem({
       ref={el => onRegisterRef(slide.id, el)}
       data-slide-stack
       data-slide-index={index}
-      className="slideshow-editor-stack-slide flex w-full flex-col items-center"
+      className="slideshow-editor-stack-slide group/slide relative flex w-full flex-col items-center"
       style={slideWidth ? { maxWidth: slideWidth } : undefined}
     >
-      {isActive ? (
-        <SlideStackActions
-          slide={slide}
-          slideIndex={index}
-          slideCount={slideCount}
-          onDuplicate={onDuplicate}
-          onRequestDelete={onRequestDelete}
-        />
-      ) : (
-        <div className="h-8 w-full shrink-0" aria-hidden />
-      )}
-
       <div
         role="button"
         tabIndex={isActive ? 0 : -1}
@@ -178,12 +169,21 @@ function SlideStackItem({
           }
         }}
         className={cn(
-          'w-full overflow-hidden rounded-lg bg-background outline-none transition-[opacity,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-ring',
+          'relative w-full overflow-hidden rounded-lg bg-background transition-[opacity,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-ring',
           isActive
-            ? 'cursor-default ring-2 ring-foreground'
-            : 'cursor-pointer opacity-60 hover:opacity-90',
+            ? 'cursor-default ring-[1.5px] ring-foreground'
+            : 'cursor-pointer opacity-60 outline outline-1 outline-offset-0 outline-[oklch(0_0_0/0.1)] hover:opacity-90 dark:outline-[oklch(1_0_0/0.1)]',
         )}
       >
+        {isActive ? (
+          <SlideStackActions
+            slide={slide}
+            slideIndex={index}
+            slideCount={slideCount}
+            onDuplicate={onDuplicate}
+            onRequestDelete={onRequestDelete}
+          />
+        ) : null}
         <SlideCanvasShell
           slide={slide}
           interactive={isActive}
@@ -249,7 +249,7 @@ export function SlidePreviewStack({ canvasHint, emptyState }: SlidePreviewStackP
       <div className="flex h-full flex-col items-center justify-center gap-2 text-center" role="status">
         <p className="text-sm font-medium text-muted-foreground">No slides yet</p>
         <p className="max-w-xs text-xs text-muted-foreground/80">
-          Use AI generate or TikTok import to create your first slides.
+          Use Create to generate your first slides with AI.
         </p>
       </div>
     )

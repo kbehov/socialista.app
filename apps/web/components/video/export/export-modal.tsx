@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 
 const RESOLUTION_PRESETS = (() => {
   const seen = new Set<string>()
@@ -248,16 +250,19 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <DialogContent className="max-w-md">
-      <DialogHeader>
-        <DialogTitle>Export video</DialogTitle>
+    <DialogContent className="flex max-h-[min(90vh,40rem)] max-w-md flex-col gap-0 overflow-hidden p-0">
+      <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/40 px-6 pt-6 pb-4 text-left">
+        <DialogTitle>{resultUrl ? 'Export ready' : 'Export video'}</DialogTitle>
         <DialogDescription>
-          Export your timeline as an MP4. Encoding runs on our servers for faster results.
+          {resultUrl
+            ? 'Preview your export below, then download or close.'
+            : 'Export your timeline as an MP4. Encoding runs on our servers for faster results.'}
         </DialogDescription>
       </DialogHeader>
 
-      <div className="flex flex-col gap-3">
-        <div className="space-y-1.5">
+      <ScrollArea className="min-h-0 flex-1 px-6 py-4" scrollFade scrollbarGutter>
+        <div className="flex flex-col gap-3">
+        <div className={cn('space-y-1.5', resultUrl && 'hidden')}>
           <Label className="text-xs text-muted-foreground">Resolution</Label>
           <Select value={resolutionId} onValueChange={setResolutionId} disabled={isRunning}>
             <SelectTrigger className="h-9 w-full">
@@ -273,7 +278,7 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
           </Select>
         </div>
 
-        <div className="space-y-1.5">
+        <div className={cn('space-y-1.5', resultUrl && 'hidden')}>
           <Label className="text-xs text-muted-foreground">FPS</Label>
           <Select value={String(fps)} onValueChange={v => setFps(parseInt(v, 10))} disabled={isRunning}>
             <SelectTrigger className="h-9 w-full">
@@ -289,7 +294,7 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
           </Select>
         </div>
 
-        <div className="space-y-1.5">
+        <div className={cn('space-y-1.5', resultUrl && 'hidden')}>
           <Label className="text-xs text-muted-foreground">Quality</Label>
           <Select value={quality} onValueChange={v => setQuality(v as ExportQuality)} disabled={isRunning}>
             <SelectTrigger className="h-9 w-full">
@@ -309,11 +314,16 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
           ) : null}
         </div>
 
-        <p className="truncate rounded-md border bg-muted/40 px-2.5 py-1.5 font-mono text-[11px] text-muted-foreground">
+        <p
+          className={cn(
+            'truncate rounded-md border bg-muted/40 px-2.5 py-1.5 font-mono text-[11px] text-muted-foreground',
+            resultUrl && 'hidden',
+          )}
+        >
           {filename}
         </p>
 
-        {warning ? (
+        {warning && !resultUrl ? (
           <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-800 dark:text-amber-200">
             {warning}
           </p>
@@ -340,28 +350,43 @@ function ExportModalBody({ onClose }: { onClose: () => void }) {
 
         {resultUrl ? (
           <div className="flex flex-col gap-2">
-            <video src={resultUrl} controls className="w-full rounded-md border" />
-            <a
-              href={resultUrl}
-              download={filename}
-              className="video-studio-press flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-            >
-              <DownloadIcon className="h-4 w-4" /> Download MP4
-            </a>
+            <p className="truncate font-mono text-[11px] text-muted-foreground" title={filename}>
+              {filename}
+            </p>
+            <div className="overflow-hidden rounded-lg border border-border/50 bg-black/90">
+              <video
+                src={resultUrl}
+                controls
+                playsInline
+                className="max-h-[min(42vh,18rem)] w-full object-contain"
+              />
+            </div>
           </div>
         ) : null}
-      </div>
+        </div>
+      </ScrollArea>
 
-      <DialogFooter>
+      <DialogFooter className="shrink-0 gap-2 border-t border-border/40 bg-card px-6 py-4">
         <Button type="button" variant="outline" onClick={handleClose} disabled={isRunning}>
           {resultUrl ? 'Close' : 'Cancel'}
         </Button>
-        {!resultUrl ? (
-          <Button type="button" onClick={() => void handleExport()} disabled={isRunning}>
-            {isRunning ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
+        {resultUrl ? (
+          <Button type="button" className="video-studio-press gap-1.5" asChild>
+            <a href={resultUrl} download={filename}>
+              <DownloadIcon className="size-4" strokeWidth={1.75} />
+              Download MP4
+            </a>
+          </Button>
+        ) : (
+          <Button type="button" className="video-studio-press gap-1.5" onClick={() => void handleExport()} disabled={isRunning}>
+            {isRunning ? (
+              <Loader2Icon className="size-4 animate-spin" />
+            ) : (
+              <DownloadIcon className="size-4" strokeWidth={1.75} />
+            )}
             Export
           </Button>
-        ) : null}
+        )}
       </DialogFooter>
     </DialogContent>
   )

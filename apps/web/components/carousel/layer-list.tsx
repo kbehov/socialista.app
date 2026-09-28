@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useRef } from 'react'
 import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react'
 import { useSortable } from '@dnd-kit/react/sortable'
 import { move } from '@dnd-kit/helpers'
@@ -9,22 +9,18 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   CopyIcon,
-  FolderOpenIcon,
   GripVerticalIcon,
   ImageIcon,
   PencilIcon,
   SparklesIcon,
-  SquareIcon,
   Trash2Icon,
   TypeIcon,
-  UploadIcon,
 } from 'lucide-react'
 import { useEditorStore } from '@/lib/carousel/store'
 import { displayImageUrl } from '@/lib/carousel/image-url'
 import { sortLayers } from '@/lib/carousel/defaults'
 import { overlayFillColor } from '@/lib/carousel/overlay-style'
 import { useSlideImageEditOptional } from '@/components/carousel/slide-image-edit-provider'
-import { WorkspaceImagePickerDialog } from '@/components/carousel/workspace-image-picker-dialog'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -32,7 +28,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const LayerListDragContext = createContext<React.MutableRefObject<boolean> | null>(null)
@@ -99,7 +94,7 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
 
   if (slide.layers.length === 0) {
     if (!forceVisible) return null
-    return <LayerListEmpty slideId={slide.id} />
+    return <LayerListEmpty />
   }
 
   const layers = sortLayers(slide.layers).slice().reverse()
@@ -108,7 +103,6 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
     <LayerListDragContext.Provider value={suppressSelectRef}>
       <DragDropProvider onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex flex-col gap-0.5">
-          <LayerListActions slideId={slide.id} />
           {layers.map((layer, index) => (
             <SortableLayerRow key={layer.id} slideId={slide.id} layer={layer} index={index} />
           ))}
@@ -118,65 +112,12 @@ export function LayerList({ forceVisible = false }: LayerListProps) {
   )
 }
 
-function LayerListActions({ slideId }: { slideId: SlideId }) {
-  const addTextLayer = useEditorStore(s => s.addTextLayer)
-  const addImageLayer = useEditorStore(s => s.addImageLayer)
-  const addOverlayLayer = useEditorStore(s => s.addOverlayLayer)
-  const [filesDialogOpen, setFilesDialogOpen] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    addImageLayer(slideId, URL.createObjectURL(file))
-  }
-
-  return (
-    <>
-      <div className="flex gap-1">
-        <Button size="sm" variant="outline" className="h-7 flex-1 text-xs" onClick={() => addTextLayer(slideId)}>
-          <TypeIcon className="size-3" />
-          Text
-        </Button>
-        <Button size="sm" variant="outline" className="h-7 flex-1 text-xs" onClick={() => fileInputRef.current?.click()}>
-          <UploadIcon className="size-3" />
-          Image
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 flex-1 text-xs"
-          onClick={() => addOverlayLayer(slideId)}
-        >
-          <SquareIcon className="size-3" />
-          Overlay
-        </Button>
-      </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-7 w-full text-xs text-muted-foreground"
-        onClick={() => setFilesDialogOpen(true)}
-      >
-        <FolderOpenIcon className="size-3" />
-        Add from files
-      </Button>
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-      <WorkspaceImagePickerDialog
-        open={filesDialogOpen}
-        onOpenChange={setFilesDialogOpen}
-        onSelect={url => addImageLayer(slideId, url)}
-      />
-    </>
-  )
-}
-
-function LayerListEmpty({ slideId }: { slideId: SlideId }) {
+function LayerListEmpty() {
   return (
     <div className="flex flex-col gap-3 px-0.5 py-2">
-      <p className="text-[12px] text-muted-foreground">No layers on this slide yet.</p>
-      <LayerListActions slideId={slideId} />
+      <p className="text-[12px] leading-relaxed text-muted-foreground">
+        No layers on this slide yet. Add text or media from the sidebar tabs.
+      </p>
     </div>
   )
 }
@@ -247,7 +188,7 @@ function SortableLayerRow({
     <div
       ref={ref}
       className={cn(
-        'flex items-center gap-1 rounded-md transition-colors',
+        'flex items-center gap-1 rounded-lg transition-colors',
         active
           ? 'bg-foreground/[0.06] text-foreground'
           : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',

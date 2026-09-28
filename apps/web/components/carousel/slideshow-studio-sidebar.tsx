@@ -8,39 +8,29 @@ import { StudioMediaPanel } from '@/components/carousel/studio-media-panel'
 import { StudioPanelHeader, StudioPanelScrollArea } from '@/components/carousel/studio-segmented-tabs'
 import { StudioTextPanel } from '@/components/carousel/studio-text-panel'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { type SidebarTab, useSidebarTab } from '@/hooks/carousel/use-sidebar-tab'
 import { cn } from '@/lib/utils'
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ImageIcon,
-  LayersIcon,
-  PaletteIcon,
-  SparklesIcon,
-  TypeIcon,
-  XIcon,
-} from 'lucide-react'
+import { ImageIcon, LayersIcon, PaletteIcon, SquarePenIcon, TypeIcon, XIcon, type LucideIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 const PANEL_OPEN_STORAGE_KEY = 'slideshow-panel-open'
-const PANEL_EASE = 'cubic-bezier(0.32,0.72,0,1)'
 
 const SIDEBAR_TABS = [
-  { id: 'create' as const, label: 'Create', icon: SparklesIcon },
+  { id: 'create' as const, label: 'Create', icon: SquarePenIcon },
   { id: 'design' as const, label: 'Design', icon: PaletteIcon },
   { id: 'text' as const, label: 'Text', icon: TypeIcon },
   { id: 'media' as const, label: 'Media', icon: ImageIcon },
   { id: 'layers' as const, label: 'Layers', icon: LayersIcon },
 ]
 
-const TAB_META: Record<SidebarTab, { title: string; description: string }> = {
-  create: { title: 'Create', description: 'Topic, directions, or import from TikTok' },
-  design: { title: 'Design', description: 'Background, color, and overlays' },
-  text: { title: 'Text', description: 'Add text boxes and presets' },
-  media: { title: 'Media', description: 'Upload, files, Unsplash, or URL' },
-  layers: { title: 'Layers', description: 'Reorder and manage slide layers' },
+const TAB_META: Record<SidebarTab, { title: string }> = {
+  create: { title: 'Create' },
+  design: { title: 'Design' },
+  text: { title: 'Text' },
+  media: { title: 'Media' },
+  layers: { title: 'Layers' },
 }
 
 function readPanelOpen(): boolean {
@@ -53,6 +43,14 @@ function readPanelOpen(): boolean {
   }
 }
 
+function persistPanelOpen(open: boolean) {
+  try {
+    sessionStorage.setItem(PANEL_OPEN_STORAGE_KEY, String(open))
+  } catch {
+    // ignore storage errors
+  }
+}
+
 function RailButton({
   active,
   label,
@@ -61,7 +59,7 @@ function RailButton({
 }: {
   active: boolean
   label: string
-  icon: typeof SparklesIcon
+  icon: LucideIcon
   onClick: () => void
 }) {
   return (
@@ -72,31 +70,21 @@ function RailButton({
           onClick={onClick}
           aria-label={label}
           aria-pressed={active}
-          className="group flex w-full flex-col items-center gap-1 rounded-md py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="group flex w-full justify-center rounded-md py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <span
             className={cn(
-              'flex size-8 items-center justify-center rounded-lg transition-colors duration-150',
+              'flex size-9 items-center justify-center rounded-[10px] transition-[transform,background-color,color] duration-150 ease-out motion-reduce:transition-none motion-reduce:active:scale-100 group-active:scale-[0.96]',
               active
-                ? 'bg-foreground/[0.07] text-foreground'
-                : 'text-muted-foreground group-hover:bg-foreground/[0.04] group-hover:text-foreground',
+                ? 'bg-foreground/[0.08] text-foreground'
+                : 'text-muted-foreground group-hover:bg-foreground/[0.05] group-hover:text-foreground',
             )}
           >
-            <Icon className="size-4" strokeWidth={active ? 1.9 : 1.6} />
-          </span>
-          <span
-            className={cn(
-              'text-[10px] leading-none tracking-tight transition-colors duration-150',
-              active
-                ? 'font-medium text-foreground'
-                : 'font-medium text-muted-foreground group-hover:text-foreground',
-            )}
-          >
-            {label}
+            <Icon className="size-[17px]" strokeWidth={active ? 1.85 : 1.55} />
           </span>
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      <TooltipContent side="right" sideOffset={8}>{label}</TooltipContent>
     </Tooltip>
   )
 }
@@ -182,31 +170,35 @@ export function SlideshowStudioSidebar({ className }: { className?: string }) {
   const { tab, setTab } = useSidebarTab()
   const [panelOpen, setPanelOpen] = useState(() => readPanelOpen())
 
-  const togglePanel = useCallback(() => {
-    setPanelOpen(prev => {
-      const next = !prev
-      try {
-        sessionStorage.setItem(PANEL_OPEN_STORAGE_KEY, String(next))
-      } catch {
-        // ignore storage errors
-      }
-      return next
-    })
+  const setPanelOpenPersisted = useCallback((next: boolean) => {
+    setPanelOpen(next)
+    persistPanelOpen(next)
   }, [])
 
-  const selectTab = useCallback(
+  const handleRailClick = useCallback(
     (next: SidebarTab) => {
+      if (tab === next && panelOpen) {
+        setPanelOpenPersisted(false)
+        return
+      }
       setTab(next)
-      if (!panelOpen) togglePanel()
+      if (!panelOpen) {
+        setPanelOpenPersisted(true)
+      }
     },
-    [panelOpen, setTab, togglePanel],
+    [panelOpen, setPanelOpenPersisted, setTab, tab],
   )
 
   return (
-    <div className={cn('relative flex h-full min-h-0 min-w-0 shrink-0 bg-background', className)}>
+    <div
+      className={cn(
+        'relative flex h-full min-h-0 min-w-0 shrink-0 border-r border-border/40 bg-background',
+        className,
+      )}
+    >
       <nav
         aria-label="Slideshow editor panels"
-        className="flex h-full w-12 shrink-0 flex-col gap-0.5 border-r border-border/40 px-1 py-2"
+        className="slideshow-editor-rail flex h-full w-[52px] shrink-0 flex-col gap-1 px-1.5 py-3"
       >
         {SIDEBAR_TABS.map(item => (
           <RailButton
@@ -214,62 +206,28 @@ export function SlideshowStudioSidebar({ className }: { className?: string }) {
             active={tab === item.id}
             label={item.label}
             icon={item.icon}
-            onClick={() => selectTab(item.id)}
+            onClick={() => handleRailClick(item.id)}
           />
         ))}
       </nav>
 
       <div
-        style={{ transitionTimingFunction: PANEL_EASE }}
         className={cn(
-          ' relative flex h-full min-w-0 shrink-0 flex-col overflow-hidden border-r border-border/40 transition-[width,opacity] duration-300',
-          panelOpen ? 'w-60 opacity-100 lg:w-64 xl:w-70' : 'w-0 border-r-0 opacity-0',
+          'relative flex h-full min-w-0 shrink-0 flex-col overflow-hidden bg-background',
+          panelOpen ? 'w-60 lg:w-64 xl:w-70' : 'w-0',
         )}
         aria-hidden={!panelOpen}
         inert={!panelOpen ? true : undefined}
       >
         <div
-          className={cn('flex h-full min-h-0 w-60 flex-col bg-background lg:w-64 xl:w-70', !panelOpen && 'invisible')}
+          className={cn(
+            'flex h-full min-h-0 w-60 flex-col transition-opacity duration-150 lg:w-64 xl:w-70',
+            panelOpen ? 'opacity-100' : 'pointer-events-none invisible opacity-0',
+          )}
         >
           <StudioPanelContent tab={tab} panelId="desktop-studio" />
         </div>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={togglePanel}
-              aria-expanded={panelOpen}
-              aria-label={panelOpen ? 'Collapse panel' : 'Expand panel'}
-              className="slideshow-editor-panel-toggle absolute top-1/2 -right-2.5 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background transition-colors duration-150 hover:border-border hover:bg-muted"
-            >
-              {panelOpen ? (
-                <ChevronLeftIcon className="size-3 text-muted-foreground" />
-              ) : (
-                <ChevronRightIcon className="size-3 text-muted-foreground" />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{panelOpen ? 'Collapse panel' : 'Expand panel'}</TooltipContent>
-        </Tooltip>
       </div>
-
-      {!panelOpen ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={togglePanel}
-              aria-expanded={false}
-              aria-label="Expand panel"
-              className="slideshow-editor-panel-toggle absolute top-1/2 left-12 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background transition-colors duration-150 hover:border-border hover:bg-muted"
-            >
-              <ChevronRightIcon className="size-3 text-muted-foreground" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Expand panel</TooltipContent>
-        </Tooltip>
-      ) : null}
     </div>
   )
 }
@@ -291,7 +249,7 @@ export function SlideshowStudioMobileSheet({
     if (open && initialTab) setTab(initialTab)
   }, [initialTab, open, setTab])
 
-  const meta = showInspector ? { title: 'Inspector', description: 'Edit the selected layer or slide' } : TAB_META[tab]
+  const meta = showInspector ? { title: 'Inspector' } : TAB_META[tab]
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -304,19 +262,14 @@ export function SlideshowStudioMobileSheet({
           <div className="h-1 w-9 rounded-full bg-muted-foreground/25" />
         </div>
 
-        <SheetHeader className="shrink-0 space-y-3 border-b border-border/40 px-4 pt-1 pb-3.5 text-left">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <SheetTitle className="text-[13px] font-medium tracking-tight">{meta.title}</SheetTitle>
-              <SheetDescription className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/80">
-                {meta.description}
-              </SheetDescription>
-            </div>
+        <SheetHeader className="shrink-0 space-y-3 border-b border-border/40 px-4 pt-1 pb-3 text-left">
+          <div className="flex items-center justify-between gap-3">
+            <SheetTitle className="text-[13px] font-medium tracking-tight">{meta.title}</SheetTitle>
             <Button
               type="button"
               size="icon-sm"
               variant="ghost"
-              className="size-8 shrink-0 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+              className="size-9 shrink-0 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
               onClick={() => onOpenChange(false)}
               aria-label="Close panel"
             >
@@ -337,13 +290,13 @@ export function SlideshowStudioMobileSheet({
                     aria-label={item.label}
                     onClick={() => setTab(item.id)}
                     className={cn(
-                      'flex h-9 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-[10px] font-medium transition-colors duration-150',
+                      'flex h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-[11px] font-medium transition-colors duration-150',
                       active
                         ? 'bg-background text-foreground'
                         : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    <Icon className="size-3.5" strokeWidth={active ? 1.9 : 1.6} />
+                    <Icon className="size-3.5" strokeWidth={1.75} />
                     <span className="leading-none">{item.label}</span>
                   </button>
                 )

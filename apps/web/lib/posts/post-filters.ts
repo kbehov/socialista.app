@@ -2,7 +2,7 @@ import type { Filter, FilterFieldConfig } from '@/components/reui/filters'
 import { getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import type { AccountSummary, PostStatus, SocialProvider } from '@socialista/types'
 
-export type PostViewMode = 'list' | 'calendar'
+export type PostViewMode = 'list' | 'grid' | 'calendar'
 
 const POST_STATUSES: PostStatus[] = [
   'draft',
@@ -86,6 +86,7 @@ export function parsePostViewMode(
   value: string | string[] | undefined,
 ): PostViewMode {
   if (value === 'calendar') return 'calendar'
+  if (value === 'grid') return 'grid'
   return 'list'
 }
 

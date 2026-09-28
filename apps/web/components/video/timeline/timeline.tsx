@@ -28,6 +28,7 @@ import {
   ZoomOutIcon,
 } from 'lucide-react'
 import { openVideoShortcutsHelp } from '@/lib/video/editor-events'
+import { overlayLaneCount, textOverlayRowHeight } from '@/lib/video/overlay-lanes'
 import { Playhead } from './playhead'
 import { TimelineFocusContext } from './timeline-focus-context'
 import { TrackList } from './track-list'
@@ -37,7 +38,6 @@ import type { Clip } from '@socialista/types'
 const TRACK_HEADER_WIDTH = 120
 const TRACK_ROW_HEIGHT = 48
 const RULER_HEIGHT = 22
-const TEXT_OVERLAY_ROW_HEIGHT = 28
 const MIN_TIMELINE_WIDTH = 800
 
 type TimelineMenuTarget =
@@ -53,6 +53,7 @@ function canSplitClipAt(clip: Clip, playhead: number): boolean {
 export function Timeline() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const zoom = useVideoEditorStore(s => s.zoom)
+  const textOverlays = useVideoEditorStore(s => s.project.textOverlays)
   const duration = useVideoEditorStore(s => s.project.duration)
   const durationGuide = useVideoEditorStore(s => s.durationGuide)
   const seek = useVideoEditorStore(s => s.seek)
@@ -66,6 +67,7 @@ export function Timeline() {
   const [menuTarget, setMenuTarget] = useState<TimelineMenuTarget | null>(null)
 
   const timelineWidth = Math.max(MIN_TIMELINE_WIDTH, Math.ceil(duration * zoom) + 80)
+  const textRowHeight = textOverlayRowHeight(overlayLaneCount(textOverlays, zoom))
 
   const fitToProject = useCallback(() => {
     setZoom(fitZoomToProjectDuration(duration))
@@ -210,13 +212,13 @@ export function Timeline() {
                   <div
                     data-timeline-chrome
                     className="flex shrink-0 items-center border-r px-2 text-[11px] font-medium text-muted-foreground"
-                    style={{ width: TRACK_HEADER_WIDTH, height: TEXT_OVERLAY_ROW_HEIGHT }}
+                    style={{ width: TRACK_HEADER_WIDTH, height: textRowHeight }}
                   >
                     Text
                   </div>
                   <div
                     className="relative cursor-crosshair touch-none"
-                    style={{ width: timelineWidth, height: TEXT_OVERLAY_ROW_HEIGHT }}
+                    style={{ width: timelineWidth, height: textRowHeight }}
                     onPointerDown={handleScrubPointerDown}
                     onPointerMove={handleScrubPointerMove}
                   >

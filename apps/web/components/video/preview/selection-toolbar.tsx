@@ -1,17 +1,14 @@
 'use client'
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ClipSpeedDropdown } from '@/components/video/clip-speed-menu'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { cn } from '@/lib/utils'
 import type { ClipId } from '@socialista/types'
 import {
-  CopyIcon,
   PencilIcon,
   RotateCcwIcon,
-  ScissorsIcon,
   Trash2Icon,
 } from 'lucide-react'
 
@@ -57,38 +54,22 @@ function ClipToolbar({ clipId }: { clipId: ClipId }) {
   const track = useVideoEditorStore(s =>
     clip ? s.project.tracks.find(t => t.id === clip.trackId) : undefined,
   )
-  const playhead = useVideoEditorStore(s => s.playhead)
-  const splitClip = useVideoEditorStore(s => s.splitClip)
-  const duplicateClip = useVideoEditorStore(s => s.duplicateClip)
   const removeClip = useVideoEditorStore(s => s.removeClip)
   const resetClipTransform = useVideoEditorStore(s => s.resetClipTransform)
 
   if (!clip) return null
 
   const locked = track?.locked ?? false
-  const localTime = playhead - clip.startTime
-  const canSplit = !locked && localTime > 0 && localTime < clip.duration
 
   return (
     <>
-      <ActionIconButton
-        label="Split at playhead"
-        onClick={() => splitClip(clipId, useVideoEditorStore.getState().playhead)}
-        disabled={!canSplit}
-      >
-        <ScissorsIcon className="size-3.5" />
-      </ActionIconButton>
-      <ClipSpeedDropdown clipId={clipId} disabled={locked} />
-      <ActionIconButton label="Duplicate clip" onClick={() => duplicateClip(clipId)} disabled={locked}>
-        <CopyIcon className="size-3.5" />
-      </ActionIconButton>
       {clip.type !== 'audio' && clip.transform ? (
         <ActionIconButton label="Reset transform" onClick={() => resetClipTransform(clipId)}>
           <RotateCcwIcon className="size-3.5" />
         </ActionIconButton>
       ) : null}
       <ActionIconButton label="Delete clip" onClick={() => removeClip(clipId)} disabled={locked} destructive>
-        <Trash2Icon className="size-3.5" />
+        <Trash2Icon className="size-3.5" strokeWidth={1.75} />
       </ActionIconButton>
     </>
   )
@@ -102,29 +83,14 @@ function OverlayToolbar({
   onEditText?: () => void
 }) {
   const overlay = useVideoEditorStore(s => s.project.textOverlays.find(o => o.id === overlayId))
-  const duplicateOverlay = useVideoEditorStore(s => s.duplicateOverlay)
   const removeOverlay = useVideoEditorStore(s => s.removeOverlay)
-  const splitOverlay = useVideoEditorStore(s => s.splitOverlay)
-  const playhead = useVideoEditorStore(s => s.playhead)
 
   if (!overlay) return null
-
-  const canSplit = playhead > overlay.startTime && playhead < overlay.endTime
 
   return (
     <>
       <ActionIconButton label="Edit text" onClick={() => onEditText?.()}>
-        <PencilIcon className="size-3.5" />
-      </ActionIconButton>
-      <ActionIconButton
-        label="Split at playhead"
-        onClick={() => splitOverlay(overlayId, playhead)}
-        disabled={!canSplit}
-      >
-        <ScissorsIcon className="size-3.5" />
-      </ActionIconButton>
-      <ActionIconButton label="Duplicate" onClick={() => duplicateOverlay(overlayId)}>
-        <CopyIcon className="size-3.5" />
+        <PencilIcon className="size-3.5" strokeWidth={1.75} />
       </ActionIconButton>
       <ActionIconButton label="Delete" onClick={() => removeOverlay(overlayId)} destructive>
         <Trash2Icon className="size-3.5" />
@@ -165,7 +131,7 @@ export function SelectionToolbar({ className, onEditOverlayText }: SelectionTool
           onPointerDown={e => e.stopPropagation()}
         >
           <div
-            className="video-studio-glass flex w-auto shrink-0 items-center gap-0.5 rounded-full p-0.5 shadow-sm"
+            className="video-studio-glass flex w-auto shrink-0 items-center gap-0.5 rounded-full p-0.5"
             onPointerDown={e => e.stopPropagation()}
           >
             {selectedClipId ? <ClipToolbar clipId={selectedClipId} /> : null}

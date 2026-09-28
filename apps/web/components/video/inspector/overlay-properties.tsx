@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { BoldIcon } from 'lucide-react'
+import { BoldIcon, ChevronDownIcon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { ColorPicker } from '@/components/editor/primitives/color-picker'
 import { FontPicker } from '@/components/editor/primitives/font-picker'
@@ -10,6 +10,19 @@ import { StyleSlider } from '@/components/editor/primitives/style-slider'
 import { TextPresetPicker } from '@/components/editor/text-preset-picker'
 import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { TextAnimation, TextOverlayStyle } from '@socialista/types'
 import {
   DEFAULT_TEXT_LAYER_BASE,
@@ -42,6 +55,7 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
   const [contentDraft, setContentDraft] = useState('')
   const [startDraft, setStartDraft] = useState('')
   const [endDraft, setEndDraft] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   useEffect(() => {
     if (!overlay) return
@@ -83,13 +97,26 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
           >
             ↓
           </button>
-          <button
-            type="button"
-            className="rounded-md px-1.5 py-1 text-[11px] text-red-500/90 transition-colors hover:bg-red-500/10"
-            onClick={() => removeOverlay(overlay.id)}
-          >
-            Delete
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" size="icon-sm" variant="ghost" className="size-7" aria-label="More actions">
+                <MoreHorizontalIcon className="size-3.5" strokeWidth={1.75} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => {
+                  if (window.confirm('Delete this text overlay?')) {
+                    removeOverlay(overlay.id)
+                  }
+                }}
+              >
+                <Trash2Icon className="size-3.5" />
+                Delete overlay
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -189,58 +216,72 @@ export function OverlayProperties({ overlayId }: { overlayId: string }) {
         </Field>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-border/40 bg-muted/15 p-3">
-        <StyleSlider
-          label="Letter spacing"
-          min={-2}
-          max={20}
-          step={0.5}
-          value={overlay.style.letterSpacing ?? 0}
-          onChange={v => updateOverlayStyle(overlay.id, { letterSpacing: v })}
-          suffix="px"
-        />
-        <StyleSlider
-          label="Line height"
-          min={0.8}
-          max={3}
-          step={0.05}
-          value={overlay.style.lineHeight ?? 1.2}
-          onChange={v => updateOverlayStyle(overlay.id, { lineHeight: v })}
-        />
-        <StyleSlider
-          label="Padding"
-          min={0}
-          max={48}
-          step={1}
-          value={overlay.style.padding ?? 0}
-          onChange={v => updateOverlayStyle(overlay.id, { padding: v })}
-          suffix="px"
-        />
-        <StyleSlider
-          label="Corner radius"
-          min={0}
-          max={48}
-          step={1}
-          value={overlay.style.borderRadius ?? 0}
-          onChange={v => updateOverlayStyle(overlay.id, { borderRadius: v })}
-          suffix="px"
-        />
-      </div>
-
-      <Field label="Animation" htmlFor="overlay-animation">
-        <select
-          id="overlay-animation"
-          value={overlay.style.animation ?? 'none'}
-          onChange={e => updateOverlayStyle(overlay.id, { animation: e.target.value as TextAnimation })}
-          className={fieldControlClass}
+      <div className="rounded-lg bg-muted/15">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
+          onClick={() => setAdvancedOpen(v => !v)}
         >
-          {ANIMATIONS.map(a => (
-            <option key={a.value} value={a.value}>
-              {a.label}
-            </option>
-          ))}
-        </select>
-      </Field>
+          Advanced typography
+          <ChevronDownIcon className={cn('size-3.5 transition-transform', advancedOpen && 'rotate-180')} />
+        </button>
+        {advancedOpen ? (
+          <div className="space-y-3 border-t border-border/40 p-3">
+            <StyleSlider
+              label="Letter spacing"
+              min={-2}
+              max={20}
+              step={0.5}
+              value={overlay.style.letterSpacing ?? 0}
+              onChange={v => updateOverlayStyle(overlay.id, { letterSpacing: v })}
+              suffix="px"
+            />
+            <StyleSlider
+              label="Line height"
+              min={0.8}
+              max={3}
+              step={0.05}
+              value={overlay.style.lineHeight ?? 1.2}
+              onChange={v => updateOverlayStyle(overlay.id, { lineHeight: v })}
+            />
+            <StyleSlider
+              label="Padding"
+              min={0}
+              max={48}
+              step={1}
+              value={overlay.style.padding ?? 0}
+              onChange={v => updateOverlayStyle(overlay.id, { padding: v })}
+              suffix="px"
+            />
+            <StyleSlider
+              label="Corner radius"
+              min={0}
+              max={48}
+              step={1}
+              value={overlay.style.borderRadius ?? 0}
+              onChange={v => updateOverlayStyle(overlay.id, { borderRadius: v })}
+              suffix="px"
+            />
+            <Field label="Animation">
+              <Select
+                value={overlay.style.animation ?? 'none'}
+                onValueChange={v => updateOverlayStyle(overlay.id, { animation: v as TextAnimation })}
+              >
+                <SelectTrigger className="h-8 w-full text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ANIMATIONS.map(a => (
+                    <SelectItem key={a.value} value={a.value}>
+                      {a.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        ) : null}
+      </div>
 
       <div className="grid grid-cols-2 gap-2.5">
         <Field label="Start (s)" htmlFor="overlay-start">

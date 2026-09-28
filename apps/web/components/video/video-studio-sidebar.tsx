@@ -31,8 +31,8 @@ const TAB_META: Record<VideoSidebarTab, { title: string; description: string }> 
   media: { title: 'Media', description: 'Upload, library, Pixabay, or paste a URL' },
   text: { title: 'Text', description: 'Add text boxes and presets at the playhead' },
   audio: { title: 'Audio', description: 'Generate a voiceover or upload your own' },
-  script: { title: 'Script', description: 'Generate timed on-screen captions' },
-  captions: { title: 'Captions', description: "Generate captions from your video's audio" },
+  script: { title: 'Script', description: 'Write timed lines from a prompt' },
+  captions: { title: 'Captions', description: 'Transcribe a clip — captions stay on that clip' },
 }
 
 function isPanelTab(value: string | null | unknown): value is VideoSidebarTab {
@@ -85,27 +85,17 @@ function RailButton({
           aria-label={label}
           aria-pressed={active}
           data-tour-anchor={label === 'Media' ? 'media' : undefined}
-          className="group flex w-full flex-col items-center gap-1 rounded-md py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="group flex w-full items-center justify-center rounded-md py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <span
             className={cn(
-              'flex size-8 items-center justify-center rounded-lg transition-colors duration-150',
+              'flex size-9 items-center justify-center rounded-lg transition-colors duration-150',
               active
                 ? 'bg-foreground/[0.07] text-foreground'
                 : 'text-muted-foreground group-hover:bg-foreground/[0.04] group-hover:text-foreground',
             )}
           >
             <Icon className="size-4" strokeWidth={active ? 1.9 : 1.6} />
-          </span>
-          <span
-            className={cn(
-              'text-[10px] leading-none tracking-tight transition-colors duration-150',
-              active
-                ? 'font-medium text-foreground'
-                : 'font-medium text-muted-foreground group-hover:text-foreground',
-            )}
-          >
-            {label}
           </span>
         </button>
       </TooltipTrigger>

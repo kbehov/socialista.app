@@ -1,6 +1,14 @@
 'use client'
 
 import type { Transition, TransitionType } from '@socialista/types'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 
 const TRANSITIONS: { value: TransitionType; label: string }[] = [
   { value: 'cut', label: 'Cut' },
@@ -20,29 +28,32 @@ export function TransitionPicker({ value, onChange }: TransitionPickerProps) {
   const duration = value?.duration ?? 0.5
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-xs font-medium text-muted-foreground">Transition</div>
-      <select
+      <Select
         value={type}
-        onChange={e => onChange({ type: e.target.value as TransitionType, duration })}
-        className="h-8 rounded-md border border-input bg-transparent px-2 text-xs"
+        onValueChange={v => onChange({ type: v as TransitionType, duration })}
       >
-        {TRANSITIONS.map(t => (
-          <option key={t.value} value={t.value}>
-            {t.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="h-8 w-full text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TRANSITIONS.map(t => (
+            <SelectItem key={t.value} value={t.value}>
+              {t.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {type !== 'cut' && (
         <div className="flex items-center gap-2">
           <label className="text-xs text-muted-foreground">Duration</label>
-          <input
+          <Input
             type="number"
             min={0.1}
             max={5}
             step={0.1}
             value={duration}
             onChange={e => onChange({ type, duration: parseFloat(e.target.value) || 0.5 })}
-            className="h-8 w-20 rounded-md border border-input bg-transparent px-2 text-xs"
+            className="h-8 w-20 text-xs tabular-nums"
           />
           <span className="text-xs text-muted-foreground">s</span>
         </div>

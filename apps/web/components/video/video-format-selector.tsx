@@ -9,6 +9,7 @@ import {
   SelectItem,
   SelectLabel,
   SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { formatAspectRatio } from '@/lib/carousel/aspect-ratios'
 import {
@@ -22,7 +23,67 @@ import { VIDEO_FOCUS_FORMAT_EVENT } from '@/lib/video/editor-events'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
+const FPS_OPTIONS = [24, 30, 60]
+
+const DURATION_GUIDES = [
+  { value: 'none', label: 'No guide' },
+  { value: '15', label: '15 seconds' },
+  { value: '30', label: '30 seconds' },
+  { value: '60', label: '60 seconds' },
+  { value: '90', label: '90 seconds (IG Reels max)' },
+] as const
+
 const SAFE_ZONE_NUDGE_KEY = 'video-safe-zone-nudge:v1'
+
+function VideoFormatProjectSettings() {
+  const fps = useVideoEditorStore(s => s.project.fps)
+  const durationGuide = useVideoEditorStore(s => s.durationGuide)
+  const setFps = useVideoEditorStore(s => s.setFps)
+  const setDurationGuide = useVideoEditorStore(s => s.setDurationGuide)
+  const guideValue = durationGuide == null ? 'none' : String(durationGuide)
+
+  return (
+    <div
+      className="space-y-2 border-t border-border/40 px-2 py-2"
+      onPointerDown={e => e.preventDefault()}
+    >
+      <div className="space-y-1">
+        <span className="text-[11px] font-medium text-muted-foreground">Frame rate</span>
+        <Select value={String(fps)} onValueChange={v => setFps(parseInt(v, 10))}>
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FPS_OPTIONS.map(f => (
+              <SelectItem key={f} value={String(f)}>
+                {f} fps
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <span className="text-[11px] font-medium text-muted-foreground">Target length</span>
+        <p className="text-[10px] leading-snug text-muted-foreground/80">Timeline ruler marker only.</p>
+        <Select
+          value={guideValue}
+          onValueChange={v => setDurationGuide(v === 'none' ? null : parseInt(v, 10))}
+        >
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DURATION_GUIDES.map(g => (
+              <SelectItem key={g.value} value={g.value}>
+                {g.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  )
+}
 
 function maybeNudgeSafeZones(presetId: VideoFormatPresetId) {
   const preset = getVideoFormatPreset(presetId)
@@ -134,6 +195,7 @@ export function VideoFormatSelector({
               ))}
             </SelectGroup>
           ))}
+          <VideoFormatProjectSettings />
         </SelectContent>
       </Select>
     </div>
