@@ -7,6 +7,9 @@ export type MediaGridItem = {
   src: string
   alt?: string
   mimeType?: string
+  name?: string
+  width?: number
+  height?: number
 }
 
 type MediaGridProps = {
@@ -17,8 +20,13 @@ type MediaGridProps = {
   renderOverlay?: (item: MediaGridItem) => ReactNode
 }
 
-const defaultGridClassName =
-  'grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8'
+export const mediaGridClassName =
+  'grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8'
+
+const defaultGridClassName = mediaGridClassName
+
+export const mediaGridItemClassName =
+  'group/cell relative aspect-square overflow-hidden rounded-[10px] bg-muted/25 outline outline-1 outline-[oklch(0_0_0/0.1)] transition-[outline-color,box-shadow] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:outline-[oklch(0_0_0/0.16)] hover:shadow-sm dark:outline-[oklch(1_0_0/0.1)] dark:hover:outline-[oklch(1_0_0/0.16)]'
 
 export function MediaGrid({ items, className, itemClassName, renderItem, renderOverlay }: MediaGridProps) {
   return (
@@ -26,7 +34,7 @@ export function MediaGrid({ items, className, itemClassName, renderItem, renderO
       {items.map(item => (
         <div
           key={item.id}
-          className={cn('group relative aspect-square overflow-hidden rounded-lg', itemClassName)}
+          className={cn(mediaGridItemClassName, itemClassName)}
         >
           {renderItem ? (
             renderItem(item)

@@ -17,12 +17,15 @@ const THREADS_TYPES = [PostType.TEXT, PostType.IMAGE, PostType.VIDEO, PostType.C
 
 const LINKEDIN_TYPES = [PostType.TEXT, PostType.IMAGE, PostType.VIDEO, PostType.CAROUSEL] as const
 
+const TWITTER_TYPES = [PostType.TEXT, PostType.IMAGE, PostType.VIDEO, PostType.CAROUSEL] as const
+
 export const PROVIDER_PUBLISH_TYPES: Record<string, readonly PostType[]> = {
   [SocialProvider.FACEBOOK]: FACEBOOK_TYPES,
   [SocialProvider.INSTAGRAM]: INSTAGRAM_TYPES,
   [SocialProvider.TIKTOK]: TIKTOK_TYPES,
   [SocialProvider.THREADS]: THREADS_TYPES,
   [SocialProvider.LINKEDIN]: LINKEDIN_TYPES,
+  [SocialProvider.TWITTER]: TWITTER_TYPES,
 }
 
 export function assertPostPublishable(post: IPost): void {
@@ -46,6 +49,13 @@ export function assertPostPublishable(post: IPost): void {
     const items = (post.content as { items?: Array<{ kind?: string }> }).items ?? []
     if (items.some(item => item.kind === 'video')) {
       throw new PermanentPublishError('LinkedIn organic multi-image posts cannot include videos')
+    }
+  }
+
+  if (post.type === PostType.CAROUSEL && post.provider === SocialProvider.TWITTER) {
+    const items = (post.content as { items?: Array<{ kind?: string }> }).items ?? []
+    if (items.some(item => item.kind === 'video')) {
+      throw new PermanentPublishError('X photo posts cannot include videos')
     }
   }
 }

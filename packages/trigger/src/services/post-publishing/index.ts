@@ -1,5 +1,6 @@
-import { ConnectionStatus, SocialProvider, type IAccount, type IPost } from '@socialista/db'
+import { ConnectionStatus, SocialProvider, getAccountByIdWithTokens, type IAccount, type IPost } from '@socialista/db'
 
+import { refreshAccountTokens } from '../token-refresh/index.js'
 import { assertPostPublishable } from './capabilities.js'
 import { publishFacebookPost } from './facebook.js'
 import { PublishHttpError } from './fetch.js'
@@ -7,6 +8,7 @@ import { publishInstagramPost } from './instagram.js'
 import { publishLinkedInPost } from './linkedin.js'
 import { publishThreadsPost } from './threads.js'
 import { publishTikTokPost } from './tiktok.js'
+import { publishTwitterPost } from './twitter.js'
 import {
   PermanentPublishError,
   requireAccessToken,
@@ -25,13 +27,33 @@ export { PublishHttpError } from './fetch.js'
 export { assertPostPublishable } from './capabilities.js'
 export { postFirstComment } from './first-comment.js'
 
-function assertAccountReady(account: IAccount): void {
+async function ensureAccountReady(account: IAccount): Promise<IAccount> {
   if (account.connectionStatus !== ConnectionStatus.CONNECTED) {
     throw new PermanentPublishError(`Account is ${account.connectionStatus}, not connected`)
   }
-  if (account.accessTokenExpiresAt && account.accessTokenExpiresAt.getTime() <= Date.now()) {
+
+  const expiresAt = account.accessTokenExpiresAt
+  if (!expiresAt || expiresAt.getTime() > Date.now()) {
+    return account
+  }
+
+  const result = await refreshAccountTokens(account)
+  if (result.status !== 'refreshed') {
+    throw new PermanentPublishError(
+      result.status === 'disconnected' ? result.reason : 'Account access token has expired',
+    )
+  }
+
+  const refreshed = await getAccountByIdWithTokens(account._id.toString())
+  if (!refreshed?.accessToken) {
     throw new PermanentPublishError('Account access token has expired')
   }
+
+  account.accessToken = refreshed.accessToken
+  account.refreshToken = refreshed.refreshToken
+  account.accessTokenExpiresAt = refreshed.accessTokenExpiresAt
+  account.refreshTokenExpiresAt = refreshed.refreshTokenExpiresAt
+  return account
 }
 
 export async function publishPostToProvider(input: {
@@ -40,20 +62,20 @@ export async function publishPostToProvider(input: {
   persistOperationId?: (operationId: string) => Promise<void>
 }): Promise<PublishResult> {
   assertPostPublishable(input.post)
-  assertAccountReady(input.account)
+  const account = await ensureAccountReady(input.account)
 
-  if (input.post.provider !== input.account.provider) {
+  if (input.post.provider !== account.provider) {
     throw new PermanentPublishError('Post provider does not match account provider')
   }
 
   const ctx: PublishContext = {
     post: input.post,
-    account: input.account,
-    accessToken: requireAccessToken(input.account),
+    account,
+    accessToken: requireAccessToken(account),
     persistOperationId: input.persistOperationId,
   }
 
-  switch (input.account.provider) {
+  switch (account.provider) {
     case SocialProvider.FACEBOOK:
       return publishFacebookPost(ctx)
     case SocialProvider.INSTAGRAM:
@@ -64,6 +86,8 @@ export async function publishPostToProvider(input: {
       return publishThreadsPost(ctx)
     case SocialProvider.LINKEDIN:
       return publishLinkedInPost(ctx)
+    case SocialProvider.TWITTER:
+      return publishTwitterPost(ctx)
     default:
       throw new PermanentPublishError(`Unsupported provider: ${input.account.provider}`)
   }

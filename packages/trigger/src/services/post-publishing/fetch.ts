@@ -4,7 +4,7 @@ type FetchJsonOptions = {
   searchParams?: Record<string, string>
   method?: 'GET' | 'POST' | 'PUT'
   headers?: Record<string, string>
-  body?: URLSearchParams | string
+  body?: URLSearchParams | string | FormData
   /** When true, skip JSON parse and return empty object for empty bodies. */
   allowEmpty?: boolean
 }
@@ -38,6 +38,14 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
     if (typeof message === 'string' && message.trim()) return message
   }
   if (typeof record.message === 'string' && record.message.trim()) return record.message
+  if (typeof record.detail === 'string' && record.detail.trim()) return record.detail
+  const errors = record.errors
+  if (Array.isArray(errors) && errors[0] && typeof errors[0] === 'object') {
+    const first = errors[0] as { message?: unknown; detail?: unknown }
+    if (typeof first.message === 'string' && first.message.trim()) return first.message
+    if (typeof first.detail === 'string' && first.detail.trim()) return first.detail
+  }
+  if (typeof record.title === 'string' && record.title.trim()) return record.title
   const data = record.data
   if (data && typeof data === 'object') {
     const errorCode = (data as { error_code?: unknown }).error_code

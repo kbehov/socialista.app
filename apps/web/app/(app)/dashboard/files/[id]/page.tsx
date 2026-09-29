@@ -1,5 +1,4 @@
 import { FilesBrowser } from '@/components/files/files-browser'
-import { PageHeader } from '@/components/headers/page-header'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
 import { getFolderById, getWorkspaceFiles } from '@/services/files.service'
@@ -27,25 +26,22 @@ const DashboardFolderPage = async ({ params }: { params: Promise<{ id: string }>
   const filesError = filesResult && !filesResult.success ? (filesResult.message ?? 'Failed to load files') : null
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={folder.name}
-        description={formatFileCount(folder.imagesCount)}
-        backHref={DASHBOARD_ROUTES.HOME}
-        breadcrumbs={[{ label: 'Files', href: DASHBOARD_ROUTES.HOME }, { label: folder.name }]}
-      />
-
-      <FilesBrowser
-        folderId={id}
-        folderName={folder.name}
-        folderFileCount={folder.imagesCount}
-        workspaceId={workspace?.id}
-        initialFiles={initialFiles}
-        initialError={filesError}
-        initialHasMore={Boolean(filesResult?.meta?.hasNextPage)}
-        initialTotal={filesResult?.meta?.total}
-      />
-    </div>
+    <FilesBrowser
+      pageHeader={{
+        title: folder.name,
+        description: formatFileCount(folder.imagesCount),
+        backHref: DASHBOARD_ROUTES.HOME,
+        breadcrumbs: [{ label: 'Files', href: DASHBOARD_ROUTES.HOME }, { label: folder.name }],
+      }}
+      folderId={id}
+      folderName={folder.name}
+      folderFileCount={folder.imagesCount}
+      workspaceId={workspace?.id}
+      initialFiles={initialFiles}
+      initialError={filesError}
+      initialHasMore={Boolean(filesResult?.meta?.hasNextPage)}
+      initialTotal={filesResult?.meta?.total}
+    />
   )
 }
 

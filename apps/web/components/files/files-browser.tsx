@@ -3,9 +3,10 @@
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { ErrorState } from '@/components/common/error-state'
 import { LoadingState } from '@/components/common/loading-state'
-import { CreateFolderSheet } from '@/components/files/create-folder-sheet'
 import { FilesDropzone } from '@/components/files/files-dropzone'
-import { FilesToolbar, FolderToolbar } from '@/components/files/files-toolbar'
+import { FilesFiltersToolbar } from '@/components/files/files-filters-toolbar'
+import { FilesPageHeaderActions } from '@/components/files/files-page-header-actions'
+import { PageHeader, type PageHeaderProps } from '@/components/headers/page-header'
 import { FilesUploadEmptyState } from '@/components/files/files-upload-empty-state'
 import { FileMediaGrid } from '@/components/media/file-media-grid'
 import { FolderGrid } from '@/components/media/folder-grid'
@@ -13,15 +14,24 @@ import type { MediaGridItem } from '@/components/media/media-grid'
 import { MediaGridSkeleton } from '@/components/media/media-grid-skeleton'
 import { getFilesPaths, type FilesPathsVariant, type FilesRoutePaths } from '@/constants/app-routes'
 import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
+import { useFilesFilters } from '@/hooks/use-files-filters'
 import { useWorkspaceFiles } from '@/hooks/use-workspace-files'
-import { cn } from '@/lib/utils'
+import {
+  filterFilesByType,
+  getFileSortFromFilters,
+  getFileTypesFromFilters,
+  hasActiveFileFilters,
+  parseFileFiltersFromSearchParams,
+} from '@/lib/files/file-filters'
 import { deleteWorkspaceFile, deleteWorkspaceFolder } from '@/services/files.service'
 import { useWorkspaceStore, useWorkspaceStoreActions } from '@/store/workspace.store'
+import { fileLabel } from '@/components/files/attach-media/utils'
 import { formatFileCount } from '@/utils/format'
 import type { CollectionResponse, ImageResponse } from '@socialista/types'
 import { Loader2Icon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useMemo, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { toast } from 'sonner'
 
@@ -42,6 +52,7 @@ type FilesBrowserProps = {
   pageSize?: number
   /** DOM id of the scrollable parent. Defaults by `pathsVariant`. */
   scrollableTarget?: string
+  pageHeader?: Omit<PageHeaderProps, 'actions'>
 }
 
 type DeleteTarget =
@@ -52,17 +63,11 @@ function toMediaGridItems(files: ImageResponse[]): MediaGridItem[] {
   return files.map(file => ({
     id: file._id,
     src: file.url,
-    alt: '',
+    alt: fileLabel(file),
+    name: fileLabel(file),
+    width: file.width,
+    height: file.height,
   }))
-}
-
-function getFileLabel(file: MediaGridItem) {
-  if (file.alt) return file.alt
-  try {
-    return new URL(file.src).pathname.split('/').pop() ?? 'File'
-  } catch {
-    return 'File'
-  }
 }
 
 function applyFreedStorage(
@@ -80,9 +85,33 @@ function applyFreedStorage(
 
 function FilesScrollLoader() {
   return (
-    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-      <Loader2Icon className="size-4 animate-spin" />
-      Loading more files…
+    <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-muted-foreground">
+      <Loader2Icon className="size-3.5 animate-spin opacity-70" />
+      Loading more
+    </div>
+  )
+}
+
+function FilesSectionLabel({ children }: { children: string }) {
+  return (
+    <h2 className="mb-3 px-0.5 text-[11px] font-medium tracking-[0.06em] text-muted-foreground uppercase">
+      {children}
+    </h2>
+  )
+}
+
+function FilesFilterEmptyState({ hasMore, onClear }: { hasMore: boolean; onClear: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+      <p className="text-sm font-medium tracking-tight text-foreground">No files match</p>
+      <p className="max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+        {hasMore
+          ? 'None of the loaded files match these filters. Scroll to load more, or adjust your filters.'
+          : 'Try a different type or sort, or clear filters to see everything.'}
+      </p>
+      <Button type="button" variant="outline" size="sm" className="h-8" onClick={onClear}>
+        Clear filters
+      </Button>
     </div>
   )
 }
@@ -95,6 +124,9 @@ function FinderContent({
   onUpload,
   onDeleteFile,
   onDeleteFolder,
+  showFilterEmpty,
+  hasMore,
+  onClearFilters,
 }: {
   folders: CollectionResponse[]
   files: ImageResponse[]
@@ -103,26 +135,43 @@ function FinderContent({
   onUpload: () => void
   onDeleteFile: (item: MediaGridItem) => void
   onDeleteFolder: (folder: Pick<CollectionResponse, '_id' | 'name' | 'imagesCount'>) => void
+  showFilterEmpty: boolean
+  hasMore: boolean
+  onClearFilters: () => void
 }) {
   const hasFolders = folders.length > 0
   const hasFiles = files.length > 0
 
-  if (!hasFolders && !hasFiles) {
+  if (!hasFolders && !hasFiles && !showFilterEmpty) {
     return <FilesUploadEmptyState isDragging={isDragging} onUpload={onUpload} />
   }
 
+  const showFilesSection = hasFiles || showFilterEmpty
+
   return (
-    <div className="flex flex-col gap-5">
-      {hasFolders && <FolderGrid folders={folders} paths={paths} onDeleteFolder={onDeleteFolder} />}
+    <div className="flex flex-col gap-8 pb-2">
+      {hasFolders ? (
+        <section>
+          <FilesSectionLabel>Folders</FilesSectionLabel>
+          <FolderGrid folders={folders} paths={paths} onDeleteFolder={onDeleteFolder} />
+        </section>
+      ) : null}
 
-      {hasFolders && hasFiles && <div className="border-t border-border/60" />}
-
-      {hasFiles && <FileMediaGrid items={toMediaGridItems(files)} onDeleteFile={onDeleteFile} />}
+      {showFilesSection ? (
+        <section>
+          <FilesSectionLabel>Files</FilesSectionLabel>
+          {showFilterEmpty ? (
+            <FilesFilterEmptyState hasMore={hasMore} onClear={onClearFilters} />
+          ) : (
+            <FileMediaGrid items={toMediaGridItems(files)} onDeleteFile={onDeleteFile} />
+          )}
+        </section>
+      ) : null}
     </div>
   )
 }
 
-export function FilesBrowser({
+function FilesBrowserContent({
   folders = [],
   folderId,
   folderName,
@@ -135,6 +184,7 @@ export function FilesBrowser({
   initialTotal,
   pageSize = WORKSPACE_FILES_PAGE_SIZE,
   scrollableTarget,
+  pageHeader,
 }: FilesBrowserProps) {
   const paths = getFilesPaths(pathsVariant)
   const router = useRouter()
@@ -145,6 +195,16 @@ export function FilesBrowser({
   const resolvedScrollTarget =
     scrollableTarget ?? (pathsVariant === 'manager' ? MANAGER_FILES_SCROLL_ID : DASHBOARD_FILES_SCROLL_ID)
 
+  const searchParams = useSearchParams()
+  const { clearFilters } = useFilesFilters()
+  const filters = useMemo(
+    () => parseFileFiltersFromSearchParams(Object.fromEntries(searchParams.entries())),
+    [searchParams],
+  )
+  const sort = getFileSortFromFilters(filters)
+  const typeFilter = getFileTypesFromFilters(filters)
+  const filtersActive = hasActiveFileFilters(filters)
+
   const { files, isLoading, isUploading, error, hasMore, total, fetchMore, refetch, uploadState, uploadActions } =
     useWorkspaceFiles({
       workspaceId: resolvedWorkspaceId,
@@ -154,17 +214,16 @@ export function FilesBrowser({
       initialHasMore,
       initialTotal,
       pageSize,
+      sort,
     })
+
+  const visibleFiles = useMemo(() => filterFilesByType(files, typeFilter), [files, typeFilter])
+  const showFilterEmpty = filtersActive && visibleFiles.length === 0 && files.length > 0
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const { isDragging } = uploadState
-  const fileCountLabel = isRootView ? total : files.length
-  const totalItems = folders.length + fileCountLabel
-  const hasItems = folders.length > 0 || files.length > 0 || hasMore
-  const title = folderName ?? currentWorkspace?.name ?? 'Files'
-
   const handleDeleteSuccess = useCallback(
     (freedBytes: number) => {
       if (currentWorkspace && freedBytes > 0) {
@@ -214,7 +273,7 @@ export function FilesBrowser({
     setDeleteTarget({
       type: 'file',
       id: item.id,
-      name: getFileLabel(item),
+      name: item.name ?? item.alt ?? 'File',
     })
   }, [])
 
@@ -237,22 +296,48 @@ export function FilesBrowser({
   const browserContent = isRootView ? (
     <FinderContent
       folders={folders}
-      files={files}
+      files={visibleFiles}
       paths={paths}
       isDragging={isDragging}
       onUpload={uploadActions.openFileDialog}
       onDeleteFile={handleDeleteFile}
       onDeleteFolder={handleDeleteFolder}
+      showFilterEmpty={showFilterEmpty}
+      hasMore={hasMore}
+      onClearFilters={clearFilters}
     />
-  ) : files.length === 0 && !hasMore ? (
+  ) : showFilterEmpty ? (
+    <FilesFilterEmptyState hasMore={hasMore} onClear={clearFilters} />
+  ) : visibleFiles.length === 0 && !hasMore ? (
     <FilesUploadEmptyState isDragging={isDragging} onUpload={uploadActions.openFileDialog} />
   ) : (
-    <FileMediaGrid items={toMediaGridItems(files)} onDeleteFile={handleDeleteFile} />
+    <div className="pb-2">
+      <FilesSectionLabel>Files</FilesSectionLabel>
+      <FileMediaGrid items={toMediaGridItems(visibleFiles)} onDeleteFile={handleDeleteFile} />
+    </div>
+  )
+
+  const headerActions = (
+    <FilesPageHeaderActions
+      isUploading={isUploading}
+      onUpload={uploadActions.openFileDialog}
+      showNewFolder={isRootView}
+      onDeleteFolder={
+        !isRootView && folderId && folderName
+          ? () => handleDeleteFolder({ _id: folderId, name: folderName, imagesCount: folderFileCount })
+          : undefined
+      }
+    />
   )
 
   return (
     <>
+      {pageHeader ? <PageHeader {...pageHeader} actions={headerActions} /> : null}
+
+      <FilesFiltersToolbar filters={filters} total={total} visibleCount={visibleFiles.length} />
+
       <FilesDropzone
+        borderless
         isDragging={isDragging}
         isUploading={isUploading}
         onDragEnter={uploadActions.handleDragEnter}
@@ -260,30 +345,7 @@ export function FilesBrowser({
         onDragOver={uploadActions.handleDragOver}
         onDrop={uploadActions.handleDrop}
         inputProps={uploadActions.getInputProps()}
-        className={cn(hasItems ? 'border-solid' : undefined)}
-        header={
-          isRootView ? (
-            <FilesToolbar
-              title={title}
-              itemCount={totalItems}
-              isUploading={isUploading}
-              onUpload={uploadActions.openFileDialog}
-              actions={<CreateFolderSheet variant="toolbar" />}
-            />
-          ) : (
-            <FolderToolbar
-              title={title}
-              fileCount={folderFileCount > 0 ? folderFileCount : total}
-              isUploading={isUploading}
-              onUpload={uploadActions.openFileDialog}
-              onDeleteFolder={
-                folderId && folderName
-                  ? () => handleDeleteFolder({ _id: folderId, name: folderName, imagesCount: folderFileCount })
-                  : undefined
-              }
-            />
-          )
-        }
+        bodyClassName="min-h-0 p-0"
       >
         {isLoading ? (
           <LoadingState message="Loading…">
@@ -320,5 +382,22 @@ export function FilesBrowser({
         onConfirm={() => void handleConfirmDelete()}
       />
     </>
+  )
+}
+
+export function FilesBrowser(props: FilesBrowserProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-4">
+          {props.pageHeader ? <PageHeader {...props.pageHeader} /> : null}
+          <LoadingState message="Loading…">
+            <MediaGridSkeleton />
+          </LoadingState>
+        </div>
+      }
+    >
+      <FilesBrowserContent {...props} />
+    </Suspense>
   )
 }

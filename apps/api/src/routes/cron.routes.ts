@@ -1,4 +1,5 @@
 import {
+  disconnectExpiredAccounts,
   publishDuePosts,
   refreshExpiringAccountTokens,
   sweepAccountAnalytics,
@@ -11,6 +12,7 @@ const cronRoutes = new Hono()
 
 cronRoutes.use('/*', internalApiMiddleware)
 cronRoutes.post('/accounts/refresh-expiring', refreshExpiringAccountTokens)
+cronRoutes.post('/accounts/disconnect-expired', disconnectExpiredAccounts)
 cronRoutes.post('/posts/publish-due', publishDuePosts)
 cronRoutes.post('/analytics/sweep', sweepAccountAnalytics)
 cronRoutes.post('/analytics/posts/sweep', sweepPostAnalytics)

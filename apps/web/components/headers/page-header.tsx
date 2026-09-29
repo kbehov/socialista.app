@@ -20,6 +20,16 @@ export type PageHeaderBreadcrumb = {
   href?: string
 }
 
+export function PageHeaderActions({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn('flex w-full shrink-0 flex-wrap items-center gap-2.5 sm:w-auto sm:justify-end', className)}
+    >
+      {children}
+    </div>
+  )
+}
+
 type PageHeaderProps = {
   title: ReactNode
   description?: string
@@ -102,9 +112,7 @@ export function PageHeader({
           </div>
         </div>
 
-        {actions ? (
-          <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
-        ) : null}
+        {actions ? <PageHeaderActions>{actions}</PageHeaderActions> : null}
       </div>
     </div>
   )

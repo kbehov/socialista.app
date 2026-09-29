@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { dashboardSurface } from '@/components/dashboard'
+import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '../ui/field'
 import { Input } from '../ui/input'
@@ -21,7 +23,7 @@ const createFolderSchema = z.object({
 })
 
 type CreateFolderSheetProps = {
-  variant?: 'default' | 'toolbar'
+  variant?: 'default' | 'toolbar' | 'header'
 }
 
 export const CreateFolderSheet = ({ variant = 'default' }: CreateFolderSheetProps) => {
@@ -58,6 +60,11 @@ export const CreateFolderSheet = ({ variant = 'default' }: CreateFolderSheetProp
         {variant === 'toolbar' ? (
           <Button type="button" size="xs" variant="outline">
             <FolderPlusIcon />
+            New folder
+          </Button>
+        ) : variant === 'header' ? (
+          <Button type="button" size="sm" variant="outline" className={cn(dashboardSurface.toolbarControl)}>
+            <FolderPlusIcon className="size-4" strokeWidth={1.75} />
             New folder
           </Button>
         ) : (

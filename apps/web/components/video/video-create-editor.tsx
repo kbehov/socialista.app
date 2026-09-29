@@ -4,6 +4,9 @@ import { ErrorState } from '@/components/common/error-state'
 import { VideoStudio } from '@/components/video/video-studio'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
+import { generateVideoThumbnails, importMediaFromLibrary } from '@/lib/video/media-import'
+import { consumeVideoLibraryImport } from '@/lib/video/library-import-pending'
 import { importSlideshowToTimeline, type SlideshowImportProgress } from '@/lib/video/slideshow-import'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { fetchSlideshow } from '@/services/slideshow.client'
@@ -28,9 +31,63 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
   const router = useRouter()
   const clearProject = useVideoEditorStore(s => s.clearProject)
   const importedRef = useRef(false)
+  const libraryImportRef = useRef(false)
   const [ready, setReady] = useState(!slideshowId)
   const [error, setError] = useState<string | null>(null)
   const [importProgress, setImportProgress] = useState<SlideshowImportProgress | null>(null)
+
+  useEffect(() => {
+    if (slideshowId || libraryImportRef.current) return
+
+    const pending = consumeVideoLibraryImport()
+    if (!pending) return
+
+    libraryImportRef.current = true
+    setReady(false)
+    setError(null)
+    let cancelled = false
+
+    async function importFromLibrary() {
+      clearProject()
+
+      try {
+        const asset = await importMediaFromLibrary(
+          {
+            url: pending.url,
+            fileId: pending.id,
+            name: pending.name,
+            width: pending.width,
+            height: pending.height,
+          },
+          { deferThumbnails: true },
+        )
+        if (cancelled) return
+
+        registerAndPlaceAtPlayhead(asset)
+        void generateVideoThumbnails(asset).then(thumbnails => {
+          if (thumbnails.length > 0) {
+            useVideoEditorStore.getState().setAssetThumbnails(asset.id, thumbnails)
+          }
+        })
+        importedRef.current = true
+        toast.success(`Added ${pending.name ?? 'video'} to timeline`)
+      } catch (err) {
+        if (cancelled) return
+        const message = err instanceof Error ? err.message : 'Failed to import video from library'
+        toast.error(message)
+      } finally {
+        if (!cancelled) {
+          setReady(true)
+        }
+      }
+    }
+
+    void importFromLibrary()
+
+    return () => {
+      cancelled = true
+    }
+  }, [clearProject, slideshowId])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -38,11 +95,15 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
 
     async function init() {
       if (!slideshowId) {
-        if (!importedRef.current) {
+        if (!importedRef.current && !libraryImportRef.current) {
           clearProject()
         }
-        importedRef.current = false
-        setReady(true)
+        if (!libraryImportRef.current) {
+          importedRef.current = false
+        }
+        if (!libraryImportRef.current) {
+          setReady(true)
+        }
         setError(null)
         setImportProgress(null)
         return

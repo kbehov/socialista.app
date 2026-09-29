@@ -8,6 +8,7 @@ import {
   SocialProvider,
   claimDuePosts,
   currentAnalyticsSlotIndex,
+  disconnectExpiredAccountsWithoutLiveRefreshToken,
   floorToAnalyticsBucket,
   floorToUtcDay,
   getConnectedAccountsExpiringSoon,
@@ -30,6 +31,14 @@ import type { Context } from 'hono'
 
 function utcDateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10)
+}
+
+/** Future X expiry is unique per token; already-expired tokens retry once per hour. */
+function twitterRefreshIdempotencyKey(accessTokenExpiresAt: Date | undefined): string {
+  if (accessTokenExpiresAt && accessTokenExpiresAt.getTime() > Date.now()) {
+    return accessTokenExpiresAt.toISOString()
+  }
+  return `expired:${new Date().toISOString().slice(0, 13)}`
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -107,8 +116,8 @@ export const refreshExpiringAccountTokens = async (c: Context) => {
     accounts.map(async account => {
       const accountId = account._id.toString()
       const expiryKey =
-        account.provider === SocialProvider.TWITTER && account.accessTokenExpiresAt
-          ? account.accessTokenExpiresAt.toISOString()
+        account.provider === SocialProvider.TWITTER
+          ? twitterRefreshIdempotencyKey(account.accessTokenExpiresAt)
           : dateKey
       const handle = await tasks.trigger<RefreshAccountTokenTask>(
         TASK_IDS.refreshAccountToken,
@@ -123,6 +132,16 @@ export const refreshExpiringAccountTokens = async (c: Context) => {
     queued: results.length,
     accountIds: results.map(r => r.accountId),
     runs: results,
+  })
+}
+
+/** Disconnect connected accounts whose access token is expired and have no live refresh token. */
+export const disconnectExpiredAccounts = async (c: Context) => {
+  const { accountIds } = await disconnectExpiredAccountsWithoutLiveRefreshToken()
+
+  return successResponse(c, 200, {
+    disconnected: accountIds.length,
+    accountIds,
   })
 }
 

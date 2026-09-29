@@ -1,5 +1,4 @@
 import { FilesBrowser } from '@/components/files/files-browser'
-import { PageHeader } from '@/components/headers/page-header'
 import { MANAGER_FILES_ROUTES } from '@/constants/app-routes'
 import { getFolderById } from '@/services/files.service'
 import { formatFileCount } from '@/utils/format'
@@ -17,18 +16,17 @@ const ManagerFolderPage = async ({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <PageHeader
-        title={folder.name}
-        description={formatFileCount(folder.imagesCount)}
-        backHref={MANAGER_FILES_ROUTES.HOME}
-        breadcrumbs={[
-          { label: 'Manager', href: '/manager' },
-          { label: 'Files', href: MANAGER_FILES_ROUTES.HOME },
-          { label: folder.name },
-        ]}
-      />
-
       <FilesBrowser
+        pageHeader={{
+          title: folder.name,
+          description: formatFileCount(folder.imagesCount),
+          backHref: MANAGER_FILES_ROUTES.HOME,
+          breadcrumbs: [
+            { label: 'Manager', href: '/manager' },
+            { label: 'Files', href: MANAGER_FILES_ROUTES.HOME },
+            { label: folder.name },
+          ],
+        }}
         folderId={id}
         folderName={folder.name}
         folderFileCount={folder.imagesCount}

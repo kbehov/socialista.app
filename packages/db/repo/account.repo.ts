@@ -402,10 +402,9 @@ export const disconnectAccount = async (id: string): Promise<IAccount | null> =>
 }
 
 /**
- * Connected accounts whose access token expires soon.
- * Non-X providers: within `withinDays` (default 2). X tokens last 2 hours, so those
- * accounts are selected when expiry is within 1 hour.
- * Includes OAuth tokens for refresh flows.
+ * Connected accounts whose access token is expired or expires soon.
+ * Non-X providers: within `withinDays` (default 2) and not yet expired.
+ * X tokens last 2 hours — include already-expired accounts that still have a refresh token.
  */
 export const getConnectedAccountsExpiringSoon = async (
   withinDays = 2,
@@ -424,12 +423,71 @@ export const getConnectedAccountsExpiringSoon = async (
       },
       {
         provider: SocialProvider.TWITTER,
-        accessTokenExpiresAt: { $gt: now, $lte: twitterWindowEnd },
+        refreshToken: { $exists: true, $nin: [null, ''] },
+        accessTokenExpiresAt: { $lte: twitterWindowEnd },
       },
     ],
   })
     .select('+accessToken +refreshToken')
     .lean()
+}
+
+const EXPIRED_WITHOUT_REFRESH_ERROR = 'Access token expired and no live refresh token'
+
+/**
+ * Connected accounts whose access token has already expired and cannot be refreshed:
+ * missing refresh token, empty refresh token, or refresh token past `refreshTokenExpiresAt`.
+ */
+export const getConnectedAccountsExpiredWithoutLiveRefreshToken = async (
+  limit = 500,
+): Promise<IAccount[]> => {
+  const now = new Date()
+  const cappedLimit = Math.min(Math.max(limit, 1), 1000)
+
+  return AccountModel.find({
+    connectionStatus: ConnectionStatus.CONNECTED,
+    accessTokenExpiresAt: { $lte: now },
+    $or: [
+      { refreshToken: { $exists: false } },
+      { refreshToken: { $in: [null, ''] } },
+      { refreshTokenExpiresAt: { $lte: now } },
+    ],
+  })
+    .select('_id provider providerAccountId accessTokenExpiresAt refreshTokenExpiresAt')
+    .limit(cappedLimit)
+    .lean()
+}
+
+/**
+ * Disconnect expired connected accounts that have no usable refresh token.
+ * Clears stored tokens and records lastError.
+ */
+export const disconnectExpiredAccountsWithoutLiveRefreshToken = async (
+  limit = 500,
+): Promise<{ accountIds: string[] }> => {
+  const accounts = await getConnectedAccountsExpiredWithoutLiveRefreshToken(limit)
+  const ids = accounts.map(account => account._id)
+  if (ids.length === 0) {
+    return { accountIds: [] }
+  }
+
+  await AccountModel.updateMany(
+    { _id: { $in: ids } },
+    {
+      $set: {
+        connectionStatus: ConnectionStatus.DISCONNECTED,
+        lastError: EXPIRED_WITHOUT_REFRESH_ERROR,
+      },
+      $unset: {
+        accessToken: '',
+        refreshToken: '',
+        accessTokenExpiresAt: '',
+        refreshTokenExpiresAt: '',
+      },
+    },
+  )
+
+  return { accountIds: ids.map(id => id.toString()) }
 }
 
 /** Soft-disconnect after a failed token refresh — clears tokens but keeps lastError. */
