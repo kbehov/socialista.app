@@ -2,9 +2,11 @@
 
 import Logo from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 
 import { HERO, LANDING_NAV } from './content'
@@ -13,6 +15,8 @@ import { MobileNav } from './mobile-nav'
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false)
+  const { data: session } = useSession()
+  const isLoggedIn = Boolean(session?.user)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4)
@@ -57,21 +61,32 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2 pl-1.5 sm:pl-2">
-          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className={cn(landingCtaSecondary, 'hidden h-10 px-5 text-sm md:inline-flex')}
-          >
-            <Link href="/auth/signin">Sign in</Link>
-          </Button>
-          <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
-            <Link href="/auth/signup">
-              {HERO.primaryCta}
-              <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
-            </Link>
-          </Button>
-          <MobileNav />
+          {isLoggedIn ? (
+            <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
+              <Link href={DASHBOARD_ROUTES.ROOT}>
+                Go to dashboard
+                <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className={cn(landingCtaSecondary, 'hidden h-10 px-5 text-sm md:inline-flex')}
+              >
+                <Link href="/auth/signin">Sign in</Link>
+              </Button>
+              <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
+                <Link href="/auth/signup">
+                  {HERO.primaryCta}
+                  <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                </Link>
+              </Button>
+            </>
+          )}
+          <MobileNav isLoggedIn={isLoggedIn} />
         </div>
       </div>
     </header>

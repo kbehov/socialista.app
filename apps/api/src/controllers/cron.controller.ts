@@ -5,6 +5,7 @@ import {
   DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_PER_TICK,
+  SocialProvider,
   claimDuePosts,
   currentAnalyticsSlotIndex,
   floorToAnalyticsBucket,
@@ -105,10 +106,14 @@ export const refreshExpiringAccountTokens = async (c: Context) => {
   const results = await Promise.all(
     accounts.map(async account => {
       const accountId = account._id.toString()
+      const expiryKey =
+        account.provider === SocialProvider.TWITTER && account.accessTokenExpiresAt
+          ? account.accessTokenExpiresAt.toISOString()
+          : dateKey
       const handle = await tasks.trigger<RefreshAccountTokenTask>(
         TASK_IDS.refreshAccountToken,
         { accountId },
-        { idempotencyKey: `refresh-account:${accountId}:${dateKey}` },
+        { idempotencyKey: `refresh-account:${accountId}:${expiryKey}` },
       )
       return { accountId, runId: handle.id }
     }),

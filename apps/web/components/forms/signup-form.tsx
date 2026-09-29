@@ -4,9 +4,9 @@ import {
   AUTH_ERROR_MESSAGES,
   AuthFormDivider,
   AuthFormRootError,
+  AuthSocialButtons,
   FieldError,
   FieldLabel,
-  GoogleIcon,
 } from '@/components/forms/auth-form-shared'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,8 @@ import { ApiError } from '@/lib/api-public'
 import { cn } from '@/lib/utils'
 import { signUpSchema, type SignUpSchemaType } from '@/lib/zod/auth.schema'
 import { signUp as signUpService } from '@/services/auth.service'
-import { getBrowserTimezone, persistBrowserTimezoneCookie } from '@/utils/timezone'
+import { authPageHref, resolveAuthCallbackUrl } from '@/utils/auth.utils'
+import { getBrowserTimezone } from '@/utils/timezone'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'
 import { signIn } from 'next-auth/react'
@@ -31,10 +32,10 @@ type SignUpFormProps = {
 export function SignUpForm({ className }: SignUpFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/'
+  const callbackUrl = resolveAuthCallbackUrl(searchParams)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isSocialBusy, setIsSocialBusy] = useState(false)
 
   const {
     register,
@@ -90,18 +91,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
     }
   })
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsGoogleLoading(true)
-      persistBrowserTimezoneCookie()
-      await signIn('google', { callbackUrl })
-    } catch {
-      toast.error(AUTH_ERROR_MESSAGES.default)
-      setIsGoogleLoading(false)
-    }
-  }
-
-  const isLoading = isSubmitting || isGoogleLoading
+  const isLoading = isSubmitting || isSocialBusy
 
   return (
     <div className={cn('mx-auto w-full max-w-105', className)}>
@@ -112,17 +102,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
         </header>
 
         <div className="space-y-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="h-11 w-full bg-background/60 text-sm font-medium"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            {isGoogleLoading ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon className="size-4" />}
-            Continue with Google
-          </Button>
+          <AuthSocialButtons callbackUrl={callbackUrl} disabled={isLoading} onBusyChange={setIsSocialBusy} />
         </div>
 
         <AuthFormDivider />
@@ -235,11 +215,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link
-            href={
-              callbackUrl && callbackUrl !== '/'
-                ? `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
-                : '/auth/signin'
-            }
+            href={authPageHref('/auth/signin', callbackUrl)}
             className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
           >
             Sign in

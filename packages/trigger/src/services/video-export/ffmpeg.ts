@@ -1,19 +1,11 @@
 import { spawn } from "node:child_process";
-import ffmpegStaticImport from "ffmpeg-static";
 
 export type FfmpegProgressHandler = (progress: number) => void;
 
+/** Trigger.dev ffmpeg build extension sets FFMPEG_PATH; locally use PATH or set the env var. */
 function resolveFfmpegPath(): string {
   const fromEnv = process.env.FFMPEG_PATH;
   if (fromEnv) return fromEnv;
-
-  const candidate =
-    typeof ffmpegStaticImport === "string"
-      ? ffmpegStaticImport
-      : ((ffmpegStaticImport as unknown as { default?: string | null })
-          ?.default ?? null);
-
-  if (typeof candidate === "string" && candidate.length > 0) return candidate;
   return "ffmpeg";
 }
 

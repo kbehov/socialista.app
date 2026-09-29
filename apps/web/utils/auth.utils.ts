@@ -1,5 +1,22 @@
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import type { User } from '@socialista/types'
 import type { JWT } from 'next-auth/jwt'
+
+type SearchParamReader = { get: (name: string) => string | null }
+
+/** Safe relative post-login path. Defaults to dashboard when none is provided. */
+export function resolveAuthCallbackUrl(searchParams: SearchParamReader): string {
+  const raw = searchParams.get('callbackUrl') ?? searchParams.get('redirectUrl')
+  if (raw?.startsWith('/') && !raw.startsWith('//')) {
+    return raw
+  }
+  return DASHBOARD_ROUTES.ROOT
+}
+
+export function authPageHref(path: '/auth/signin' | '/auth/signup', callbackUrl: string): string {
+  if (!callbackUrl || callbackUrl === DASHBOARD_ROUTES.ROOT) return path
+  return `${path}?callbackUrl=${encodeURIComponent(callbackUrl)}`
+}
 
 const ACCESS_TOKEN_REFRESH_BUFFER_MS = 60 * 1000
 
@@ -82,20 +99,50 @@ export function shouldRefreshAccessToken(token: JWT): boolean {
   return Date.now() >= expiresAt - ACCESS_TOKEN_REFRESH_BUFFER_MS
 }
 
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+  return undefined
+}
+
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    const parsed = asString(value)
+    if (parsed) return parsed
+  }
+  return undefined
+}
+
+/** X OAuth 2.0 does not return email. Unique placeholder so social login can persist a User. */
+export function twitterOauthPlaceholderEmail(providerAccountId: string): string {
+  return `x.${providerAccountId}@users.noreply.socialista.app`
+}
+
 export function getSocialProfile(
   profile: Record<string, unknown> | null | undefined,
   fallback?: { email?: string | null; name?: string | null; image?: string | null },
 ) {
-  const email = (typeof profile?.email === 'string' ? profile.email : fallback?.email) ?? undefined
-  const name = (typeof profile?.name === 'string' ? profile.name : fallback?.name) ?? undefined
-  const avatar =
-    (typeof profile?.picture === 'string'
-      ? profile.picture
-      : typeof profile?.image === 'string'
-        ? profile.image
-        : typeof profile?.avatar_url === 'string'
-          ? profile.avatar_url
-          : fallback?.image) ?? undefined
+  const nested = asRecord(profile?.data)
+  const email = firstString(profile?.email, nested?.email, fallback?.email)
+  const name = firstString(profile?.name, nested?.name, nested?.username, profile?.username, fallback?.name)
+  const avatar = firstString(
+    profile?.picture,
+    profile?.image,
+    profile?.avatar_url,
+    nested?.profile_image_url,
+    fallback?.image,
+  )
+  const username = firstString(nested?.username, profile?.username)
 
-  return { email, name, avatar }
+  return {
+    email,
+    name,
+    avatar: avatar?.replace('_normal', '_400x400') ?? avatar,
+    username,
+  }
 }

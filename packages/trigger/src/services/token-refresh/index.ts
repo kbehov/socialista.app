@@ -12,6 +12,7 @@ import {
   refreshMetaUserAccessToken,
   refreshThreadsAccessToken,
   refreshTikTokAccessToken,
+  refreshXAccessToken,
   type RefreshedTokens,
 } from './providers.js'
 
@@ -46,6 +47,12 @@ async function refreshForProvider(account: IAccount): Promise<RefreshedTokens | 
         throw new Error('LinkedIn account has no refresh token')
       }
       return refreshLinkedInAccessToken(account.refreshToken)
+    }
+    case SocialProvider.TWITTER: {
+      if (!account.refreshToken) {
+        throw new Error('X account has no refresh token')
+      }
+      return refreshXAccessToken(account.refreshToken)
     }
     case SocialProvider.FACEBOOK: {
       if (tokenKind(account) === 'page_access_token') {

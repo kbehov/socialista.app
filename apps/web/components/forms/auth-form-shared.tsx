@@ -1,4 +1,12 @@
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { persistBrowserTimezoneCookie } from '@/utils/timezone'
+import { Loader2 } from 'lucide-react'
+import { signIn } from 'next-auth/react'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   CredentialsSignin: 'Invalid email or password. Please try again.',
@@ -28,6 +36,70 @@ export function GoogleIcon({ className }: { className?: string }) {
         fill="#EA4335"
       />
     </svg>
+  )
+}
+
+export function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  )
+}
+
+type SocialProvider = 'google' | 'twitter'
+
+export function AuthSocialButtons({
+  callbackUrl,
+  disabled,
+  onBusyChange,
+}: {
+  callbackUrl: string
+  disabled?: boolean
+  onBusyChange?: (busy: boolean) => void
+}) {
+  const [pending, setPending] = useState<SocialProvider | null>(null)
+
+  const handleSocial = async (provider: SocialProvider) => {
+    try {
+      setPending(provider)
+      onBusyChange?.(true)
+      persistBrowserTimezoneCookie()
+      await signIn(provider, { callbackUrl })
+    } catch {
+      toast.error(AUTH_ERROR_MESSAGES.default)
+      setPending(null)
+      onBusyChange?.(false)
+    }
+  }
+
+  const busy = pending !== null
+
+  return (
+    <div className="space-y-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="h-11 w-full bg-background/60 text-sm font-medium"
+        onClick={() => handleSocial('google')}
+        disabled={disabled || busy}
+      >
+        {pending === 'google' ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon className="size-4" />}
+        Continue with Google
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="h-11 w-full bg-background/60 text-sm font-medium"
+        onClick={() => handleSocial('twitter')}
+        disabled={disabled || busy}
+      >
+        {pending === 'twitter' ? <Loader2 className="size-4 animate-spin" /> : <XIcon className="size-4" />}
+        Continue with X
+      </Button>
+    </div>
   )
 }
 

@@ -17,6 +17,7 @@ type OAuthStatePayload = {
   userId: string
   workspaceId: string
   createdAt: number
+  codeVerifier?: string
 }
 
 export type MetaHandoffPayload = {
@@ -80,6 +81,7 @@ export async function beginOAuthState(input: {
   provider: ConnectProvider
   userId: string
   workspaceId: string
+  codeVerifier?: string
 }): Promise<string> {
   const state = randomBytes(24).toString('hex')
   await setSealedCookie(
@@ -90,6 +92,7 @@ export async function beginOAuthState(input: {
       userId: input.userId,
       workspaceId: input.workspaceId,
       createdAt: Date.now(),
+      ...(input.codeVerifier ? { codeVerifier: input.codeVerifier } : {}),
     } satisfies OAuthStatePayload,
     OAUTH_STATE_MAX_AGE_SEC,
   )

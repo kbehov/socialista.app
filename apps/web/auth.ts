@@ -11,6 +11,7 @@ import {
   mapApiUserToSessionUser,
   shouldRefreshAccessToken,
   toIsoString,
+  twitterOauthPlaceholderEmail,
 } from '@/utils/auth.utils'
 import type { Account, User as NextAuthUser, Profile } from 'next-auth'
 import NextAuth, { CredentialsSignin } from 'next-auth'
@@ -18,9 +19,12 @@ import type { JWT } from 'next-auth/jwt'
 import Credentials from 'next-auth/providers/credentials'
 import GitHub from 'next-auth/providers/github'
 import Google from 'next-auth/providers/google'
+import TwitterProvider from 'next-auth/providers/twitter'
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID ?? process.env.AUTH_GOOGLE_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? process.env.AUTH_GOOGLE_SECRET
+const xClientId = process.env.X_CLIENT_ID
+const xClientSecret = process.env.X_CLIENT_SECRET
 
 class InvalidCredentialsError extends CredentialsSignin {
   code = 'invalid_credentials'
@@ -62,13 +66,17 @@ async function authenticateWithSocialProvider(
     throw new SocialLoginError('Missing provider account id')
   }
 
-  const { email, name, avatar } = getSocialProfile(profile as Record<string, unknown> | undefined, {
+  const { email, name, avatar, username } = getSocialProfile(profile as Record<string, unknown> | undefined, {
     email: user?.email,
     name: user?.name,
     image: user?.image,
   })
 
-  if (!email || !name) {
+  const resolvedName = name || username
+  const resolvedEmail =
+    email || (account.provider === 'twitter' ? twitterOauthPlaceholderEmail(account.providerAccountId) : undefined)
+
+  if (!resolvedEmail || !resolvedName) {
     throw new SocialLoginError('Social provider did not return required profile fields')
   }
 
@@ -77,8 +85,8 @@ async function authenticateWithSocialProvider(
   const response = await socialLoginService({
     provider: account.provider,
     providerAccountId: account.providerAccountId,
-    email,
-    name,
+    email: resolvedEmail,
+    name: resolvedName,
     avatar,
     timezone,
   })
@@ -121,6 +129,15 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
     updateAge: 60 * 60, // 1 hour
   },
   providers: [
+    ...(xClientId && xClientSecret
+      ? [
+          TwitterProvider({
+            clientId: xClientId,
+            clientSecret: xClientSecret,
+            userinfo: 'https://api.x.com/2/users/me?user.fields=profile_image_url,username,name',
+          }),
+        ]
+      : []),
     Credentials({
       credentials: {
         email: { type: 'email' },

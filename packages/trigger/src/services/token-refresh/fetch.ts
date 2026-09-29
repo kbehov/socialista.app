@@ -35,9 +35,9 @@ export async function fetchJson<T extends z.ZodTypeAny>(
   if (!response.ok) {
     let message = response.statusText
     if (payload && typeof payload === 'object') {
-      const err = (payload as { error?: { message?: string } | string }).error
-      if (typeof err === 'string') message = err
-      else if (err && typeof err === 'object' && err.message) message = err.message
+      const err = payload as { error?: { message?: string } | string; error_description?: string }
+      if (typeof err.error === 'string') message = err.error_description ?? err.error
+      else if (err.error && typeof err.error === 'object' && err.error.message) message = err.error.message
     }
     throw new Error(message || 'Provider request failed')
   }

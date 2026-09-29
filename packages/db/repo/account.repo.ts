@@ -3,10 +3,10 @@ import { DEFAULT_ACCOUNT_PAGE_SIZE } from '../config/config.js'
 import {
   AccountAnalyticsStatus,
   ConnectionStatus,
+  SocialProvider,
   type CreateAccountInput,
   type IAccount,
   type SetAccountAnalyticsStateInput,
-  type SocialProvider,
   type UpdateAccountInput,
 } from '../types/account.types.js'
 import { hashAccountRefreshSlot } from '../utils/analytics-slot.js'
@@ -402,7 +402,9 @@ export const disconnectAccount = async (id: string): Promise<IAccount | null> =>
 }
 
 /**
- * Connected accounts whose access token expires within `withinDays` (exclusive of now, inclusive of the window end).
+ * Connected accounts whose access token expires soon.
+ * Non-X providers: within `withinDays` (default 2). X tokens last 2 hours, so those
+ * accounts are selected when expiry is within 1 hour.
  * Includes OAuth tokens for refresh flows.
  */
 export const getConnectedAccountsExpiringSoon = async (
@@ -410,11 +412,21 @@ export const getConnectedAccountsExpiringSoon = async (
 ): Promise<IAccount[]> => {
   const now = new Date()
   const windowEnd = new Date(now.getTime() + withinDays * 24 * 60 * 60 * 1000)
+  const twitterWindowEnd = new Date(now.getTime() + 60 * 60 * 1000)
 
   return AccountModel.find({
     connectionStatus: ConnectionStatus.CONNECTED,
     accessToken: { $exists: true, $nin: [null, ''] },
-    accessTokenExpiresAt: { $gt: now, $lte: windowEnd },
+    $or: [
+      {
+        provider: { $ne: SocialProvider.TWITTER },
+        accessTokenExpiresAt: { $gt: now, $lte: windowEnd },
+      },
+      {
+        provider: SocialProvider.TWITTER,
+        accessTokenExpiresAt: { $gt: now, $lte: twitterWindowEnd },
+      },
+    ],
   })
     .select('+accessToken +refreshToken')
     .lean()

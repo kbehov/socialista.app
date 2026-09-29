@@ -4,15 +4,15 @@ import {
   AUTH_ERROR_MESSAGES,
   AuthFormDivider,
   AuthFormRootError,
+  AuthSocialButtons,
   FieldError,
   FieldLabel,
-  GoogleIcon,
 } from '@/components/forms/auth-form-shared'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { signInSchema, type SignInSchemaType } from '@/lib/zod/auth.schema'
 import { cn } from '@/lib/utils'
-import { persistBrowserTimezoneCookie } from '@/utils/timezone'
+import { authPageHref, resolveAuthCallbackUrl } from '@/utils/auth.utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react'
 import Link from 'next/link'
@@ -29,9 +29,9 @@ type SignInFormProps = {
 export function SignInForm({ className }: SignInFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/'
+  const callbackUrl = resolveAuthCallbackUrl(searchParams)
   const [showPassword, setShowPassword] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isSocialBusy, setIsSocialBusy] = useState(false)
 
   const {
     register,
@@ -73,18 +73,7 @@ export function SignInForm({ className }: SignInFormProps) {
     router.refresh()
   })
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsGoogleLoading(true)
-      persistBrowserTimezoneCookie()
-      await signIn('google', { callbackUrl })
-    } catch {
-      toast.error(AUTH_ERROR_MESSAGES.default)
-      setIsGoogleLoading(false)
-    }
-  }
-
-  const isLoading = isSubmitting || isGoogleLoading
+  const isLoading = isSubmitting || isSocialBusy
 
   return (
     <div className={cn('mx-auto w-full max-w-105', className)}>
@@ -95,21 +84,7 @@ export function SignInForm({ className }: SignInFormProps) {
         </header>
 
         <div className="space-y-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="h-11 w-full bg-background/60 text-sm font-medium"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            {isGoogleLoading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <GoogleIcon className="size-4" />
-            )}
-            Continue with Google
-          </Button>
+          <AuthSocialButtons callbackUrl={callbackUrl} disabled={isLoading} onBusyChange={setIsSocialBusy} />
         </div>
 
         <AuthFormDivider />
@@ -185,11 +160,7 @@ export function SignInForm({ className }: SignInFormProps) {
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
           <Link
-            href={
-              callbackUrl && callbackUrl !== '/'
-                ? `/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
-                : '/auth/signup'
-            }
+            href={authPageHref('/auth/signup', callbackUrl)}
             className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
           >
             Create one

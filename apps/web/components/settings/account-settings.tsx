@@ -19,6 +19,7 @@ const ICON_STROKE = 1.5
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google',
   github: 'GitHub',
+  twitter: 'X',
 }
 
 type AccountSettingsProps = {

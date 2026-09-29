@@ -22,7 +22,7 @@ export default defineConfig({
   dirs: ['./src/tasks'],
   build: {
     // Native binaries cannot be bundled
-    external: ['sharp', 'ffmpeg-static'],
+    external: ['sharp'],
     extensions: [ffmpeg({ version: '7' })],
   },
 })

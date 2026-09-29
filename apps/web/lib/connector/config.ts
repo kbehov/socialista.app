@@ -89,6 +89,16 @@ export function getLinkedInConfig() {
   }
 }
 
+export function getXConfig() {
+  return {
+    clientId: process.env.X_CLIENT_ID ?? '',
+    clientSecret: process.env.X_CLIENT_SECRET ?? '',
+    redirectUri: getCallbackUrl('twitter'),
+    // tweet.write + media.write are requested now so a later publisher does not force reconnect.
+    scopes: ['tweet.read', 'tweet.write', 'users.read', 'media.write', 'offline.access'],
+  }
+}
+
 export function assertProviderConfigured(provider: ConnectProvider): void {
   const checks: Record<ConnectProvider, { ok: boolean; label: string }> = {
     facebook: {
@@ -110,6 +120,10 @@ export function assertProviderConfigured(provider: ConnectProvider): void {
     linkedin: {
       ok: Boolean(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET),
       label: 'LinkedIn',
+    },
+    twitter: {
+      ok: Boolean(process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET),
+      label: 'X',
     },
   }
 

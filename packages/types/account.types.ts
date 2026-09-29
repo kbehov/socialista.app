@@ -95,7 +95,7 @@ export type ConnectAccountResult = {
 
 // --- OAuth connector wire types (web connect routes) ---
 
-export type ConnectProvider = 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin'
+export type ConnectProvider = 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin' | 'twitter'
 
 export type OAuthErrorCode =
   | 'unauthorized'
