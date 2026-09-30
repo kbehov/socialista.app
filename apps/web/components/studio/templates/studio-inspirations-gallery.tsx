@@ -23,6 +23,8 @@ type StudioInspirationsGalleryProps = {
   headingTone?: 'display' | 'quiet'
   chipTone?: 'outline' | 'studio'
   hideTitle?: boolean
+  className?: string
+  sectionDescription?: string
 }
 
 export function StudioInspirationsGallery({
@@ -36,15 +38,19 @@ export function StudioInspirationsGallery({
   headingTone = 'display',
   chipTone = 'outline',
   hideTitle,
+  className,
+  sectionDescription,
 }: StudioInspirationsGalleryProps) {
   return (
     <StudioTemplatesGallery
       kind={kind}
       initialCategories={templateCategories}
       sectionTitle={sectionTitle}
+      sectionDescription={sectionDescription}
       headingTone={headingTone}
       chipTone={chipTone}
       hideTitle={hideTitle}
+      className={className}
       cardVariant="visual"
       onRecreate={onRecreate}
       onPreview={onPreview}

@@ -15,6 +15,7 @@ import {
   DASHBOARD_ROUTES,
   isManagerCompaniesPath,
   isManagerFilesPath,
+  isManagerInfluencersPath,
   isManagerInspirationCategoriesPath,
   isManagerInspirationNichesPath,
   isManagerInspirationsPath,
@@ -39,6 +40,7 @@ import {
   LightbulbIcon,
   ShapesIcon,
   TagsIcon,
+  UserRoundIcon,
   type LucideIcon,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -113,6 +115,12 @@ function buildLibraryItems(pathname: string): SidebarNavItem[] {
       url: MANAGER_ROUTES.FILES,
       icon: navIcon(FolderIcon),
       isActive: isManagerFilesPath(pathname),
+    },
+    {
+      title: 'Influencers',
+      url: MANAGER_ROUTES.INFLUENCERS,
+      icon: navIcon(UserRoundIcon),
+      isActive: isManagerInfluencersPath(pathname),
     },
   ]
 }

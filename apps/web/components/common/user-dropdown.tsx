@@ -17,10 +17,10 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getBillingPortalUrl } from '@/utils/billing-urls'
+import { getInitials } from '@/utils/user'
 import { ArrowUpRightIcon, CircleUserIcon, CreditCardIcon, LogOutIcon } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { getInitials } from '@/utils/user'
 
 export function UserDropdown({ className }: { className?: string }) {
   const { data: session, status } = useSession()
@@ -51,7 +51,7 @@ export function UserDropdown({ className }: { className?: string }) {
           )}
           aria-label="Open account menu"
         >
-          <Avatar className="size-5 rounded-full after:rounded-full">
+          <Avatar className="size-7 rounded-full after:rounded-full">
             <AvatarImage src={avatar} alt={name} />
             <AvatarFallback className="rounded-full text-[9px] font-medium">{getInitials(user?.name)}</AvatarFallback>
           </Avatar>

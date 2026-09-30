@@ -152,6 +152,9 @@ export const MANAGER_ROUTES = {
   STATIC_AD_TEMPLATE_CATEGORIES: '/manager/static-ad-templates/categories',
   FILES: '/manager/files',
   folder: (id: string) => `/manager/files/${id}`,
+  INFLUENCERS: '/manager/influencers',
+  INFLUENCER_CREATE: '/manager/influencers/create',
+  influencer: (id: string) => `/manager/influencers/${id}`,
   MODELS: '/manager/models',
   COMPANIES: '/manager/models/companies',
 } as const
@@ -204,6 +207,10 @@ export function isManagerStaticAdTemplateCategoriesPath(pathname: string) {
 
 export function isManagerFilesPath(pathname: string) {
   return isExactOrNested(pathname, MANAGER_ROUTES.FILES)
+}
+
+export function isManagerInfluencersPath(pathname: string) {
+  return isExactOrNested(pathname, MANAGER_ROUTES.INFLUENCERS)
 }
 
 export function isManagerModelsPath(pathname: string) {

@@ -38,7 +38,8 @@ import { storeGenerationAccessToken } from '@/lib/image-generation/session'
 import { cn } from '@/lib/utils'
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import { useWorkspaceStore } from '@/store/workspace.store'
-import { buildPresetPlaceholderExamples, IMAGE_STUDIO_PLACEHOLDER_EXAMPLES } from '@/lib/studio/preset-media'
+import { buildPresetPlaceholderExamples } from '@/lib/studio/preset-media'
+import { IMAGE_STUDIO_PLACEHOLDER_EXAMPLES } from '@/lib/studio/studio-placeholder-examples'
 import { commitHaptic } from '@/utils/haptics'
 import {
   IMAGE_GENERATION_COUNT_DEFAULT,
@@ -526,12 +527,12 @@ function ImagePromptComposer({
 export function ImagePromptInput(props: ImagePromptInputProps) {
   if (props.models.length === 0) {
     return (
-      <div className="w-full rounded-xl border border-dashed border-black/8 bg-black/1.5 px-6 py-16 text-center dark:border-white/10 dark:bg-white/1.5">
-        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/3 ring-1 ring-black/8 dark:bg-white/3 dark:ring-white/10">
-          <SparklesIcon className="size-3.5 text-black/48 dark:text-white/48" />
+      <div className="w-full rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-14 text-center">
+        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-xl bg-background ring-1 ring-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+          <SparklesIcon className="size-3.5 text-muted-foreground" />
         </div>
         <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">No image models yet</p>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/48 dark:text-white/48">
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
           Add a text-to-image model in the manager to start making campaign stills.
         </p>
       </div>
@@ -546,7 +547,13 @@ export function ImagePromptInput(props: ImagePromptInputProps) {
 }
 
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
-  return <ImagePromptInput models={models} homeHero />
+  return (
+    <ImagePromptInput
+      models={models}
+      homeHero
+      surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+    />
+  )
 }
 
 export default ImageGenerationPromptInput

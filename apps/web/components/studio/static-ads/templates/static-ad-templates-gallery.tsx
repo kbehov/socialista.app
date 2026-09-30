@@ -96,9 +96,14 @@ function TemplateCategoryFilter({
         containScroll: 'trimSnaps',
       }}
     >
-      <h2 className="mb-3 text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
-        Templates
-      </h2>
+      <div className="mb-3 space-y-1">
+        <h2 className="text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
+          Inspirations
+        </h2>
+        <p className="text-[13px] leading-snug tracking-[-0.01em] text-muted-foreground/75">
+          Recreate a winning layout with your product and copy.
+        </p>
+      </div>
 
       {categories.length > 0 ? (
         <div className="flex items-center gap-2">
@@ -157,7 +162,7 @@ function TemplateCategoryFilter({
   )
 }
 
-export function StaticAdTemplatesGallery() {
+export function StaticAdTemplatesGallery({ embedded = false }: { embedded?: boolean }) {
   const { applyTemplate } = useStaticAdStudio()
   const [categories, setCategories] = useState<StaticAdTemplateCategoryDto[]>([])
   const [templates, setTemplates] = useState<StaticAdTemplateDto[]>([])
@@ -226,7 +231,14 @@ export function StaticAdTemplatesGallery() {
   }
 
   return (
-    <div className="relative z-10 mx-auto mt-8 flex w-full max-w-5xl flex-col px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8">
+    <div
+      className={cn(
+        'relative z-10 flex w-full flex-col',
+        embedded
+          ? 'pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1rem))]'
+          : 'mx-auto mt-8 max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8',
+      )}
+    >
       <TemplateCategoryFilter
         categories={categories}
         selectedCategory={selectedCategory}

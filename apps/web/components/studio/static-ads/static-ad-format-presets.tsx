@@ -111,9 +111,12 @@ export function StaticAdFormatPresets() {
         containScroll: 'trimSnaps',
       }}
     >
-      <div className="mb-3">
+      <div className="mb-3 space-y-1">
         <p className="text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
           Formats
+        </p>
+        <p className="text-[13px] leading-snug tracking-[-0.01em] text-muted-foreground/75">
+          Quick-start layouts — tap one to prefill the prompt.
         </p>
       </div>
 

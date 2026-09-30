@@ -39,6 +39,7 @@ import { storeGenerationAccessToken } from "@/lib/image-generation/session";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import { getProjectId, useProjectStore } from "@/store/project.store";
+import { VIDEO_STUDIO_PLACEHOLDER_EXAMPLES } from "@/lib/studio/studio-placeholder-examples";
 import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
@@ -380,7 +381,8 @@ function VideoPromptComposer({
   const animatedPlaceholderWords = useMemo(() => {
     if (!homeHero || placeholderProp || attachedImages.length > 0) return undefined;
     const examples = buildPresetPlaceholderExamples(presets);
-    return examples.length > 0 ? examples : undefined;
+    if (examples.length > 0) return examples;
+    return [...VIDEO_STUDIO_PLACEHOLDER_EXAMPLES];
   }, [attachedImages.length, homeHero, placeholderProp, presets]);
 
   const insertAtCursor = useCallback(
@@ -900,6 +902,7 @@ const VideoGenerationPromptInput = ({
       initialAttachmentUrl={initialAttachmentUrl}
       models={models}
       homeHero
+      surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
     />
   );
 };

@@ -15,7 +15,6 @@ import { SlideshowPromptAnatomy } from '@/components/studio/slideshows/slideshow
 import { useSlideshowStudio } from '@/components/studio/slideshows/slideshow-studio-provider'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
-  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
   STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
@@ -35,6 +34,7 @@ import { Kbd } from '@/components/ui/kbd'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { ASPECT_RATIO_PRESETS, DEFAULT_ASPECT_RATIO_ID } from '@/lib/carousel/aspect-ratios'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
+import { SLIDESHOW_STUDIO_PLACEHOLDER_EXAMPLES } from '@/lib/studio/studio-placeholder-examples'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { formatCredits } from '@/utils/format'
@@ -95,6 +95,10 @@ function SlideshowPromptComposerInner({
   const selectedTextModel = textModels.find(model => model._id === selectedTextModelId) ?? textModels[0]
   const useAiImages = imageSource === 'ai'
   const isAutoSlideCount = slideCount === 'auto'
+  const animatedPlaceholderWords = useMemo(() => {
+    if (!homeHero) return undefined
+    return [...SLIDESHOW_STUDIO_PLACEHOLDER_EXAMPLES]
+  }, [homeHero])
   const planCost = selectedTextModel?.cost ?? SLIDESHOW_PLAN_CREDIT_COST
   const estimatedImageCount = isAutoSlideCount
     ? SLIDESHOW_GENERATION_SLIDE_COUNT_MIN
@@ -279,6 +283,7 @@ function SlideshowPromptComposerInner({
           label: 'Number of slides',
         }}
         placeholder={DEFAULT_PLACEHOLDER}
+        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={submitLabel}
@@ -288,7 +293,7 @@ function SlideshowPromptComposerInner({
         emptyTitle="Describe a slideshow"
         emptyDescription="Stock photos work without an image model. Pick a text model to write the slides, then add a text-to-image model for AI images."
         surfaceClassName={
-          homeHero ? STUDIO_HERO_COMPOSER_SURFACE_CLASS : STUDIO_HOME_COMPOSER_SURFACE_CLASS
+          STUDIO_HOME_COMPOSER_SURFACE_CLASS
         }
         composerRef={composerRef}
         textareaRef={node => {

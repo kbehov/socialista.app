@@ -42,6 +42,7 @@ import {
   InfluencerSource,
   InfluencerStatus,
   InfluencerVisibility,
+  getInfluencerById,
   listInfluencers,
   updateInfluencer as updateInfluencerInDb,
   updateInfluencerCloneRequest,
@@ -71,6 +72,7 @@ import type { Context } from "hono";
 
 const MIN_CLONE_PHOTOS = 3;
 const DEFAULT_EXPLORE_LIMIT = "24";
+const DEFAULT_ADMIN_LIST_LIMIT = "12";
 const DIRECTIONS_MAX = 500;
 
 function isValidHttpUrl(value: string): boolean {
@@ -208,6 +210,134 @@ export const getInfluencer = async (c: Context<AppContext>) => {
   return successResponse(c, 200, {
     influencer: serializeInfluencer(influencer),
   });
+};
+
+export const listAdminInfluencers = async (c: Context<AppContext>) => {
+  const params = new URLSearchParams(c.req.url.split("?")[1] ?? "");
+  if (!params.has("limit")) params.set("limit", DEFAULT_ADMIN_LIST_LIMIT);
+  if (!params.has("sort")) params.set("sort", "newest");
+
+  const data = await listInfluencers(params.toString());
+  return successResponse(
+    c,
+    200,
+    { influencers: data.influencers.map(serializeInfluencer) },
+    data.meta,
+  );
+};
+
+export const getAdminInfluencer = async (c: Context<AppContext>) => {
+  const id = parseParamId(c.req.param("id"), "influencer ID");
+  const influencer = await getInfluencerById(id);
+  if (!influencer) {
+    throw new HttpError(404, "Influencer not found");
+  }
+  return successResponse(c, 200, {
+    influencer: serializeInfluencer(influencer),
+  });
+};
+
+export const createLibraryInfluencer = async (c: Context<AppContext>) => {
+  const userId = c.get("userId");
+  const body = (await c.req.json()) as CreateInfluencerPayload &
+    Record<string, unknown>;
+  const billingWorkspaceId = parseParamId(body.workspaceId, "workspace ID");
+  await getWorkspaceAsMember(billingWorkspaceId, userId);
+
+  const name = requireTrimmedString(body.name, "Name");
+  const gender = parseGender(body.gender);
+  const ageRange = parseAgeRange(body.ageRange);
+  const appearance = parseAppearance(body.appearance);
+  const niche = parseStringArray(body.niche);
+  const scenes = parseScenes(body.scenes);
+  const vibeTags = parseVibeTags(body.vibeTags);
+  const aestheticTags = parseStringArray(body.aestheticTags);
+  const bio = optionalTrimmedString(body.bio);
+  const directions = parseDirections(body.directions);
+  const ethnicity = optionalTrimmedString(body.ethnicity);
+  const photoStyle = parsePhotoStyle(body.photoStyle);
+  const userReferenceImageUrls = parseOptionalUserReferenceImageUrls(
+    body.userReferenceImageUrls,
+  );
+  const shotCount = clampInfluencerShotCount(body.shotCount);
+  const model = await resolveInfluencerGenerationModel(body.model);
+
+  const basePromptFragment =
+    optionalTrimmedString(body.basePromptFragment) ??
+    buildInfluencerBasePromptFragment({
+      name,
+      gender,
+      ageRange,
+      ethnicity,
+      appearance,
+    });
+
+  const seed = Math.floor(Math.random() * 1_000_000_000);
+
+  const influencer = await createInfluencerInDb({
+    workspace: null,
+    project: null,
+    createdBy: userId,
+    visibility: InfluencerVisibility.PUBLIC,
+    source: InfluencerSource.LIBRARY,
+    name,
+    bio,
+    directions,
+    niche,
+    scenes,
+    vibeTags,
+    gender,
+    ageRange,
+    ethnicity,
+    appearance,
+    aestheticTags,
+    photoStyle,
+    identity: {
+      method: InfluencerIdentityMethod.REFERENCE,
+      seed,
+      basePromptFragment,
+      referenceImageUrls: [],
+      ...(userReferenceImageUrls ? { userReferenceImageUrls } : {}),
+    },
+    status: InfluencerStatus.GENERATING,
+    galleryImageUrls: [],
+  });
+
+  const handle = await tasks.trigger<GenerateInfluencerTask>(
+    TASK_IDS.generateInfluencer,
+    {
+      influencerId: influencer._id.toString(),
+      workspaceId: billingWorkspaceId,
+      userId,
+      model,
+      shotCount,
+    },
+  );
+
+  const publicAccessToken = await createPublicAccessToken(handle.id);
+
+  return successResponse(c, 202, {
+    influencer: serializeInfluencer(influencer),
+    runId: handle.id,
+    publicAccessToken,
+  });
+};
+
+export const deleteAdminInfluencer = async (c: Context<AppContext>) => {
+  const id = parseParamId(c.req.param("id"), "influencer ID");
+  const influencer = await getInfluencerById(id);
+  if (!influencer) {
+    throw new HttpError(404, "Influencer not found");
+  }
+
+  const mediaUrls = collectInfluencerMediaUrls(influencer);
+  const workspaceId = influencer.workspace?.toString() ?? null;
+
+  await deleteInfluencerCloneRequestsByResultInfluencerId(id);
+  await deleteInfluencerInDb(id);
+  await bestEffortDeleteMedia(mediaUrls, workspaceId);
+
+  return successResponse(c, 200, { deleted: true });
 };
 
 export const createInfluencer = async (c: Context<AppContext>) => {

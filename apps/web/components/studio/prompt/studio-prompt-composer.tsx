@@ -162,16 +162,16 @@ function StudioBatchCountMenu({
 }
 
 const PROMPT_TEXT_METRICS =
-  'box-border w-full whitespace-pre-wrap break-words px-4 pt-3 pb-10 font-normal leading-[25px]'
+  'box-border w-full whitespace-pre-wrap break-words px-4 py-0 pt-3 pb-10 text-[15px] font-normal leading-[25px]'
 
 const PROMPT_TEXT_METRICS_COMPACT =
-  'box-border w-full whitespace-pre-wrap break-words px-3 pt-2 pb-7 text-[13px] font-normal leading-[22px]'
+  'box-border w-full whitespace-pre-wrap break-words px-3 py-0 pt-2 pb-7 text-[13px] font-normal leading-[22px]'
 
 const PROMPT_TEXT_METRICS_WITH_ATTACHMENTS =
-  'box-border w-full whitespace-pre-wrap break-words px-4 pt-1 pb-10 font-normal leading-[25px]'
+  'box-border w-full whitespace-pre-wrap break-words px-4 py-0 pt-1 pb-10 text-[15px] font-normal leading-[25px]'
 
 const PROMPT_TEXT_METRICS_COMPACT_WITH_ATTACHMENTS =
-  'box-border w-full whitespace-pre-wrap break-words px-3 pt-0.5 pb-7 text-[13px] font-normal leading-[22px]'
+  'box-border w-full whitespace-pre-wrap break-words px-3 py-0 pt-0.5 pb-7 text-[13px] font-normal leading-[22px]'
 
 const PROMPT_TEXTAREA_CLASS = cn(PROMPT_TEXT_METRICS, 'block min-h-32 max-h-48 overflow-y-auto')
 

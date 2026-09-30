@@ -7,6 +7,7 @@ import {
   ImageIcon,
   LayoutTemplateIcon,
   LightbulbIcon,
+  UserRoundIcon,
   type LucideIcon,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -36,6 +37,12 @@ const items: DirectoryItem[] = [
     description: 'Templates for the static ads studio gallery.',
     href: MANAGER_ROUTES.STATIC_AD_TEMPLATES,
     icon: ImageIcon,
+  },
+  {
+    title: 'Influencers',
+    description: 'Public library and all user-generated influencers.',
+    href: MANAGER_ROUTES.INFLUENCERS,
+    icon: UserRoundIcon,
   },
   {
     title: 'Files',

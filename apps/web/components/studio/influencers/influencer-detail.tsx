@@ -10,18 +10,30 @@ import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { formatInfluencerNiches } from '@/lib/studio/influencers/niche-label'
 import { getInfluencer } from '@/services/influencer.service'
-import type { Influencer, InfluencerHookVideo, Model } from '@socialista/types'
+import type { ApiResponse, Influencer, InfluencerHookVideo, Model } from '@socialista/types'
 import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+
+type FetchInfluencer = (id: string) => Promise<ApiResponse<{ influencer: Influencer }>>
 
 type InfluencerDetailProps = {
   initialInfluencer: Influencer
   videoModels: Model[]
   imageModels: Model[]
+  readOnly?: boolean
+  backHref?: string
+  fetchInfluencer?: FetchInfluencer
 }
 
-export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }: InfluencerDetailProps) {
+export function InfluencerDetail({
+  initialInfluencer,
+  videoModels,
+  imageModels,
+  readOnly = false,
+  backHref = DASHBOARD_ROUTES.STUDIO.INFLUENCERS,
+  fetchInfluencer = getInfluencer,
+}: InfluencerDetailProps) {
   const [influencer, setInfluencer] = useState(initialInfluencer)
   const [hookSourceUrl, setHookSourceUrl] = useState<string | null>(null)
   const [sceneOpen, setSceneOpen] = useState(false)
@@ -32,7 +44,7 @@ export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }
 
     let cancelled = false
     const poll = async () => {
-      const response = await getInfluencer(influencer._id)
+      const response = await fetchInfluencer(influencer._id)
       if (cancelled || !response.success || !response.data?.influencer) return
       setInfluencer(response.data.influencer)
     }
@@ -46,11 +58,11 @@ export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }
       cancelled = true
       window.clearInterval(id)
     }
-  }, [influencer._id, influencer.status])
+  }, [fetchInfluencer, influencer._id, influencer.status])
 
   const isGenerating = influencer.status === 'generating'
   const isFailed = influencer.status === 'failed'
-  const canMutate = influencer.status === 'ready' && Boolean(influencer.workspaceId)
+  const canMutate = !readOnly && influencer.status === 'ready' && Boolean(influencer.workspaceId)
 
   const galleryUrls = useMemo(
     () =>
@@ -78,7 +90,7 @@ export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }
   const nicheText = formatInfluencerNiches(influencer.niche)
 
   const refreshInfluencer = async () => {
-    const response = await getInfluencer(influencer._id)
+    const response = await fetchInfluencer(influencer._id)
     if (response.success && response.data?.influencer) {
       setInfluencer(response.data.influencer)
     }
@@ -89,7 +101,7 @@ export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }
       <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-4 sm:px-6 sm:pt-6">
         <div className="mb-6">
           <Button variant="ghost" size="icon-sm" asChild>
-            <Link href={DASHBOARD_ROUTES.STUDIO.INFLUENCERS} aria-label="Back">
+            <Link href={backHref} aria-label="Back">
               <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
             </Link>
           </Button>
@@ -116,7 +128,7 @@ export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }
         ) : null}
       </div>
 
-      {hookSourceUrl ? (
+      {!readOnly && hookSourceUrl ? (
         <InfluencerHookVideoDialog
           open
           onOpenChange={open => {
@@ -132,7 +144,7 @@ export function InfluencerDetail({ initialInfluencer, videoModels, imageModels }
         />
       ) : null}
 
-      {sceneOpen && identityReferenceUrl ? (
+      {!readOnly && sceneOpen && identityReferenceUrl ? (
         <InfluencerSceneDialog
           open
           onOpenChange={open => {

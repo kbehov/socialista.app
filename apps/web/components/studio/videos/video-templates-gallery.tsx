@@ -28,7 +28,8 @@ export function VideoTemplatesGallery({
       <StudioInspirationsGallery
         kind={StudioTemplateKind.VIDEO}
         templateCategories={templateCategories}
-        sectionTitle="Templates"
+        sectionTitle="Inspirations"
+        sectionDescription="Browse looks and recreate any template in one tap."
         hideTitle={hideTitle}
         headingTone="quiet"
         chipTone="studio"
