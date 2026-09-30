@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { FAQ_ITEMS, FAQ_SECTION } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingBodySm, landingContentGap, landingH3 } from "./landing-classes";
+import { landingBodySm, landingContentGap, landingH3, LANDING_STORY_INDEX } from "./landing-classes";
 import { Section } from "./section";
 import { LandingSectionIntro } from "./section-header";
 
@@ -18,6 +18,7 @@ export function LandingFaq() {
       <FadeIn>
         <LandingSectionIntro
           titleId="faq-heading"
+          storyIndex={LANDING_STORY_INDEX.faq}
           title={FAQ_SECTION.title}
           description={FAQ_SECTION.description}
         />

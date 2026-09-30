@@ -88,6 +88,21 @@ export const SLIDESHOW_MARQUEE_ITEMS = [
     views: '892.1K',
     likes: '112.8K',
   },
+  /** Placeholder duplicates for landing showcase — swap `src` when final frames are ready. */
+  {
+    id: 'theories-copy',
+    src: 'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/74aafe44-77fa-4df7-8f25-52f74ff762b2.webp',
+    focal: '50% 32%',
+    views: '386.6K',
+    likes: '70.6K',
+  },
+  {
+    id: 'budget-copy',
+    src: 'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/8e642969-127c-4b22-b2b3-f2eed56361ac.webp',
+    focal: '50% 40%',
+    views: '4.7M',
+    likes: '636.0K',
+  },
 ] as const
 
 export const STATIC_AD_MARQUEE_IMAGES = [

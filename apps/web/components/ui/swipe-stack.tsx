@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Hand, MousePointer2 } from 'lucide-react'
+import { Hand } from 'lucide-react'
 import {
   AnimatePresence,
   animate,
@@ -119,24 +119,29 @@ function SwipeStackInfluencerHint() {
   return (
     <motion.div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-50"
+      className="pointer-events-none absolute inset-x-0 bottom-[21%] z-50 flex items-center justify-center gap-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
-      <motion.div
-        className="absolute left-[58%] top-[38%] flex flex-col items-center gap-2"
-        animate={{ x: [-14, 16, -12, 14, 0], y: [0, -2, 0, -1, 0] }}
-        transition={{ duration: 2.1, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+      <motion.span
+        className="h-px w-5 bg-white/25"
+        animate={{ scaleX: [0.6, 1, 0.6], opacity: [0.35, 0.55, 0.35] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.span
+        className="text-[0.6875rem] font-medium tracking-[0.06em] text-white/40"
+        animate={{ opacity: [0.32, 0.55, 0.32] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <div className="flex size-11 items-center justify-center rounded-full border border-white/28 bg-black/55 shadow-[0_10px_28px_-8px_rgb(0_0_0/0.65)] backdrop-blur-md">
-          <MousePointer2 className="size-5 text-white" strokeWidth={2.1} />
-        </div>
-        <span className="rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-white/92 backdrop-blur-sm">
-          Swipe
-        </span>
-      </motion.div>
+        Swipe
+      </motion.span>
+      <motion.span
+        className="h-px w-5 bg-white/25"
+        animate={{ scaleX: [0.6, 1, 0.6], opacity: [0.35, 0.55, 0.35] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+      />
     </motion.div>
   )
 }
@@ -281,7 +286,7 @@ function TopSwipeCard({
     >
       <motion.div
         className="size-full"
-        animate={showSwipeHint && !exitDirection && hintVariant === 'influencer' ? HINT_SHAKE : { x: 0 }}
+        animate={showSwipeHint && !exitDirection && hintVariant === 'default' ? HINT_SHAKE : { x: 0 }}
       >
         {children}
       </motion.div>

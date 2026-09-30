@@ -26,6 +26,7 @@ import {
   landingPricingCardSurface,
   landingSectionLead,
   landingSectionPricing,
+  LANDING_STORY_INDEX,
 } from './landing-classes'
 import { Section } from './section'
 import { LandingSectionIntro } from './section-header'
@@ -82,7 +83,7 @@ function PricingEnterpriseCallout() {
         />
         <span>
           <span className="font-semibold tracking-[-0.02em] text-[var(--landing-ink)]">
-            {enterprise.eyebrow}.
+            {enterprise.eyebrow}
           </span>
           <span className="text-[var(--landing-muted)]"> {enterprise.description}</span>
         </span>
@@ -121,7 +122,7 @@ function PricingTrustIndicators({ className }: { className?: string }) {
             )}
           >
             <span
-              className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--accent-orange)_16%,white)] text-[var(--landing-ink)]"
+              className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_22%,white)] text-[var(--landing-ink)]"
               aria-hidden="true"
             >
               <Icon className="size-3.5" strokeWidth={2} />
@@ -145,6 +146,7 @@ export function LandingPricing({ products, loadError = null }: LandingPricingPro
         {hasProducts ? (
           <LandingSectionIntro
             titleId="pricing-heading"
+            storyIndex={LANDING_STORY_INDEX.pricing}
             title={PRICING_SECTION.title}
             titleAccent={PRICING_SECTION.titleAccent}
             description={PRICING_SECTION.description}
@@ -152,6 +154,7 @@ export function LandingPricing({ products, loadError = null }: LandingPricingPro
         ) : (
           <LandingSectionIntro
             titleId="pricing-heading"
+            storyIndex={LANDING_STORY_INDEX.pricing}
             title={PRICING_SECTION.fallbackTitle}
             description={PRICING_SECTION.fallbackDescription}
           />

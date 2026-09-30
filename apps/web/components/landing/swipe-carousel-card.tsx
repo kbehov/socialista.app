@@ -35,22 +35,6 @@ type SwipeCarouselCardProps = {
   swipeActions?: SwipeStackSwipeActions
 }
 
-function InfluencerInfoSkeleton() {
-  return (
-    <div className="space-y-[2.6cqw]" aria-hidden="true">
-      <div className="flex items-center gap-[2.2cqw]">
-        <div className="h-[5.2cqw] w-[42%] animate-pulse rounded-lg bg-white/22" />
-        <div className="h-[3.4cqw] w-[14%] animate-pulse rounded-md bg-white/14" />
-      </div>
-      <div className="h-[3.4cqw] w-[78%] animate-pulse rounded-md bg-white/18" />
-      <div className="flex flex-wrap gap-[1.8cqw] pt-[0.4cqw]">
-        <div className="h-[4.8cqw] w-[30%] animate-pulse rounded-full bg-white/14" />
-        <div className="h-[4.8cqw] w-[26%] animate-pulse rounded-full bg-white/14" />
-      </div>
-    </div>
-  )
-}
-
 export function SwipeCarouselCard({
   media,
   index,
@@ -59,7 +43,7 @@ export function SwipeCarouselCard({
   stackDepth,
   reduceMotion,
   variant = 'post',
-  influencer,
+  influencer: _influencer,
   embedded = false,
   swipeActions,
 }: SwipeCarouselCardProps) {
@@ -67,7 +51,7 @@ export function SwipeCarouselCard({
   const [videoReady, setVideoReady] = useState(false)
   const videoSrc = media.video || undefined
   const playVideo = Boolean(videoSrc) && !reduceMotion && isTop && stackDepth === 0
-  const isInfluencer = variant === 'influencer' && influencer
+  const isInfluencer = variant === 'influencer'
   const showActionButtons = isInfluencer && isTop && stackDepth === 0 && swipeActions
 
   useEffect(() => {
@@ -94,6 +78,7 @@ export function SwipeCarouselCard({
       className={cn(
         '@container-size relative size-full overflow-hidden bg-black',
         radius,
+        isInfluencer && 'ring-1 ring-inset ring-white/20',
       )}
       aria-label={
         isInfluencer
@@ -110,7 +95,7 @@ export function SwipeCarouselCard({
         quality={92}
         sizes={imageSizes}
         priority={index < 3}
-        className="pointer-events-none object-cover outline outline-1 -outline-offset-1 outline-white/10"
+        className="pointer-events-none object-cover"
         style={{ objectPosition: media.objectPosition }}
       />
 
@@ -144,16 +129,6 @@ export function SwipeCarouselCard({
                 {INFLUENCER_SECTION.mockup.badge}
               </span>
             </span>
-          </div>
-
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 px-[5%] pb-[19%] pt-[18%]"
-            style={{
-              background:
-                'linear-gradient(to top, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.42) 48%, transparent 100%)',
-            }}
-          >
-            <InfluencerInfoSkeleton />
           </div>
 
           {showActionButtons ? (

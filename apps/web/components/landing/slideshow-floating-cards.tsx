@@ -17,38 +17,52 @@ const itemsById = Object.fromEntries(SLIDESHOW_MARQUEE_ITEMS.map(item => [item.i
 >
 
 const SHOWCASE_ROW: {
+  key: string
   id: SlideshowItem['id']
   rotate: number
   featured?: boolean
 }[] = [
-  { id: 'theories', rotate: -3 },
-  { id: 'budget', rotate: -1, featured: true },
-  { id: 'skincare', rotate: 1 },
-  { id: 'morning', rotate: 3 },
+  { key: 'theories', id: 'theories', rotate: -4 },
+  { key: 'budget', id: 'budget', rotate: -2, featured: true },
+  { key: 'skincare', id: 'skincare', rotate: 0 },
+  { key: 'morning', id: 'morning', rotate: 2 },
+  { key: 'theories-copy', id: 'theories-copy', rotate: 3 },
+  { key: 'budget-copy', id: 'budget-copy', rotate: 5 },
 ]
 
 const cardWidth = 'w-[5.75rem] sm:w-[7rem] md:w-[7.75rem] lg:w-[8.5rem]'
 const cardWidthFeatured = 'w-[7.25rem] sm:w-[8.75rem] md:w-[9.75rem] lg:w-[10.75rem]'
+
+const cardWidthCompact = 'w-[4.5rem] sm:w-[5.25rem] md:w-[5.75rem] lg:w-[7.25rem] xl:w-[7.75rem]'
+const cardWidthFeaturedCompact = 'w-[5.25rem] sm:w-[6.25rem] md:w-[6.75rem] lg:w-[8.5rem] xl:w-[9rem]'
 
 function SlideshowPreviewCard({
   item,
   className,
   featured = false,
   priority,
+  compact = false,
 }: {
   item: SlideshowItem
   className?: string
   featured?: boolean
   priority?: boolean
+  compact?: boolean
 }) {
   const focal = item.focal ?? '50% 38%'
 
   return (
     <article
       className={cn(
-        'relative aspect-9/16 shrink-0 overflow-hidden rounded-[0.95rem] bg-[#121212] shadow-[0_14px_32px_-18px_rgb(0_0_0/0.38),0_0_0_1px_rgb(255_255_255/0.1)] sm:rounded-[1.05rem]',
+        'relative aspect-9/16 shrink-0 overflow-hidden rounded-[0.85rem] bg-[#121212] shadow-[0_10px_24px_-16px_rgb(0_0_0/0.45),0_0_0_1px_rgb(255_255_255/0.1)] sm:rounded-[0.95rem]',
         landingMediaCardHover,
-        featured ? cardWidthFeatured : cardWidth,
+        compact
+          ? featured
+            ? cardWidthFeaturedCompact
+            : cardWidthCompact
+          : featured
+            ? cardWidthFeatured
+            : cardWidth,
         className,
       )}
     >
@@ -62,19 +76,36 @@ function SlideshowPreviewCard({
         style={{ objectPosition: focal }}
         aria-hidden="true"
       />
-      <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/75 via-black/25 to-transparent px-2 pb-2 pt-5 sm:pb-2.5">
+      <div
+        className={cn(
+          'absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/75 via-black/25 to-transparent px-1.5 pb-1.5 pt-3 sm:px-2 sm:pb-2 sm:pt-4',
+          compact && 'pt-2.5 sm:pt-3',
+        )}
+      >
         <div
           className={cn(
-            'flex flex-col gap-1 font-semibold leading-none text-white/95 tabular-nums',
-            featured ? 'text-sidebar-label sm:text-[0.75rem]' : 'text-[0.625rem] sm:text-sidebar-label',
+            'flex flex-col gap-0.5 font-semibold leading-none text-white/95 tabular-nums',
+            compact
+              ? 'text-[0.5625rem] sm:text-[0.625rem]'
+              : featured
+                ? 'text-sidebar-label sm:text-[0.75rem]'
+                : 'text-[0.625rem] sm:text-sidebar-label',
           )}
         >
-          <span className="flex items-center gap-1">
-            <Play className="size-2.5 shrink-0 fill-white sm:size-3" strokeWidth={0} aria-hidden="true" />
+          <span className="flex items-center gap-0.5 sm:gap-1">
+            <Play
+              className={cn('shrink-0 fill-white', compact ? 'size-2 sm:size-2.5' : 'size-2.5 sm:size-3')}
+              strokeWidth={0}
+              aria-hidden="true"
+            />
             {item.views}
           </span>
-          <span className="flex items-center gap-1 text-white/88">
-            <Heart className="size-2.5 shrink-0 fill-white/88 sm:size-3" strokeWidth={0} aria-hidden="true" />
+          <span className="flex items-center gap-0.5 text-white/88 sm:gap-1">
+            <Heart
+              className={cn('shrink-0 fill-white/88', compact ? 'size-2 sm:size-2.5' : 'size-2.5 sm:size-3')}
+              strokeWidth={0}
+              aria-hidden="true"
+            />
             {item.likes}
           </span>
         </div>
@@ -91,19 +122,25 @@ function ShowcaseCard({
   featured = false,
   enterDelay = 0,
   priority,
+  compact = false,
 }: {
   itemId: SlideshowItem['id']
   rotate: number
   featured?: boolean
   enterDelay?: number
   priority?: boolean
+  compact?: boolean
 }) {
   const reduceMotion = useReducedMotion()
   const item = itemsById[itemId]
 
   return (
     <motion.div
-      className={cn('shrink-0 overflow-visible', featured && '-translate-y-1 sm:-translate-y-2')}
+      className={cn(
+        'shrink-0 overflow-visible',
+        compact ? 'p-1 sm:p-1.5' : 'p-2 sm:p-2.5',
+        featured && (compact ? '-translate-y-0.5' : '-translate-y-1 sm:-translate-y-2'),
+      )}
       style={{ rotate: `${rotate}deg` }}
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -114,28 +151,42 @@ function ShowcaseCard({
         delay: enterDelay,
       }}
     >
-      <SlideshowPreviewCard item={item} featured={featured} priority={priority} />
+      <SlideshowPreviewCard item={item} featured={featured} priority={priority} compact={compact} />
     </motion.div>
   )
 }
 
-export function SlideshowShowcase() {
+export function SlideshowShowcase({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="overflow-visible px-6 sm:px-10 md:px-14 lg:px-16">
+    <div className="relative -mx-5 overflow-visible sm:-mx-6 lg:-mx-8">
       <div
-        className="flex items-end justify-center gap-3 overflow-x-auto overflow-y-visible py-3 [-ms-overflow-style:none] scrollbar-none sm:gap-4 md:gap-5 lg:gap-6 [&::-webkit-scrollbar]:hidden"
+        className={cn(
+          'overflow-x-auto overflow-y-visible px-5 lg:overflow-visible lg:px-10 xl:px-12',
+          compact ? 'py-1 sm:py-1.5' : 'py-4 sm:py-5',
+          '[-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
+        )}
         aria-hidden="true"
       >
+        <div
+          className={cn(
+            'mx-auto flex w-max max-w-none items-end justify-center',
+            compact
+              ? 'gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3'
+              : 'gap-2 sm:gap-3 md:gap-4 lg:gap-[1.125rem] xl:gap-5',
+          )}
+        >
         {SHOWCASE_ROW.map((entry, index) => (
           <ShowcaseCard
-            key={entry.id}
+            key={entry.key}
             itemId={entry.id}
             rotate={entry.rotate}
             featured={entry.featured}
             enterDelay={index * 0.05}
             priority={Boolean(entry.featured)}
+            compact={compact}
           />
         ))}
+        </div>
       </div>
     </div>
   )

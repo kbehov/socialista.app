@@ -6,16 +6,16 @@ export const LANDING_NAV = [
 ] as const
 
 export const HERO = {
-  eyebrow: 'For marketers, agencies, founders, and growth teams',
-  title: 'The AI studio to dominate',
-  titleAccent: 'social media.',
+  eyebrow: 'AI studio for social',
+  title: 'Make content that',
+  titleAccent: 'actually ships.',
   description:
-    'Create and schedule UGC videos, winning ads, and carousels in one place. Learn which ideas perform best to run again.',
+    'UGC, ads, and carousels in one place—create, schedule, and see what hits without juggling five tabs.',
   primaryCta: 'Start creating for free',
   googleCta: 'Continue with Google',
 } as const
 
-export const HERO_PROOF_POINTS = ['Ship content fast', 'Publish to social media', 'Free to start · no card'] as const
+export const HERO_PROOF_POINTS = ['Create in minutes', 'Publish everywhere', 'Free to start · no card'] as const
 
 export const UGC_ADS = {
   title: 'Create realistic UGC ads',
@@ -90,42 +90,63 @@ export const SLIDESHOWS = {
   cta: 'Create slideshow',
 } as const
 
-export const FEATURES_BENTO = {
-  eyebrow: 'Features',
-  title: 'Create, publish, and see',
-  titleAccent: 'what hits.',
+export const IMAGE_TEMPLATES_SECTION = {
+  eyebrow: 'Image inspirations',
+  title: 'Never run out of ideas',
+  titleAccent: 'for your next post.',
   description:
-    'UGC, ads, carousels, scheduling, and analytics in one workspace—no duct-taping tools together.',
+    'Start from studio templates—product shots, lifestyle frames, and ad-ready stills you can recreate in one tap.',
+  cta: 'Browse templates',
+  ctaHref: '/auth/signup',
+} as const
+
+export const VIDEOS_SECTION = {
+  eyebrow: 'Video studio',
+  title: 'Create videos',
+  titleAccent: 'in minutes.',
+  description:
+    'Recreate a template or clone a video you already like, then trim, caption, and finish it in the editor.',
+  cta: 'Create a video',
+  ctaHref: '/auth/signup',
+  recreate: 'Recreate',
+  clone: 'Clone',
+} as const
+
+export const PUBLISH_SECTION = {
+  eyebrow: 'Publishing',
+  title: 'One creative,',
+  titleAccent: 'every channel.',
+  description:
+    'Native ratios and captions per connected account—publish now or hand off to your queue without leaving the studio.',
+} as const
+
+export const SCHEDULING_SECTION = {
+  eyebrow: 'Scheduling',
+  title: 'Your calendar 📅,',
+  titleAccent: 'not a spreadsheet.',
+  description:
+    'Queue posts per channel, preview captions, and ship on your calendar—not someone else’s.',
+} as const
+
+export const ANALYTICS_SECTION = {
+  eyebrow: 'Analytics',
+  title: 'See what spikes',
+  titleAccent: 'before the recap.',
+  description:
+    'Reach, engagement, and the creatives behind the spike—without exporting spreadsheets.',
+} as const
+
+export const FEATURES_BENTO = {
+  eyebrow: 'Studio tools',
+  title: 'Carousels and context',
+  titleAccent: 'in one workspace.',
+  description:
+    'Stack slides and keep brand rules attached—everything that happens before you hit publish.',
   items: [
-    {
-      id: 'scheduling' as const,
-      title: 'Queue it. Post it.',
-      description: 'Queue posts per channel, preview captions, and ship on your calendar—not someone else’s.',
-    },
-    {
-      id: 'analytics' as const,
-      title: 'See what spikes',
-      description: 'Reach, engagement, and the creatives behind the spike—without exporting spreadsheets.',
-    },
-    {
-      id: 'short-videos' as const,
-      title: 'Short videos',
-      description: 'Vertical hooks and UGC-style clips sized for Reels, TikTok, and Shorts.',
-    },
-    {
-      id: 'video-editor' as const,
-      title: 'Video editor',
-      description: 'Trim clips, tune captions, and polish motion before anything goes live.',
-    },
     {
       id: 'slideshow-editor' as const,
       title: 'Slideshow editor',
       description: 'Stack slides, set pacing, and export carousels built for the feed.',
-    },
-    {
-      id: 'image-generation' as const,
-      title: 'Image generation',
-      description: 'Turn a brief into product stills and ad frames that match your brand.',
     },
     {
       id: 'context-skills' as const,
@@ -147,9 +168,9 @@ export const PRICING_SECTION = {
   fallbackTitle: 'Plans live in your workspace.',
   fallbackDescription: 'Create an account to see current pricing, credits, and team limits for your region.',
   enterprise: {
-    eyebrow: 'Enterprise',
-    description: 'Custom credits, priority support, and procurement-friendly billing for larger teams.',
-    cta: 'Contact sales',
+    eyebrow: 'Need more seats or credits?',
+    description: 'We’ll help you find a plan that fits how you work.',
+    cta: 'Talk to us',
     href: 'mailto:sales@socialista.app?subject=Socialista%20Enterprise',
   },
   trust: [
@@ -191,7 +212,7 @@ export const FAQ_ITEMS = [
   {
     question: 'Who is Socialista for?',
     answer:
-      'Marketers, agencies, founders, and growth teams use Socialista to create and publish social creative—whether you are promoting a product, an app, a service, or a client account.',
+      'Anyone shipping social creative—solo founders, small teams, and studios who want UGC, ads, and publishing in one place.',
   },
   {
     question: 'Can my team work in the same workspace?',
@@ -211,7 +232,7 @@ export const FINAL_CTA = {
 } as const
 
 export const FOOTER = {
-  tagline: 'The AI social studio for teams that create, publish, and learn.',
+  tagline: 'Create, publish, and learn what hits—all in one studio.',
   columns: [
     {
       title: 'Product',
@@ -227,6 +248,8 @@ export const FOOTER = {
       links: [
         { href: '/#ugc-ads', label: 'UGC video' },
         { href: '/#static-ads', label: 'Static ads' },
+        { href: '/#image-templates', label: 'Image templates' },
+        { href: '/#videos', label: 'Videos' },
         { href: '/#slideshows', label: 'Slideshows' },
       ],
     },
@@ -241,9 +264,9 @@ export const FOOTER = {
 } as const
 
 export const PAGE_METADATA = {
-  title: 'Socialista — AI social studio for marketers and teams',
+  title: 'Socialista — AI studio for social',
   description:
-    'Create UGC video, winning ads, and carousels in one studio. Publish to every major channel and learn what to make next—for marketers, agencies, and founders.',
+    'Create UGC video, ads, and carousels in one studio. Publish to every major channel and learn what to make next.',
 } as const
 
 // Temporary compatibility data for detail components retained outside the new
@@ -277,8 +300,8 @@ export const FEATURE_MARQUEE = {
   rowB: ['Video Studio', 'Composer', 'Analytics'],
 } as const
 export const HERO_SOCIAL_PROOF = {
-  lead: 'Built for the way social teams actually work',
-  subline: 'Marketers · agencies · founders · mobile apps · e-commerce',
+  lead: 'Built for people who post every day',
+  subline: 'Indie apps · brands · studios · e‑commerce',
 } as const
 export const HERO_SLIDES = [
   {

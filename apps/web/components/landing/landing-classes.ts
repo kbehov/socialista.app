@@ -19,7 +19,29 @@ export const landingSectionLead =
   'mx-auto max-w-2xl text-pretty text-[1.0625rem] leading-7 text-[var(--landing-muted)] sm:text-lg sm:leading-8'
 
 export const landingHeroEyebrow =
-  'text-sm font-semibold tracking-[-0.015em] text-[var(--landing-orange)]'
+  'text-sm font-medium tracking-[-0.02em] text-[var(--landing-muted)]'
+
+/** Frosted surface on light sections — pairs with dark mockup glass */
+export const landingGlassLight =
+  'border border-[color-mix(in_srgb,var(--landing-ink)_7%,transparent)] bg-[color-mix(in_srgb,white_70%,var(--landing-canvas))] shadow-[inset_0_1px_0_0_oklch(1_0_0/0.88),0_1px_2px_color-mix(in_oklch,var(--landing-ink)_4%,transparent),0_20px_44px_-28px_color-mix(in_oklch,var(--landing-ink)_12%,transparent)] backdrop-blur-xl backdrop-saturate-150 supports-backdrop-filter:bg-[color-mix(in_srgb,white_52%,var(--landing-canvas))]'
+
+/** Light workflow mockup shells — flat, no wash gradients */
+export const landingWorkflowPanel =
+  'relative overflow-hidden rounded-[var(--landing-media-radius)] border border-[color-mix(in_srgb,var(--landing-ink)_7%,transparent)] bg-white shadow-[0_1px_2px_color-mix(in_oklch,var(--landing-ink)_5%,transparent)]'
+
+/** Scheduling calendar — dark panel, clean edges */
+export const landingWorkflowPanelDark =
+  'relative overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0c0c0c] outline outline-1 outline-[oklch(0_0_0/0.1)]'
+
+/** Full-bleed dark landing bands (scheduling, influencers, …) */
+export const landingSectionDark =
+  'border-white/10 bg-[#0c0c0c] text-white [border-top-color:color-mix(in_srgb,white_10%,transparent)]'
+
+export const landingWorkflowInsetCard =
+  'rounded-[0.875rem] border border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_14%,white)]'
+
+export const landingWorkflowInsetCardDark =
+  'rounded-[0.875rem] border border-white/[0.08] bg-white/[0.03]'
 
 /** Shared glass on dark media mockups */
 export const landingGlass =
@@ -34,11 +56,20 @@ export const landingMediaCardHover = 'landing-media-hover'
 export const landingHeroDisplay =
   'text-balance font-semibold text-[clamp(2.875rem,6.8vw,6.4rem)] leading-[0.96] tracking-[-0.05em] text-[var(--landing-ink)] sm:leading-[0.94]'
 
+/** Serif accent — hero headline and odd-index story sections */
+export const landingHeroTitleAccent =
+  'font-serif text-[1.02em] font-normal italic tracking-[-0.02em] text-[var(--landing-ink)]'
+
+export const landingSectionTitleAccentSerif = landingHeroTitleAccent
+
 export const landingHeroLead =
   'mx-auto max-w-2xl text-pretty text-[1.0625rem] leading-7 text-[var(--landing-muted)] sm:text-lg sm:leading-8'
 
 export const landingFeatureCaptionTitle =
-  'font-serif text-[1.25rem] italic leading-snug tracking-[-0.02em] text-[var(--landing-ink)] sm:text-[1.375rem]'
+  'text-[1.125rem] font-semibold leading-snug tracking-[-0.025em] text-[var(--landing-ink)] sm:text-[1.25rem]'
+
+export const landingFeatureCaptionTitleOnDark =
+  'text-[1.125rem] font-semibold leading-snug tracking-[-0.025em] text-white sm:text-[1.25rem]'
 
 export const landingFeatureCaptionBody =
   'mt-2 text-[0.9375rem] leading-6 text-[var(--landing-muted)]'
@@ -68,8 +99,37 @@ export const landingH2 =
 export const landingSectionTitle =
   'text-balance text-[clamp(2.125rem,4.5vw,3.375rem)] font-semibold leading-[1.02] tracking-[-0.045em] text-[var(--landing-ink)]'
 
+/** Sans continuation — pairs with semibold section title (even-index story sections) */
 export const landingSectionTitleAccent =
-  'font-serif text-[1.02em] font-normal italic tracking-[-0.02em]'
+  'font-normal tracking-[-0.045em] text-[color-mix(in_srgb,var(--landing-ink)_68%,var(--landing-muted))]'
+
+/**
+ * Home page story order after the hero (1 = UGC, 2 = influencers, …).
+ * Odd `storyIndex` → serif accent; even → sans. Keeps editorial rhythm consistent.
+ */
+export const LANDING_STORY_INDEX = {
+  ugcAds: 1,
+  influencers: 2,
+  channels: 3,
+  staticAds: 4,
+  slideshows: 5,
+  imageTemplates: 6,
+  videos: 7,
+  publish: 8,
+  scheduling: 9,
+  analytics: 10,
+  features: 11,
+  pricing: 12,
+  faq: 13,
+  getStarted: 14,
+} as const
+
+export type LandingStoryIndex =
+  (typeof LANDING_STORY_INDEX)[keyof typeof LANDING_STORY_INDEX]
+
+export function landingAccentToneForStory(storyIndex: LandingStoryIndex): 'serif' | 'sans' {
+  return storyIndex % 2 === 1 ? 'serif' : 'sans'
+}
 
 export const landingH3 = 'text-[1.0625rem] font-semibold leading-[1.35] tracking-[-0.02em] sm:text-lg'
 
@@ -79,10 +139,11 @@ export const landingBodySm = 'text-[0.9375rem] leading-[1.65] text-pretty text-m
 
 export const landingLabel = 'text-[0.8125rem] font-medium tracking-[-0.01em] text-muted-foreground'
 
-export const landingEyebrow = 'text-[0.75rem] font-medium uppercase tracking-[0.08em] text-muted-foreground'
+export const landingEyebrow =
+  'text-[0.8125rem] font-medium tracking-[-0.02em] text-[var(--landing-muted)]'
 
 export const landingSectionAlt =
-  'bg-[color-mix(in_srgb,var(--landing-stone)_22%,var(--landing-canvas))]'
+  'bg-[color-mix(in_srgb,var(--landing-stone)_18%,var(--landing-canvas))]'
 
 export const landingNavLink =
   'relative text-sm font-medium tracking-[-0.01em] text-[var(--landing-muted)] transition-colors duration-150 ease-out hover:text-[var(--landing-ink)] after:absolute after:inset-x-0 after:-bottom-[0.15rem] after:h-px after:bg-current after:origin-center after:scale-x-0 after:transition-transform after:duration-150 after:ease-out hover:after:scale-x-100'
@@ -124,13 +185,13 @@ export const landingCtaGhost = 'h-11 rounded-full px-4 text-sm font-medium text-
 /** Brand accent washes — --accent-orange & --guest-accent from globals.css */
 /** Radial spotlight behind the hero h1 (sits under the headline in the stack). */
 export const landingHeroHeadingGlow =
-  'bg-[radial-gradient(ellipse_75%_52%_at_50%_58%,color-mix(in_oklch,var(--accent-orange)_10%,transparent),transparent_68%),radial-gradient(ellipse_50%_38%_at_50%_72%,color-mix(in_oklch,var(--accent-orange)_6%,transparent),transparent_72%),radial-gradient(ellipse_90%_45%_at_50%_50%,color-mix(in_oklch,var(--guest-accent)_4%,transparent),transparent_75%)]'
+  'bg-[radial-gradient(ellipse_78%_54%_at_50%_58%,color-mix(in_oklch,var(--landing-ink)_5%,transparent),transparent_70%),radial-gradient(ellipse_52%_40%_at_50%_72%,color-mix(in_oklch,var(--landing-ink)_3%,transparent),transparent_74%),radial-gradient(ellipse_88%_42%_at_50%_48%,color-mix(in_oklch,var(--accent-orange)_4%,transparent),transparent_78%)]'
 
 export const landingInfluencerGlow =
   'bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--accent-orange)_8%,transparent)_0%,transparent_50%),radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--foreground)_3%,transparent)_0%,transparent_72%)]'
 
 export const landingFinalCtaGlow =
-  'bg-[radial-gradient(ellipse_50%_80%_at_15%_50%,color-mix(in_oklch,var(--background)_10%,transparent),transparent_55%),radial-gradient(ellipse_45%_65%_at_88%_18%,color-mix(in_oklch,var(--accent-orange)_20%,transparent),transparent_50%),radial-gradient(ellipse_40%_55%_at_72%_75%,color-mix(in_oklch,var(--guest-accent)_14%,transparent),transparent_48%)]'
+  'bg-[radial-gradient(ellipse_55%_85%_at_18%_50%,color-mix(in_oklch,white_9%,transparent),transparent_56%),radial-gradient(ellipse_48%_62%_at_88%_16%,color-mix(in_oklch,white_7%,transparent),transparent_52%),radial-gradient(ellipse_42%_58%_at_70%_78%,color-mix(in_oklch,var(--accent-orange)_8%,transparent),transparent_50%)]'
 
 export const landingAccentUnderline =
   'text-[color-mix(in_oklch,var(--accent-orange)_88%,var(--foreground))]'

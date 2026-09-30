@@ -22,6 +22,7 @@ import {
   landingCtaPrimary,
   landingFeatureCaptionTitle,
   landingInfluencerGlow,
+  LANDING_STORY_INDEX,
 } from "./landing-classes";
 import { Section } from "./section";
 import { LandingSectionIntro } from "./section-header";
@@ -113,6 +114,7 @@ export function LandingInfluencer() {
       <FadeIn>
         <LandingSectionIntro
           titleId="influencers-heading"
+          storyIndex={LANDING_STORY_INDEX.influencers}
           title={INFLUENCER_SECTION.title}
           titleAccent={INFLUENCER_SECTION.titleAccent}
           description={INFLUENCER_SECTION.eyebrow}

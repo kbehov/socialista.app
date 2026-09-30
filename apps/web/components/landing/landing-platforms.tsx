@@ -3,7 +3,7 @@
 import { SocialPlatformIcon } from "@/components/icons/social-platform-icon";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
 import { cn } from "@/lib/utils";
-import { LogoGlyph, LogoWordmark } from "@/components/common/logo";
+import { LogoGlyph } from "@/components/common/logo";
 import { forwardRef, useRef, type RefObject } from "react";
 
 import {
@@ -16,6 +16,7 @@ import {
   landingContentGap,
   landingSection,
   landingSectionDivider,
+  LANDING_STORY_INDEX,
 } from "./landing-classes";
 import { LandingSectionIntro } from "./section-header";
 
@@ -160,6 +161,7 @@ export function LandingPlatforms() {
         <FadeIn>
           <LandingSectionIntro
             titleId="channels-heading"
+            storyIndex={LANDING_STORY_INDEX.channels}
             title={PLATFORMS_SECTION.title}
             titleAccent={PLATFORMS_SECTION.titleAccent}
             description={PLATFORMS_SECTION.description}
@@ -183,10 +185,9 @@ export function LandingPlatforms() {
                 <PlatformNode id="tiktok" nodeRef={midLeftRef} />
                 <div
                   ref={centerRef}
-                  className="z-10 flex min-w-[5.5rem] flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] px-4 py-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:min-w-[6.25rem] sm:gap-2.5 sm:px-5 sm:py-4"
+                  className="z-10 flex items-center justify-center rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] p-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:p-4"
                 >
                   <LogoGlyph size="hero" priority />
-                  <LogoWordmark tone="onDark" size="sm" className="text-[0.6875rem] sm:text-xs" />
                 </div>
                 <PlatformNode id="linkedin" nodeRef={midRightRef} />
               </div>

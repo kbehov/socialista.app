@@ -1,6 +1,9 @@
 import { FAQ_ITEMS, PAGE_METADATA } from '@/components/landing/content'
 import { LandingFaq } from '@/components/landing/landing-faq'
+import { LandingImageTemplates } from '@/components/landing/landing-image-templates'
+import { LandingVideos } from '@/components/landing/landing-videos'
 import { LandingFeatures } from '@/components/landing/landing-features'
+import { LandingPublish, LandingScheduling, LandingAnalytics } from '@/components/landing/landing-workflow'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
@@ -114,6 +117,11 @@ export default async function HomePage() {
       <LandingPlatforms />
       <LandingStaticAds />
       <LandingSlideshows />
+      <LandingImageTemplates />
+      <LandingVideos />
+      <LandingPublish />
+      <LandingScheduling />
+      <LandingAnalytics />
       <LandingFeatures />
       <LandingPricing
         products={products}

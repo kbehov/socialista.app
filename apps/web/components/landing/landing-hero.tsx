@@ -12,6 +12,7 @@ import {
   landingHeroEyebrow,
   landingHeroHeadingGlow,
   landingHeroLead,
+  landingHeroTitleAccent,
 } from './landing-classes'
 
 const HERO_FLOAT_STATS = HERO_SLIDES[0]
@@ -20,12 +21,12 @@ export function LandingHero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="landing-canvas relative overflow-x-clip pb-12 pt-12 sm:pb-16 sm:pt-[4.75rem]"
+      className="landing-canvas relative overflow-x-clip pb-14 pt-11 sm:pb-20 sm:pt-[4.5rem]"
     >
       <SectionInner className="max-w-7xl">
         <div className="mx-auto max-w-4xl text-center">
           <p className={landingHeroEyebrow}>{HERO.eyebrow}</p>
-          <div className="relative mx-auto mt-4 w-full max-w-[min(100%,52rem)] px-1 sm:mt-5 sm:px-0">
+          <div className="relative mx-auto mt-3.5 w-full max-w-[min(100%,52rem)] px-1 sm:mt-4 sm:px-0">
             <div
               className={`pointer-events-none absolute inset-x-[-8%] top-[-20%] bottom-[-28%] -z-10 ${landingHeroHeadingGlow}`}
               aria-hidden="true"
@@ -35,9 +36,10 @@ export function LandingHero() {
               views={HERO_FLOAT_STATS.views}
             />
             <h1 id="hero-heading" className={landingHeroDisplay}>
-              {HERO.title}{' '}
-              <span className="font-serif text-[1.02em] font-normal italic tracking-[-0.02em]">
-                {HERO.titleAccent}
+              {HERO.title}
+              <span className="block sm:inline">
+                {' '}
+                <span className={landingHeroTitleAccent}>{HERO.titleAccent}</span>
               </span>
             </h1>
           </div>

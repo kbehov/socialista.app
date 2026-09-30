@@ -9,34 +9,21 @@ import {
   landingFeatureCaptionTitle,
   landingMediaCardHover,
   landingMediaPanel,
+  LANDING_STORY_INDEX,
 } from './landing-classes'
 import { Section } from './section'
 import { LandingSectionIntro } from './section-header'
 
-/** 12-col rows: publish → video → carousels, stills, and context */
-const BENTO_ROWS: FeatureBentoId[][] = [
-  ['scheduling', 'analytics'],
-  ['short-videos', 'video-editor'],
-  ['slideshow-editor', 'image-generation', 'context-skills'],
-]
+/** 12-col row: carousels + context */
+const BENTO_ROWS: FeatureBentoId[][] = [['slideshow-editor', 'context-skills']]
 
 const GRID_SPAN: Record<FeatureBentoId, string> = {
-  scheduling: 'sm:col-span-2 lg:col-span-7',
-  analytics: 'sm:col-span-2 lg:col-span-5',
-  'short-videos': 'sm:col-span-2 lg:col-span-6',
-  'video-editor': 'sm:col-span-2 lg:col-span-6',
-  'slideshow-editor': 'lg:col-span-4',
-  'image-generation': 'lg:col-span-4',
-  'context-skills': 'sm:col-span-2 lg:col-span-4',
+  'slideshow-editor': 'sm:col-span-2 lg:col-span-6',
+  'context-skills': 'sm:col-span-2 lg:col-span-6',
 }
 
 const PANEL_MIN_H: Record<FeatureBentoId, string> = {
-  scheduling: 'min-h-[18rem] sm:min-h-[20rem] lg:min-h-[21rem]',
-  analytics: 'min-h-[18rem] sm:min-h-[20rem] lg:min-h-[21rem]',
-  'short-videos': 'min-h-[17rem] sm:min-h-[19rem] lg:min-h-[20rem]',
-  'video-editor': 'min-h-[17rem] sm:min-h-[19rem] lg:min-h-[20rem]',
   'slideshow-editor': 'min-h-[16rem] sm:min-h-[18rem] lg:min-h-[19rem]',
-  'image-generation': 'min-h-[16rem] sm:min-h-[18rem] lg:min-h-[19rem]',
   'context-skills': 'min-h-[16rem] sm:min-h-[18rem] lg:min-h-[19rem]',
 }
 
@@ -62,7 +49,7 @@ function FeatureCaption({ title, description }: { title: string; description: st
       <h3
         className={cn(
           landingFeatureCaptionTitle,
-          'transition-colors duration-200 ease-[cubic-bezier(0.2,0,0,1)] group-hover/panel:text-[color-mix(in_oklch,var(--landing-ink)_92%,var(--landing-orange))]',
+          'transition-[color,opacity] duration-200 ease-[cubic-bezier(0.2,0,0,1)] opacity-[0.92] group-hover/panel:opacity-100',
         )}
       >
         {title}
@@ -108,7 +95,9 @@ export function LandingFeatures() {
       <FadeIn>
         <LandingSectionIntro
           titleId="features-heading"
+          storyIndex={LANDING_STORY_INDEX.features}
           eyebrow={FEATURES_BENTO.eyebrow}
+          eyebrowTone="accent"
           title={FEATURES_BENTO.title}
           titleAccent={FEATURES_BENTO.titleAccent}
           description={FEATURES_BENTO.description}

@@ -59,10 +59,10 @@ function EngagementOrb({
   return (
     <motion.div
       className={cn(
-        'absolute z-20 flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 shadow-[0_10px_28px_-14px_rgb(0_0_0/0.22)] backdrop-blur-md',
+        'absolute z-20 flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.65),0_12px_32px_-16px_rgb(0_0_0/0.18)] backdrop-blur-xl backdrop-saturate-150',
         muted
-          ? 'border-black/[0.04] bg-white/72 text-black/62'
-          : 'border-black/[0.06] bg-white/[0.96] text-[#111]',
+          ? 'border-[color-mix(in_srgb,var(--landing-ink)_5%,transparent)] bg-[color-mix(in_srgb,white_58%,var(--landing-canvas))] text-[color-mix(in_srgb,var(--landing-ink)_62%,transparent)]'
+          : 'border-[color-mix(in_srgb,var(--landing-ink)_8%,transparent)] bg-[color-mix(in_srgb,white_78%,var(--landing-canvas))] text-[var(--landing-ink)]',
         className,
       )}
       initial={false}
@@ -93,7 +93,7 @@ function EngagementOrb({
           aria-hidden
         />
       ) : (
-        <Eye className="size-3 shrink-0 text-black/55" strokeWidth={2.25} aria-hidden />
+        <Eye className="size-3 shrink-0 text-[var(--landing-muted)]" strokeWidth={2.25} aria-hidden />
       )}
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

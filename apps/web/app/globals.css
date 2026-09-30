@@ -20,13 +20,13 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --landing-canvas: #f7f5f1;
-  --landing-ink: #1c1c1a;
-  --landing-muted: #6a655c;
-  --landing-stone: #e6e1d8;
+  --landing-canvas: #fafafa;
+  --landing-ink: #0a0a0a;
+  --landing-muted: #737373;
+  --landing-stone: #e5e5e5;
   --landing-orange: #ff5a1f;
-  --landing-charcoal: #1d1c1a;
-  --landing-peach: #ffe2d5;
+  --landing-charcoal: #171717;
+  --landing-peach: #ececec;
   --landing-media-radius: 1.75rem;
   --landing-panel-radius: 2.25rem;
   /* ── Primitives ───────────────────────────────────────────────────────── */
@@ -239,8 +239,9 @@
 
 .landing-canvas-atmosphere {
   background:
-    radial-gradient(118% 72% at 50% -18%, color-mix(in srgb, var(--landing-peach) 22%, transparent), transparent 56%),
-    radial-gradient(70% 48% at 100% 0%, color-mix(in srgb, var(--landing-stone) 40%, transparent), transparent 50%);
+    radial-gradient(120% 70% at 50% -22%, color-mix(in srgb, var(--landing-ink) 3%, transparent), transparent 58%),
+    radial-gradient(68% 44% at 100% 0%, color-mix(in srgb, var(--landing-stone) 55%, transparent), transparent 52%),
+    radial-gradient(52% 38% at 0% 8%, color-mix(in srgb, var(--landing-stone) 35%, transparent), transparent 48%);
 }
 
 .landing-canvas-atmosphere::after {
@@ -263,7 +264,7 @@
 }
 
 .landing-section-divider {
-  border-top: 1px solid color-mix(in srgb, var(--landing-stone) 64%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--landing-ink) 6%, transparent);
 }
 
 @media (hover: hover) and (pointer: fine) {

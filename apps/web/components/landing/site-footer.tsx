@@ -39,7 +39,7 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <p className="mt-12 border-t border-[color-mix(in_srgb,var(--landing-stone)_75%,transparent)] pt-6 text-sm text-[var(--landing-muted)]">
+        <p className="mt-12 border-t border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] pt-6 text-sm text-[var(--landing-muted)]">
           © {year} Socialista
         </p>
       </SectionInner>

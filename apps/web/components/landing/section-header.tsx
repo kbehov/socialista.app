@@ -8,6 +8,9 @@ import {
   landingSectionLead,
   landingSectionTitle,
   landingSectionTitleAccent,
+  landingSectionTitleAccentSerif,
+  landingAccentToneForStory,
+  type LandingStoryIndex,
 } from "./landing-classes";
 
 type SectionHeaderProps = {
@@ -73,7 +76,21 @@ type LandingSectionIntroProps = {
   align?: "left" | "center";
   className?: string;
   titleId?: string;
+  /** Home story position — odd sections get serif accents, even get sans */
+  storyIndex?: LandingStoryIndex;
+  accentTone?: "sans" | "serif";
+  /** Light page sections vs dark bands (e.g. scheduling) */
+  tone?: "light" | "dark";
 };
+
+function resolveAccentTone(
+  accentTone: LandingSectionIntroProps["accentTone"],
+  storyIndex: LandingSectionIntroProps["storyIndex"],
+): "sans" | "serif" {
+  if (accentTone) return accentTone;
+  if (storyIndex !== undefined) return landingAccentToneForStory(storyIndex);
+  return "serif";
+}
 
 export function LandingSectionIntro({
   title,
@@ -81,10 +98,29 @@ export function LandingSectionIntro({
   description,
   eyebrow,
   eyebrowTone = "caps",
+  storyIndex,
+  accentTone,
   align = "center",
   className,
   titleId,
+  tone = "light",
 }: LandingSectionIntroProps) {
+  const resolvedAccentTone = resolveAccentTone(accentTone, storyIndex);
+  const isDark = tone === "dark";
+  const accentClass =
+    resolvedAccentTone === "serif"
+      ? isDark
+        ? cn(
+            landingSectionTitleAccentSerif,
+            "text-[color-mix(in_srgb,var(--landing-canvas)_92%,white)]",
+          )
+        : landingSectionTitleAccentSerif
+      : isDark
+        ? cn(
+            landingSectionTitleAccent,
+            "text-[color-mix(in_srgb,var(--landing-canvas)_72%,transparent)]",
+          )
+        : landingSectionTitleAccent;
   return (
     <div
       className={cn(
@@ -99,6 +135,8 @@ export function LandingSectionIntro({
             eyebrowTone === "accent" ? landingHeroEyebrow : landingEyebrow,
             eyebrowTone === "caps" && "mb-4",
             eyebrowTone === "accent" && "mb-3 sm:mb-4",
+            isDark &&
+              "text-[color-mix(in_srgb,var(--landing-canvas)_58%,transparent)]",
           )}
         >
           {eyebrow}
@@ -106,18 +144,31 @@ export function LandingSectionIntro({
       ) : null}
       <h2
         id={titleId}
-        className={cn(landingSectionTitle, eyebrow ? "mt-0" : undefined)}
+        className={cn(
+          landingSectionTitle,
+          eyebrow ? "mt-0" : undefined,
+          isDark && "text-white",
+        )}
       >
         {title}
         {titleAccent ? (
           <>
             {" "}
-            <span className={landingSectionTitleAccent}>{titleAccent}</span>
+            <span className={accentClass}>{titleAccent}</span>
           </>
         ) : null}
       </h2>
       {description ? (
-        <p className={cn(landingSectionLead, "mt-5")}>{description}</p>
+        <p
+          className={cn(
+            landingSectionLead,
+            isDark ? 'mt-4 sm:mt-5' : 'mt-5',
+            isDark &&
+              'text-[color-mix(in_srgb,var(--landing-canvas)_68%,transparent)]',
+          )}
+        >
+          {description}
+        </p>
       ) : null}
     </div>
   );

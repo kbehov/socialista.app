@@ -21,6 +21,7 @@ import {
   landingGlassBadge,
   landingMediaCardHover,
   landingMediaPanel,
+  LANDING_STORY_INDEX,
 } from './landing-classes'
 import { LazyAutoplayVideo } from './lazy-autoplay-video'
 import { IMG, VIDEO } from './media'
@@ -45,6 +46,7 @@ export function LandingUgcAds() {
       <FadeIn>
         <LandingSectionIntro
           titleId="ugc-ads-heading"
+          storyIndex={LANDING_STORY_INDEX.ugcAds}
           title={UGC_ADS.title}
           titleAccent={UGC_ADS.titleAccent}
           description={UGC_ADS.description}
