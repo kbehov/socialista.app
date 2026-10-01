@@ -75,6 +75,8 @@ export type GenerateVideoScriptInput = {
   description: string
   duration: number
   tone?: VideoScriptTone
+  /** Catalog `Model.value`. Falls back to the video-script registry default. */
+  model?: string
 }
 
 export type GenerateVideoScriptResult = {
@@ -87,6 +89,19 @@ export type SkillBrandContext = {
   description?: string
   industry?: string
   website?: string
+  colors?: string[]
+}
+
+/** Scraped page facts sent to the brand-from-URL extractor. Not a persisted document. */
+export type SiteBrandContextInput = {
+  url: string
+  title?: string
+  metaDescription?: string
+  siteName?: string
+  headings?: string[]
+  text: string
+  jsonLd?: string
+  logoUrl?: string
   colors?: string[]
 }
 

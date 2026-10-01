@@ -2,6 +2,7 @@
 
 import type { AttachedMedia } from '@/components/files/attach-images-dialog'
 import { dashboardSurface } from '@/components/dashboard'
+import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
 import { StudioComposerModelSelector } from '@/components/studio/prompt/studio-composer-model-selector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +28,7 @@ import { getProjectId, useProjectStore } from '@/store/project.store'
 import { cn } from '@/lib/utils'
 import { commitHaptic } from '@/utils/haptics'
 import { formatModelCost } from '@/utils/format'
-import type { Model } from '@socialista/types'
+import type { ApiResponse, CreateInfluencerPayload, CreateInfluencerResponse, Model } from '@socialista/types'
 import {
   INFLUENCER_DEFAULT_MODEL,
   INFLUENCER_GENERATION_SHOT_COUNT,
@@ -46,10 +47,17 @@ import { OptionSegmented } from './influencer-option-controls'
 import { InfluencerPresetStrip } from './influencer-preset-strip'
 import { InfluencerReferenceUploader } from './influencer-reference-uploader'
 
+type CreateInfluencerAction = (
+  payload: CreateInfluencerPayload,
+) => Promise<ApiResponse<CreateInfluencerResponse>>
+
 type InfluencerCreateWorkspaceProps = {
   workspaceId: string
   models: Model[]
   returnTo?: string
+  backHref?: string
+  successHref?: (influencerId: string) => string
+  createAction?: CreateInfluencerAction
 }
 
 const FEATURE_MAX = 3
@@ -69,7 +77,14 @@ const SHOT_OPTIONS = Array.from(
   },
 )
 
-export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: InfluencerCreateWorkspaceProps) {
+export function InfluencerCreateWorkspace({
+  workspaceId,
+  models,
+  returnTo,
+  backHref,
+  successHref,
+  createAction = createInfluencer,
+}: InfluencerCreateWorkspaceProps) {
   const router = useRouter()
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [pending, startTransition] = useTransition()
@@ -163,7 +178,7 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
 
     startTransition(async () => {
       commitHaptic({})
-      const response = await createInfluencer({
+      const response = await createAction({
         workspaceId,
         projectId,
         model: selectedModel.value,
@@ -212,6 +227,10 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
         router.push(`${returnTo}?${params.toString()}`)
         return
       }
+      if (successHref) {
+        router.push(successHref(response.data.influencer._id))
+        return
+      }
       router.push(DASHBOARD_ROUTES.STUDIO.influencer(response.data.influencer._id))
     })
   }
@@ -224,7 +243,7 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
   }
 
   return (
-    <div className="image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className={lockedStudioShellRootClassName}>
       <form
         className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
         onSubmit={handleSubmit}
@@ -240,7 +259,7 @@ export function InfluencerCreateWorkspace({ workspaceId, models, returnTo }: Inf
               size="icon-sm"
               className="size-8 shrink-0 rounded-md text-muted-foreground hover:text-foreground"
             >
-              <Link href={returnTo ?? DASHBOARD_ROUTES.STUDIO.INFLUENCERS} aria-label="Back">
+              <Link href={backHref ?? returnTo ?? DASHBOARD_ROUTES.STUDIO.INFLUENCERS} aria-label="Back">
                 <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
               </Link>
             </Button>

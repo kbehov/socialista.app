@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { hasUgcProduct, ugcNeedsCreator } from '@/lib/studio/ugc/ugc-stage'
+import { hasUgcProduct, ugcNeedsCreator, ugcProjectHasGeneratedSceneWork } from '@/lib/studio/ugc/ugc-stage'
 import { cn } from '@/lib/utils'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
 import {
@@ -309,8 +309,13 @@ function CampaignTab({
             <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted ring-1 ring-black/[0.06] dark:ring-white/[0.08]">
               <MicIcon className="size-3.5 text-muted-foreground" strokeWidth={1.5} />
             </span>
-            <span className="truncate font-medium" title={voice.voiceName}>
-              {voice.voiceName ?? 'Choose a voice'}
+            <span className="min-w-0">
+              <span className="block truncate font-medium" title={voice.voiceName}>
+                {voice.voiceName ?? 'Choose a voice'}
+              </span>
+              <span className="mt-0.5 block truncate text-[11px] leading-none text-muted-foreground">
+                Campaign voice
+              </span>
             </span>
           </span>
         </PropertyRow>
@@ -386,6 +391,7 @@ function CampaignTab({
         <UgcCampaignPresets
           open={presetOpen}
           applying={applyingPreset}
+          hasGeneratedWork={ugcProjectHasGeneratedSceneWork(project)}
           onOpenChange={setPresetOpen}
           onApply={presetId => {
             onApplyPreset(presetId)

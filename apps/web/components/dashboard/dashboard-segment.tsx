@@ -34,7 +34,7 @@ function DashboardSegmentButton({ active, className, type = 'button', ...props }
       aria-selected={active}
       className={cn(
         dashboardSurface.segmentItem,
-        'inline-flex h-7 flex-row flex-nowrap items-center gap-1.5 px-2.5 whitespace-nowrap',
+        'inline-flex h-[var(--control-height)] flex-row flex-nowrap items-center gap-1.5 px-2.5 whitespace-nowrap',
         active ? dashboardSurface.segmentItemActive : dashboardSurface.segmentItemInactive,
         className,
       )}
@@ -50,7 +50,7 @@ export type DashboardSegmentLinkProps = ComponentProps<'a'> & {
 
 function dashboardSegmentLinkClass(active?: boolean, className?: string) {
   return cn(
-    'inline-flex h-7 items-center gap-1.5 px-2.5 whitespace-nowrap',
+    'inline-flex h-[var(--control-height)] items-center gap-1.5 px-2.5 whitespace-nowrap',
     dashboardSurface.segmentItem,
     active ? dashboardSurface.segmentItemActive : dashboardSurface.segmentItemInactive,
     className,

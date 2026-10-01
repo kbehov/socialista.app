@@ -27,6 +27,7 @@ import {
 import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 import { toObjectId } from '../utils/isValid.js'
 import { assertValidTimezone } from '../utils/timezone.js'
+import { seedPostAnalyticsIfEligible } from './post-analytics.repo.js'
 
 const SORT_BY_SCHEDULED = { scheduledAt: 1 } as const
 const SORT_BY_CREATED_DESC = { createdAt: -1 } as const
@@ -653,7 +654,7 @@ export const completePostPublish = async (
     $unset.firstCommentError = ''
   }
 
-  return PostModel.findOneAndUpdate(
+  const post = await PostModel.findOneAndUpdate(
     {
       _id: toObjectId(input.postId),
       status: PostStatus.PUBLISHING,
@@ -666,6 +667,9 @@ export const completePostPublish = async (
     },
     { returnDocument: 'after' },
   ).lean()
+
+  if (!post) return null
+  return seedPostAnalyticsIfEligible(post)
 }
 
 export const failPostPublish = async (input: FailPostPublishInput): Promise<IPost | null> => {

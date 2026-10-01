@@ -177,7 +177,7 @@ export type PublishedPostActivityResponse = {
 
 /** Supported publish combinations for the connected providers. */
 export const PUBLISHABLE_POST_TYPES: Record<
-  Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin'>,
+  Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin' | 'twitter'>,
   readonly PostType[]
 > = {
   facebook: ['text', 'image', 'video', 'reel', 'carousel'],
@@ -185,6 +185,7 @@ export const PUBLISHABLE_POST_TYPES: Record<
   tiktok: ['video', 'reel', 'carousel', 'image'],
   threads: ['text', 'image', 'video', 'carousel'],
   linkedin: ['text', 'image', 'video', 'carousel'],
+  twitter: ['text', 'image', 'video', 'carousel'],
 } as const
 
 export function isPublishablePostType(

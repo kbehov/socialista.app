@@ -33,6 +33,10 @@ import { useEffect, useState } from 'react'
 
 type InfluencerCardProps = {
   influencer: Influencer
+  /** Override detail link (default: studio influencer page). */
+  href?: string
+  /** Show public/private in meta line (manager list). */
+  showVisibility?: boolean
   /** When omitted, the overflow delete action is hidden (e.g. public library). */
   onDelete?: (influencer: Influencer) => void
 }
@@ -201,14 +205,15 @@ function CoverPlaceholder({ isGenerating }: { isGenerating: boolean }) {
   )
 }
 
-export function InfluencerCard({ influencer, onDelete }: InfluencerCardProps) {
-  const href = DASHBOARD_ROUTES.STUDIO.influencer(influencer._id)
+export function InfluencerCard({ influencer, href: hrefOverride, showVisibility, onDelete }: InfluencerCardProps) {
+  const href = hrefOverride ?? DASHBOARD_ROUTES.STUDIO.influencer(influencer._id)
   const isGenerating = influencer.status === 'generating'
   const images = collectImages(influencer)
   const niches = influencer.niche.slice(0, 2).map(nicheLabel)
   const nicheLine = niches.join(' · ')
   const showStatusBadge = influencer.status !== 'ready'
   const metaLine = [
+    showVisibility ? (influencer.visibility === 'public' ? 'Public' : 'Private') : null,
     nicheLine || null,
     influencer.usageCount > 0 ? `${influencer.usageCount} uses` : null,
   ]

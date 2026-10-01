@@ -1,6 +1,7 @@
 import { model, Schema } from 'mongoose'
 import { enumValues } from '../lib/schema.js'
 import { SocialProvider } from '../types/account.types.js'
+import { PostAnalyticsCheckpoint } from '../types/post-analytics.types.js'
 import { PostStatus, PostType, type IPost } from '../types/post.types.js'
 
 const postMediaSchema = new Schema(
@@ -41,6 +42,19 @@ const postLocationSchema = new Schema(
   { _id: false },
 )
 
+const postAnalyticsSchema = new Schema(
+  {
+    nextCheckpointKey: { type: String, enum: enumValues(PostAnalyticsCheckpoint) },
+    nextCheckpointAt: { type: Date },
+    inFlightCheckpointKey: { type: String, enum: enumValues(PostAnalyticsCheckpoint) },
+    leasedUntil: { type: Date },
+    consecutiveFailures: { type: Number, default: 0 },
+    lastError: { type: String },
+    completedAt: { type: Date },
+  },
+  { _id: false },
+)
+
 const postSchema = new Schema<IPost>(
   {
     account: { type: Schema.Types.ObjectId, ref: 'Account', required: true },
@@ -77,6 +91,7 @@ const postSchema = new Schema<IPost>(
     providerOperationId: { type: String },
     providerPostId: { type: String },
     providerPermalink: { type: String },
+    postAnalytics: { type: postAnalyticsSchema },
   },
   { timestamps: true },
 )
@@ -136,6 +151,18 @@ postSchema.index(
     partialFilterExpression: {
       status: PostStatus.PUBLISHED,
       publishedAt: { $type: 'date' },
+    },
+  },
+)
+
+// Hourly post-analytics sweep — only published posts with a pending checkpoint.
+postSchema.index(
+  { workspace: 1, 'postAnalytics.nextCheckpointAt': 1 },
+  {
+    name: 'due_post_analytics',
+    partialFilterExpression: {
+      status: PostStatus.PUBLISHED,
+      'postAnalytics.nextCheckpointAt': { $type: 'date' },
     },
   },
 )

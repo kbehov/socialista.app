@@ -22,7 +22,7 @@ export type ActivityDay = {
 
 export type ActivityLevel = 0 | 1 | 2 | 3 | 4
 
-export type ActivityHeatmapColorScheme = 'green' | 'blue' | 'neutral'
+export type ActivityHeatmapColorScheme = 'green' | 'blue' | 'neutral' | 'brand'
 
 export type ActivityHeatmapSize = 'sm' | 'default' | 'lg'
 
@@ -108,6 +108,13 @@ const COLOR_SCHEMES: Record<ActivityHeatmapColorScheme, string[]> = {
     'bg-foreground/28',
     'bg-foreground/52',
     'bg-foreground/82',
+  ],
+  brand: [
+    'bg-muted',
+    'bg-[color-mix(in_oklch,var(--accent-orange)_16%,var(--muted))]',
+    'bg-[color-mix(in_oklch,var(--accent-orange)_38%,var(--muted))]',
+    'bg-[color-mix(in_oklch,var(--accent-orange)_62%,var(--muted))]',
+    'bg-accent-orange',
   ],
 }
 
@@ -317,8 +324,10 @@ function ActivityHeatmap({
                                 cellClassName,
                                 colors[cell.level],
                                 'outline-none transition-colors duration-75',
-                                'hover:z-10 hover:ring-1 hover:ring-foreground/25',
-                                'focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-ring',
+                                'focus-visible:z-10 focus-visible:ring-1',
+                                colorScheme === 'brand'
+                                  ? 'hover:z-10 hover:ring-1 hover:ring-accent-orange/35 focus-visible:ring-accent-orange/50'
+                                  : 'hover:z-10 hover:ring-1 hover:ring-foreground/25 focus-visible:ring-ring',
                               )}
                             />
                           </TooltipTrigger>

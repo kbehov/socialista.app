@@ -10,7 +10,8 @@ type InfluencerSwipeCarouselProps = {
 
 const CARD_WIDTH = 'w-[17.5rem] max-w-[72vw]'
 
-const INFLUENCER_FRAME = 'h-full w-full border-0 bg-transparent shadow-none'
+const INFLUENCER_FRAME =
+  'h-full w-full overflow-hidden rounded-[1.75rem] border border-white/15 bg-transparent shadow-none'
 
 export function InfluencerSwipeCarousel({ className }: InfluencerSwipeCarouselProps) {
   return (

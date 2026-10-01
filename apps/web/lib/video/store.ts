@@ -13,6 +13,7 @@ import type {
   VideoFilter,
 } from '@socialista/types'
 
+import { overlayBelongsToClipReplace } from './caption-placement'
 import { showVideoDeleteUndoToast } from './delete-toast'
 import {
   getClipHeightPercent,
@@ -189,8 +190,19 @@ interface EditorState {
     endTime: number,
     style?: Partial<TextOverlay['style']>,
   ) => string
-  /** Add multiple overlays in a single undo step. Optionally replace existing text. */
-  addTextOverlays: (overlays: AddTextOverlayInput[], options?: { replaceExisting?: boolean }) => string[]
+  /**
+   * Add multiple overlays in a single undo step.
+   * `replaceExisting` drops every text overlay.
+   * With `replaceClipId` + `replaceRange`, only that clip's captions (and untagged text inside the range) are dropped.
+   */
+  addTextOverlays: (
+    overlays: AddTextOverlayInput[],
+    options?: {
+      replaceExisting?: boolean
+      replaceClipId?: string
+      replaceRange?: { startTime: number; endTime: number }
+    },
+  ) => string[]
   updateOverlay: (id: string, partial: Partial<TextOverlay>) => void
   /** Live preview update without undo history (e.g. while typing). */
   updateOverlayLive: (id: string, partial: Partial<TextOverlay>) => void
@@ -1070,9 +1082,10 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
       if (overlays.length === 0) return []
 
       const replaceExisting = options?.replaceExisting === true
-      const baseZ = replaceExisting
-        ? -1
-        : get().project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
+      const replaceClipId = options?.replaceClipId
+      const replaceRange = options?.replaceRange
+      const scopedReplace = replaceExisting && Boolean(replaceClipId && replaceRange)
+      const baseZ = get().project.textOverlays.reduce((m, o) => Math.max(m, o.zIndex), -1)
 
       const created: TextOverlay[] = overlays.map((input, index) => {
         const startTime = Math.max(0, input.startTime)
@@ -1084,17 +1097,25 @@ export const useVideoEditorStore = create<EditorState>((set, get) => {
           ...(input.x !== undefined ? { x: input.x } : null),
           ...(input.y !== undefined ? { y: input.y } : null),
           ...(input.width !== undefined ? { width: input.width } : null),
+          ...(input.clipId ? { clipId: input.clipId } : null),
         }
       })
 
-      record(state => ({
-        project: recomputeDuration({
-          ...state.project,
-          textOverlays: replaceExisting
-            ? created
-            : [...state.project.textOverlays, ...created],
-        }),
-      }))
+      record(state => {
+        const kept = !replaceExisting
+          ? state.project.textOverlays
+          : scopedReplace && replaceClipId && replaceRange
+            ? state.project.textOverlays.filter(
+                overlay => !overlayBelongsToClipReplace(overlay, replaceClipId, replaceRange),
+              )
+            : []
+        return {
+          project: recomputeDuration({
+            ...state.project,
+            textOverlays: [...kept, ...created],
+          }),
+        }
+      })
       set({ selectedOverlayId: null, selectedClipId: null })
       return created.map(o => o.id)
     },

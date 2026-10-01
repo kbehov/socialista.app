@@ -139,7 +139,7 @@ export function PreviewControls({
                 disabled={!hasContent}
                 aria-label={`Skip back ${SKIP_SECONDS} second`}
               >
-                <SkipBackIcon className="size-3.5" />
+                <SkipBackIcon className="size-3.5" strokeWidth={1.75} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Back {SKIP_SECONDS}s</TooltipContent>
@@ -150,13 +150,17 @@ export function PreviewControls({
             onClick={playback.toggle}
             disabled={!hasContent}
             className={cn(
-              'video-studio-press flex size-8 shrink-0 items-center justify-center rounded-full transition-all',
+              'video-studio-press flex size-8 shrink-0 items-center justify-center rounded-full transition-[transform,opacity]',
               'bg-foreground text-background hover:opacity-90',
               'disabled:cursor-not-allowed disabled:opacity-40',
             )}
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? <PauseIcon className="size-3.5" /> : <PlayIcon className="ml-0.5 size-3.5" />}
+            {isPlaying ? (
+              <PauseIcon className="size-3.5" strokeWidth={1.75} />
+            ) : (
+              <PlayIcon className="ml-0.5 size-3.5" strokeWidth={1.75} />
+            )}
           </button>
 
           <Tooltip>
@@ -170,7 +174,7 @@ export function PreviewControls({
                 disabled={!hasContent}
                 aria-label={`Skip forward ${SKIP_SECONDS} second`}
               >
-                <SkipForwardIcon className="size-3.5" />
+                <SkipForwardIcon className="size-3.5" strokeWidth={1.75} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Forward {SKIP_SECONDS}s</TooltipContent>
@@ -207,13 +211,17 @@ export function PreviewControls({
           onClick={playback.toggle}
           disabled={!hasContent}
           className={cn(
-            'video-studio-press flex size-10 shrink-0 items-center justify-center rounded-full transition-all',
+            'video-studio-press flex size-10 shrink-0 items-center justify-center rounded-full transition-[transform,opacity]',
             'bg-foreground text-background shadow-md hover:opacity-90',
             'disabled:cursor-not-allowed disabled:opacity-40',
           )}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <PauseIcon className="size-4" /> : <PlayIcon className="ml-0.5 size-4" />}
+          {isPlaying ? (
+            <PauseIcon className="size-4" strokeWidth={1.75} />
+          ) : (
+            <PlayIcon className="ml-0.5 size-4" strokeWidth={1.75} />
+          )}
         </button>
 
         <Tooltip>

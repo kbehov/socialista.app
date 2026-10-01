@@ -14,7 +14,6 @@ export function VideoGenerationProgress({ runId, models }: VideoGenerationProgre
     <GenerationRunView
       backHref={DASHBOARD_ROUTES.STUDIO.VIDEOS}
       contentKind="video"
-      generatingTitle="Generating video"
       models={models}
       previewHeadingId="video-generation-preview-heading"
       progressHeadingId="video-generation-progress-heading"

@@ -1,5 +1,6 @@
 'use client'
 
+import { ugcStudioRootClassName } from '@/components/dashboard/studio-shell'
 import { CollapseAppSidebarOnMount } from '@/components/sidebars/collapse-app-sidebar-on-mount'
 import { UgcClipRail } from '@/components/studio/ugc/ugc-clip-rail'
 import { UgcPlanDialog } from '@/components/studio/ugc/ugc-plan-dialog'
@@ -33,7 +34,7 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
   const ws = useUgcProjectWorkspace(props)
 
   return (
-    <div className="ugc-studio flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+    <div className={ugcStudioRootClassName}>
       <CollapseAppSidebarOnMount />
 
       {ws.activeRuns.map(run => (
@@ -89,6 +90,7 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
           videoAttachments={ws.videoAttachments}
           creatingScenes={ws.creatingScenes}
           writingScript={ws.writingScript}
+          writingVideoPrompt={ws.writingVideoPrompt}
           generatingAudio={ws.generatingAudio}
           generatingStill={ws.generatingStill}
           generatingVideo={ws.generatingVideo}
@@ -123,6 +125,7 @@ function UgcProjectWorkspaceInner(props: UgcProjectWorkspaceProps) {
           extending={ws.extendingClipId === ws.selectedClip?.id}
           onScriptChange={ws.handleScriptChange}
           onWriteScript={ws.handleWriteScript}
+          onWriteVideoPrompt={ws.handleWriteVideoPrompt}
           onVoiceChange={ws.handleVoiceChange}
           onGenerateAudio={ws.handleGenerateClipAudio}
         />

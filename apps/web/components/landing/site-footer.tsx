@@ -10,7 +10,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="landing-section-divider py-16 sm:py-20">
+    <footer className="landing-section-divider bg-[var(--landing-surface-muted)] py-20 sm:py-24">
       <SectionInner>
         <div className="grid gap-10 sm:grid-cols-[1.5fr_repeat(3,minmax(0,1fr))] sm:gap-8">
           <div>
@@ -39,9 +39,15 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <p className="mt-12 border-t border-[color-mix(in_srgb,var(--landing-stone)_75%,transparent)] pt-6 text-sm text-[var(--landing-muted)]">
-          © {year} Socialista
-        </p>
+        <div className="mt-12 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] pt-6 text-sm text-[var(--landing-muted)] sm:flex-row sm:items-center sm:justify-between">
+          <p>© {year} Socialista. All rights reserved.</p>
+          <a
+            href={`mailto:${FOOTER.contactEmail}`}
+            className="transition-colors duration-150 ease-out hover:text-[var(--landing-ink)]"
+          >
+            {FOOTER.contactEmail}
+          </a>
+        </div>
       </SectionInner>
     </footer>
   );

@@ -3,10 +3,10 @@ import {
   buildInfluencerBasePromptFragment,
   buildInfluencerCharacterSheet,
   buildInfluencerImagePrompt,
-  evaluateAnchorPortrait,
+  // evaluateAnchorPortrait,
   generateImage,
   getInfluencerGenerationShots,
-  INFLUENCER_SKIN_LOCK_FOOTER,
+  appendInfluencerSkinLock,
   type InfluencerReferenceMode,
   type InfluencerShot,
 } from "@socialista/ai";
@@ -44,9 +44,10 @@ function isSexualSafetyError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /safety_violations=\[sexual\]/i.test(message);
 }
-/** Cover QA on by default; set INFLUENCER_COVER_QUALITY_GATE=false to skip. */
-const COVER_QUALITY_GATE_ENABLED =
-  process.env.INFLUENCER_COVER_QUALITY_GATE !== "false";
+// Cover QA paused — evaluateAnchorPortrait is not used for now.
+// /** Cover QA on by default; set INFLUENCER_COVER_QUALITY_GATE=false to skip. */
+// const COVER_QUALITY_GATE_ENABLED =
+//   process.env.INFLUENCER_COVER_QUALITY_GATE !== "false";
 
 async function generateShotWithRetry(
   generate: (attempt: number) => Promise<string>,
@@ -157,7 +158,6 @@ export const generateInfluencer = schemaTask({
           ageRange: influencer.ageRange,
           ethnicity: influencer.ethnicity,
           appearance: influencer.appearance,
-          characterSheet,
         });
         await updateInfluencer(payload.influencerId, {
           identity: {
@@ -215,8 +215,9 @@ export const generateInfluencer = schemaTask({
       }
 
       const referenceModeForShot = (shotIndex: number): InfluencerReferenceMode => {
-        if (!hasUserRefs) return "none";
-        return shotIndex === 0 ? "user" : "cover";
+        if (shotIndex > 0) return "cover";
+        if (hasUserRefs) return "user";
+        return "none";
       };
 
       const buildShotPromptCtx = (shotIndex: number) => ({
@@ -275,7 +276,7 @@ export const generateInfluencer = schemaTask({
                     : String(enhanceError),
               });
             }
-            prompt = `${enhanced}\n\n${INFLUENCER_SKIN_LOCK_FOOTER}`;
+            prompt = appendInfluencerSkinLock(enhanced);
             logger.info("Influencer image prompt", {
               shotId: shot.id,
               attempt,
@@ -329,27 +330,28 @@ export const generateInfluencer = schemaTask({
       );
       coverImageUrl = await runShot(coverShot, 0, coverRefs);
 
+      // Anchor cover QA is paused for now.
       // QA + regen only without user refs — refs already steer the cover; regen would bill a 4th image.
-      if (COVER_QUALITY_GATE_ENABLED && !hasUserRefs) {
-        try {
-          setGenerationStatus(22, "Reviewing cover portrait");
-          const quality = await evaluateAnchorPortrait(coverImageUrl);
-          metadata.set("shot_front-portrait_quality", quality);
-          if (!quality.pass) {
-            logger.warn("Cover failed quality gate, regenerating once", {
-              reason: quality.reason,
-            });
-            coverImageUrl = await runShot(coverShot, 0, coverRefs, 1);
-          }
-        } catch (gateError) {
-          logger.warn("Cover quality gate unavailable, continuing", {
-            error:
-              gateError instanceof Error
-                ? gateError.message
-                : String(gateError),
-          });
-        }
-      }
+      // if (COVER_QUALITY_GATE_ENABLED && !hasUserRefs) {
+      //   try {
+      //     setGenerationStatus(22, "Reviewing cover portrait");
+      //     const quality = await evaluateAnchorPortrait(coverImageUrl);
+      //     metadata.set("shot_front-portrait_quality", quality);
+      //     if (!quality.pass) {
+      //       logger.warn("Cover failed quality gate, regenerating once", {
+      //         reason: quality.reason,
+      //       });
+      //       coverImageUrl = await runShot(coverShot, 0, coverRefs, 1);
+      //     }
+      //   } catch (gateError) {
+      //     logger.warn("Cover quality gate unavailable, continuing", {
+      //       error:
+      //         gateError instanceof Error
+      //           ? gateError.message
+      //           : String(gateError),
+      //     });
+      //   }
+      // }
 
       galleryShots.push({
         shotId: coverShot.id,

@@ -39,6 +39,7 @@ import { storeGenerationAccessToken } from "@/lib/image-generation/session";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import { getProjectId, useProjectStore } from "@/store/project.store";
+import { VIDEO_STUDIO_PLACEHOLDER_EXAMPLES } from "@/lib/studio/studio-placeholder-examples";
 import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
@@ -53,6 +54,7 @@ import {
   videoResolutionCostMultiplier,
   type Model,
   type Preset,
+  type PromptKey,
   type VideoAspectRatio,
   type VideoResolution,
 } from "@socialista/types";
@@ -72,6 +74,7 @@ import {
   useRef,
   useState,
   useTransition,
+  type ReactNode,
 } from "react";
 import { toast } from "sonner";
 import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
@@ -122,6 +125,7 @@ export type VideoPromptSubmitResult = {
   resolution: VideoResolution;
   imageUrls: string[];
   enhance: boolean;
+  skillId?: string;
   count: number;
 };
 
@@ -168,6 +172,11 @@ export type VideoPromptInputProps = {
   hideAudio?: boolean;
   hideEnhance?: boolean;
   countOptions?: { min: number; max: number; initial?: number };
+  skillTarget?: PromptKey;
+  /** Extra composer tools, rendered before enhance. Used by UGC to write a prompt. */
+  extraTools?: ReactNode;
+  /** Bump after an AI write so the next Generate sends the prompt as written. */
+  rawPromptToken?: number;
 };
 
 function VideoPromptComposer({
@@ -209,6 +218,9 @@ function VideoPromptComposer({
   hideAudio = false,
   hideEnhance = false,
   countOptions,
+  skillTarget = PROMPT_KEYS.videoPrompt,
+  extraTools,
+  rawPromptToken,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -254,7 +266,7 @@ function VideoPromptComposer({
     initialGenerateAudio ?? true,
   );
   const audioEnabled = audioLocked ? false : generateAudio;
-  const [enhance, setEnhance] = useState(true);
+  const [enhance, setEnhance] = useState(() => !rawPromptToken);
   const [skillId, setSkillId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { textInput } = usePromptInputController();
@@ -369,7 +381,8 @@ function VideoPromptComposer({
   const animatedPlaceholderWords = useMemo(() => {
     if (!homeHero || placeholderProp || attachedImages.length > 0) return undefined;
     const examples = buildPresetPlaceholderExamples(presets);
-    return examples.length > 0 ? examples : undefined;
+    if (examples.length > 0) return examples;
+    return [...VIDEO_STUDIO_PLACEHOLDER_EXAMPLES];
   }, [attachedImages.length, homeHero, placeholderProp, presets]);
 
   const insertAtCursor = useCallback(
@@ -492,6 +505,7 @@ function VideoPromptComposer({
           resolution,
           imageUrls,
           enhance,
+          ...(enhance && skillId ? { skillId } : {}),
           count,
         });
         return;
@@ -554,7 +568,7 @@ function VideoPromptComposer({
       </PromptInputButton>
       <StudioSkillPicker
         appearance="icon"
-        target={PROMPT_KEYS.videoPrompt}
+        target={skillTarget}
         value={skillId}
         onChange={setSkillId}
         disabled={pending || disabled || !enhance}
@@ -742,6 +756,7 @@ function VideoPromptComposer({
           </span>
         </PromptInputButton>
       )}
+      {extraTools}
       {enhanceTools}
     </>
   );
@@ -887,6 +902,7 @@ const VideoGenerationPromptInput = ({
       initialAttachmentUrl={initialAttachmentUrl}
       models={models}
       homeHero
+      surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
     />
   );
 };

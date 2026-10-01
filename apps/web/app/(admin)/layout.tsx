@@ -1,5 +1,10 @@
 import { auth } from '@/auth'
-import { dashboardMainClassName } from '@/components/dashboard/studio-shell'
+import {
+  dashboardMainClassName,
+  dashboardPageClassName,
+  dashboardShellInsetClassName,
+  dashboardShellProviderClassName,
+} from '@/components/dashboard/studio-shell'
 import { ManagerHeader } from '@/components/headers/manager-header'
 import { PageScrollCompactProvider } from '@/components/headers/page-scroll-compact'
 import { AdminSidebar } from '@/components/sidebars/admin-sidebar'
@@ -22,13 +27,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <WorkspaceProvider workspaces={workspaces.data ?? []}>
-      <SidebarProvider className="dashboard-shell h-svh max-h-svh overflow-hidden">
+      <SidebarProvider className={dashboardShellProviderClassName}>
         <AdminSidebar />
-        <SidebarInset className="dashboard-inset flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden">
+        <SidebarInset className={dashboardShellInsetClassName}>
           <ManagerHeader />
           <main id="manager-scroll" data-dashboard-scroll className={dashboardMainClassName}>
             <PageScrollCompactProvider>
-              <div className="dashboard-page">{children}</div>
+              <div className={dashboardPageClassName}>{children}</div>
             </PageScrollCompactProvider>
           </main>
         </SidebarInset>

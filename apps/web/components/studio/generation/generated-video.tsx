@@ -6,6 +6,8 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { ASPECT_RATIO_LABELS } from '@/constants/generation.const'
 import { downloadGeneratedVideo } from '@/lib/video-generation/video-actions'
 import { resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
+import { cn } from '@/lib/utils'
+import { getAspectRatioClass } from '@/utils/aspect-ratio'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { VideoGenerationOutput } from '@socialista/types'
 import { AlertCircleIcon, CheckIcon, DownloadIcon, FolderIcon, PlusIcon, SendIcon } from 'lucide-react'
@@ -27,6 +29,7 @@ type GeneratedVideoProps = {
   durationSec?: number
   newGenerationHref?: string
   referenceUrls?: string[]
+  previewVariant?: 'framed' | 'bare'
 }
 
 export function GeneratedVideo({
@@ -41,6 +44,7 @@ export function GeneratedVideo({
   durationSec,
   newGenerationHref = DASHBOARD_ROUTES.STUDIO.VIDEOS,
   referenceUrls,
+  previewVariant = 'framed',
 }: GeneratedVideoProps) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [previewError, setPreviewError] = useState(false)
@@ -59,15 +63,43 @@ export function GeneratedVideo({
 
   const aspectLabel = aspectRatio ? (ASPECT_RATIO_LABELS[aspectRatio] ?? aspectRatio) : undefined
   const clipSeconds = durationSec ?? output.durationSec
+  const isBarePreview = previewVariant === 'bare'
+  const previewMaxHeight = 'max-h-[min(72dvh,720px)]'
+
+  const videoPlayer = previewError ? (
+    <div
+      className={cn(
+        'flex w-full max-w-lg flex-col items-center justify-center gap-2 rounded-xl px-4 py-16 text-center',
+        getAspectRatioClass(aspectRatio),
+        previewMaxHeight,
+      )}
+    >
+      <AlertCircleIcon className="size-5 text-destructive" />
+      <p className="text-sm text-destructive">Could not load the generated video.</p>
+    </div>
+  ) : (
+    <video
+      className={cn('w-full max-w-lg rounded-xl bg-black object-contain', previewMaxHeight)}
+      controls
+      playsInline
+      preload="metadata"
+      src={output.videoUrl}
+      onError={() => setPreviewError(true)}
+    />
+  )
 
   return (
     <div ref={videoRef} className="space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Your video</h2>
-        <p className="text-sm text-muted-foreground">Video is saved to library.</p>
-      </div>
+      {!isBarePreview ? (
+        <div className="space-y-1">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Your video</h2>
+          <p className="text-sm text-muted-foreground">Video is saved to library.</p>
+        </div>
+      ) : null}
 
-      {(prompt || aspectLabel || modelName || clipSeconds || generateAudio != null) ? (
+      {isBarePreview ? <div className="flex w-full justify-center">{videoPlayer}</div> : null}
+
+      {!isBarePreview && (prompt || aspectLabel || modelName || clipSeconds || generateAudio != null) ? (
         <div className="space-y-2 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
           {prompt ? (
             <p className="line-clamp-3 text-[13px] leading-relaxed text-foreground/90">{prompt}</p>
@@ -110,6 +142,26 @@ export function GeneratedVideo({
         </div>
       ) : null}
 
+      {!isBarePreview ? (
+      <GenerationPreviewFrame aspectRatio={aspectRatio} maxHeightClass="max-h-[calc(100dvh-14rem)]">
+        {previewError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+            <AlertCircleIcon className="size-5 text-destructive" />
+            <p className="text-sm text-destructive">Could not load the generated video.</p>
+          </div>
+        ) : (
+          <video
+            className="absolute inset-0 size-full bg-black object-contain"
+            controls
+            playsInline
+            preload="metadata"
+            src={output.videoUrl}
+            onError={() => setPreviewError(true)}
+          />
+        )}
+      </GenerationPreviewFrame>
+      ) : null}
+
       <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <CheckIcon className="size-3.5 text-emerald-600 dark:text-emerald-400" />
         <span>Saved to library</span>
@@ -130,25 +182,7 @@ export function GeneratedVideo({
         </div>
       ) : null}
 
-      <GenerationPreviewFrame aspectRatio={aspectRatio} maxHeightClass="max-h-[calc(100dvh-14rem)]">
-        {previewError ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
-            <AlertCircleIcon className="size-5 text-destructive" />
-            <p className="text-sm text-destructive">Could not load the generated video.</p>
-          </div>
-        ) : (
-          <video
-            className="absolute inset-0 size-full bg-black object-contain"
-            controls
-            playsInline
-            preload="metadata"
-            src={output.videoUrl}
-            onError={() => setPreviewError(true)}
-          />
-        )}
-      </GenerationPreviewFrame>
-
-      <p className="text-center text-[12px] tabular-nums text-muted-foreground">
+      <p className={cn('text-[12px] tabular-nums text-muted-foreground', isBarePreview ? 'text-left' : 'text-center')}>
         {formatDuration(durationMs)} · {formatCost(cost)}
       </p>
 

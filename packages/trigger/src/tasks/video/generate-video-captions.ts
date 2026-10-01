@@ -114,11 +114,13 @@ export const generateVideoCaptions = schemaTask({
 
       setGenerationStatus(40, 'Extracting audio')
       const audioPath = path.join(workDir, 'audio.mp3')
+      const speed = clip.type === 'video' && clip.speed > 0 ? clip.speed : 1
+      const sourceSeconds = Math.max(0.1, clip.duration * speed)
       await extractClipAudioMp3({
         inputPath: sourcePath,
         outputPath: audioPath,
         trimIn: clip.trimIn,
-        durationSeconds: clip.duration,
+        durationSeconds: sourceSeconds,
       })
       const audio = new Uint8Array(await readFile(audioPath))
       if (audio.byteLength === 0) {
@@ -129,7 +131,7 @@ export const generateVideoCaptions = schemaTask({
       }
 
       setGenerationStatus(60, 'Transcribing')
-      const result = await generateCaptions({ audio, durationSeconds: clip.duration })
+      const result = await generateCaptions({ audio, durationSeconds: sourceSeconds })
 
       await deductAiCredits(payload.workspaceId, VIDEO_CAPTIONS_CREDIT_COST)
 

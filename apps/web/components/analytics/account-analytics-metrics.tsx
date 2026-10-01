@@ -1,8 +1,8 @@
 import type { AccountAnalyticsResponse } from '@socialista/types'
 
+import { cn } from '@/lib/utils'
 import { formatCount, formatRate, formatSignedCount, trendFromPercent } from '@/utils/format'
 import { StatMetric, StatMetrics } from './stat-metric'
-
 export type AccountAnalyticsMetricsProps = {
   data: AccountAnalyticsResponse
   className?: string
@@ -11,14 +11,11 @@ export type AccountAnalyticsMetricsProps = {
 function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsProps) {
   const { current, delta, changePercent } = data
   const showEngagementBreakdown =
-    current.likes !== null ||
-    current.comments !== null ||
-    current.shares !== null ||
-    current.saves !== null
+    current.likes !== null || current.comments !== null || current.shares !== null || current.saves !== null
   const showClickMetrics = current.profileViews !== null || current.linkClicks !== null
 
   return (
-    <div className={className}>
+    <div className={cn('flex flex-col gap-2', className)}>
       <StatMetrics columns={6} size="sm">
         <StatMetric
           label="Engagement"
@@ -46,7 +43,7 @@ function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsPro
       </StatMetrics>
 
       {showEngagementBreakdown ? (
-        <StatMetrics columns={4} size="sm" className="mt-2">
+        <StatMetrics columns={4} size="sm">
           <StatMetric label="Likes" value={formatCount(current.likes)} trend={trendFromPercent(changePercent.likes)} />
           <StatMetric
             label="Comments"
@@ -63,7 +60,7 @@ function AccountAnalyticsMetrics({ data, className }: AccountAnalyticsMetricsPro
       ) : null}
 
       {showClickMetrics ? (
-        <StatMetrics columns={2} size="sm" className="mt-2">
+        <StatMetrics columns={2} size="sm">
           <StatMetric
             label="Profile visits"
             value={formatCount(current.profileViews)}

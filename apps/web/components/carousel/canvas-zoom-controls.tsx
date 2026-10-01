@@ -1,5 +1,6 @@
 'use client'
 
+import { CanvasViewMenu } from '@/components/carousel/canvas-view-menu'
 import { CanvasZoomControls as EditorCanvasZoomControls } from '@/components/editor/canvas-zoom-controls'
 import { useEditorStore } from '@/lib/carousel/store'
 
@@ -17,6 +18,7 @@ export function CanvasZoomControls({ className }: CarouselCanvasZoomControlsProp
       zoom={viewportZoom}
       onZoomChange={setViewportZoom}
       className={className}
+      trailing={<CanvasViewMenu />}
     />
   )
 }

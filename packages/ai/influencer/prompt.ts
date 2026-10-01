@@ -36,8 +36,6 @@ export type BuildInfluencerBasePromptInput = {
   ageRange: InfluencerAgeRange
   ethnicity?: string
   appearance: InfluencerPromptAppearance
-  /** When present, identityLock + signatureDetails drive the fragment. */
-  characterSheet?: InfluencerCharacterSheet
 }
 
 export type InfluencerReferenceMode = 'none' | 'user' | 'cover'
@@ -101,12 +99,12 @@ const PHOTO_STYLE_CUE: Record<InfluencerPhotoStyle, string> = {
 /** Positive photoreal footer. Camera and place come from Shot, Scene, or the reference — not from this line. */
 export const INFLUENCER_EXCLUSIONS_BASE =
   'Photoreal photo from a creator who already posts on Instagram, TikTok, and Pinterest. ' +
-  'Visible natural pores on the nose and inner cheeks, real facial texture, natural asymmetry, light social retouch. ' +
-  'Practical light, real depth, feed-ready color. Close portraits keep a sharp face.'
+  'Real skin with visible pores, slight natural asymmetry, light social retouch. ' +
+  'Practical light, real depth, feed-ready color. A clear, believable face.'
 
-/** Appended after enhance so pore texture cannot be dropped. */
+/** Appended after enhance so skin texture cannot be dropped. */
 export const INFLUENCER_SKIN_LOCK_FOOTER =
-  'Visible natural pores on the nose and inner cheeks, real facial texture, natural asymmetry, light social retouch only.'
+  'Real skin with visible pores, slight natural asymmetry, light social retouch only.'
 
 export const INFLUENCER_EXCLUSIONS_REF_ADDENDUM =
   ' Attached photos own the scene, palette, framing, and light. Identity owns the person.'
@@ -137,61 +135,31 @@ function featuresWithoutAccessoryOverlap(
 }
 
 /**
- * Locked identity prose — reused byte-identical on every shot.
- * Scene / camera / wardrobe / accessories belong in the shot prompt, not here.
+ * Identity prose reused on every shot.
+ * Face shape, jaw, brows, nose, and lips stay out of this text so the image model can invent them.
+ * Scene, camera, wardrobe, and accessories belong in the shot prompt.
  */
 export function buildInfluencerBasePromptFragment(input: BuildInfluencerBasePromptInput): string {
-  const { gender, ageRange, ethnicity, appearance, characterSheet } = input
+  const { gender, ageRange, ethnicity, appearance } = input
   const person = GENDER_LABEL[gender]
   const age = AGE_REPRESENTATIVE[ageRange]
+  const heritage = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
   const height = appearance.height ? `, ${HEIGHT_LABEL[appearance.height]}` : ''
-  const ethnicityClause = ethnicity?.trim() ? ` of ${ethnicity.trim()} heritage` : ''
-  const featureList = featuresWithoutAccessoryOverlap(appearance.distinguishingFeatures, appearance.accessories)
-  const features = featureList.length > 0 ? `, ${featureList.join(', ')}` : ''
-
+  const features = featuresWithoutAccessoryOverlap(appearance.distinguishingFeatures, appearance.accessories)
+  const featureClause = features.length > 0 ? ` Features: ${features.join(', ')}.` : ''
   const facialHair =
     appearance.facialHair && appearance.facialHair !== 'none' ? ` Facial hair: ${appearance.facialHair}.` : ''
-  const makeup =
+  const makeupLabel =
     appearance.makeup && appearance.makeup !== 'none'
-      ? ` ${MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`}.`
+      ? (MAKEUP_PROMPT_LABEL[appearance.makeup] ?? `Makeup: ${appearance.makeup}`)
       : ''
-
-  const subject = `A ${age}-year-old ${person}${ethnicityClause}, a real social-media creator.`
-  const faceStructure = [
-    characterSheet?.face?.shape,
-    characterSheet?.face?.brows,
-    characterSheet?.face?.nose,
-  ]
-    .map(part => part?.trim())
-    .filter((part): part is string => Boolean(part))
-  const faceDetail = faceStructure.length > 0 ? `, ${faceStructure.join(', ')}` : ''
-  const hairLength = characterSheet?.hair?.length?.trim()
-  const hairPart = characterSheet?.hair?.part?.trim()
-  const hairDetail = [hairLength, hairPart].filter(Boolean).join(', ')
-  const hairLine = hairDetail
-    ? ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}, ${hairDetail}.`
-    : ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.`
-
-  if (characterSheet) {
-    const signatures =
-      characterSheet.signatureDetails.length > 0
-        ? ` Signature: ${characterSheet.signatureDetails.join('; ')}.`
-        : ''
-    return (
-      `${subject} ${characterSheet.identityLock}${signatures}` +
-      hairLine +
-      ` Face: ${appearance.skinTone} complexion, ${appearance.eyeColor} eyes${faceDetail}${features}.${facialHair}${makeup}` +
-      ` Build: ${appearance.bodyShape}${height}.` +
-      ` Believable real-world light.`
-    )
-  }
+  const makeup = makeupLabel ? ` ${makeupLabel}.` : ''
 
   return (
-    `${subject}` +
-    ` Face: ${appearance.skinTone} complexion, ${appearance.eyeColor} eyes${features}.${facialHair}${makeup}` +
+    `A ${age}-year-old ${person}${heritage}, a real social-media creator.` +
     ` Hair: ${appearance.hairColor}, ${appearance.hairStyle}.` +
-    ` Build: ${appearance.bodyShape}${height}.` +
-    ` Believable real-world light.`
+    ` Complexion: ${appearance.skinTone}. Eyes: ${appearance.eyeColor}.${featureClause}${facialHair}${makeup}` +
+    ` Build: ${appearance.bodyShape}${height}.`
   )
 }
 
@@ -212,13 +180,105 @@ function expandUserScene(sceneId: string | undefined): InfluencerScenePrompt | u
   return INFLUENCER_SCENE_PROMPTS[sceneId]
 }
 
+/** Seats, desks, and tight vanities cannot show head-to-shoes. Standing version of the same place. */
+const FULL_BODY_ENVIRONMENT: Record<string, string> = {
+  plane:
+    'airport hallway by tall windows, daylight, open floor so head and shoes both fit, a carry-on beside them',
+  car: 'standing beside the open driver door, daylight, the street behind, head to shoes visible',
+  'bathroom-vanity':
+    'standing in the bathroom they film in, window light, the mirror and a small tray of bottles beside them, head to shoes visible',
+  restaurant:
+    'standing just inside a restaurant at dusk, warm lamps, a set table behind them, head to shoes visible',
+  'coffee-shop':
+    'standing at a café counter, daylight from the window, head to shoes visible',
+  'podcast-setup':
+    'standing in the podcast corner, warm lamp, a mic beside them, shelves behind, head to shoes visible',
+  'streaming-desk':
+    'standing beside the desk they stream from, monitor glow behind them, head to shoes visible',
+  'asmr-desk':
+    'standing at the desk they film from, warm lamp, a mic beside them, head to shoes visible',
+  library: 'standing in a library aisle, warm light, books behind, head to shoes visible',
+  'study-desk':
+    'standing beside the study desk, a notebook and mug on it, warm lamp, head to shoes visible',
+  'home-office':
+    'standing in the home office, laptop open on the desk behind, daylight, head to shoes visible',
+  'unboxing-desk':
+    'standing at the desk they film at, an open mailer on the desk, window light, head to shoes visible',
+  grwm: 'standing at the vanity they get ready at, window light, plain bottles beside them, head to shoes visible',
+  'sitting-testimonial':
+    'standing in the room they talk from, a couch behind, warm practical light, head to shoes visible',
+  classroom: 'standing at the front of a classroom, whiteboard behind, daylight, head to shoes visible',
+  'bedroom-morning':
+    'standing in the bedroom, lived-in linen bed behind, warm morning window light, head to shoes visible',
+}
+
+const HANDHELD_ACCESSORIES = new Set([
+  'phone',
+  'coffee-cup',
+  'dumbbell',
+  'water-bottle',
+  'skincare-bottle',
+  'shopping-bag',
+  'books',
+  'notebook',
+  'mic',
+  'candle',
+  'laptop',
+  'backpack',
+  'pet',
+])
+
+/** One garment. "a jacket or knit" becomes "a jacket". */
+function concreteWardrobe(hint: string | undefined): string | undefined {
+  const first = hint?.split(/\s+or\s+/i)[0]?.trim()
+  return first || undefined
+}
+
+function adaptSceneForShot(scene: InfluencerPromptScene, shot: InfluencerShot): InfluencerPromptScene {
+  if (shot.id === 'full-body') {
+    const standing = scene.id ? FULL_BODY_ENVIRONMENT[scene.id] : undefined
+    const environment =
+      standing ??
+      (scene.environment && /\b(seat|seated|sitting|desk|vanity)\b/i.test(scene.environment)
+        ? `standing with head and shoes visible, that place behind them: ${scene.environment}`
+        : scene.environment)
+    return {
+      ...scene,
+      environment,
+      action: standing || environment !== scene.environment
+        ? 'relaxed weight on one leg, outfit readable from head to shoes'
+        : scene.action,
+    }
+  }
+
+  if (shot.id === 'selfie-talking') {
+    return {
+      ...scene,
+      environment: scene.environment
+        ?.replace(/,?\s*a walk rather than a swim set/gi, ', stopped on the sand')
+        .replace(/\bwalking\b/gi, 'paused'),
+      action: 'stopped, phone in the raised hand mostly out of frame, talking to the lens',
+    }
+  }
+
+  if (shot.id === 'front-portrait') {
+    const environment = scene.environment
+      ? `${scene.environment}. Tight head-and-shoulders: that place is only the background, and nothing covers the face`
+      : undefined
+    return { ...scene, environment, action: undefined }
+  }
+
+  return scene
+}
+
 /** Resolve wardrobe + setting + action from sheet → user scenes → niche fallback. */
 function resolveInfluencerPromptScene(
   shot: InfluencerShot,
   ctx?: BuildInfluencerShotPromptContext,
 ): InfluencerPromptScene | undefined {
   const mode = ctx?.referenceMode ?? 'none'
-  if (mode !== 'none') return undefined
+  // User style photos own the cover frame. A generated cover locks the face only, so the new scene stays.
+  if (mode === 'user') return undefined
   if (!shot.useNicheScene) return undefined
 
   const index = ctx?.shotIndex ?? 0
@@ -230,20 +290,26 @@ function resolveInfluencerPromptScene(
     const sceneId = pickFromArray(userScenes, index)
     const scene = expandUserScene(sceneId)
     if (scene) {
-      return {
-        id: sceneId,
-        wardrobe: scene.wardrobeHint ?? sheetWardrobe,
-        environment: scene.environment ?? sheetEnv,
-        action: scene.actionCue,
-      }
+      return adaptSceneForShot(
+        {
+          id: sceneId,
+          wardrobe: concreteWardrobe(sheetWardrobe) ?? concreteWardrobe(scene.wardrobeHint),
+          environment: scene.environment ?? sheetEnv,
+          action: scene.actionCue,
+        },
+        shot,
+      )
     }
   }
 
   if (sheetWardrobe || sheetEnv) {
-    return {
-      wardrobe: sheetWardrobe || undefined,
-      environment: sheetEnv || undefined,
-    }
+    return adaptSceneForShot(
+      {
+        wardrobe: concreteWardrobe(sheetWardrobe),
+        environment: sheetEnv || undefined,
+      },
+      shot,
+    )
   }
 
   const niches = ctx?.niche?.filter(Boolean) ?? []
@@ -257,14 +323,14 @@ function resolveInfluencerPromptScene(
     pickFromArray(primaryScene?.environments, index) ?? pickFromArray(secondaryScene?.environments, index)
 
   if (!wardrobe && !environment) return undefined
-  return { wardrobe, environment }
+  return adaptSceneForShot({ wardrobe: concreteWardrobe(wardrobe), environment }, shot)
 }
 
 function buildLookalikeRefInstructions(referenceCount: number, mode: InfluencerReferenceMode, shotIndex: number): string {
   if (mode === 'cover' || shotIndex > 0) {
     return (
-      'The attached cover is this same person: same face structure, hair, and complexion. ' +
-      'Keep the cover color grade and light. Use the angle and crop in Shot.'
+      'Image 1 is this same person. Keep their face, hair, and complexion from that photo. ' +
+      'Shot and Scene replace the room, crop, pose, and light. Do not copy the cover background or color grade.'
     )
   }
 
@@ -272,7 +338,7 @@ function buildLookalikeRefInstructions(referenceCount: number, mode: InfluencerR
   const imageLabel = n === 1 ? 'Image 1' : n === 2 ? 'Images 1–2' : 'Images 1–3'
   return (
     `${imageLabel} sets the scene, palette, wardrobe colors, framing, pose, props, and light. ` +
-    'Render the Identity person in that frame, in equivalent unbranded clothing and props.'
+    'The person is the Identity subject, with a new face. Equivalent unbranded clothing and props.'
   )
 }
 
@@ -305,7 +371,11 @@ function buildInfluencerPromptDoc(
   const refMode = mode !== 'none'
   const shotIndex = ctx?.shotIndex ?? 0
   const coverRefMode = mode === 'user' && shotIndex === 0
-  const accessories = expandAccessories(ctx?.accessories)
+  const accessoryIds =
+    shot.id === 'front-portrait' || shot.id === 'selfie-talking'
+      ? ctx?.accessories?.filter(id => !HANDHELD_ACCESSORIES.has(id))
+      : ctx?.accessories
+  const accessories = expandAccessories(accessoryIds)
   const directions = ctx?.directions?.trim() || undefined
   const aesthetics = coverRefMode ? undefined : ctx?.aestheticTags?.filter(Boolean).slice(0, 2)
   const vibes = coverRefMode
@@ -395,10 +465,8 @@ export function softenInfluencerImagePrompt(prompt: string): string {
     [/\bintimate\b/gi, 'close'],
     [/\b(below|past|to) (?:her |his |their )?chest\b/gi, '$1 the shoulders'],
     [/\bchest\b/gi, 'shoulders'],
-    [/\bfuller lower lip\b/gi, 'lower lip'],
-    [/\bfull lips\b/gi, 'lips'],
-    [/\bcupid['’]s bow\b/gi, 'lip line'],
     [/\b(glistening|dewy|wet) skin\b/gi, 'natural complexion'],
+    [/\beditorial(?:[-\s]glam)?\b/gi, ''],
   ]
 
   let text = prompt
@@ -410,6 +478,22 @@ export function softenInfluencerImagePrompt(prompt: string): string {
     .replace(/ +([.,;])/g, '$1')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+}
+
+/** One skin sentence. Rewrites often repeat it, and the image call appends the footer. */
+export function appendInfluencerSkinLock(prompt: string): string {
+  const footerPattern = INFLUENCER_SKIN_LOCK_FOOTER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const stripped = prompt
+    .replace(new RegExp(footerPattern, 'gi'), '')
+    .replace(
+      /,?\s*visible pores,?\s*real skin texture,?\s*(?:natural complexion,?\s*)?slight natural asymmetry,?\s*(?:and\s+)?light social retouch only\.?/gi,
+      '',
+    )
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/ +([.,;])/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return `${stripped}\n\n${INFLUENCER_SKIN_LOCK_FOOTER}`
 }
 
 /**
@@ -436,7 +520,7 @@ export function buildCloneCoverPrompt(input: BuildCloneCoverPromptInput): string
 
   return softenInfluencerImagePrompt(
     [
-      'Identity: The person in the reference photos — same face structure, jaw, complexion, and hair. Light matches those photos.',
+      'Identity: The person in the reference photos — same face, complexion, and hair. Light matches those photos.',
       `Shot: ${suffix}`,
       `Quality: ${INFLUENCER_EXCLUSIONS_BASE}`,
     ].join('\n'),

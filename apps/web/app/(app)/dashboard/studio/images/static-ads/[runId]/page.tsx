@@ -1,3 +1,4 @@
+import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
 import { StaticAdGenerationProgress } from '@/components/studio/static-ads/static-ad-generation-progress'
 
 type StaticAdRunPageProps = {
@@ -8,7 +9,7 @@ export default async function StaticAdRunPage({ params }: StaticAdRunPageProps) 
   const { runId } = await params
 
   return (
-    <div className="image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className={lockedStudioShellRootClassName}>
       <StaticAdGenerationProgress runId={runId} />
     </div>
   )

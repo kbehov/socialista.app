@@ -150,20 +150,20 @@ export function AppSidebar({ workspaces, projects, className, ...props }: AppSid
 
   return (
     <Sidebar collapsible="icon" className={cn(className)} {...props}>
-      <SidebarHeader className="flex h-(--dashboard-chrome-height) shrink-0 flex-row items-center gap-0.5 border-b border-sidebar-border px-2 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-1">
+      <SidebarHeader className="flex h-(--dashboard-chrome-height) shrink-0 flex-row items-center gap-1 border-b border-sidebar-border px-2 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-1">
         <div className="min-w-0 flex-1 group-data-[collapsible=icon]:flex-none">
           <ProjectSwitcher projects={projects} />
         </div>
         <SidebarCreateAction compact />
       </SidebarHeader>
 
-      <SidebarContent className=" gap-3 overflow-x-hidden px-2 pt-2.5 pb-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:py-2">
+      <SidebarContent className="gap-4 overflow-x-hidden px-2 pt-2 pb-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:py-2">
         <NavMain items={platformItems} sectionTitle="Platform" collapsible={false} />
         <NavMain items={studioItems} sectionTitle="Studio" />
         <NavMain items={workspaceItems} sectionTitle="Workspace" />
       </SidebarContent>
 
-      <SidebarFooter className="shrink-0 gap-1 px-2 pb-2 pt-1 group-data-[collapsible=icon]:px-1">
+      <SidebarFooter className="shrink-0 gap-2 px-2 pb-2 pt-1 group-data-[collapsible=icon]:px-1">
         <SidebarUpgradeCard />
         <SidebarStorageFooter />
         <TeamSwitcher workspaces={workspaces} />

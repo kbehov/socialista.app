@@ -57,7 +57,6 @@ export const HERO_MARQUEE_POSTERS = [
   'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/generated/c33b0c90-7462-4207-9527-06259a5dddb2.webp',
 ] as const
 
-/** Placeholder stills for the static-ads marquee. Swap for generated ads in `public/landing/`. */
 /** Portrait slideshow frames for the landing marquee (9:16). */
 export const SLIDESHOW_MARQUEE_ITEMS = [
   {
@@ -90,6 +89,7 @@ export const SLIDESHOW_MARQUEE_ITEMS = [
   },
 ] as const
 
+/** Fallback stills for the static-ads marquee when templates fail to load. */
 export const STATIC_AD_MARQUEE_IMAGES = [
   'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/6418a8e9-fd00-4a89-b08b-5a78e1d20432.webp',
   'https://cdn.socialista.app/static-ad-templates/67d443cb-0771-4dbd-910a-c683707ca8b5.webp',
@@ -120,17 +120,8 @@ export const VIDEO = {
 
 const featureBentoSkincareSlideSrc = SLIDESHOW_MARQUEE_ITEMS.find(item => item.id === 'skincare')?.src ?? IMG.gallery1
 
-/** Media for landing features bento mockups (`feature-bento-mockups.tsx`). */
-export const FEATURE_BENTO_MOCKUP = {
-  imageGeneration: {
-    autoplayMs: 4000,
-    slides: [
-      'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/00e30d06-0f33-4e35-b39c-fb163cedc997.webp',
-      'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/generated/83dddc19-3bcc-43f4-843c-b37524018824.webp',
-      'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/generated/305847a3-1853-4b1f-a7c9-1ddaa4ed46a2.webp',
-    ],
-    prompt: 'Serum on marble, soft morning light',
-  },
+/** Media for landing workflow mockups (publish / scheduling). */
+export const LANDING_WORKFLOW_MOCKUP = {
   scheduling: {
     calendarThumbs: [IMG.adStill, featureBentoSkincareSlideSrc, IMG.canvasSkincare],
     queue: {
@@ -138,34 +129,7 @@ export const FEATURE_BENTO_MOCKUP = {
       objectPosition: '50% 35%',
     },
   },
-  videoEditor: {
-    video:
-      'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/0b432fbc-91d9-4ea1-9f60-9687dbebddb0.mp4',
-    poster: IMG.shapeAdPreview,
-    objectPosition: 'center',
-  },
-  shortVideos: {
-    video:
-      'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/14986baa-1535-445e-99fe-f4807d8fe9a7.mp4',
-    poster: IMG.creatorPickerBg,
-    objectPosition: 'center',
-    caption: 'Morning glow routine',
-  },
-  contextSkills: {
-    brandThumb: IMG.canvasSkincare,
-    brandSwatches: ['#F2B8C6', '#FFF4EE', '#C47E8A'],
-  },
-  slideshow: {
-    stack: {
-      left: 'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/92e99cb9-ef30-41f3-b2b5-6d2903b8ad70.webp',
-      center:
-        'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/8f0a8ed7-c20c-4ae0-aeaf-cca760a82970.webp',
-      right: 'https://cdn.socialista.app/workspaces/6a3106e25705ba0dff8871f0/fc30d1c4-361e-4173-800e-799450547921.webp',
-    },
-  },
 } as const
-
-export const FEATURE_BENTO_SLIDESHOW_STACK = FEATURE_BENTO_MOCKUP.slideshow.stack
 
 export const LANDING_CLIPS = {
   ugc: {

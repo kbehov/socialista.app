@@ -120,6 +120,43 @@ export async function refreshLinkedInAccessToken(refreshToken: string): Promise<
   }
 }
 
+/** X user access tokens last 2 hours (7,200 seconds). */
+const X_ACCESS_TOKEN_LIFETIME_SECONDS = 7200
+
+const xTokenSchema = z.object({
+  access_token: z.string().min(1),
+  expires_in: z.number(),
+  refresh_token: z.string().optional(),
+})
+
+export async function refreshXAccessToken(refreshToken: string): Promise<RefreshedTokens> {
+  const clientId = process.env.X_CLIENT_ID ?? ''
+  const clientSecret = process.env.X_CLIENT_SECRET ?? ''
+
+  if (!clientId || !clientSecret) {
+    throw new Error('X is not configured')
+  }
+
+  const token = await fetchJson('https://api.x.com/2/oauth2/token', xTokenSchema, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+    }),
+  })
+
+  return {
+    accessToken: token.access_token,
+    refreshToken: token.refresh_token,
+    accessTokenExpiresAt: expiresAtFromSeconds(token.expires_in, X_ACCESS_TOKEN_LIFETIME_SECONDS),
+  }
+}
+
 export async function refreshMetaUserAccessToken(accessToken: string): Promise<RefreshedTokens> {
   const appId = process.env.META_APP_ID ?? ''
   const appSecret = process.env.META_APP_SECRET ?? ''

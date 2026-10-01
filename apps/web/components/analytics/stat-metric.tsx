@@ -17,6 +17,7 @@ export type StatMetricProps = {
     label?: ReactNode
   }
   className?: string
+  valueClassName?: string
 }
 
 export type StatMetricsProps = {
@@ -44,23 +45,29 @@ function StatMetrics({ children, className, size = 'default', columns = 4 }: Sta
     <div
       data-slot="stat-metrics"
       data-size={size}
-      className={cn('group/metrics', dashboardSurface.dividerGrid, 'w-full grid-cols-1', COLUMN_STYLES[columns], className)}
+      className={cn(
+        'group/metrics',
+        dashboardSurface.metricsGrid,
+        'grid-cols-1',
+        COLUMN_STYLES[columns],
+        className,
+      )}
     >
       {children}
     </div>
   )
 }
 
-function StatMetric({ value, label, description, trend, className }: StatMetricProps) {
+function StatMetric({ value, label, description, trend, className, valueClassName }: StatMetricProps) {
   const direction = trend?.direction ?? 'neutral'
 
   return (
     <div
       data-slot="stat-metric"
       className={cn(
-        'flex min-w-0 flex-col gap-1 px-3.5 py-3.5',
-        dashboardSurface.dividerCell,
-        'group-data-[size=sm]/metrics:gap-0.5 group-data-[size=sm]/metrics:px-3 group-data-[size=sm]/metrics:py-3',
+        'flex min-w-0 flex-col gap-1 px-4 py-3',
+        dashboardSurface.metricCell,
+        'group-data-[size=sm]/metrics:gap-0.5 group-data-[size=sm]/metrics:px-3 group-data-[size=sm]/metrics:py-2.5',
         className,
       )}
     >
@@ -71,6 +78,7 @@ function StatMetric({ value, label, description, trend, className }: StatMetricP
           className={cn(
             dashboardSurface.metricValue,
             'leading-none whitespace-nowrap group-data-[size=sm]/metrics:text-base',
+            valueClassName,
           )}
         >
           {value}
@@ -78,7 +86,7 @@ function StatMetric({ value, label, description, trend, className }: StatMetricP
         {trend ? (
           <span
             className={cn(
-              'inline-flex shrink-0 items-center text-[11px] font-medium tabular-nums',
+              'inline-flex shrink-0 items-center text-[11px] font-[510] tabular-nums',
               TREND_STYLES[direction],
             )}
           >

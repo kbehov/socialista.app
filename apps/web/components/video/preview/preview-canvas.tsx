@@ -7,7 +7,9 @@ import { CanvasRulers, CANVAS_RULER_SIZE } from '@/components/editor/canvas-rule
 import { CanvasZoomControls } from '@/components/editor/canvas-zoom-controls'
 import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { Button } from '@/components/ui/button'
+import { VideoCanvasViewMenu } from '@/components/video/preview/video-canvas-view-menu'
 import { seekPreview } from '@/hooks/video/use-playback'
+import { openVideoStudioPanel } from '@/lib/video/editor-events'
 import { fitVideoPreviewInWorkspace } from '@/lib/editor/canvas-viewport'
 import { pickActiveVideoClip } from '@/lib/video/active-clip'
 import { hitTestOverlayAt, pointerToCanvasPercent } from '@/lib/video/canvas-hit-test'
@@ -16,7 +18,7 @@ import { useVideoEditorStore } from '@/lib/video/store'
 import { isMediaAssetAvailable } from '@/lib/video/types'
 import type { SnapGuide } from '@/lib/editor/snap-guides'
 import { cn } from '@/lib/utils'
-import { Loader2Icon, ScanIcon } from 'lucide-react'
+import { Loader2Icon } from 'lucide-react'
 import { TextOverlayRenderer } from './text-overlay-renderer'
 import { ClipInteractionLayer } from './clip-interaction-layer'
 import {
@@ -25,7 +27,6 @@ import {
 } from './element-context-menu'
 import { SelectionToolbar } from './selection-toolbar'
 import { SafeZoneOverlay } from './safe-zone-overlay'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 type PreviewCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>
@@ -52,14 +53,9 @@ export function PreviewCanvas({
   const textOverlays = useVideoEditorStore(s => s.project.textOverlays)
   const selectClip = useVideoEditorStore(s => s.selectClip)
   const selectOverlay = useVideoEditorStore(s => s.selectOverlay)
-  const showSafeZones = useVideoEditorStore(s => s.showSafeZones)
-  const setShowSafeZones = useVideoEditorStore(s => s.setShowSafeZones)
   const showRulers = useVideoEditorStore(s => s.showRulers)
   const showGuides = useVideoEditorStore(s => s.showGuides)
-  const canvasSnapEnabled = useVideoEditorStore(s => s.canvasSnapEnabled)
-  const toggleShowRulers = useVideoEditorStore(s => s.toggleShowRulers)
-  const toggleShowGuides = useVideoEditorStore(s => s.toggleShowGuides)
-  const toggleCanvasSnapEnabled = useVideoEditorStore(s => s.toggleCanvasSnapEnabled)
+  const duration = useVideoEditorStore(s => s.project.duration)
   const workspaceSize = useCanvasWorkspaceSize()
   const [contextTarget, setContextTarget] = useState<CanvasContextTarget | null>(null)
   const [editOverlayRequestId, setEditOverlayRequestId] = useState<string | null>(null)
@@ -82,6 +78,8 @@ export function PreviewCanvas({
   const isActiveClipSelected = canSelectClip && selectedClipId === activeClip?.id
   const isOverlaySelected = Boolean(selectedOverlayId && !isPlaying)
   const showSelectionChrome = isActiveClipSelected || isOverlaySelected
+  const showAlignmentBar = showSelectionChrome && !isPlaying
+  const isEmptyProject = duration <= 0 && Object.keys(clips).length === 0
 
   const centerGuides = useMemo<SnapGuide[]>(() => {
     if (!showGuides) return []
@@ -191,25 +189,23 @@ export function PreviewCanvas({
   return (
     <div className="relative h-full min-h-0 w-full">
       {/* Floating chrome — outside scroll so it never crops */}
-      <div className="pointer-events-none absolute inset-x-0 top-2.5 z-30 flex justify-center px-3">
-        <div
-          className="pointer-events-auto flex max-w-full items-center gap-1.5 overflow-x-auto"
-          onPointerDown={e => e.stopPropagation()}
-        >
-          <AlignmentToolbar
-            onAlign={canAlign ? handleAlign : undefined}
-            showDistribute={false}
-            rulersVisible={showRulers}
-            onToggleRulers={toggleShowRulers}
-            guidesVisible={showGuides}
-            onToggleGuides={toggleShowGuides}
-            snapEnabled={canvasSnapEnabled}
-            onToggleSnap={toggleCanvasSnapEnabled}
-            size="xs"
-            variant="floating"
-          />
+      {showAlignmentBar ? (
+        <div className="pointer-events-none absolute inset-x-0 top-2.5 z-30 flex justify-center px-3">
+          <div
+            className="pointer-events-auto flex max-w-full items-center gap-1.5 overflow-x-auto"
+            onPointerDown={e => e.stopPropagation()}
+          >
+            <AlignmentToolbar
+              onAlign={canAlign ? handleAlign : undefined}
+              showDistribute={false}
+              showToggles={false}
+              size="xs"
+              variant="floating"
+              className="video-studio-glass shadow-none"
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-12 z-30 flex justify-center px-3">
         <SelectionToolbar
@@ -252,10 +248,7 @@ export function PreviewCanvas({
               }}
             >
               <div
-                className={cn(
-                  'relative',
-                  showSelectionChrome ? 'ring-2 ring-primary/35' : undefined,
-                )}
+                className="relative"
                 style={
                   isMeasured
                     ? {
@@ -309,6 +302,20 @@ export function PreviewCanvas({
                       />
                     ) : null}
                     <SafeZoneOverlay />
+                    {isEmptyProject && !isPlaying ? (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="video-studio-press pointer-events-auto h-8 bg-white/10 text-[12px] font-medium text-white hover:bg-white/15"
+                          onPointerDown={e => e.stopPropagation()}
+                          onClick={() => openVideoStudioPanel('media')}
+                        >
+                          Add media
+                        </Button>
+                      </div>
+                    ) : null}
                     {isBuffering && isPlaying ? (
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
                         <Loader2Icon className="size-6 animate-spin text-white/70" aria-hidden />
@@ -326,30 +333,11 @@ export function PreviewCanvas({
         data-canvas-controls
         className="pointer-events-none absolute bottom-3 right-3 z-40 flex items-center gap-1.5"
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className={cn(
-                'video-studio-glass video-studio-press pointer-events-auto size-8 rounded-full shadow-sm',
-                showSafeZones && 'bg-primary/15 text-primary',
-              )}
-              onClick={() => setShowSafeZones(!showSafeZones)}
-              aria-pressed={showSafeZones}
-              aria-label={showSafeZones ? 'Hide safe zones' : 'Show safe zones'}
-            >
-              <ScanIcon className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{showSafeZones ? 'Hide safe zones' : 'Safe zones'}</TooltipContent>
-        </Tooltip>
-
         <CanvasZoomControls
           zoom={previewZoom}
           onZoomChange={onPreviewZoomChange}
-          className="video-studio-glass pointer-events-auto shadow-sm"
+          className="video-studio-glass pointer-events-auto shadow-none"
+          trailing={<VideoCanvasViewMenu />}
         />
       </div>
     </div>

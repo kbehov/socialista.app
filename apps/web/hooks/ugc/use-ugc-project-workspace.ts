@@ -12,13 +12,11 @@ import { useUgcGeneration } from '@/hooks/ugc/use-ugc-generation'
 import { useUgcPersistence } from '@/hooks/ugc/use-ugc-persistence'
 import { useUgcPlanWorkflow } from '@/hooks/ugc/use-ugc-plan-workflow'
 import { hasUgcProduct, ugcNeedsCreator } from '@/lib/studio/ugc/ugc-stage'
-import {
-  generateUgcClipScript,
-  getUgcProject,
-  openUgcProjectEditor,
-} from '@/services/ugc-project.service'
+import { generateUgcClipScriptAction } from '@/actions/ugc-script.actions'
+import { generateUgcClipVideoPromptAction } from '@/actions/ugc-video-prompt.actions'
+import { getUgcProject, openUgcProjectEditor } from '@/services/ugc-project.service'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
-import type { UgcWorkbenchTab } from '@/types/ugc.types'
+import type { UgcWorkbenchTab, UgcWriteScriptOptions, UgcWriteVideoPromptOptions } from '@/types/ugc.types'
 import { ugcSceneWorkbenchConfig } from '@/utils/ugc/scene.utils'
 import type { UgcProject } from '@socialista/types'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -52,11 +50,14 @@ export function useUgcProjectWorkspace({
   const project =
     storeProject?.id === initialProject.id ? storeProject : initialProject
 
-  const [selectedClipId, setSelectedClipId] = useState(initialProject.clips[0]?.id)
+  const [selectedClipId, setSelectedClipId] = useState<string | undefined>(
+    initialProject.clips[0]?.id,
+  )
   const [creatorOpen, setCreatorOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<UgcWorkbenchTab>('image')
   const [writingScript, startWriteScript] = useTransition()
+  const [writingVideoPrompt, startWriteVideoPrompt] = useTransition()
   const [generatingAudio, startGenerateAudio] = useTransition()
   const [openingProjectEditor, startOpenProjectEditor] = useTransition()
 
@@ -247,19 +248,58 @@ export function useUgcProjectWorkspace({
     0,
   )
 
-  const handleWriteScript = useCallback(() => {
-    if (!selectedClip) return
-    startWriteScript(async () => {
-      const response = await generateUgcClipScript(project.id, selectedClip.id, {
-        model: project.models.script,
+  const handleWriteScript = useCallback(
+    (options?: UgcWriteScriptOptions) => {
+      if (!selectedClip) return Promise.resolve(false)
+      return new Promise<boolean>(resolve => {
+        startWriteScript(async () => {
+          const result = await generateUgcClipScriptAction({
+            projectId: project.id,
+            clipId: selectedClip.id,
+            ...(options?.directions?.trim()
+              ? { directions: options.directions.trim() }
+              : {}),
+          })
+          if (!result.success) {
+            toast.error(result.error)
+            resolve(false)
+            return
+          }
+          setProject(result.project)
+          resolve(true)
+        })
       })
-      if (!response.success || !response.data?.project) {
-        toast.error(response.message ?? 'Could not write a script')
-        return
-      }
-      setProject(response.data.project)
-    })
-  }, [project.id, project.models.script, selectedClip, setProject])
+    },
+    [project.id, selectedClip, setProject],
+  )
+
+  const handleWriteVideoPrompt = useCallback(
+    (options?: UgcWriteVideoPromptOptions) => {
+      if (!selectedClip) return Promise.resolve(false)
+      return new Promise<boolean>(resolve => {
+        startWriteVideoPrompt(async () => {
+          const result = await generateUgcClipVideoPromptAction({
+            projectId: project.id,
+            clipId: selectedClip.id,
+            ...(options?.referenceImageUrl
+              ? { referenceImageUrl: options.referenceImageUrl }
+              : {}),
+            ...(options?.directions?.trim()
+              ? { directions: options.directions.trim() }
+              : {}),
+          })
+          if (!result.success) {
+            toast.error(result.error)
+            resolve(false)
+            return
+          }
+          setProject(result.project)
+          resolve(true)
+        })
+      })
+    },
+    [project.id, selectedClip, setProject],
+  )
 
   const handleScriptChange = useCallback(
     (text: string) => {
@@ -318,6 +358,7 @@ export function useUgcProjectWorkspace({
     activeTab: workbenchTab,
     setActiveTab,
     writingScript,
+    writingVideoPrompt,
     generatingAudio: audioBusy,
     generatingStill,
     generatingVideo,
@@ -337,6 +378,7 @@ export function useUgcProjectWorkspace({
     handleNameChange,
     handleOpenEditor,
     handleWriteScript,
+    handleWriteVideoPrompt,
     handleScriptChange,
     handleGenerateClipAudio,
     handleImageSubmit,

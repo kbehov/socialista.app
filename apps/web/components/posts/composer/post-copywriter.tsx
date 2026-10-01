@@ -2,10 +2,11 @@
 
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
 import {
-  BRIEF_SUGGESTIONS,
   COPYWRITER_FADE_EASE,
+  COPYWRITER_GENERATION_CREDITS,
   TONE_OPTIONS,
 } from '@/components/posts/composer/copywriter/copywriter-constants'
+import { SkillModelSelector } from '@/components/skills/skill-model-selector'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { CopywriterFooter } from '@/components/posts/composer/copywriter/copywriter-footer'
 import { CopywriterResult } from '@/components/posts/composer/copywriter/copywriter-result'
@@ -21,14 +22,17 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { formatProviderList, getStrictestCaptionLimit } from '@/constants/platform-limits'
+import { getModels } from '@/services/models.service'
 import type { ComposerMediaItem } from '@/types/composer-types'
 import { useCompletion } from '@ai-sdk/react'
-import type { SocialProvider } from '@socialista/types'
-import { PROMPT_KEYS } from '@socialista/types'
+import type { Model, SocialProvider } from '@socialista/types'
+import { ModelType, PROMPT_KEYS } from '@socialista/types'
 import { AnimatePresence, motion } from 'motion/react'
 import { AlertCircleIcon, ImagesIcon, SparklesIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+
+const TEXT_MODELS_QUERY = `limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`
 
 type PostCopywriterDialogProps = {
   open: boolean
@@ -56,8 +60,13 @@ export function PostCopywriterDialog({
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [skillId, setSkillId] = useState<string | undefined>()
+  const [textModels, setTextModels] = useState<Model[]>([])
+  const [selectedTextModelId, setSelectedTextModelId] = useState('')
   const previewRef = useRef<HTMLDivElement>(null)
   const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const selectedTextModel = textModels.find(model => model._id === selectedTextModelId) ?? textModels[0]
+  const estimatedCost = selectedTextModel?.cost ?? COPYWRITER_GENERATION_CREDITS
 
   const limit = getStrictestCaptionLimit(selectedProviders)
   const platformLabel = formatProviderList(selectedProviders)
@@ -79,6 +88,19 @@ export function PostCopywriterDialog({
   const showPreview = isThinking || hasResult
   const charsOver = completion.length - limit
   const canGenerate = !!prompt.trim() && !isLoading
+
+  useEffect(() => {
+    let cancelled = false
+    void getModels(TEXT_MODELS_QUERY).then(res => {
+      if (cancelled) return
+      const next = res.success ? (res.data?.models ?? []) : []
+      setTextModels(next)
+      setSelectedTextModelId(current => current || next[0]?._id || '')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const reset = useCallback(() => {
     setPrompt('')
@@ -140,6 +162,7 @@ export function PostCopywriterDialog({
         tone: tone || undefined,
         media: mediaPayload.length > 0 ? mediaPayload : undefined,
         ...(skillId ? { skillId } : {}),
+        ...(selectedTextModel?.value ? { model: selectedTextModel.value } : {}),
       },
     })
   }, [
@@ -150,6 +173,7 @@ export function PostCopywriterDialog({
     media,
     prompt,
     selectedProviders,
+    selectedTextModel,
     setCompletion,
     skillId,
     tone,
@@ -366,38 +390,6 @@ export function PostCopywriterDialog({
               ) : null}
 
               <AnimatePresence initial={false}>
-                {!showPreview && !prompt.trim() ? (
-                  <motion.div
-                    key="suggestions"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -2 }}
-                    transition={{ duration: 0.2, ease: COPYWRITER_FADE_EASE }}
-                    className="flex flex-wrap gap-1.5 pt-0.5"
-                  >
-                    {BRIEF_SUGGESTIONS.map(suggestion => (
-                      <button
-                        key={suggestion.label}
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => setPrompt(suggestion.prompt)}
-                        className={cn(
-                          'rounded-full border border-border/45 bg-background px-3 py-1.5',
-                          'text-[11px] font-medium tracking-tight text-muted-foreground',
-                          'transition-[color,background-color,border-color,transform] duration-150',
-                          'hover:border-border hover:bg-muted/40 hover:text-foreground',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                          'active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100',
-                        )}
-                      >
-                        {suggestion.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-
-              <AnimatePresence initial={false}>
                 {hasExistingCaption && !showPreview ? (
                   <motion.div
                     key="current-caption"
@@ -466,13 +458,21 @@ export function PostCopywriterDialog({
             </AnimatePresence>
           </div>
 
-          <div className="px-4 pb-2">
+          <div className="space-y-2 px-4 pb-2">
             <StudioSkillPicker
               target={PROMPT_KEYS.postCopy}
               value={skillId}
               onChange={setSkillId}
               disabled={isLoading}
             />
+            {textModels.length > 0 ? (
+              <SkillModelSelector
+                models={textModels}
+                selectedModelId={selectedTextModel?._id ?? selectedTextModelId}
+                onSelectedModelChange={setSelectedTextModelId}
+                disabled={isLoading}
+              />
+            ) : null}
           </div>
           <CopywriterFooter
             isLoading={isLoading}
@@ -481,6 +481,7 @@ export function PostCopywriterDialog({
             canGenerate={canGenerate}
             overLimit={overLimit}
             completion={completion}
+            creditCost={estimatedCost}
             onClose={() => handleOpenChange(false)}
             onStop={() => stop()}
             onGenerate={handleGenerate}

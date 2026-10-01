@@ -121,6 +121,7 @@ export const AI_COMPANY_ROUTES = {
 
 export const BRAND_ROUTES = {
   CREATE: '/brands',
+  EXTRACT: '/brands/extract',
   GET_BY_ID: (id: string) => `/brands/${id}`,
   UPDATE: (id: string) => `/brands/${id}`,
   DELETE: (id: string) => `/brands/${id}`,
@@ -249,6 +250,9 @@ export const UGC_PROJECT_ROUTES = {
 export const INFLUENCER_ROUTES = {
   EXPLORE: '/influencers/explore',
   CREATE: '/influencers',
+  ADMIN: '/influencers/admin',
+  ADMIN_BY_ID: (id: string) => `/influencers/admin/${id}`,
+  ADMIN_CREATE: '/influencers/admin',
   CLONE: '/influencers/clone',
   GET_BY_ID: (id: string) => `/influencers/${id}`,
   CREATE_HOOK_VIDEO: (id: string) => `/influencers/${id}/hook-videos`,

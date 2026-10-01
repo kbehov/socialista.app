@@ -25,7 +25,6 @@ export enum UgcScriptSource {
 }
 
 export enum UgcClipType {
-  HOOK = "hook",
   TALKING = "talking",
   PRODUCT_HOLD = "product-hold",
   B_ROLL = "b-roll",

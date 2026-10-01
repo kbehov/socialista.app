@@ -1,11 +1,19 @@
 import { ImagePlus, LayoutTemplate, Sparkles, type LucideIcon } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
+
 import { STATIC_ADS, type StaticAdsStepId } from './content'
 import { FadeIn } from './fade-in'
-import { landingContentGap } from './landing-classes'
+import {
+  landingContentGap,
+  landingFeatureCaptionTitleOnDark,
+  landingMediaPanel,
+} from './landing-classes'
 import { Section } from './section'
+import { SectionCta } from './section-cta'
 import { LandingSectionIntro } from './section-header'
 import { StaticAdsMarquee } from './static-ads-marquee'
+import { getLandingStaticAdMarqueeImages } from './landing-static-ad-marquee-data'
 
 const glassCard =
   'border border-white/16 bg-black/36 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_18px_40px_-24px_rgba(0,0,0,0.55)] backdrop-blur-2xl'
@@ -16,12 +24,15 @@ const STEP_ICONS: Record<StaticAdsStepId, LucideIcon> = {
   create: Sparkles,
 }
 
-export function LandingStaticAds() {
+export async function LandingStaticAds() {
+  const marqueeImages = await getLandingStaticAdMarqueeImages()
+
   return (
-    <Section id="static-ads" landingDivider>
+    <Section id="static-ads" landingDivider alt>
       <FadeIn>
         <LandingSectionIntro
           titleId="static-ads-heading"
+          eyebrow={STATIC_ADS.eyebrow}
           title={STATIC_ADS.title}
           titleAccent={STATIC_ADS.titleAccent}
           description={STATIC_ADS.description}
@@ -29,14 +40,15 @@ export function LandingStaticAds() {
       </FadeIn>
 
       <FadeIn delay={0.08} className={landingContentGap}>
-        <div className="relative overflow-hidden rounded-[var(--landing-panel-radius)] bg-[#0c0c0c] shadow-[0_28px_64px_-36px_rgba(0,0,0,0.45)] outline outline-1 outline-[oklch(0_0_0/0.1)]">
+        <div
+          className={cn(
+            landingMediaPanel,
+            'rounded-[var(--landing-panel-radius)] shadow-[0_28px_64px_-36px_rgba(0,0,0,0.45)]',
+          )}
+        >
           <div className="relative flex min-h-[22rem] flex-col sm:min-h-[28rem] lg:min-h-[32.5rem]">
-            <StaticAdsMarquee />
+            <StaticAdsMarquee imageUrls={marqueeImages} />
 
-            <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_12%,rgba(0,0,0,0.12)_52%,rgba(0,0,0,0.42)_100%)]"
-              aria-hidden="true"
-            />
             <div
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/20"
               aria-hidden="true"
@@ -50,7 +62,7 @@ export function LandingStaticAds() {
               aria-hidden="true"
             />
 
-            <div className="relative h-[10.5rem] shrink-0 sm:h-[13.5rem] lg:h-[15.5rem]" aria-hidden="true" />
+            <div className="relative h-[7.5rem] shrink-0 sm:h-[13.5rem] lg:h-[15.5rem]" aria-hidden="true" />
 
             <div className="relative z-10 p-4 pt-0 sm:p-5 sm:pt-0 lg:p-6 lg:pt-0">
               <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
@@ -67,6 +79,10 @@ export function LandingStaticAds() {
             </div>
           </div>
         </div>
+      </FadeIn>
+
+      <FadeIn className={landingContentGap}>
+        <SectionCta label={STATIC_ADS.cta} />
       </FadeIn>
     </Section>
   )
@@ -94,9 +110,7 @@ function StepCard({
         </span>
         <span className="text-[0.6875rem] font-medium tracking-[0.12em] text-white/55">{step}</span>
       </div>
-      <h3 className="mt-4 font-serif text-[1.25rem] italic leading-snug tracking-[-0.02em] text-white sm:text-[1.375rem]">
-        {title}
-      </h3>
+      <h3 className={cn('mt-4', landingFeatureCaptionTitleOnDark)}>{title}</h3>
       <p className="mt-1.5 text-[0.8125rem] leading-5 text-white/72 sm:text-[0.875rem] sm:leading-6">
         {description}
       </p>

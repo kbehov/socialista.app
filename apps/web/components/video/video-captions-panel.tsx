@@ -19,6 +19,12 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  captionAnchorY,
+  captionSegmentsToOverlays,
+  captionSourceTimeToTimeline,
+  clipTimelineRange,
+} from '@/lib/video/caption-placement'
 import { CAPTION_OVERLAY_PRESET } from '@/lib/video/defaults'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
@@ -49,6 +55,11 @@ type CaptionClipOption = {
   clip: Clip
 }
 
+function timelineTime(clip: Clip | undefined, sourceTime: number): number {
+  if (!clip) return sourceTime
+  return captionSourceTimeToTimeline(clip, sourceTime)
+}
+
 function formatDurationShort(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds))
   const m = Math.floor(total / 60)
@@ -75,20 +86,6 @@ function captionClipsFromProject(
     })
 }
 
-function toTimelineOverlay(
-  clip: Clip,
-  segment: VideoCaptionSegment,
-): { content: string; startTime: number; endTime: number } | null {
-  const clipStart = clip.startTime
-  const clipEnd = clip.startTime + clip.duration
-  const startTime = clipStart + segment.startTime
-  const endTime = clipStart + segment.endTime
-  const clampedStart = Math.max(clipStart, startTime)
-  const clampedEnd = Math.min(clipEnd, endTime)
-  if (clampedEnd - clampedStart < 0.05) return null
-  return { content: segment.text, startTime: clampedStart, endTime: clampedEnd }
-}
-
 export function VideoCaptionsPanel({
   embedded = false,
   showPanelHeader = true,
@@ -109,6 +106,7 @@ export function VideoCaptionsPanel({
 
   const [view, setView] = useState<PanelView>('input')
   const [selectedClipId, setSelectedClipId] = useState<string>('')
+  const [captionClipId, setCaptionClipId] = useState<string | null>(null)
   const [segments, setSegments] = useState<VideoCaptionSegment[]>([])
   const [language, setLanguage] = useState('en')
   const [replaceExisting, setReplaceExisting] = useState(true)
@@ -120,9 +118,13 @@ export function VideoCaptionsPanel({
   const [starting, setStarting] = useState(false)
   const toastedRunIdRef = useRef<string | null>(null)
 
-  const selectedClipIdResolved = clipOptions.some(option => option.id === selectedClipId)
-    ? selectedClipId
-    : (clipOptions[0]?.id ?? '')
+  const selectionIsValid = clipOptions.some(option => option.id === selectedClipId)
+  if (!selectionIsValid) {
+    const fallback = clipOptions[0]?.id ?? ''
+    if (selectedClipId !== fallback) setSelectedClipId(fallback)
+  }
+  const selectedClipIdResolved = selectionIsValid ? selectedClipId : (clipOptions[0]?.id ?? '')
+  const applyClip = clipOptions.find(option => option.id === (captionClipId ?? selectedClipIdResolved))
 
   const { run, error: runHookError } = useGenerationRun({
     runId: runId ?? '',
@@ -192,6 +194,7 @@ export function VideoCaptionsPanel({
 
     toastedRunIdRef.current = null
     setConsumedRunId(null)
+    setCaptionClipId(selectedClipIdResolved)
     setStarting(true)
     setLocalProgress(2)
     setLocalLabel('Saving draft')
@@ -241,41 +244,46 @@ export function VideoCaptionsPanel({
       return
     }
 
-    const clip = useVideoEditorStore.getState().project.clips[selectedClipIdResolved]
+    const clipId = captionClipId ?? selectedClipIdResolved
+    const projectNow = useVideoEditorStore.getState().project
+    const clip = projectNow.clips[clipId]
     if (!clip) {
       toast.error('The selected clip is no longer on the timeline')
       return
     }
 
-    const batch = segments.flatMap(segment => {
-      const mapped = toTimelineOverlay(clip, segment)
-      if (!mapped) return []
-      return [
-        {
-          ...mapped,
-          x: CAPTION_OVERLAY_PRESET.x,
-          y: CAPTION_OVERLAY_PRESET.y,
-          width: CAPTION_OVERLAY_PRESET.width,
-          style: CAPTION_OVERLAY_PRESET.style,
-        },
-      ]
-    })
-
-    if (batch.length === 0) {
+    const placed = captionSegmentsToOverlays(clip, segments)
+    if (placed.length === 0) {
       toast.error('None of the captions overlap this clip')
       return
     }
 
-    const ids = addTextOverlays(batch, { replaceExisting })
+    const range = clipTimelineRange(clip)
+    const y = captionAnchorY(projectNow.textOverlays, clip.id, range)
+    const batch = placed.map(mapped => ({
+      ...mapped,
+      clipId: clip.id,
+      x: CAPTION_OVERLAY_PRESET.x,
+      y,
+      width: CAPTION_OVERLAY_PRESET.width,
+      style: CAPTION_OVERLAY_PRESET.style,
+    }))
+
+    const ids = addTextOverlays(
+      batch,
+      replaceExisting
+        ? { replaceExisting: true, replaceClipId: clip.id, replaceRange: range }
+        : undefined,
+    )
     const first = batch[0]
     if (first) seek(first.startTime)
 
     toast.success(
       replaceExisting
-        ? `Replaced timeline text with ${ids.length} caption${ids.length === 1 ? '' : 's'}`
+        ? `Updated this clip with ${ids.length} caption${ids.length === 1 ? '' : 's'}`
         : `Applied ${ids.length} caption${ids.length === 1 ? '' : 's'}`,
     )
-  }, [addTextOverlays, replaceExisting, seek, segments, selectedClipIdResolved])
+  }, [addTextOverlays, captionClipId, replaceExisting, seek, segments, selectedClipIdResolved])
 
   const percent = progress != null ? Math.round(progress) : 0
   const canGenerate = clipOptions.length > 0 && Boolean(selectedClipIdResolved) && !isRunning
@@ -292,7 +300,7 @@ export function VideoCaptionsPanel({
         <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
           <EditorPanelHeader
             title="Captions"
-            description="Captions appear one short phrase at a time"
+            description="Transcribe a clip — captions stay on that clip"
           />
         </div>
       ) : null}
@@ -374,8 +382,11 @@ export function VideoCaptionsPanel({
             </p>
             <p className="px-1 text-[11px] text-muted-foreground">
               {segments.length} caption{segments.length === 1 ? '' : 's'}
-              {language ? ` · ${language}` : ''} · edit before applying
+              {language ? ` · ${language}` : ''} · placed on this clip’s timeline range
             </p>
+            {applyClip ? (
+              <p className="truncate px-1 text-[11px] text-muted-foreground">{applyClip.label}</p>
+            ) : null}
           </div>
 
           <EditorPanelScrollArea contentClassName="gap-2.5 p-3 pb-4">
@@ -386,7 +397,8 @@ export function VideoCaptionsPanel({
               >
                 <div className="mb-2 flex items-center justify-end">
                   <span className="text-[10px] tabular-nums text-muted-foreground">
-                    {formatTimecode(segment.startTime, fps)} – {formatTimecode(segment.endTime, fps)}
+                    {formatTimecode(timelineTime(applyClip?.clip, segment.startTime), fps)} –{' '}
+                    {formatTimecode(timelineTime(applyClip?.clip, segment.endTime), fps)}
                   </span>
                 </div>
                 <Textarea
@@ -427,7 +439,7 @@ export function VideoCaptionsPanel({
                     className="h-7 w-18 px-2 text-[11px] tabular-nums"
                     aria-label={`Caption ${index + 1} end seconds`}
                   />
-                  <span className="text-[10px] text-muted-foreground">s</span>
+                  <span className="text-[10px] text-muted-foreground">s from clip start</span>
                 </div>
               </div>
             ))}
@@ -439,7 +451,7 @@ export function VideoCaptionsPanel({
                 htmlFor="replace-caption-overlays"
                 className="text-[11px] leading-snug font-normal text-muted-foreground"
               >
-                Replace existing text overlays
+                Replace text on this clip
               </Label>
               <Switch
                 id="replace-caption-overlays"

@@ -21,11 +21,11 @@ import { getProjectId, useProjectStore } from '@/store/project.store'
 import { getWorkspaceId, useWorkspaceStore } from '@/store/workspace.store'
 import {
   ModelType,
-  PROMPT_KEY_LABELS,
-  PROMPT_KEY_VALUES,
+  SKILL_TARGET_LABELS,
+  SKILL_TARGET_VALUES,
   type Brand,
   type Model,
-  type PromptKey,
+  type SkillTarget,
 } from '@socialista/types'
 import { Loader2Icon, SparklesIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -128,7 +128,7 @@ export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogP
     const trimmed = description.trim()
     if (!trimmed || isPending || !selectedModel) return
 
-    const pinnedTarget = target !== AUTO_TARGET ? (target as PromptKey) : undefined
+    const pinnedTarget = target !== AUTO_TARGET ? (target as SkillTarget) : undefined
     const selectedBrandId = brandId !== NONE_BRAND ? brandId : undefined
 
     startTransition(async () => {
@@ -245,9 +245,9 @@ export function GenerateSkillDialog({ open, onOpenChange }: GenerateSkillDialogP
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={AUTO_TARGET}>Auto (infer from description)</SelectItem>
-                {PROMPT_KEY_VALUES.map(key => (
+                {SKILL_TARGET_VALUES.map(key => (
                   <SelectItem key={key} value={key}>
-                    {PROMPT_KEY_LABELS[key]}
+                    {SKILL_TARGET_LABELS[key]}
                   </SelectItem>
                 ))}
               </SelectContent>

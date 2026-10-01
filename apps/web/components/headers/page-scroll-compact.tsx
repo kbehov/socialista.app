@@ -52,6 +52,8 @@ function PageScrollCompactTracker() {
   useLayoutEffect(() => {
     if (!reportScrollTop) return
 
+    reportScrollTop(0)
+
     const scrollParent = document.querySelector<HTMLElement>(DASHBOARD_SCROLL_SELECTOR)
     if (!scrollParent) {
       reportScrollTop(0)

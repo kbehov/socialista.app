@@ -10,6 +10,7 @@ import { useReportPageScroll } from '@/components/headers/page-scroll-compact'
 import { PostEditSheet } from '@/components/posts/post-edit-sheet'
 import { PostsCalendarView } from '@/components/posts/posts-calendar-view'
 import { PostsToolbar } from '@/components/posts/posts-toolbar'
+import { PostsGrid } from '@/components/posts/posts-grid'
 import { PostsTable } from '@/components/tables/posts.table'
 import type { Filter } from '@/components/reui/filters'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -95,7 +96,7 @@ export function PostsView({ posts, meta, accounts, filters, view, month, hasFilt
   const accountsById = useMemo(() => indexById(accounts), [accounts])
 
   useEffect(() => {
-    if (view !== 'list') {
+    if (view === 'calendar') {
       reportPageScroll(0)
     }
   }, [view, reportPageScroll])
@@ -137,14 +138,26 @@ export function PostsView({ posts, meta, accounts, filters, view, month, hasFilt
             scrollbarGutter
             onViewportScroll={event => reportPageScroll(event.currentTarget.scrollTop)}
           >
-            <PostsTable
-              posts={posts}
-              accountsById={accountsById}
-              onEditPost={handleEditPost}
-              onPostNow={handlePostNow}
-              onDeletePost={setDeleteTarget}
-              publishingPostId={publishingPostId}
-            />
+            {view === 'grid' ? (
+              <PostsGrid
+                posts={posts}
+                accountsById={accountsById}
+                onEditPost={handleEditPost}
+                onPostNow={handlePostNow}
+                onDeletePost={setDeleteTarget}
+                publishingPostId={publishingPostId}
+                className="pt-0.5"
+              />
+            ) : (
+              <PostsTable
+                posts={posts}
+                accountsById={accountsById}
+                onEditPost={handleEditPost}
+                onPostNow={handlePostNow}
+                onDeletePost={setDeleteTarget}
+                publishingPostId={publishingPostId}
+              />
+            )}
           </ScrollArea>
           <SmartPagination
             meta={meta}

@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose'
-import { PROMPT_KEY_VALUES } from '@socialista/types'
+import { SKILL_TARGET_VALUES } from '@socialista/types'
 import type { ISkill } from '../types/skill.types.js'
 
 const skillSchema = new Schema<ISkill>(
@@ -14,7 +14,7 @@ const skillSchema = new Schema<ISkill>(
     name: { type: String, required: true, trim: true },
     description: { type: String, required: true, default: '' },
     icon: { type: String },
-    target: { type: String, enum: PROMPT_KEY_VALUES, required: true },
+    target: { type: String, enum: SKILL_TARGET_VALUES, required: true },
     content: { type: String, required: true },
     usageCount: { type: Number, required: true, default: 0 },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },

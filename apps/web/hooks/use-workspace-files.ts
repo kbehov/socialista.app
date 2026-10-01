@@ -2,6 +2,7 @@
 
 import { getWorkspaceFiles, uploadToFolder, uploadToWorkspace } from '@/services/files.service'
 import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
+import { DEFAULT_FILE_SORT } from '@/lib/files/file-filters'
 import type { ImageResponse } from '@socialista/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type FileWithPreview, useFileUpload } from './use-file-upload'
@@ -17,6 +18,7 @@ type UseWorkspaceFilesOptions = {
   /** Total file count from the first page meta (optional). */
   initialTotal?: number
   pageSize?: number
+  sort?: string
 }
 
 type UseWorkspaceFilesReturn = {
@@ -41,6 +43,7 @@ export function useWorkspaceFiles({
   initialHasMore = false,
   initialTotal,
   pageSize = WORKSPACE_FILES_PAGE_SIZE,
+  sort = DEFAULT_FILE_SORT,
 }: UseWorkspaceFilesOptions = {}): UseWorkspaceFilesReturn {
   const hasServerData = initialFiles !== undefined
   const [files, setFiles] = useState(initialFiles ?? [])
@@ -107,7 +110,7 @@ export function useWorkspaceFiles({
         const response = await getWorkspaceFiles(workspaceId, folderId, {
           page: pageNum,
           limit: pageSize,
-          sort: '-createdAt',
+          sort,
         })
 
         if (requestId !== loadRequestId.current) return
@@ -134,19 +137,25 @@ export function useWorkspaceFiles({
         }
       }
     },
-    [workspaceId, folderId, pageSize],
+    [workspaceId, folderId, pageSize, sort],
   )
 
   const fetchFiles = useCallback(async () => {
     await loadPage(1, 'replace')
   }, [loadPage])
 
+  const skipInitialFetchRef = useRef(hasServerData && sort === DEFAULT_FILE_SORT)
+
   useEffect(() => {
-    if (hasServerData) return
+    if (!workspaceId) return
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false
+      return
+    }
     setTimeout(() => {
       void loadPage(1, 'replace')
     }, 0)
-  }, [hasServerData, loadPage])
+  }, [workspaceId, folderId, sort, loadPage])
 
   const fetchMore = useCallback(() => {
     if (!workspaceId || isLoadingMoreRef.current || !hasMoreRef.current) return

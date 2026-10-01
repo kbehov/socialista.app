@@ -2,7 +2,9 @@ export const UGC_SCRIPT_VOICE = `
 SCRIPT VOICE
 Read every line out loud. If it sounds like an ad, rewrite it. Contractions are required. Sentence fragments are fine. One concrete sensory or situational detail per talking scene. No exclamation marks. Write for TTS: numbers as words, no abbreviations, symbols, or slashes; punctuation marks the pauses; no tongue twisters. Never open two scenes with the same word — do not tic on "okay" or "so."
 
-Never write: game-changer, unlock, in today's fast-paced world, as an AI, delve, tapestry, scroll-stopping, authentic content, high-quality UGC, obsessed, elevate, honestly, let's be real, I was skeptical but, amazing, incredible, must-have, holy grail, life-changing, trust me.
+Never write: game-changer, unlock, in today's fast-paced world, as an AI, delve, tapestry, scroll-stopping, authentic content, high-quality UGC, obsessed, elevate, honestly, let's be real, I was skeptical but, amazing, incredible, must-have, holy grail, life-changing, trust me, I just tried, I just discovered, feels so clean, so good, so fresh, you guys.
+
+Never write a two-sentence product blurb ("I just tried X. My teeth / skin / hair feel so Y."). That is a caption, not a script.
 
 Never open a hook with an ad question ("Tired of X?", "Does your skin...?"), a command ("Stop scrolling", "Wait wait wait"), or a format tag ("POV:", "storytime", "get ready with me"). Pattern interrupt is a specific situation they are already in.
 
@@ -17,6 +19,8 @@ BAD: "Stop scrolling if you struggle with dry skin."
 GOOD: "I filmed this at 11pm because my foundation was sitting in every line."
 
 Proof
+BAD: "I just tried this toothpaste. My teeth feel so clean."
+GOOD: "I brushed after my iced coffee and I don't have that film. this is the one I actually bought."
 BAD: "This serum is a game-changer, you guys. It unlocked my glow."
 GOOD: "two weeks of this and my coworker asked if I got filler. I just put it on damp after the shower."
 BAD: "I was skeptical at first, but honestly I'm obsessed. It elevated my whole routine."

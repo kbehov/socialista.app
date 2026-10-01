@@ -213,163 +213,166 @@ export function clampInfluencerHookVideoCount(value: unknown): number {
   );
 }
 
-/** Short seed prompts the hook-video enhancer expands into a start-frame reaction. */
+/**
+ * Short seeds for image-to-video. One slow change each.
+ * Stacked blinks, degree counts, and multi-step face beats make these models warp the face.
+ */
 export const INFLUENCER_HOOK_PRESETS = [
   {
     id: "shocked-reaction",
     label: "Shocked reaction",
     prompt:
-      "soft inhale, head eases a few degrees toward camera, brows lift, eyelids widen, lips part just enough for a silent oh, shoulders rise a little then settle, blinks once and holds the look like a real phone reaction",
+      "Same person, clothes, and room as the photo. Camera holds. A slow quiet surprise: eyes open a little wider, lips part slightly, then they hold that look. Body stays in the start pose.",
   },
   {
     id: "wait-for-it",
     label: "Wait for it",
     prompt:
-      "holds the start pose a beat too long, almost still, then the face finally lands, brows lift a few millimeters, a small inhale, eyes find camera, the delay is the joke, not a jump-cut or snap",
+      "Same person, clothes, and room as the photo. Camera holds. They stay almost still, looking at the camera, then a small reaction shows slowly in the eyes. One gentle change. Mouth stays closed.",
   },
   {
     id: "pov-lean",
     label: "POV lean",
     prompt:
-      "leans a couple centimeters toward camera like the viewer is in the room, eyes soften and lock, a tiny head tilt, holds the look the way a POV clip invites you in, breathing stays visible",
+      "Same person, clothes, and room as the photo. Camera holds. They lean a little closer to the lens and keep calm eye contact. Small, slow movement. Mouth stays closed.",
   },
   {
     id: "hot-take",
     label: "Hot take",
     prompt:
-      "chin lifts a touch, weight settles, a small confident inhale as if about to drop a take, brows set, one slow blink, holds the here's-the-truth face without speaking",
+      "Same person, clothes, and room as the photo. Camera holds. Chin lifts slightly and they look steadily at the camera, confident, as if about to speak. Mouth stays closed.",
   },
   {
     id: "skeptical-squint",
     label: "Skeptical squint",
     prompt:
-      "eyes narrow just a little, head tips back a degree, mouth presses, the I-wanted-this-to-fail skeptic look, one unimpressed blink, holds, never a cartoon glare",
+      "Same person, clothes, and room as the photo. Camera holds. Eyes narrow a little, a mild skeptical look at the camera. Very small movement. Mouth stays closed.",
   },
   {
     id: "sad-snob",
     label: "Sad snob",
     prompt:
-      "slow weight shift, chin tips up a touch, eyes drop then look down the nose with a tired unimpressed pout, one lazy blink, mouth presses soft to the side, the kind of sad-snob face people make on TikTok not a costume",
+      "Same person, clothes, and room as the photo. Camera holds. Chin tips up slightly, a tired unimpressed look, mouth relaxed. Very small movement.",
   },
   {
     id: "hand-on-mouth",
     label: "Hand on mouth",
     prompt:
-      "a small delay, then the near hand lifts naturally to cover the lips, fingers relaxed not clawed, eyes widen after the hand arrives, a tiny head tilt, holds the silent gasp like they just saw the comments",
+      "Same person, clothes, and room as the photo. Camera holds. The nearest hand rises slowly and rests over the mouth, fingers together, eyes a little wider. One slow gesture. Face stays natural.",
   },
   {
     id: "finger-point",
     label: "Finger point",
     prompt:
-      "leans in a little, one finger rises and points toward camera with a loose wrist, eyebrows lift in a playful know-it-all beat, a small nod, holds the point the way a creator teases a reveal",
+      "Same person, clothes, and room as the photo. Camera holds. One hand lifts slowly and points toward the camera, wrist loose, a small playful look. One slow gesture. Face stays natural.",
   },
   {
     id: "side-eye",
     label: "Side-eye",
     prompt:
-      "eyes slide to the side first, head follows half a beat later, a judging glance with a tiny smirk, then eases back to camera still side-eyeing, soft and natural not a cartoon cut",
+      "Same person, clothes, and room as the photo. Camera holds. Eyes glance a little to the side, head follows slightly, a soft judging look, then they ease back toward the camera. Slow and small.",
   },
   {
     id: "double-take",
     label: "Double-take",
     prompt:
-      "looks just off camera as if something passed, a short pause, then turns back with a second quieter look of disbelief, mouth barely opens, one blink, the recatch feels human not a whip-pan gag",
+      "Same person, clothes, and room as the photo. Camera holds. They glance slightly off camera, then look back at the lens with a quiet surprised expression. Slow and small. Mouth barely moves.",
   },
   {
     id: "eye-roll",
     label: "Eye roll",
     prompt:
-      "eyes drift up first, lids lazy, head follows a half beat later, a tiny exhale through the nose, comes back to camera still unimpressed, never a full cartoon roll",
+      "Same person, clothes, and room as the photo. Camera holds. Eyes drift upward briefly, then return to the camera with a flat unimpressed mouth. Slow and small.",
   },
   {
     id: "knowing-smirk",
     label: "Knowing smirk",
     prompt:
-      "one corner of the mouth lifts, eyes stay on camera, a small nod like I told you so, holds the smirk without breaking into a grin",
+      "Same person, clothes, and room as the photo. Camera holds. One corner of the mouth lifts into a small smirk, eyes stay on the camera. Very small movement.",
   },
   {
     id: "whisper-tea",
     label: "Whisper tea",
     prompt:
-      "leans in, nearest shoulder rises a little, eyes widen just enough, lips almost part as if sharing a secret, holds the lean, no spoken words",
+      "Same person, clothes, and room as the photo. Camera holds. They lean in a little, eyes slightly wider, mouth almost closed, like sharing a secret without speaking. Small, slow movement.",
   },
   {
     id: "stitch-glance",
     label: "Stitch glance",
     prompt:
-      "looks just off-camera like a stitch or quote-post is playing, a beat, then turns to camera with a reply face, brows set, a small head shake or nod, the anyway look creators use on X",
+      "Same person, clothes, and room as the photo. Camera holds. They glance slightly off camera, then look back at the lens with a knowing expression. Slow and small. Mouth stays closed.",
   },
   {
     id: "look-down-up",
     label: "Look down, up",
     prompt:
-      "eyes drop as if reading a phone or a comment, a short still, then looks back up to camera with a quieter second expression, mouth barely moves, the recatch is the hook",
+      "Same person, clothes, and room as the photo. Camera holds. Eyes drop for a moment, then rise back to the camera. Slow and small. Mouth stays closed.",
   },
   {
     id: "eyebrow-raise",
     label: "Eyebrow raise",
     prompt:
-      "one brow lifts first, the other follows a little, eyes widen a millimeter, a silent oh-really, holds, face stays soft not theatrical",
+      "Same person, clothes, and room as the photo. Camera holds. Eyebrows lift slightly, a quiet curious look at the camera. Very small movement. Mouth stays relaxed.",
   },
   {
     id: "cringe-wince",
     label: "Cringe wince",
     prompt:
-      "shoulders tighten, eyes squeeze halfway, teeth catch the lip, a tiny head tuck, then eases back still wincing, secondhand embarrassment not a scream",
+      "Same person, clothes, and room as the photo. Camera holds. Eyes tighten a little and the mouth pulls in, a small embarrassed wince, then they ease. Slow and small.",
   },
   {
     id: "plot-twist",
     label: "Plot twist",
     prompt:
-      "starts with a tiny almost-smile, then the smile fades as the thought lands, brows knit a little, a swallow, holds the new face, one continuous beat",
+      "Same person, clothes, and room as the photo. Camera holds. A faint smile fades into a quieter, more serious look at the camera. One slow change.",
   },
   {
     id: "soft-laugh",
     label: "Soft laugh",
     prompt:
-      "tries to hold it together, mouth tightens, then a silent laugh breaks, shoulders bounce once, eyes crinkle, settles still smiling, no spoken line",
+      "Same person, clothes, and room as the photo. Camera holds. A small silent laugh, eyes crinkling, shoulders barely moving. Gentle. Mouth stays closed between the smile.",
   },
   {
     id: "knowing-nod",
     label: "Knowing nod",
     prompt:
-      "a small yes nod, two beats, eyes lock, the this-is-it confirmation, then holds still like a talking-head open",
+      "Same person, clothes, and room as the photo. Camera holds. One small slow nod while looking at the camera. Very small movement. Mouth stays closed.",
   },
   {
     id: "head-shake-no",
     label: "Head shake no",
     prompt:
-      "slow small no, two short shakes, lips press, eyes stay on camera, disappointed more than angry, eases back to still",
+      "Same person, clothes, and room as the photo. Camera holds. One small slow head shake, eyes on the camera, mouth closed. Very small movement.",
   },
   {
     id: "peek-fingers",
     label: "Peek",
     prompt:
-      "near hand rises to cover the eyes, fingers part just enough to peek, a cringe smile, holds like they cannot watch, wrist stays loose",
+      "Same person, clothes, and room as the photo. Camera holds. One hand rises slowly in front of the eyes, fingers together with a small gap, a shy smile. One slow gesture. Face stays natural.",
   },
   {
     id: "chefs-kiss",
     label: "Chef's kiss",
     prompt:
-      "near hand lifts, fingertips gather and kiss away from the lips in a small chef's kiss, eyes close half a beat, then looks back at camera pleased, loose wrist not a pose",
+      "Same person, clothes, and room as the photo. Camera holds. One hand lifts slowly, fingertips meet near the lips and move a little away, a pleased look at the camera. One slow gesture. Face stays natural.",
   },
   {
     id: "come-closer",
     label: "Watch this",
     prompt:
-      "leans in and beckons with the nearest hand or a small come-here flick, brows lift, a playful watch-this face, then holds the invite toward camera",
+      "Same person, clothes, and room as the photo. Camera holds. They lean in slightly and make a small come-here gesture with one open hand, a playful look at the camera. Slow and small.",
   },
   {
     id: "unimpressed-blink",
     label: "Unimpressed blink",
     prompt:
-      "one long slow blink, mouth flat, head barely moves, the tired and? look, holds like a muted Reels reaction",
+      "Same person, clothes, and room as the photo. Camera holds. A flat unimpressed look at the camera, almost still, mouth relaxed. Natural face, very little movement.",
   },
   {
     id: "slow-realize",
     label: "Slow realize",
     prompt:
-      "eyes widen gradually, lips part on a quiet inhale, head eases back a few degrees, the realization lands in pieces, not a cartoon mind-blown",
+      "Same person, clothes, and room as the photo. Camera holds. Eyes widen gradually and the lips part a little, a quiet realization. Body stays in the start pose.",
   },
 ] as const;
 

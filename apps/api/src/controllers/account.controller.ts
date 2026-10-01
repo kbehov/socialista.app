@@ -3,6 +3,7 @@ import {
   getAccountForMember,
   parseCreateAccountInput,
   parseUpdateAccountInput,
+  persistAccountAvatar,
   serializeAccount,
   serializeAccountSummary,
   toCreateAccountInput,
@@ -39,6 +40,7 @@ async function authorizeWorkspaceAccountAction(c: Context<AppContext>, workspace
 export const connectAccount = async (c: Context<AppContext>) => {
   const input = parseCreateAccountInput((await c.req.json()) as Record<string, unknown>)
   const userId = c.get('userId')
+  const avatarPromise = persistAccountAvatar(input.accountAvatar, input)
 
   const [workspace, existing] = await Promise.all([
     getWorkspaceAsMember(input.workspaceId, userId),
@@ -51,8 +53,9 @@ export const connectAccount = async (c: Context<AppContext>) => {
 
   const project = await resolveProjectForWorkspace(input.workspaceId, input.projectId)
   const timezone = resolveAccountTimezone(input.timezone, project.timezone || workspace.settings.timezone)
+  const accountAvatar = await avatarPromise
   const { account, created } = await upsertAccount(
-    toCreateAccountInput({ ...input, timezone, projectId: project._id.toString() }, userId),
+    toCreateAccountInput({ ...input, timezone, projectId: project._id.toString(), accountAvatar }, userId),
   )
 
   if (created) {
@@ -68,13 +71,15 @@ export const connectAccount = async (c: Context<AppContext>) => {
 /** Create a new account without upsert (fails if already connected). */
 export const createAccount = async (c: Context<AppContext>) => {
   const input = parseCreateAccountInput((await c.req.json()) as Record<string, unknown>)
+  const avatarPromise = persistAccountAvatar(input.accountAvatar, input)
   const { userId, workspace } = await authorizeWorkspaceAccountAction(c, input.workspaceId)
   assertAccountsLimit(workspace)
 
   const project = await resolveProjectForWorkspace(input.workspaceId, input.projectId)
   const timezone = resolveAccountTimezone(input.timezone, project.timezone || workspace.settings.timezone)
+  const accountAvatar = await avatarPromise
   const account = await createAccountInDb(
-    toCreateAccountInput({ ...input, timezone, projectId: project._id.toString() }, userId),
+    toCreateAccountInput({ ...input, timezone, projectId: project._id.toString(), accountAvatar }, userId),
   )
   await incrementAccountsUsage(input.workspaceId)
 

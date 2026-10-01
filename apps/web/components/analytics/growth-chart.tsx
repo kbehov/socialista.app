@@ -278,7 +278,7 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
             <Bar
               dataKey="value"
               fill="var(--color-value)"
-              radius={[2, 2, 0, 0]}
+              radius={[4, 4, 0, 0]}
               maxBarSize={barSize}
               isAnimationActive={false}
             />

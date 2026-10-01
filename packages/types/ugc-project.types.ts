@@ -25,7 +25,6 @@ export const UGC_SCRIPT_SOURCES = ["user", "ai"] as const;
 export type UgcScriptSource = (typeof UGC_SCRIPT_SOURCES)[number];
 
 export const UGC_CLIP_TYPES = [
-  "hook",
   "talking",
   "product-hold",
   "b-roll",
@@ -113,22 +112,6 @@ function defineUgcScene(
 }
 
 export const UGC_SCENE_CATALOG: Record<UgcClipType, UgcSceneDefinition> = {
-  hook: defineUgcScene("hook", {
-    label: "Hook",
-    shortLabel: "Hook",
-    description: "A punchy opening line to camera that stops the scroll",
-    group: "opener",
-    primary: true,
-    defaultDurationSec: 5,
-    defaultSceneCount: 1,
-    requiresCreator: true,
-    requiresProduct: false,
-    requiresScreenshots: false,
-    showsScript: true,
-    requiresScript: true,
-    usesLipSync: true,
-    showsOnScreenText: false,
-  }),
   talking: defineUgcScene("talking", {
     label: "Talking head",
     shortLabel: "Talk",
@@ -164,7 +147,8 @@ export const UGC_SCENE_CATALOG: Record<UgcClipType, UgcSceneDefinition> = {
   "b-roll": defineUgcScene("b-roll", {
     label: "Product b-roll",
     shortLabel: "B-roll",
-    description: "Product-only beauty shots — no talking to camera",
+    description:
+      "Product-only beauty shots — optional voiceover mixed over the clip, not spoken to camera",
     group: "product",
     primary: true,
     defaultDurationSec: 6,
@@ -212,7 +196,8 @@ export const UGC_SCENE_CATALOG: Record<UgcClipType, UgcSceneDefinition> = {
   demo: defineUgcScene("demo", {
     label: "Product demo",
     shortLabel: "Demo",
-    description: "Use the product so the viewer sees how it works",
+    description:
+      "They use the product so you see how it works — any line is a voiceover, not lip-sync",
     group: "product",
     primary: false,
     defaultDurationSec: 10,
@@ -221,8 +206,8 @@ export const UGC_SCENE_CATALOG: Record<UgcClipType, UgcSceneDefinition> = {
     requiresProduct: true,
     requiresScreenshots: false,
     showsScript: true,
-    requiresScript: true,
-    usesLipSync: true,
+    requiresScript: false,
+    usesLipSync: false,
     showsOnScreenText: false,
   }),
   "try-on": defineUgcScene("try-on", {
@@ -290,9 +275,10 @@ export const UGC_SCENE_CATALOG: Record<UgcClipType, UgcSceneDefinition> = {
     showsOnScreenText: false,
   }),
   "app-showcase": defineUgcScene("app-showcase", {
-    label: "App on screen",
-    shortLabel: "App",
-    description: "Show the app or site on a phone",
+    label: "App / web on screen",
+    shortLabel: "App / web",
+    description:
+      "Phone or laptop showing the app or site — optional voiceover mixed over the screen",
     group: "screen",
     primary: false,
     defaultDurationSec: 8,
@@ -347,6 +333,7 @@ export const UGC_DURATION_MAX = 15;
 export const UGC_DEFAULT_DURATION = 8;
 export const UGC_SCRIPT_MAX_CHARS = 150;
 export const UGC_TALKING_HEAD_SCRIPT_MAX_CHARS = 300;
+export const UGC_SCRIPT_TARGET_MIN_CHARS = 100;
 export const UGC_SPOKEN_CHARS_PER_SEC = 12;
 
 function catalogField<K extends keyof UgcSceneDefinition>(
@@ -405,6 +392,9 @@ export function ugcClipTypesWhere(
 }
 
 export function parseUgcClipType(value: unknown): UgcClipType | undefined {
+  if (typeof value === "string" && value === "hook") {
+    return "talking";
+  }
   if (
     typeof value === "string" &&
     (UGC_CLIP_TYPES as readonly string[]).includes(value)
@@ -586,14 +576,10 @@ export function ugcScriptTargetChars(
   durationSec: number,
   type?: UgcClipType,
 ): number {
-  if (type && ugcClipUsesTalkingHeadModel(type)) {
-    return UGC_TALKING_HEAD_SCRIPT_MAX_CHARS;
-  }
+  const max = Math.min(ugcScriptMaxChars(type), UGC_SCRIPT_MAX_CHARS);
   const spokenWindow = Math.min(10, Math.max(UGC_DURATION_MIN, durationSec));
-  return Math.min(
-    UGC_SCRIPT_MAX_CHARS,
-    Math.round(spokenWindow * UGC_SPOKEN_CHARS_PER_SEC),
-  );
+  const fromDuration = Math.round(spokenWindow * UGC_SPOKEN_CHARS_PER_SEC);
+  return Math.min(max, Math.max(UGC_SCRIPT_TARGET_MIN_CHARS, fromDuration));
 }
 
 export function clampUgcDuration(value: unknown): number {
@@ -674,9 +660,11 @@ export function clampUgcSceneCount(
 
 export function ugcResolvedInfluencerId(
   project: { influencerId?: string },
-  clip?: { influencerId?: string },
+  clip?: { influencerId?: string; type?: UgcClipType },
 ): string | undefined {
-  return clip?.influencerId ?? project.influencerId;
+  if (clip?.influencerId) return clip.influencerId;
+  if (clip?.type && !ugcClipRequiresCreator(clip.type)) return undefined;
+  return project.influencerId;
 }
 
 /** Defaults tuned for conversational UGC (ElevenLabs 0–100 scale). */
@@ -685,9 +673,9 @@ export const UGC_DEFAULT_VOICE: UgcClipVoice = {
   voiceId: "21m00Tcm4TlvDq8ikWAM",
   voiceName: "Rachel",
   speed: 1.05,
-  stability: 45,
-  similarity: 75,
-  style: 15,
+  stability: 40,
+  similarity: 80,
+  style: 8,
   speakerBoost: true,
   enabled: true,
 };
@@ -750,7 +738,7 @@ export const UGC_CAMPAIGN_PRESETS: UgcCampaignPreset[] = [
     label: "Viral Hook",
     description: "Fast opener, product showcase, punchy ask.",
     beats: [
-      { type: "hook", durationSec: 5, name: "Hook" },
+      { type: "talking", durationSec: 5, name: "Hook" },
       { type: "product-hold", durationSec: 7, name: "Showcase" },
       { type: "cta", durationSec: 5, name: "CTA" },
     ],
@@ -1257,6 +1245,7 @@ export type UpdateUgcClipPayload = {
   imagePrompt?: string | null;
   referenceImageUrls?: string[];
   plannedPrompt?: string | null;
+  negativePrompt?: string | null;
   models?: Partial<UgcClipModels>;
   approved?: boolean;
   stills?: UgcSceneStill[];

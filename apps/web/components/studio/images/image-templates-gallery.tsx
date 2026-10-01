@@ -13,9 +13,16 @@ import { useState } from 'react'
 type ImageTemplatesGalleryProps = {
   models: Model[]
   templateCategories: StudioTemplateCategoryDto[]
+  hideTitle?: boolean
+  className?: string
 }
 
-export function ImageTemplatesGallery({ models, templateCategories }: ImageTemplatesGalleryProps) {
+export function ImageTemplatesGallery({
+  models,
+  templateCategories,
+  hideTitle = false,
+  className,
+}: ImageTemplatesGalleryProps) {
   const [recreateTemplate, setRecreateTemplate] = useState<StudioTemplateDto | null>(null)
 
   return (
@@ -23,9 +30,12 @@ export function ImageTemplatesGallery({ models, templateCategories }: ImageTempl
       <StudioInspirationsGallery
         kind={StudioTemplateKind.IMAGE}
         templateCategories={templateCategories}
-        sectionTitle="Templates"
+        sectionTitle="Inspirations"
+        sectionDescription="Browse looks and recreate any template in one tap."
         headingTone="quiet"
         chipTone="studio"
+        hideTitle={hideTitle}
+        className={className}
         emptyTitle="No templates yet"
         emptyDescription="When templates are added, they show up here so you can recreate one in a tap."
         onRecreate={setRecreateTemplate}

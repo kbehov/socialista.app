@@ -71,7 +71,7 @@ export function PromptAnatomy({
         </p>
       ) : null}
 
-      <div className="rounded-xl bg-black/[0.025] px-3.5 py-3 text-[13px] font-normal leading-[1.7] tracking-[-0.015em] ring-1 ring-black/[0.07] dark:bg-white/[0.025] dark:ring-white/[0.08]">
+      <div className="rounded-xl bg-black/[0.02] px-3.5 py-3 text-[13px] font-normal leading-[1.65] tracking-[-0.015em] ring-1 ring-black/[0.06] dark:bg-white/[0.02] dark:ring-white/[0.07]">
         {segments.map((segment, index) => {
           const isActive = activeSegment === segment.id
           const styles = segment.styles
@@ -148,11 +148,11 @@ export function PromptAnatomy({
       <CollapsibleTrigger
         className={cn(
           'group mx-auto flex items-center justify-center gap-1 py-1 text-left',
-          'text-black/40 transition-colors duration-150 dark:text-white/40',
-          'hover:text-foreground/70',
+          'text-muted-foreground/70 transition-colors duration-150',
+          'hover:text-foreground/75',
           'active:scale-[0.99] motion-reduce:active:scale-100',
           'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/45',
-          open && 'text-foreground/70',
+          open && 'text-foreground/80',
         )}
       >
         <span className="text-[12px] font-medium tracking-[-0.015em]">

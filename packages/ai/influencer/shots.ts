@@ -22,7 +22,7 @@ export const INFLUENCER_GENERATION_SHOTS: InfluencerShot[] = [
     label: 'Front portrait',
     aspectRatio: '1:1',
     promptSuffix:
-      'Instagram profile portrait: tight head-and-shoulders crop, eye-level 85mm look, face fills the frame as identity anchor, calm half-smile to camera. The place behind is their usual posting spot — styled, lived-in, and grid-ready, never a blank wall.',
+      'Instagram profile portrait: tight head-and-shoulders crop, eye-level, face clear in frame, a natural expression to camera. The place behind is their usual posting spot — lived-in and grid-ready, never a blank wall.',
     wardrobeSlot: 'casual',
     useNicheScene: true,
   },

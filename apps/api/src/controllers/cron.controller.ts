@@ -5,8 +5,10 @@ import {
   DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_PER_TICK,
+  SocialProvider,
   claimDuePosts,
   currentAnalyticsSlotIndex,
+  disconnectExpiredAccountsWithoutLiveRefreshToken,
   floorToAnalyticsBucket,
   floorToUtcDay,
   getConnectedAccountsExpiringSoon,
@@ -19,6 +21,7 @@ import {
 import { TASK_IDS } from '@socialista/types'
 import type {
   AnalyticsSweepTask,
+  PostAnalyticsSweepTask,
   PublishPostTask,
   RefreshAccountTokenTask,
 } from '@socialista/trigger/task-types'
@@ -28,6 +31,14 @@ import type { Context } from 'hono'
 
 function utcDateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10)
+}
+
+/** Future X expiry is unique per token; already-expired tokens retry once per hour. */
+function twitterRefreshIdempotencyKey(accessTokenExpiresAt: Date | undefined): string {
+  if (accessTokenExpiresAt && accessTokenExpiresAt.getTime() > Date.now()) {
+    return accessTokenExpiresAt.toISOString()
+  }
+  return `expired:${new Date().toISOString().slice(0, 13)}`
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -104,10 +115,14 @@ export const refreshExpiringAccountTokens = async (c: Context) => {
   const results = await Promise.all(
     accounts.map(async account => {
       const accountId = account._id.toString()
+      const expiryKey =
+        account.provider === SocialProvider.TWITTER
+          ? twitterRefreshIdempotencyKey(account.accessTokenExpiresAt)
+          : dateKey
       const handle = await tasks.trigger<RefreshAccountTokenTask>(
         TASK_IDS.refreshAccountToken,
         { accountId },
-        { idempotencyKey: `refresh-account:${accountId}:${dateKey}` },
+        { idempotencyKey: `refresh-account:${accountId}:${expiryKey}` },
       )
       return { accountId, runId: handle.id }
     }),
@@ -117,6 +132,16 @@ export const refreshExpiringAccountTokens = async (c: Context) => {
     queued: results.length,
     accountIds: results.map(r => r.accountId),
     runs: results,
+  })
+}
+
+/** Disconnect connected accounts whose access token is expired and have no live refresh token. */
+export const disconnectExpiredAccounts = async (c: Context) => {
+  const { accountIds } = await disconnectExpiredAccountsWithoutLiveRefreshToken()
+
+  return successResponse(c, 200, {
+    disconnected: accountIds.length,
+    accountIds,
   })
 }
 
@@ -214,6 +239,28 @@ export const sweepAccountAnalytics = async (c: Context) => {
     slotCount: ANALYTICS_SLOT_COUNT,
     forceAll,
     includeFlows,
+    runId: handle.id,
+  })
+}
+
+/**
+ * Kick off the hourly post-analytics sweep.
+ * Call **once an hour** via external cron with `x-internal-api-secret`.
+ * Each tick claims a bounded set of due IG/FB checkpoints (1h → 30d) for
+ * premium workspaces and batch-enqueues fetch workers.
+ */
+export const sweepPostAnalytics = async (c: Context) => {
+  const now = new Date()
+  const hourKey = now.toISOString().slice(0, 13)
+
+  const handle = await tasks.trigger<PostAnalyticsSweepTask>(
+    TASK_IDS.postAnalyticsSweep,
+    { timestamp: now.toISOString() },
+    { idempotencyKey: `post-analytics-sweep:${hourKey}` },
+  )
+
+  return successResponse(c, 200, {
+    hourKey,
     runId: handle.id,
   })
 }

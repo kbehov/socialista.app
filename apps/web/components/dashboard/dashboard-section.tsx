@@ -27,7 +27,7 @@ function DashboardSection({
 }: DashboardSectionProps) {
   const isSm = size === 'sm'
   const padding = isSm ? 'px-4' : 'px-5'
-  const headerPad = isSm ? 'pb-2.5 pt-3.5' : 'pb-3.5 pt-5'
+  const headerPad = isSm ? 'pb-2 pt-3' : 'pb-3 pt-4'
   const contentPad = isSm ? 'pb-4' : 'pb-5'
 
   return (
@@ -47,7 +47,7 @@ function DashboardSection({
         </div>
         {action ? <div className="shrink-0 self-center">{action}</div> : null}
       </header>
-      <div className={cn(padding, contentPad, 'min-h-0 pt-3', contentClassName)}>{children}</div>
+      <div className={cn(padding, contentPad, 'min-h-0 pt-0', contentClassName)}>{children}</div>
     </section>
   )
 }

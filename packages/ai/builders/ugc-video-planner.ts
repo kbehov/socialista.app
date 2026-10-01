@@ -14,7 +14,7 @@ export type UgcVideoPlannerInput = {
   audioMode?: UgcAudioMode
 }
 
-function modelBias(videoModel: string, clipType?: UgcClipType): string {
+export function ugcVideoModelBias(videoModel: string, clipType?: UgcClipType): string {
   const id = videoModel.toLowerCase()
   if (id.includes('omnihuman')) {
     return 'Write for OmniHuman 1.5: the model lip-syncs the attached audio to the person in frame 1. Describe delivery emotion, gaze, expression, and small head movement only. Do not invent a new location, person, or spoken words — the audio is already recorded.'
@@ -32,18 +32,17 @@ function modelBias(videoModel: string, clipType?: UgcClipType): string {
 }
 
 const TYPE_MOTION: Record<UgcClipType, string> = {
-  hook: 'Spoken-hook opener: animate talking-head energy from frame 1. Natural mouth shapes for the spoken line, blinks, a handheld phone feel. Pattern-interrupt energy. Stay on this person. No on-screen text.',
   talking: 'Animate talking-head energy: natural mouth shapes for the spoken line, blinks, small head turns, and a handheld phone feel. Stay on this person.',
   'product-hold': 'Keep the product in hand. Slight product tilt, a step closer, a smile. Same SKU.',
   'b-roll': 'Product-only motion: slow push-in, gentle rotation, light shifting on materials. No new objects. No person unless already in frame 1.',
   unboxing: 'Hands open or lift the product from the packaging. Continuous action from frame 1. Same box and SKU.',
   cta: 'Talking-head close: they lean in slightly and deliver the ask to camera. Natural mouth shapes, blinks, handheld phone feel. Stay on this person. No on-screen buttons or captions.',
-  demo: 'Show the product being used from frame 1. Hands complete one continuous how-it-works action. Same SKU. Mouth moves if they talk through the step.',
+  demo: 'Show the product being used from frame 1. Hands complete one continuous how-it-works action. Same SKU. Mouth stays relaxed and closed — any line is a voiceover in post.',
   'try-on': 'They adjust or show the product on their body. Natural selfie motion. Same garment/item.',
   review: 'Talking-head review: natural mouth shapes for the spoken take, small head turns, handheld phone feel. Product can stay in hand or nearby. Same person.',
   reaction: 'First-reaction motion: a real beat of surprise or delight from frame 1, then they talk. Product stays in frame. Same person and SKU.',
   'before-after': 'Hold the after (or contrast) setup from frame 1. Small continuous motion — they turn, show, or compare. Do not invent a graphic split-screen or on-image text.',
-  'app-showcase': 'Phone stays readable. Slight handheld sway. Do not invent a different UI than the screen in frame 1.',
+  'app-showcase': 'Phone or laptop stays readable. Slight handheld sway. Do not invent a different UI than the screen in frame 1. Mouth stays closed if a person is in frame.',
   custom: 'Freeform motion from frame 1. Follow user directions when given. Small continuous action, same person, product, and room. Mouth moves only if a spoken line is provided. No on-screen text.',
 }
 
@@ -75,15 +74,16 @@ export function buildUgcVideoPlannerUserPrompt(input: UgcVideoPlannerInput): str
   const durationLine = input.durationSec ? `Clip duration: ${input.durationSec} seconds.` : ''
 
   return [
-    `Video model: ${input.videoModel}. ${modelBias(input.videoModel, input.clipType)}`,
+    'Image 1 is the start frame. Look at it first. Extra attached images are the same subject at nearby angles — continuity, not a new story. Name only what you see in Image 1, then write the motion.',
+    `Video model: ${input.videoModel}. ${ugcVideoModelBias(input.videoModel, input.clipType)}`,
     `Aspect: ${input.aspectRatio}. Scene stills attached: ${input.sceneCount}. ${durationLine}`.trim(),
     input.clipType ? `Clip type: ${input.clipType}. ${typeLine}` : '',
     input.influencerName ? `Creator: ${input.influencerName}.` : 'No on-camera creator — product or device only.',
     input.identityFragment ?? '',
     `Product: ${product}.`,
     scriptBlock(input),
-    directions ? `User directions: ${directions}` : 'No extra directions — keep it natural UGC.',
-    'Write the image-to-video prompt now.',
+    directions ? `User directions: ${directions}` : 'No extra directions — keep it natural UGC. Fill motion, camera, and delivery from Image 1.',
+    'Rewrite the directions into one image-to-video prompt now.',
   ]
     .filter(Boolean)
     .join('\n\n')

@@ -10,3 +10,18 @@ export {
 } from './dashboard-segment'
 export { DashboardTableShell, type DashboardTableShellProps } from './dashboard-table-shell'
 export { WorkspaceRequired } from './workspace-required'
+export {
+  dashboardMainClassName,
+  dashboardPageClassName,
+  dashboardShellInsetClassName,
+  dashboardShellProviderClassName,
+  EDGE_TO_EDGE_STUDIO_CLASSES,
+  imageStudioHomeRootClassName,
+  lockedStudioShellRootClassName,
+  LOCKED_STUDIO_SHELL_CLASSES,
+  postComposerRootClassName,
+  slideshowStudioRootClassName,
+  STUDIO_SHELL_CLASSES,
+  ugcStudioRootClassName,
+  videoStudioRootClassName,
+} from './studio-shell'

@@ -12,7 +12,7 @@ import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import {
-  STUDIO_HERO_COMPOSER_SURFACE_CLASS,
+  STUDIO_HOME_COMPOSER_SURFACE_CLASS,
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
 } from '@/components/studio/prompt/studio-composer-surface'
@@ -32,6 +32,7 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
 import { collectStaticAdImages } from '@/lib/studio/static-ads/collect-references'
+import { STATIC_AD_STUDIO_PLACEHOLDER_EXAMPLES } from '@/lib/studio/studio-placeholder-examples'
 import { useWorkspaceStore } from '@/store/workspace.store'
 import { getProjectId, useProjectStore } from '@/store/project.store'
 import type { StaticAdAspectRatio } from '@/types/static-ads.types'
@@ -124,6 +125,11 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
       return 'Optional brief — recreate this template with your product and creator.'
     }
     return DEFAULT_PLACEHOLDER
+  }, [attachments.length, templateReference])
+
+  const animatedPlaceholderWords = useMemo(() => {
+    if (attachments.length > 0 || templateReference) return undefined
+    return [...STATIC_AD_STUDIO_PLACEHOLDER_EXAMPLES]
   }, [attachments.length, templateReference])
 
   const insertAtCursor = useCallback(
@@ -329,6 +335,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
           label: 'Number of images',
         }}
         placeholder={placeholder}
+        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={isPending}
         onSubmit={handleSubmit}
         submitLabel={numImages === 1 ? 'Generate' : `Generate ${numImages}`}
@@ -400,7 +407,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
         }}
         composerRef={composerRef}
         onPromptChange={clearActivePreset}
-        surfaceClassName={STUDIO_HERO_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
         emptyTitle="No image-input models yet"
         emptyDescription="Add a text-to-image model with image input support in the manager to start generating product ads."
       />

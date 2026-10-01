@@ -1,6 +1,7 @@
 import { AlertTriangleIcon, InfoIcon, Link2OffIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { analyticsSurface } from '@/components/analytics/analytics-surface'
 import { dashboardSurface } from '@/components/dashboard/surface'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
@@ -24,7 +25,7 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
       <div
         className={cn(
           'flex flex-wrap items-center gap-3 px-3 py-2.5',
-          dashboardSurface.inset,
+          analyticsSurface.inset,
           className,
         )}
       >
@@ -33,7 +34,7 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-foreground">Reconnect required</p>
-          <p className={dashboardSurface.metricMeta}>
+          <p className={analyticsSurface.metricMeta}>
             Analytics access expired. Reconnect this account to resume syncing.
             {lastFetchedAt ? ` Last synced ${formatRelativeTime(lastFetchedAt)}.` : null}
           </p>
@@ -47,13 +48,13 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
 
   if (status === 'unsupported') {
     return (
-      <div className={cn('flex items-start gap-2.5 px-3 py-2.5', dashboardSurface.inset, className)}>
+      <div className={cn('flex items-start gap-2.5 px-3 py-2.5', analyticsSurface.inset, className)}>
         <span className="flex size-6 shrink-0 items-center justify-center text-muted-foreground">
           <InfoIcon className="size-3.5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0">
           <p className="text-xs font-medium text-foreground">Limited metrics</p>
-          <p className={dashboardSurface.metricMeta}>
+          <p className={analyticsSurface.metricMeta}>
             This platform doesn&apos;t expose full analytics yet. Available metrics are shown below.
           </p>
         </div>
@@ -63,7 +64,7 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
 
   if (status === 'error' || hasMissing) {
     return (
-      <div className={cn('flex items-start gap-2.5 px-3 py-2.5', dashboardSurface.inset, className)}>
+      <div className={cn('flex items-start gap-2.5 px-3 py-2.5', analyticsSurface.inset, className)}>
         <span className="flex size-6 shrink-0 items-center justify-center text-destructive">
           <AlertTriangleIcon className="size-3.5" strokeWidth={1.75} />
         </span>
@@ -71,7 +72,7 @@ function AccountAnalyticsQuality({ dataQuality, className }: AccountAnalyticsQua
           <p className="text-xs font-medium text-foreground">
             {status === 'error' ? 'Sync issue' : 'Partial data'}
           </p>
-          <p className={dashboardSurface.metricMeta}>
+          <p className={analyticsSurface.metricMeta}>
             {status === 'error'
               ? 'The latest analytics sync failed. Showing the most recent available data.'
               : `Some metrics were unavailable: ${missingMetrics.join(', ')}.`}

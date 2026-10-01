@@ -2,8 +2,10 @@ export { connectDb, disconnectDb, getMongoUri, mongoose } from "./connect.js";
 
 export { AccountModel } from "./models/account.model.js";
 export { AccountAnalyticsSnapshotModel } from "./models/account-analytics-snapshot.model.js";
+export { PostAnalyticsSnapshotModel } from "./models/post-analytics-snapshot.model.js";
 export * from "./repo/account.repo.js";
 export * from "./repo/account-analytics.repo.js";
+export * from "./repo/post-analytics.repo.js";
 export { GenerationModel } from "./models/generation.model.js";
 export * from "./repo/generation.repo.js";
 export { PostModel } from "./models/post.model.js";
@@ -137,6 +139,24 @@ export {
   floorToUtcDay,
   hashAccountRefreshSlot,
 } from "./utils/analytics-slot.js";
+export {
+  POST_ANALYTICS_CHECKPOINTS,
+  POST_ANALYTICS_CHECKPOINT_HOURS,
+  POST_ANALYTICS_FINAL_GRACE_MS,
+  POST_ANALYTICS_PROVIDERS,
+  initialPostAnalyticsSchedule,
+  isPostAnalyticsCheckpoint,
+  isPostAnalyticsSupportedProvider,
+  isPostAnalyticsWindowOpen,
+  nextPostAnalyticsCheckpoint,
+  postAnalyticsCheckpointAt,
+  postAnalyticsCheckpointHours,
+  postAnalyticsOldestPublishedAt,
+  postAnalyticsWindowEnd,
+  resolvePostAnalyticsSchedule,
+  scheduleAfterPostAnalyticsSuccess,
+  type PostAnalyticsScheduleDecision,
+} from "./utils/post-analytics-schedule.js";
 export { isDuplicateKeyError } from "./utils/is-duplicate-key-error.js";
 export {
   isValidEmail,
@@ -182,6 +202,15 @@ export {
 } from "./types/account-analytics.types.js";
 
 export {
+  PostAnalyticsCheckpoint,
+  type IPostAnalyticsSnapshot,
+  type InsertPostAnalyticsSnapshotInput,
+  type PostAnalyticsMetrics,
+  type PostAnalyticsSnapshotDocument,
+  type PostAnalyticsState,
+} from "./types/post-analytics.types.js";
+
+export {
   GenerationKind,
   GenerationResultType,
   GenerationStatus,
@@ -223,9 +252,16 @@ export {
 } from "./types/post.types.js";
 
 export {
+  DEFAULT_POST_ANALYTICS_CLAIM_BATCH_SIZE,
   DEFAULT_PUBLISH_CLAIM_BATCH_SIZE,
+  MAX_POST_ANALYTICS_CLAIM_BATCH_SIZE,
+  MAX_POST_ANALYTICS_CLAIM_PER_TICK,
   MAX_PUBLISH_CLAIM_BATCH_SIZE,
   MAX_PUBLISH_CLAIM_PER_TICK,
+  POST_ANALYTICS_LEASE_MS,
+  POST_ANALYTICS_MAX_FAILURES,
+  POST_ANALYTICS_POSTS_PER_TASK,
+  POST_ANALYTICS_RETRY_DELAY_MS,
   STALE_PUBLISH_CLAIM_MS,
 } from "./config/config.js";
 

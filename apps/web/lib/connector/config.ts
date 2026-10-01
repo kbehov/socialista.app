@@ -58,7 +58,9 @@ export function getTikTokConfig() {
   return {
     clientKey: process.env.TIKTOK_CLIENT_KEY ?? '',
     clientSecret: process.env.TIKTOK_CLIENT_SECRET ?? '',
-    scopes: ['user.info.basic', 'user.info.profile', 'video.publish'],
+    // video.publish posts directly. video.upload sends a draft to the TikTok inbox,
+    // which is the path TikTok allows for a public account before the app is audited.
+    scopes: ['user.info.basic', 'user.info.profile', 'video.publish', 'video.upload'],
   }
 }
 
@@ -87,6 +89,16 @@ export function getLinkedInConfig() {
   }
 }
 
+export function getXConfig() {
+  return {
+    clientId: process.env.X_CLIENT_ID ?? '',
+    clientSecret: process.env.X_CLIENT_SECRET ?? '',
+    redirectUri: getCallbackUrl('twitter'),
+    // tweet.write + media.write are requested now so a later publisher does not force reconnect.
+    scopes: ['tweet.read', 'tweet.write', 'users.read', 'media.write', 'offline.access'],
+  }
+}
+
 export function assertProviderConfigured(provider: ConnectProvider): void {
   const checks: Record<ConnectProvider, { ok: boolean; label: string }> = {
     facebook: {
@@ -108,6 +120,10 @@ export function assertProviderConfigured(provider: ConnectProvider): void {
     linkedin: {
       ok: Boolean(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET),
       label: 'LinkedIn',
+    },
+    twitter: {
+      ok: Boolean(process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET),
+      label: 'X',
     },
   }
 

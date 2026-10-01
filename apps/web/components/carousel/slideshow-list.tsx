@@ -188,6 +188,7 @@ type SlideshowListProps = {
   initialSlideshows: SlideshowSummaryResponse[]
   initialError?: string | null
   initialHasMore?: boolean
+  embedded?: boolean
 }
 
 export function SlideshowList({
@@ -195,6 +196,7 @@ export function SlideshowList({
   initialSlideshows,
   initialError = null,
   initialHasMore = false,
+  embedded = false,
 }: SlideshowListProps) {
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const [slideshows, setSlideshows] = useState(initialSlideshows)
@@ -308,7 +310,12 @@ export function SlideshowList({
 
   return (
     <section
-      className="mx-auto w-full max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8"
+      className={cn(
+        'w-full',
+        embedded
+          ? 'pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1rem))]'
+          : 'mx-auto max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8',
+      )}
       aria-labelledby="recent-slideshows-heading"
     >
       <div className="mb-3.5 flex items-end justify-between gap-3">

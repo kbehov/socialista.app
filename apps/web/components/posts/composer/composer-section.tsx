@@ -18,10 +18,10 @@ type ComposerSectionProps = {
 }
 
 const variantStyles = {
-  default: cn('rounded-xl border border-border/60 shadow-xs', dashboardSurface.bg),
-  subtle: cn('rounded-xl border border-border/50 shadow-xs', dashboardSurface.bg),
-  dashed: cn('rounded-xl border border-dashed border-border/60', dashboardSurface.bg),
-  focus: cn('rounded-xl border border-border/60 bg-background shadow-xs'),
+  default: cn('rounded-lg border border-border/60 shadow-none', dashboardSurface.bg),
+  subtle: cn('rounded-lg border border-border/50 shadow-none', dashboardSurface.bg),
+  dashed: cn('rounded-lg border border-dashed border-border/60 shadow-none', dashboardSurface.bg),
+  focus: cn('rounded-lg border border-border/60 bg-background shadow-none'),
 } as const
 
 function SectionHeading({

@@ -1,33 +1,25 @@
 'use client'
 
 import { PricingCard } from '@/components/cards/pricing-card'
-import { Button } from '@/components/ui/button'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { cn } from '@/lib/utils'
 import type { PolarProduct } from '@socialista/types'
-import {
-  ArrowUpRight,
-  Building2,
-  Check,
-  CreditCard,
-  RefreshCw,
-  ShieldCheck,
-  Users,
-  Zap,
-} from 'lucide-react'
+import { formatProductPrice } from '@/lib/pricing'
+import { ArrowUpRight, Building2, Check, CreditCard, RefreshCw, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 
-import { HERO, PRICING_SECTION } from './content'
+import { PRICING_SECTION, SIGNUP_HREF, TESTIMONIALS } from './content'
 import { FadeIn } from './fade-in'
 import {
   landingContentGap,
-  landingCtaPrimaryLg,
   landingNavLink,
   landingPricingCardSurface,
   landingSectionLead,
   landingSectionPricing,
 } from './landing-classes'
 import { Section } from './section'
+import { SectionCta, useLandingCtaHref } from './section-cta'
 import { LandingSectionIntro } from './section-header'
 
 type LandingPricingProps = {
@@ -35,13 +27,11 @@ type LandingPricingProps = {
   loadError?: string | null
 }
 
-const TRUST_ICONS: Record<(typeof PRICING_SECTION.trust)[number], LucideIcon> = {
+const TRUST_ICONS: Record<string, LucideIcon> = {
   'Secure checkout': ShieldCheck,
   'Cancel anytime': RefreshCw,
-  'No card to start': CreditCard,
   'You own your creatives': Check,
-  'Shared team workspaces': Users,
-  'Instant studio access': Zap,
+  [PRICING_SECTION.freeTrust]: CreditCard,
 }
 
 function pickFeaturedIndex(products: PolarProduct[]): number {
@@ -82,7 +72,7 @@ function PricingEnterpriseCallout() {
         />
         <span>
           <span className="font-semibold tracking-[-0.02em] text-[var(--landing-ink)]">
-            {enterprise.eyebrow}.
+            {enterprise.eyebrow}
           </span>
           <span className="text-[var(--landing-muted)]"> {enterprise.description}</span>
         </span>
@@ -101,31 +91,22 @@ function PricingEnterpriseCallout() {
   )
 }
 
-function PricingTrustIndicators({ className }: { className?: string }) {
+function PricingTrustIndicators({ className, hasFreePlan }: { className?: string; hasFreePlan: boolean }) {
+  // Only promise "no card" when a $0 plan actually exists
+  const items = hasFreePlan ? [PRICING_SECTION.freeTrust, ...PRICING_SECTION.trust] : PRICING_SECTION.trust
+
   return (
     <ul
       className={cn(
-        'grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3',
+        'flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[0.8125rem] font-medium tracking-[-0.015em] text-[var(--landing-ink)]',
         className,
       )}
     >
-      {PRICING_SECTION.trust.map(label => {
-        const Icon = TRUST_ICONS[label]
+      {items.map(label => {
+        const Icon = TRUST_ICONS[label] ?? Check
         return (
-          <li
-            key={label}
-            className={cn(
-              landingPricingCardSurface,
-              'flex items-center gap-2.5 rounded-xl border border-[color-mix(in_srgb,var(--landing-stone)_50%,var(--border))] px-4 py-3',
-              'text-[0.8125rem] font-medium tracking-[-0.015em] text-[var(--landing-ink)]',
-            )}
-          >
-            <span
-              className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--accent-orange)_16%,white)] text-[var(--landing-ink)]"
-              aria-hidden="true"
-            >
-              <Icon className="size-3.5" strokeWidth={2} />
-            </span>
+          <li key={label} className="flex items-center gap-2">
+            <Icon className="size-4 text-[var(--landing-muted)]" strokeWidth={1.75} aria-hidden="true" />
             {label}
           </li>
         )
@@ -134,17 +115,38 @@ function PricingTrustIndicators({ className }: { className?: string }) {
   )
 }
 
+/** First real testimonial next to the plans — renders nothing until we have one. */
+function PricingQuote() {
+  const quote = TESTIMONIALS[0]
+  if (!quote) return null
+
+  return (
+    <figure className="mx-auto max-w-2xl text-center">
+      <blockquote className="font-serif text-[1.375rem] italic leading-snug tracking-[-0.01em] text-[var(--landing-ink)] sm:text-2xl">
+        “{quote.quote}”
+      </blockquote>
+      <figcaption className="mt-4 text-sm text-[var(--landing-muted)]">
+        <span className="font-medium text-[var(--landing-ink)]">{quote.name}</span> · {quote.role}
+      </figcaption>
+    </figure>
+  )
+}
+
 export function LandingPricing({ products, loadError = null }: LandingPricingProps) {
   const featuredIndex = pickFeaturedIndex(products)
   const hasProducts = products.length > 0 && !loadError
   const emphasizeFeatured = products.length >= 3 && featuredIndex >= 0
+  const hasFreePlan = products.some(product => formatProductPrice(product).isFree)
+  // Signed-in visitors upgrade from their workspace instead of signing up again
+  const isSignedIn = useLandingCtaHref() !== SIGNUP_HREF
 
   return (
-    <Section id="pricing" landingDivider alt containerClassName={landingSectionPricing}>
+    <Section id="pricing" landingDivider containerClassName={landingSectionPricing}>
       <FadeIn>
         {hasProducts ? (
           <LandingSectionIntro
             titleId="pricing-heading"
+            eyebrow={PRICING_SECTION.eyebrow}
             title={PRICING_SECTION.title}
             titleAccent={PRICING_SECTION.titleAccent}
             description={PRICING_SECTION.description}
@@ -176,8 +178,10 @@ export function LandingPricing({ products, loadError = null }: LandingPricingPro
                     product={product}
                     isFeatured={isFeatured}
                     tierIndex={index}
-                    ctaLabel={PRICING_SECTION.cta}
-                    checkoutUrl={`/auth/signup?plan=${encodeURIComponent(product.id)}`}
+                    ctaLabel={formatProductPrice(product).isFree ? PRICING_SECTION.freeCta : PRICING_SECTION.cta}
+                    checkoutUrl={
+                      isSignedIn ? DASHBOARD_ROUTES.UPGRADE : `${SIGNUP_HREF}?plan=${encodeURIComponent(product.id)}`
+                    }
                     className="w-full"
                   />
                 </FadeIn>
@@ -185,8 +189,12 @@ export function LandingPricing({ products, loadError = null }: LandingPricingPro
             })}
           </div>
 
-          <FadeIn delay={0.12} className={cn(landingContentGap, 'mt-10 sm:mt-12')}>
-            <PricingTrustIndicators />
+          <FadeIn delay={0.12} className="mt-10 sm:mt-12">
+            <PricingTrustIndicators hasFreePlan={hasFreePlan} />
+          </FadeIn>
+
+          <FadeIn delay={0.12} className={cn(landingContentGap, 'empty:hidden')}>
+            <PricingQuote />
           </FadeIn>
 
           <FadeIn delay={0.14} className={cn(landingContentGap, 'mt-8 sm:mt-9')}>
@@ -206,11 +214,9 @@ export function LandingPricing({ products, loadError = null }: LandingPricingPro
         </>
       ) : (
         <FadeIn delay={0.06} className={cn(landingContentGap, 'flex flex-col items-center gap-8')}>
-          <PricingTrustIndicators className="w-full max-w-3xl" />
+          <PricingTrustIndicators className="w-full max-w-3xl" hasFreePlan={false} />
           <PricingEnterpriseCallout />
-          <Button asChild size="lg" className={landingCtaPrimaryLg}>
-            <Link href="/auth/signup">{HERO.primaryCta}</Link>
-          </Button>
+          <SectionCta label={PRICING_SECTION.freeCta} />
         </FadeIn>
       )}
     </Section>

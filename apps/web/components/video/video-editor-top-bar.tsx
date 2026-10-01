@@ -71,20 +71,32 @@ function SaveStatusIndicator({
 
   const isDirty = !hasWorkspace || status === 'unsaved' || status === 'error' || status === 'saving'
 
+  const shortLabel =
+    !hasWorkspace
+      ? 'No workspace'
+      : status === 'saving'
+        ? 'Saving…'
+        : status === 'error'
+          ? 'Save failed'
+          : status === 'unsaved'
+            ? 'Unsaved'
+            : savedLabel
+              ? `Saved ${savedLabel}`
+              : status === 'saved'
+                ? 'Saved'
+                : null
+
   return (
-    <>
-      <span
-        className={cn(
-          'hidden size-1.5 shrink-0 rounded-full sm:block',
-          isDirty ? 'bg-foreground' : 'bg-foreground/25',
-        )}
-        aria-hidden
-        title={statusText}
-      />
-      <span className="sr-only" aria-live="polite">
-        {statusText}
-      </span>
-    </>
+    <span
+      className={cn(
+        'hidden max-w-24 truncate text-[11px] font-medium tabular-nums sm:inline',
+        isDirty ? 'text-foreground' : 'text-muted-foreground',
+      )}
+      title={statusText}
+      aria-live="polite"
+    >
+      {shortLabel}
+    </span>
   )
 }
 

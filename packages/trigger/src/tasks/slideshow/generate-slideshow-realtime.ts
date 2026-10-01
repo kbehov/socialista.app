@@ -14,7 +14,7 @@ import {
   toObjectId,
 } from '@socialista/db'
 import type { SlideshowGenerationOutput } from '@socialista/types'
-import { PROMPT_KEYS, SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, TASK_IDS } from '@socialista/types'
+import { SLIDESHOW_GENERATION_SLIDE_COUNT_MIN, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 
 import { slideshowGenerationPayloadSchema } from '../../schemas/slideshow-generation.schema.js'
@@ -28,7 +28,6 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
-import { loadSkillOverride } from '../shared/skills.js'
 import {
   assertSufficientCredits,
   finalizeGeneration,
@@ -75,14 +74,8 @@ export const realtimeSlideshowGeneration = schemaTask({
 
       setGenerationStatus(10, 'Planning your slideshow')
 
-      const systemOverride = await loadSkillOverride({
-        skillId: payload.skillId,
-        target: PROMPT_KEYS.slideshow,
-        workspaceId: payload.workspaceId,
-      })
       const plan = await planSlideshow({
         hook: payload.prompt,
-        systemOverride,
         ...(payload.slideCount != null ? { slideCount: payload.slideCount } : {}),
         ...(payload.textModel ? { model: payload.textModel } : {}),
       })

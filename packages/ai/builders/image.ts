@@ -8,20 +8,35 @@ const DESTINATION_FORMATS: Record<AspectRatio, string> = {
   '16:9': 'wide landscape — LinkedIn, X, and YouTube-style link cards',
 }
 
+const INFLUENCER_PHOTO_DESTINATION_SUFFIX =
+  ' Output must be one photoreal photograph of a single person filling the frame — not a slide, infographic, carousel, or static ad with typography.'
+
+export type BuildImagePromptMessagesOptions = {
+  /** Omit target-model "native format" hint; use UGC photograph destination (influencer generation). */
+  influencerPhotograph?: boolean
+}
+
 export const buildImagePromptMessages = (
   prompt: string,
   media?: SanitizedMedia[],
   aspectRatio?: AspectRatio,
   targetModel?: string,
+  options?: BuildImagePromptMessagesOptions,
 ): ModelMessage[] => {
+  const influencerPhotograph = options?.influencerPhotograph === true
+
   const destination = aspectRatio
-    ? `Destination format: ${DESTINATION_FORMATS[aspectRatio]}.`
-    : null
+    ? influencerPhotograph
+      ? `Destination: ${DESTINATION_FORMATS[aspectRatio]}.${INFLUENCER_PHOTO_DESTINATION_SUFFIX}`
+      : `Destination format: ${DESTINATION_FORMATS[aspectRatio]}.`
+    : influencerPhotograph
+      ? `Destination: square or vertical feed photograph of one creator.${INFLUENCER_PHOTO_DESTINATION_SUFFIX}`
+      : null
 
   const target =
-    targetModel?.trim() ?
-      `Target image model: ${targetModel.trim()}. Write in the prompt format this model responds to best.`
-    : null
+    !influencerPhotograph && targetModel?.trim()
+      ? `Target image model: ${targetModel.trim()}. Write in the prompt format this model responds to best.`
+      : null
 
   const referenceLegend =
     media && media.length > 0

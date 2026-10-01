@@ -1,14 +1,12 @@
-import { PROMPT_KEY_VALUES, type PromptKey } from '@socialista/types'
+import { normalizeSkillTarget, type SkillTarget } from '@socialista/types'
 
 export type ImportedSkillDraft = {
   name: string
   description: string
-  target: PromptKey
+  target: SkillTarget
   icon: string
   content: string
 }
-
-const TARGETS = new Set<PromptKey>(PROMPT_KEY_VALUES)
 
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/
 
@@ -38,8 +36,11 @@ function nameFromFilename(filename: string) {
   return base.charAt(0).toUpperCase() + base.slice(1)
 }
 
-function asTarget(value: string | undefined): PromptKey {
-  if (value && TARGETS.has(value as PromptKey)) return value as PromptKey
+function asTarget(value: string | undefined): SkillTarget {
+  if (value) {
+    const normalized = normalizeSkillTarget(value)
+    if (normalized) return normalized
+  }
   return 'image-prompt'
 }
 

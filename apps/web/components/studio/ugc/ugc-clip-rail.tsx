@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ugcSceneBadge } from '@/lib/studio/ugc/ugc-stage'
+import { ugcProjectHasGeneratedSceneWork, ugcSceneBadge } from '@/lib/studio/ugc/ugc-stage'
 import { cn } from '@/lib/utils'
 import type { UgcClipRailRun } from '@/types/ugc.types'
 import { UGC_SCENE_ICONS } from '@/utils/ugc/scene.utils'
@@ -105,7 +105,7 @@ export function UgcClipRail({
           <span className="font-normal tabular-nums text-muted-foreground">{clips.length}</span>
           <UgcInfoTooltip
             side="bottom"
-            label="Your ad is a sequence of short scenes. Each scene: photo → voiceover → video. Drag to reorder."
+            label="Your ad is a sequence of short scenes. Each scene: photo → audio if needed → video. Talking scenes are lip-synced; product and screen scenes mix a voiceover. Drag to reorder."
           />
         </div>
         <div className="flex shrink-0 items-center -space-x-0.5">
@@ -203,6 +203,7 @@ export function UgcClipRail({
       <UgcCampaignPresets
         open={presetOpen}
         applying={applyingPreset}
+        hasGeneratedWork={ugcProjectHasGeneratedSceneWork(project)}
         onOpenChange={setPresetOpen}
         onApply={presetId => {
           onApplyPreset(presetId)

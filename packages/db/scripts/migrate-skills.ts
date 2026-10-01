@@ -1,31 +1,41 @@
 import { connectDb, disconnectDb } from '../connect.js'
 import { SkillModel } from '../models/skill.model.js'
-import { PROMPT_KEY_VALUES, type PromptKey } from '@socialista/types'
+import {
+  LEGACY_SKILL_TARGET_MAP,
+  SKILL_TARGET_VALUES,
+  normalizeSkillTarget,
+  type SkillTarget,
+} from '@socialista/types'
 import type { Document, ObjectId } from 'mongodb'
 
-const SLOT_TO_TARGET: Record<string, PromptKey> = {
+const SLOT_TO_TARGET: Record<string, SkillTarget> = {
   'image-prompt-enhance': 'image-prompt',
   'video-prompt-enhance': 'video-prompt',
   'static-ad-vision': 'static-ad',
-  'ugc-video-planner': 'ugc-video-planner',
-  'ugc-ad-script': 'ugc-ad-script',
+  'ugc-video-planner': 'video-prompt',
+  'ugc-still-prompt': 'image-prompt',
+  'ugc-ad-script': 'video-script',
   'video-script': 'video-script',
-  slideshow: 'slideshow',
+  slideshow: 'post-copy',
   'post-copywriter': 'post-copy',
 }
 
-const BINDING_TO_TARGET: Record<string, PromptKey> = {
+const BINDING_TO_TARGET: Record<string, SkillTarget> = {
   image: 'image-prompt',
   video: 'video-prompt',
   text: 'post-copy',
 }
 
-function isPromptKey(value: unknown): value is PromptKey {
-  return typeof value === 'string' && (PROMPT_KEY_VALUES as string[]).includes(value)
+function isSkillTarget(value: unknown): value is SkillTarget {
+  return typeof value === 'string' && (SKILL_TARGET_VALUES as string[]).includes(value)
 }
 
-function resolveTarget(doc: Document): { target: PromptKey; fallback: boolean } {
-  if (isPromptKey(doc.target)) return { target: doc.target, fallback: false }
+function resolveTarget(doc: Document): { target: SkillTarget; fallback: boolean } {
+  if (isSkillTarget(doc.target)) return { target: doc.target, fallback: false }
+  if (typeof doc.target === 'string') {
+    const normalized = normalizeSkillTarget(doc.target)
+    if (normalized) return { target: normalized, fallback: doc.target !== normalized }
+  }
   if (typeof doc.slot === 'string' && SLOT_TO_TARGET[doc.slot]) {
     return { target: SLOT_TO_TARGET[doc.slot], fallback: false }
   }
@@ -89,7 +99,9 @@ async function main() {
     console.log(`Assigned fallback target to ${fallbackIds.length} skills: ${fallbackIds.join(', ')}`)
   }
 
-  console.log(`Migrated ${remaining.length} workspace skills`)
+  console.log(
+    `Migrated ${remaining.length} workspace skills (legacy map: ${Object.keys(LEGACY_SKILL_TARGET_MAP).join(', ')})`,
+  )
   await disconnectDb()
 }
 

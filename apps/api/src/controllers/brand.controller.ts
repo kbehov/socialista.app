@@ -9,7 +9,9 @@ import {
   withQueryParam,
 } from '@/utils/common.utils.js'
 import { HttpError, successResponse } from '@/utils/http-response.js'
+import { scrapeSiteContext, SiteScrapeError } from '@/utils/scrape-site.js'
 import { getWorkspaceAsMember, resolveProjectForWorkspace } from '@/utils/workspace.utils.js'
+import { extractBrandContext } from '@socialista/ai'
 import {
   createBrand as createBrandInDb,
   deleteBrand as deleteBrandInDb,
@@ -19,10 +21,9 @@ import {
   updateBrand as updateBrandInDb,
   type IBrand,
 } from '@socialista/db'
-import type { CreateBrandPayload, Brand, UpdateBrandPayload } from '@socialista/types'
+import { BRAND_COLORS_MAX, type Brand, type CreateBrandPayload, type UpdateBrandPayload } from '@socialista/types'
 import type { Context } from 'hono'
 
-const MAX_BRAND_COLORS = 12
 const HEX_COLOR_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
 
 function serializeBrand(brand: IBrand): Brand {
@@ -73,8 +74,8 @@ function parseColors(value: unknown): string[] {
     if (seen.has(hex)) continue
     seen.add(hex)
     colors.push(hex)
-    if (colors.length > MAX_BRAND_COLORS) {
-      throw new HttpError(400, `A brand can have at most ${MAX_BRAND_COLORS} colors`)
+    if (colors.length > BRAND_COLORS_MAX) {
+      throw new HttpError(400, `A brand can have at most ${BRAND_COLORS_MAX} colors`)
     }
   }
 
@@ -154,6 +155,47 @@ async function getBrandForMember(id: string, userId: string) {
   }
   await getWorkspaceAsMember(brand.workspaceId.toString(), userId)
   return brand
+}
+
+function parseExtractBrandUrl(body: Record<string, unknown>): string {
+  const raw = typeof body.url === 'string' ? body.url.trim() : ''
+  if (!raw) {
+    throw new HttpError(400, 'Website URL is required')
+  }
+  return raw
+}
+
+export const extractBrand = async (c: Context<AppContext>) => {
+  const url = parseExtractBrandUrl((await c.req.json()) as Record<string, unknown>)
+
+  let site
+  try {
+    site = await scrapeSiteContext(url)
+  } catch (error) {
+    if (error instanceof SiteScrapeError) {
+      throw new HttpError(error.status, error.message)
+    }
+    throw new HttpError(502, 'Could not reach that website')
+  }
+
+  const hasContent = Boolean(
+    site.text.trim() || site.title?.trim() || site.metaDescription?.trim() || site.jsonLd?.trim(),
+  )
+  if (!hasContent) {
+    throw new HttpError(422, 'That page did not contain enough content to build a brand')
+  }
+
+  try {
+    const brand = await extractBrandContext(site)
+    if (!brand.name.trim()) {
+      throw new HttpError(422, 'Could not determine a brand name from that website')
+    }
+    return successResponse(c, 200, brand)
+  } catch (error) {
+    if (error instanceof HttpError) throw error
+    console.error('[extractBrand]', error)
+    throw new HttpError(502, 'Could not extract brand details. Try again or enter them manually.')
+  }
 }
 
 export const createBrand = async (c: Context<AppContext>) => {

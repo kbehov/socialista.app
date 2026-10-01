@@ -21,12 +21,16 @@ export function LazyAutoplayVideo({
   useEffect(() => {
     const el = videoRef.current
     if (!el) return
+    // Reduced motion: keep the poster frame, never autoplay
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries.some(entry => entry.isIntersecting)) {
+        const visible = entries.some(entry => entry.isIntersecting)
+        if (visible) {
           void el.play().catch(() => {})
-          observer.disconnect()
+        } else {
+          el.pause()
         }
       },
       { rootMargin: '120px', threshold: 0.15 },

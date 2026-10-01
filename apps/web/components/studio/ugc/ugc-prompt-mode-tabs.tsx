@@ -16,7 +16,8 @@ const MODES = [
     id: 'audio' as const,
     label: 'Audio',
     icon: AudioLinesIcon,
-    hint: 'Write the line and generate the voiceover.',
+    lipSyncHint: 'Write the line they say on camera, then generate the voiceover.',
+    voiceoverHint: 'Write an optional line to mix over the clip.',
   },
   {
     id: 'video' as const,
@@ -28,16 +29,25 @@ const MODES = [
 
 const ALL_TABS: UgcWorkbenchTab[] = MODES.map(mode => mode.id)
 
+function modeHint(mode: (typeof MODES)[number], voiceoverOnly: boolean): string {
+  if (mode.id === 'audio') {
+    return voiceoverOnly ? mode.voiceoverHint : mode.lipSyncHint
+  }
+  return mode.hint
+}
+
 type UgcPromptModeTabsProps = {
   value: UgcWorkbenchTab
   onChange: (tab: UgcWorkbenchTab) => void
   tabs?: UgcWorkbenchTab[]
+  voiceoverOnly?: boolean
 }
 
 export function UgcPromptModeTabs({
   value,
   onChange,
   tabs = ALL_TABS,
+  voiceoverOnly = false,
 }: UgcPromptModeTabsProps) {
   const modes = MODES.filter(mode => tabs.includes(mode.id))
 
@@ -71,7 +81,7 @@ export function UgcPromptModeTabs({
                   <span className="truncate">{mode.label}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top">{mode.hint}</TooltipContent>
+              <TooltipContent side="top">{modeHint(mode, voiceoverOnly)}</TooltipContent>
             </Tooltip>
           </div>
         )

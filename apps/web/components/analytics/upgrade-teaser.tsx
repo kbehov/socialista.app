@@ -1,6 +1,7 @@
 import { BarChart3Icon, SparklesIcon, TrendingUpIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { analyticsSurface } from '@/components/analytics/analytics-surface'
 import { dashboardSurface } from '@/components/dashboard/surface'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
@@ -42,14 +43,20 @@ function UpgradeTeaser({ className }: UpgradeTeaserProps) {
         </Button>
       }
     >
-      <ul className="flex flex-col divide-y divide-border">
+      <ul className="flex flex-col divide-y divide-border/50">
         {PREMIUM_FEATURES.map(feature => (
-          <li key={feature.title} className="flex gap-2.5 py-2.5 first:pt-0 last:pb-0">
-            <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-muted-foreground">
-              <feature.icon className="size-3.5" strokeWidth={1.75} />
+          <li key={feature.title} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+            <span
+              className={cn(
+                'mt-0.5 flex shrink-0 items-center justify-center text-muted-foreground',
+                analyticsSurface.emptyIcon,
+                'size-8',
+              )}
+            >
+              <feature.icon className="size-3.5" strokeWidth={1.5} />
             </span>
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-[13px] font-medium text-foreground">{feature.title}</p>
+            <div className="min-w-0 space-y-1">
+              <p className="text-[13px] font-[510] text-foreground">{feature.title}</p>
               <p className="text-[11px] leading-relaxed text-muted-foreground">{feature.description}</p>
             </div>
           </li>

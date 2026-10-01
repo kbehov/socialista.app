@@ -12,7 +12,6 @@ export function StaticAdGenerationProgress({ runId }: StaticAdGenerationProgress
     <GenerationRunView
       backHref={DASHBOARD_ROUTES.STUDIO.STATIC_ADS}
       contentKind="ad"
-      generatingTitle="Generating static ad"
       previewHeadingId="static-ad-preview-heading"
       progressHeadingId="static-ad-progress-heading"
       retryLabel="Create another ad"

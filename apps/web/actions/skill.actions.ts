@@ -11,16 +11,16 @@ import { generateSkill } from '@socialista/ai'
 import {
   DEFAULT_GENERATION_CREDIT_COST,
   ModelType,
-  PROMPT_KEY_VALUES,
+  SKILL_TARGET_VALUES,
   type Brand,
-  type PromptKey,
+  type SkillTarget,
   type Skill,
   type SkillBrandContext,
 } from '@socialista/types'
 
 export type GenerateSkillActionInput = {
   description: string
-  target?: PromptKey
+  target?: SkillTarget
   model?: string
   brandId?: string
 }
@@ -29,8 +29,8 @@ export type GenerateSkillActionResult =
   | { success: true; skill: Skill }
   | { success: false; error: string }
 
-function isPromptKey(value: string): value is PromptKey {
-  return (PROMPT_KEY_VALUES as readonly string[]).includes(value)
+function isSkillTarget(value: string): value is SkillTarget {
+  return (SKILL_TARGET_VALUES as readonly string[]).includes(value)
 }
 
 function toSkillBrandContext(brand: Brand): SkillBrandContext | undefined {
@@ -77,7 +77,7 @@ export async function generateSkillAction({
     return { success: false, error: 'Select a text model' }
   }
 
-  const pinnedTarget = target && isPromptKey(target) ? target : undefined
+  const pinnedTarget = target && isSkillTarget(target) ? target : undefined
   const resolvedBrandId = brandId?.trim() || undefined
 
   try {

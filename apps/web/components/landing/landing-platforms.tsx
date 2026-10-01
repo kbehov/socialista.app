@@ -3,7 +3,7 @@
 import { SocialPlatformIcon } from "@/components/icons/social-platform-icon";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
 import { cn } from "@/lib/utils";
-import { LogoGlyph, LogoWordmark } from "@/components/common/logo";
+import { LogoGlyph } from "@/components/common/logo";
 import { forwardRef, useRef, type RefObject } from "react";
 
 import {
@@ -14,9 +14,10 @@ import {
 import { FadeIn } from "./fade-in";
 import {
   landingContentGap,
-  landingSection,
-  landingSectionDivider,
+  landingInsetPanel,
+  LANDING_STORY_INDEX,
 } from "./landing-classes";
+import { Section } from "./section";
 import { LandingSectionIntro } from "./section-header";
 
 const platformById = Object.fromEntries(
@@ -148,18 +149,11 @@ export function LandingPlatforms() {
   const bottomRightRef = useRef<HTMLDivElement>(null);
 
   return (
-    <section
-      id="channels"
-      aria-labelledby="channels-heading"
-      className={cn(
-        "landing-canvas scroll-mt-24 overflow-x-clip py-16 sm:py-20 lg:py-24",
-        landingSectionDivider,
-      )}
-    >
-      <div className={landingSection}>
+    <Section id="channels" landingDivider className="overflow-x-clip">
         <FadeIn>
           <LandingSectionIntro
             titleId="channels-heading"
+            storyIndex={LANDING_STORY_INDEX.channels}
             title={PLATFORMS_SECTION.title}
             titleAccent={PLATFORMS_SECTION.titleAccent}
             description={PLATFORMS_SECTION.description}
@@ -168,9 +162,10 @@ export function LandingPlatforms() {
 
         <FadeIn delay={0.08} className={landingContentGap}>
           <figure className="mx-auto w-full max-w-3xl">
+            <div className={cn(landingInsetPanel, 'px-2 py-6 sm:px-6 sm:py-8')}>
             <div
               ref={containerRef}
-              className="relative flex w-full items-center justify-center overflow-hidden px-2 py-4 sm:px-4 sm:py-6"
+              className="relative flex w-full items-center justify-center overflow-hidden px-1 py-2 sm:px-2 sm:py-4"
             >
             <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17.5rem] sm:gap-9">
               <div className="flex items-center justify-between px-1">
@@ -183,10 +178,9 @@ export function LandingPlatforms() {
                 <PlatformNode id="tiktok" nodeRef={midLeftRef} />
                 <div
                   ref={centerRef}
-                  className="z-10 flex min-w-[5.5rem] flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] px-4 py-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:min-w-[6.25rem] sm:gap-2.5 sm:px-5 sm:py-4"
+                  className="z-10 flex items-center justify-center rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] p-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:p-4"
                 >
                   <LogoGlyph size="hero" priority />
-                  <LogoWordmark tone="onDark" size="sm" className="text-[0.6875rem] sm:text-xs" />
                 </div>
                 <PlatformNode id="linkedin" nodeRef={midRightRef} />
               </div>
@@ -308,12 +302,12 @@ export function LandingPlatforms() {
               gradientStopColor={PLATFORM_BEAM_COLORS.twitter.stop}
             />
             </div>
+            </div>
             <figcaption className="sr-only">
               Socialista publishes to {PLATFORMS.map((platform) => platform.label).join(", ")}.
             </figcaption>
           </figure>
         </FadeIn>
-      </div>
-    </section>
+    </Section>
   );
 }

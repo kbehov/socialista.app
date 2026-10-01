@@ -9,12 +9,7 @@ import {
 } from '@/components/studio/templates/studio-template-card'
 import { StudioTemplatePreviewDialog } from '@/components/studio/templates/studio-template-preview-dialog'
 import { Button } from '@/components/ui/button'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  useCarousel,
-} from '@/components/ui/carousel'
+import { Carousel, CarouselContent, CarouselItem, useCarousel } from '@/components/ui/carousel'
 import { cn } from '@/lib/utils'
 import { getStudioTemplateCategories, getStudioTemplates } from '@/services/studio-templates.service'
 import {
@@ -102,7 +97,7 @@ type TemplateCategoryFilterProps = {
 
 function categoryTabClass(active: boolean, accentFilters: boolean, chipTone: CategoryChipTone) {
   const shared = cn(
-    'inline-flex shrink-0 items-center font-medium leading-none tracking-[-0.015em]',
+    'inline-flex shrink-0 items-center font-medium leading-none tracking-[-0.015em] cursor-pointer',
     'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
     'active:scale-[0.96] motion-reduce:active:scale-100',
@@ -112,12 +107,12 @@ function categoryTabClass(active: boolean, accentFilters: boolean, chipTone: Cat
   if (chipTone === 'studio') {
     return cn(
       shared,
-      'h-8 rounded-full px-3.5 text-[13px]',
+      'h-7 rounded-md px-3.5 text-xs',
       active
         ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
         : cn(
-            'bg-black/[0.045] text-foreground/72',
-            'hover:bg-black/[0.08] hover:text-foreground',
+            'border border-border text-foreground/72',
+            'hover:bg-foreground hover:text-background',
             'dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
           ),
     )
@@ -196,12 +191,7 @@ function TemplateCategoryFilter({
         containScroll: 'trimSnaps',
       }}
     >
-      <div
-        className={cn(
-          'flex justify-between gap-4',
-          quiet ? 'mb-3 items-center' : 'mb-4 items-start sm:mb-5',
-        )}
-      >
+      <div className={cn('flex justify-between gap-4', quiet ? 'mb-3 items-center' : 'mb-4 items-start sm:mb-5')}>
         <div className="min-w-0 flex-1 space-y-1">
           <h2
             className={cn(
@@ -261,10 +251,10 @@ type StudioTemplatesGalleryProps = {
   emptyDescription?: string
   hideWhenEmpty?: boolean
   className?: string
+  hideTitle?: boolean
 }
 
-const GRID_CLASS =
-  'grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-3.5 sm:gap-y-7 lg:grid-cols-4 lg:gap-x-4'
+const GRID_CLASS = 'grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-3.5 sm:gap-y-7 lg:grid-cols-4 lg:gap-x-4'
 
 function sortCategories(categories: StudioTemplateCategoryDto[]) {
   return [...categories].toSorted((a, b) => b.templatesCount - a.templatesCount)
@@ -283,13 +273,12 @@ export function StudioTemplatesGallery({
   emptyTitle = 'No templates yet',
   emptyDescription = 'Import templates to start recreating content from a reference.',
   hideWhenEmpty = false,
+  hideTitle = false,
   className,
 }: StudioTemplatesGalleryProps) {
   const nextSeedKey = categorySeedKey(initialCategories)
   const [seedKey, setSeedKey] = useState(nextSeedKey)
-  const [categories, setCategories] = useState<StudioTemplateCategoryDto[]>(() =>
-    sortCategories(initialCategories),
-  )
+  const [categories, setCategories] = useState<StudioTemplateCategoryDto[]>(() => sortCategories(initialCategories))
   const [templates, setTemplates] = useState<StudioTemplateDto[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [page, setPage] = useState(1)
@@ -376,7 +365,7 @@ export function StudioTemplatesGallery({
         selectedCategory={selectedCategory}
         onCategoryChange={handleCategoryChange}
         disabled={pending}
-        sectionTitle={sectionTitle}
+        sectionTitle={hideTitle ? '' : sectionTitle}
         sectionDescription={sectionDescription}
         headingTone={headingTone}
         chipTone={chipTone}
@@ -389,12 +378,7 @@ export function StudioTemplatesGallery({
             title="Could not load templates"
             description={error}
             action={
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => handleCategoryChange(selectedCategory)}
-              >
+              <Button type="button" size="sm" variant="outline" onClick={() => handleCategoryChange(selectedCategory)}>
                 Try again
               </Button>
             }
@@ -427,7 +411,7 @@ export function StudioTemplatesGallery({
             loader={<ScrollLoader />}
             scrollableTarget={SCROLL_TARGET_ID}
             scrollThreshold={0.9}
-            className="!overflow-visible"
+            className="overflow-visible!"
             style={{ overflow: 'visible' }}
           >
             <div className={cn(GRID_CLASS, pending && 'opacity-60')}>

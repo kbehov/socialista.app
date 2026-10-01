@@ -23,8 +23,10 @@ import {
   landingMediaPanel,
 } from './landing-classes'
 import { LazyAutoplayVideo } from './lazy-autoplay-video'
+import { PointerCursor } from './pointer-cursor'
 import { IMG, VIDEO } from './media'
 import { Section } from './section'
+import { SectionCta } from './section-cta'
 import { LandingSectionIntro } from './section-header'
 
 const featureCard = cn(
@@ -45,6 +47,7 @@ export function LandingUgcAds() {
       <FadeIn>
         <LandingSectionIntro
           titleId="ugc-ads-heading"
+          eyebrow={UGC_ADS.eyebrow}
           title={UGC_ADS.title}
           titleAccent={UGC_ADS.titleAccent}
           description={UGC_ADS.description}
@@ -68,6 +71,10 @@ export function LandingUgcAds() {
           </FeatureColumn>
         </FadeIn>
       </div>
+
+      <FadeIn className={landingContentGap}>
+        <SectionCta label={UGC_ADS.cta} />
+      </FadeIn>
     </Section>
   )
 }
@@ -188,24 +195,5 @@ function FormatsCard() {
       </article>
       <FeatureCaption title={item.title} description={item.description} />
     </>
-  )
-}
-
-function PointerCursor({ className }: { className?: string }) {
-  return (
-    <svg
-      className={`pointer-events-none absolute z-10 size-7 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] ${className ?? ''}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5.5 3.5 18 11.2c.9.55.35 1.95-.7 1.75l-4.35-.7-1.5 4.8c-.35 1.1-1.95 1.05-2.2-.1L5.5 3.5Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="0.5"
-        strokeLinejoin="round"
-      />
-    </svg>
   )
 }

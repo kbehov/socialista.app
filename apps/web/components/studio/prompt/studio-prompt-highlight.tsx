@@ -49,6 +49,10 @@ const MIRROR_STYLE_PROPS = [
   "borderBottomWidth",
   "borderLeftWidth",
   "boxSizing",
+  "display",
+  "lineHeight",
+  "minHeight",
+  "maxHeight",
   "whiteSpace",
   "overflowWrap",
   "wordBreak",
@@ -120,7 +124,11 @@ function syncMirror(
   overlay.style.height = `${textarea.offsetHeight}px`;
 
   copyTextMetrics(computed, mirror);
-  mirror.style.lineHeight = `${measureTextareaLineHeight(textarea)}px`;
+
+  if (computed.lineHeight === "normal") {
+    mirror.style.lineHeight = `${measureTextareaLineHeight(textarea)}px`;
+  }
+
   mirror.style.width = `${textarea.clientWidth}px`;
   mirror.style.transform = `translateY(${-textarea.scrollTop}px)`;
 }
@@ -197,7 +205,7 @@ export function StudioPromptHighlight({
             </span>
           );
         })}
-        {"\n"}
+        {value.endsWith("\n") ? "\n" : null}
       </pre>
     </div>
   );

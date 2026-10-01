@@ -2,7 +2,7 @@ import {
   clampUgcDuration,
   clampUgcScript,
   coerceUgcClipType,
-  PROMPT_KEYS,
+  REGISTRY_PROMPT_KEYS,
   ugcCatalogSceneName,
   ugcClipRequiresProduct,
   ugcClipRequiresScript,
@@ -94,7 +94,7 @@ function sceneIssues(
   const onlyType = scenes[0]?.type
   if (scenes.length >= 2 && onlyType && scenes.every(scene => scene.type === onlyType)) {
     issues.push(
-      `Do not repeat the same catalog type (${onlyType}) for every scene. Mix types — e.g. hook → demo → cta.`,
+      `Do not repeat the same catalog type (${onlyType}) for every scene. Mix types — e.g. talking → demo → cta.`,
     )
   }
 
@@ -120,7 +120,7 @@ export async function planUgcAd(input: PlanUgcAdInput): Promise<UgcAdPlan> {
   const allowed = new Set(allowedTypes)
   const schema = ugcAdPlanSchema(allowedTypes)
 
-  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcAdPlan, input.systemOverride)
+  const { model, system } = resolvePrompt(REGISTRY_PROMPT_KEYS.ugcAdPlan, input.systemOverride)
   const baseMessages = buildUgcAdPlanMessages({
     ...input,
     description,

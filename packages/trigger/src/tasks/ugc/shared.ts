@@ -4,6 +4,10 @@ import {
   type IUgcClip,
   type IUgcProject,
 } from '@socialista/db'
+import {
+  parseUgcClipType,
+  ugcResolvedInfluencerId,
+} from '@socialista/types'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -16,7 +20,13 @@ export function findUgcClip(project: IUgcProject, clipId: string): IUgcClip | un
 }
 
 export function resolveUgcInfluencerId(project: IUgcProject, clip: IUgcClip): string | undefined {
-  return clip.influencerId?.toString() ?? project.influencerId?.toString()
+  return ugcResolvedInfluencerId(
+    { influencerId: project.influencerId?.toString() },
+    {
+      influencerId: clip.influencerId?.toString(),
+      type: parseUgcClipType(clip.type),
+    },
+  )
 }
 
 export function projectStatusFromClips(clips: IUgcClip[]): UgcProjectStatus {

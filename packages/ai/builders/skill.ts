@@ -1,12 +1,12 @@
 import {
-  PROMPT_KEY_LABELS,
-  PROMPT_KEY_VALUES,
-  type PromptKey,
+  SKILL_TARGET_LABELS,
+  SKILL_TARGET_VALUES,
+  type SkillTarget,
   type SkillBrandContext,
 } from '@socialista/types'
 
-const TARGET_CATALOG = PROMPT_KEY_VALUES.map(
-  key => `- ${key}: ${PROMPT_KEY_LABELS[key]}`,
+const TARGET_CATALOG = SKILL_TARGET_VALUES.map(
+  key => `- ${key}: ${SKILL_TARGET_LABELS[key]}`,
 ).join('\n')
 
 function formatBrandContext(brand: SkillBrandContext): string | undefined {
@@ -28,11 +28,11 @@ ${lines.join('\n')}`
 
 export function buildSkillGenerationUserPrompt(
   description: string,
-  target?: PromptKey,
+  target?: SkillTarget,
   brand?: SkillBrandContext,
 ): string {
   const targetLine = target
-    ? `Target tool (pinned by the user — do not change): ${target} (${PROMPT_KEY_LABELS[target]})`
+    ? `Target tool (pinned by the user — do not change): ${target} (${SKILL_TARGET_LABELS[target]})`
     : 'Target tool: infer the best fit from the brief. Use exactly one of the keys listed below.'
 
   const brandBlock = brand ? formatBrandContext(brand) : undefined

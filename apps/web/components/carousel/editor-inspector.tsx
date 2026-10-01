@@ -2,7 +2,6 @@
 
 import { ImageLayerToolbar } from '@/components/carousel/image-layer-toolbar'
 import { OverlayLayerToolbar } from '@/components/carousel/overlay-layer-toolbar'
-import { SlideBackgroundPanel } from '@/components/carousel/slide-background-panel'
 import {
   StudioPanelHeader,
   StudioPanelScrollArea,
@@ -28,12 +27,6 @@ export function EditorInspector({
   })
   const activeSlideId = useEditorStore(s => s.activeSlideId)
   const activeLayerId = useEditorStore(s => s.activeLayerId)
-  const showRulers = useEditorStore(s => s.showRulers)
-  const showGuides = useEditorStore(s => s.showGuides)
-  const snapEnabled = useEditorStore(s => s.snapEnabled)
-  const toggleShowRulers = useEditorStore(s => s.toggleShowRulers)
-  const toggleShowGuides = useEditorStore(s => s.toggleShowGuides)
-  const toggleSnapEnabled = useEditorStore(s => s.toggleSnapEnabled)
   const alignLayerCenter = useEditorStore(s => s.alignLayerCenter)
   const alignLayerEdge = useEditorStore(s => s.alignLayerEdge)
 
@@ -63,8 +56,12 @@ export function EditorInspector({
     if (activeLayerType === 'overlay') {
       return { title: 'Overlay', description: 'Color, opacity, and coverage' }
     }
-    return { title: 'Slide', description: 'Background color and photo' }
+    return { title: 'Layer', description: 'Edit the selected layer' }
   }, [activeLayerType])
+
+  if (!activeLayerId || !activeLayerType) {
+    return null
+  }
 
   return (
     <aside
@@ -82,37 +79,17 @@ export function EditorInspector({
         )}
       </div>
 
-      <StudioPanelScrollArea key={activeLayerType ?? 'slide'} contentClassName="animate-in fade-in-0 duration-150">
-        {activeLayerId ? (
-          <AlignmentToolbar
-            onAlign={handleAlign}
-            showDistribute={false}
-            rulersVisible={showRulers}
-            onToggleRulers={toggleShowRulers}
-            guidesVisible={showGuides}
-            onToggleGuides={toggleShowGuides}
-            snapEnabled={snapEnabled}
-            onToggleSnap={toggleSnapEnabled}
-            size="xs"
-            variant="inline"
-          />
-        ) : (
-          <AlignmentToolbar
-            showDistribute={false}
-            rulersVisible={showRulers}
-            onToggleRulers={toggleShowRulers}
-            guidesVisible={showGuides}
-            onToggleGuides={toggleShowGuides}
-            snapEnabled={snapEnabled}
-            onToggleSnap={toggleSnapEnabled}
-            size="xs"
-            variant="inline"
-          />
-        )}
+      <StudioPanelScrollArea key={activeLayerType} contentClassName="animate-in fade-in-0 duration-150">
+        <AlignmentToolbar
+          onAlign={handleAlign}
+          showDistribute={false}
+          showToggles={false}
+          size="xs"
+          variant="inline"
+        />
         {activeLayerType === 'text' ? <TextToolbar /> : null}
         {activeLayerType === 'image' ? <ImageLayerToolbar /> : null}
         {activeLayerType === 'overlay' ? <OverlayLayerToolbar /> : null}
-        {!activeLayerType ? <SlideBackgroundPanel /> : null}
       </StudioPanelScrollArea>
     </aside>
   )

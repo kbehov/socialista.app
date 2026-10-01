@@ -1,14 +1,18 @@
 import { FAQ_ITEMS, PAGE_METADATA } from '@/components/landing/content'
 import { LandingFaq } from '@/components/landing/landing-faq'
-import { LandingFeatures } from '@/components/landing/landing-features'
+import { LandingImageTemplates } from '@/components/landing/landing-image-templates'
+import { LandingVideos } from '@/components/landing/landing-videos'
+import { LandingShipIt } from '@/components/landing/landing-workflow'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
-import { LandingPlatforms } from '@/components/landing/landing-platforms'
+import { LandingHowItWorks } from '@/components/landing/landing-how-it-works'
 import { LandingPricing } from '@/components/landing/landing-pricing'
 import { LandingSlideshows } from '@/components/landing/landing-slideshows'
 import { LandingStaticAds } from '@/components/landing/landing-static-ads'
+import { LandingTestimonials } from '@/components/landing/landing-testimonials'
 import { LandingUgcAds } from '@/components/landing/landing-ugc-ads'
+import { StickyMobileCta } from '@/components/landing/sticky-mobile-cta'
 import { formatProductPrice } from '@/lib/pricing'
 import { getPolarProducts } from '@/services/billing.service'
 import type { PolarProduct } from '@socialista/types'
@@ -41,17 +45,23 @@ export const metadata: Metadata = {
 function buildJsonLd(products: PolarProduct[] | undefined) {
   const offers =
     products && products.length > 0
-      ? products.map(product => {
+      ? products.flatMap(product => {
           const pricing = formatProductPrice(product)
           const price = product.prices.find(p => p.priceAmount != null && p.priceAmount > 0)
-          return {
-            '@type': 'Offer',
-            name: product.name,
-            price: price?.priceAmount != null ? (price.priceAmount / 100).toFixed(2) : pricing.amount,
-            priceCurrency: price?.priceCurrency?.toUpperCase() ?? 'USD',
-            availability: 'https://schema.org/InStock',
-            url: APP_URL,
-          }
+          const amount =
+            price?.priceAmount != null ? (price.priceAmount / 100).toFixed(2) : pricing.isFree ? '0.00' : null
+          // schema.org Offer.price must be numeric — skip custom / contact-us plans
+          if (amount == null) return []
+          return [
+            {
+              '@type': 'Offer',
+              name: product.name,
+              price: amount,
+              priceCurrency: price?.priceCurrency?.toUpperCase() ?? 'USD',
+              availability: 'https://schema.org/InStock',
+              url: APP_URL,
+            },
+          ]
         })
       : undefined
 
@@ -73,7 +83,7 @@ function buildJsonLd(products: PolarProduct[] | undefined) {
         operatingSystem: 'Web',
         description: PAGE_METADATA.description,
         publisher: { '@id': `${APP_URL}/#organization` },
-        ...(offers ? { offers } : {}),
+        ...(offers && offers.length > 0 ? { offers } : {}),
       },
       {
         '@type': 'WebPage',
@@ -108,19 +118,25 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <LandingHero />
-      <LandingUgcAds />
-      <LandingInfluencer />
-      <LandingPlatforms />
-      <LandingStaticAds />
-      <LandingSlideshows />
-      <LandingFeatures />
-      <LandingPricing
-        products={products}
-        loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}
-      />
-      <LandingFaq />
-      <LandingFinalCta />
+      <div className="flex flex-col">
+        <LandingHero />
+        <LandingUgcAds />
+        <LandingHowItWorks />
+        <LandingInfluencer />
+        <LandingStaticAds />
+        <LandingSlideshows />
+        <LandingImageTemplates />
+        <LandingVideos />
+        <LandingShipIt />
+        <LandingTestimonials />
+        <LandingPricing
+          products={products}
+          loadError={polarResponse.success ? null : (polarResponse.message ?? 'Failed to load plans')}
+        />
+        <LandingFaq />
+        <LandingFinalCta />
+      </div>
+      <StickyMobileCta />
     </>
   )
 }

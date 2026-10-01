@@ -16,6 +16,7 @@ type FilesDropzoneProps = {
   children: ReactNode
   className?: string
   bodyClassName?: string
+  borderless?: boolean
 }
 
 export function FilesDropzone({
@@ -30,12 +31,18 @@ export function FilesDropzone({
   children,
   className,
   bodyClassName,
+  borderless = false,
 }: FilesDropzoneProps) {
   return (
     <div
       className={cn(
-        'relative flex flex-col rounded-xl border-2 border-dashed transition-colors duration-200',
-        isDragging ? 'border-primary bg-primary/5' : 'border-border',
+        'relative flex flex-col transition-colors duration-200',
+        borderless
+          ? isDragging && 'rounded-xl bg-primary/5 ring-2 ring-inset ring-primary/25'
+          : cn(
+              'rounded-xl border-2 border-dashed',
+              isDragging ? 'border-primary bg-primary/5' : 'border-border',
+            ),
         className,
       )}
       onDragEnter={onDragEnter}

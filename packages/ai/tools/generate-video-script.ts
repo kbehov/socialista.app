@@ -16,6 +16,7 @@ export async function generateVideoScript({
   description,
   duration,
   tone,
+  model: modelOverride,
   systemOverride,
 }: GenerateVideoScriptInput & {
   systemOverride?: string
@@ -26,7 +27,8 @@ export async function generateVideoScript({
   }
 
   const clampedDuration = Math.min(Math.max(duration, MIN_DURATION), MAX_DURATION)
-  const { model, system } = resolvePrompt(PROMPT_KEYS.videoScript, systemOverride)
+  const { model: defaultModel, system } = resolvePrompt(PROMPT_KEYS.videoScript, systemOverride)
+  const model = modelOverride?.trim() || defaultModel
 
   const result = await generateObject({
     model,

@@ -3,17 +3,23 @@
 import { SystemNotice } from '@/components/common/system-notice'
 import { GeneratedImage } from '@/components/studio/generation/generated-image'
 import { GeneratedVideo } from '@/components/studio/generation/generated-video'
-import { GenerationConnectingSection } from '@/components/studio/generation/generation-connecting-section'
 import {
   GenerationFailureAlert,
   GenerationMissingOutputAlert,
 } from '@/components/studio/generation/generation-failure-alert'
+import { GenerationMatrixPlaceholder } from '@/components/studio/generation/generation-matrix-placeholder'
+import { GenerationPipelineSection } from '@/components/studio/generation/generation-pipeline-section'
 import { GenerationProgressHeader } from '@/components/studio/generation/generation-progress-header'
-import { PipelineStepsSection } from '@/components/studio/generation/pipeline-steps-section'
+import {
+  collectStaticAdReferenceUrls,
+  collectVideoReferenceUrls,
+  GenerationRunPromptBrief,
+} from '@/components/studio/generation/generation-run-prompt-brief'
 import { RemixPromptInput } from '@/components/studio/generation/remix-prompt-input'
 import { Button } from '@/components/ui/button'
 import { getLanguageLabel } from '@/components/ui/language-selector'
-import { ASPECT_RATIO_LABELS, COMPLETED_STATUSES, FAILED_STATUSES } from '@/constants/generation.const'
+import type { GenerationWaitingKind } from '@/constants/generation-waiting.const'
+import { COMPLETED_STATUSES, FAILED_STATUSES } from '@/constants/generation.const'
 import { useGenerationRun } from '@/hooks/use-generation-run'
 import { resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
 import {
@@ -34,10 +40,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 type GenerationRunViewProps = {
   runId: string
-  contentKind: 'image' | 'ad' | 'video'
+  contentKind: GenerationWaitingKind
   backHref: string
   studioLabel: string
-  generatingTitle: string
   retryLabel: string
   previewHeadingId: string
   progressHeadingId: string
@@ -49,179 +54,11 @@ function findModel(models: Model[] | undefined, value: string | undefined): Mode
   return models.find(model => model.value === value)
 }
 
-function ImagePromptMetaStrip({
-  payload,
-  model,
-  enhancedPrompt,
-}: {
-  payload: ImageGenerationPayload
-  model?: Model
-  enhancedPrompt?: string
-}) {
-  const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
-  const referenceUrls =
-    payload.imageUrls && payload.imageUrls.length > 0
-      ? payload.imageUrls
-      : payload.imageUrl
-        ? [payload.imageUrl]
-        : []
-  const numImages = payload.numImages ?? 1
-  const showEnhanced = Boolean(enhancedPrompt && enhancedPrompt !== payload.prompt)
-
-  return (
-    <div className="space-y-2.5 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 dark:border-white/12 dark:bg-white/[0.02]">
-      <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
-      {showEnhanced ? (
-        <p className="line-clamp-4 text-[12px] leading-relaxed text-black/56 dark:text-white/56">
-          <span className="font-medium text-foreground/72">Enhanced · </span>
-          {enhancedPrompt}
-        </p>
-      ) : null}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
-          {aspectLabel} · {payload.aspectRatio}
-        </span>
-        {numImages > 1 ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
-            {numImages} images
-          </span>
-        ) : null}
-        {model ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-black/56 ring-1 ring-black/10 dark:text-white/56 dark:ring-white/12">
-            {model.name}
-          </span>
-        ) : null}
-        {referenceUrls.length > 0 ? (
-          <div className="ml-auto flex">
-            {referenceUrls.slice(0, 3).map(url => (
-              <div
-                key={url}
-                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-black/10 bg-black/[0.03] -ml-1 first:ml-0 dark:border-white/12 dark:bg-white/[0.03]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
-                <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
-}
-
-function collectStaticAdReferenceUrls(payload: StaticAdGenerationPayload): string[] {
-  if (payload.images && payload.images.length > 0) {
-    return payload.images.map(image => image.url)
-  }
-  const urls: string[] = []
-  if (payload.productImage) urls.push(payload.productImage)
-  if (payload.referenceImage && !urls.includes(payload.referenceImage)) {
-    urls.push(payload.referenceImage)
-  }
-  return urls
-}
-
-function StaticAdPromptMetaStrip({ payload }: { payload: StaticAdGenerationPayload }) {
-  const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
-  const languageLabel =
-    payload.language && payload.language !== 'en' ? getLanguageLabel(payload.language) : undefined
-  const numImages = payload.numImages ?? 1
-  const referenceUrls = collectStaticAdReferenceUrls(payload)
-
-  return (
-    <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
-      <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">
-        {payload.prompt?.trim() || 'No brief notes — inventing from references'}
-      </p>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-          {aspectLabel} · {payload.aspectRatio}
-        </span>
-        {numImages > 1 ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-            {numImages} images
-          </span>
-        ) : null}
-        {languageLabel ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-            {languageLabel}
-          </span>
-        ) : null}
-        {referenceUrls.length > 0 ? (
-          <div className="ml-auto flex items-center">
-            {referenceUrls.slice(0, 4).map(url => (
-              <div
-                key={url}
-                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
-                <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
-              </div>
-            ))}
-            {referenceUrls.length > 4 ? (
-              <span className="ml-1 text-[11px] font-medium text-muted-foreground">
-                +{referenceUrls.length - 4}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
-}
-
-function collectReferenceUrls(payload: VideoGenerationPayload): string[] {
-  const urls = [...(payload.imageUrls ?? [])]
-  if (payload.imageUrl && !urls.includes(payload.imageUrl)) urls.push(payload.imageUrl)
-  return urls
-}
-
-function VideoPromptMetaStrip({ payload, model }: { payload: VideoGenerationPayload; model?: Model }) {
-  const aspectLabel = ASPECT_RATIO_LABELS[payload.aspectRatio] ?? payload.aspectRatio
-  const referenceUrls = collectReferenceUrls(payload)
-
-  return (
-    <div className="space-y-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-3">
-      <p className="line-clamp-2 text-[13px] leading-relaxed text-foreground/90">{payload.prompt}</p>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-          {aspectLabel} · {payload.aspectRatio}
-        </span>
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-          {payload.duration}s
-        </span>
-        <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-          {payload.generateAudio ? 'Audio on' : 'Muted'}
-        </span>
-        {model ? (
-          <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-            {model.name}
-          </span>
-        ) : null}
-        {referenceUrls.length > 0 ? (
-          <div className="ml-auto flex">
-            {referenceUrls.slice(0, 3).map(url => (
-              <div
-                key={url}
-                className="relative size-8 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted/30 -ml-1 first:ml-0"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop */}
-                <img alt="Reference" className="absolute inset-0 size-full object-cover" src={resolveGeneratedImagePreviewUrl(url)} />
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
-}
-
 export function GenerationRunView({
   runId,
   contentKind,
   backHref,
   studioLabel,
-  generatingTitle,
   retryLabel,
   previewHeadingId,
   progressHeadingId,
@@ -229,8 +66,8 @@ export function GenerationRunView({
 }: GenerationRunViewProps) {
   const [accessToken] = useState(() => readGenerationAccessToken(runId))
   const [remixImageUrl, setRemixImageUrl] = useState<string | undefined>()
+  const outputRef = useRef<HTMLDivElement>(null)
   const activeStepRef = useRef<HTMLDivElement>(null)
-  const imageRef = useRef<HTMLDivElement>(null)
   const lastScrolledStepRef = useRef<number | null>(null)
 
   const { run, error } = useGenerationRun({ runId, accessToken })
@@ -249,11 +86,11 @@ export function GenerationRunView({
     status.label === 'Generation failed'
   const isRunning = Boolean(run) && !isComplete && !isFailed
   const isConnecting = !isRunning && !isComplete && !isFailed
+  const showGenerationUi = isRunning || isConnecting
 
   const imagePayload =
     contentKind === 'image' ? (run?.payload as ImageGenerationPayload | undefined) : undefined
-  const adPayload =
-    contentKind === 'ad' ? (run?.payload as StaticAdGenerationPayload | undefined) : undefined
+  const adPayload = contentKind === 'ad' ? (run?.payload as StaticAdGenerationPayload | undefined) : undefined
   const videoPayload =
     contentKind === 'video' ? (run?.payload as VideoGenerationPayload | undefined) : undefined
 
@@ -262,13 +99,8 @@ export function GenerationRunView({
     [models, imagePayload?.model, adPayload?.model, videoPayload?.model],
   )
   const languageLabel =
-    adPayload?.language && adPayload.language !== 'en'
-      ? getLanguageLabel(adPayload.language)
-      : undefined
+    adPayload?.language && adPayload.language !== 'en' ? getLanguageLabel(adPayload.language) : undefined
   const adReferenceUrls = adPayload ? collectStaticAdReferenceUrls(adPayload) : []
-
-  const enhancedPrompt =
-    typeof run?.metadata?.enhancedPrompt === 'string' ? run.metadata.enhancedPrompt : undefined
 
   const activeStepIndex = useMemo(
     () => computeActiveStepIndex(status.progress, isComplete, isFailed),
@@ -284,20 +116,30 @@ export function GenerationRunView({
 
   useEffect(() => {
     const reduceMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const scrollBehavior: ScrollBehavior = reduceMotion ? 'auto' : 'smooth'
 
     if (isComplete && hasCompleteOutput) {
-      imageRef.current?.scrollIntoView({ behavior: scrollBehavior, block: 'nearest' })
+      outputRef.current?.scrollIntoView({ behavior: scrollBehavior, block: 'nearest' })
       return
     }
 
-    if ((isRunning || isFailed) && lastScrolledStepRef.current !== activeStepIndex) {
+    if (isRunning && lastScrolledStepRef.current !== activeStepIndex) {
       lastScrolledStepRef.current = activeStepIndex
       activeStepRef.current?.scrollIntoView({ behavior: scrollBehavior, block: 'nearest' })
     }
-  }, [activeStepIndex, hasCompleteOutput, isComplete, isFailed, isRunning])
+  }, [activeStepIndex, hasCompleteOutput, isComplete, isRunning])
+
+  let promptBrief: ReactNode = null
+  if (imagePayload) {
+    promptBrief = <GenerationRunPromptBrief kind="image" model={model} payload={imagePayload} />
+  } else if (adPayload) {
+    promptBrief = <GenerationRunPromptBrief kind="ad" payload={adPayload} />
+  } else if (videoPayload) {
+    promptBrief = <GenerationRunPromptBrief kind="video" model={model} payload={videoPayload} />
+  }
+
+  const hasBriefOrRunning = Boolean(promptBrief) || isRunning
 
   if (!accessToken) {
     return (
@@ -330,18 +172,10 @@ export function GenerationRunView({
     )
   }
 
-  let metaStrip: ReactNode = null
-  if (!isComplete) {
-    if (imagePayload) {
-      metaStrip = (
-        <ImagePromptMetaStrip enhancedPrompt={enhancedPrompt} model={model} payload={imagePayload} />
-      )
-    } else if (adPayload) {
-      metaStrip = <StaticAdPromptMetaStrip payload={adPayload} />
-    } else if (videoPayload) {
-      metaStrip = <VideoPromptMetaStrip model={model} payload={videoPayload} />
-    }
-  }
+  const missingOutputMessage =
+    contentKind === 'video'
+      ? 'The run completed but no video was returned.'
+      : 'The run completed but no image was returned.'
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -359,51 +193,11 @@ export function GenerationRunView({
         aria-atomic="true"
         aria-live="polite"
         className={cn(
-          'mx-auto w-full max-w-3xl flex-1 px-4 sm:px-6',
-          isComplete ? 'py-4 sm:py-5' : 'py-6 sm:py-8',
+          'mx-auto w-full max-w-2xl flex-1 px-5 sm:px-6',
+          isComplete && hasCompleteOutput ? 'py-5 sm:py-6' : 'py-2 sm:py-4',
         )}
       >
-        <div className={cn(isComplete ? 'space-y-4' : 'space-y-5')}>
-          {metaStrip}
-
-          {isRunning || isConnecting ? (
-            <GenerationConnectingSection
-              aspectRatio={aspectRatio}
-              headingId={previewHeadingId}
-              isConnecting={isConnecting}
-              statusLabel={status.label}
-              title={generatingTitle}
-            />
-          ) : null}
-
-          {isRunning && run ? (
-            <PipelineStepsSection
-              activeStepIndex={activeStepIndex}
-              activeStepRef={activeStepRef}
-              headingId={progressHeadingId}
-              progress={status.progress}
-              statusLabel={status.label}
-            />
-          ) : null}
-
-          {isFailed ? (
-            <GenerationFailureAlert
-              message={failureMessage}
-              retryHref={backHref}
-              retryLabel={retryLabel}
-            />
-          ) : null}
-
-          {isComplete && !hasCompleteOutput ? (
-            <GenerationMissingOutputAlert
-              message={
-                contentKind === 'video'
-                  ? 'The run completed but no video was returned.'
-                  : 'The run completed but no image was returned.'
-              }
-            />
-          ) : null}
-
+        <div className={cn(isComplete && hasCompleteOutput ? 'space-y-5' : 'space-y-0')}>
           {isComplete && imageOutput?.imageUrl ? (
             <>
               <GeneratedImage
@@ -411,18 +205,17 @@ export function GenerationRunView({
                 contentKind={contentKind === 'ad' ? 'ad' : 'image'}
                 cost={imageOutput.cost}
                 durationMs={run?.durationMs}
-                imageRef={imageRef}
+                imageRef={outputRef}
                 languageLabel={languageLabel}
                 modelName={model?.name ?? (contentKind === 'ad' ? 'GPT Image 2' : undefined)}
                 newGenerationHref={backHref}
                 onSelectedUrlChange={setRemixImageUrl}
                 output={imageOutput}
+                previewVariant="bare"
                 productImageUrl={
-                  adReferenceUrls[0]
-                    ? resolveGeneratedImagePreviewUrl(adReferenceUrls[0])
-                    : undefined
+                  adReferenceUrls[0] ? resolveGeneratedImagePreviewUrl(adReferenceUrls[0]) : undefined
                 }
-                prompt={enhancedPrompt ?? imagePayload?.prompt ?? adPayload?.prompt}
+                prompt={imagePayload?.prompt ?? adPayload?.prompt}
               />
               {remixModel && remixWorkspaceId ? (
                 <RemixPromptInput
@@ -448,10 +241,52 @@ export function GenerationRunView({
               modelName={model?.name}
               newGenerationHref={backHref}
               output={videoOutput}
+              previewVariant="bare"
               prompt={videoPayload?.prompt}
-              referenceUrls={videoPayload ? collectReferenceUrls(videoPayload) : undefined}
-              videoRef={imageRef}
+              referenceUrls={videoPayload ? collectVideoReferenceUrls(videoPayload) : undefined}
+              videoRef={outputRef}
             />
+          ) : null}
+
+          {showGenerationUi ? (
+            <>
+              <GenerationMatrixPlaceholder
+                contentKind={contentKind}
+                headingId={previewHeadingId}
+                isConnecting={isConnecting}
+                statusLabel={status.label}
+              />
+
+              {hasBriefOrRunning ? (
+                <div className="mt-2 space-y-8 border-t border-black/8 pt-8 dark:border-white/10">
+                  {promptBrief}
+
+                  {isRunning && run ? (
+                    <GenerationPipelineSection
+                      activeStepIndex={activeStepIndex}
+                      activeStepRef={activeStepRef}
+                      headingId={progressHeadingId}
+                      progress={status.progress}
+                      statusLabel={status.label}
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          {isFailed ? (
+            <div className="pt-6">
+              <GenerationFailureAlert
+                message={failureMessage}
+                retryHref={backHref}
+                retryLabel={retryLabel}
+              />
+            </div>
+          ) : null}
+
+          {isComplete && !hasCompleteOutput ? (
+            <GenerationMissingOutputAlert message={missingOutputMessage} />
           ) : null}
         </div>
       </div>

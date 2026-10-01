@@ -17,7 +17,9 @@ export default function HomeLayout({
         Skip to content
       </Link>
       <SiteHeader />
-      <main id="main-content">{children}</main>
+      <main id="main-content" className="flex min-w-0 flex-col">
+        {children}
+      </main>
       <SiteFooter />
     </LandingShell>
   );

@@ -11,6 +11,7 @@ import {
 } from '@/lib/editor/zoom'
 import { cn } from '@/lib/utils'
 import { RotateCcwIcon, ZoomInIcon, ZoomOutIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 type CanvasZoomControlsProps = {
   zoom: number
@@ -20,6 +21,7 @@ type CanvasZoomControlsProps = {
   defaultZoom?: number
   step?: number
   className?: string
+  trailing?: ReactNode
 }
 
 export function CanvasZoomControls({
@@ -30,6 +32,7 @@ export function CanvasZoomControls({
   defaultZoom = DEFAULT_VIEWPORT_ZOOM,
   step = VIEWPORT_ZOOM_STEP,
   className,
+  trailing,
 }: CanvasZoomControlsProps) {
   const percent = Math.round(zoom * 100)
   const zoomOut = () => onZoomChange(clampViewportZoom(Math.max(min, zoom - step)))
@@ -100,6 +103,13 @@ export function CanvasZoomControls({
           </TooltipTrigger>
           <TooltipContent>Reset to {Math.round(defaultZoom * 100)}%</TooltipContent>
         </Tooltip>
+      ) : null}
+
+      {trailing ? (
+        <>
+          <span className="mx-0.5 h-4 w-px shrink-0 bg-border/60" aria-hidden />
+          {trailing}
+        </>
       ) : null}
     </div>
   )

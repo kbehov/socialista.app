@@ -1,19 +1,16 @@
-"use client";
+'use client'
 
-import { startImageGeneration } from "@/actions/image-generation.actions";
+import { startImageGeneration } from '@/actions/image-generation.actions'
 import {
   PromptInputButton,
   PromptInputProvider,
   usePromptInputController,
   type PromptInputMessage,
-} from "@/components/ai-elements/prompt-input";
-import { AspectRatioIcon } from "@/components/icons/aspect-ration.icon";
-import { useOptionalImageStudio } from "@/components/studio/images/image-studio-provider";
-import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
-import {
-  StudioAttachedSkill,
-  StudioSkillPicker,
-} from "@/components/skills/studio-skill-picker";
+} from '@/components/ai-elements/prompt-input'
+import type { AttachedMedia } from '@/components/files/attach-images-dialog'
+import { AspectRatioIcon } from '@/components/icons/aspect-ration.icon'
+import { StudioAttachedSkill, StudioSkillPicker } from '@/components/skills/studio-skill-picker'
+import { useOptionalImageStudio } from '@/components/studio/images/image-studio-provider'
 import {
   STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS,
   STUDIO_HERO_COMPOSER_SURFACE_CLASS,
@@ -23,9 +20,10 @@ import {
   STUDIO_TOOL_BUTTON_CLASS,
   STUDIO_TOOL_CHEVRON_CLASS,
   STUDIO_TOOL_ICON_BUTTON_CLASS,
-} from "@/components/studio/prompt/studio-composer-surface";
-import { StudioPromptComposer } from "@/components/studio/prompt/studio-prompt-composer";
-import { StudioReferenceTagHint } from "@/components/studio/prompt/studio-reference-tag-hint";
+} from '@/components/studio/prompt/studio-composer-surface'
+import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
+import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
+import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,15 +31,16 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Kbd } from "@/components/ui/kbd";
-import { DASHBOARD_ROUTES } from "@/constants/app-routes";
-import { storeGenerationAccessToken } from "@/lib/image-generation/session";
-import { cn } from "@/lib/utils";
-import { useWorkspaceStore } from "@/store/workspace.store";
-import { getProjectId, useProjectStore } from "@/store/project.store";
-import { commitHaptic } from "@/utils/haptics";
-import type { AttachedMedia } from "@/components/files/attach-images-dialog";
+} from '@/components/ui/dropdown-menu'
+import { Kbd } from '@/components/ui/kbd'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { storeGenerationAccessToken } from '@/lib/image-generation/session'
+import { cn } from '@/lib/utils'
+import { getProjectId, useProjectStore } from '@/store/project.store'
+import { useWorkspaceStore } from '@/store/workspace.store'
+import { buildPresetPlaceholderExamples } from '@/lib/studio/preset-media'
+import { IMAGE_STUDIO_PLACEHOLDER_EXAMPLES } from '@/lib/studio/studio-placeholder-examples'
+import { commitHaptic } from '@/utils/haptics'
 import {
   IMAGE_GENERATION_COUNT_DEFAULT,
   IMAGE_GENERATION_COUNT_MAX,
@@ -49,31 +48,23 @@ import {
   PROMPT_KEYS,
   type AspectRatio,
   type Model,
+  type Preset,
+  type PromptKey,
   type Skill,
-} from "@socialista/types";
-import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
-import { toast } from "sonner";
-import { ImagePromptAnatomy } from "./prompt-anatomy";
+} from '@socialista/types'
+import { ChevronDownIcon, SparklesIcon, WandSparklesIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { toast } from 'sonner'
+import { ImagePromptAnatomy } from './prompt-anatomy'
 
-const MAX_REFERENCE_IMAGES = 3;
+const MAX_REFERENCE_IMAGES = 3
 
-const DEFAULT_PLACEHOLDER =
-  "Matte serum on travertine, hard side light, luxury PDP still…";
+const DEFAULT_PLACEHOLDER = IMAGE_STUDIO_PLACEHOLDER_EXAMPLES[0]
 
 function getSubmitShortcutLabel() {
-  if (typeof navigator === "undefined") return "⌘↵";
-  return /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent)
-    ? "⌘↵"
-    : "Ctrl↵";
+  if (typeof navigator === 'undefined') return '⌘↵'
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent) ? '⌘↵' : 'Ctrl↵'
 }
 
 export type ImagePromptSubmitResult = {
@@ -82,6 +73,8 @@ export type ImagePromptSubmitResult = {
   aspectRatio: AspectRatio
   imageUrls: string[]
   numImages: number
+  enhance: boolean
+  skillId?: string
 }
 
 export type ImagePromptInputProps = {
@@ -101,18 +94,20 @@ export type ImagePromptInputProps = {
   bindStudio?: boolean
   autoFocus?: boolean
   surfaceClassName?: string
+  skillTarget?: PromptKey
+  presets?: Preset[]
 }
 
 const ASPECT_RATIOS = [
-  { id: "1:1", label: "Square", ratio: 1 },
-  { id: "16:9", label: "Landscape", ratio: 16 / 9 },
-  { id: "9:16", label: "Portrait", ratio: 9 / 16 },
-  { id: "4:3", label: "Classic", ratio: 4 / 3 },
+  { id: '1:1', label: 'Square', ratio: 1 },
+  { id: '16:9', label: 'Landscape', ratio: 16 / 9 },
+  { id: '9:16', label: 'Portrait', ratio: 9 / 16 },
+  { id: '4:3', label: 'Classic', ratio: 4 / 3 },
 ] as const satisfies ReadonlyArray<{
-  id: AspectRatio;
-  label: string;
-  ratio: number;
-}>;
+  id: AspectRatio
+  label: string
+  ratio: number
+}>
 
 function ImagePromptComposer({
   models,
@@ -131,80 +126,82 @@ function ImagePromptComposer({
   bindStudio = true,
   autoFocus,
   surfaceClassName: surfaceClassNameProp,
+  skillTarget = PROMPT_KEYS.imagePrompt,
+  presets = [],
 }: ImagePromptInputProps) {
-  const [submitShortcut] = useState(getSubmitShortcutLabel);
-  const router = useRouter();
-  const studioContext = useOptionalImageStudio();
-  const studio = bindStudio ? studioContext : null;
-  const localComposerRef = useRef<HTMLDivElement>(null);
-  const composerRef = studio?.composerRef ?? localComposerRef;
-  const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
-  const projectId = useProjectStore((s) => getProjectId(s.currentProject));
-  const [isPending, startTransition] = useTransition();
-  const pending = pendingProp || isPending;
+  const [submitShortcut] = useState(getSubmitShortcutLabel)
+  const router = useRouter()
+  const studioContext = useOptionalImageStudio()
+  const studio = bindStudio ? studioContext : null
+  const localComposerRef = useRef<HTMLDivElement>(null)
+  const composerRef = studio?.composerRef ?? localComposerRef
+  const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
+  const projectId = useProjectStore(s => getProjectId(s.currentProject))
+  const [isPending, startTransition] = useTransition()
+  const pending = pendingProp || isPending
   const [attachedImages, setAttachedImages] = useState<AttachedMedia[]>(() => {
-    if (initialAttachments?.length) return initialAttachments.slice(0, MAX_REFERENCE_IMAGES);
+    if (initialAttachments?.length) return initialAttachments.slice(0, MAX_REFERENCE_IMAGES)
     if (initialAttachmentUrl) {
       return [
         {
-          id: "influencer-identity",
+          id: 'influencer-identity',
           url: initialAttachmentUrl,
-          kind: "image",
-          source: "library",
-          label: "Identity",
-          name: "Identity reference",
+          kind: 'image',
+          source: 'library',
+          label: 'Identity',
+          name: 'Identity reference',
         },
-      ];
+      ]
     }
-    return [];
-  });
-  const dismissedAttachmentUrls = useRef(new Set<string>());
-  const [selectedModelId, setSelectedModelId] = useState(
-    () => models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? "",
-  );
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(initialAspectRatio ?? "1:1");
-  const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT);
-  const [attachedSkill, setAttachedSkill] = useState<Skill | undefined>();
-  const [enhance, setEnhance] = useState(true);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { textInput } = usePromptInputController();
-  const setInput = textInput.setInput;
+    return []
+  })
+  const dismissedAttachmentUrls = useRef(new Set<string>())
+  const [preferredModelId, setPreferredModelId] = useState(
+    () => models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? '',
+  )
+  const selectedModelId = useMemo(() => {
+    if (models.length === 0) return preferredModelId
+    if (preferredModelId && models.some(model => model._id === preferredModelId)) {
+      return preferredModelId
+    }
+    return models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? preferredModelId
+  }, [models, initialModel, preferredModelId])
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(initialAspectRatio ?? '1:1')
+  const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT)
+  const [attachedSkill, setAttachedSkill] = useState<Skill | undefined>()
+  const [enhance, setEnhance] = useState(true)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { textInput } = usePromptInputController()
+  const setInput = textInput.setInput
 
-  const handleAttachmentsChange = useCallback((next: AttachedMedia[]) => {
-    if (attachmentsLocked) return;
-    setAttachedImages(current => {
-      const nextUrls = new Set(next.map(item => item.url));
-      for (const item of current) {
-        if (!nextUrls.has(item.url)) dismissedAttachmentUrls.current.add(item.url);
-      }
-      for (const item of next) {
-        dismissedAttachmentUrls.current.delete(item.url);
-      }
-      return next;
-    });
-  }, [attachmentsLocked]);
+  const handleAttachmentsChange = useCallback(
+    (next: AttachedMedia[]) => {
+      if (attachmentsLocked) return
+      setAttachedImages(current => {
+        const nextUrls = new Set(next.map(item => item.url))
+        for (const item of current) {
+          if (!nextUrls.has(item.url)) dismissedAttachmentUrls.current.add(item.url)
+        }
+        for (const item of next) {
+          dismissedAttachmentUrls.current.delete(item.url)
+        }
+        return next
+      })
+    },
+    [attachmentsLocked],
+  )
 
   useEffect(() => {
-    if (!initialAttachments) return;
+    if (!initialAttachments) return
     setAttachedImages(current => {
-      const currentUrls = new Set(current.map(item => item.url));
+      const currentUrls = new Set(current.map(item => item.url))
       const missing = initialAttachments.filter(
-        item =>
-          !currentUrls.has(item.url) &&
-          !dismissedAttachmentUrls.current.has(item.url),
-      );
-      if (missing.length === 0) return current;
-      return [...current, ...missing].slice(0, MAX_REFERENCE_IMAGES);
-    });
-  }, [initialAttachments]);
-
-  useEffect(() => {
-    if (models.length === 0) return
-    setSelectedModelId(current => {
-      if (current && models.some(model => model._id === current)) return current
-      return models.find(model => model.value === initialModel)?._id ?? models[0]?._id ?? current
+        item => !currentUrls.has(item.url) && !dismissedAttachmentUrls.current.has(item.url),
+      )
+      if (missing.length === 0) return current
+      return [...current, ...missing].slice(0, MAX_REFERENCE_IMAGES)
     })
-  }, [initialModel, models])
+  }, [initialAttachments])
 
   useEffect(() => {
     if (!initialPrompt) return
@@ -212,69 +209,88 @@ function ImagePromptComposer({
   }, [initialPrompt, setInput])
 
   const placeholder = useMemo(() => {
-    if (placeholderProp) return placeholderProp;
+    if (placeholderProp) return placeholderProp
     if (attachedImages.length >= 2) {
-      return "the creator from @image1 holding the product from @image2, native UGC for Reels…";
+      return 'the creator from @image1 holding the product from @image2, native UGC for Reels…'
     }
     if (attachedImages.length === 1) {
-      return "the product from @image1 on marble, ecommerce hero, clean studio light…";
+      return 'the product from @image1 on marble, ecommerce hero, clean studio light…'
     }
-    return DEFAULT_PLACEHOLDER;
-  }, [attachedImages.length, placeholderProp]);
+    return DEFAULT_PLACEHOLDER
+  }, [attachedImages.length, placeholderProp])
+
+  const animatedPlaceholderWords = useMemo(() => {
+    if (placeholderProp || attachedImages.length > 0) return undefined
+    if (!homeHero && (hideExtras || embedded)) return undefined
+
+    const fromPresets = presets.length > 0 ? buildPresetPlaceholderExamples(presets) : []
+    if (fromPresets.length > 0) return fromPresets
+
+    if (homeHero) return [...IMAGE_STUDIO_PLACEHOLDER_EXAMPLES]
+    return undefined
+  }, [attachedImages.length, embedded, hideExtras, homeHero, placeholderProp, presets])
+
+  const submitLabel = useMemo(() => {
+    if (pending) return 'Generating…'
+    if (homeHero) {
+      return numImages === 1 ? 'Create image' : `Create ${numImages} images`
+    }
+    return numImages === 1 ? 'Generate' : `Generate ${numImages}`
+  }, [homeHero, numImages, pending])
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
-      const el = textareaRef.current;
-      const current = textInput.value;
+      const el = textareaRef.current
+      const current = textInput.value
 
       if (!el) {
-        textInput.setInput(current ? `${current}${snippet}` : snippet);
-        return;
+        textInput.setInput(current ? `${current}${snippet}` : snippet)
+        return
       }
 
-      const start = el.selectionStart ?? current.length;
-      const end = el.selectionEnd ?? current.length;
-      const next = `${current.slice(0, start)}${snippet}${current.slice(end)}`;
-      textInput.setInput(next);
+      const start = el.selectionStart ?? current.length
+      const end = el.selectionEnd ?? current.length
+      const next = `${current.slice(0, start)}${snippet}${current.slice(end)}`
+      textInput.setInput(next)
 
       requestAnimationFrame(() => {
-        const position = start + snippet.length;
-        el.focus();
-        el.setSelectionRange(position, position);
-      });
+        const position = start + snippet.length
+        el.focus()
+        el.setSelectionRange(position, position)
+      })
     },
     [textInput],
-  );
+  )
 
   const setPrompt = useCallback(
     (text: string) => {
-      textInput.setInput(text);
+      textInput.setInput(text)
       requestAnimationFrame(() => {
-        const el = textareaRef.current;
-        if (!el) return;
-        el.focus();
-        el.setSelectionRange(text.length, text.length);
-      });
+        const el = textareaRef.current
+        if (!el) return
+        el.focus()
+        el.setSelectionRange(text.length, text.length)
+      })
     },
     [textInput],
-  );
+  )
 
   const setAttachments = useCallback((attachments: AttachedMedia[]) => {
-    dismissedAttachmentUrls.current.clear();
-    setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES));
-  }, []);
+    dismissedAttachmentUrls.current.clear()
+    setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES))
+  }, [])
 
   const focusPrompt = useCallback(() => {
-    textareaRef.current?.focus();
-  }, []);
+    textareaRef.current?.focus()
+  }, [])
 
   const setModel = useCallback(
     (modelValue: string) => {
-      const found = models.find((model) => model.value === modelValue);
-      if (found) setSelectedModelId(found._id);
+      const found = models.find(model => model.value === modelValue)
+      if (found) setPreferredModelId(found._id)
     },
     [models],
-  );
+  )
 
   useEffect(() => {
     studio?.registerPromptHandlers({
@@ -284,35 +300,34 @@ function ImagePromptComposer({
       focusPrompt,
       setModel,
       setAspectRatio,
-    });
-  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt, setModel]);
+    })
+  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt, setModel])
 
   useEffect(() => {
-    const shouldFocus = autoFocus ?? !hideExtras;
-    if (!shouldFocus) return;
-    if (typeof window === "undefined") return;
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-    textareaRef.current?.focus();
-  }, [autoFocus, hideExtras]);
+    const shouldFocus = autoFocus ?? !hideExtras
+    if (!shouldFocus) return
+    if (typeof window === 'undefined') return
+    if (!window.matchMedia('(pointer: fine)').matches) return
+    textareaRef.current?.focus()
+  }, [autoFocus, hideExtras])
 
   const handleSubmit = (message: PromptInputMessage) => {
-    const prompt = message.text.trim();
-    if (!prompt) return;
+    const prompt = message.text.trim()
+    if (!prompt) return
 
-    const selectedModel =
-      models.find((model) => model._id === selectedModelId) ?? models[0];
+    const selectedModel = models.find(model => model._id === selectedModelId) ?? models[0]
     if (!selectedModel) {
-      toast.error("Select a model to continue.");
-      return;
+      toast.error('Select a model to continue.')
+      return
     }
 
     if (!currentWorkspace?._id) {
-      toast.error("Select a workspace to continue.");
-      return;
+      toast.error('Select a workspace to continue.')
+      return
     }
 
     startTransition(async () => {
-      const imageUrls = attachedImages.map((image) => image.url);
+      const imageUrls = attachedImages.map(image => image.url)
       if (onSubmitOverride) {
         onSubmitOverride({
           prompt,
@@ -320,8 +335,10 @@ function ImagePromptComposer({
           aspectRatio,
           imageUrls,
           numImages,
-        });
-        return;
+          enhance,
+          ...(enhance && attachedSkill ? { skillId: attachedSkill._id } : {}),
+        })
+        return
       }
 
       const result = await startImageGeneration({
@@ -329,27 +346,26 @@ function ImagePromptComposer({
         model: selectedModel.value,
         workspaceId: currentWorkspace._id,
         aspectRatio,
-        userId: "",
+        userId: '',
         numImages,
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
         ...(attachedSkill ? { skillId: attachedSkill._id } : {}),
         ...(enhance ? {} : { enhance: false }),
         ...(projectId ? { projectId } : {}),
-      });
+      })
 
       if (!result.success) {
-        toast.error(result.error);
-        return;
+        toast.error(result.error)
+        return
       }
 
-      commitHaptic({ vibrateDuration: 10 });
-      storeGenerationAccessToken(result.runId, result.publicAccessToken);
-      router.push(DASHBOARD_ROUTES.STUDIO.imageRun(result.runId));
-    });
-  };
+      commitHaptic({ vibrateDuration: 10 })
+      storeGenerationAccessToken(result.runId, result.publicAccessToken)
+      router.push(DASHBOARD_ROUTES.STUDIO.imageRun(result.runId))
+    })
+  }
 
-  const selectedAspect =
-    ASPECT_RATIOS.find((option) => option.id === aspectRatio) ?? ASPECT_RATIOS[0];
+  const selectedAspect = ASPECT_RATIOS.find(option => option.id === aspectRatio) ?? ASPECT_RATIOS[0]
 
   const aspectTools = (
     <DropdownMenu>
@@ -363,50 +379,36 @@ function ImagePromptComposer({
             type="button"
           >
             <AspectRatioIcon active ratio={selectedAspect.ratio} />
-            <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-              {selectedAspect.id}
-            </span>
+            <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">{selectedAspect.id}</span>
             <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
           </PromptInputButton>
         </DropdownMenuTrigger>
       </StudioInputActionTooltip>
       <DropdownMenuContent align="start" className="min-w-44 w-44">
-        <DropdownMenuRadioGroup
-          value={aspectRatio}
-          onValueChange={(value) => setAspectRatio(value as AspectRatio)}
-        >
-          {ASPECT_RATIOS.map((option) => (
-            <DropdownMenuRadioItem
-              key={option.id}
-              className="gap-2.5 rounded-lg"
-              value={option.id}
-            >
-              <AspectRatioIcon
-                active={aspectRatio === option.id}
-                ratio={option.ratio}
-              />
-              <span className="text-[13px] font-medium tracking-[-0.015em]">
-                {option.label}
-              </span>
+        <DropdownMenuRadioGroup value={aspectRatio} onValueChange={value => setAspectRatio(value as AspectRatio)}>
+          {ASPECT_RATIOS.map(option => (
+            <DropdownMenuRadioItem key={option.id} className="gap-2.5 rounded-lg" value={option.id}>
+              <AspectRatioIcon active={aspectRatio === option.id} ratio={option.ratio} />
+              <span className="text-[13px] font-medium tracking-[-0.015em]">{option.label}</span>
               <DropdownMenuShortcut>{option.id}</DropdownMenuShortcut>
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 
   return (
     <div className="image-studio-prompt">
       <StudioPromptComposer
         models={models}
         selectedModelId={selectedModelId}
-        onSelectedModelChange={setSelectedModelId}
+        onSelectedModelChange={setPreferredModelId}
         modelPickerVariant="image"
         modelPickerHeading="Image models"
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
-        attachSources={attachmentsLocked ? [] : ["upload", "library", "influencer", "product"]}
+        attachSources={attachmentsLocked ? [] : ['upload', 'library', 'influencer', 'product']}
         attachmentsLocked={attachmentsLocked}
         maxAttachments={attachmentsLocked ? 1 : MAX_REFERENCE_IMAGES}
         minAttachments={attachmentsLocked ? 1 : 0}
@@ -416,36 +418,21 @@ function ImagePromptComposer({
           min: IMAGE_GENERATION_COUNT_MIN,
           max: IMAGE_GENERATION_COUNT_MAX,
           onChange: setNumImages,
-          label: "Number of images",
+          label: 'Number of images',
         }}
         placeholder={placeholder}
+        animatedPlaceholderWords={animatedPlaceholderWords}
         pending={pending}
         onSubmit={handleSubmit}
-        submitLabel={
-          homeHero
-            ? numImages === 1
-              ? "Create image"
-              : `Create ${numImages} images`
-            : numImages === 1
-              ? "Generate"
-              : `Generate ${numImages}`
-        }
-        submitTitle={
-          homeHero
-            ? numImages === 1
-              ? "Create image"
-              : `Create ${numImages} images`
-            : numImages === 1
-              ? "Generate"
-              : `Generate ${numImages}`
-        }
+        submitLabel={submitLabel}
+        submitTitle={submitLabel}
         submitAppearance="send"
         footerClassName={
           embedded
             ? STUDIO_EMBEDDED_COMPOSER_FOOTER_CLASS
             : hideExtras
-              ? "border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5"
-              : "border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3"
+              ? 'border-transparent bg-transparent px-3 pb-2.5 pt-1 sm:px-3.5'
+              : 'border-transparent bg-transparent px-2.5 pb-2 pt-1 sm:px-3'
         }
         composerHeader={
           attachedSkill ? (
@@ -456,24 +443,21 @@ function ImagePromptComposer({
             />
           ) : null
         }
-        composerHeaderClassName="border-black/[0.06] bg-transparent py-1.5 dark:border-white/[0.08]"
+        composerHeaderClassName="border-border/35 bg-transparent py-1.5"
         tools={
           <>
             {aspectTools}
             <PromptInputButton
-              aria-label={enhance ? "Prompt enhancement on" : "Prompt enhancement off"}
+              aria-label={enhance ? 'Prompt enhancement on' : 'Prompt enhancement off'}
               aria-pressed={enhance}
-              className={cn(
-                STUDIO_TOOL_ICON_BUTTON_CLASS,
-                enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS,
-              )}
+              className={cn(STUDIO_TOOL_ICON_BUTTON_CLASS, enhance && STUDIO_TOOL_BUTTON_ACTIVE_CLASS)}
               disabled={pending}
-              onClick={() => setEnhance((value) => !value)}
+              onClick={() => setEnhance(value => !value)}
               size="icon-xs"
               tooltip={
                 enhance
-                  ? "Enhance on — AI refines your prompt before generating"
-                  : "Raw prompt — send exactly what you typed"
+                  ? 'Enhance on — AI refines your prompt before generating'
+                  : 'Raw prompt — send exactly what you typed'
               }
               type="button"
             >
@@ -481,18 +465,18 @@ function ImagePromptComposer({
             </PromptInputButton>
             <StudioSkillPicker
               appearance="icon"
-              target={PROMPT_KEYS.imagePrompt}
+              target={skillTarget}
               value={attachedSkill?._id}
-              onChange={(skillId) => {
-                if (!skillId) setAttachedSkill(undefined);
+              onChange={skillId => {
+                if (!skillId) setAttachedSkill(undefined)
               }}
               onSelect={setAttachedSkill}
               disabled={pending || !enhance}
             />
           </>
         }
-        textareaRef={(node) => {
-          textareaRef.current = node;
+        textareaRef={node => {
+          textareaRef.current = node
         }}
         composerRef={composerRef}
         emptyTitle="No image models yet"
@@ -510,14 +494,14 @@ function ImagePromptComposer({
       />
 
       {attachedImages.length > 0 && !embedded && !hideExtras ? (
-        <div className={homeHero ? "mt-1.5 px-0.5" : "mt-2.5 px-0.5"}>
+        <div className={cn('px-0.5', homeHero ? 'mt-2' : 'mt-2.5')}>
           <StudioReferenceTagHint attachmentCount={attachedImages.length} />
         </div>
       ) : null}
 
       {homeHero || hideExtras ? null : (
-        <div className="mt-4 flex flex-col items-center gap-4">
-          <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
+        <div className="mt-4 flex w-full flex-col items-center gap-3.5">
+          <p className="pointer-fine:flex hidden flex-wrap items-center justify-center gap-1.5 text-sidebar-label tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
               /
             </Kbd>
@@ -537,36 +521,39 @@ function ImagePromptComposer({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 export function ImagePromptInput(props: ImagePromptInputProps) {
   if (props.models.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-black/[0.08] bg-black/[0.015] px-6 py-16 text-center dark:border-white/10 dark:bg-white/[0.015]">
-        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-lg bg-black/[0.03] ring-1 ring-black/8 dark:bg-white/[0.03] dark:ring-white/10">
-          <SparklesIcon className="size-3.5 text-black/48 dark:text-white/48" />
+      <div className="w-full rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-14 text-center">
+        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-xl bg-background ring-1 ring-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+          <SparklesIcon className="size-3.5 text-muted-foreground" />
         </div>
-        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">
-          No image models yet
-        </p>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-black/48 dark:text-white/48">
-          Add a text-to-image model in the manager to start making campaign
-          stills.
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">No image models yet</p>
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
+          Add a text-to-image model in the manager to start making campaign stills.
         </p>
       </div>
-    );
+    )
   }
 
   return (
-    <PromptInputProvider initialInput={props.initialPrompt ?? ""}>
+    <PromptInputProvider initialInput={props.initialPrompt ?? ''}>
       <ImagePromptComposer {...props} />
     </PromptInputProvider>
-  );
+  )
 }
 
 const ImageGenerationPromptInput = ({ models }: { models: Model[] }) => {
-  return <ImagePromptInput models={models} homeHero />;
-};
+  return (
+    <ImagePromptInput
+      models={models}
+      homeHero
+      surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+    />
+  )
+}
 
-export default ImageGenerationPromptInput;
+export default ImageGenerationPromptInput

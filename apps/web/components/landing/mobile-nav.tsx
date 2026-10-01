@@ -8,6 +8,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { DASHBOARD_ROUTES } from "@/constants/app-routes";
 import { cn } from "@/lib/utils";
 import { ChevronRight, MenuIcon } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +21,7 @@ import {
   landingNavLink,
 } from "./landing-classes";
 
-export function MobileNav() {
+export function MobileNav({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,10 +38,10 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[min(100vw-2rem,20rem)] border-[color-mix(in_srgb,var(--landing-stone)_75%,transparent)] bg-[var(--landing-canvas)]"
+        className="w-[min(100vw-2rem,20rem)] border-[color-mix(in_srgb,var(--landing-ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_92%,white)] backdrop-blur-xl"
       >
         <SheetHeader>
-          <SheetTitle className="text-left text-base">Menu</SheetTitle>
+          <SheetTitle className="text-left text-base">Socialista</SheetTitle>
         </SheetHeader>
         <nav className="mt-6 flex flex-col gap-1">
           {LANDING_NAV.map((item) => (
@@ -54,22 +55,33 @@ export function MobileNav() {
             </a>
           ))}
           <div className="mt-4 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--landing-stone)_75%,transparent)] pt-4">
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className={landingCtaSecondary}
-            >
-              <Link href="/auth/signin" onClick={() => setOpen(false)}>
-                Sign in
-              </Link>
-            </Button>
-            <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
-              <Link href="/auth/signup" onClick={() => setOpen(false)}>
-                {HERO.primaryCta}
-                <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
-              </Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
+                <Link href={DASHBOARD_ROUTES.ROOT} onClick={() => setOpen(false)}>
+                  Go to dashboard
+                  <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className={landingCtaSecondary}
+                >
+                  <Link href="/auth/signin" onClick={() => setOpen(false)}>
+                    Sign in
+                  </Link>
+                </Button>
+                <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
+                  <Link href="/auth/signup" onClick={() => setOpen(false)}>
+                    {HERO.primaryCta}
+                    <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </nav>
       </SheetContent>

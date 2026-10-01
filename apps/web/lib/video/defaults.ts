@@ -214,6 +214,8 @@ export type AddTextOverlayInput = {
   x?: number
   y?: number
   width?: number
+  /** Timeline clip these captions were generated for. */
+  clipId?: string
 }
 
 export function createEntityId(prefix: string): string {

@@ -13,8 +13,8 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { AttachedMediaThumb, type AttachedMedia } from '@/components/files/attach-images-dialog'
 import { ModelLogo } from '@/components/icons/model-logo'
-import { StudioAnimatedPlaceholder } from '@/components/studio/prompt/studio-animated-placeholder'
 import type { InfluencerPickerMediaType } from '@/components/studio/influencers/influencer-picker-dialog'
+import { StudioAnimatedPlaceholder } from '@/components/studio/prompt/studio-animated-placeholder'
 import {
   StudioAttachMenu,
   attachmentChipLabel,
@@ -162,16 +162,16 @@ function StudioBatchCountMenu({
 }
 
 const PROMPT_TEXT_METRICS =
-  'box-border w-full whitespace-pre-wrap break-words px-4 pt-3 pb-10 font-normal leading-[25px]'
+  'box-border w-full whitespace-pre-wrap break-words px-4 py-0 pt-3 pb-10 text-[15px] font-normal leading-[25px]'
 
 const PROMPT_TEXT_METRICS_COMPACT =
-  'box-border w-full whitespace-pre-wrap break-words px-3 pt-2 pb-7 text-[13px] font-normal leading-[22px]'
+  'box-border w-full whitespace-pre-wrap break-words px-3 py-0 pt-2 pb-7 text-[13px] font-normal leading-[22px]'
 
 const PROMPT_TEXT_METRICS_WITH_ATTACHMENTS =
-  'box-border w-full whitespace-pre-wrap break-words px-4 pt-1 pb-10 font-normal leading-[25px]'
+  'box-border w-full whitespace-pre-wrap break-words px-4 py-0 pt-1 pb-10 text-[15px] font-normal leading-[25px]'
 
 const PROMPT_TEXT_METRICS_COMPACT_WITH_ATTACHMENTS =
-  'box-border w-full whitespace-pre-wrap break-words px-3 pt-0.5 pb-7 text-[13px] font-normal leading-[22px]'
+  'box-border w-full whitespace-pre-wrap break-words px-3 py-0 pt-0.5 pb-7 text-[13px] font-normal leading-[22px]'
 
 const PROMPT_TEXTAREA_CLASS = cn(PROMPT_TEXT_METRICS, 'block min-h-32 max-h-48 overflow-y-auto')
 
@@ -220,10 +220,7 @@ function StudioAttachmentChip({
       onClick={() => onInsert(index)}
     >
       <div
-        className={cn(
-          'rounded-[0.875rem] transition-transform duration-150 active:scale-[0.97]',
-          picking && 'scale-[1.04]',
-        )}
+        className={cn('rounded-xl transition-transform duration-150 active:scale-[0.97]', picking && 'scale-[1.04]')}
       >
         <AttachedMediaThumb
           file={file}
@@ -231,7 +228,7 @@ function StudioAttachmentChip({
           disabled={disabled}
           onRemove={onRemove}
           className={cn(
-            'rounded-[0.875rem] transition-[box-shadow,ring-color] duration-150',
+            'rounded-xl transition-[box-shadow,ring-color] duration-150',
             tagged || picking ? cn('ring-2', tone.chip) : 'ring-border/45 hover:ring-border/70',
           )}
         />
@@ -563,8 +560,8 @@ export function StudioPromptComposer({
 
   if (models.length === 0 && !allowEmptyModels) {
     return (
-      <div className="rounded-xl border border-dashed border-black/12 bg-black/[0.02] px-6 py-14 text-left dark:border-white/12 dark:bg-white/[0.02]">
-        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/[0.04] ring-1 ring-black/10 dark:bg-white/[0.04] dark:ring-white/12">
+      <div className="rounded-xl border border-dashed border-black/12 bg-black/2 px-6 py-14 text-left dark:border-white/12 dark:bg-white/2">
+        <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-black/4 ring-1 ring-black/10 dark:bg-white/4 dark:ring-white/12">
           <SparklesIcon className="size-4 text-black/56 dark:text-white/56" />
         </div>
         <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">{emptyTitle}</p>
@@ -650,9 +647,7 @@ export function StudioPromptComposer({
               if (optionIndex >= 0) setMentionOptionIndex(optionIndex)
             }}
             onRemove={
-              attachmentsLocked
-                ? undefined
-                : id => onAttachmentsChange(attachments.filter(item => item.id !== id))
+              attachmentsLocked ? undefined : id => onAttachmentsChange(attachments.filter(item => item.id !== id))
             }
           />
         ))}
@@ -835,7 +830,7 @@ export function StudioPromptComposer({
 
           <div className="flex shrink-0 items-center gap-2">
             {costLabel ? (
-              <span className="flex items-center gap-1 text-[11px] tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40">
+              <span className="flex items-center gap-1 text-sidebar-label tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40">
                 <CoinsIcon className="size-3" strokeWidth={1.75} />
                 {costLabel}
               </span>

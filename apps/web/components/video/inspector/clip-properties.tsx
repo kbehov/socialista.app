@@ -13,6 +13,7 @@ import { InspectorSlider as Slider } from '@/components/media/inspector-slider'
 import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { TransitionPicker } from './transition-picker'
 import { cn } from '@/lib/utils'
+import { isMediaAssetAvailable } from '@/lib/video/types'
 
 export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const clip = useVideoEditorStore(s => s.project.clips[clipId])
@@ -38,6 +39,8 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
   const [trimInDraft, setTrimInDraft] = useState(() => clip?.trimIn.toFixed(2) ?? '0')
   const [trimOutDraft, setTrimOutDraft] = useState(() => clip?.trimOut.toFixed(2) ?? '0')
   const [positionOpen, setPositionOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [transitionsOpen, setTransitionsOpen] = useState(false)
 
   if (!clip) {
     return <div className="text-xs text-muted-foreground">No clip selected.</div>
@@ -183,7 +186,6 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
               trimClip(clip.id, v, clip.trimOut)
             }}
             step={0.1}
-            format={() => formatTimecode(clip.trimIn, fps)}
           />
           <NumberField
             label="Trim out"
@@ -194,7 +196,6 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
               trimClip(clip.id, clip.trimIn, v)
             }}
             step={0.1}
-            format={() => formatTimecode(clip.trimOut, fps)}
           />
         </div>
         <div className="text-[10px] text-muted-foreground">
@@ -230,19 +231,51 @@ export function ClipProperties({ clipId }: { clipId: ClipId }) {
 
       {clip.type !== 'audio' && (
         <>
-          <FilterControls
-            filters={clip.filters}
-            previewImageUrl={asset?.thumbnails?.[0] ?? (asset?.type === 'image' ? asset.objectUrl : null)}
-            onChange={f => setClipFilterLive(clip.id, f)}
-            onCommit={f => setClipFilter(clip.id, f)}
-            onRemove={t => removeClipFilterLive(clip.id, t)}
-            onRemoveCommit={t => removeClipFilter(clip.id, t)}
-            onApplyFilters={next => setClipFilters(clip.id, next)}
-          />
-          <TransitionPicker
-            value={clip.transition}
-            onChange={t => setClipTransition(clip.id, t)}
-          />
+          <div className="rounded-lg bg-muted/15">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
+              onClick={() => setFiltersOpen(v => !v)}
+            >
+              Filters
+              <ChevronDownIcon className={cn('size-3.5 transition-transform', filtersOpen && 'rotate-180')} />
+            </button>
+            {filtersOpen ? (
+              <div className="border-t px-3 py-3">
+                <FilterControls
+                  filters={clip.filters}
+                  previewImageUrl={
+                    asset && isMediaAssetAvailable(asset)
+                      ? (asset.thumbnails?.[0] ?? (asset.type === 'image' ? asset.objectUrl : null))
+                      : null
+                  }
+                  onChange={f => setClipFilterLive(clip.id, f)}
+                  onCommit={f => setClipFilter(clip.id, f)}
+                  onRemove={t => removeClipFilterLive(clip.id, t)}
+                  onRemoveCommit={t => removeClipFilter(clip.id, t)}
+                  onApplyFilters={next => setClipFilters(clip.id, next)}
+                />
+              </div>
+            ) : null}
+          </div>
+          <div className="rounded-lg bg-muted/15">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium"
+              onClick={() => setTransitionsOpen(v => !v)}
+            >
+              Transition
+              <ChevronDownIcon className={cn('size-3.5 transition-transform', transitionsOpen && 'rotate-180')} />
+            </button>
+            {transitionsOpen ? (
+              <div className="border-t px-3 py-3">
+                <TransitionPicker
+                  value={clip.transition}
+                  onChange={t => setClipTransition(clip.id, t)}
+                />
+              </div>
+            ) : null}
+          </div>
         </>
       )}
     </div>
@@ -278,9 +311,6 @@ function NumberField({
         onBlur={onBlur}
         className="h-7 rounded-md border border-input bg-transparent px-2 font-mono text-xs tabular-nums"
       />
-      {format && typeof value === 'number' ? (
-        <span className="font-mono text-[10px] text-muted-foreground">{format(value)}</span>
-      ) : null}
     </label>
   )
 }

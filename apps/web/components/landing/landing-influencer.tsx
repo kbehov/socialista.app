@@ -6,8 +6,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import {
@@ -19,11 +17,11 @@ import { InfluencerSwipeCarousel } from "./influencer-swipe-carousel";
 import {
   landingBody,
   landingContentGap,
-  landingCtaPrimary,
   landingFeatureCaptionTitle,
   landingInfluencerGlow,
 } from "./landing-classes";
 import { Section } from "./section";
+import { SectionCta } from "./section-cta";
 import { LandingSectionIntro } from "./section-header";
 
 const FEATURE_ICONS: Record<InfluencerFeatureId, LucideIcon> = {
@@ -66,7 +64,7 @@ function InfluencerFeature({
     >
       <FeatureIcon icon={icon} />
       <h3 className={landingFeatureCaptionTitle}>{title}</h3>
-      <p className={cn(landingBody, "max-w-none text-[0.9375rem] sm:text-base")}>
+      <p className={cn(landingBody, 'max-w-none')}>
         {description}
       </p>
     </article>
@@ -113,9 +111,10 @@ export function LandingInfluencer() {
       <FadeIn>
         <LandingSectionIntro
           titleId="influencers-heading"
+          eyebrow={INFLUENCER_SECTION.eyebrow}
           title={INFLUENCER_SECTION.title}
           titleAccent={INFLUENCER_SECTION.titleAccent}
-          description={INFLUENCER_SECTION.eyebrow}
+          description={INFLUENCER_SECTION.description}
         />
       </FadeIn>
 
@@ -128,36 +127,22 @@ export function LandingInfluencer() {
           )}
         />
 
-        <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-8 xl:gap-12">
-          <div className="hidden min-w-0 flex-1 lg:flex lg:justify-end">
+        {/* Single render: carousel first on mobile, features flank it on lg */}
+        <div className="relative mx-auto grid w-full max-w-5xl grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-10 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-8 xl:gap-12">
+          <div className="flex min-w-0 lg:justify-end">
             <FeatureList features={leftFeatures} align="right" baseDelay={0} />
           </div>
 
-          <div className="flex w-full flex-col items-center gap-6 sm:gap-7 lg:w-auto lg:shrink-0">
+          <div className="order-first flex w-full flex-col items-center gap-6 sm:col-span-2 sm:gap-7 lg:order-none lg:col-span-1 lg:w-auto">
             <InfluencerSwipeCarousel />
             <FadeIn delay={0.08}>
-              <Button asChild size="lg" className={cn(landingCtaPrimary, "h-11 px-7")}>
-                <Link href="/auth/signup">{INFLUENCER_SECTION.cta}</Link>
-              </Button>
+              <SectionCta label={INFLUENCER_SECTION.cta} />
             </FadeIn>
           </div>
 
-          <div className="hidden min-w-0 flex-1 lg:flex lg:justify-start">
+          <div className="flex min-w-0 lg:justify-start">
             <FeatureList features={rightFeatures} align="left" baseDelay={0.12} />
           </div>
-        </div>
-
-        <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 lg:hidden">
-          {INFLUENCER_SECTION.features.map((feature, index) => (
-            <FadeIn key={feature.id} delay={0.06 + index * 0.05}>
-              <InfluencerFeature
-                title={feature.title}
-                description={feature.description}
-                icon={FEATURE_ICONS[feature.id]}
-                align="left"
-              />
-            </FadeIn>
-          ))}
         </div>
       </div>
     </Section>

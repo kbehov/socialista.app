@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { FAQ_ITEMS, FAQ_SECTION } from "./content";
 import { FadeIn } from "./fade-in";
-import { landingBodySm, landingContentGap, landingH3 } from "./landing-classes";
+import { landingBodySm, landingContentGap, landingGlassLight, landingH3, landingNavLink } from "./landing-classes";
 import { Section } from "./section";
 import { LandingSectionIntro } from "./section-header";
 
@@ -18,16 +18,22 @@ export function LandingFaq() {
       <FadeIn>
         <LandingSectionIntro
           titleId="faq-heading"
+          eyebrow={FAQ_SECTION.eyebrow}
           title={FAQ_SECTION.title}
+          titleAccent={FAQ_SECTION.titleAccent}
           description={FAQ_SECTION.description}
         />
       </FadeIn>
 
-      <FadeIn delay={0.06} className={cn("mx-auto max-w-2xl", landingContentGap)}>
+      <FadeIn delay={0.06} className={cn('mx-auto max-w-2xl', landingContentGap)}>
         <Accordion
           type="single"
           collapsible
-          className="divide-y divide-[color-mix(in_srgb,var(--landing-stone)_78%,transparent)]"
+          className={cn(
+            landingGlassLight,
+            'overflow-hidden rounded-[var(--landing-panel-radius)] px-1 sm:px-2',
+            'divide-y divide-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)]',
+          )}
         >
           {FAQ_ITEMS.map((item, index) => (
             <AccordionItem
@@ -38,21 +44,23 @@ export function LandingFaq() {
               <AccordionTrigger
                 className={cn(
                   landingH3,
-                  "py-5 text-left text-[var(--landing-ink)] hover:no-underline data-[state=open]:text-[var(--landing-ink)]",
-                  "[&_[data-slot=accordion-trigger-icon]:last-child]:hidden",
-                  "[&_[data-slot=accordion-trigger-icon]:first-child]:transition-transform",
-                  "[&_[data-slot=accordion-trigger-icon]:first-child]:duration-200",
-                  "data-[state=open]:[&_[data-slot=accordion-trigger-icon]:first-child]:rotate-180",
+                  "px-4 py-5 text-left text-[var(--landing-ink)] hover:no-underline data-[state=open]:text-[var(--landing-ink)] sm:px-5",
                 )}
               >
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className={cn(landingBodySm, "pb-5 text-[var(--landing-muted)]")}>
+              <AccordionContent className={cn(landingBodySm, "px-4 pb-5 text-[var(--landing-muted)] sm:px-5")}>
                 <p>{item.answer}</p>
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
+        <p className="mt-8 text-center text-sm text-[var(--landing-muted)]">
+          {FAQ_SECTION.contactLead}{" "}
+          <a href={FAQ_SECTION.contactHref} className={cn(landingNavLink, "font-medium text-[var(--landing-ink)]")}>
+            {FAQ_SECTION.contactCta}
+          </a>
+        </p>
       </FadeIn>
     </Section>
   );

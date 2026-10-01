@@ -34,8 +34,9 @@ export function SlideshowTemplatesGallery({ workspaceId }: { workspaceId: string
   return (
     <StudioTemplatesGallery
       kind={StudioTemplateKind.SLIDESHOW}
-      className="relative z-10 mx-auto mt-8 w-full max-w-5xl px-4 pb-10 sm:px-6 lg:px-8"
-      sectionTitle="Templates"
+      className="w-full"
+      sectionTitle="Inspirations"
+      sectionDescription="Start from a template and open it in the editor."
       headingTone="quiet"
       chipTone="studio"
       hideWhenEmpty

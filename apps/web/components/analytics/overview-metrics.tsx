@@ -1,5 +1,6 @@
 import type { AnalyticsOverviewResponse } from '@socialista/types'
 
+import { cn } from '@/lib/utils'
 import { formatCount, formatRate, formatSignedCount, trendFromPercent } from '@/utils/format'
 import { StatMetric, StatMetrics } from './stat-metric'
 
@@ -14,14 +15,11 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
   if (premium) {
     const { totals, changePercent } = premium
     const showEngagementBreakdown =
-      totals.likes !== null ||
-      totals.comments !== null ||
-      totals.shares !== null ||
-      totals.saves !== null
+      totals.likes !== null || totals.comments !== null || totals.shares !== null || totals.saves !== null
     const showClickMetrics = totals.profileViews !== null || totals.linkClicks !== null
 
     return (
-      <div className={className}>
+      <div className={cn('flex flex-col gap-2', className)}>
         <StatMetrics columns={6} size="sm">
           <StatMetric
             label="Engagement"
@@ -52,7 +50,7 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
         </StatMetrics>
 
         {showEngagementBreakdown ? (
-          <StatMetrics columns={4} size="sm" className="mt-2">
+          <StatMetrics columns={4} size="sm">
             <StatMetric label="Likes" value={formatCount(totals.likes)} trend={trendFromPercent(changePercent.likes)} />
             <StatMetric
               label="Comments"
@@ -69,7 +67,7 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
         ) : null}
 
         {showClickMetrics ? (
-          <StatMetrics columns={2} size="sm" className="mt-2">
+          <StatMetrics columns={2} size="sm">
             <StatMetric
               label="Profile visits"
               value={formatCount(totals.profileViews)}
@@ -87,24 +85,26 @@ function OverviewMetrics({ overview, className }: OverviewMetricsProps) {
   }
 
   return (
-    <StatMetrics columns={4} size="sm" className={className}>
-      <StatMetric
-        label="Accounts"
-        value={formatCount(free.connectedAccounts)}
-        description={
-          free.accountsNeedingReauth > 0
-            ? `${free.accountsNeedingReauth} need reauth`
-            : `${free.accountsByProvider.length} platforms`
-        }
-      />
-      <StatMetric label="Followers" value={formatCount(free.totalFollowers)} />
-      <StatMetric label="Scheduled" value={formatCount(free.scheduledPosts)} />
-      <StatMetric
-        label="Published"
-        value={formatCount(free.publishedPosts)}
-        description={`${formatCount(free.draftPosts)} drafts`}
-      />
-    </StatMetrics>
+    <div className={cn('flex flex-col gap-2', className)}>
+      <StatMetrics columns={4} size="sm">
+        <StatMetric
+          label="Accounts"
+          value={formatCount(free.connectedAccounts)}
+          description={
+            free.accountsNeedingReauth > 0
+              ? `${free.accountsNeedingReauth} need reauth`
+              : `${free.accountsByProvider.length} platforms`
+          }
+        />
+        <StatMetric label="Followers" value={formatCount(free.totalFollowers)} />
+        <StatMetric label="Scheduled" value={formatCount(free.scheduledPosts)} />
+        <StatMetric
+          label="Published"
+          value={formatCount(free.publishedPosts)}
+          description={`${formatCount(free.draftPosts)} drafts`}
+        />
+      </StatMetrics>
+    </div>
   )
 }
 

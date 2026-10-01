@@ -50,7 +50,7 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
   const isCritical = anomaly.severity === 'critical'
 
   return (
-    <li className="flex items-center gap-2.5 rounded-md px-1 py-1.5 -mx-1">
+    <li className="flex items-center gap-2.5 rounded-[var(--control-radius)] px-1 py-1.5 -mx-1 transition-colors hover:bg-muted/60">
       <span
         className={cn(
           'flex size-5 shrink-0 items-center justify-center',
@@ -62,7 +62,7 @@ function AnomalyRow({ anomaly }: { anomaly: AnalyticsAnomaly }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <p className="text-[13px] font-medium text-foreground">
+          <p className="text-[13px] font-[510] text-foreground">
             {anomaly.direction === 'spike' ? 'Spike' : 'Drop'} in {anomaly.metric}
           </p>
           {anomaly.provider ? (

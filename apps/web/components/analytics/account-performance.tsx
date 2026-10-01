@@ -141,7 +141,7 @@ function AccountPerformance({
         <AccountPerformanceMetricToggle rankBy={data.rankBy} range={range} provider={provider} />
       }
     >
-      <div className="grid sm:grid-cols-2 sm:divide-x sm:divide-border">
+      <div className="grid sm:grid-cols-2 sm:divide-x sm:divide-border/50">
         <PerformanceColumn tone="up" title="Winning" rows={winners} rankBy={data.rankBy} className="sm:pr-6" />
         <PerformanceColumn tone="down" title="Losing" rows={losers} rankBy={data.rankBy} className="max-sm:mt-5 sm:pl-6" />
       </div>
@@ -169,7 +169,7 @@ function PerformanceColumn({
     <div className={cn('min-w-0', className)}>
       <div className="mb-3 flex items-center gap-1.5">
         <Icon className={cn('size-3.5 shrink-0', styles.iconClassName)} strokeWidth={1.75} />
-        <p className="text-[13px] font-medium text-foreground">{title}</p>
+        <p className="text-[13px] font-[510] text-foreground">{title}</p>
         <span className="text-[11px] tabular-nums text-muted-foreground">{rows.length}</span>
       </div>
 
@@ -216,8 +216,8 @@ function PerformanceRow({
       <Link
         href={DASHBOARD_ROUTES.accountAnalytics(row.account.id)}
         className={cn(
-          'flex items-center gap-2.5 rounded-md px-1 py-1.5 -mx-1',
-          'transition-colors hover:bg-highlight',
+          'flex items-center gap-2.5 rounded-[var(--control-radius)] px-1 py-1.5 -mx-1',
+          'transition-colors hover:bg-muted/60',
         )}
       >
         <span className="w-5 shrink-0 text-[11px] tabular-nums text-muted-foreground">
@@ -237,14 +237,14 @@ function PerformanceRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-foreground">{row.account.accountName}</p>
+          <p className="truncate text-xs font-[510] text-foreground">{row.account.accountName}</p>
           <p className="truncate text-[11px] text-muted-foreground">
             {handle ?? meta}
             {handle && meta ? ` · ${meta}` : null}
           </p>
         </div>
 
-        <p className={cn('shrink-0 text-sm font-medium tabular-nums tracking-[-0.02em]', scoreClassName)}>
+        <p className={cn('shrink-0 text-sm font-[590] tabular-nums tracking-tight', scoreClassName)}>
           {primaryScore(row, rankBy)}
         </p>
       </Link>

@@ -1,6 +1,6 @@
 'use server'
 
-import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { DASHBOARD_ROUTES, MANAGER_ROUTES } from '@/constants/app-routes'
 import { INFLUENCER_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
 import type {
@@ -24,11 +24,14 @@ import type {
 import { revalidatePath } from 'next/cache'
 
 const STUDIO_INFLUENCERS_PATH = DASHBOARD_ROUTES.STUDIO.INFLUENCERS
+const MANAGER_INFLUENCERS_PATH = MANAGER_ROUTES.INFLUENCERS
 
 function revalidateInfluencerPaths(influencerId?: string) {
   revalidatePath(STUDIO_INFLUENCERS_PATH)
+  revalidatePath(MANAGER_INFLUENCERS_PATH)
   if (influencerId) {
     revalidatePath(DASHBOARD_ROUTES.STUDIO.influencer(influencerId))
+    revalidatePath(MANAGER_ROUTES.influencer(influencerId))
   }
 }
 
@@ -91,6 +94,34 @@ export const getWorkspaceInfluencers = async (
   const search = params.toString()
   const path = `${INFLUENCER_ROUTES.GET_WORKSPACE_INFLUENCERS(workspaceId)}${search ? `?${search}` : ''}`
   return api.get<GetInfluencersResponse>(path)
+}
+
+export const listAdminInfluencers = async (
+  query?: WorkspaceInfluencersQuery,
+): Promise<ApiResponse<GetInfluencersResponse>> => {
+  const params = new URLSearchParams()
+  appendInfluencerQuery(params, query)
+  const search = params.toString()
+  const path = `${INFLUENCER_ROUTES.ADMIN}${search ? `?${search}` : ''}`
+  return api.get<GetInfluencersResponse>(path)
+}
+
+export const getAdminInfluencer = async (id: string): Promise<ApiResponse<{ influencer: Influencer }>> => {
+  return api.get<{ influencer: Influencer }>(INFLUENCER_ROUTES.ADMIN_BY_ID(id))
+}
+
+export const createLibraryInfluencer = async (
+  payload: CreateInfluencerPayload,
+): Promise<ApiResponse<CreateInfluencerResponse>> => {
+  const response = await api.post<CreateInfluencerResponse>(INFLUENCER_ROUTES.ADMIN_CREATE, payload)
+  revalidateInfluencerPaths(response.data?.influencer._id)
+  return response
+}
+
+export const deleteLibraryInfluencer = async (id: string): Promise<ApiResponse<DeleteInfluencerResponse>> => {
+  const response = await api.delete<DeleteInfluencerResponse>(INFLUENCER_ROUTES.ADMIN_BY_ID(id))
+  revalidateInfluencerPaths(id)
+  return response
 }
 
 export const getInfluencer = async (id: string): Promise<ApiResponse<{ influencer: Influencer }>> => {

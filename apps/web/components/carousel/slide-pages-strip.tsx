@@ -173,11 +173,9 @@ function PageThumb({
             }}
             style={{ width: THUMB_WIDTH, height: thumbHeight }}
             className={cn(
-              'group relative shrink-0 cursor-grab overflow-hidden rounded-md bg-background outline-none transition-[opacity,box-shadow,transform] duration-150 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing',
-              active
-                ? 'opacity-100 ring-2 ring-foreground'
-                : 'opacity-70 ring-1 ring-border/70 hover:opacity-100 hover:ring-border',
-              isDragging && 'z-20 scale-[1.02] opacity-80 ring-2 ring-foreground/50',
+              'relative shrink-0 cursor-grab overflow-hidden rounded-md bg-background outline outline-1 outline-offset-0 outline-[oklch(0_0_0/0.1)] dark:outline-[oklch(1_0_0/0.1)] transition-[box-shadow,transform] duration-150 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing',
+              active ? 'outline-none ring-[1.5px] ring-foreground' : 'hover:ring-1 hover:ring-border',
+              isDragging && 'z-20 scale-[1.02] opacity-90 ring-2 ring-foreground/50',
               isDropTarget && !isDragging && 'ring-2 ring-foreground/40',
             )}
           >
@@ -185,31 +183,6 @@ function PageThumb({
             <span className="pointer-events-none absolute top-1 left-1 flex size-4 items-center justify-center rounded bg-background/90 text-[9px] font-medium tabular-nums text-foreground">
               {index + 1}
             </span>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-0.5 bg-black/40 p-0.5 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
-              <button
-                type="button"
-                className="flex size-5 items-center justify-center rounded-sm bg-background text-foreground transition-colors hover:bg-muted"
-                aria-label={`Duplicate page ${index + 1}`}
-                onClick={event => {
-                  event.stopPropagation()
-                  duplicateSlide(slide.id)
-                }}
-              >
-                <CopyIcon className="size-3" />
-              </button>
-              <button
-                type="button"
-                className="flex size-5 items-center justify-center rounded-sm bg-background text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-40"
-                aria-label={`Delete page ${index + 1}`}
-                disabled={slideCount <= 1}
-                onClick={event => {
-                  event.stopPropagation()
-                  setDeleteOpen(true)
-                }}
-              >
-                <Trash2Icon className="size-3" />
-              </button>
-            </div>
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { LoadingState } from '@/components/common/loading-state'
+import { postComposerRootClassName } from '@/components/dashboard/studio-shell'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { usePostComposerSubmit } from '@/hooks/use-post-composer-submit'
@@ -230,7 +231,7 @@ export function PostComposer({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className={postComposerRootClassName}>
       <ComposerHeader
         canSubmit={canSubmit && storeWorkspaceId === workspaceId}
         isSubmitting={isPending}

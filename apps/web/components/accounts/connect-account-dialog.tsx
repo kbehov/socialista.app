@@ -14,7 +14,7 @@ import type { SocialProvider } from '@socialista/types'
 import { ArrowUpRightIcon, ShieldCheckIcon } from 'lucide-react'
 
 export type ConnectablePlatform = {
-  provider: Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin'>
+  provider: Extract<SocialProvider, 'facebook' | 'instagram' | 'tiktok' | 'threads' | 'linkedin' | 'twitter'>
   href: string
   description: string
 }
@@ -54,6 +54,11 @@ export const CONNECTABLE_PLATFORMS: ConnectablePlatform[] = [
     provider: 'linkedin',
     href: getConnectHref('linkedin'),
     description: 'Post to your LinkedIn profile',
+  },
+  {
+    provider: 'twitter',
+    href: getConnectHref('twitter'),
+    description: 'Post to your X account',
   },
 ]
 

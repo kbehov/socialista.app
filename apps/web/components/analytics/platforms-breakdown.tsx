@@ -1,4 +1,5 @@
 import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/social-platform-icon'
+import { analyticsSurface } from '@/components/analytics/analytics-surface'
 import { dashboardSurface } from '@/components/dashboard/surface'
 import { cn } from '@/lib/utils'
 import type {
@@ -99,7 +100,7 @@ function PlatformsBreakdown({ data, overview, provider = 'all', error, className
       {platforms.length === 0 ? (
         <AnalyticsEmpty title="No platform data yet" description="Metrics appear after accounts sync." />
       ) : (
-        <div className="-mx-4 -mb-4 grid gap-px border-t border-border bg-border/30 sm:grid-cols-2 xl:grid-cols-3 dark:bg-border/40">
+        <div className="-mx-4 -mb-4 grid gap-px border-t border-border/50 bg-border/35 sm:grid-cols-2 xl:grid-cols-3">
           {platforms.map(row => (
             <PlatformCard key={row.provider} row={row} />
           ))}
@@ -118,12 +119,12 @@ function PlatformCard({ row }: { row: AnalyticsPlatformRow }) {
   ] as const
 
   return (
-    <div className={cn(dashboardSurface.dividerCell, 'flex flex-col gap-3 px-3.5 py-3.5')}>
+    <div className={cn(analyticsSurface.metricCell, 'flex flex-col gap-3 px-4 py-3')}>
       <div className="flex items-center gap-2">
         <SocialPlatformIcon provider={row.provider} size={14} className="size-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium text-foreground">{getSocialPlatformLabel(row.provider)}</p>
-          <p className={dashboardSurface.metricMeta}>
+          <p className="truncate text-[13px] font-[510] text-foreground">{getSocialPlatformLabel(row.provider)}</p>
+          <p className={analyticsSurface.metricMeta}>
             {row.accounts} account{row.accounts === 1 ? '' : 's'}
           </p>
         </div>
@@ -132,11 +133,11 @@ function PlatformCard({ row }: { row: AnalyticsPlatformRow }) {
       <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
         {metrics.map(metric => (
           <div key={metric.label}>
-            <p className={dashboardSurface.metricLabel}>{metric.label}</p>
-            <p className="mt-0.5 text-[13px] font-medium tabular-nums tracking-[-0.02em] text-foreground">
+            <p className={analyticsSurface.metricLabel}>{metric.label}</p>
+            <p className="mt-0.5 text-[13px] font-[590] tabular-nums tracking-tight text-foreground">
               {formatCount(metric.value)}
             </p>
-            <p className={cn('mt-0.5 text-[11px] font-medium tabular-nums', changeTone(metric.change))}>
+            <p className={cn('mt-0.5 text-[11px] font-[510] tabular-nums', changeTone(metric.change))}>
               {formatPercent(metric.change)}
             </p>
           </div>

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { STATIC_AD_MARQUEE_IMAGES } from './media'
 
 const IMAGE_QUALITY = 88
+const FALLBACK_IMAGES = STATIC_AD_MARQUEE_IMAGES
 
 const ROWS = [
   { reverse: false, durationClass: '[--duration:52s]', offset: 0 },
@@ -16,10 +17,13 @@ const ROWS = [
   { reverse: false, durationClass: '[--duration:58s]', offset: 6 },
 ] as const
 
-function rotateImages(offset: number) {
-  const images = STATIC_AD_MARQUEE_IMAGES
+type StaticAdsMarqueeProps = {
+  imageUrls: readonly string[]
+}
+
+function rotateImages(images: readonly string[], offset: number) {
+  if (images.length === 0) return []
   const len = images.length
-  if (len === 0) return []
   const start = offset % len
   return [...images.slice(start), ...images.slice(0, start)]
 }
@@ -44,13 +48,15 @@ function MarqueeRow({
   durationClass,
   offset,
   staticRow,
+  imageUrls,
 }: {
   reverse: boolean
   durationClass: string
   offset: number
   staticRow: boolean
+  imageUrls: readonly string[]
 }) {
-  const tiles = rotateImages(offset).map((src, index) => (
+  const tiles = rotateImages(imageUrls, offset).map((src, index) => (
     <AdTile key={`${offset}-${src}-${index}`} src={src} />
   ))
 
@@ -69,9 +75,10 @@ function MarqueeRow({
   )
 }
 
-export function StaticAdsMarquee() {
+export function StaticAdsMarquee({ imageUrls }: StaticAdsMarqueeProps) {
   const reduceMotion = useReducedMotion()
   const staticRow = Boolean(reduceMotion)
+  const sources = imageUrls.length > 0 ? imageUrls : FALLBACK_IMAGES
 
   return (
     <div
@@ -85,6 +92,7 @@ export function StaticAdsMarquee() {
           durationClass={row.durationClass}
           offset={row.offset}
           staticRow={staticRow}
+          imageUrls={sources}
         />
       ))}
     </div>

@@ -9,7 +9,7 @@ import { UgcSceneTabContent } from '@/components/studio/ugc/ugc-scene-tab-conten
 import type { VideoPromptSubmitResult } from '@/components/studio/videos/video-prompt-input'
 import { ugcClipGeneratedStills } from '@/lib/studio/ugc/ugc-stage'
 import { useUgcProjectStore } from '@/store/ugc-project.store'
-import type { UgcWorkbenchTab } from '@/types/ugc.types'
+import type { UgcWorkbenchTab, UgcWriteScriptOptions, UgcWriteVideoPromptOptions } from '@/types/ugc.types'
 import { stillUrlsToAttachments, ugcCampaignAttachments } from '@/utils/ugc/attachments.utils'
 import { ugcSceneWorkbenchConfig } from '@/utils/ugc/scene.utils'
 import type { UgcClip, UgcClipType, UgcClipVoice, UgcProject } from '@socialista/types'
@@ -24,6 +24,7 @@ type UgcSceneWorkbenchProps = {
   videoAttachments: AttachedMedia[]
   creatingScenes?: boolean
   writingScript?: boolean
+  writingVideoPrompt?: boolean
   generatingAudio?: boolean
   generatingStill?: boolean
   generatingVideo?: boolean
@@ -39,7 +40,8 @@ type UgcSceneWorkbenchProps = {
   onImageSubmit: (result: ImagePromptSubmitResult) => void
   onVideoSubmit: (result: VideoPromptSubmitResult) => void
   onScriptChange: (text: string) => void
-  onWriteScript: () => void
+  onWriteScript: (options?: UgcWriteScriptOptions) => Promise<boolean>
+  onWriteVideoPrompt: (options?: UgcWriteVideoPromptOptions) => Promise<boolean>
   onVoiceChange: (voice: UgcClipVoice) => void
   onGenerateAudio: (script?: string) => void
   onUseStills: (urls: string[]) => void
@@ -57,6 +59,7 @@ export function UgcSceneWorkbench({
   videoAttachments,
   creatingScenes,
   writingScript,
+  writingVideoPrompt,
   generatingAudio,
   generatingStill,
   generatingVideo,
@@ -73,6 +76,7 @@ export function UgcSceneWorkbench({
   onVideoSubmit,
   onScriptChange,
   onWriteScript,
+  onWriteVideoPrompt,
   onVoiceChange,
   onGenerateAudio,
   onUseStills,
@@ -189,6 +193,7 @@ export function UgcSceneWorkbench({
         hasStills={hasStills}
         hasVideo={hasVideo}
         writingScript={writingScript}
+        writingVideoPrompt={writingVideoPrompt}
         generatingAudio={generatingAudio}
         generatingStill={generatingStill}
         generatingVideo={generatingVideo}
@@ -198,6 +203,7 @@ export function UgcSceneWorkbench({
         onVideoSubmit={onVideoSubmit}
         onScriptChange={onScriptChange}
         onWriteScript={onWriteScript}
+        onWriteVideoPrompt={onWriteVideoPrompt}
         onVoiceChange={onVoiceChange}
         onGenerateAudio={onGenerateAudio}
       />

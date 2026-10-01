@@ -174,6 +174,13 @@ POST /cron/analytics/sweep (every 5 min, internal secret)
           → fetch Graph profile + insights
           → normalize → upsert AccountAnalyticsSnapshot
   → GET /workspaces/:workspaceId/analytics/... (on-read aggregation)
+
+POST /cron/analytics/posts/sweep (every 1 hour, internal secret)
+  → post-analytics-sweep
+      pages premium workspaces → due published IG/FB posts (1h → 30d checkpoints)
+      → batchTrigger fetch-post-analytics (queue analytics-post, per-account concurrency)
+          → fetch media/post insights
+          → insert PostAnalyticsSnapshot (one doc per post + checkpoint)
 ```
 
 Accounts are spread across a rolling 12h window (144 × 5-minute slots). Each account is fetched once per 12h, but 100k accounts trickle continuously instead of spiking twice a day.
@@ -214,8 +221,13 @@ Legacy `page_impressions*` metrics were deprecated by Meta (Nov 2025) and are no
 - `GET /workspaces/:workspaceId/analytics/accounts/:accountId?range=daily|weekly|monthly`
 - `GET /workspaces/:workspaceId/analytics/summary?range=daily|weekly|monthly`
 - `POST /cron/analytics/sweep` — internal cron (header `x-internal-api-secret`); call **every 5 minutes**; each tick processes one hash slot (~1/144 of accounts)
+- `POST /cron/analytics/posts/sweep` — internal cron (header `x-internal-api-secret`); call **once an hour**; claims a bounded batch of due post checkpoints (1h, 6h, 24h, 48h, 72h, 7d, 30d) for published IG/FB posts on premium workspaces
 
 Responses include current values, previous period, delta, `%` change, and a `series[]` ready for charts — no client-side aggregation required.
+
+### Post analytics checkpoints
+
+Published Instagram and Facebook posts are fetched **at most seven times**: 1h, 6h, 24h, 48h, 72h, 7d, then 30d (final, with a 24h grace). Unpublished posts, unsupported providers, posts older than that window, and workspaces without an active Pro/Enterprise subscription are excluded. Missed windows are skipped (no backfill of lifetime totals onto an earlier label). Snapshots live in `PostAnalyticsSnapshot` keyed by `(post, checkpointKey)`.
 
 ### Migration notes
 

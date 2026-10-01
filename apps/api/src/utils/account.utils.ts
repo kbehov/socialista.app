@@ -1,3 +1,4 @@
+import { R2_CDN_BASE_URL, R2_PUBLIC_BASE_URL, uploadBufferToR2 } from '@/lib/aws.js'
 import {
   assertHasUpdates,
   optionalTrimmedString,
@@ -11,6 +12,7 @@ import {
   toDate,
   toNullableDate,
 } from '@/utils/common.utils.js'
+import { downloadImage } from '@/utils/download-image.js'
 import { HttpError } from '@/utils/http-response.js'
 import { assertWorkspaceMember, getWorkspaceOrThrow } from '@/utils/workspace.utils.js'
 import {
@@ -30,9 +32,45 @@ import type {
   CreateAccountPayload,
   UpdateAccountPayload,
 } from '@socialista/types'
+import sharp from 'sharp'
 
 const SOCIAL_PROVIDERS = new Set<string>(Object.values(SocialProvider))
 const CONNECTION_STATUSES = new Set<string>(Object.values(ConnectionStatus))
+
+function isStoredR2Url(url: string): boolean {
+  const bases = [R2_CDN_BASE_URL, R2_PUBLIC_BASE_URL]
+    .filter((base): base is string => Boolean(base))
+    .map(base => base.replace(/\/$/, ''))
+  return bases.some(base => url.startsWith(`${base}/`))
+}
+
+/** Download a provider profile picture and store it on R2. Returns undefined on failure. */
+export async function persistAccountAvatar(
+  accountAvatar: string | undefined,
+  input: Pick<CreateAccountPayload, 'workspaceId' | 'provider' | 'providerAccountId'>,
+): Promise<string | undefined> {
+  if (!accountAvatar) {
+    return undefined
+  }
+  if (isStoredR2Url(accountAvatar)) {
+    return accountAvatar
+  }
+
+  try {
+    const image = sharp(await downloadImage(accountAvatar)).rotate()
+    const { width, height } = await image.metadata()
+    if (!width || !height) {
+      return undefined
+    }
+
+    const buffer = await image.resize(512, 512, { fit: 'cover' }).webp({ quality: 85 }).toBuffer()
+    const key = `workspaces/${input.workspaceId}/accounts/${input.provider}/${input.providerAccountId}/avatar.webp`
+    return await uploadBufferToR2(key, buffer, 'image/webp')
+  } catch (error) {
+    console.warn('[accounts] failed to persist account avatar', error)
+    return undefined
+  }
+}
 
 export const isSocialProvider = (value: unknown): value is ApiSocialProvider =>
   typeof value === 'string' && SOCIAL_PROVIDERS.has(value)

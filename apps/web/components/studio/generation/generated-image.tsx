@@ -7,6 +7,7 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { downloadGeneratedImage } from '@/lib/image-generation/image-actions'
 import { dataImageUrlToBlobUrl, isDataImageUrl, resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
 import { cn } from '@/lib/utils'
+import { getAspectRatioClass } from '@/utils/aspect-ratio'
 import { formatCost, formatDuration } from '@/utils/format'
 import type { ImageGenerationOutput } from '@socialista/types'
 import { AlertCircleIcon, CheckIcon, DownloadIcon, PlusIcon, SendIcon, VideoIcon } from 'lucide-react'
@@ -29,6 +30,8 @@ type GeneratedImageProps = {
   productImageUrl?: string
   languageLabel?: string
   onSelectedUrlChange?: (url: string) => void
+  /** Framed preview with border; bare is image-only with rounded corners. */
+  previewVariant?: 'framed' | 'bare'
 }
 
 export function GeneratedImage({
@@ -44,6 +47,7 @@ export function GeneratedImage({
   productImageUrl,
   languageLabel,
   onSelectedUrlChange,
+  previewVariant = 'framed',
 }: GeneratedImageProps) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -132,14 +136,19 @@ export function GeneratedImage({
     ? DASHBOARD_ROUTES.STUDIO.createVideo({ generationId: output.generationId })
     : undefined
 
+  const isBarePreview = previewVariant === 'bare'
+  const previewMaxHeight = 'max-h-[min(72dvh,720px)]'
+
   return (
     <div ref={imageRef} className="space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-[15px] font-medium tracking-[-0.015em] text-foreground">{resultTitle}</h2>
-        <p className="text-[13px] leading-[1.5] text-black/56 dark:text-white/56">{resultDescription}</p>
-      </div>
+      {!isBarePreview ? (
+        <div className="space-y-1">
+          <h2 className="text-[15px] font-medium tracking-[-0.015em] text-foreground">{resultTitle}</h2>
+          <p className="text-[13px] leading-[1.5] text-black/56 dark:text-white/56">{resultDescription}</p>
+        </div>
+      ) : null}
 
-      {(prompt || aspectLabel || modelName || productImageUrl || languageLabel) ? (
+      {!isBarePreview && (prompt || aspectLabel || modelName || productImageUrl || languageLabel) ? (
         <div className="space-y-2 rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-3 dark:border-white/12 dark:bg-white/[0.02]">
           {prompt ? (
             <p className="line-clamp-3 text-[13px] leading-relaxed text-foreground/90">{prompt}</p>
@@ -176,27 +185,62 @@ export function GeneratedImage({
         </div>
       ) : null}
 
-      <GenerationPreviewFrame
-        aspectRatio={aspectRatio}
-        isLoading={isPreviewLoading}
-        maxHeightClass="max-h-[calc(100dvh-14rem)]"
-        variant="viewport"
-      >
-        {previewError || (!isPreviewLoading && !previewSrc) ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
-            <AlertCircleIcon className="size-5 text-destructive" />
-            <p className="text-sm text-destructive">Could not load the generated image preview.</p>
-          </div>
-        ) : previewSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop
-          <img
-            alt={previewAlt}
-            className="absolute inset-0 size-full object-contain"
-            onError={() => setPreviewError(true)}
-            src={previewSrc}
-          />
-        ) : null}
-      </GenerationPreviewFrame>
+      {isBarePreview ? (
+        <div className="flex w-full justify-center">
+          {previewError || (!isPreviewLoading && !previewSrc) ? (
+            <div
+              className={cn(
+                'flex w-full max-w-lg flex-col items-center justify-center gap-2 rounded-xl px-4 py-16 text-center',
+                getAspectRatioClass(aspectRatio),
+                previewMaxHeight,
+              )}
+            >
+              <AlertCircleIcon className="size-5 text-destructive" />
+              <p className="text-sm text-destructive">Could not load the generated image preview.</p>
+            </div>
+          ) : isPreviewLoading ? (
+            <div
+              aria-busy="true"
+              aria-label="Loading image"
+              className={cn(
+                'w-full max-w-lg animate-pulse rounded-xl bg-black/[0.04] motion-reduce:animate-none dark:bg-white/[0.04]',
+                getAspectRatioClass(aspectRatio),
+                previewMaxHeight,
+              )}
+            />
+          ) : previewSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop
+            <img
+              alt={previewAlt}
+              className={cn('w-full max-w-lg rounded-xl object-contain', previewMaxHeight)}
+              onError={() => setPreviewError(true)}
+              src={previewSrc}
+            />
+          ) : null}
+        </div>
+      ) : (
+        <GenerationPreviewFrame
+          aspectRatio={aspectRatio}
+          isLoading={isPreviewLoading}
+          maxHeightClass="max-h-[calc(100dvh-14rem)]"
+          variant="viewport"
+        >
+          {previewError || (!isPreviewLoading && !previewSrc) ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+              <AlertCircleIcon className="size-5 text-destructive" />
+              <p className="text-sm text-destructive">Could not load the generated image preview.</p>
+            </div>
+          ) : previewSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element -- provider CDNs vary; skip Next image optimizer hop
+            <img
+              alt={previewAlt}
+              className="absolute inset-0 size-full object-contain"
+              onError={() => setPreviewError(true)}
+              src={previewSrc}
+            />
+          ) : null}
+        </GenerationPreviewFrame>
+      )}
 
       {isMultiple ? (
         <div

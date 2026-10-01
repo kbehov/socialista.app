@@ -1,4 +1,9 @@
-import { dashboardMainClassName } from '@/components/dashboard/studio-shell'
+import {
+  dashboardMainClassName,
+  dashboardPageClassName,
+  dashboardShellInsetClassName,
+  dashboardShellProviderClassName,
+} from '@/components/dashboard/studio-shell'
 import DashboardHeader from '@/components/headers/dashboard-header'
 import { PageScrollCompactProvider } from '@/components/headers/page-scroll-compact'
 import { AppSidebar } from '@/components/sidebars/app-sidebar'
@@ -10,13 +15,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { workspaces, projects, currentWorkspace, aiCreditsBalance } = await getDashboardData()
 
   const dashboard = (
-    <SidebarProvider className="dashboard-shell h-svh max-h-svh overflow-hidden">
+    <SidebarProvider className={dashboardShellProviderClassName}>
       <AppSidebar workspaces={workspaces} projects={projects} />
-      <SidebarInset className="dashboard-inset flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden">
+      <SidebarInset className={dashboardShellInsetClassName}>
         <DashboardHeader workspaceBalance={aiCreditsBalance} />
         <main id="dashboard-scroll" data-dashboard-scroll className={dashboardMainClassName}>
           <PageScrollCompactProvider>
-            <div className="dashboard-page">{children}</div>
+            <div className={dashboardPageClassName}>{children}</div>
           </PageScrollCompactProvider>
         </main>
       </SidebarInset>

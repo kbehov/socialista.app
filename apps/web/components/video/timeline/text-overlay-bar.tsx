@@ -1,6 +1,11 @@
 'use client'
 
 import { useVideoEditorStore } from '@/lib/video/store'
+import {
+  assignOverlayLanes,
+  MIN_OVERLAY_BLOCK_PX,
+  TEXT_OVERLAY_LANE_HEIGHT,
+} from '@/lib/video/overlay-lanes'
 import { useDragOverlay } from '@/hooks/video/use-drag-overlay'
 import { useTimelineFocus } from '@/components/video/timeline/timeline-focus-context'
 import { cn } from '@/lib/utils'
@@ -16,6 +21,7 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
   const seek = useVideoEditorStore(s => s.seek)
   const { beginMove, beginTrim, draft } = useDragOverlay(pxPerSec)
   const focusAtTime = useTimelineFocus()
+  const lanes = assignOverlayLanes(overlays, pxPerSec)
 
   return (
     <div className="absolute inset-0 z-[1] touch-none">
@@ -24,8 +30,9 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
         const startTime = timingDraft?.startTime ?? overlay.startTime
         const endTime = timingDraft?.endTime ?? overlay.endTime
         const left = startTime * pxPerSec
-        const width = Math.max(16, (endTime - startTime) * pxPerSec)
+        const width = Math.max(MIN_OVERLAY_BLOCK_PX, (endTime - startTime) * pxPerSec)
         const selected = overlay.id === selectedOverlayId
+        const top = (lanes.get(overlay.id) ?? 0) * TEXT_OVERLAY_LANE_HEIGHT + 2
 
         return (
           <TextOverlayBlock
@@ -33,6 +40,7 @@ export function TextOverlayBar({ pxPerSec }: { pxPerSec: number }) {
             overlay={overlay}
             left={left}
             width={width}
+            top={top}
             selected={selected}
             onSelect={() => {
               selectClip(null)
@@ -71,6 +79,7 @@ function TextOverlayBlock({
   overlay,
   left,
   width,
+  top,
   selected,
   onSelect,
   onDoubleClick,
@@ -81,6 +90,7 @@ function TextOverlayBlock({
   overlay: TextOverlay
   left: number
   width: number
+  top: number
   selected: boolean
   onSelect: () => void
   onDoubleClick: () => void
@@ -94,19 +104,26 @@ function TextOverlayBlock({
       data-overlay-id={overlay.id}
       onDoubleClick={onDoubleClick}
       className={cn(
-        'absolute top-0.5 flex h-[26px] touch-none select-none items-center overflow-hidden rounded-lg border transition-[box-shadow,border-color]',
+        'group/overlay absolute flex h-[26px] touch-none select-none items-center overflow-hidden rounded-lg border transition-[box-shadow,border-color]',
         selected
           ? 'z-10 border-primary bg-violet-500/85 ring-2 ring-primary/20'
           : 'border-violet-400/40 bg-violet-500/65 hover:bg-violet-500/80',
       )}
-      style={{ left, width }}
+      style={{ left, width, top }}
       title={`${overlay.content || 'Text overlay'} — double-click to edit`}
     >
       <div
         onPointerDown={onTrimStart}
-        className="absolute left-0 top-0 z-20 h-full w-2.5 shrink-0 cursor-ew-resize bg-white/20 hover:bg-white/40"
+        className="absolute left-0 top-0 z-20 flex h-full w-5 cursor-ew-resize items-stretch justify-start"
         aria-label="Trim start"
-      />
+      >
+        <div
+          className={cn(
+            'h-full w-2.5 bg-white/20 transition-opacity hover:bg-white/40',
+            selected ? 'opacity-100' : 'opacity-0 group-hover/overlay:opacity-100',
+          )}
+        />
+      </div>
       <div
         onPointerDown={e => {
           onSelect()
@@ -114,14 +131,21 @@ function TextOverlayBlock({
         }}
         className="flex h-full min-w-0 flex-1 cursor-grab items-center gap-1 px-3 text-[10px] text-white active:cursor-grabbing"
       >
-        <TypeIcon className="pointer-events-none h-3 w-3 shrink-0" />
+        <TypeIcon className="pointer-events-none size-3 shrink-0" strokeWidth={1.75} />
         <span className="pointer-events-none truncate">{overlay.content || 'Text overlay'}</span>
       </div>
       <div
         onPointerDown={onTrimEnd}
-        className="absolute right-0 top-0 z-20 h-full w-2.5 shrink-0 cursor-ew-resize bg-white/20 hover:bg-white/40"
+        className="absolute right-0 top-0 z-20 flex h-full w-5 cursor-ew-resize items-stretch justify-end"
         aria-label="Trim end"
-      />
+      >
+        <div
+          className={cn(
+            'h-full w-2.5 bg-white/20 transition-opacity hover:bg-white/40',
+            selected ? 'opacity-100' : 'opacity-0 group-hover/overlay:opacity-100',
+          )}
+        />
+      </div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { generateVideoScriptAction } from '@/actions/video.actions'
+import { SkillModelSelector } from '@/components/skills/skill-model-selector'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
 import {
   EditorPanelHeader,
@@ -18,23 +19,30 @@ import { openVideoAudioPanelWithScript } from '@/lib/video/editor-events'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { formatTimecode } from '@/lib/video/timecode'
 import { cn } from '@/lib/utils'
+import { getModels } from '@/services/models.service'
 import { formatCredits } from '@/utils/format'
-import type { VideoScriptSegment, VideoScriptTone } from '@socialista/types'
-import { PROMPT_KEYS, VIDEO_AUDIO_MAX_CHARS, VIDEO_SCRIPT_TONES } from '@socialista/types'
+import type { Model, VideoScriptSegment, VideoScriptTone } from '@socialista/types'
+import {
+  DEFAULT_GENERATION_CREDIT_COST,
+  ModelType,
+  PROMPT_KEYS,
+  VIDEO_AUDIO_MAX_CHARS,
+  VIDEO_SCRIPT_TONES,
+} from '@socialista/types'
 import {
   ArrowLeftIcon,
   AudioLinesIcon,
   Loader2Icon,
   SparklesIcon,
 } from 'lucide-react'
-import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
-const GENERATION_CREDIT_COST = 2
 const PROMPT_MAX_LENGTH = 800
 const MIN_DURATION = 5
 const MAX_DURATION = 600
 const DEFAULT_EMPTY_DURATION = 30
+const TEXT_MODELS_QUERY = `limit=50&modelType=${ModelType.TEXT}&sort=-usageCount`
 
 const PROMPT_EXAMPLES = [
   {
@@ -106,6 +114,11 @@ export function VideoScriptPanel({
   const [applied, setApplied] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [skillId, setSkillId] = useState<string | undefined>()
+  const [textModels, setTextModels] = useState<Model[]>([])
+  const [selectedTextModelId, setSelectedTextModelId] = useState('')
+
+  const selectedTextModel = textModels.find(model => model._id === selectedTextModelId) ?? textModels[0]
+  const estimatedCost = selectedTextModel?.cost ?? DEFAULT_GENERATION_CREDIT_COST
 
   const hasTimeline = projectDuration > 0
   const effectiveDuration = hasTimeline
@@ -116,6 +129,19 @@ export function VideoScriptPanel({
   const canGenerate = trimmed.length > 0 && !isPending
   const charCount = prompt.length
 
+  useEffect(() => {
+    let cancelled = false
+    void getModels(TEXT_MODELS_QUERY).then(res => {
+      if (cancelled) return
+      const next = res.success ? (res.data?.models ?? []) : []
+      setTextModels(next)
+      setSelectedTextModelId(current => current || next[0]?._id || '')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const handleGenerate = useCallback(() => {
     if (!trimmed) {
       toast.error('Enter a description of your video first')
@@ -124,7 +150,13 @@ export function VideoScriptPanel({
     }
 
     startTransition(async () => {
-      const result = await generateVideoScriptAction(trimmed, effectiveDuration, tone, skillId)
+      const result = await generateVideoScriptAction(
+        trimmed,
+        effectiveDuration,
+        tone,
+        skillId,
+        selectedTextModel?.value,
+      )
       if (!result.success) {
         toast.error(result.error)
         return
@@ -135,7 +167,7 @@ export function VideoScriptPanel({
       setView('preview')
       toast.success(`Generated ${result.segments.length} captions`)
     })
-  }, [effectiveDuration, skillId, tone, trimmed])
+  }, [effectiveDuration, selectedTextModel?.value, skillId, tone, trimmed])
 
   const updateSegment = useCallback((index: number, partial: Partial<VideoScriptSegment>) => {
     setSegments(prev =>
@@ -224,7 +256,7 @@ export function VideoScriptPanel({
         <div className="shrink-0 border-b border-border/40 px-3.5 py-2.5">
           <EditorPanelHeader
             title="Script"
-            description="Generate timed on-screen captions"
+            description="Write timed lines from a prompt"
           />
         </div>
       ) : null}
@@ -371,6 +403,14 @@ export function VideoScriptPanel({
               onChange={setSkillId}
               disabled={isPending}
             />
+            {textModels.length > 0 ? (
+              <SkillModelSelector
+                models={textModels}
+                selectedModelId={selectedTextModel?._id ?? selectedTextModelId}
+                onSelectedModelChange={setSelectedTextModelId}
+                disabled={isPending}
+              />
+            ) : null}
             <Button
               className="h-9 w-full gap-2 rounded-lg text-[12px] font-medium tracking-tight shadow-xs"
               onClick={handleGenerate}
@@ -384,7 +424,7 @@ export function VideoScriptPanel({
               {isPending ? 'Generating…' : 'Generate script'}
             </Button>
             <div className="flex items-center justify-between gap-2 px-0.5 text-[10px] tracking-wide text-muted-foreground/75">
-              <p>≈ {formatCredits(GENERATION_CREDIT_COST)} credits per generation</p>
+              <p>≈ {formatCredits(estimatedCost)} credits per generation</p>
               <p className="flex items-center gap-1">
                 <Kbd className="h-4 min-w-4 px-1 text-[10px]">⌘</Kbd>
                 <Kbd className="h-4 min-w-4 px-1 text-[10px]">↵</Kbd>

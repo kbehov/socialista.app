@@ -6,8 +6,8 @@ import type { ReactNode } from "react";
 
 const fadeTransition = {
   type: "tween" as const,
-  duration: 0.2,
-  ease: [0.16, 1, 0.3, 1] as const,
+  duration: 0.22,
+  ease: [0.2, 0, 0, 1] as const,
 };
 
 type FadeInProps = {

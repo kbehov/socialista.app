@@ -1,6 +1,7 @@
 import {
   createBrand,
   deleteBrand,
+  extractBrand,
   getBrand,
   getWorkspaceBrands,
   updateBrand,
@@ -13,6 +14,7 @@ const brandRoutes = new Hono<AppContext>()
 
 brandRoutes.use('/*', authMiddleware)
 
+brandRoutes.post('/extract', extractBrand)
 brandRoutes.post('/', createBrand)
 brandRoutes.get('/workspace/:workspaceId', getWorkspaceBrands)
 brandRoutes.get('/:id', getBrand)

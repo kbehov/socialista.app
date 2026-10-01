@@ -47,3 +47,15 @@ export function ugcSceneBadge(clip: UgcClip, generating: boolean): string {
 export function ugcNeedsCreator(project: UgcProject): boolean {
   return project.clips.some(clip => ugcClipRequiresCreator(clip.type))
 }
+
+export function ugcClipHasGeneratedWork(clip: UgcClip): boolean {
+  return Boolean(
+    clip.videoUrl ||
+      clip.audioUrl ||
+      clip.stills.some(still => Boolean(still.imageUrl)),
+  )
+}
+
+export function ugcProjectHasGeneratedSceneWork(project: UgcProject): boolean {
+  return project.clips.some(ugcClipHasGeneratedWork)
+}

@@ -151,7 +151,7 @@ export const generateUgcVideo = schemaTask({
         try {
           const systemOverride = await loadSkillOverride({
             skillId: payload.skillId,
-            target: PROMPT_KEYS.ugcVideoPlanner,
+            target: PROMPT_KEYS.videoPrompt,
             workspaceId: payload.workspaceId,
           });
           const planned = await planUgcVideoPrompt({

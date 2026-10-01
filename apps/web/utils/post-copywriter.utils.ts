@@ -38,6 +38,8 @@ export type PostCompletionBody = {
   tone?: string
   media?: CopywriterMediaItem[]
   skillId?: string
+  /** Catalog `Model.value` for the text model to use. */
+  model?: string
 }
 
 export type SanitizedMedia = {
@@ -54,6 +56,7 @@ export type SanitizedPostCompletionInput = {
   tone?: string
   media: SanitizedMedia[]
   skillId?: string
+  model?: string
 }
 
 export function parseHttpsUrl(value?: string): URL | null {
@@ -111,6 +114,7 @@ export function sanitizePostCompletionBody(body: PostCompletionBody): SanitizedP
     existingCaption: body.existingCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
     previousCaption: body.previousCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
     skillId: body.skillId?.trim() || undefined,
+    model: body.model?.trim() || undefined,
   }
 }
 

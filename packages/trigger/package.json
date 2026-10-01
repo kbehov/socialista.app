@@ -37,6 +37,14 @@
       "types": "./dist/schemas/analytics-sweep.schema.d.ts",
       "import": "./dist/schemas/analytics-sweep.schema.js"
     },
+    "./schemas/post-analytics-sweep": {
+      "types": "./dist/schemas/post-analytics-sweep.schema.d.ts",
+      "import": "./dist/schemas/post-analytics-sweep.schema.js"
+    },
+    "./schemas/fetch-post-analytics": {
+      "types": "./dist/schemas/fetch-post-analytics.schema.d.ts",
+      "import": "./dist/schemas/fetch-post-analytics.schema.js"
+    },
     "./schemas/static-ad": {
       "types": "./dist/schemas/static-ad.schema.d.ts",
       "import": "./dist/schemas/static-ad.schema.js"
@@ -111,7 +119,6 @@
     "@socialista/types": "workspace:^",
     "@trigger.dev/sdk": "^4.5.3",
     "ai": "^7.0.36",
-    "ffmpeg-static": "^5.3.0",
     "sharp": "^0.35.3",
     "zod": "^4.4.3"
   },

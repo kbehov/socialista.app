@@ -1,11 +1,7 @@
 'use client'
 
 import { StudioTemplatesGallery } from '@/components/studio/templates/studio-templates-gallery'
-import {
-  StudioTemplateKind,
-  type StudioTemplateCategoryDto,
-  type StudioTemplateDto,
-} from '@socialista/types'
+import { StudioTemplateKind, type StudioTemplateCategoryDto, type StudioTemplateDto } from '@socialista/types'
 
 type InspirationKind = typeof StudioTemplateKind.IMAGE | typeof StudioTemplateKind.VIDEO
 
@@ -26,6 +22,9 @@ type StudioInspirationsGalleryProps = {
   sectionTitle?: string
   headingTone?: 'display' | 'quiet'
   chipTone?: 'outline' | 'studio'
+  hideTitle?: boolean
+  className?: string
+  sectionDescription?: string
 }
 
 export function StudioInspirationsGallery({
@@ -38,14 +37,20 @@ export function StudioInspirationsGallery({
   sectionTitle = 'Inspirations',
   headingTone = 'display',
   chipTone = 'outline',
+  hideTitle,
+  className,
+  sectionDescription,
 }: StudioInspirationsGalleryProps) {
   return (
     <StudioTemplatesGallery
       kind={kind}
       initialCategories={templateCategories}
       sectionTitle={sectionTitle}
+      sectionDescription={sectionDescription}
       headingTone={headingTone}
       chipTone={chipTone}
+      hideTitle={hideTitle}
+      className={className}
       cardVariant="visual"
       onRecreate={onRecreate}
       onPreview={onPreview}

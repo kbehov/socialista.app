@@ -353,15 +353,17 @@ export function usePlayback(canvasRef: React.RefObject<HTMLCanvasElement | null>
 
     const startInBuffer = clip.trimIn + offsetInClip
     gain.gain.setValueAtTime(targetVolume, whenStart)
-    if (clip.fadeIn && clip.fadeIn > 0 && offsetInClip < clip.fadeIn) {
-      gain.gain.setValueAtTime(0, whenStart)
-      gain.gain.linearRampToValueAtTime(targetVolume, whenStart + (clip.fadeIn - offsetInClip))
-    }
-    if (clip.fadeOut && clip.fadeOut > 0) {
-      const fadeStart = whenStart + (remainingTimeline - clip.fadeOut)
-      if (fadeStart > whenStart) {
-        gain.gain.setValueAtTime(targetVolume, fadeStart)
-        gain.gain.linearRampToValueAtTime(0, fadeStart + clip.fadeOut)
+    if (clip.type === 'audio') {
+      if (clip.fadeIn && clip.fadeIn > 0 && offsetInClip < clip.fadeIn) {
+        gain.gain.setValueAtTime(0, whenStart)
+        gain.gain.linearRampToValueAtTime(targetVolume, whenStart + (clip.fadeIn - offsetInClip))
+      }
+      if (clip.fadeOut && clip.fadeOut > 0) {
+        const fadeStart = whenStart + (remainingTimeline - clip.fadeOut)
+        if (fadeStart > whenStart) {
+          gain.gain.setValueAtTime(targetVolume, fadeStart)
+          gain.gain.linearRampToValueAtTime(0, fadeStart + clip.fadeOut)
+        }
       }
     }
     source.connect(gain).connect(ctx.destination)

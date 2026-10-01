@@ -23,6 +23,15 @@ export type UgcActiveRun = {
 
 export type UgcWorkbenchTab = 'image' | 'audio' | 'video'
 
+export type UgcWriteScriptOptions = {
+  directions?: string
+}
+
+export type UgcWriteVideoPromptOptions = {
+  directions?: string
+  referenceImageUrl?: string
+}
+
 export type UgcPlanDraft = {
   influencerId: string
   description: string

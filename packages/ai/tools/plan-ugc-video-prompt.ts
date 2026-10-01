@@ -2,6 +2,7 @@ import { generateObject } from 'ai'
 import { z } from 'zod'
 import { PROMPT_KEYS, type AspectRatio } from '@socialista/types'
 
+import { UGC_VIDEO_PLANNER_SYSTEM } from '../prompts/ugc-video-planner.js'
 import { resolvePrompt } from '../registry.js'
 import { buildUgcVideoPlannerUserPrompt, type UgcVideoPlannerInput } from '../builders/ugc-video-planner.js'
 import { buildImagePromptMessages } from '../builders/image.js'
@@ -41,7 +42,8 @@ export async function planUgcVideoPrompt(input: PlanUgcVideoPromptInput): Promis
 
   const media = stillUrls.map(imageUrl => ({ imageUrl }))
   const userText = buildUgcVideoPlannerUserPrompt(input)
-  const { model, system } = resolvePrompt(PROMPT_KEYS.ugcVideoPlanner, input.systemOverride)
+  const { model } = resolvePrompt(PROMPT_KEYS.videoPrompt)
+  const system = input.systemOverride?.trim() || UGC_VIDEO_PLANNER_SYSTEM
 
   const result = await generateObject({
     model,
