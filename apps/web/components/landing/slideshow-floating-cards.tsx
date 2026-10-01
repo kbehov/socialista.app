@@ -23,30 +23,26 @@ const SHOWCASE_ROW: {
   featured?: boolean
 }[] = [
   { key: 'theories', id: 'theories', rotate: -4 },
-  { key: 'budget', id: 'budget', rotate: -2, featured: true },
-  { key: 'skincare', id: 'skincare', rotate: 0 },
-  { key: 'morning', id: 'morning', rotate: 2 },
-  { key: 'theories-copy', id: 'theories-copy', rotate: 3 },
-  { key: 'budget-copy', id: 'budget-copy', rotate: 5 },
+  { key: 'budget', id: 'budget', rotate: -1.5, featured: true },
+  { key: 'skincare', id: 'skincare', rotate: 1.5 },
+  { key: 'morning', id: 'morning', rotate: 4 },
 ]
 
 const cardWidth = 'w-[5.75rem] sm:w-[7rem] md:w-[7.75rem] lg:w-[8.5rem]'
 const cardWidthFeatured = 'w-[7.25rem] sm:w-[8.75rem] md:w-[9.75rem] lg:w-[10.75rem]'
 
-const cardWidthCompact = 'w-[4.5rem] sm:w-[5.25rem] md:w-[5.75rem] lg:w-[7.25rem] xl:w-[7.75rem]'
-const cardWidthFeaturedCompact = 'w-[5.25rem] sm:w-[6.25rem] md:w-[6.75rem] lg:w-[8.5rem] xl:w-[9rem]'
+const cardWidthCompact = 'w-[6.25rem] sm:w-[7.5rem] md:w-[8.25rem] lg:w-[9.25rem] xl:w-[10rem]'
+const cardWidthFeaturedCompact = 'w-[7.25rem] sm:w-[8.75rem] md:w-[9.5rem] lg:w-[10.75rem] xl:w-[11.5rem]'
 
 function SlideshowPreviewCard({
   item,
   className,
   featured = false,
-  priority,
   compact = false,
 }: {
   item: SlideshowItem
   className?: string
   featured?: boolean
-  priority?: boolean
   compact?: boolean
 }) {
   const focal = item.focal ?? '50% 38%'
@@ -70,8 +66,8 @@ function SlideshowPreviewCard({
         src={item.src}
         alt=""
         fill
-        unoptimized
-        priority={priority}
+        quality={80}
+        sizes={featured ? '(max-width: 640px) 128px, 192px' : '(max-width: 640px) 112px, 168px'}
         className="object-cover"
         style={{ objectPosition: focal }}
         aria-hidden="true"
@@ -86,7 +82,7 @@ function SlideshowPreviewCard({
           className={cn(
             'flex flex-col gap-0.5 font-semibold leading-none text-white/95 tabular-nums',
             compact
-              ? 'text-[0.5625rem] sm:text-[0.625rem]'
+              ? 'text-[0.625rem] sm:text-sidebar-label'
               : featured
                 ? 'text-sidebar-label sm:text-[0.75rem]'
                 : 'text-[0.625rem] sm:text-sidebar-label',
@@ -121,14 +117,12 @@ function ShowcaseCard({
   rotate,
   featured = false,
   enterDelay = 0,
-  priority,
   compact = false,
 }: {
   itemId: SlideshowItem['id']
   rotate: number
   featured?: boolean
   enterDelay?: number
-  priority?: boolean
   compact?: boolean
 }) {
   const reduceMotion = useReducedMotion()
@@ -151,7 +145,7 @@ function ShowcaseCard({
         delay: enterDelay,
       }}
     >
-      <SlideshowPreviewCard item={item} featured={featured} priority={priority} compact={compact} />
+      <SlideshowPreviewCard item={item} featured={featured} compact={compact} />
     </motion.div>
   )
 }
@@ -159,17 +153,18 @@ function ShowcaseCard({
 export function SlideshowShowcase({ compact = false }: { compact?: boolean }) {
   return (
     <div className="relative -mx-5 overflow-visible sm:-mx-6 lg:-mx-8">
+      {/* Decorative row: outer cards peek and fade on narrow screens instead of scrolling */}
       <div
         className={cn(
-          'overflow-x-auto overflow-y-visible px-5 lg:overflow-visible lg:px-10 xl:px-12',
-          compact ? 'py-1 sm:py-1.5' : 'py-4 sm:py-5',
-          '[-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden',
+          'overflow-hidden px-5 lg:overflow-visible lg:px-10 xl:px-12',
+          '[mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] lg:[mask-image:none]',
+          compact ? 'py-2 sm:py-3' : 'py-4 sm:py-5',
         )}
         aria-hidden="true"
       >
         <div
           className={cn(
-            'mx-auto flex w-max max-w-none items-end justify-center',
+            'relative left-1/2 flex w-max max-w-none -translate-x-1/2 items-end justify-center',
             compact
               ? 'gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3'
               : 'gap-2 sm:gap-3 md:gap-4 lg:gap-[1.125rem] xl:gap-5',
@@ -182,7 +177,6 @@ export function SlideshowShowcase({ compact = false }: { compact?: boolean }) {
             rotate={entry.rotate}
             featured={entry.featured}
             enterDelay={index * 0.05}
-            priority={Boolean(entry.featured)}
             compact={compact}
           />
         ))}

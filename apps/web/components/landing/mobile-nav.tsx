@@ -41,7 +41,7 @@ export function MobileNav({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
         className="w-[min(100vw-2rem,20rem)] border-[color-mix(in_srgb,var(--landing-ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_92%,white)] backdrop-blur-xl"
       >
         <SheetHeader>
-          <SheetTitle className="text-left text-base">Menu</SheetTitle>
+          <SheetTitle className="text-left text-base">Socialista</SheetTitle>
         </SheetHeader>
         <nav className="mt-6 flex flex-col gap-1">
           {LANDING_NAV.map((item) => (

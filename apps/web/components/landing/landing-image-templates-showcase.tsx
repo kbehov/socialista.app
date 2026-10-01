@@ -1,18 +1,17 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
 import { useState } from 'react'
 
 import { ImageTemplateRecreateDialog } from '@/components/studio/images/image-template-recreate-dialog'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Model, StudioTemplateDto } from '@socialista/types'
 
 import { IMAGE_TEMPLATES_SECTION } from './content'
-import { landingCtaPrimary, landingGlass } from './landing-classes'
+import { SectionCta } from './section-cta'
+import { landingGlass } from './landing-classes'
 
-const IMAGE_QUALITY = 90
+const IMAGE_QUALITY = 80
 
 const MASONRY_RATIOS = ['3 / 4', '4 / 5', '1 / 1', '5 / 6', '9 / 16', '4 / 3', '2 / 3', '5 / 4'] as const
 
@@ -24,12 +23,10 @@ type LandingImageTemplatesShowcaseProps = {
 function MasonryTile({
   template,
   index,
-  priority,
   onRecreate,
 }: {
   template: StudioTemplateDto
   index: number
-  priority?: boolean
   onRecreate: (template: StudioTemplateDto) => void
 }) {
   const aspectRatio = MASONRY_RATIOS[index % MASONRY_RATIOS.length]
@@ -48,9 +45,8 @@ function MasonryTile({
     >
       <Image
         src={template.previewImageUrl}
-        alt=""
+        alt={template.name ?? ''}
         fill
-        priority={priority}
         quality={IMAGE_QUALITY}
         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         className="object-cover transition-[transform,filter] duration-500 ease-[cubic-bezier(0.2,0,0,1)] group-hover/card:scale-[1.04] group-hover/card:brightness-[1.03]"
@@ -61,7 +57,7 @@ function MasonryTile({
       />
       <button
         type="button"
-        aria-label="Recreate this template"
+        aria-label={template.name ? `Recreate ${template.name}` : 'Recreate this template'}
         onClick={event => {
           event.stopPropagation()
           onRecreate(template)
@@ -110,16 +106,13 @@ export function LandingImageTemplatesShowcase({ templates, models }: LandingImag
               key={`${template._id}-${index}`}
               template={template}
               index={index}
-              priority={index < 4}
               onRecreate={openRecreate}
             />
           ))}
         </div>
 
         <div className="flex justify-center pt-0.5">
-          <Button asChild size="lg" className={cn(landingCtaPrimary, 'h-11 px-7')}>
-            <Link href={IMAGE_TEMPLATES_SECTION.ctaHref}>{IMAGE_TEMPLATES_SECTION.cta}</Link>
-          </Button>
+          <SectionCta label={IMAGE_TEMPLATES_SECTION.cta} />
         </div>
       </div>
 

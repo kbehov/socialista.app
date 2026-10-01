@@ -4,7 +4,7 @@ import { IMAGE_TEMPLATES_SECTION } from './content'
 import { FadeIn } from './fade-in'
 import { getLandingImageTemplates } from './landing-image-templates-data'
 import { LandingImageTemplatesShowcase } from './landing-image-templates-showcase'
-import { landingContentGap, LANDING_STORY_INDEX } from './landing-classes'
+import { landingContentGap } from './landing-classes'
 import { Section } from './section'
 import { LandingSectionIntro } from './section-header'
 import { getModels } from '@/services/models.service'
@@ -20,15 +20,14 @@ async function loadImageModels() {
 
 export async function LandingImageTemplates() {
   const [templates, models] = await Promise.all([getLandingImageTemplates(), loadImageModels()])
+  if (templates.length === 0) return null
 
   return (
-    <Section id="image-templates" landingDivider alt>
+    <Section id="image-templates" landingDivider>
       <FadeIn>
         <LandingSectionIntro
           titleId="image-templates-heading"
-          storyIndex={LANDING_STORY_INDEX.imageTemplates}
           eyebrow={IMAGE_TEMPLATES_SECTION.eyebrow}
-          eyebrowTone="accent"
           title={IMAGE_TEMPLATES_SECTION.title}
           titleAccent={IMAGE_TEMPLATES_SECTION.titleAccent}
           description={IMAGE_TEMPLATES_SECTION.description}

@@ -14,10 +14,10 @@ import {
 import { FadeIn } from "./fade-in";
 import {
   landingContentGap,
-  landingSection,
-  landingSectionDivider,
+  landingInsetPanel,
   LANDING_STORY_INDEX,
 } from "./landing-classes";
+import { Section } from "./section";
 import { LandingSectionIntro } from "./section-header";
 
 const platformById = Object.fromEntries(
@@ -149,15 +149,7 @@ export function LandingPlatforms() {
   const bottomRightRef = useRef<HTMLDivElement>(null);
 
   return (
-    <section
-      id="channels"
-      aria-labelledby="channels-heading"
-      className={cn(
-        "landing-canvas scroll-mt-24 overflow-x-clip py-16 sm:py-20 lg:py-24",
-        landingSectionDivider,
-      )}
-    >
-      <div className={landingSection}>
+    <Section id="channels" landingDivider className="overflow-x-clip">
         <FadeIn>
           <LandingSectionIntro
             titleId="channels-heading"
@@ -170,9 +162,10 @@ export function LandingPlatforms() {
 
         <FadeIn delay={0.08} className={landingContentGap}>
           <figure className="mx-auto w-full max-w-3xl">
+            <div className={cn(landingInsetPanel, 'px-2 py-6 sm:px-6 sm:py-8')}>
             <div
               ref={containerRef}
-              className="relative flex w-full items-center justify-center overflow-hidden px-2 py-4 sm:px-4 sm:py-6"
+              className="relative flex w-full items-center justify-center overflow-hidden px-1 py-2 sm:px-2 sm:py-4"
             >
             <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17.5rem] sm:gap-9">
               <div className="flex items-center justify-between px-1">
@@ -309,12 +302,12 @@ export function LandingPlatforms() {
               gradientStopColor={PLATFORM_BEAM_COLORS.twitter.stop}
             />
             </div>
+            </div>
             <figcaption className="sr-only">
               Socialista publishes to {PLATFORMS.map((platform) => platform.label).join(", ")}.
             </figcaption>
           </figure>
         </FadeIn>
-      </div>
-    </section>
+    </Section>
   );
 }

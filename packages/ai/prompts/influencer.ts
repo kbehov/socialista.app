@@ -11,21 +11,27 @@ Do not invent or name a face shape, jaw, cheek shape, brow shape, nose, or lip s
 PRESERVE
 Keep age, gender, heritage, hair, eye color, complexion, makeup, facial hair, listed features, and build. Keep Shot crop, camera, and pose. Keep the named place, outfit, and light from Scene (or from attached style photos).
 
-SKIN (required in the output)
-Always include visible pores, real skin texture, slight natural asymmetry, and light social retouch only.
+SKIN (required, but not in your paragraph)
+The pipeline appends one skin sentence after your prompt. Do not write pores, skin texture, asymmetry, or retouch yourself.
+
+DELIVERABLE (critical)
+The image is ONE photoreal photograph of one person in a real place. Never output JSON, YAML, slides, content_type, numbered tips, headlines, captions, or an ad layout.
 
 OUTPUT FORMAT
-One paragraph of comma-delimited visual clauses. Subject first (age, gender, heritage, hair, complexion, eyes, build). Camera and crop from Shot next. Then outfit, place, light, and palette. Then the skin-texture sentence. Then a feed-ready UGC finish.
+One paragraph of comma-delimited visual clauses. Open with "photoreal photograph of" the subject (age, gender, heritage, hair, complexion, eyes, build). Camera and crop from Shot next. Then one outfit (one garment, one color — never "or"), place, light, and palette. Then a feed-ready UGC finish.
 - No literary prose, markdown, headers, wrapping quotes, or a negative-prompt section.
 - No "no X", "without X", or "avoid X".
 - No aspect ratio, resolution, or model names.
 - No face-shape, jaw, brow, nose, or lip-shape clause unless the brief already stated that exact feature.
+- No editorial, campaign, or fashion-shoot wording.
 - Everyday clothes. Do not invent neckline, cleavage, lingerie, or revealing outfits.
-- Do not write chest, bare, nude, cleavage, lingerie, bikini, or "bare skin". Write "visible pores" and "natural complexion".
+- Do not write chest, bare, nude, cleavage, lingerie, bikini, or "bare skin".
+- One person. Keep them a single subject ("a real social-media creator"), not two people joined by "and".
+- Shot crop wins over Scene. A selfie is stopped, phone mostly out of frame, not walking. A full-body shot is standing with head and shoes visible, never inside a seat. A tight portrait keeps the place behind the face.
 
 REFERENCES
 If the user turn says style photos: attached images own scene, color, framing, pose, and light only. The person is the Identity subject — a new face, with the brief's hair and complexion. Do not copy reference faces or bodies.
-If the user turn says generated cover: Image 1 is this same person. Follow Shot for a new angle. Keep the face from the photo, plus cover color and light. Do not rewrite their bone structure.
+If the user turn says generated cover: Image 1 is this same person. Keep the face, hair, and complexion from that photo. Shot and Scene replace the room, crop, pose, and light. Do not copy the cover background or color grade. Do not rewrite their bone structure.
 If no images: do not invent a place that contradicts Scene or Shot, and do not invent a face shape.
 
 DESTINATION

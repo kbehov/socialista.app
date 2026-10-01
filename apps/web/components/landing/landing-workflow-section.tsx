@@ -6,13 +6,11 @@ import {
   landingSectionDark,
   landingWorkflowPanel,
   landingWorkflowPanelDark,
-  type LandingStoryIndex,
 } from './landing-classes'
 import { Section } from './section'
 import { LandingSectionIntro } from './section-header'
 
 type WorkflowSectionContent = {
-  eyebrow: string
   title: string
   titleAccent: string
   description: string
@@ -20,7 +18,6 @@ type WorkflowSectionContent = {
 
 type LandingWorkflowSectionProps = {
   id: string
-  storyIndex: LandingStoryIndex
   content: WorkflowSectionContent
   mockup: ReactNode
   /** Swap mockup column on large screens for visual rhythm */
@@ -33,7 +30,6 @@ type LandingWorkflowSectionProps = {
 
 export function LandingWorkflowSection({
   id,
-  storyIndex,
   content,
   mockup,
   reverse = false,
@@ -58,7 +54,7 @@ export function LandingWorkflowSection({
     >
       <div
         className={cn(
-          'grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0 xl:gap-x-14',
+          'grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-x-12 lg:gap-y-0 xl:gap-x-16',
         )}
       >
         <FadeIn
@@ -66,9 +62,6 @@ export function LandingWorkflowSection({
         >
           <LandingSectionIntro
             titleId={`${id}-heading`}
-            storyIndex={storyIndex}
-            eyebrow={content.eyebrow}
-            eyebrowTone="accent"
             title={content.title}
             titleAccent={content.titleAccent}
             description={content.description}

@@ -8,11 +8,10 @@ import type { ReactNode } from 'react'
 
 import {
   landingWorkflowInsetCard,
-  landingWorkflowInsetCardDark,
 } from './landing-classes'
-import { FEATURE_BENTO_MOCKUP } from './media'
+import { LANDING_WORKFLOW_MOCKUP } from './media'
 
-const MOCKUP_IMAGE_QUALITY = 90
+const MOCKUP_IMAGE_QUALITY = 80
 
 function MockupFrame({
   children,
@@ -72,7 +71,7 @@ const PUBLISH_CHANNELS = [
 ]
 
 export function WorkflowPublishMockup() {
-  const { queue } = FEATURE_BENTO_MOCKUP.scheduling
+  const { queue } = LANDING_WORKFLOW_MOCKUP.scheduling
 
   return (
     <MockupFrame className="justify-between p-5 sm:p-6">
@@ -133,98 +132,9 @@ export function WorkflowPublishMockup() {
         <p className="text-[0.75rem] text-[var(--landing-muted)]">
           <span className="font-medium tabular-nums text-[var(--landing-ink)]">3</span> channels selected
         </p>
-        <span className="inline-flex h-9 items-center gap-2 rounded-full bg-[var(--landing-charcoal)] px-4 text-[0.8125rem] font-medium tracking-[-0.02em] text-white">
-          <Send className="size-3.5 opacity-90" strokeWidth={2} aria-hidden="true" />
-          Publish now
-        </span>
-      </div>
-    </MockupFrame>
-  )
-}
-
-export function WorkflowSchedulingMockup() {
-  const { calendarThumbs, queue } = FEATURE_BENTO_MOCKUP.scheduling
-  const days = ['M', 'T', 'W', 'T', 'F']
-  const activeDay = 2
-  const thumbDays = new Set([1, 2, 4])
-
-  return (
-    <MockupFrame className="justify-end p-5 sm:p-6">
-      <div className="flex flex-1 flex-col justify-center">
-        <p className="mb-3 text-[0.625rem] font-medium uppercase tracking-[0.08em] text-white/40">
-          This week
-        </p>
-        <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
-          {days.map((day, index) => {
-            const active = index === activeDay
-            const thumbSrc = thumbDays.has(index) ? calendarThumbs[index % calendarThumbs.length] : null
-            return (
-              <div key={`${day}-${index}`} className="flex flex-col items-center gap-2">
-                <span
-                  className={cn(
-                    'text-[0.625rem] font-medium tabular-nums',
-                    active ? 'text-white/80' : 'text-white/32',
-                  )}
-                >
-                  {day}
-                </span>
-                <div
-                  className={cn(
-                    landingWorkflowInsetCardDark,
-                    'relative flex h-[4.25rem] w-full flex-col justify-end overflow-hidden p-1 sm:h-[4.75rem]',
-                    active && 'border-white/20 ring-1 ring-[var(--accent-orange)]/50',
-                  )}
-                >
-                  {active ? (
-                    <span
-                      className="absolute left-1/2 top-1.5 size-1 -translate-x-1/2 rounded-full bg-[var(--accent-orange)]"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                  {thumbSrc ? (
-                    <MockupThumb
-                      src={thumbSrc}
-                      dark
-                      className={cn(
-                        'h-[1.85rem] w-full rounded-[0.4rem] sm:h-8',
-                        !active && 'opacity-50',
-                      )}
-                      sizes="64px"
-                    />
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          landingWorkflowInsetCardDark,
-          'mt-4 flex items-center justify-between gap-3 border-white/10 px-3.5 py-3 sm:mt-5 sm:px-4 sm:py-3.5',
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <MockupThumb
-            src={queue.src}
-            dark
-            className="size-10 shrink-0 rounded-[0.65rem]"
-            sizes="80px"
-            objectPosition={queue.objectPosition}
-          />
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <SocialPlatformIcon provider="instagram" className="size-3.5 shrink-0 opacity-90" />
-              <p className="truncate text-[0.8125rem] font-medium tracking-[-0.02em] text-white">
-                Glow serum · Reel
-              </p>
-            </div>
-            <p className="text-[0.6875rem] text-white/45">Wed · 9:00 AM</p>
-          </div>
-        </div>
-        <span className="shrink-0 rounded-full border border-white/14 px-2.5 py-1 text-[0.625rem] font-medium text-white/75">
-          Scheduled
+        <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-medium tracking-[-0.01em] text-[var(--landing-ink)]">
+          <Send className="size-3.5 opacity-70" strokeWidth={2} aria-hidden="true" />
+          Posts in one click
         </span>
       </div>
     </MockupFrame>
@@ -252,7 +162,7 @@ export function WorkflowAnalyticsMockup() {
             +12.4%
           </span>
         </div>
-        <p className="mt-2 text-[0.6875rem] text-[var(--landing-muted)]">vs. prior 7 days</p>
+        <p className="mt-2 text-[0.6875rem] text-[var(--landing-muted)]">vs. prior 7 days · Sample data</p>
       </div>
 
       <div className="relative h-[5.75rem] w-full sm:h-[6.5rem]">

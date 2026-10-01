@@ -53,9 +53,9 @@ const characterSheetSchema = z.object({
       '2-3 short facts from the form: hair, complexion, build, or a listed feature such as freckles. Do not invent bone structure, jaw, brows, nose, or lips.',
     ),
   wardrobe: z.object({
-    casual: z.string().describe('Everyday outfit that matches niche, scenes, and aesthetic.'),
-    onCamera: z.string().describe('Outfit for talking-head / selfie content, still on-brand.'),
-    active: z.string().describe('Outfit for movement / outdoor / activity shots.'),
+    casual: z.string().describe('One everyday garment and one color. No alternatives.'),
+    onCamera: z.string().describe('One talking-head outfit and one color. No alternatives.'),
+    active: z.string().describe('One movement outfit and one color. No alternatives.'),
   }),
   environments: z
     .array(z.string())
@@ -122,6 +122,7 @@ const SYSTEM_INSTRUCTIONS =
   '(3) do not invent face shape, jaw, cheeks, brow shape, nose, or lip shape — the image model varies the face; only repeat features the form already listed; ' +
   '(4) no celebrity likeness; (5) plausibly real person with natural asymmetry; ' +
   '(6) wardrobe and environments must feel like scroll-stopping creator UGC — lived-in, specific light and place, clothes that fit the niche; ' +
+  'each wardrobe slot names one garment and one color, never "or" or a second option; casual and onCamera may differ but share that color; ' +
   'never blank walls, passport studios, or sterile seamless backdrops; ' +
   '(7) identityLock must be reusable byte-for-byte across many image prompts and must not include the person\'s name; ' +
   '(8) when scenes are provided, the 3 environments MUST be concrete variations of those situations (same place family, different angles/light/props); ' +

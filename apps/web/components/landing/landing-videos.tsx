@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 import { VIDEOS_SECTION } from './content'
 import { FadeIn } from './fade-in'
-import { landingContentGap, LANDING_STORY_INDEX } from './landing-classes'
+import { landingContentGap } from './landing-classes'
 import { getLandingVideoTemplates } from './landing-videos-data'
 import { LandingVideosEditor } from './landing-videos-editor'
 import { Section } from './section'
@@ -20,22 +20,21 @@ async function loadVideoModels() {
 
 export async function LandingVideos() {
   const [templates, models] = await Promise.all([getLandingVideoTemplates(), loadVideoModels()])
+  if (templates.length === 0) return null
 
   return (
-    <Section id="videos" landingDivider>
+    <Section id="videos" landingDivider alt>
       <FadeIn>
         <LandingSectionIntro
           titleId="videos-heading"
-          storyIndex={LANDING_STORY_INDEX.videos}
           eyebrow={VIDEOS_SECTION.eyebrow}
-          eyebrowTone="accent"
           title={VIDEOS_SECTION.title}
           titleAccent={VIDEOS_SECTION.titleAccent}
           description={VIDEOS_SECTION.description}
         />
       </FadeIn>
 
-      <FadeIn delay={0.08} className={cn(landingContentGap, 'mx-auto max-w-5xl')}>
+      <FadeIn delay={0.08} className={cn(landingContentGap, 'mx-auto w-full max-w-3xl')}>
         <LandingVideosEditor templates={templates} models={models} />
       </FadeIn>
     </Section>

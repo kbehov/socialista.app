@@ -54,7 +54,7 @@ export const INFLUENCER_SWIPE_ITEMS: SwipeCarouselItem[] = INFLUENCER_SWIPE_CREA
 
 export const LANDING_SWIPE_BADGES: SwipeCarouselBadge[] = [
   { platform: 'tiktok', slot: 'top-left' },
-  { platform: 'youtube', slot: 'mid-left' },
+  { platform: 'threads', slot: 'mid-left' },
   { platform: 'instagram', slot: 'mid-right' },
 ]
 

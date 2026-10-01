@@ -1,7 +1,7 @@
 import {
+  appendInfluencerSkinLock,
   buildInfluencerImagePrompt,
   generateImage,
-  INFLUENCER_SKIN_LOCK_FOOTER,
 } from '@socialista/ai'
 import {
   appendInfluencerGalleryImage,
@@ -116,7 +116,7 @@ export const generateInfluencerImage = schemaTask({
         lastEnhanced = enhanced
         await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
 
-        const prompt = `${enhanced}\n\n${INFLUENCER_SKIN_LOCK_FOOTER}`
+        const prompt = appendInfluencerSkinLock(enhanced)
         setGenerationStatus(generateProgress, `Generating scene${shotLabel}`)
 
         try {

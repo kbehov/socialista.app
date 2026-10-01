@@ -1,48 +1,27 @@
-import {
-  ANALYTICS_SECTION,
-  PUBLISH_SECTION,
-  SCHEDULING_SECTION,
-} from './content'
-import { LANDING_STORY_INDEX } from './landing-classes'
-import { LandingWorkflowSection } from './landing-workflow-section'
-import {
-  WorkflowAnalyticsMockup,
-  WorkflowPublishMockup,
-  WorkflowSchedulingMockup,
-} from './landing-workflow-mockups'
+import { SHIP_IT_SECTION } from './content'
+import { FadeIn } from './fade-in'
+import { landingContentGap } from './landing-classes'
+import { ShipItTabs } from './landing-ship-it-tabs'
+import { Section } from './section'
+import { LandingSectionIntro } from './section-header'
 
-export function LandingPublish() {
+/** Publish → schedule → analyze, merged into one tabbed story. */
+export function LandingShipIt() {
   return (
-    <LandingWorkflowSection
-      id="publish"
-      storyIndex={LANDING_STORY_INDEX.publish}
-      content={PUBLISH_SECTION}
-      mockup={<WorkflowPublishMockup />}
-    />
-  )
-}
+    <Section id="publish" landingDivider>
+      <FadeIn>
+        <LandingSectionIntro
+          titleId="publish-heading"
+          eyebrow={SHIP_IT_SECTION.eyebrow}
+          title={SHIP_IT_SECTION.title}
+          titleAccent={SHIP_IT_SECTION.titleAccent}
+          description={SHIP_IT_SECTION.description}
+        />
+      </FadeIn>
 
-export function LandingScheduling() {
-  return (
-    <LandingWorkflowSection
-      id="scheduling"
-      storyIndex={LANDING_STORY_INDEX.scheduling}
-      content={SCHEDULING_SECTION}
-      mockup={<WorkflowSchedulingMockup />}
-      reverse
-      sectionTone="dark"
-      panelTone="dark"
-    />
-  )
-}
-
-export function LandingAnalytics() {
-  return (
-    <LandingWorkflowSection
-      id="analytics"
-      storyIndex={LANDING_STORY_INDEX.analytics}
-      content={ANALYTICS_SECTION}
-      mockup={<WorkflowAnalyticsMockup />}
-    />
+      <FadeIn delay={0.06} className={landingContentGap}>
+        <ShipItTabs />
+      </FadeIn>
+    </Section>
   )
 }

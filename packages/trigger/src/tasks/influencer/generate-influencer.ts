@@ -6,7 +6,7 @@ import {
   // evaluateAnchorPortrait,
   generateImage,
   getInfluencerGenerationShots,
-  INFLUENCER_SKIN_LOCK_FOOTER,
+  appendInfluencerSkinLock,
   type InfluencerReferenceMode,
   type InfluencerShot,
 } from "@socialista/ai";
@@ -215,8 +215,9 @@ export const generateInfluencer = schemaTask({
       }
 
       const referenceModeForShot = (shotIndex: number): InfluencerReferenceMode => {
-        if (!hasUserRefs) return "none";
-        return shotIndex === 0 ? "user" : "cover";
+        if (shotIndex > 0) return "cover";
+        if (hasUserRefs) return "user";
+        return "none";
       };
 
       const buildShotPromptCtx = (shotIndex: number) => ({
@@ -275,7 +276,7 @@ export const generateInfluencer = schemaTask({
                     : String(enhanceError),
               });
             }
-            prompt = `${enhanced}\n\n${INFLUENCER_SKIN_LOCK_FOOTER}`;
+            prompt = appendInfluencerSkinLock(enhanced);
             logger.info("Influencer image prompt", {
               shotId: shot.id,
               attempt,

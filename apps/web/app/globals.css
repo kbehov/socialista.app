@@ -20,13 +20,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --landing-canvas: #fafafa;
+  --landing-canvas: #ffffff;
   --landing-ink: #0a0a0a;
   --landing-muted: #737373;
-  --landing-stone: #e5e5e5;
+  --landing-stone: #e8e8e8;
   --landing-orange: #ff5a1f;
   --landing-charcoal: #171717;
-  --landing-peach: #ececec;
+  --landing-peach: #f5f5f5;
+  --landing-surface-muted: #f9f9f9;
   --landing-media-radius: 1.75rem;
   --landing-panel-radius: 2.25rem;
   /* ── Primitives ───────────────────────────────────────────────────────── */
@@ -239,9 +240,9 @@
 
 .landing-canvas-atmosphere {
   background:
-    radial-gradient(120% 70% at 50% -22%, color-mix(in srgb, var(--landing-ink) 3%, transparent), transparent 58%),
-    radial-gradient(68% 44% at 100% 0%, color-mix(in srgb, var(--landing-stone) 55%, transparent), transparent 52%),
-    radial-gradient(52% 38% at 0% 8%, color-mix(in srgb, var(--landing-stone) 35%, transparent), transparent 48%);
+    radial-gradient(120% 70% at 50% -22%, color-mix(in srgb, var(--landing-ink) 2.5%, transparent), transparent 58%),
+    radial-gradient(68% 44% at 100% 0%, color-mix(in srgb, var(--landing-stone) 38%, transparent), transparent 52%),
+    radial-gradient(52% 38% at 0% 8%, color-mix(in srgb, var(--landing-stone) 24%, transparent), transparent 48%);
 }
 
 .landing-canvas-atmosphere::after {
@@ -270,8 +271,8 @@
 @media (hover: hover) and (pointer: fine) {
   .landing-media-hover {
     transition:
-      transform 220ms var(--ease-out),
-      box-shadow 220ms var(--ease-out);
+      transform 220ms var(--ease-emphasized),
+      box-shadow 220ms var(--ease-emphasized);
   }
 
   .landing-media-hover:hover {
@@ -283,19 +284,37 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .landing-ready {
-    animation: landing-ready 0.7s var(--ease-out) 0.08s both;
+  .landing-orb-float {
+    animation: landing-orb-float var(--orb-duration, 5s) ease-in-out var(--orb-delay, 0s) infinite;
   }
 
-  @keyframes landing-ready {
+  @keyframes landing-orb-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(1.5px, -5px, 0);
+    }
+  }
+
+  .landing-tab-progress {
+    animation: landing-tab-progress linear both;
+  }
+
+  @keyframes landing-tab-progress {
     from {
-      opacity: 0;
-      transform: translateY(0.5rem);
+      transform: scaleX(0);
     }
     to {
-      opacity: 1;
-      transform: translateY(0);
+      transform: scaleX(1);
     }
+  }
+
+  .landing-sticky-cta {
+    transition:
+      transform 260ms var(--ease-out),
+      opacity 200ms var(--ease-out);
   }
 
   .pricing-badge-fire {
