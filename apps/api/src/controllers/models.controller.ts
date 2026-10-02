@@ -4,11 +4,17 @@ import {
   createModel as createModelFromDb,
   deleteModel as deleteModelFromDb,
   getModelById,
+  getLandingModels as getLandingModelsFromDb,
   getModels as getModelsFromDb,
   updateModel as updateModelFromDb,
   type IModel,
 } from '@socialista/db'
 import type { Context } from 'hono'
+
+export const getLandingModels = async (c: Context) => {
+  const { models, total } = await getLandingModelsFromDb()
+  return successResponse(c, 200, { models, total })
+}
 
 export const getModels = async (c: Context) => {
   const { models, meta } = await getModelsFromDb(getQueryString(c.req.url))

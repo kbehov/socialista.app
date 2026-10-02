@@ -6,16 +6,20 @@ import { InfluencerDetailReady } from '@/components/studio/influencers/influence
 import { InfluencerHookVideoDialog } from '@/components/studio/influencers/influencer-hook-video-dialog'
 import { InfluencerHookVideoPreviewDialog } from '@/components/studio/influencers/influencer-hook-video-preview-dialog'
 import { InfluencerSceneDialog } from '@/components/studio/influencers/influencer-scene-dialog'
+import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { formatInfluencerNiches } from '@/lib/studio/influencers/niche-label'
 import { getInfluencer } from '@/services/influencer.service'
-import type { ApiResponse, Influencer, InfluencerHookVideo, Model } from '@socialista/types'
-import { ArrowLeftIcon } from 'lucide-react'
+import type { ApiResponse, DeleteInfluencerResponse, Influencer, InfluencerHookVideo, Model } from '@socialista/types'
+import { ArrowLeftIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { toast } from 'sonner'
 
 type FetchInfluencer = (id: string) => Promise<ApiResponse<{ influencer: Influencer }>>
+type DeleteInfluencerAction = (id: string) => Promise<ApiResponse<DeleteInfluencerResponse>>
 
 type InfluencerDetailProps = {
   initialInfluencer: Influencer
@@ -24,6 +28,7 @@ type InfluencerDetailProps = {
   readOnly?: boolean
   backHref?: string
   fetchInfluencer?: FetchInfluencer
+  deleteAction?: DeleteInfluencerAction
 }
 
 export function InfluencerDetail({
@@ -33,7 +38,11 @@ export function InfluencerDetail({
   readOnly = false,
   backHref = DASHBOARD_ROUTES.STUDIO.INFLUENCERS,
   fetchInfluencer = getInfluencer,
+  deleteAction,
 }: InfluencerDetailProps) {
+  const router = useRouter()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, startDelete] = useTransition()
   const [influencer, setInfluencer] = useState(initialInfluencer)
   const [hookSourceUrl, setHookSourceUrl] = useState<string | null>(null)
   const [sceneOpen, setSceneOpen] = useState(false)
@@ -96,15 +105,42 @@ export function InfluencerDetail({
     }
   }
 
+  function handleDeleteConfirm() {
+    if (!deleteAction) return
+    startDelete(async () => {
+      const response = await deleteAction(influencer._id)
+      if (!response.success) {
+        toast.error(response.message ?? 'Failed to delete influencer')
+        return
+      }
+      toast.success('Influencer deleted')
+      setDeleteOpen(false)
+      router.push(backHref)
+      router.refresh()
+    })
+  }
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-4 sm:px-6 sm:pt-6">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between gap-3">
           <Button variant="ghost" size="icon-sm" asChild>
             <Link href={backHref} aria-label="Back">
               <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
             </Link>
           </Button>
+          {deleteAction ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/8 hover:text-destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2Icon className="size-3.5" strokeWidth={1.75} />
+              Delete
+            </Button>
+          ) : null}
         </div>
 
         {isGenerating ? <InfluencerDetailGenerating name={influencer.name} /> : null}
@@ -166,6 +202,17 @@ export function InfluencerDetail({
           if (!open) setPreviewHookClip(null)
         }}
       />
+
+      {deleteAction ? (
+        <DeleteConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title="Delete influencer?"
+          description={`"${influencer.name}" will be permanently deleted. This cannot be undone.`}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={deleting}
+        />
+      ) : null}
     </div>
   )
 }

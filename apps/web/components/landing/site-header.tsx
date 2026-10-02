@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { HERO, LANDING_NAV, SIGNUP_HREF } from './content'
-import { landingCtaPrimaryCompact, landingCtaSecondary, landingNavLink } from './landing-classes'
+import { landingCtaPrimaryCompact, landingCtaSecondary, landingNavLink, landingSection } from './landing-classes'
 import { MobileNav } from './mobile-nav'
 
 export function SiteHeader() {
@@ -42,17 +42,29 @@ export function SiteHeader() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 flex justify-center px-4 pt-3 sm:px-5 sm:pt-4">
+    <header
+      className={cn(
+        'sticky top-0 z-40 w-full transition-[background-color] duration-200 ease-out',
+        scrolled
+          ? 'bg-[color-mix(in_srgb,var(--landing-canvas)_94%,white)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--landing-canvas)_55%,transparent)]'
+          : 'bg-(--landing-canvas)',
+      )}
+    >
       <div
         className={cn(
-          'flex w-fit max-w-[calc(100vw-1rem)] items-center gap-4 rounded-full border border-[color-mix(in_srgb,var(--landing-ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_78%,white)] px-4 py-2 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.72),0_1px_2px_color-mix(in_oklch,var(--landing-ink)_4%,transparent),0_10px_28px_-14px_color-mix(in_oklch,var(--landing-ink)_10%,transparent)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow,border-color] duration-200 ease-out supports-backdrop-filter:bg-[color-mix(in_srgb,var(--landing-canvas)_68%,white)] sm:gap-6 sm:px-5 sm:py-2.5',
-          scrolled && 
-            'border-[color-mix(in_srgb,var(--landing-ink)_12%,transparent)] bg-[color-mix(in_srgb,var(--landing-canvas)_88%,white)] shadow-[inset_0_1px_0_0_oklch(1_0_0/0.8),0_2px_4px_color-mix(in_oklch,var(--landing-ink)_5%,transparent),0_14px_36px_-16px_color-mix(in_oklch,var(--landing-ink)_14%,transparent)] supports-backdrop-filter:bg-[color-mix(in_srgb,var(--landing-canvas)_72%,white)]',
+          landingSection,
+          'grid h-14 min-h-14 grid-cols-[1fr_auto] items-center gap-3 sm:h-[3.75rem] sm:min-h-[3.75rem] sm:gap-4',
+          'md:grid-cols-[1fr_auto_1fr]',
         )}
       >
-        <Logo variant="landing" className="pl-0.5 sm:pl-1" />
+        <div className="flex min-w-0 items-center">
+          <Logo variant="landing" />
+        </div>
 
-        <nav aria-label="Primary" className="hidden items-center gap-7 px-1.5 md:flex lg:gap-8">
+        <nav
+          aria-label="Primary"
+          className="hidden items-center justify-center gap-7 md:flex lg:gap-8 md:col-start-2 md:row-start-1"
+        >
           {LANDING_NAV.map(item => (
             <a key={item.label} href={item.href} className={cn(landingNavLink, 'text-sm')}>
               {item.label}
@@ -60,7 +72,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 pl-1.5 sm:pl-2">
+        <div className="col-start-2 flex shrink-0 items-center justify-end gap-2 sm:gap-2.5 md:col-start-3">
           {isLoggedIn ? (
             <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
               <Link href={DASHBOARD_ROUTES.ROOT}>

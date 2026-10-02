@@ -2,10 +2,24 @@
 
 import { MODEL_ROUTES } from '@/constants/routes'
 import { api } from '@/lib/api'
-import type { ApiResponse, CreateModelInput, GetModelsResponse, Model, UpdateModelInput } from '@socialista/types'
+import { publicApi } from '@/lib/api-public'
+import type {
+  ApiResponse,
+  CreateModelInput,
+  GetLandingModelsResponse,
+  GetModelsResponse,
+  Model,
+  UpdateModelInput,
+} from '@socialista/types'
 import { revalidatePath } from 'next/cache'
 
 const MODELS_PATH = '/manager/models'
+
+export const getLandingModels = async (): Promise<ApiResponse<GetLandingModelsResponse>> => {
+  return publicApi.get<GetLandingModelsResponse>(MODEL_ROUTES.GET_LANDING_MODELS, {
+    next: { revalidate: 3600, tags: ['landing-models'] },
+  })
+}
 
 export const getModels = async (query?: string): Promise<ApiResponse<GetModelsResponse>> => {
   return api.get<GetModelsResponse>(`${MODEL_ROUTES.GET_MODELS}${query ? `?${query}` : ''}`)

@@ -1,7 +1,7 @@
 import { ErrorState } from '@/components/common/error-state'
 import { InfluencerDetail } from '@/components/studio/influencers/influencer-detail'
 import { MANAGER_ROUTES } from '@/constants/app-routes'
-import { getAdminInfluencer } from '@/services/influencer.service'
+import { deleteLibraryInfluencer, getAdminInfluencer } from '@/services/influencer.service'
 import { getModels } from '@/services/models.service'
 
 type ManagerInfluencerPageProps = {
@@ -36,6 +36,7 @@ export default async function ManagerInfluencerPage({ params }: ManagerInfluence
       readOnly
       backHref={MANAGER_ROUTES.INFLUENCERS}
       fetchInfluencer={getAdminInfluencer}
+      deleteAction={deleteLibraryInfluencer}
     />
   )
 }

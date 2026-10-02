@@ -33,6 +33,21 @@ export const LANDING_CHANNELS = [
 ] as const
 export type PlatformId = (typeof LANDING_CHANNELS)[number]['id']
 
+export const PLATFORMS_SECTION = {
+  eyebrow: 'Channels',
+  title: 'Post to every channel',
+  titleAccent: 'from one studio.',
+  description:
+    'Connect Instagram, TikTok, Facebook, Threads, LinkedIn, and X. Export native sizes and a caption per channel, then schedule without switching tools.',
+} as const
+
+export const MODELS_SECTION = {
+  titleLead: 'One plan.',
+  titleRest: 'AI models included.',
+  /** Display "30+" when the catalog reaches this size */
+  countThreshold: 30,
+} as const
+
 export const HERO_CHANNELS_LABEL = 'Publishes to'
 
 /** Real numbers only — the stat line renders nothing while empty. */
@@ -303,40 +318,68 @@ export const FINAL_CTA = {
   description: 'Pick a creator, drop in your product, and publish today.',
 } as const
 
+export type FooterLink = {
+  href: string
+  label: string
+}
+
+export type FooterColumn = {
+  title: string
+  links: readonly FooterLink[]
+  /** Two-column link list for longer sections (e.g. Features) */
+  splitLinks?: boolean
+}
+
 export const FOOTER = {
   tagline: 'Realistic UGC ads, made with AI—then published everywhere from one studio.',
   contactEmail: 'sales@socialista.app',
   columns: [
     {
-      title: 'Product',
+      title: 'Features',
+      splitLinks: true,
       links: [
-        { href: '/#ugc-ads', label: 'UGC ads' },
-        { href: '/#influencers', label: 'AI creators' },
-        { href: '/#how-it-works', label: 'How it works' },
-        { href: '/#publish', label: 'Publish & schedule' },
-        { href: '/#pricing', label: 'Pricing' },
-        { href: '/#faq', label: 'FAQ' },
+        { href: '/#influencers', label: 'AI Influencer Generator' },
+        { href: '/#ugc-ads', label: 'AI UGC Video Generator' },
+        { href: '/#slideshows', label: 'AI Slideshows Generator' },
+        { href: '/#static-ads', label: 'AI Meta Ads Templates' },
+        { href: '/#publish', label: 'Social Media Scheduling' },
+        { href: '/#channels', label: 'Social Media Analytics' },
+        { href: '/#image-templates', label: 'AI Image Generation' },
+        { href: '/#videos', label: 'AI Video Generation' },
       ],
     },
     {
-      title: 'Create',
+      title: 'Compare',
       links: [
-        { href: '/#ugc-ads', label: 'UGC video' },
-        { href: '/#static-ads', label: 'Static ads' },
-        { href: '/#image-templates', label: 'Image templates' },
-        { href: '/#videos', label: 'Videos' },
-        { href: '/#slideshows', label: 'Slideshows' },
+        { href: '/compare/arcads', label: 'Socialista vs Arcads' },
+        { href: '/compare/makeugc', label: 'Socialista vs MakeUGC' },
+        { href: '/compare/buffer', label: 'Socialista vs Buffer' },
+        { href: '/compare/superscale', label: 'Socialista vs Superscale' },
+        { href: '/compare/heygen', label: 'Socialista vs HeyGen' },
+        { href: '/compare/creatify', label: 'Socialista vs Creatify' },
       ],
     },
     {
-      title: 'Account',
+      title: 'Industries',
       links: [
-        { href: '/auth/signup', label: 'Start free' },
-        { href: '/auth/signin', label: 'Sign in' },
+        { href: '/industries/ecommerce', label: 'Shopify & E-commerce' },
+        { href: '/industries/mobile-apps', label: 'Mobile Apps' },
+        { href: '/industries/saas', label: 'SaaS' },
+        { href: '/industries/dropshipping', label: 'Dropshipping' },
+        { href: '/industries/agencies', label: 'Marketing Agencies' },
+        { href: '/industries/creators', label: 'Content Creators' },
+        { href: '/industries/founders', label: 'Founders' },
+      ],
+    },
+    {
+      title: 'Company',
+      links: [
         { href: 'mailto:sales@socialista.app', label: 'Contact' },
+        { href: '/privacy', label: 'Privacy Policy' },
+        { href: '/terms', label: 'Terms of Service' },
       ],
     },
-  ],
+  ] satisfies readonly FooterColumn[],
 } as const
 
 export const PAGE_METADATA = {

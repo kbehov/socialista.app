@@ -11,12 +11,10 @@ import { z } from 'zod'
 
 import { INFLUENCER_ACCESSORY_PROMPTS, INFLUENCER_SCENE_PROMPTS } from '../influencer/catalog.js'
 
-const CHARACTER_SHEET_MODEL = 'openai/gpt-6-astra'
+const CHARACTER_SHEET_MODEL = 'openai/gpt-6-sol'
 
 const faceBlockSchema = z.object({
-  shape: z
-    .string()
-    .describe('Write "open". Do not assign a face shape, jaw, or cheek structure.'),
+  shape: z.string().describe('Write "open". Do not assign a face shape, jaw, or cheek structure.'),
   eyes: z.string().describe('Eye color from the form only. Do not invent eye shape or lashes.'),
   brows: z.string().describe('Write "open". Do not invent brow shape.'),
   nose: z.string().describe('Write "open". Do not invent nose shape.'),
@@ -43,7 +41,7 @@ const characterSheetSchema = z.object({
   identityLock: z
     .string()
     .describe(
-      '2-3 sentences on hair, complexion, build, and features the form already listed. Do not name face shape, jaw, cheeks, brows, nose, or lips. No beauty adjectives. Do not include the person\'s name.',
+      "2-3 sentences on hair, complexion, build, and features the form already listed. Do not name face shape, jaw, cheeks, brows, nose, or lips. No beauty adjectives. Do not include the person's name.",
     ),
   signatureDetails: z
     .array(z.string())
@@ -124,7 +122,7 @@ const SYSTEM_INSTRUCTIONS =
   '(6) wardrobe and environments must feel like scroll-stopping creator UGC — lived-in, specific light and place, clothes that fit the niche; ' +
   'each wardrobe slot names one garment and one color, never "or" or a second option; casual and onCamera may differ but share that color; ' +
   'never blank walls, passport studios, or sterile seamless backdrops; ' +
-  '(7) identityLock must be reusable byte-for-byte across many image prompts and must not include the person\'s name; ' +
+  "(7) identityLock must be reusable byte-for-byte across many image prompts and must not include the person's name; " +
   '(8) when scenes are provided, the 3 environments MUST be concrete variations of those situations (same place family, different angles/light/props); ' +
   '(9) when accessories are provided, weave wearable/holdable ones into wardrobe and onCamera descriptions naturally; ' +
   '(10) prefer scroll-stopping creator photography over sterile headshots; keep it photoreal, not fashion-editorial extremes; ' +

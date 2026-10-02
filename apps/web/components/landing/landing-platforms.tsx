@@ -1,126 +1,78 @@
-"use client";
+'use client'
 
-import { SocialPlatformIcon } from "@/components/icons/social-platform-icon";
-import { AnimatedBeam } from "@/components/ui/animated-beam";
-import { cn } from "@/lib/utils";
-import { LogoGlyph } from "@/components/common/logo";
-import { forwardRef, useRef, type RefObject } from "react";
+import { LogoGlyph } from '@/components/common/logo'
+import { SocialPlatformIcon } from '@/components/icons/social-platform-icon'
+import { AnimatedBeam } from '@/components/ui/animated-beam'
+import { cn } from '@/lib/utils'
+import { useRef, type ReactNode, type Ref, type RefObject } from 'react'
 
-import {
-  PLATFORMS,
-  PLATFORMS_SECTION,
-  type PlatformId,
-} from "./content";
-import { FadeIn } from "./fade-in";
-import {
-  landingContentGap,
-  landingInsetPanel,
-  LANDING_STORY_INDEX,
-} from "./landing-classes";
-import { Section } from "./section";
-import { LandingSectionIntro } from "./section-header";
+import { LANDING_CHANNELS, PLATFORMS_SECTION, type PlatformId } from './content'
+import { FadeIn } from './fade-in'
+import { landingContentGap } from './landing-classes'
+import { Section } from './section'
+import { LandingSectionIntro } from './section-header'
 
-const platformById = Object.fromEntries(
-  PLATFORMS.map((platform) => [platform.id, platform]),
-) as Record<PlatformId, (typeof PLATFORMS)[number]>;
-
-type BeamSlot =
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "mid-left"
-  | "mid-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
-
-const PLATFORM_BEAM_COLORS: Record<
+const platformById = Object.fromEntries(LANDING_CHANNELS.map(platform => [platform.id, platform])) as Record<
   PlatformId,
-  { start: string; stop: string; path: string }
-> = {
-  instagram: { start: "#f77737", stop: "#c13584", path: "#f0a8d0" },
-  youtube: { start: "#ff4e45", stop: "#cc0000", path: "#ffb3b0" },
-  facebook: { start: "#4da3ff", stop: "#1877f2", path: "#a8cfff" },
-  tiktok: { start: "#25f4ee", stop: "#fe2c55", path: "#9ef0ec" },
-  linkedin: { start: "#4ba3f5", stop: "#0a66c2", path: "#a8d4ff" },
-  threads: { start: "#6b6b6b", stop: "#000000", path: "#c4c4c4" },
-  pinterest: { start: "#ff6b6b", stop: "#e60023", path: "#ffb3b3" },
-  twitter: { start: "#8b8b8b", stop: "#000000", path: "#c7c7c7" },
-};
+  (typeof LANDING_CHANNELS)[number]
+>
 
-const BEAM_NODES: Record<
-  BeamSlot,
-  {
-    platformId: PlatformId;
-    curvature?: number;
-    reverse?: boolean;
-    endYOffset?: number;
-    delay?: number;
-  }
-> = {
-  "top-left": {
-    platformId: "instagram",
-    curvature: -78,
-    endYOffset: -8,
-    delay: 0,
-  },
-  "top-center": { platformId: "youtube", curvature: -46, delay: 0.25 },
-  "top-right": {
-    platformId: "facebook",
-    curvature: -78,
-    endYOffset: -8,
-    reverse: true,
-    delay: 0.5,
-  },
-  "mid-left": { platformId: "tiktok", delay: 0.12 },
-  "mid-right": { platformId: "linkedin", reverse: true, delay: 0.38 },
-  "bottom-left": {
-    platformId: "threads",
-    curvature: 78,
-    endYOffset: 8,
-    delay: 0.75,
-  },
-  "bottom-center": { platformId: "pinterest", curvature: 46, delay: 1 },
-  "bottom-right": {
-    platformId: "twitter",
-    curvature: 78,
-    endYOffset: 8,
-    reverse: true,
-    delay: 1.25,
-  },
-};
+type BeamConfig = {
+  platformId: PlatformId
+  curvature?: number
+  reverse?: boolean
+  endYOffset?: number
+  delay: number
+}
 
-const BeamCircle = forwardRef<
-  HTMLDivElement,
-  { className?: string; children: React.ReactNode }
->(({ className, children }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "z-10 flex size-9 items-center justify-center rounded-full border border-border bg-background sm:size-10",
-      className,
-    )}
-  >
-    {children}
-  </div>
-));
-BeamCircle.displayName = "BeamCircle";
+const BEAMS: BeamConfig[] = [
+  { platformId: 'instagram', curvature: -78, endYOffset: -8, delay: 0 },
+  { platformId: 'facebook', curvature: -78, endYOffset: -8, reverse: true, delay: 0.35 },
+  { platformId: 'tiktok', delay: 0.12 },
+  { platformId: 'linkedin', reverse: true, delay: 0.48 },
+  { platformId: 'threads', curvature: 78, endYOffset: 8, delay: 0.7 },
+  { platformId: 'twitter', curvature: 78, endYOffset: 8, reverse: true, delay: 0.95 },
+]
 
-function PlatformNode({
-  id,
-  nodeRef,
+const PLATFORM_BEAM_COLORS: Record<PlatformId, { start: string; stop: string; path: string }> = {
+  instagram: { start: '#f77737', stop: '#c13584', path: '#f0a8d0' },
+  facebook: { start: '#4da3ff', stop: '#1877f2', path: '#a8cfff' },
+  tiktok: { start: '#25f4ee', stop: '#fe2c55', path: '#9ef0ec' },
+  linkedin: { start: '#4ba3f5', stop: '#0a66c2', path: '#a8d4ff' },
+  threads: { start: '#6b6b6b', stop: '#000000', path: '#c4c4c4' },
+  twitter: { start: '#8b8b8b', stop: '#000000', path: '#c7c7c7' },
+}
+
+const platformRow = 'grid grid-cols-3 items-center'
+
+function BeamCircle({
+  className,
+  children,
+  ref,
 }: {
-  id: PlatformId;
-  nodeRef: RefObject<HTMLDivElement | null>;
+  className?: string
+  children: ReactNode
+  ref?: Ref<HTMLDivElement>
 }) {
-  const platform = platformById[id];
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'z-10 flex size-9 items-center justify-center rounded-full border border-border bg-background sm:size-10',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+function PlatformNode({ id, nodeRef }: { id: PlatformId; nodeRef: RefObject<HTMLDivElement | null> }) {
+  const platform = platformById[id]
 
   return (
     <div className="group/platform flex min-w-[3.75rem] flex-col items-center gap-2 sm:min-w-[4.25rem]">
-      <BeamCircle
-        ref={nodeRef}
-        className="size-auto border-none bg-transparent shadow-none"
-      >
+      <BeamCircle ref={nodeRef} className="size-auto border-none bg-transparent shadow-none">
         <SocialPlatformIcon
           provider={id}
           size={18}
@@ -132,182 +84,112 @@ function PlatformNode({
         {platform.label}
       </span>
     </div>
-  );
+  )
 }
 
 export function LandingPlatforms() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const centerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null)
+  const centerRef = useRef<HTMLDivElement>(null)
+  const instagramRef = useRef<HTMLDivElement>(null)
+  const facebookRef = useRef<HTMLDivElement>(null)
+  const tiktokRef = useRef<HTMLDivElement>(null)
+  const linkedinRef = useRef<HTMLDivElement>(null)
+  const threadsRef = useRef<HTMLDivElement>(null)
+  const twitterRef = useRef<HTMLDivElement>(null)
 
-  const topLeftRef = useRef<HTMLDivElement>(null);
-  const topCenterRef = useRef<HTMLDivElement>(null);
-  const topRightRef = useRef<HTMLDivElement>(null);
-  const midLeftRef = useRef<HTMLDivElement>(null);
-  const midRightRef = useRef<HTMLDivElement>(null);
-  const bottomLeftRef = useRef<HTMLDivElement>(null);
-  const bottomCenterRef = useRef<HTMLDivElement>(null);
-  const bottomRightRef = useRef<HTMLDivElement>(null);
+  const nodeRefs: Record<PlatformId, RefObject<HTMLDivElement | null>> = {
+    instagram: instagramRef,
+    facebook: facebookRef,
+    tiktok: tiktokRef,
+    linkedin: linkedinRef,
+    threads: threadsRef,
+    twitter: twitterRef,
+  }
 
   return (
     <Section id="channels" landingDivider className="overflow-x-clip">
-        <FadeIn>
-          <LandingSectionIntro
-            titleId="channels-heading"
-            storyIndex={LANDING_STORY_INDEX.channels}
-            title={PLATFORMS_SECTION.title}
-            titleAccent={PLATFORMS_SECTION.titleAccent}
-            description={PLATFORMS_SECTION.description}
-          />
-        </FadeIn>
+      <FadeIn>
+        <LandingSectionIntro
+          titleId="channels-heading"
+          eyebrow={PLATFORMS_SECTION.eyebrow}
+          title={PLATFORMS_SECTION.title}
+          titleAccent={PLATFORMS_SECTION.titleAccent}
+          description={PLATFORMS_SECTION.description}
+        />
+      </FadeIn>
 
-        <FadeIn delay={0.08} className={landingContentGap}>
-          <figure className="mx-auto w-full max-w-3xl">
-            <div className={cn(landingInsetPanel, 'px-2 py-6 sm:px-6 sm:py-8')}>
+      <FadeIn delay={0.08} className={landingContentGap}>
+        <figure className="mx-auto w-full max-w-3xl">
+          <div className="px-2 py-6 sm:px-6 sm:py-8">
             <div
               ref={containerRef}
               className="relative flex w-full items-center justify-center overflow-hidden px-1 py-2 sm:px-2 sm:py-4"
             >
-            <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17.5rem] sm:gap-9">
-              <div className="flex items-center justify-between px-1">
-                <PlatformNode id="instagram" nodeRef={topLeftRef} />
-                <PlatformNode id="youtube" nodeRef={topCenterRef} />
-                <PlatformNode id="facebook" nodeRef={topRightRef} />
-              </div>
-
-              <div className="flex items-center justify-between gap-3 sm:gap-4">
-                <PlatformNode id="tiktok" nodeRef={midLeftRef} />
-                <div
-                  ref={centerRef}
-                  className="z-10 flex items-center justify-center rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] p-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:p-4"
-                >
-                  <LogoGlyph size="hero" priority />
+              <div className="relative flex min-h-[15rem] w-full flex-col justify-between gap-7 sm:min-h-[17.5rem] sm:gap-9">
+                <div className={platformRow}>
+                  <div className="justify-self-start">
+                    <PlatformNode id="instagram" nodeRef={instagramRef} />
+                  </div>
+                  <div />
+                  <div className="justify-self-end">
+                    <PlatformNode id="facebook" nodeRef={facebookRef} />
+                  </div>
                 </div>
-                <PlatformNode id="linkedin" nodeRef={midRightRef} />
+
+                <div className={cn(platformRow, 'gap-3 sm:gap-4')}>
+                  <div className="justify-self-start">
+                    <PlatformNode id="tiktok" nodeRef={tiktokRef} />
+                  </div>
+                  <div
+                    ref={centerRef}
+                    className="z-10 justify-self-center rounded-2xl border border-white/[0.1] bg-[var(--landing-charcoal)] p-3.5 shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_20px_48px_-20px_rgba(0,0,0,0.45)] sm:p-4"
+                  >
+                    <LogoGlyph size="hero" priority />
+                  </div>
+                  <div className="justify-self-end">
+                    <PlatformNode id="linkedin" nodeRef={linkedinRef} />
+                  </div>
+                </div>
+
+                <div className={platformRow}>
+                  <div className="justify-self-start">
+                    <PlatformNode id="threads" nodeRef={threadsRef} />
+                  </div>
+                  <div />
+                  <div className="justify-self-end">
+                    <PlatformNode id="twitter" nodeRef={twitterRef} />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between px-1">
-                <PlatformNode id="threads" nodeRef={bottomLeftRef} />
-                <PlatformNode id="pinterest" nodeRef={bottomCenterRef} />
-                <PlatformNode id="twitter" nodeRef={bottomRightRef} />
-              </div>
+              {BEAMS.map(beam => {
+                const colors = PLATFORM_BEAM_COLORS[beam.platformId]
+                return (
+                  <AnimatedBeam
+                    key={beam.platformId}
+                    containerRef={containerRef}
+                    fromRef={nodeRefs[beam.platformId]}
+                    toRef={centerRef}
+                    curvature={beam.curvature}
+                    reverse={beam.reverse}
+                    endYOffset={beam.endYOffset}
+                    delay={beam.delay}
+                    duration={4.5}
+                    pathColor={colors.path}
+                    pathWidth={2}
+                    pathOpacity={0.18}
+                    gradientStartColor={colors.start}
+                    gradientStopColor={colors.stop}
+                  />
+                )
+              })}
             </div>
-
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={topLeftRef}
-              toRef={centerRef}
-              curvature={BEAM_NODES['top-left'].curvature}
-              endYOffset={BEAM_NODES['top-left'].endYOffset}
-              delay={BEAM_NODES['top-left'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.instagram.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.instagram.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.instagram.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={topCenterRef}
-              toRef={centerRef}
-              curvature={BEAM_NODES['top-center'].curvature}
-              delay={BEAM_NODES['top-center'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.youtube.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.youtube.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.youtube.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={topRightRef}
-              toRef={centerRef}
-              curvature={BEAM_NODES['top-right'].curvature}
-              reverse={BEAM_NODES['top-right'].reverse}
-              endYOffset={BEAM_NODES['top-right'].endYOffset}
-              delay={BEAM_NODES['top-right'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.facebook.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.facebook.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.facebook.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={midLeftRef}
-              toRef={centerRef}
-              delay={BEAM_NODES['mid-left'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.tiktok.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.tiktok.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.tiktok.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={midRightRef}
-              toRef={centerRef}
-              reverse={BEAM_NODES['mid-right'].reverse}
-              delay={BEAM_NODES['mid-right'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.linkedin.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.linkedin.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.linkedin.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={bottomLeftRef}
-              toRef={centerRef}
-              curvature={BEAM_NODES['bottom-left'].curvature}
-              endYOffset={BEAM_NODES['bottom-left'].endYOffset}
-              delay={BEAM_NODES['bottom-left'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.threads.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.threads.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.threads.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={bottomCenterRef}
-              toRef={centerRef}
-              curvature={BEAM_NODES['bottom-center'].curvature}
-              delay={BEAM_NODES['bottom-center'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.pinterest.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.pinterest.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.pinterest.stop}
-            />
-            <AnimatedBeam
-              containerRef={containerRef}
-              fromRef={bottomRightRef}
-              toRef={centerRef}
-              curvature={BEAM_NODES['bottom-right'].curvature}
-              reverse={BEAM_NODES['bottom-right'].reverse}
-              endYOffset={BEAM_NODES['bottom-right'].endYOffset}
-              delay={BEAM_NODES['bottom-right'].delay}
-              duration={4.5}
-              pathColor={PLATFORM_BEAM_COLORS.twitter.path}
-              pathWidth={2}
-              pathOpacity={0.18}
-              gradientStartColor={PLATFORM_BEAM_COLORS.twitter.start}
-              gradientStopColor={PLATFORM_BEAM_COLORS.twitter.stop}
-            />
-            </div>
-            </div>
-            <figcaption className="sr-only">
-              Socialista publishes to {PLATFORMS.map((platform) => platform.label).join(", ")}.
-            </figcaption>
-          </figure>
-        </FadeIn>
+          </div>
+          <figcaption className="sr-only">
+            Socialista publishes to {LANDING_CHANNELS.map(platform => platform.label).join(', ')}.
+          </figcaption>
+        </figure>
+      </FadeIn>
     </Section>
-  );
+  )
 }

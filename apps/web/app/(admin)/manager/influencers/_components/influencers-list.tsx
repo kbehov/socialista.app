@@ -86,13 +86,9 @@ export function InfluencersList({ influencers, filters }: InfluencersListProps) 
             influencer={influencer}
             href={MANAGER_ROUTES.influencer(influencer._id)}
             showVisibility
-            onDelete={
-              influencer.workspaceId === null
-                ? item => {
-                    setDeleteTarget(item)
-                  }
-                : undefined
-            }
+            onDelete={item => {
+              setDeleteTarget(item)
+            }}
           />
         ))}
       </div>
@@ -102,10 +98,12 @@ export function InfluencersList({ influencers, filters }: InfluencersListProps) 
         onOpenChange={open => {
           if (!open) setDeleteTarget(null)
         }}
-        title="Delete public influencer?"
+        title={deleteTarget?.workspaceId === null ? 'Delete public influencer?' : 'Delete influencer?'}
         description={
           deleteTarget
-            ? `"${deleteTarget.name}" will be removed from the public library. This cannot be undone.`
+            ? deleteTarget.workspaceId === null
+              ? `"${deleteTarget.name}" will be removed from the public library. This cannot be undone.`
+              : `"${deleteTarget.name}" will be permanently deleted from its workspace. This cannot be undone.`
             : undefined
         }
         onConfirm={handleDeleteConfirm}

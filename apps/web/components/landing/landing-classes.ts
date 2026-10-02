@@ -6,12 +6,31 @@ export const landingSection = 'mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8'
 /** Pricing grid — wider track so plan cards breathe */
 export const landingSectionPricing = 'mx-auto w-full max-w-[84rem] px-5 sm:px-8 lg:px-12 xl:px-14'
 
+/** Marketing footer — full marketing width */
+export const landingFooter =
+  'mx-auto w-full max-w-[90rem] px-5 sm:px-8 lg:px-10 xl:px-14 2xl:px-16'
+
+export const landingFooterColumnTitle =
+  'text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-[var(--landing-muted)]'
+
+export const landingFooterLink =
+  'inline-block text-[0.8125rem] leading-[1.45] tracking-[-0.01em] text-[color-mix(in_srgb,var(--landing-ink)_70%,var(--landing-muted))] transition-colors duration-150 ease-out hover:text-[var(--landing-ink)]'
+
 export const landingSectionY = 'py-24 sm:py-28 lg:py-32'
+
+/** Trust / catalog bands — tighter than primary feature sections */
+export const landingSupportingSectionY = 'py-14 sm:py-16 lg:py-[4.5rem]'
 
 /** Warm hairline between landing story sections */
 export const landingSectionDivider = 'landing-section-divider'
 
 export const landingContentGap = 'mt-12 sm:mt-14 lg:mt-16'
+
+export const landingSupportingContentGap = 'mt-8 sm:mt-9'
+
+/** Single-line supporting headline (models, integrations, etc.) */
+export const landingSupportingTitle =
+  'mx-auto max-w-[36rem] text-balance text-center text-base font-medium leading-[1.45] tracking-[-0.025em] text-[var(--landing-ink)] sm:text-[1.125rem] sm:leading-[1.5]'
 
 /** Centered section lead — one rhythm across product blocks */
 /** Small uppercase kicker above section titles */
