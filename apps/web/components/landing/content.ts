@@ -1,13 +1,33 @@
 import { SITE_CONFIG } from '@/lib/seo/base'
 
 import { COMPARE_COMPETITORS, comparePath } from './compare'
-import { FEATURES, featurePath } from './features'
+import { FEATURE_CATEGORIES, FEATURES, featurePath } from './features'
 
+export const LANDING_HEADER = {
+  features: {
+    label: 'Features',
+    overviewHref: '/features',
+    overviewLabel: 'All features',
+  },
+  pricing: { href: '/pricing', label: 'Pricing' },
+  about: { href: '/about', label: 'About' },
+} as const
+
+export const LANDING_FEATURES_NAV = FEATURE_CATEGORIES.map(category => ({
+  id: category.id,
+  label: category.label,
+  items: FEATURES.filter(feature => feature.category === category.id).map(feature => ({
+    slug: feature.slug,
+    href: featurePath(feature.slug),
+    label: feature.name,
+    summary: feature.summary,
+  })),
+}))
+
+/** Simple header links for mobile (Features listed separately). */
 export const LANDING_NAV = [
-  { href: '/#ugc-ads', label: 'UGC ads' },
-  { href: '/#influencers', label: 'AI creators' },
-  { href: '/#how-it-works', label: 'How it works' },
-  { href: '/pricing', label: 'Pricing' },
+  LANDING_HEADER.pricing,
+  LANDING_HEADER.about,
 ] as const
 
 export const SIGNUP_HREF = '/auth/signup'
@@ -254,7 +274,7 @@ export const PRICING_SECTION = {
     eyebrow: 'Need more seats or credits?',
     description: 'We’ll help you find a plan that fits how you work.',
     cta: 'Talk to us',
-    href: 'mailto:sales@socialista.app?subject=Socialista%20Enterprise',
+    href: 'mailto:hello@socialista.app?subject=Socialista%20Enterprise',
   },
   trust: ['Secure checkout', 'Cancel anytime', 'You own your creatives'] as const,
   freeTrust: 'No card to start',
@@ -267,7 +287,7 @@ export const FAQ_SECTION = {
   description: 'Everything you need to know before your first ad.',
   contactLead: 'Still have questions?',
   contactCta: 'Email us',
-  contactHref: 'mailto:sales@socialista.app?subject=Question%20about%20Socialista',
+  contactHref: 'mailto:hello@socialista.app?subject=Question%20about%20Socialista',
 } as const
 
 export const FAQ_ITEMS = [
@@ -337,7 +357,7 @@ export type FooterColumn = {
 
 export const FOOTER = {
   tagline: 'Realistic UGC ads, made with AI—then published everywhere from one studio.',
-  contactEmail: 'sales@socialista.app',
+  contactEmail: 'hello@socialista.app',
   columns: [
     {
       title: 'Features',
@@ -370,7 +390,8 @@ export const FOOTER = {
     {
       title: 'Company',
       links: [
-        { href: 'mailto:sales@socialista.app', label: 'Contact' },
+        { href: '/about', label: 'About' },
+        { href: 'mailto:hello@socialista.app', label: 'Contact' },
         { href: '/privacy', label: 'Privacy Policy' },
         { href: '/terms', label: 'Terms of Service' },
       ],

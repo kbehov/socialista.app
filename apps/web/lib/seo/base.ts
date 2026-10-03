@@ -12,7 +12,7 @@ export const SITE_CONFIG = {
   description:
     'Create realistic UGC video ads with AI creators, plus static ads, slideshows, and videos. Publish and schedule to every channel from one studio.',
   locale: 'en_US',
-  email: 'sales@socialista.app',
+  email: 'hello@socialista.app',
   logoPath: '/socialista-logo.webp',
   keywords: [
     'AI UGC ads',

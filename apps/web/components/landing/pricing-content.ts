@@ -114,6 +114,6 @@ export const PRICING_FAQ_ITEMS = [
   {
     question: 'Who do I contact for enterprise seats or volume?',
     answer:
-      'Email sales@socialista.app with your team size, channels, and monthly creative volume. We will help you pick credits, seats, and support that fit an agency or in-house team.',
+      'Email hello@socialista.app with your team size, channels, and monthly creative volume. We will help you pick credits, seats, and support that fit an agency or in-house team.',
   },
 ] as const

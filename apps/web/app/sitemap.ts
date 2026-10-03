@@ -4,7 +4,7 @@ import { INDUSTRIES } from '@/components/landing/industries'
 import { absoluteUrl } from '@/lib/seo/base'
 import type { MetadataRoute } from 'next'
 
-const HUB_PATHS = ['/features', '/industries', '/compare', '/pricing'] as const
+const HUB_PATHS = ['/features', '/industries', '/compare', '/pricing', '/about', '/privacy', '/terms'] as const
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [

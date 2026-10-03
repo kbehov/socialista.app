@@ -11,7 +11,6 @@ import {
   Captions,
   Clapperboard,
   Download,
-  GalleryHorizontalEnd,
   ImageIcon,
   Layers,
   Library,
@@ -30,6 +29,7 @@ import Link from 'next/link'
 
 import { CtaPair } from './cta-pair'
 import { FadeIn } from './fade-in'
+import { FEATURE_NAV_ICONS } from './feature-nav-icons'
 import { FeatureMedia } from './feature-media'
 import {
   FEATURE_CATEGORIES,
@@ -61,16 +61,7 @@ import {
 } from './landing-classes'
 import { Section } from './section'
 
-const FEATURE_ICONS: Record<FeatureSlug, LucideIcon> = {
-  'ai-influencers': ScanFace,
-  'ai-ugc-video': Clapperboard,
-  'ai-slideshows': GalleryHorizontalEnd,
-  'ai-meta-ads': Megaphone,
-  'ai-images': ImageIcon,
-  'ai-videos': Clapperboard,
-  'social-scheduling': CalendarDays,
-  'social-analytics': LineChart,
-}
+const FEATURE_ICONS = FEATURE_NAV_ICONS
 
 const HIGHLIGHT_ICONS: Record<FeatureSlug, readonly [LucideIcon, LucideIcon, LucideIcon]> = {
   'ai-influencers': [ScanFace, Repeat, Users],
