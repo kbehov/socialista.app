@@ -37,7 +37,7 @@ function FeatureIcon({ icon: Icon }: { icon: LucideIcon }) {
       className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--landing-stone)_70%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_28%,white)] text-[var(--landing-ink)] sm:size-10"
       aria-hidden="true"
     >
-      <Icon className="size-[1.125rem] sm:size-5" strokeWidth={1.75} />
+      <Icon className="size-[1.125rem] sm:size-5" strokeWidth={2} />
     </span>
   );
 }
@@ -107,7 +107,7 @@ export function LandingInfluencer() {
   );
 
   return (
-    <Section id="influencers" landingDivider>
+    <Section id="influencers" landingDivider alt>
       <FadeIn>
         <LandingSectionIntro
           titleId="influencers-heading"

@@ -1,5 +1,14 @@
 export const CURRENT_WORKSPACE_COOKIE = 'socialista_cwp'
 export const CURRENT_PROJECT_COOKIE = 'socialista_cpj'
+export const COOKIE_CONSENT_COOKIE = 'socialista_cookie_consent'
+export const COOKIE_CONSENT_ACCEPTED = 'accepted'
+export const COOKIE_CONSENT_ESSENTIAL_ONLY = 'essential'
+
+const COOKIE_CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
+
+function isCookieConsentBannerHiddenValue(value: string | undefined): boolean {
+  return value === COOKIE_CONSENT_ACCEPTED || value === COOKIE_CONSENT_ESSENTIAL_ONLY
+}
 
 const DEFAULT_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 
@@ -89,4 +98,20 @@ export function setCurrentProjectIdClient(projectId: string): void {
 
 export function removeCurrentProjectIdClient(): void {
   removeClientCookie(CURRENT_PROJECT_COOKIE)
+}
+
+export function hasCookieConsentClient(): boolean {
+  return getClientCookie(COOKIE_CONSENT_COOKIE) === COOKIE_CONSENT_ACCEPTED
+}
+
+export function isCookieConsentBannerHiddenClient(): boolean {
+  return isCookieConsentBannerHiddenValue(getClientCookie(COOKIE_CONSENT_COOKIE))
+}
+
+export function setCookieConsentAcceptedClient(): void {
+  setClientCookie(COOKIE_CONSENT_COOKIE, COOKIE_CONSENT_ACCEPTED, { maxAge: COOKIE_CONSENT_MAX_AGE_SECONDS })
+}
+
+export function setCookieConsentEssentialOnlyClient(): void {
+  setClientCookie(COOKIE_CONSENT_COOKIE, COOKIE_CONSENT_ESSENTIAL_ONLY, { maxAge: COOKIE_CONSENT_MAX_AGE_SECONDS })
 }

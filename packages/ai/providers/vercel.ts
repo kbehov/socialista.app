@@ -2,9 +2,7 @@ import type {
   AspectRatio,
   GenerateImageOptions,
   GenerateVideoOptions,
-  VideoResolution,
 } from "@socialista/types";
-import { parseVideoResolution } from "@socialista/types";
 import { experimental_generateVideo as generateVideo, generateImage } from "ai";
 import { uploadGeneratedImage } from "../utils/image-upload.js";
 import { uploadGeneratedVideo } from "../utils/video-upload.js";
@@ -29,9 +27,11 @@ function usesImageSize(model: string): boolean {
 
 // Vercel AI Gateway video models accept a fixed resolution enum; orientation comes from aspectRatio.
 function videoResolutionToSize(
-  resolution: VideoResolution | undefined,
+  resolution: string | undefined,
 ): "854x480" | "1280x720" | "1920x1080" {
-  return parseVideoResolution(resolution) === "1080p" ? "1920x1080" : "1280x720";
+  if (resolution === "480p") return "854x480";
+  if (resolution === "1080p") return "1920x1080";
+  return "1280x720";
 }
 
 export async function generateImageVercel({
@@ -141,7 +141,7 @@ export async function generateVideoVercel({
     prompt: promptArg,
     aspectRatio,
     resolution: size,
-    duration,
+    ...(typeof duration === "number" ? { duration } : {}),
     generateAudio,
     ...(referenceImages.length > 1
       ? { inputReferences: referenceImages.slice(1) }

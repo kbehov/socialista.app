@@ -1,4 +1,4 @@
-import { VIDEO_RESOLUTION_DEFAULT, VIDEO_RESOLUTIONS } from "@socialista/types";
+import { VIDEO_RESOLUTION_DEFAULT } from "@socialista/types";
 import { model, Schema } from "mongoose";
 import { enumValues } from "../lib/schema.js";
 import {
@@ -118,6 +118,7 @@ const clipSchema = new Schema<IUgcClip>(
       default: UgcClipStatus.IDLE,
     },
     durationSec: { type: Number, default: 8 },
+    durationAuto: { type: Boolean },
     sceneCount: { type: Number, enum: [1, 2, 3] },
     influencerId: { type: Schema.Types.ObjectId, ref: "Influencer" },
     script: { type: scriptSchema },
@@ -199,7 +200,6 @@ const ugcProjectSchema = new Schema<IUgcProject>(
     aspectRatio: { type: String, default: "9:16" },
     videoResolution: {
       type: String,
-      enum: [...VIDEO_RESOLUTIONS],
       default: VIDEO_RESOLUTION_DEFAULT,
     },
     models: { type: modelsSchema, required: true },

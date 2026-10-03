@@ -1,4 +1,3 @@
-import type { VideoResolution } from "@socialista/types";
 import { z } from "zod";
 
 import { fal } from "../fal.js";
@@ -22,7 +21,7 @@ export type GenerateUgcTalkingHeadInput = {
   prompt: string;
   imageUrl: string;
   audioUrl: string;
-  resolution?: VideoResolution;
+  resolution?: string;
   workspaceId?: string;
   userId?: string;
   onProgress?: (progress: number, label: string) => void;

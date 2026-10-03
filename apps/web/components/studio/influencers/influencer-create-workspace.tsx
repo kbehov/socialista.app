@@ -56,7 +56,7 @@ type InfluencerCreateWorkspaceProps = {
   models: Model[]
   returnTo?: string
   backHref?: string
-  successHref?: (influencerId: string) => string
+  successHref?: string
   createAction?: CreateInfluencerAction
 }
 
@@ -228,7 +228,7 @@ export function InfluencerCreateWorkspace({
         return
       }
       if (successHref) {
-        router.push(successHref(response.data.influencer._id))
+        router.push(`${successHref}/${response.data.influencer._id}`)
         return
       }
       router.push(DASHBOARD_ROUTES.STUDIO.influencer(response.data.influencer._id))

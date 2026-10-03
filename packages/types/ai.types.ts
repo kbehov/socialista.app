@@ -1,6 +1,6 @@
 import { AspectRatio } from './image-generation.types.js'
 import type { PromptKey } from './skill.types.js'
-import type { VideoAspectRatio, VideoResolution } from './video-generation.types.js'
+import type { VideoAspectRatio, VideoDuration } from './video-generation.types.js'
 
 export const SLIDESHOW_CONTENT_TYPES = ['story', 'guide', 'list', 'routine', 'comparison', 'myth'] as const
 
@@ -171,9 +171,9 @@ export type GenerateVideoOptions = {
   workspaceId: string
   projectId?: string
   userId: string
-  duration: number
+  duration?: VideoDuration
   generateAudio?: boolean
-  resolution?: VideoResolution
+  resolution?: string
   imageUrl?: string
   imageUrls?: string[]
   skillId?: string

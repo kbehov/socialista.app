@@ -26,6 +26,11 @@ export enum ContextSupport {
 
 export type PopulatedAiCompany = Pick<IAiCompany, '_id' | 'name' | 'logo'>
 
+export interface IModelResolution {
+  value: string
+  costPerSecond: number
+}
+
 export interface IModel {
   _id: Types.ObjectId
   value: string
@@ -34,6 +39,8 @@ export interface IModel {
   costUnit: CostUnit
   modelType: ModelType
   contextSupports: ContextSupport[]
+  /** Per-resolution credits-per-second prices. Used for video models. */
+  resolutions?: IModelResolution[]
   allowedInUgc: boolean
   usageCount: number
   modelProvider: string

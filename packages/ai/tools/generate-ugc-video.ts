@@ -1,4 +1,4 @@
-import { UGC_DEFAULT_DURATION, type VideoAspectRatio, type VideoResolution } from '@socialista/types'
+import { type VideoAspectRatio } from '@socialista/types'
 import { generateVideoFal } from '../providers/fal.js'
 import { generateVideoVercel } from '../providers/vercel.js'
 
@@ -11,7 +11,7 @@ export type GenerateUgcVideoInput = {
   negativePrompt?: string
   duration?: number
   generateAudio?: boolean
-  resolution?: VideoResolution
+  resolution?: string
   workspaceId: string
   userId: string
   onProgress?: (progress: number, label: string) => void
@@ -53,7 +53,7 @@ export async function generateUgcVideo(input: GenerateUgcVideoInput): Promise<st
       aspectRatio: toVideoAspectRatio(input.aspectRatio),
       workspaceId: input.workspaceId,
       userId: input.userId,
-      duration: input.duration ?? UGC_DEFAULT_DURATION,
+      ...(typeof input.duration === "number" ? { duration: input.duration } : {}),
       generateAudio: input.generateAudio,
       resolution: input.resolution,
       onProgress: input.onProgress,

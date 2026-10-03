@@ -70,7 +70,6 @@ import {
   parseUgcCampaignPresetId,
   parseUgcFlowStep,
   parseUgcProductKind,
-  parseVideoResolution,
   PROMPT_KEYS,
   StudioTemplateKind,
   UGC_CAMPAIGN_PRESETS,
@@ -356,8 +355,8 @@ export const updateUgcProject = async (c: Context<AppContext>) => {
   }
   if (typeof input.aspectRatio === "string" && input.aspectRatio)
     updates.aspectRatio = input.aspectRatio;
-  if (input.videoResolution)
-    updates.videoResolution = parseVideoResolution(input.videoResolution);
+  if (typeof input.videoResolution === "string" && input.videoResolution.trim())
+    updates.videoResolution = input.videoResolution.trim();
   if (input.models) {
     updates.models = {
       ...project.models,
@@ -494,6 +493,9 @@ export const updateUgcClipHandler = async (c: Context<AppContext>) => {
   }
   if (input.durationSec !== undefined) {
     clipUpdates.durationSec = clampUgcDuration(input.durationSec);
+  }
+  if (typeof input.durationAuto === "boolean") {
+    clipUpdates.durationAuto = input.durationAuto;
   }
   if (typeof input.approved === "boolean") {
     clipUpdates.approved = input.approved;

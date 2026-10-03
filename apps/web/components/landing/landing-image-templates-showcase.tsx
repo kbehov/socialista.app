@@ -34,22 +34,22 @@ function MasonryTile({
   return (
     <article
       className={cn(
-        'group/card relative mb-3 w-full overflow-hidden rounded-[1.125rem] bg-[#0a0a0a] sm:mb-3.5',
-        'shadow-[0_0_0_1px_oklch(0_0_0/0.07),0_16px_36px_-24px_rgb(0_0_0/0.38)]',
-        'outline outline-1 outline-[oklch(0_0_0/0.05)]',
+        'group/card relative mb-3 w-full overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-media-dark)] sm:mb-3.5',
+        'shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_16px_36px_-24px_rgb(0_0_0/0.38)]',
+        'outline outline-1 outline-[oklch(0_0_0/0.1)]',
         'break-inside-avoid',
-        'transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.2,0,0,1)]',
+        'transition-[transform,box-shadow] duration-220 ease-[cubic-bezier(0.2,0,0,1)]',
         'hover:shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_22px_48px_-22px_rgb(0_0_0/0.45)]',
       )}
       style={{ aspectRatio }}
     >
       <Image
         src={template.previewImageUrl}
-        alt={template.name ?? ''}
+        alt={template.name?.trim() || 'Image template preview'}
         fill
         quality={IMAGE_QUALITY}
         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-        className="object-cover transition-[transform,filter] duration-500 ease-[cubic-bezier(0.2,0,0,1)] group-hover/card:scale-[1.04] group-hover/card:brightness-[1.03]"
+        className="object-cover transition-[transform,filter] duration-220 ease-[cubic-bezier(0.2,0,0,1)] pointer-fine:group-hover/card:scale-[1.04] pointer-fine:group-hover/card:brightness-[1.03]"
       />
       <div
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent opacity-80 transition-opacity duration-300 group-hover/card:opacity-100"
@@ -64,7 +64,7 @@ function MasonryTile({
         }}
         className={cn(
           landingGlass,
-          'absolute inset-x-2.5 bottom-2.5 z-10 inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3',
+          'absolute inset-x-2.5 bottom-2.5 z-10 inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3',
           'text-[0.8125rem] font-medium tracking-[-0.015em] text-white',
           'shadow-[0_2px_10px_rgba(0,0,0,0.28)]',
           'transition-[opacity,transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
@@ -95,21 +95,22 @@ export function LandingImageTemplatesShowcase({ templates, models }: LandingImag
   return (
     <>
       <div className="flex flex-col gap-8 sm:gap-10">
-        <div
+        <ul
           className={cn(
-            'columns-2 gap-3 sm:columns-3 sm:gap-3.5 lg:columns-4 lg:gap-4',
+            'columns-2 list-none gap-3 p-0 sm:columns-3 sm:gap-3.5 lg:columns-4 lg:gap-4',
             '[column-fill:balance]',
           )}
         >
           {templates.map((template, index) => (
-            <MasonryTile
-              key={`${template._id}-${index}`}
-              template={template}
-              index={index}
-              onRecreate={openRecreate}
-            />
+            <li key={`${template._id}-${index}`} className="break-inside-avoid">
+              <MasonryTile
+                template={template}
+                index={index}
+                onRecreate={openRecreate}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
 
         <div className="flex justify-center pt-0.5">
           <SectionCta label={IMAGE_TEMPLATES_SECTION.cta} />

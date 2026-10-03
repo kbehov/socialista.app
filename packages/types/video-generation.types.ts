@@ -5,6 +5,13 @@ export const VIDEO_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const satisfies re
 export const VIDEO_DURATION_MIN = 5
 export const VIDEO_DURATION_MAX = 15
 export const VIDEO_DURATION_DEFAULT = 5
+export const VIDEO_DURATION_AUTO = 'auto' as const
+
+export type VideoDuration = number | typeof VIDEO_DURATION_AUTO
+
+export function isAutoVideoDuration(value: unknown): value is typeof VIDEO_DURATION_AUTO {
+  return value === VIDEO_DURATION_AUTO
+}
 
 export const VIDEO_DURATIONS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const satisfies readonly number[]
 
@@ -44,9 +51,9 @@ export type VideoGenerator = (options: {
   aspectRatio: VideoAspectRatio
   workspaceId: string
   userId: string
-  duration: number
+  duration?: number
   generateAudio?: boolean
-  resolution?: VideoResolution
+  resolution?: string
   imageUrl?: string
   imageUrls?: string[]
   onProgress?: (progress: number, label: string) => void

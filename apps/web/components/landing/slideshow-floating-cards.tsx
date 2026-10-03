@@ -50,7 +50,7 @@ function SlideshowPreviewCard({
   return (
     <article
       className={cn(
-        'relative aspect-9/16 shrink-0 overflow-hidden rounded-[0.85rem] bg-[#121212] shadow-[0_10px_24px_-16px_rgb(0_0_0/0.45),0_0_0_1px_rgb(255_255_255/0.1)] sm:rounded-[0.95rem]',
+        'relative aspect-9/16 shrink-0 overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-media-raised)] shadow-[0_10px_24px_-16px_rgb(0_0_0/0.45),0_0_0_1px_rgb(255_255_255/0.1)]',
         landingMediaCardHover,
         compact
           ? featured

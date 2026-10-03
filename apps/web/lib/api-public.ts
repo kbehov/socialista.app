@@ -33,10 +33,18 @@ export async function parseJson<T>(response: Response): Promise<ApiResponse<T>> 
   }
 }
 
-async function publicRequest<T>(method: string, path: string, body?: unknown): Promise<ApiResponse<T>> {
+type PublicRequestOptions = Omit<RequestInit, 'method' | 'body'>
+
+async function publicRequest<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  options?: PublicRequestOptions,
+): Promise<ApiResponse<T>> {
   const response = await fetch(`${API_URL}${path}`, {
+    ...options,
     method,
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    headers: body !== undefined ? { 'Content-Type': 'application/json' } : options?.headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 
@@ -44,5 +52,7 @@ async function publicRequest<T>(method: string, path: string, body?: unknown): P
 }
 
 export const publicApi = {
-  post: <T>(path: string, body?: unknown) => publicRequest<T>('POST', path, body),
+  get: <T>(path: string, options?: PublicRequestOptions) => publicRequest<T>('GET', path, undefined, options),
+  post: <T>(path: string, body?: unknown, options?: PublicRequestOptions) =>
+    publicRequest<T>('POST', path, body, options),
 }

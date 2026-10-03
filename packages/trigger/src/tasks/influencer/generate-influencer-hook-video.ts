@@ -2,7 +2,6 @@ import { buildInfluencerHookVideoPrompt, generateVideo } from '@socialista/ai'
 import {
   appendInfluencerHookVideo,
   connectDb,
-  CostUnit,
   disconnectDb,
   getInfluencerById,
 } from '@socialista/db'
@@ -13,7 +12,6 @@ import {
   INFLUENCER_HOOK_VIDEO_ASPECT_RATIO,
   INFLUENCER_HOOK_VIDEO_RESOLUTION,
   TASK_IDS,
-  videoResolutionCostMultiplier,
 } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
@@ -29,6 +27,7 @@ import {
 } from '../shared/generation-record.js'
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
+import { resolveVideoBilledCost } from '../shared/video-cost.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function influencerOwnsSourceImage(
@@ -70,9 +69,7 @@ export const generateInfluencerHookVideo = schemaTask({
       const duration = clampVideoDuration(payload.duration)
       const count = clampInfluencerHookVideoCount(payload.count)
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
-      const billedCost =
-        (model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost) *
-        videoResolutionCostMultiplier(INFLUENCER_HOOK_VIDEO_RESOLUTION)
+      const billedCost = resolveVideoBilledCost(model, INFLUENCER_HOOK_VIDEO_RESOLUTION, duration)
       assertSufficientCredits(workspace, billedCost * count)
 
       const started = await startGenerationRecord({

@@ -6,7 +6,14 @@ import { getWorkspaceBalance } from '@/services/workspace.service'
 import { createPublicAccessToken } from '@socialista/trigger'
 import type { RealtimeVideoGenerationTask } from '@socialista/trigger/task-types'
 import type { GenerateVideoOptions } from '@socialista/types'
-import { clampVideoDuration, CostUnit, TASK_IDS, VIDEO_RESOLUTION_DEFAULT, videoResolutionCostMultiplier } from '@socialista/types'
+import {
+  clampVideoDuration,
+  estimateVideoCredits,
+  isAutoVideoDuration,
+  TASK_IDS,
+  VIDEO_DURATION_AUTO,
+  VIDEO_RESOLUTION_DEFAULT,
+} from '@socialista/types'
 import { tasks } from '@trigger.dev/sdk/v3'
 
 export type StartVideoGenerationResult =
@@ -20,7 +27,9 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
   }
 
   try {
-    const duration = clampVideoDuration(input.duration)
+    const isAuto = isAutoVideoDuration(input.duration)
+    const duration = isAuto ? VIDEO_DURATION_AUTO : clampVideoDuration(input.duration)
+    const resolution = input.resolution ?? VIDEO_RESOLUTION_DEFAULT
     const balanceRes = await getWorkspaceBalance(input.workspaceId)
     const credits = balanceRes.data?.aiCreditsBalance ?? 0
 
@@ -32,9 +41,14 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       return { success: false, error: 'Model not found.' }
     }
 
-    const billedCost =
-      (model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost) *
-      videoResolutionCostMultiplier(input.resolution)
+    if (
+      model.resolutions?.length &&
+      !model.resolutions.some(entry => entry.value === resolution)
+    ) {
+      return { success: false, error: 'That resolution is not supported by this model.' }
+    }
+
+    const billedCost = estimateVideoCredits(model, resolution, duration)
     if (credits < billedCost) {
       return { success: false, error: 'Insufficient AI credits.' }
     }
@@ -47,7 +61,7 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       aspectRatio: input.aspectRatio,
       duration,
       generateAudio: input.generateAudio ?? true,
-      resolution: input.resolution ?? VIDEO_RESOLUTION_DEFAULT,
+      resolution,
       ...(input.imageUrl ? { imageUrl: input.imageUrl } : {}),
       ...(input.imageUrls && input.imageUrls.length > 0 ? { imageUrls: input.imageUrls } : {}),
       ...(input.skillId ? { skillId: input.skillId } : {}),

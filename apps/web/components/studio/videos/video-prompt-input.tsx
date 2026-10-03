@@ -40,23 +40,25 @@ import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import { getProjectId, useProjectStore } from "@/store/project.store";
 import { VIDEO_STUDIO_PLACEHOLDER_EXAMPLES } from "@/lib/studio/studio-placeholder-examples";
+import { formatCredits } from "@/utils/format";
 import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
   clampVideoDuration,
-  ContextSupport,
+  estimateVideoCredits,
   ModelType,
+  modelUsesPerSecondVideoPricing,
+  modelVideoResolutions,
   PROMPT_KEYS,
+  VIDEO_DURATION_AUTO,
   VIDEO_DURATION_DEFAULT,
   VIDEO_DURATIONS,
-  VIDEO_RESOLUTION_COST_MULTIPLIERS,
   VIDEO_RESOLUTION_DEFAULT,
-  videoResolutionCostMultiplier,
   type Model,
   type Preset,
   type PromptKey,
   type VideoAspectRatio,
-  type VideoResolution,
+  type VideoDuration,
 } from "@socialista/types";
 import {
   ChevronDownIcon,
@@ -108,21 +110,13 @@ const ASPECT_RATIOS = [
   ratio: number;
 }>;
 
-const RESOLUTIONS = [
-  { id: "720p", label: "HD" },
-  { id: "1080p", label: "Full HD" },
-] as const satisfies ReadonlyArray<{
-  id: VideoResolution;
-  label: string;
-}>;
-
 export type VideoPromptSubmitResult = {
   prompt: string;
   model: string;
   aspectRatio: VideoAspectRatio;
-  duration: number;
+  duration: VideoDuration;
   generateAudio: boolean;
-  resolution: VideoResolution;
+  resolution: string;
   imageUrls: string[];
   enhance: boolean;
   skillId?: string;
@@ -143,7 +137,9 @@ export type VideoPromptInputProps = {
   initialModel?: string;
   initialAspectRatio?: VideoAspectRatio;
   initialDuration?: number;
-  initialResolution?: VideoResolution;
+  /** Start the duration picker on Auto. Ignored when duration is locked. */
+  initialDurationAuto?: boolean;
+  initialResolution?: string;
   initialGenerateAudio?: boolean;
   /** When true, force audio off and disable the toggle (e.g. UGC scene with a lip-synced voiceover). */
   audioLocked?: boolean;
@@ -152,6 +148,8 @@ export type VideoPromptInputProps = {
   hideSettings?: boolean;
   /** Hide the duration picker when length is driven by attached audio. */
   hideDuration?: boolean;
+  /** Offer an Auto length that is billed from the finished clip. */
+  allowAutoDuration?: boolean;
   /** Lock duration to this value (voiceover length) and disable the picker. */
   lockedDurationSec?: number;
   /** Hide the credit estimate until billable duration is known (talking-head audio). */
@@ -193,6 +191,7 @@ function VideoPromptComposer({
   initialModel,
   initialAspectRatio,
   initialDuration,
+  initialDurationAuto = false,
   initialResolution,
   initialGenerateAudio,
   audioLocked,
@@ -200,6 +199,7 @@ function VideoPromptComposer({
   modelLocked = false,
   hideSettings = false,
   hideDuration = false,
+  allowAutoDuration = true,
   lockedDurationSec,
   hideCost = false,
   disabled,
@@ -207,7 +207,6 @@ function VideoPromptComposer({
   bindStudio = true,
   autoFocus,
   surfaceClassName: surfaceClassNameProp,
-  costMultiplier: costMultiplierProp,
   attachSources = DEFAULT_ATTACH_SOURCES,
   influencerMediaType = "media",
   maxAttachments = MAX_REFERENCE_IMAGES,
@@ -255,11 +254,12 @@ function VideoPromptComposer({
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>(
     initialAspectRatio ?? "9:16",
   );
-  const [duration, setDuration] = useState(() =>
-    clampVideoDuration(initialDuration ?? VIDEO_DURATION_DEFAULT),
+  const [duration, setDuration] = useState<VideoDuration>(() =>
+    initialDurationAuto && lockedDurationSec == null && allowAutoDuration
+      ? VIDEO_DURATION_AUTO
+      : clampVideoDuration(initialDuration ?? VIDEO_DURATION_DEFAULT),
   );
-  const effectiveDuration = lockedDurationSec ?? duration;
-  const [resolution, setResolution] = useState<VideoResolution>(
+  const [resolution, setResolution] = useState(
     initialResolution ?? VIDEO_RESOLUTION_DEFAULT,
   );
   const [generateAudio, setGenerateAudio] = useState(
@@ -335,19 +335,8 @@ function VideoPromptComposer({
         model.modelType === ModelType.VIDEO ||
         model.modelType === ModelType.LIP_SYNC,
     );
-    const pool = videoModels.length > 0 ? videoModels : models;
-    if (attachedImages.length === 0) {
-      const textToVideo = pool.filter(
-        (model) =>
-          !(model.contextSupports ?? []).includes(ContextSupport.IMAGE),
-      );
-      return textToVideo.length > 0 ? textToVideo : pool;
-    }
-    const imageToVideo = pool.filter((model) =>
-      (model.contextSupports ?? []).includes(ContextSupport.IMAGE),
-    );
-    return imageToVideo.length > 0 ? imageToVideo : pool;
-  }, [attachedImages.length, models]);
+    return videoModels.length > 0 ? videoModels : models;
+  }, [models]);
 
   const [selectedModelId, setSelectedModelId] = useState(
     () =>
@@ -366,6 +355,19 @@ function VideoPromptComposer({
       );
     });
   }, [initialModel, visibleModels]);
+
+  const selectedModel = useMemo(
+    () => visibleModels.find((model) => model._id === selectedModelId) ?? visibleModels[0],
+    [selectedModelId, visibleModels],
+  );
+  const resolutionOptions = useMemo(
+    () => (selectedModel ? modelVideoResolutions(selectedModel) : []),
+    [selectedModel],
+  );
+  const resolutionValue = resolutionOptions.some((option) => option.value === resolution)
+    ? resolution
+    : (resolutionOptions.find((option) => option.value === (initialResolution ?? VIDEO_RESOLUTION_DEFAULT)) ??
+        resolutionOptions[0])?.value ?? resolution;
 
   const placeholder = useMemo(() => {
     if (placeholderProp) return placeholderProp;
@@ -473,6 +475,10 @@ function VideoPromptComposer({
     textareaRef.current?.focus();
   }, [autoFocus, hideExtras]);
 
+  const selectedDuration: VideoDuration =
+    lockedDurationSec ??
+    (allowAutoDuration && duration === VIDEO_DURATION_AUTO ? VIDEO_DURATION_AUTO : clampVideoDuration(duration));
+
   const handleSubmit = (message: PromptInputMessage) => {
     if (disabled || submitDisabled) return;
     const prompt = message.text.trim();
@@ -500,9 +506,9 @@ function VideoPromptComposer({
           prompt,
           model: selectedModel.value,
           aspectRatio,
-          duration: effectiveDuration,
+          duration: selectedDuration,
           generateAudio: audioEnabled,
-          resolution,
+          resolution: resolutionValue,
           imageUrls,
           enhance,
           ...(enhance && skillId ? { skillId } : {}),
@@ -516,9 +522,9 @@ function VideoPromptComposer({
         model: selectedModel.value,
         workspaceId: currentWorkspace._id,
         aspectRatio,
-        duration: effectiveDuration,
+        duration: selectedDuration,
         generateAudio: audioEnabled,
-        resolution,
+        resolution: resolutionValue,
         userId: "",
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
         ...(skillId ? { skillId } : {}),
@@ -541,7 +547,16 @@ function VideoPromptComposer({
     ASPECT_RATIOS.find((option) => option.id === aspectRatio) ??
     ASPECT_RATIOS[0];
   const selectedResolution =
-    RESOLUTIONS.find((option) => option.id === resolution) ?? RESOLUTIONS[0];
+    resolutionOptions.find((option) => option.value === resolutionValue) ?? resolutionOptions[0];
+  const durationIsAuto = selectedDuration === VIDEO_DURATION_AUTO;
+  const billedCredits =
+    hideCost || !selectedModel
+      ? undefined
+      : estimateVideoCredits(
+          selectedModel,
+          resolutionValue,
+          selectedDuration,
+        ) * count;
 
   const enhanceTools = hideEnhance ? null : (
     <>
@@ -630,38 +645,38 @@ function VideoPromptComposer({
         <StudioInputActionTooltip label="Output resolution">
           <DropdownMenuTrigger asChild>
             <PromptInputButton
-              aria-label={`Resolution ${selectedResolution.id}`}
+              aria-label={`Resolution ${selectedResolution?.value ?? resolutionValue}`}
               className={STUDIO_TOOL_BUTTON_CLASS}
-              disabled={pending}
+              disabled={pending || resolutionOptions.length === 0}
               size="xs"
               type="button"
             >
               <span className="text-[12px] font-medium leading-none tracking-[-0.015em]">
-                {selectedResolution.id}
+                {selectedResolution?.value ?? resolutionValue}
               </span>
               <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
             </PromptInputButton>
           </DropdownMenuTrigger>
         </StudioInputActionTooltip>
-        <DropdownMenuContent align="start" className="min-w-44 w-44">
+        <DropdownMenuContent align="start" className="min-w-48 w-48">
           <DropdownMenuRadioGroup
-            value={resolution}
-            onValueChange={(value) => setResolution(value as VideoResolution)}
+            value={resolutionValue}
+            onValueChange={setResolution}
           >
-            {RESOLUTIONS.map((option) => (
+            {resolutionOptions.map((option) => (
               <DropdownMenuRadioItem
-                key={option.id}
+                key={option.value}
                 className="rounded-lg"
-                value={option.id}
+                value={option.value}
               >
                 <span className="text-[13px] font-medium tracking-[-0.015em]">
-                  {option.label}
+                  {option.value}
                 </span>
                 <DropdownMenuShortcut>
-                  {option.id}
-                  {VIDEO_RESOLUTION_COST_MULTIPLIERS[option.id] !== 1
-                    ? ` · ×${VIDEO_RESOLUTION_COST_MULTIPLIERS[option.id]}`
-                    : ""}
+                  {selectedModel &&
+                  (durationIsAuto || modelUsesPerSecondVideoPricing(selectedModel, option.value))
+                    ? `${formatCredits(option.costPerSecond)}/s`
+                    : formatCredits(option.costPerSecond)}
                 </DropdownMenuShortcut>
               </DropdownMenuRadioItem>
             ))}
@@ -692,14 +707,14 @@ function VideoPromptComposer({
           <StudioInputActionTooltip label="Clip duration">
             <DropdownMenuTrigger asChild>
               <PromptInputButton
-                aria-label={`Duration ${duration} seconds`}
+                aria-label={durationIsAuto ? "Duration auto" : `Duration ${duration} seconds`}
                 className={STUDIO_TOOL_BUTTON_CLASS}
                 disabled={pending}
                 size="xs"
                 type="button"
               >
                 <span className="text-[12px] font-medium leading-none tracking-[-0.015em] tabular-nums">
-                  {duration}s
+                  {durationIsAuto ? "Auto" : `${duration}s`}
                 </span>
                 <ChevronDownIcon className={STUDIO_TOOL_CHEVRON_CLASS} />
               </PromptInputButton>
@@ -707,9 +722,18 @@ function VideoPromptComposer({
           </StudioInputActionTooltip>
           <DropdownMenuContent align="start" className="min-w-36 w-36">
             <DropdownMenuRadioGroup
-              value={String(duration)}
-              onValueChange={(value) => setDuration(Number(value))}
+              value={durationIsAuto ? VIDEO_DURATION_AUTO : String(duration)}
+              onValueChange={(value) =>
+                setDuration(value === VIDEO_DURATION_AUTO ? VIDEO_DURATION_AUTO : Number(value))
+              }
             >
+              {allowAutoDuration ? (
+                <DropdownMenuRadioItem className="rounded-lg" value={VIDEO_DURATION_AUTO}>
+                  <span className="text-[13px] font-medium tracking-[-0.015em]">
+                    Auto
+                  </span>
+                </DropdownMenuRadioItem>
+              ) : null}
               {VIDEO_DURATIONS.map((seconds) => (
                 <DropdownMenuRadioItem
                   key={seconds}
@@ -767,6 +791,8 @@ function VideoPromptComposer({
         models={visibleModels}
         selectedModelId={selectedModelId}
         onSelectedModelChange={setSelectedModelId}
+        modelPickerVariant="video"
+        modelPickerHeading="Video models"
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
         attachSources={effectiveAttachSources}
@@ -785,13 +811,8 @@ function VideoPromptComposer({
               }
             : undefined
         }
-        costMultiplier={
-          hideCost
-            ? undefined
-            : (costMultiplierProp ?? effectiveDuration) *
-              videoResolutionCostMultiplier(resolution) *
-              count
-        }
+        billedCredits={billedCredits}
+        billedCreditsPrefix={durationIsAuto ? "≤ " : undefined}
         hideCost={hideCost}
         workspaceId={currentWorkspace?._id}
         placeholder={placeholder}

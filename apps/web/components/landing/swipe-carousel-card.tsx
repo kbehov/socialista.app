@@ -65,7 +65,7 @@ export function SwipeCarouselCard({
   }, [playVideo])
 
   const radius =
-    embedded && variant !== 'influencer' ? 'rounded-none' : 'rounded-[1.75rem]'
+    embedded && variant !== 'influencer' ? 'rounded-none' : 'rounded-[var(--landing-media-radius)]'
   const imageSizes =
     variant === 'influencer'
       ? '(max-width: 768px) 90vw, 560px'
@@ -138,7 +138,7 @@ export function SwipeCarouselCard({
               <button
                 type="button"
                 aria-label="Pass"
-                className="flex size-14 items-center justify-center rounded-full border border-white/20 bg-black/50 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.7)] backdrop-blur-md transition-transform duration-150 ease-out active:scale-[0.96] sm:size-[3.75rem]"
+                className="flex size-14 items-center justify-center rounded-full border border-white/20 bg-black/50 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.7)] backdrop-blur-md transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 sm:size-[3.75rem]"
                 onPointerDown={event => event.stopPropagation()}
                 onClick={event => {
                   event.stopPropagation()
@@ -150,7 +150,7 @@ export function SwipeCarouselCard({
               <button
                 type="button"
                 aria-label="Match"
-                className="flex size-16 items-center justify-center rounded-full border border-white/20 bg-black/50 shadow-[0_12px_32px_-10px_rgb(0_0_0/0.75)] backdrop-blur-md transition-transform duration-150 ease-out active:scale-[0.96] sm:size-[4.25rem]"
+                className="flex size-16 items-center justify-center rounded-full border border-white/20 bg-black/50 shadow-[0_12px_32px_-10px_rgb(0_0_0/0.75)] backdrop-blur-md transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 sm:size-[4.25rem]"
                 onPointerDown={event => event.stopPropagation()}
                 onClick={event => {
                   event.stopPropagation()

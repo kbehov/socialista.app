@@ -34,6 +34,21 @@ function applyContextSupportsFilter(match: Record<string, unknown>) {
   match.contextSupports = value
 }
 
+const LANDING_MODELS_LIMIT = 10
+
+export const getLandingModels = async () => {
+  const [models, total] = await Promise.all([
+    ModelModel.find({})
+      .select('name value modelType modelProvider company')
+      .populate(COMPANY_POPULATE)
+      .sort({ usageCount: -1 })
+      .limit(LANDING_MODELS_LIMIT)
+      .lean(),
+    ModelModel.countDocuments({}),
+  ])
+  return { models, total }
+}
+
 export const getModels = async (query: string) => {
   const { match, pagination, sort } = buildFilters(query)
   applyContextSupportsFilter(match)

@@ -1,13 +1,17 @@
+import { CookieConsentBanner } from "@/components/landing/cookie-consent-banner";
 import { LandingShell } from "@/components/landing/landing-shell";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
+import { isCookieConsentBannerHidden } from "@/utils/cookie.utils.server";
 import Link from "next/link";
 
-export default function HomeLayout({
+export default async function HomeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieConsentHidden = await isCookieConsentBannerHidden();
+
   return (
     <LandingShell>
       <Link
@@ -21,6 +25,7 @@ export default function HomeLayout({
         {children}
       </main>
       <SiteFooter />
+      <CookieConsentBanner initialHidden={cookieConsentHidden} />
     </LandingShell>
   );
 }

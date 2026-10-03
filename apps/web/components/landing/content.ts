@@ -1,8 +1,33 @@
+import { SITE_CONFIG } from '@/lib/seo/base'
+
+import { COMPARE_COMPETITORS, comparePath, type CompareCell } from './compare'
+import { FEATURE_CATEGORIES, FEATURES, featurePath } from './features'
+
+export const LANDING_HEADER = {
+  features: {
+    label: 'Features',
+    overviewHref: '/features',
+    overviewLabel: 'All features',
+  },
+  pricing: { href: '/pricing', label: 'Pricing' },
+  about: { href: '/about', label: 'About' },
+} as const
+
+export const LANDING_FEATURES_NAV = FEATURE_CATEGORIES.map(category => ({
+  id: category.id,
+  label: category.label,
+  items: FEATURES.filter(feature => feature.category === category.id).map(feature => ({
+    slug: feature.slug,
+    href: featurePath(feature.slug),
+    label: feature.name,
+    summary: feature.summary,
+  })),
+}))
+
+/** Simple header links for mobile (Features listed separately). */
 export const LANDING_NAV = [
-  { href: '/#ugc-ads', label: 'UGC ads' },
-  { href: '/#influencers', label: 'AI creators' },
-  { href: '/#how-it-works', label: 'How it works' },
-  { href: '/#pricing', label: 'Pricing' },
+  LANDING_HEADER.pricing,
+  LANDING_HEADER.about,
 ] as const
 
 export const SIGNUP_HREF = '/auth/signup'
@@ -33,16 +58,31 @@ export const LANDING_CHANNELS = [
 ] as const
 export type PlatformId = (typeof LANDING_CHANNELS)[number]['id']
 
-export const HERO_CHANNELS_LABEL = 'Publishes to'
+export const PLATFORMS_SECTION = {
+  eyebrow: 'Channels',
+  title: 'Post to every channel',
+  titleAccent: 'from one studio.',
+  description:
+    'Connect Instagram, TikTok, Facebook, Threads, LinkedIn, and X. Export native sizes and a caption per channel, then schedule without switching tools.',
+  cta: 'Connect your channels',
+} as const
 
-/** Real numbers only — the stat line renders nothing while empty. */
-export const PROOF_STATS: readonly { value: string; label: string }[] = []
+export const MODELS_SECTION = {
+  titleLead: 'One plan.',
+  titleRest: 'AI models included.',
+  /** Display "30+" when the catalog reaches this size */
+  countThreshold: 30,
+} as const
+
+export const HERO_CHANNELS_LABEL = 'Publishes to'
 
 export type Testimonial = {
   quote: string
   name: string
   role: string
   avatar?: string
+  /** 1–5, only when the quote came with a real rating. */
+  rating?: number
 }
 
 /** Real customer quotes only — the testimonials section is hidden while empty. */
@@ -53,6 +93,52 @@ export const TESTIMONIALS_SECTION = {
   title: 'Teams shipping',
   titleAccent: 'more with less.',
 } as const
+
+/**
+ * Aggregate only when it comes from a real review source.
+ * The star row stays hidden while this is null — do not invent a score.
+ */
+export const TESTIMONIALS_RATING: { score: string; label: string } | null = null
+
+export const HOME_COMPARE = {
+  eyebrow: 'The workflow',
+  title: 'One studio,',
+  titleAccent: 'not ten tabs.',
+  description:
+    'Brands, agencies, and freelancers all hit the same wall: slow creative, messy handoffs, and posts that never quite make it live on time. Socialista removes the friction between idea and published.',
+  columns: [
+    { id: 'socialista', label: 'Socialista' },
+    { id: 'oldWay', label: 'The old way' },
+  ],
+  rows: [
+    {
+      label: 'UGC-style ads in minutes—not weeks on shoots and revisions',
+      cells: { socialista: 'yes', oldWay: 'no' },
+    },
+    {
+      label: 'The same creator and voice on every ad, not a new face each time',
+      cells: { socialista: 'yes', oldWay: 'partial' },
+    },
+    {
+      label: 'One post to every channel—no re-export and re-upload loop',
+      cells: { socialista: 'yes', oldWay: 'no' },
+    },
+    {
+      label: 'What goes live this week, visible in one queue—not buried in threads',
+      cells: { socialista: 'yes', oldWay: 'no' },
+    },
+    {
+      label: 'Prove output before retainers, renewals, and another tool subscription',
+      cells: { socialista: 'yes', oldWay: 'partial' },
+    },
+  ],
+  footnote: 'Comparing named software? Checked side-by-sides live on the comparisons page.',
+  footnoteHref: '/compare',
+  footnoteLabel: 'See tool comparisons',
+} as const satisfies {
+  columns: readonly { id: string; label: string }[]
+  rows: readonly { label: string; cells: Record<string, CompareCell> }[]
+}
 
 export const UGC_ADS = {
   eyebrow: 'UGC ads',
@@ -234,7 +320,7 @@ export const PRICING_SECTION = {
     eyebrow: 'Need more seats or credits?',
     description: 'We’ll help you find a plan that fits how you work.',
     cta: 'Talk to us',
-    href: 'mailto:sales@socialista.app?subject=Socialista%20Enterprise',
+    href: 'mailto:hello@socialista.app?subject=Socialista%20Enterprise',
   },
   trust: ['Secure checkout', 'Cancel anytime', 'You own your creatives'] as const,
   freeTrust: 'No card to start',
@@ -247,7 +333,7 @@ export const FAQ_SECTION = {
   description: 'Everything you need to know before your first ad.',
   contactLead: 'Still have questions?',
   contactCta: 'Email us',
-  contactHref: 'mailto:sales@socialista.app?subject=Question%20about%20Socialista',
+  contactHref: 'mailto:hello@socialista.app?subject=Question%20about%20Socialista',
 } as const
 
 export const FAQ_ITEMS = [
@@ -303,46 +389,65 @@ export const FINAL_CTA = {
   description: 'Pick a creator, drop in your product, and publish today.',
 } as const
 
+export type FooterLink = {
+  href: string
+  label: string
+}
+
+export type FooterColumn = {
+  title: string
+  links: readonly FooterLink[]
+  /** Two-column link list for longer sections (e.g. Features) */
+  splitLinks?: boolean
+}
+
 export const FOOTER = {
   tagline: 'Realistic UGC ads, made with AI—then published everywhere from one studio.',
-  contactEmail: 'sales@socialista.app',
+  contactEmail: 'hello@socialista.app',
   columns: [
     {
-      title: 'Product',
+      title: 'Features',
+      splitLinks: true,
+      links: FEATURES.map(feature => ({
+        href: featurePath(feature.slug),
+        label: feature.name,
+      })),
+    },
+    {
+      title: 'Compare',
+      splitLinks: true,
+      links: COMPARE_COMPETITORS.map(competitor => ({
+        href: comparePath(competitor.slug),
+        label: competitor.name,
+      })),
+    },
+    {
+      title: 'Industries',
       links: [
-        { href: '/#ugc-ads', label: 'UGC ads' },
-        { href: '/#influencers', label: 'AI creators' },
-        { href: '/#how-it-works', label: 'How it works' },
-        { href: '/#publish', label: 'Publish & schedule' },
-        { href: '/#pricing', label: 'Pricing' },
-        { href: '/#faq', label: 'FAQ' },
+        { href: '/industries/ecommerce', label: 'Shopify & E-commerce' },
+        { href: '/industries/mobile-apps', label: 'Mobile Apps' },
+        { href: '/industries/saas', label: 'SaaS' },
+        { href: '/industries/dropshipping', label: 'Dropshipping' },
+        { href: '/industries/agencies', label: 'Marketing Agencies' },
+        { href: '/industries/creators', label: 'Content Creators' },
+        { href: '/industries/founders', label: 'Founders' },
       ],
     },
     {
-      title: 'Create',
+      title: 'Company',
       links: [
-        { href: '/#ugc-ads', label: 'UGC video' },
-        { href: '/#static-ads', label: 'Static ads' },
-        { href: '/#image-templates', label: 'Image templates' },
-        { href: '/#videos', label: 'Videos' },
-        { href: '/#slideshows', label: 'Slideshows' },
+        { href: '/about', label: 'About' },
+        { href: 'mailto:hello@socialista.app', label: 'Contact' },
+        { href: '/privacy', label: 'Privacy Policy' },
+        { href: '/terms', label: 'Terms of Service' },
       ],
     },
-    {
-      title: 'Account',
-      links: [
-        { href: '/auth/signup', label: 'Start free' },
-        { href: '/auth/signin', label: 'Sign in' },
-        { href: 'mailto:sales@socialista.app', label: 'Contact' },
-      ],
-    },
-  ],
+  ] satisfies readonly FooterColumn[],
 } as const
 
 export const PAGE_METADATA = {
-  title: 'Socialista — Realistic AI UGC ads, no creators needed',
-  description:
-    'Create realistic UGC video ads with AI creators, plus static ads, slideshows, and videos. Publish and schedule to every channel from one studio.',
+  title: SITE_CONFIG.title,
+  description: SITE_CONFIG.description,
 } as const
 
 export const HERO_SLIDES = [

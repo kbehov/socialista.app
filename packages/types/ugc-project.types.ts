@@ -1,5 +1,3 @@
-import type { VideoResolution } from "./video-generation.types.js";
-
 export const UGC_PROJECT_STATUSES = [
   "draft",
   "generating",
@@ -1100,6 +1098,8 @@ export type UgcClip = {
   name?: string;
   status: UgcClipStatus;
   durationSec: number;
+  /** When true, clip length is chosen by the video model and billed from the result. */
+  durationAuto?: boolean;
   sceneCount: UgcSceneCount;
   influencerId?: string;
   script?: UgcProjectScript;
@@ -1158,7 +1158,7 @@ export type UgcProject = {
   influencerId?: string;
   voice?: UgcClipVoice;
   aspectRatio: string;
-  videoResolution: VideoResolution;
+  videoResolution: string;
   models: UgcProjectModels;
   flowStep?: UgcFlowStep;
   clips: UgcClip[];
@@ -1213,7 +1213,7 @@ export type UpdateUgcProjectPayload = {
   influencerId?: string | null;
   voice?: UgcClipVoice | null;
   aspectRatio?: string;
-  videoResolution?: VideoResolution;
+  videoResolution?: string;
   models?: Partial<UgcProjectModels>;
   clipOrder?: string[];
   flowStep?: UgcFlowStep;
@@ -1235,6 +1235,7 @@ export type UpdateUgcClipPayload = {
   name?: string;
   type?: UgcClipType;
   durationSec?: number;
+  durationAuto?: boolean;
   sceneCount?: UgcSceneCount;
   startFrameIndex?: number;
   influencerId?: string | null;

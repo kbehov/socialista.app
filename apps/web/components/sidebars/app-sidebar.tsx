@@ -98,12 +98,6 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       isActive: isStudioRoute(pathname, 'videos'),
     },
     {
-      title: 'Slideshows',
-      url: DASHBOARD_ROUTES.STUDIO.SLIDESHOWS,
-      icon: navIcon(LayersIcon),
-      isActive: isStudioRoute(pathname, 'slideshows'),
-    },
-    {
       title: 'Static ads',
       url: DASHBOARD_ROUTES.STUDIO.STATIC_ADS,
       icon: navIcon(MegaphoneIcon),
@@ -120,6 +114,12 @@ function buildStudioItems(pathname: string): SidebarNavItem[] {
       url: DASHBOARD_ROUTES.STUDIO.UGC,
       icon: navIcon(SmartphoneIcon),
       isActive: isStudioRoute(pathname, 'ugc'),
+    },
+    {
+      title: 'Slideshows',
+      url: DASHBOARD_ROUTES.STUDIO.SLIDESHOWS,
+      icon: navIcon(LayersIcon),
+      isActive: isStudioRoute(pathname, 'slideshows'),
     },
   ]
 }

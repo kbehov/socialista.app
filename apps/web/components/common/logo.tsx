@@ -54,6 +54,30 @@ type LogoMarkProps = {
   priority?: boolean
 }
 
+type LogoImageProps = {
+  className?: string
+  size?: LogoMarkSize
+  priority?: boolean
+}
+
+/** Logo asset only — no tile (light backgrounds) */
+export function LogoImage({ className, size = 'md', priority = false }: LogoImageProps) {
+  const dimensions = MARK_SIZES[size]
+
+  return (
+    <span className={cn('relative block shrink-0', dimensions.img, className)}>
+      <Image
+        src={LOGO_SRC}
+        alt=""
+        fill
+        sizes={dimensions.sizes}
+        priority={priority}
+        className="object-contain"
+      />
+    </span>
+  )
+}
+
 /** Logo glyph on brand charcoal — use on landing and marketing surfaces */
 export function LogoMark({ className, size = 'md', priority = false }: LogoMarkProps) {
   const dimensions = MARK_SIZES[size]
@@ -193,11 +217,19 @@ function Logo({
         className,
       )}
     >
-      <LogoMark
-        size={compact ? 'sm' : isLanding ? 'hero' : large ? 'lg' : 'md'}
-        priority={isLanding}
-        className="transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:scale-[1.03] group-active:scale-[0.97]"
-      />
+      {isLanding ? (
+        <LogoImage
+          size={compact ? 'sm' : 'hero'}
+          priority
+          className="transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:scale-[1.03] group-active:scale-[0.97]"
+        />
+      ) : (
+        <LogoMark
+          size={compact ? 'sm' : large ? 'lg' : 'md'}
+          priority={false}
+          className="transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:scale-[1.03] group-active:scale-[0.97]"
+        />
+      )}
       <LogoWordmark
         compact={compact}
         size={compact ? 'sm' : large ? 'lg' : 'md'}

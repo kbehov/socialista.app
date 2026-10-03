@@ -274,7 +274,7 @@ export function InfluencerHookVideoDialog({
       sourceImageUrl,
       prompt: result.prompt,
       model: result.model,
-      duration: result.duration,
+      duration: typeof result.duration === 'number' ? result.duration : 5,
       count: result.count,
       ...(presetId ? { presetId } : {}),
       ...(projectId ? { projectId } : {}),
@@ -339,6 +339,7 @@ export function InfluencerHookVideoDialog({
               attachmentsLocked
               hideAspectRatio
               hideResolution
+              allowAutoDuration={false}
               hideAudio
               hideEnhance
               initialAspectRatio={INFLUENCER_HOOK_VIDEO_ASPECT_RATIO}

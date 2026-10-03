@@ -103,6 +103,7 @@ export function inspirationRoute(template: string, id: string): string {
   return template.replace(':id', id)
 }
 export const MODEL_ROUTES = {
+  GET_LANDING_MODELS: `/models/catalog`,
   GET_MODELS: `/models`,
   GET_MODEL: (id: string) => `/models/${id}`,
   CREATE_MODEL: `/models`,

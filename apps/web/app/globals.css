@@ -27,9 +27,13 @@
   --landing-orange: #ff5a1f;
   --landing-charcoal: #171717;
   --landing-peach: #f5f5f5;
-  --landing-surface-muted: #f9f9f9;
+  --landing-surface-muted: #f6f6f4;
+  --landing-section-dark: #0c0c0c;
+  --landing-media-dark: #0a0a0a;
+  --landing-media-raised: #141414;
   --landing-media-radius: 1.75rem;
   --landing-panel-radius: 2.25rem;
+  --landing-inset-radius: 1rem;
   /* ── Primitives ───────────────────────────────────────────────────────── */
 
   --spacing: 0.25rem;
@@ -278,7 +282,7 @@
   .landing-media-hover:hover {
     transform: translateY(-1px);
     box-shadow:
-      0 0 0 1px oklch(0 0 0 / 0.08),
+      0 0 0 1px oklch(0 0 0 / 0.1),
       0 18px 40px -22px rgb(0 0 0 / 0.38);
   }
 }
@@ -315,6 +319,21 @@
     transition:
       transform 260ms var(--ease-out),
       opacity 200ms var(--ease-out);
+  }
+
+  .landing-cookie-banner {
+    animation: landing-cookie-banner-in 280ms var(--ease-out) both;
+  }
+
+  @keyframes landing-cookie-banner-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .pricing-badge-fire {
@@ -875,15 +894,6 @@
   }
   50% {
     transform: translateY(-10px);
-  }
-}
-
-@keyframes marquee-landing {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
   }
 }
 

@@ -47,16 +47,18 @@ function PreviewMedia({
   url,
   autoPlay,
   className,
+  alt = '',
 }: {
   url: string
   autoPlay?: boolean
   className?: string
+  alt?: string
 }) {
   return (
     <StudioTemplatePreviewMedia
       key={url}
       url={url}
-      alt=""
+      alt={alt}
       autoPlay={autoPlay}
       className={cn('absolute inset-0 size-full object-cover', className)}
     />
@@ -87,7 +89,11 @@ function FeaturedPreview({
         'shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_32px_72px_-40px_rgba(0,0,0,0.55)]',
       )}
     >
-      <PreviewMedia url={template.previewImageUrl} autoPlay={previewIsVideo} />
+      <PreviewMedia
+        url={template.previewImageUrl}
+        autoPlay={previewIsVideo}
+        alt={readableTemplateName(template.name) ?? 'Video template preview'}
+      />
       {previewIsVideo ? null : (
         <span
           className="pointer-events-none absolute top-1/2 left-1/2 flex size-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] backdrop-blur-sm"
@@ -110,10 +116,9 @@ function FeaturedPreview({
           type="button"
           onClick={onRecreate}
           className={cn(
-            'inline-flex h-9 flex-1 cursor-pointer items-center justify-center rounded-full bg-white px-3',
+            'inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-full bg-white px-3',
             'text-[0.8125rem] font-medium tracking-[-0.02em] text-[var(--landing-charcoal)]',
-            'transition-[transform,background-color] active:scale-[0.96] motion-reduce:active:scale-100',
-            ease,
+            'transition-[transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80',
           )}
         >
@@ -142,8 +147,8 @@ function PreviewThumb({
       aria-label={templateLabel(template, index)}
       onClick={onSelect}
       className={cn(
-        'relative aspect-[9/16] w-[3.25rem] shrink-0 cursor-pointer overflow-hidden rounded-[0.875rem] bg-[#111]',
-        'outline outline-1 outline-[oklch(0_0_0/0.08)]',
+        'relative aspect-[9/16] w-[3.25rem] shrink-0 cursor-pointer overflow-hidden rounded-[var(--landing-inset-radius)] bg-[var(--landing-media-raised)]',
+        'outline outline-1 outline-[oklch(0_0_0/0.1)]',
         'transition-[transform,outline-color,box-shadow] active:scale-[0.96] motion-reduce:active:scale-100',
         ease,
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--landing-canvas)]',

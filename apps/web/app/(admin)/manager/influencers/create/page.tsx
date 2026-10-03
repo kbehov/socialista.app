@@ -25,7 +25,7 @@ export default async function ManagerCreateInfluencerPage() {
       workspaceId={workspace.id}
       models={models}
       backHref={MANAGER_ROUTES.INFLUENCERS}
-      successHref={id => MANAGER_ROUTES.influencer(id)}
+      successHref={MANAGER_ROUTES.INFLUENCERS}
       createAction={createLibraryInfluencer}
     />
   )

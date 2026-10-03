@@ -13,10 +13,10 @@ import { COST_UNIT_OPTIONS, createModelSchema, type CreateModelFormValues } from
 import { createModel, updateModel } from '@/services/models.service'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CREDITS_PER_USD, ContextSupport, CostUnit, ModelType, type AiCompany, type Model } from '@socialista/types'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { ScrollArea } from '../ui/scroll-area'
 
@@ -43,6 +43,7 @@ const emptyFormValues: CreateModelFormValues = {
   costUnit: CostUnit.TOKENS,
   modelType: ModelType.TEXT,
   contextSupports: [ContextSupport.TEXT],
+  resolutions: [],
   allowedInUgc: false,
   modelProvider: '',
   company: '',
@@ -55,6 +56,10 @@ function toFormValues(model: Model): CreateModelFormValues {
     costUnit: model.costUnit,
     modelType: model.modelType,
     contextSupports: model.contextSupports?.length ? model.contextSupports : [ContextSupport.TEXT],
+    resolutions: (model.resolutions ?? []).map(resolution => ({
+      value: resolution.value,
+      costPerSecond: String(resolution.costPerSecond),
+    })),
     allowedInUgc: model.allowedInUgc ?? false,
     modelProvider: model.modelProvider,
     value: model.value,
@@ -86,6 +91,8 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
     mode: 'onTouched',
   })
 
+  const { fields, append, remove } = useFieldArray({ control, name: 'resolutions' })
+
   useEffect(() => {
     if (!open) {
       reset(emptyFormValues)
@@ -98,6 +105,8 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
   const costInput = watch('cost') ?? ''
   const parsedCost = Number(costInput)
   const hasCostPreview = costInput.trim() !== '' && Number.isFinite(parsedCost) && parsedCost > 0
+  const modelType = watch('modelType')
+  const resolutionRows = watch('resolutions')
 
   const onSubmit = handleSubmit(async values => {
     const payload = {
@@ -107,6 +116,13 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
       costUnit: values.costUnit,
       modelType: values.modelType,
       contextSupports: values.contextSupports,
+      resolutions:
+        values.modelType === ModelType.VIDEO
+          ? values.resolutions.map(resolution => ({
+              value: resolution.value,
+              costPerSecond: Number(resolution.costPerSecond),
+            }))
+          : [],
       allowedInUgc: values.allowedInUgc,
       modelProvider: values.modelProvider,
       company: values.company,
@@ -323,6 +339,70 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
               </div>
               <FieldError message={errors.cost?.message} />
             </div>
+
+            {modelType === ModelType.VIDEO ? (
+              <div className="space-y-2">
+                <FieldLabel>Resolutions</FieldLabel>
+                <p className="text-xs text-muted-foreground">
+                  Per-resolution per-second pricing overrides the base cost for video generations.
+                </p>
+                {fields.map((field, index) => {
+                  const credits = Number(resolutionRows?.[index]?.costPerSecond)
+                  const hasResolutionPreview = Number.isFinite(credits) && credits > 0
+                  return (
+                    <div key={field.id} className="space-y-1">
+                      <div className="flex items-start gap-2">
+                        <Input
+                          aria-label="Resolution"
+                          placeholder="720p"
+                          disabled={isSubmitting}
+                          aria-invalid={Boolean(errors.resolutions?.[index]?.value)}
+                          {...register(`resolutions.${index}.value`)}
+                        />
+                        <Input
+                          aria-label="Credits per second"
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="Credits / sec"
+                          disabled={isSubmitting}
+                          aria-invalid={Boolean(errors.resolutions?.[index]?.costPerSecond)}
+                          {...register(`resolutions.${index}.costPerSecond`)}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={isSubmitting}
+                          aria-label="Remove resolution"
+                          onClick={() => remove(index)}
+                        >
+                          <X />
+                        </Button>
+                      </div>
+                      {hasResolutionPreview ? (
+                        <p className="text-xs font-medium tabular-nums text-foreground">
+                          {credits} credits/s ≈ {formatUsdFromCredits(credits)}/s
+                        </p>
+                      ) : null}
+                      <FieldError message={errors.resolutions?.[index]?.value?.message} />
+                      <FieldError message={errors.resolutions?.[index]?.costPerSecond?.message} />
+                    </div>
+                  )
+                })}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmitting}
+                  onClick={() => append({ value: '', costPerSecond: '' })}
+                >
+                  <Plus />
+                  Add resolution
+                </Button>
+                <FieldError message={errors.resolutions?.message} />
+              </div>
+            ) : null}
 
             {errors.root?.message && (
               <div

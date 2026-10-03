@@ -68,6 +68,7 @@ export {
   CostUnit,
   ModelType,
   type IModel,
+  type IModelResolution,
   type ModelDocument,
   type PopulatedAiCompany,
 } from "./types/models.types.js";

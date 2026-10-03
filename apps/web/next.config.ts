@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const monorepoRoot = path.join(dirname, '..', '..')
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://socialista.app').replace(/\/$/, '')
+const llmsDescribedBy = `<${appUrl}/llms.txt>; rel="describedby"`
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
@@ -11,7 +13,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@socialista/types'],
   allowedDevOrigins: ['dev.socialista.app'],
   images: {
-    qualities: [75, 80, 85, 90, 95, 100],
+    qualities: [75, 80, 85, 88, 90,92, 95, 100],
     remotePatterns: [
       {
         protocol: 'https',
@@ -34,6 +36,20 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '52mb', // matches the 50 MB video upload limit + overhead
     },
+  },
+  async headers() {
+    const noIndex = [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+
+    return [
+      {
+        source: '/:path*',
+        headers: [{ key: 'Link', value: llmsDescribedBy }],
+      },
+      { source: '/dashboard', headers: noIndex },
+      { source: '/dashboard/:path*', headers: noIndex },
+      { source: '/manager', headers: noIndex },
+      { source: '/manager/:path*', headers: noIndex },
+    ]
   },
 }
 

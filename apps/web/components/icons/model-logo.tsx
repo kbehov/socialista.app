@@ -1,10 +1,10 @@
 import { ModelSelectorLogo } from '@/components/ai-elements/model-selector'
 import { ModelProviderIcon } from '@/components/icons/model-provider-icon'
 import { cn } from '@/lib/utils'
-import type { Model } from '@socialista/types'
+import type { LandingModel, Model } from '@socialista/types'
 
 type ModelLogoProps = {
-  model: Model
+  model: Pick<Model, 'value' | 'modelProvider' | 'company'> | LandingModel
   className?: string
   size?: number
 }

@@ -39,7 +39,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 
   const [modelsRes, videosResponse, initialAttachmentUrl, templateCategoriesRes] =
     await Promise.all([
-      getModels('limit=20&modelType=video&sort=-usageCount'),
+      getModels('limit=100&modelType=video&sort=-usageCount'),
       getWorkspaceVideos(workspace.id, {
         status: 'draft',
         page: 1,

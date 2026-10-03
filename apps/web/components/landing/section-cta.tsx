@@ -35,7 +35,7 @@ export function SectionCta({ label, href, note, tone = 'light', className }: Sec
         <Link href={resolvedHref}>
           {label}
           <ArrowRight
-            className="size-4 opacity-80 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
+            className="size-4 translate-y-px opacity-80 transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
             aria-hidden="true"
           />
         </Link>

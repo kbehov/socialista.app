@@ -175,7 +175,7 @@ export function UgcScenePromptTabs({
                 </div>
               ) : null}
               <VideoPromptInput
-                key={`${clip.id}-video-${clip.audioUrl ? 'vo' : 'gen'}-${rawPromptToken}`}
+                key={`${clip.id}-video-${clip.audioUrl ? 'vo' : 'gen'}-${clip.durationAuto ? 'auto' : 'set'}-${rawPromptToken}`}
                 models={config.talkingHead ? lipSyncModels : videoModels}
                 hideExtras
                 embedded
@@ -219,6 +219,7 @@ export function UgcScenePromptTabs({
                 }
                 initialAspectRatio={project.aspectRatio as VideoAspectRatio}
                 initialDuration={audioLockedSec ?? clip.durationSec}
+                initialDurationAuto={audioLockedSec == null && clip.durationAuto === true}
                 lockedDurationSec={audioLockedSec}
                 initialResolution={project.videoResolution}
                 initialGenerateAudio={!clip.audioUrl}

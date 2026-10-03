@@ -1,7 +1,7 @@
 import { ErrorState } from '@/components/common/error-state'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { InfluencerDetail } from '@/components/studio/influencers/influencer-detail'
-import { getInfluencer } from '@/services/influencer.service'
+import { deleteInfluencer, getInfluencer } from '@/services/influencer.service'
 import { getModels } from '@/services/models.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 
@@ -39,6 +39,7 @@ export default async function InfluencerPage({ params }: InfluencerPageProps) {
       initialInfluencer={response.data.influencer}
       videoModels={videoModelsRes.data?.models ?? []}
       imageModels={imageModelsRes.data?.models ?? []}
+      deleteAction={response.data.influencer.workspaceId ? deleteInfluencer : undefined}
     />
   )
 }
