@@ -2,7 +2,7 @@ import { FAQ_ITEMS } from '@/components/landing/content'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
-import { LandingHowItWorks } from '@/components/landing/landing-how-it-works'
+import { LandingFeaturesMarquee } from '@/components/landing/landing-features-marquee'
 import { LandingImageTemplates } from '@/components/landing/landing-image-templates'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
 import { LandingModels } from '@/components/landing/landing-models'
@@ -42,7 +42,7 @@ export default async function HomePage() {
       <div className="flex flex-col">
         <LandingHero />
         <LandingUgcAds />
-        <LandingHowItWorks />
+        <LandingFeaturesMarquee />
         <LandingPlatforms />
         <LandingInfluencer />
         <LandingStaticAds />

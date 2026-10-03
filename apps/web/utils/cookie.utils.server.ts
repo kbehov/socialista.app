@@ -1,6 +1,12 @@
 import { cookies } from 'next/headers'
 
-import { CURRENT_PROJECT_COOKIE, CURRENT_WORKSPACE_COOKIE } from '@/utils/cookie.utils'
+import {
+  COOKIE_CONSENT_ACCEPTED,
+  COOKIE_CONSENT_COOKIE,
+  COOKIE_CONSENT_ESSENTIAL_ONLY,
+  CURRENT_PROJECT_COOKIE,
+  CURRENT_WORKSPACE_COOKIE,
+} from '@/utils/cookie.utils'
 
 export async function getServerCookie(name: string): Promise<string | undefined> {
   const cookieStore = await cookies()
@@ -30,4 +36,14 @@ export async function getCurrentProjectId(): Promise<string | undefined> {
 
 export async function setCurrentProjectId(projectId: string): Promise<void> {
   await setServerCookie(CURRENT_PROJECT_COOKIE, projectId)
+}
+
+export async function hasCookieConsent(): Promise<boolean> {
+  const value = await getServerCookie(COOKIE_CONSENT_COOKIE)
+  return value === COOKIE_CONSENT_ACCEPTED
+}
+
+export async function isCookieConsentBannerHidden(): Promise<boolean> {
+  const value = await getServerCookie(COOKIE_CONSENT_COOKIE)
+  return value === COOKIE_CONSENT_ACCEPTED || value === COOKIE_CONSENT_ESSENTIAL_ONLY
 }
