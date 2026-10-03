@@ -1,8 +1,13 @@
+import { SITE_CONFIG } from '@/lib/seo/base'
+
+import { COMPARE_COMPETITORS, comparePath } from './compare'
+import { FEATURES, featurePath } from './features'
+
 export const LANDING_NAV = [
   { href: '/#ugc-ads', label: 'UGC ads' },
   { href: '/#influencers', label: 'AI creators' },
   { href: '/#how-it-works', label: 'How it works' },
-  { href: '/#pricing', label: 'Pricing' },
+  { href: '/pricing', label: 'Pricing' },
 ] as const
 
 export const SIGNUP_HREF = '/auth/signup'
@@ -337,27 +342,18 @@ export const FOOTER = {
     {
       title: 'Features',
       splitLinks: true,
-      links: [
-        { href: '/#influencers', label: 'AI Influencer Generator' },
-        { href: '/#ugc-ads', label: 'AI UGC Video Generator' },
-        { href: '/#slideshows', label: 'AI Slideshows Generator' },
-        { href: '/#static-ads', label: 'AI Meta Ads Templates' },
-        { href: '/#publish', label: 'Social Media Scheduling' },
-        { href: '/#channels', label: 'Social Media Analytics' },
-        { href: '/#image-templates', label: 'AI Image Generation' },
-        { href: '/#videos', label: 'AI Video Generation' },
-      ],
+      links: FEATURES.map(feature => ({
+        href: featurePath(feature.slug),
+        label: feature.name,
+      })),
     },
     {
       title: 'Compare',
-      links: [
-        { href: '/compare/arcads', label: 'Socialista vs Arcads' },
-        { href: '/compare/makeugc', label: 'Socialista vs MakeUGC' },
-        { href: '/compare/buffer', label: 'Socialista vs Buffer' },
-        { href: '/compare/superscale', label: 'Socialista vs Superscale' },
-        { href: '/compare/heygen', label: 'Socialista vs HeyGen' },
-        { href: '/compare/creatify', label: 'Socialista vs Creatify' },
-      ],
+      splitLinks: true,
+      links: COMPARE_COMPETITORS.map(competitor => ({
+        href: comparePath(competitor.slug),
+        label: competitor.name,
+      })),
     },
     {
       title: 'Industries',
@@ -383,9 +379,8 @@ export const FOOTER = {
 } as const
 
 export const PAGE_METADATA = {
-  title: 'Socialista — Realistic AI UGC ads, no creators needed',
-  description:
-    'Create realistic UGC video ads with AI creators, plus static ads, slideshows, and videos. Publish and schedule to every channel from one studio.',
+  title: SITE_CONFIG.title,
+  description: SITE_CONFIG.description,
 } as const
 
 export const HERO_SLIDES = [

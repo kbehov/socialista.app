@@ -13,17 +13,12 @@ import {
 } from './landing-classes'
 
 function FooterLinkColumn({ column }: { column: FooterColumn }) {
-  const { title, links, splitLinks } = column
+  const { title, links } = column
 
   return (
-    <nav aria-label={title} className={cn(splitLinks && 'sm:col-span-2 xl:col-span-2')}>
-      <h2 className={landingFooterColumnTitle}>{title}</h2>
-      <ul
-        className={cn(
-          'mt-4 gap-x-8 gap-y-2.5',
-          splitLinks ? 'grid sm:grid-cols-2' : 'flex flex-col space-y-2.5',
-        )}
-      >
+    <nav aria-label={title}>
+      <p className={landingFooterColumnTitle}>{title}</p>
+      <ul className="mt-4 flex flex-col gap-y-2.5">
         {links.map(link => (
           <li key={link.label}>
             <Link href={link.href} className={landingFooterLink}>

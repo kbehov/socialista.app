@@ -2,8 +2,8 @@ import { auth } from '@/auth'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/context/auth-provider'
 import { ThemeProvider } from '@/context/theme-provider'
+import { createMetadata } from '@/lib/seo/base'
 import { cn } from '@/lib/utils'
-import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -20,16 +20,7 @@ const geistMono = Geist_Mono({
   display: 'swap',
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Socialista',
-    template: '%s · Socialista',
-  },
-  description:
-    'Socialista is a social media content studio and workspace — AI images, product ads, carousels, video, and team files in one place.',
-  applicationName: 'Socialista',
-  metadataBase: process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL) : undefined,
-}
+export const metadata = createMetadata()
 
 export default async function RootLayout({
   children,

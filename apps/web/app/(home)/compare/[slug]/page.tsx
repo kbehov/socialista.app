@@ -1,6 +1,7 @@
-import { COMPARE_COMPETITORS, getCompareCompetitor } from '@/components/landing/compare'
+import { COMPARE_COMPETITORS, comparePath, getCompareCompetitor } from '@/components/landing/compare'
 import { CompareDetail } from '@/components/landing/compare-page'
-import type { Metadata } from 'next'
+import { createMetadata } from '@/lib/seo/base'
+import { breadcrumbJsonLd, faqPageJsonLd, JsonLd, webPageJsonLd } from '@/lib/seo/json-ld'
 import { notFound } from 'next/navigation'
 
 type CompareSlugPageProps = {
@@ -13,18 +14,22 @@ export function generateStaticParams() {
 
 export const dynamicParams = false
 
-export async function generateMetadata({ params }: CompareSlugPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: CompareSlugPageProps) {
   const { slug } = await params
   const competitor = getCompareCompetitor(slug)
   if (!competitor) return {}
 
-  return {
-    title: { absolute: `Socialista vs ${competitor.name}` },
-    description: competitor.difference,
-    alternates: {
-      canonical: `/compare/${competitor.slug}`,
-    },
-  }
+  return createMetadata({
+    title: competitor.metaTitle,
+    description: competitor.metaDescription,
+    path: comparePath(competitor.slug),
+    keywords: [
+      `Socialista vs ${competitor.name}`,
+      competitor.category,
+      'AI UGC ads',
+      'social media studio',
+    ],
+  })
 }
 
 export default async function CompareSlugPage({ params }: CompareSlugPageProps) {
@@ -32,5 +37,23 @@ export default async function CompareSlugPage({ params }: CompareSlugPageProps) 
   const competitor = getCompareCompetitor(slug)
   if (!competitor) notFound()
 
-  return <CompareDetail competitor={competitor} />
+  const path = comparePath(competitor.slug)
+  const name = competitor.metaTitle
+
+  return (
+    <>
+      <JsonLd
+        data={[
+          webPageJsonLd({ name, description: competitor.metaDescription, path }),
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Compare', path: '/compare' },
+            { name: `Socialista vs ${competitor.name}`, path },
+          ]),
+          faqPageJsonLd(competitor.faqs, path),
+        ]}
+      />
+      <CompareDetail competitor={competitor} />
+    </>
+  )
 }

@@ -25,6 +25,10 @@ import { LandingSectionIntro } from './section-header'
 type LandingPricingProps = {
   products: PolarProduct[]
   loadError?: string | null
+  /** When false, the parent page supplies the primary heading (e.g. /pricing). */
+  showIntro?: boolean
+  landingDivider?: boolean
+  sectionId?: string
 }
 
 const TRUST_ICONS: Record<string, LucideIcon> = {
@@ -106,7 +110,7 @@ function PricingTrustIndicators({ className, hasFreePlan }: { className?: string
         const Icon = TRUST_ICONS[label] ?? Check
         return (
           <li key={label} className="flex items-center gap-2">
-            <Icon className="size-4 text-[var(--landing-muted)]" strokeWidth={1.75} aria-hidden="true" />
+            <Icon className="size-4 text-[var(--landing-muted)]" strokeWidth={2} aria-hidden="true" />
             {label}
           </li>
         )
@@ -132,62 +136,81 @@ function PricingQuote() {
   )
 }
 
-export function LandingPricing({ products, loadError = null }: LandingPricingProps) {
+export function LandingPricing({
+  products,
+  loadError = null,
+  showIntro = true,
+  landingDivider = true,
+  sectionId = 'pricing',
+}: LandingPricingProps) {
   const featuredIndex = pickFeaturedIndex(products)
   const hasProducts = products.length > 0 && !loadError
   const emphasizeFeatured = products.length >= 3 && featuredIndex >= 0
   const hasFreePlan = products.some(product => formatProductPrice(product).isFree)
   // Signed-in visitors upgrade from their workspace instead of signing up again
   const isSignedIn = useLandingCtaHref() !== SIGNUP_HREF
+  const plansHeadingId = showIntro ? 'pricing-heading' : 'pricing-plans-heading'
 
   return (
-    <Section id="pricing" landingDivider containerClassName={landingSectionPricing}>
-      <FadeIn>
-        {hasProducts ? (
-          <LandingSectionIntro
-            titleId="pricing-heading"
-            eyebrow={PRICING_SECTION.eyebrow}
-            title={PRICING_SECTION.title}
-            titleAccent={PRICING_SECTION.titleAccent}
-            description={PRICING_SECTION.description}
-          />
-        ) : (
-          <LandingSectionIntro
-            titleId="pricing-heading"
-            title={PRICING_SECTION.fallbackTitle}
-            description={PRICING_SECTION.fallbackDescription}
-          />
-        )}
-      </FadeIn>
+    <Section
+      id={sectionId}
+      landingDivider={landingDivider}
+      labelledBy={plansHeadingId}
+      containerClassName={landingSectionPricing}
+    >
+      {showIntro ? (
+        <FadeIn>
+          {hasProducts ? (
+            <LandingSectionIntro
+              titleId="pricing-heading"
+              eyebrow={PRICING_SECTION.eyebrow}
+              title={PRICING_SECTION.title}
+              titleAccent={PRICING_SECTION.titleAccent}
+              description={PRICING_SECTION.description}
+            />
+          ) : (
+            <LandingSectionIntro
+              titleId="pricing-heading"
+              title={PRICING_SECTION.fallbackTitle}
+              description={PRICING_SECTION.fallbackDescription}
+            />
+          )}
+        </FadeIn>
+      ) : (
+        <h2 id={plansHeadingId} className="sr-only">
+          {hasProducts ? 'Plans and pricing' : PRICING_SECTION.fallbackTitle}
+        </h2>
+      )}
 
       {hasProducts ? (
         <>
-          <div className={cn(landingContentGap, pricingGridClass(products.length))}>
+          <ul className={cn('list-none p-0', landingContentGap, pricingGridClass(products.length))}>
             {products.map((product, index) => {
               const isFeatured = index === featuredIndex
               return (
-                <FadeIn
+                <li
                   key={product.id}
-                  delay={0.05 + index * 0.05}
                   className={cn(
                     'flex min-w-0',
                     emphasizeFeatured && isFeatured && 'lg:relative lg:z-10 lg:-translate-y-1.5',
                   )}
                 >
-                  <PricingCard
-                    product={product}
-                    isFeatured={isFeatured}
-                    tierIndex={index}
-                    ctaLabel={formatProductPrice(product).isFree ? PRICING_SECTION.freeCta : PRICING_SECTION.cta}
-                    checkoutUrl={
-                      isSignedIn ? DASHBOARD_ROUTES.UPGRADE : `${SIGNUP_HREF}?plan=${encodeURIComponent(product.id)}`
-                    }
-                    className="w-full"
-                  />
-                </FadeIn>
+                  <FadeIn delay={0.05 + index * 0.05} className="flex w-full min-w-0">
+                    <PricingCard
+                      product={product}
+                      isFeatured={isFeatured}
+                      tierIndex={index}
+                      ctaLabel={formatProductPrice(product).isFree ? PRICING_SECTION.freeCta : PRICING_SECTION.cta}
+                      checkoutUrl={
+                        isSignedIn ? DASHBOARD_ROUTES.UPGRADE : `${SIGNUP_HREF}?plan=${encodeURIComponent(product.id)}`
+                      }
+                      className="w-full"
+                    />
+                  </FadeIn>
+                </li>
               )
             })}
-          </div>
+          </ul>
 
           <FadeIn delay={0.12} className="mt-10 sm:mt-12">
             <PricingTrustIndicators hasFreePlan={hasFreePlan} />

@@ -24,13 +24,14 @@ const HERO_MARQUEE_CLIPS = Array.from({ length: HERO_MARQUEE_COPIES }, (_, copy)
 
 type MarqueeClip = (typeof HERO_MARQUEE_CLIPS)[number]
 
-function HeroMarqueeClip({ clip }: { clip: MarqueeClip }) {
+function HeroMarqueeClip({ clip, priority = false }: { clip: MarqueeClip; priority?: boolean }) {
   return (
-    <div className="relative h-[12.75rem] w-[7.6rem] shrink-0 overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0a0a0a] shadow-[0_0_0_1px_oklch(0_0_0/0.08),0_22px_44px_-24px_rgb(0_0_0/0.45),inset_0_1px_0_0_oklch(1_0_0/0.06)] sm:h-[16.75rem] sm:w-[10rem] lg:h-[19.5rem] lg:w-[11.5rem]">
+    <div className="relative h-[12.75rem] w-[7.6rem] shrink-0 overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0a0a0a] shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_22px_44px_-24px_rgb(0_0_0/0.45),inset_0_1px_0_0_oklch(1_0_0/0.06)] sm:h-[16.75rem] sm:w-[10rem] lg:h-[19.5rem] lg:w-[11.5rem]">
       <Image
         src={clip.poster}
         alt=""
         fill
+        priority={priority}
         quality={75}
         sizes="(max-width: 640px) 122px, (max-width: 1024px) 160px, 184px"
         className="object-cover"
@@ -47,8 +48,8 @@ function HeroMarqueeClips({
   reduceMotion: boolean
   className?: string
 }) {
-  const clips = HERO_MARQUEE_CLIPS.map(clip => (
-    <HeroMarqueeClip key={clip.id} clip={clip} />
+  const clips = HERO_MARQUEE_CLIPS.map((clip, index) => (
+    <HeroMarqueeClip key={clip.id} clip={clip} priority={index === 0} />
   ))
 
   if (reduceMotion) {
@@ -90,6 +91,7 @@ export function HeroMarquee() {
         <Iphone
           variant="black"
           bezel="thin"
+          priority
           src={FEATURED_CLIP.poster}
           videoSrc={featuredVideo}
           className="w-[11.25rem] drop-shadow-[0_32px_64px_-20px_color-mix(in_oklch,var(--landing-ink)_28%,transparent)] sm:w-[14.25rem] lg:w-[16.5rem]"

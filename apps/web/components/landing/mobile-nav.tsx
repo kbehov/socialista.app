@@ -48,7 +48,7 @@ export function MobileNav({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
             <a
               key={item.label}
               href={item.href}
-              className={`${landingNavLink} rounded-md px-2 py-2.5 text-sm`}
+              className={`${landingNavLink} flex min-h-11 items-center rounded-md px-3 text-sm`}
               onClick={() => setOpen(false)}
             >
               {item.label}
@@ -59,7 +59,7 @@ export function MobileNav({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
                 <Link href={DASHBOARD_ROUTES.ROOT} onClick={() => setOpen(false)}>
                   Go to dashboard
-                  <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                  <ChevronRight className="size-4 translate-y-px opacity-80" aria-hidden="true" />
                 </Link>
               </Button>
             ) : (
@@ -77,7 +77,7 @@ export function MobileNav({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                 <Button asChild size="lg" className={cn(landingCtaPrimary, "gap-1.5")}>
                   <Link href="/auth/signup" onClick={() => setOpen(false)}>
                     {HERO.primaryCta}
-                    <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                    <ChevronRight className="size-4 translate-y-px opacity-80" aria-hidden="true" />
                   </Link>
                 </Button>
               </>

@@ -147,12 +147,12 @@ function LandingScheduleDayButton({
       className={cn(
         'relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-left sm:rounded-2xl',
         'border border-white/[0.1] bg-[#121212]',
-        'transition-[transform,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.2,0,0,1)]',
-        'hover:border-white/20 active:scale-[0.98] motion-reduce:active:scale-100',
+        'transition-[transform,border-color,box-shadow] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+        'hover:border-white/20 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c0c]',
         post
           ? 'aspect-[3/4] min-h-[4.5rem] sm:min-h-[5rem]'
-          : 'min-h-[2.5rem] items-center justify-center sm:min-h-[2.75rem]',
+          : 'min-h-11 items-center justify-center',
         isSelected &&
           'border-white/35 shadow-[0_10px_28px_-16px_rgba(0,0,0,0.85)] ring-1 ring-white/30',
         className,

@@ -50,7 +50,7 @@ export function CtaPair({
           <Link href={isLoggedIn ? DASHBOARD_ROUTES.ROOT : primaryHref}>
             {isLoggedIn ? 'Go to dashboard' : HERO.primaryCta}
             <ArrowRight
-              className="size-4 opacity-80 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
+              className="size-4 translate-y-px opacity-80 transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
               aria-hidden="true"
             />
           </Link>

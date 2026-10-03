@@ -10,6 +10,7 @@ import { HeroSocialProof } from './hero-social-proof'
 import { cn } from '@/lib/utils'
 import { SectionInner } from './section'
 import {
+  landingFocusRing,
   landingGlassLight,
   landingHeroDisplay,
   landingHeroHeadingGlow,
@@ -32,7 +33,8 @@ export function LandingHero() {
               href={HERO.eyebrowHref}
               className={cn(
                 landingGlassLight,
-                'group mx-auto mb-7 inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[0.8125rem] font-medium tracking-[-0.01em] text-[var(--landing-ink)] transition-colors duration-150 ease-out hover:border-[color-mix(in_srgb,var(--landing-ink)_14%,transparent)] sm:mb-8',
+                landingFocusRing,
+                'group mx-auto mb-7 inline-flex min-h-8 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-[0.8125rem] font-medium tracking-[-0.01em] text-[var(--landing-ink)] transition-[border-color,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:border-[color-mix(in_srgb,var(--landing-ink)_14%,transparent)] sm:mb-8',
               )}
             >
               <span className="rounded-full bg-[var(--landing-charcoal)] px-2 py-0.5 text-[0.6875rem] font-semibold text-white">
@@ -40,7 +42,7 @@ export function LandingHero() {
               </span>
               {HERO.eyebrowLabel}
               <ArrowRight
-                className="size-3.5 text-[var(--landing-muted)] transition-transform duration-150 ease-out group-hover:translate-x-0.5"
+                className="size-3.5 translate-y-px text-[var(--landing-muted)] transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
                 aria-hidden="true"
               />
             </Link>

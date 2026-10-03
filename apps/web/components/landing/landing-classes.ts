@@ -14,7 +14,7 @@ export const landingFooterColumnTitle =
   'text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-[var(--landing-muted)]'
 
 export const landingFooterLink =
-  'inline-block text-[0.8125rem] leading-[1.45] tracking-[-0.01em] text-[color-mix(in_srgb,var(--landing-ink)_70%,var(--landing-muted))] transition-colors duration-150 ease-out hover:text-[var(--landing-ink)]'
+  'inline-block rounded-sm text-[0.8125rem] leading-[1.45] tracking-[-0.01em] text-[color-mix(in_srgb,var(--landing-ink)_70%,var(--landing-muted))] outline-none transition-colors duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:text-[var(--landing-ink)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[var(--landing-ink)]'
 
 export const landingSectionY = 'py-24 sm:py-28 lg:py-32'
 
@@ -129,14 +129,26 @@ export const landingLabel = 'text-[0.8125rem] font-medium tracking-[-0.01em] tex
 
 export const landingSectionAlt = 'bg-[var(--landing-surface-muted)]'
 
+/** Keyboard ring for text links and chips. Buttons already ring via `Button`. */
+export const landingFocusRing =
+  'rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[var(--landing-ink)]'
+
+export const landingFocusRingOnDark =
+  'rounded-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white'
+
+/** 1px image edge. Pure black on light, pure white on dark — never a tinted neutral. */
+export const landingImageOutline = 'outline outline-1 -outline-offset-1 outline-[oklch(0_0_0/0.1)]'
+
+export const landingImageOutlineOnDark = 'outline outline-1 -outline-offset-1 outline-[oklch(1_0_0/0.1)]'
+
 export const landingNavLink =
-  'relative text-sm font-medium tracking-[-0.01em] text-[var(--landing-muted)] transition-colors duration-150 ease-out hover:text-[var(--landing-ink)] after:absolute after:inset-x-0 after:-bottom-[0.15rem] after:h-px after:bg-current after:origin-center after:scale-x-0 after:transition-transform after:duration-150 after:ease-out hover:after:scale-x-100'
+  'relative rounded-sm text-sm font-medium tracking-[-0.01em] text-[var(--landing-muted)] outline-none transition-colors duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:text-[var(--landing-ink)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[var(--landing-ink)] after:absolute after:inset-x-0 after:-bottom-[0.15rem] after:h-px after:bg-current after:origin-center after:scale-x-0 after:transition-transform after:duration-150 after:ease-[cubic-bezier(0.2,0,0,1)] hover:after:scale-x-100'
 
 export const landingMediaCard =
   'relative overflow-hidden rounded-[calc(var(--radius)+4px)] border border-border bg-surface-0 shadow-[var(--shadow-xs)]'
 
 export const landingCtaPress =
-  'transition-[transform,background-color,color,border-color,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96]'
+  'transition-[transform,background-color,color,border-color,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100'
 
 export const landingCtaPrimary = `h-11 gap-2 rounded-full px-6 text-sm font-medium shadow-none bg-[var(--landing-charcoal)] text-white hover:bg-[color-mix(in_oklch,var(--landing-charcoal),white_10%)] ${landingCtaPress}`
 

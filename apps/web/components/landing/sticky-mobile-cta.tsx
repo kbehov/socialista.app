@@ -53,7 +53,7 @@ export function StickyMobileCta() {
       >
         <Link href={href} tabIndex={visible ? undefined : -1}>
           {href === SIGNUP_HREF ? HERO.primaryCta : 'Go to dashboard'}
-          <ArrowRight className="size-4 opacity-80" aria-hidden="true" />
+          <ArrowRight className="size-4 translate-y-px opacity-80" aria-hidden="true" />
         </Link>
       </Button>
     </div>

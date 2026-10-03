@@ -54,23 +54,29 @@ export function LandingUgcAds() {
         />
       </FadeIn>
 
-      <div className={cn(landingContentGap, 'grid gap-8 lg:grid-cols-3 lg:gap-6 xl:gap-8')}>
-        <FadeIn delay={0.04}>
-          <FeatureColumn>
-            <CreatorCard />
-          </FeatureColumn>
-        </FadeIn>
-        <FadeIn delay={0.08}>
-          <FeatureColumn>
-            <ShapeCard />
-          </FeatureColumn>
-        </FadeIn>
-        <FadeIn delay={0.12}>
-          <FeatureColumn>
-            <FormatsCard />
-          </FeatureColumn>
-        </FadeIn>
-      </div>
+      <ul className={cn(landingContentGap, 'grid list-none gap-8 p-0 lg:grid-cols-3 lg:gap-6 xl:gap-8')}>
+        <li className="min-w-0">
+          <FadeIn delay={0.04}>
+            <FeatureColumn>
+              <CreatorCard />
+            </FeatureColumn>
+          </FadeIn>
+        </li>
+        <li className="min-w-0">
+          <FadeIn delay={0.08}>
+            <FeatureColumn>
+              <ShapeCard />
+            </FeatureColumn>
+          </FadeIn>
+        </li>
+        <li className="min-w-0">
+          <FadeIn delay={0.12}>
+            <FeatureColumn>
+              <FormatsCard />
+            </FeatureColumn>
+          </FadeIn>
+        </li>
+      </ul>
 
       <FadeIn className={landingContentGap}>
         <SectionCta label={UGC_ADS.cta} />
@@ -175,6 +181,29 @@ function ShapeCard() {
       </article>
       <FeatureCaption title={item.title} description={item.description} />
     </>
+  )
+}
+
+/** The three studio cards, without the homepage section chrome. */
+export function UgcAdsMedia() {
+  return (
+    <ul className="grid list-none gap-8 p-0 lg:grid-cols-3 lg:gap-6 xl:gap-8">
+      <li className="min-w-0">
+        <FeatureColumn>
+          <CreatorCard />
+        </FeatureColumn>
+      </li>
+      <li className="min-w-0">
+        <FeatureColumn>
+          <ShapeCard />
+        </FeatureColumn>
+      </li>
+      <li className="min-w-0">
+        <FeatureColumn>
+          <FormatsCard />
+        </FeatureColumn>
+      </li>
+    </ul>
   )
 }
 

@@ -77,7 +77,7 @@ export function SiteHeader() {
             <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
               <Link href={DASHBOARD_ROUTES.ROOT}>
                 Go to dashboard
-                <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                <ChevronRight className="size-4 translate-y-px opacity-80" aria-hidden="true" />
               </Link>
             </Button>
           ) : (
@@ -93,7 +93,7 @@ export function SiteHeader() {
               <Button asChild size="lg" className={cn(landingCtaPrimaryCompact, 'hidden md:inline-flex')}>
                 <Link href={SIGNUP_HREF}>
                   {HERO.compactCta}
-                  <ChevronRight className="size-4 opacity-80" aria-hidden="true" />
+                  <ChevronRight className="size-4 translate-y-px opacity-80" aria-hidden="true" />
                 </Link>
               </Button>
             </>

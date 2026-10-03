@@ -102,7 +102,7 @@ export function ShipItTabs() {
                 tabIndex={selected ? 0 : -1}
                 onClick={() => select(index)}
                 className={cn(
-                  'relative flex-1 overflow-hidden rounded-full px-4 py-2 text-sm font-medium tracking-[-0.01em] transition-[color,background-color,box-shadow] duration-150 ease-out sm:flex-none sm:px-5',
+                  'relative flex min-h-11 flex-1 items-center justify-center overflow-hidden rounded-full px-4 py-2 text-sm font-medium tracking-[-0.01em] transition-[color,background-color,box-shadow] duration-150 ease-[cubic-bezier(0.2,0,0,1)] sm:flex-none sm:px-5',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--landing-ink)]/30',
                   selected
                     ? 'bg-white text-[var(--landing-ink)] shadow-[0_1px_2px_rgb(0_0_0/0.06),0_0_0_1px_rgb(0_0_0/0.04)]'
@@ -137,7 +137,7 @@ export function ShipItTabs() {
                   className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)]"
                   aria-hidden="true"
                 >
-                  <Check className="size-3" strokeWidth={2.5} />
+                  <Check className="size-3" strokeWidth={2} />
                 </span>
                 {bullet}
               </li>

@@ -14,7 +14,7 @@ import { LandingSectionIntro } from "./section-header";
 
 export function LandingFaq() {
   return (
-    <Section id="faq" landingDivider>
+    <Section id="faq" landingDivider alt>
       <FadeIn>
         <LandingSectionIntro
           titleId="faq-heading"
@@ -44,7 +44,7 @@ export function LandingFaq() {
               <AccordionTrigger
                 className={cn(
                   landingH3,
-                  "px-4 py-5 text-left text-[var(--landing-ink)] hover:no-underline data-[state=open]:text-[var(--landing-ink)] sm:px-5",
+                  "min-h-11 items-center px-4 py-5 text-left text-[var(--landing-ink)] hover:no-underline focus-visible:ring-[var(--landing-ink)]/30 data-[state=open]:text-[var(--landing-ink)] sm:px-5",
                 )}
               >
                 {item.question}

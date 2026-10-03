@@ -24,7 +24,7 @@ export async function LandingStaticAds() {
   const marqueeImages = await getLandingStaticAdMarqueeImages()
 
   return (
-    <Section id="static-ads" landingDivider alt>
+    <Section id="static-ads" landingDivider>
       <FadeIn>
         <LandingSectionIntro
           titleId="static-ads-heading"
@@ -61,17 +61,18 @@ export async function LandingStaticAds() {
             <div className="relative h-[9rem] shrink-0 sm:h-[15.5rem] lg:h-[18rem]" aria-hidden="true" />
 
             <div className="relative z-10 p-3 pt-0 sm:p-4 sm:pt-0 lg:p-5 lg:pt-0">
-              <div className="grid gap-2 sm:gap-2.5 lg:grid-cols-3">
+              <ol className="grid list-none gap-2 p-0 sm:gap-2.5 lg:grid-cols-3">
                 {STATIC_ADS.items.map(item => (
-                  <StepCard
-                    key={item.id}
-                    step={item.step}
-                    title={item.title}
-                    description={item.description}
-                    icon={STEP_ICONS[item.id]}
-                  />
+                  <li key={item.id}>
+                    <StepCard
+                      step={item.step}
+                      title={item.title}
+                      description={item.description}
+                      icon={STEP_ICONS[item.id]}
+                    />
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           </div>
         </div>
@@ -101,7 +102,7 @@ function StepCard({
         className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/8 text-white sm:size-8"
         aria-hidden="true"
       >
-        <Icon className="size-3.5 sm:size-4" strokeWidth={1.75} />
+        <Icon className="size-3.5 sm:size-4" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">

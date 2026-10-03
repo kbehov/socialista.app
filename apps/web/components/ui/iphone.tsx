@@ -93,6 +93,8 @@ export interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
   bezel?: IphoneBezel
   /** When true, children receive pointer events (e.g. swipe stacks inside the screen). */
   screenInteractive?: boolean
+  /** Preload the poster — hero LCP only. */
+  priority?: boolean
   children?: ReactNode
 }
 
@@ -102,6 +104,7 @@ export function Iphone({
   variant = "default",
   bezel = "default",
   screenInteractive = false,
+  priority = false,
   className,
   style,
   children,
@@ -139,6 +142,8 @@ export function Iphone({
             <img
               src={src}
               alt=""
+              fetchPriority={priority ? 'high' : 'auto'}
+              decoding="async"
               className="absolute inset-0 size-full object-cover object-center"
             />
           ) : null}

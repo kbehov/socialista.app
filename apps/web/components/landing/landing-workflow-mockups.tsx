@@ -46,7 +46,7 @@ function MockupThumb({
         'relative overflow-hidden outline outline-1',
         dark
           ? 'bg-[#141414] outline-[oklch(1_0_0/0.1)]'
-          : 'bg-[color-mix(in_srgb,var(--landing-stone)_35%,white)] outline-[oklch(0_0_0/0.08)]',
+          : 'bg-[color-mix(in_srgb,var(--landing-stone)_35%,white)] outline-[oklch(0_0_0/0.1)]',
         className,
       )}
     >
@@ -122,7 +122,7 @@ export function WorkflowPublishMockup() {
               )}
               aria-hidden="true"
             >
-              {channel.on ? <Check className="size-3" strokeWidth={2.5} /> : null}
+              {channel.on ? <Check className="size-3" strokeWidth={2} /> : null}
             </span>
           </div>
         ))}

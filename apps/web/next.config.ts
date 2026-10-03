@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@socialista/types'],
   allowedDevOrigins: ['dev.socialista.app'],
   images: {
-    qualities: [75, 80, 85, 90, 95, 100],
+    qualities: [75, 80, 85, 88, 90, 95, 100],
     remotePatterns: [
       {
         protocol: 'https',

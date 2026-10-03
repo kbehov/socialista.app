@@ -37,7 +37,7 @@ export function LandingFinalCta() {
               <div
                 key={poster.src}
                 className={cn(
-                  "relative aspect-9/16 w-[4.5rem] overflow-hidden rounded-2xl bg-[#141414] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.1)] sm:w-[5.25rem]",
+                  "relative aspect-9/16 w-[4.5rem] overflow-hidden rounded-2xl bg-[#141414] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.8),0_0_0_1px_oklch(1_0_0/0.1)] sm:w-[5.25rem]",
                   index === 1 && "z-10 w-[5.25rem] sm:w-[6.25rem]",
                 )}
                 style={{ rotate: poster.rotate }}
