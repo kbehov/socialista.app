@@ -21,6 +21,8 @@ export const SITE_CONFIG = {
     'social media scheduler',
     'social media content studio',
   ],
+  /** Official social profile URLs for Organization `sameAs`. Omit until they exist. */
+  sameAs: [] as readonly string[],
 } as const
 
 /** Absolute URL for a site path. `/` resolves to the origin with no trailing slash. */

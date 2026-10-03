@@ -1,4 +1,5 @@
 import {
+  COMPARE_CHECKED_ON,
   COMPARE_COMPETITORS,
   COMPARE_HUB,
   comparePath,
@@ -29,7 +30,7 @@ export default function ComparePage() {
     <>
       <JsonLd
         data={[
-          webPageJsonLd({ name: title, description, path: '/compare' }),
+          webPageJsonLd({ name: title, description, path: '/compare', dateModified: COMPARE_CHECKED_ON }),
           itemListJsonLd({
             name: title,
             path: '/compare',

@@ -31,6 +31,7 @@ export function organizationJsonLd(): JsonLdNode {
     url: SITE_CONFIG.url,
     logo: absoluteUrl(SITE_CONFIG.logoPath),
     email: SITE_CONFIG.email,
+    ...(SITE_CONFIG.sameAs.length > 0 ? { sameAs: [...SITE_CONFIG.sameAs] } : {}),
   }
 }
 
@@ -74,10 +75,13 @@ export function webPageJsonLd({
   name,
   description,
   path,
+  dateModified,
 }: {
   name: string
   description: string
   path: string
+  /** ISO 8601 date (`YYYY-MM-DD`) when the page content has a known last-updated date. */
+  dateModified?: string
 }): JsonLdNode {
   return {
     '@type': 'WebPage',
@@ -88,6 +92,7 @@ export function webPageJsonLd({
     isPartOf: { '@id': ORGANIZATION_ID },
     about: { '@id': APP_ID },
     inLanguage: 'en',
+    ...(dateModified ? { dateModified } : {}),
   }
 }
 

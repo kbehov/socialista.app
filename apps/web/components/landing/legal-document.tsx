@@ -27,6 +27,8 @@ export type LegalDocumentMeta = {
   description: string
   effectiveDate: string
   lastUpdated: string
+  /** ISO 8601 date (`YYYY-MM-DD`) matching `lastUpdated`, for JSON-LD. */
+  lastUpdatedIso: string
   intro: readonly string[]
   sections: readonly LegalSection[]
 }

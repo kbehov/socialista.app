@@ -89,11 +89,8 @@ export function SiteFooter() {
             <a href={`mailto:${FOOTER.contactEmail}`} className={cn(landingFooterLink, 'text-[var(--landing-muted)]')}>
               {FOOTER.contactEmail}
             </a>
-            <Link href="/privacy" className={landingFooterLink}>
-              Privacy
-            </Link>
-            <Link href="/terms" className={landingFooterLink}>
-              Terms
+            <Link href="/llms.txt" className={landingFooterLink}>
+              llms.txt
             </Link>
           </div>
         </div>

@@ -24,7 +24,12 @@ export default function TermsOfServicePage() {
     <>
       <JsonLd
         data={[
-          webPageJsonLd({ name: title, description, path: '/terms' }),
+          webPageJsonLd({
+            name: title,
+            description,
+            path: '/terms',
+            dateModified: TERMS_OF_SERVICE_DOCUMENT.lastUpdatedIso,
+          }),
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
             { name: 'Terms of Service', path: '/terms' },

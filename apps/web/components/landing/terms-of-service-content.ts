@@ -10,6 +10,7 @@ export const TERMS_OF_SERVICE_DOCUMENT: LegalDocumentMeta = {
     'The agreement governing your access to Socialista’s AI content studio, workspace collaboration, subscriptions, and social publishing features.',
   effectiveDate: 'October 3, 2026',
   lastUpdated: 'October 3, 2026',
+  lastUpdatedIso: '2026-10-03',
   intro: [
     `These Terms of Service ("Terms") are a binding agreement between you and the entity operating ${SERVICE_NAME} ("${SERVICE_NAME}," "we," "us," or "our") governing access to and use of our website at [${WEBSITE}](${WEBSITE}), applications, APIs, and related products (collectively, the "Services").`,
     `By creating an account, clicking to accept, or using the Services, you agree to these Terms and our [Privacy Policy](/privacy). If you use the Services on behalf of an organization, you represent that you have authority to bind that organization, and "you" includes the organization.`,

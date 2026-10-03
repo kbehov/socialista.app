@@ -1,4 +1,9 @@
-import { COMPARE_COMPETITORS, comparePath, getCompareCompetitor } from '@/components/landing/compare'
+import {
+  COMPARE_CHECKED_ON,
+  COMPARE_COMPETITORS,
+  comparePath,
+  getCompareCompetitor,
+} from '@/components/landing/compare'
 import { CompareDetail } from '@/components/landing/compare-page'
 import { createMetadata } from '@/lib/seo/base'
 import { breadcrumbJsonLd, faqPageJsonLd, JsonLd, webPageJsonLd } from '@/lib/seo/json-ld'
@@ -44,7 +49,12 @@ export default async function CompareSlugPage({ params }: CompareSlugPageProps) 
     <>
       <JsonLd
         data={[
-          webPageJsonLd({ name, description: competitor.metaDescription, path }),
+          webPageJsonLd({
+            name,
+            description: competitor.metaDescription,
+            path,
+            dateModified: COMPARE_CHECKED_ON,
+          }),
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
             { name: 'Compare', path: '/compare' },

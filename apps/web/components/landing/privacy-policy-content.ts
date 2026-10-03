@@ -10,6 +10,7 @@ export const PRIVACY_POLICY_DOCUMENT: LegalDocumentMeta = {
     'How Socialista collects, uses, shares, and protects personal information when you use our website, studio, and connected social publishing features.',
   effectiveDate: 'October 3, 2026',
   lastUpdated: 'October 3, 2026',
+  lastUpdatedIso: '2026-10-03',
   intro: [
     `This Privacy Policy describes how ${SERVICE_NAME} ("${SERVICE_NAME}," "we," "us," or "our") processes personal information when you visit [${WEBSITE}](${WEBSITE}), create an account, use our AI content studio, connect social accounts, purchase a subscription, or otherwise interact with our products and services (collectively, the "Services").`,
     `By accessing or using the Services, you acknowledge that you have read this Privacy Policy. If you do not agree with our practices, please do not use the Services. Where required by law, we will obtain your consent for specific processing activities.`,

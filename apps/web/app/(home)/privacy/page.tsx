@@ -25,7 +25,12 @@ export default function PrivacyPolicyPage() {
     <>
       <JsonLd
         data={[
-          webPageJsonLd({ name: title, description, path: '/privacy' }),
+          webPageJsonLd({
+            name: title,
+            description,
+            path: '/privacy',
+            dateModified: PRIVACY_POLICY_DOCUMENT.lastUpdatedIso,
+          }),
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
             { name: 'Privacy Policy', path: '/privacy' },
