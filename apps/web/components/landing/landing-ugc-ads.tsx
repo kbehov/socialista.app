@@ -92,7 +92,7 @@ function FeatureColumn({ children }: { children: ReactNode }) {
 function FeatureCaption({ title, description }: { title: string; description: string }) {
   return (
     <div className="px-0.5">
-      <h3 className={cn(landingFeatureCaptionTitle, 'sm:text-2xl')}>{title}</h3>
+      <h3 className={landingFeatureCaptionTitle}>{title}</h3>
       <p className={landingFeatureCaptionBody}>{description}</p>
     </div>
   )

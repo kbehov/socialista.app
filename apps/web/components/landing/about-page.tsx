@@ -261,7 +261,7 @@ export function AboutPage() {
       <section
         id={beliefs.id}
         aria-labelledby="beliefs-heading"
-        className={cn('scroll-mt-36 bg-[#0c0c0c] text-white', landingSectionY)}
+        className={cn('scroll-mt-36 bg-[var(--landing-section-dark)] text-white', landingSectionY)}
       >
         <div className={landingSection}>
           <FadeIn>

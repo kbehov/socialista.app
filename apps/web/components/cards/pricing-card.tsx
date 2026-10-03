@@ -353,7 +353,7 @@ export function PricingCard({
       className={cn(
         cardShellClass(false),
         isDark && [
-          'border-white/[0.1] bg-[#0c0c0c] text-white dark:bg-[#0c0c0c]',
+          'border-white/[0.1] bg-[var(--landing-section-dark)] text-white dark:bg-[var(--landing-section-dark)]',
           'shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_28px_56px_-32px_rgba(0,0,0,0.75)]',
           'ring-1 ring-inset ring-white/[0.06]',
         ],

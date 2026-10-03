@@ -27,6 +27,8 @@ import { useReducedMotion } from 'motion/react'
 import { Marquee } from '@/components/ui/marquee'
 import { cn } from '@/lib/utils'
 
+import { FadeIn } from './fade-in'
+
 import {
   landingSection,
   landingSectionAlt,
@@ -165,9 +167,11 @@ export function LandingFeaturesMarquee() {
       )}
     >
       <div className={landingSection}>
-        <h2 id="features-heading" className={landingSupportingTitle}>
-          All you need to dominate social media
-        </h2>
+        <FadeIn>
+          <h2 id="features-heading" className={landingSupportingTitle}>
+            All you need to dominate social media
+          </h2>
+        </FadeIn>
       </div>
 
       <div

@@ -10,6 +10,7 @@ import { LANDING_CHANNELS, PLATFORMS_SECTION, type PlatformId } from './content'
 import { FadeIn } from './fade-in'
 import { landingContentGap } from './landing-classes'
 import { Section } from './section'
+import { SectionCta } from './section-cta'
 import { LandingSectionIntro } from './section-header'
 
 const platformById = Object.fromEntries(LANDING_CHANNELS.map(platform => [platform.id, platform])) as Record<
@@ -189,6 +190,10 @@ export function LandingPlatforms() {
             Socialista publishes to {LANDING_CHANNELS.map(platform => platform.label).join(', ')}.
           </figcaption>
         </figure>
+      </FadeIn>
+
+      <FadeIn className={landingContentGap}>
+        <SectionCta label={PLATFORMS_SECTION.cta} />
       </FadeIn>
     </Section>
   )

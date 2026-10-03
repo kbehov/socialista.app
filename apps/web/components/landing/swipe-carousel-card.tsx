@@ -65,7 +65,7 @@ export function SwipeCarouselCard({
   }, [playVideo])
 
   const radius =
-    embedded && variant !== 'influencer' ? 'rounded-none' : 'rounded-[1.75rem]'
+    embedded && variant !== 'influencer' ? 'rounded-none' : 'rounded-[var(--landing-media-radius)]'
   const imageSizes =
     variant === 'influencer'
       ? '(max-width: 768px) 90vw, 560px'

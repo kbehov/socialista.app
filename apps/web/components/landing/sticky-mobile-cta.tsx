@@ -38,8 +38,10 @@ export function StickyMobileCta() {
   return (
     <div
       className={cn(
-        'landing-sticky-cta fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 md:hidden',
-        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-full opacity-0',
+        'landing-sticky-cta fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 motion-reduce:transition-none md:hidden',
+        visible
+          ? 'translate-y-0 opacity-100'
+          : 'pointer-events-none translate-y-full opacity-0 motion-reduce:translate-y-0',
       )}
       aria-hidden={!visible}
     >

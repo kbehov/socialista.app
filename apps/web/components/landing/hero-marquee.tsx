@@ -26,7 +26,7 @@ type MarqueeClip = (typeof HERO_MARQUEE_CLIPS)[number]
 
 function HeroMarqueeClip({ clip, priority = false }: { clip: MarqueeClip; priority?: boolean }) {
   return (
-    <div className="relative h-[12.75rem] w-[7.6rem] shrink-0 overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0a0a0a] shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_22px_44px_-24px_rgb(0_0_0/0.45),inset_0_1px_0_0_oklch(1_0_0/0.06)] sm:h-[16.75rem] sm:w-[10rem] lg:h-[19.5rem] lg:w-[11.5rem]">
+    <div className="relative h-[12.75rem] w-[7.6rem] shrink-0 overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-media-dark)] shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_22px_44px_-24px_rgb(0_0_0/0.45),inset_0_1px_0_0_oklch(1_0_0/0.06)] sm:h-[16.75rem] sm:w-[10rem] lg:h-[19.5rem] lg:w-[11.5rem]">
       <Image
         src={clip.poster}
         alt=""

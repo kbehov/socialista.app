@@ -27,9 +27,13 @@
   --landing-orange: #ff5a1f;
   --landing-charcoal: #171717;
   --landing-peach: #f5f5f5;
-  --landing-surface-muted: #f9f9f9;
+  --landing-surface-muted: #f6f6f4;
+  --landing-section-dark: #0c0c0c;
+  --landing-media-dark: #0a0a0a;
+  --landing-media-raised: #141414;
   --landing-media-radius: 1.75rem;
   --landing-panel-radius: 2.25rem;
+  --landing-inset-radius: 1rem;
   /* ── Primitives ───────────────────────────────────────────────────────── */
 
   --spacing: 0.25rem;
@@ -890,15 +894,6 @@
   }
   50% {
     transform: translateY(-10px);
-  }
-}
-
-@keyframes marquee-landing {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
   }
 }
 

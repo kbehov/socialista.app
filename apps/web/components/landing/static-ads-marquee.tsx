@@ -30,7 +30,7 @@ function rotateImages(images: readonly string[], offset: number) {
 
 function AdTile({ src }: { src: string }) {
   return (
-    <div className="relative h-[11.25rem] w-[9rem] shrink-0 overflow-hidden rounded-[1.15rem] bg-black/50 shadow-[0_14px_32px_-20px_rgb(0_0_0/0.7)] outline outline-1 outline-white/10 sm:h-[13.5rem] sm:w-[10.8rem]">
+    <div className="relative h-[11.25rem] w-[9rem] shrink-0 overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-media-dark)] shadow-[0_14px_32px_-20px_rgb(0_0_0/0.7)] outline outline-1 outline-white/10 sm:h-[13.5rem] sm:w-[10.8rem]">
       <Image
         src={src}
         alt=""

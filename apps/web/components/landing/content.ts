@@ -1,6 +1,6 @@
 import { SITE_CONFIG } from '@/lib/seo/base'
 
-import { COMPARE_COMPETITORS, comparePath } from './compare'
+import { COMPARE_COMPETITORS, comparePath, type CompareCell } from './compare'
 import { FEATURE_CATEGORIES, FEATURES, featurePath } from './features'
 
 export const LANDING_HEADER = {
@@ -64,6 +64,7 @@ export const PLATFORMS_SECTION = {
   titleAccent: 'from one studio.',
   description:
     'Connect Instagram, TikTok, Facebook, Threads, LinkedIn, and X. Export native sizes and a caption per channel, then schedule without switching tools.',
+  cta: 'Connect your channels',
 } as const
 
 export const MODELS_SECTION = {
@@ -75,14 +76,13 @@ export const MODELS_SECTION = {
 
 export const HERO_CHANNELS_LABEL = 'Publishes to'
 
-/** Real numbers only — the stat line renders nothing while empty. */
-export const PROOF_STATS: readonly { value: string; label: string }[] = []
-
 export type Testimonial = {
   quote: string
   name: string
   role: string
   avatar?: string
+  /** 1–5, only when the quote came with a real rating. */
+  rating?: number
 }
 
 /** Real customer quotes only — the testimonials section is hidden while empty. */
@@ -93,6 +93,52 @@ export const TESTIMONIALS_SECTION = {
   title: 'Teams shipping',
   titleAccent: 'more with less.',
 } as const
+
+/**
+ * Aggregate only when it comes from a real review source.
+ * The star row stays hidden while this is null — do not invent a score.
+ */
+export const TESTIMONIALS_RATING: { score: string; label: string } | null = null
+
+export const HOME_COMPARE = {
+  eyebrow: 'The workflow',
+  title: 'One studio,',
+  titleAccent: 'not ten tabs.',
+  description:
+    'Brands, agencies, and freelancers all hit the same wall: slow creative, messy handoffs, and posts that never quite make it live on time. Socialista removes the friction between idea and published.',
+  columns: [
+    { id: 'socialista', label: 'Socialista' },
+    { id: 'oldWay', label: 'The old way' },
+  ],
+  rows: [
+    {
+      label: 'UGC-style ads in minutes—not weeks on shoots and revisions',
+      cells: { socialista: 'yes', oldWay: 'no' },
+    },
+    {
+      label: 'The same creator and voice on every ad, not a new face each time',
+      cells: { socialista: 'yes', oldWay: 'partial' },
+    },
+    {
+      label: 'One post to every channel—no re-export and re-upload loop',
+      cells: { socialista: 'yes', oldWay: 'no' },
+    },
+    {
+      label: 'What goes live this week, visible in one queue—not buried in threads',
+      cells: { socialista: 'yes', oldWay: 'no' },
+    },
+    {
+      label: 'Prove output before retainers, renewals, and another tool subscription',
+      cells: { socialista: 'yes', oldWay: 'partial' },
+    },
+  ],
+  footnote: 'Comparing named software? Checked side-by-sides live on the comparisons page.',
+  footnoteHref: '/compare',
+  footnoteLabel: 'See tool comparisons',
+} as const satisfies {
+  columns: readonly { id: string; label: string }[]
+  rows: readonly { label: string; cells: Record<string, CompareCell> }[]
+}
 
 export const UGC_ADS = {
   eyebrow: 'UGC ads',

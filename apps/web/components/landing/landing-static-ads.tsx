@@ -50,11 +50,11 @@ export async function LandingStaticAds() {
               aria-hidden="true"
             />
             <div
-              className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#0c0c0c] to-transparent sm:w-16"
+              className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--landing-section-dark)] to-transparent sm:w-16"
               aria-hidden="true"
             />
             <div
-              className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0c0c0c] to-transparent sm:w-16"
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--landing-section-dark)] to-transparent sm:w-16"
               aria-hidden="true"
             />
 

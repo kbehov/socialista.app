@@ -1,7 +1,9 @@
 import { FAQ_ITEMS } from '@/components/landing/content'
+import { LandingCompare } from '@/components/landing/landing-compare'
 import { LandingFaq } from '@/components/landing/landing-faq'
 import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 import { LandingHero } from '@/components/landing/landing-hero'
+import { LandingLogoCloud } from '@/components/landing/landing-logo-cloud'
 import { LandingFeaturesMarquee } from '@/components/landing/landing-features-marquee'
 import { LandingImageTemplates } from '@/components/landing/landing-image-templates'
 import { LandingInfluencer } from '@/components/landing/landing-influencer'
@@ -41,6 +43,7 @@ export default async function HomePage() {
       />
       <div className="flex flex-col">
         <LandingHero />
+        <LandingLogoCloud />
         <LandingUgcAds />
         <LandingFeaturesMarquee />
         <LandingPlatforms />
@@ -50,6 +53,7 @@ export default async function HomePage() {
         <LandingImageTemplates />
         <LandingVideos />
         <LandingShipIt />
+        <LandingCompare />
         <LandingTestimonials />
         <LandingModels />
         <LandingPricing

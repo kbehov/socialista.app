@@ -6,7 +6,7 @@ import { useInView, useReducedMotion } from 'motion/react'
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 
 import { SHIP_IT_SECTION, type ShipItTabId } from './content'
-import { landingWorkflowPanel, landingWorkflowPanelDark } from './landing-classes'
+import { landingWorkflowPanel } from './landing-classes'
 import { WorkflowAnalyticsMockup, WorkflowPublishMockup } from './landing-workflow-mockups'
 import { WorkflowSchedulingMockup } from './landing-workflow-scheduling-mockup'
 import { SectionCta } from './section-cta'
@@ -158,10 +158,7 @@ export function ShipItTabs() {
               role="tabpanel"
               aria-labelledby={tabId(tab.id)}
               hidden={!selected}
-              className={cn(
-                tab.id === 'schedule' ? landingWorkflowPanelDark : landingWorkflowPanel,
-                'animate-in fade-in-0 duration-300',
-              )}
+              className={cn(landingWorkflowPanel, 'animate-in fade-in-0 duration-300')}
             >
               {/* Mount only the active mockup — keeps the date-based calendar client-only */}
               {selected ? MOCKUPS[tab.id]() : null}

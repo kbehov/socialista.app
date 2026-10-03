@@ -16,6 +16,9 @@ export const landingFooterColumnTitle =
 export const landingFooterLink =
   'inline-block rounded-sm text-[0.8125rem] leading-[1.45] tracking-[-0.01em] text-[color-mix(in_srgb,var(--landing-ink)_70%,var(--landing-muted))] outline-none transition-colors duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:text-[var(--landing-ink)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[var(--landing-ink)]'
 
+export const landingFooterLinkOnDark =
+  'inline-block rounded-sm text-[0.8125rem] leading-[1.45] tracking-[-0.01em] text-white/70 outline-none transition-colors duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white'
+
 export const landingSectionY = 'py-24 sm:py-28 lg:py-32'
 
 /** Trust / catalog bands — tighter than primary feature sections */
@@ -47,22 +50,23 @@ export const landingGlassLight =
 export const landingInsetPanel =
   'rounded-[var(--landing-panel-radius)] border border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] bg-[var(--landing-surface-muted)] shadow-[inset_0_1px_0_0_oklch(1_0_0/0.9)]'
 
-/** Light workflow mockup shells — flat, no wash gradients */
+/** Workflow mockup shells — inverted surface */
 export const landingWorkflowPanel =
-  'relative overflow-hidden rounded-[var(--landing-media-radius)] border border-[color-mix(in_srgb,var(--landing-ink)_7%,transparent)] bg-white shadow-[0_1px_2px_color-mix(in_oklch,var(--landing-ink)_5%,transparent)]'
+  'relative overflow-hidden rounded-[var(--landing-media-radius)] border border-background/10 bg-foreground text-background shadow-[0_1px_2px_color-mix(in_oklch,var(--landing-ink)_5%,transparent)]'
 
 /** Scheduling calendar — dark panel, clean edges */
 export const landingWorkflowPanelDark =
-  'relative overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0c0c0c] outline outline-1 outline-[oklch(0_0_0/0.1)]'
+  'relative overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-section-dark)] outline outline-1 outline-[oklch(0_0_0/0.1)]'
 
 /** Full-bleed dark landing bands (scheduling, influencers, …) */
 export const landingSectionDark =
-  'border-white/10 bg-[#0c0c0c] text-white [border-top-color:color-mix(in_srgb,white_10%,transparent)]'
+  'border-white/10 bg-[var(--landing-section-dark)] text-white [border-top-color:color-mix(in_srgb,white_10%,transparent)]'
 
 export const landingWorkflowInsetCard =
-  'rounded-[0.875rem] border border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_14%,white)]'
+  'rounded-[var(--landing-inset-radius)] border border-[color-mix(in_srgb,var(--landing-ink)_6%,transparent)] bg-[color-mix(in_srgb,var(--landing-stone)_14%,white)]'
 
-export const landingWorkflowInsetCardDark = 'rounded-[0.875rem] border border-white/[0.08] bg-white/[0.03]'
+export const landingWorkflowInsetCardDark =
+  'rounded-[var(--landing-inset-radius)] border border-white/[0.08] bg-white/[0.03]'
 
 /** Shared glass on dark media mockups */
 export const landingGlass =
@@ -83,7 +87,7 @@ export const landingHeroTitleAccent =
 export const landingSectionTitleAccentSerif = landingHeroTitleAccent
 
 export const landingHeroLead =
-  'mx-auto max-w-xl text-pretty text-sm leading-[1.6] text-[var(--landing-muted)] sm:text-xs sm:leading-relaxed'
+  'mx-auto max-w-xl text-pretty text-sm leading-[1.6] text-[var(--landing-muted)] sm:text-[1.0625rem] sm:leading-[1.65]'
 
 export const landingFeatureCaptionTitle =
   'text-[1.125rem] font-semibold leading-snug tracking-[-0.025em] text-[var(--landing-ink)] sm:text-[1.25rem]'
@@ -99,10 +103,11 @@ export const landingPricingCardSurface =
   'bg-white text-[var(--landing-ink)] dark:bg-white dark:text-[var(--landing-ink)]'
 
 /** Dark pricing tiers on the landing section — matches feature media panels */
-export const landingPricingCardDark = 'bg-[#0c0c0c] text-white dark:bg-[#0c0c0c] dark:text-white'
+export const landingPricingCardDark =
+  'bg-[var(--landing-section-dark)] text-white dark:bg-[var(--landing-section-dark)] dark:text-white'
 
 export const landingMediaPanel =
-  'relative overflow-hidden rounded-[var(--landing-media-radius)] bg-[#0c0c0c] outline outline-1 outline-[oklch(0_0_0/0.1)]'
+  'relative overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-section-dark)] outline outline-1 outline-[oklch(0_0_0/0.1)]'
 
 export const landingCtaStack = 'flex flex-col justify-center gap-3 sm:flex-row sm:items-center'
 
@@ -167,10 +172,9 @@ export const landingCtaGoogleInverted = `border-[color-mix(in_srgb,var(--landing
 export const landingCtaPrimaryInverted =
   'bg-[color-mix(in_srgb,var(--landing-canvas)_96%,white)] text-[var(--landing-charcoal)] hover:bg-[color-mix(in_srgb,var(--landing-canvas)_88%,white)]'
 
-export const landingCtaSecondary =
-  'h-11 gap-2 rounded-full border-border/80 bg-background px-6 text-sm font-medium shadow-none hover:bg-muted/40'
+export const landingCtaSecondary = `h-11 gap-2 rounded-full border-border/80 bg-background px-6 text-sm font-medium shadow-none hover:bg-muted/40 ${landingCtaPress}`
 
-export const landingCtaGhost = 'h-11 rounded-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground'
+export const landingCtaGhost = `h-11 rounded-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground ${landingCtaPress}`
 
 /** Brand accent washes — --accent-orange & --guest-accent from globals.css */
 /** Radial spotlight behind the hero h1 (sits under the headline in the stack). */

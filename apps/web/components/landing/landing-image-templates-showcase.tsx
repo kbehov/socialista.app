@@ -34,11 +34,11 @@ function MasonryTile({
   return (
     <article
       className={cn(
-        'group/card relative mb-3 w-full overflow-hidden rounded-[1.125rem] bg-[#0a0a0a] sm:mb-3.5',
+        'group/card relative mb-3 w-full overflow-hidden rounded-[var(--landing-media-radius)] bg-[var(--landing-media-dark)] sm:mb-3.5',
         'shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_16px_36px_-24px_rgb(0_0_0/0.38)]',
         'outline outline-1 outline-[oklch(0_0_0/0.1)]',
         'break-inside-avoid',
-        'transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.2,0,0,1)]',
+        'transition-[transform,box-shadow] duration-220 ease-[cubic-bezier(0.2,0,0,1)]',
         'hover:shadow-[0_0_0_1px_oklch(0_0_0/0.1),0_22px_48px_-22px_rgb(0_0_0/0.45)]',
       )}
       style={{ aspectRatio }}
@@ -49,7 +49,7 @@ function MasonryTile({
         fill
         quality={IMAGE_QUALITY}
         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-        className="object-cover transition-[transform,filter] duration-500 ease-[cubic-bezier(0.2,0,0,1)] group-hover/card:scale-[1.04] group-hover/card:brightness-[1.03]"
+        className="object-cover transition-[transform,filter] duration-220 ease-[cubic-bezier(0.2,0,0,1)] pointer-fine:group-hover/card:scale-[1.04] pointer-fine:group-hover/card:brightness-[1.03]"
       />
       <div
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent opacity-80 transition-opacity duration-300 group-hover/card:opacity-100"

@@ -147,7 +147,7 @@ function PreviewThumb({
       aria-label={templateLabel(template, index)}
       onClick={onSelect}
       className={cn(
-        'relative aspect-[9/16] w-[3.25rem] shrink-0 cursor-pointer overflow-hidden rounded-[0.875rem] bg-[#111]',
+        'relative aspect-[9/16] w-[3.25rem] shrink-0 cursor-pointer overflow-hidden rounded-[var(--landing-inset-radius)] bg-[var(--landing-media-raised)]',
         'outline outline-1 outline-[oklch(0_0_0/0.1)]',
         'transition-[transform,outline-color,box-shadow] active:scale-[0.96] motion-reduce:active:scale-100',
         ease,

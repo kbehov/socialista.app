@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { getLandingModels } from '@/services/models.service'
 import type { LandingModel } from '@socialista/types'
 
-import { MODELS_SECTION, TESTIMONIALS } from './content'
+import { MODELS_SECTION } from './content'
 import { FadeIn } from './fade-in'
 import { landingSupportingContentGap, landingSupportingSectionY, landingSupportingTitle } from './landing-classes'
 import { Section } from './section'
@@ -61,7 +61,6 @@ export async function LandingModels() {
     <Section
       id="ai-models"
       landingDivider
-      alt={TESTIMONIALS.length === 0}
       className={landingSupportingSectionY}
       containerClassName="max-w-5xl"
     >

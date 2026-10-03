@@ -63,7 +63,7 @@ export function LandingHero() {
             </div>
           </FadeIn>
           <FadeIn immediate delay={0.08} y={8}>
-            <p className={cn(landingHeroLead, 'mt-6 sm:mt-7 sm:text-[1.0625rem]')}>{HERO.description}</p>
+            <p className={cn(landingHeroLead, 'mt-6 sm:mt-7')}>{HERO.description}</p>
           </FadeIn>
           <FadeIn immediate delay={0.12} y={8}>
             <CtaPair className="mt-8 sm:mt-9" />
