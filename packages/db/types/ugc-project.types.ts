@@ -120,6 +120,7 @@ export interface IUgcClip {
   name?: string;
   status: UgcClipStatus;
   durationSec: number;
+  durationAuto?: boolean;
   sceneCount?: UgcSceneCount;
   influencerId?: Types.ObjectId;
   script?: IUgcProjectScript;

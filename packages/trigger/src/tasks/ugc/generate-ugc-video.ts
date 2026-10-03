@@ -20,7 +20,8 @@ import {
   ugcClipUsesTalkingHeadModel,
   type UgcClipType,
   PROMPT_KEYS,
-  parseVideoResolution,
+  VIDEO_DURATION_MAX,
+  VIDEO_RESOLUTION_DEFAULT,
   appendUgcVideoTakes,
 } from "@socialista/types";
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
@@ -38,7 +39,8 @@ import {
   setGenerationStatus,
 } from "../shared/metadata.js";
 import { loadSkillOverride } from "../shared/skills.js";
-import { resolveVideoBilledCost } from "../shared/video-cost.js";
+import { probeBilledDurationSec } from "../shared/probe-billed-duration.js";
+import { resolveVideoBilledCost, resolveVideoSecondRate } from "../shared/video-cost.js";
 import {
   assertSufficientCredits,
   finalizeGeneration,
@@ -96,12 +98,18 @@ export const generateUgcVideo = schemaTask({
           : loadModel(clip.models?.video || project.models.video),
         loadWorkspace(payload.workspaceId),
       ]);
-      const resolution = parseVideoResolution(project.videoResolution);
+      const resolution =
+        typeof project.videoResolution === "string" && project.videoResolution
+          ? project.videoResolution
+          : VIDEO_RESOLUTION_DEFAULT;
       // Talking-head and voiceover length follow the attached audio. Other scenes keep clip duration.
       const renderDurationSec: number =
         audioRenderDurationSec ?? clip.durationSec;
-      const billedCost = resolveVideoBilledCost(model, resolution, renderDurationSec);
-      assertSufficientCredits(workspace, billedCost);
+      const isAuto = audioRenderDurationSec == null && clip.durationAuto === true;
+      const reservedCost = isAuto
+        ? resolveVideoSecondRate(model, resolution) * VIDEO_DURATION_MAX
+        : resolveVideoBilledCost(model, resolution, renderDurationSec);
+      assertSufficientCredits(workspace, reservedCost);
 
       const plannerValue =
         clip.models?.planner ||
@@ -239,7 +247,7 @@ export const generateUgcVideo = schemaTask({
             imageUrl: startFrame,
             aspectRatio: project.aspectRatio,
             negativePrompt,
-            duration: renderDurationSec,
+            ...(isAuto ? {} : { duration: renderDurationSec }),
             generateAudio: payload.generateAudio ?? !clip.audioUrl,
             resolution,
             workspaceId: payload.workspaceId,
@@ -284,6 +292,13 @@ export const generateUgcVideo = schemaTask({
         }
       }
 
+      const billedDuration = isAuto
+        ? await probeBilledDurationSec(finalVideoUrl)
+        : renderDurationSec;
+      const billedCost = isAuto
+        ? resolveVideoSecondRate(model, resolution) * billedDuration
+        : reservedCost;
+
       await finalizeGeneration(payload.workspaceId, model, billedCost);
       await completeGenerationRecord({
         triggerRunId,
@@ -291,7 +306,7 @@ export const generateUgcVideo = schemaTask({
           type: GenerationResultType.VIDEO,
           url: finalVideoUrl,
           thumbnailUrl: startFrame,
-          durationSec: renderDurationSec,
+          durationSec: billedDuration,
         },
         cost: billedCost,
         startedAt: started.startedAt,
@@ -302,13 +317,14 @@ export const generateUgcVideo = schemaTask({
         id: ctx.run.id,
         videoUrl: finalVideoUrl,
         thumbnailUrl: startFrame,
-        durationSec: renderDurationSec,
+        durationSec: billedDuration,
         prompt: plannedPrompt,
       });
 
       const latest = await updateUgcClip(payload.projectId, clip.id, {
         videoUrl: finalVideoUrl,
         thumbnailUrl: startFrame,
+        ...(isAuto ? { durationSec: billedDuration, durationAuto: false } : {}),
         videoTakes,
         generationId: started.generationId,
         plannedPrompt,

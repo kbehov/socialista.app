@@ -181,9 +181,10 @@ export function useUgcGeneration({
             return
           }
           const enhance = result.enhance !== false
+          const lockedDurationSec = ugcClipRenderDurationSec(selectedClip, selectedClip.type)
+          const durationIsAuto = lockedDurationSec == null && result.duration === 'auto'
           const durationSec =
-            ugcClipRenderDurationSec(selectedClip, selectedClip.type) ??
-            result.duration
+            lockedDurationSec ?? (typeof result.duration === 'number' ? result.duration : undefined)
           const persistAttachedStill =
             Boolean(attachedUrl) && persistedStartFrame?.imageUrl !== attachedUrl
           const matchingStill = attachedUrl
@@ -208,6 +209,7 @@ export function useUgcGeneration({
             directions: result.prompt,
             plannedPrompt: enhance ? null : result.prompt,
             ...(durationSec != null ? { durationSec } : {}),
+            durationAuto: durationIsAuto,
             models: {
               video: result.model,
             },

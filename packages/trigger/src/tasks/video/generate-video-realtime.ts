@@ -1,7 +1,14 @@
 import { buildVideoPrompt, generateVideo } from '@socialista/ai'
 import { connectDb, disconnectDb } from '@socialista/db'
 import type { VideoGenerationOutput } from '@socialista/types'
-import { clampVideoDuration, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
+import {
+  clampVideoDuration,
+  isAutoVideoDuration,
+  PROMPT_KEYS,
+  TASK_IDS,
+  VIDEO_DURATION_AUTO,
+  VIDEO_DURATION_MAX,
+} from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { videoGenerationPayloadSchema } from '../../schemas/video-generation.schema.js'
@@ -17,7 +24,8 @@ import {
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
 import { loadSkillOverride } from '../shared/skills.js'
-import { resolveVideoBilledCost } from '../shared/video-cost.js'
+import { probeBilledDurationSec } from '../shared/probe-billed-duration.js'
+import { resolveVideoBilledCost, resolveVideoSecondRate } from '../shared/video-cost.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -38,14 +46,18 @@ export const realtimeVideoGeneration = schemaTask({
     try {
       await connectDb()
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
-      const duration = clampVideoDuration(payload.duration)
+      const isAuto = isAutoVideoDuration(payload.duration)
+      const duration = isAuto ? undefined : clampVideoDuration(payload.duration)
       const generateAudio = payload.generateAudio ?? true
-      const billedCost = resolveVideoBilledCost(model, payload.resolution, duration)
-      assertSufficientCredits(workspace, billedCost)
+      const secondRate = resolveVideoSecondRate(model, payload.resolution)
+      const reservedCost = isAuto
+        ? secondRate * VIDEO_DURATION_MAX
+        : resolveVideoBilledCost(model, payload.resolution, duration!)
+      assertSufficientCredits(workspace, reservedCost)
       logger.info('video model', {
         model: model.value,
         provider: model.modelProvider,
-        duration,
+        duration: duration ?? VIDEO_DURATION_AUTO,
         generateAudio,
         resolution: payload.resolution,
       })
@@ -63,7 +75,7 @@ export const realtimeVideoGeneration = schemaTask({
         model,
         inputs: {
           aspectRatio: payload.aspectRatio,
-          durationSec: duration,
+          ...(duration != null ? { durationSec: duration } : {}),
           generateAudio,
           resolution: payload.resolution,
           ...(referenceUrls[0] ? { referenceImageUrl: referenceUrls[0] } : {}),
@@ -86,7 +98,7 @@ export const realtimeVideoGeneration = schemaTask({
           prompt: payload.prompt,
           media: referenceUrls.map(imageUrl => ({ imageUrl })),
           aspectRatio: payload.aspectRatio,
-          durationSec: duration,
+          ...(duration != null ? { durationSec: duration } : {}),
           generateAudio,
           systemOverride,
           targetModel: model.value,
@@ -105,7 +117,7 @@ export const realtimeVideoGeneration = schemaTask({
           aspectRatio: payload.aspectRatio,
           workspaceId: payload.workspaceId,
           userId: payload.userId,
-          duration,
+          duration: isAuto ? VIDEO_DURATION_AUTO : duration,
           generateAudio,
           resolution: payload.resolution,
           imageUrl: payload.imageUrl,
@@ -114,6 +126,11 @@ export const realtimeVideoGeneration = schemaTask({
         setGenerationStatus,
       )
 
+      const billedDuration = isAuto ? await probeBilledDurationSec(videoUrl) : duration!
+      const billedCost = isAuto
+        ? secondRate * billedDuration
+        : resolveVideoBilledCost(model, payload.resolution, duration!)
+
       setGenerationStatus(92, 'Saving to library')
 
       const videoId = await createGeneratedVideoProject({
@@ -121,7 +138,7 @@ export const realtimeVideoGeneration = schemaTask({
         userId: payload.userId,
         prompt: payload.prompt,
         videoUrl,
-        durationSec: duration,
+        durationSec: billedDuration,
         aspectRatio: payload.aspectRatio,
       })
 
@@ -132,7 +149,7 @@ export const realtimeVideoGeneration = schemaTask({
         result: {
           type: GenerationResultType.VIDEO,
           url: videoUrl,
-          durationSec: duration,
+          durationSec: billedDuration,
           videoId,
         },
         cost: billedCost,
@@ -159,7 +176,7 @@ export const realtimeVideoGeneration = schemaTask({
         videoUrl,
         cost: billedCost,
         generationId,
-        durationSec: duration,
+        durationSec: billedDuration,
         videoId,
       }
     } catch (error) {

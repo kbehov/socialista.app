@@ -270,6 +270,9 @@ export type StudioPromptComposerProps = {
   attachClassName?: string
   count?: StudioPromptComposerCount
   costMultiplier?: number
+  /** When set, the cost label uses this total instead of model.cost × costMultiplier. */
+  billedCredits?: number
+  billedCreditsPrefix?: string
   placeholder?: string
   animatedPlaceholderWords?: string[]
   disabled?: boolean
@@ -320,6 +323,8 @@ export function StudioPromptComposer({
   attachClassName,
   count,
   costMultiplier,
+  billedCredits,
+  billedCreditsPrefix,
   placeholder = 'Describe what to generate…',
   animatedPlaceholderWords,
   disabled,
@@ -393,9 +398,11 @@ export function StudioPromptComposer({
   const costLabel =
     hideCost || !selectedModel
       ? null
-      : selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
-        ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
-        : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit)
+      : billedCredits != null
+        ? `${billedCreditsPrefix ?? ''}${formatCredits(billedCredits)} credits`
+        : selectedModel.costUnit === CostUnit.PER_SECOND && costMultiplier != null
+          ? `${formatCredits(selectedModel.cost * costMultiplier)} credits`
+          : formatModelCost(selectedModel.cost * billedUnits, selectedModel.costUnit)
 
   const taggedIndexes = taggedAttachmentIndices(textInput.value, attachments.length)
   const activeMention = getActiveMention(textInput.value, cursor)

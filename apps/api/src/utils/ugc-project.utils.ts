@@ -27,11 +27,12 @@ import type {
 import {
   clampUgcDuration,
   clampUgcScript,
-  parseVideoResolution,
+  VIDEO_RESOLUTION_DEFAULT,
   ugcClipAudioTakes,
   ugcClipVideoTakes,
   UGC_CLIP_TYPE_LABELS,
   UGC_DEFAULT_CLIP_TYPE,
+  UGC_DEFAULT_DURATION,
   UGC_MAX_CLIPS,
   ugcScriptMaxChars,
   parseUgcClipType,
@@ -214,6 +215,7 @@ export function serializeClip(clip: IUgcClip): UgcClip {
     name: clip.name,
     status: clip.status,
     durationSec: clip.durationSec ?? UGC_DEFAULT_DURATION,
+    ...(clip.durationAuto ? { durationAuto: true } : {}),
     sceneCount,
     influencerId: clip.influencerId?.toString(),
     script: clip.script
@@ -272,7 +274,10 @@ export function serializeUgcProject(project: IUgcProject): UgcProject {
     influencerId: campaignInfluencerId,
     voice: serializeVoice(project.voice),
     aspectRatio: project.aspectRatio,
-    videoResolution: parseVideoResolution(project.videoResolution),
+    videoResolution:
+      typeof project.videoResolution === "string" && project.videoResolution
+        ? project.videoResolution
+        : VIDEO_RESOLUTION_DEFAULT,
     models: {
       image: project.models.image,
       video: project.models.video,

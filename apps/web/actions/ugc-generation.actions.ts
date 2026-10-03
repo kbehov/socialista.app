@@ -13,14 +13,14 @@ import type {
 import {
   UGC_SCRIPT_MAX_CHARS,
   clampImageGenerationCount,
-  CostUnit,
+  estimateVideoCredits,
   TASK_IDS,
   ugcClipGeneratesAudio,
   ugcClipUsesTalkingHeadModel,
   ugcResolvedClipVoice,
   ugcScriptMaxChars,
   ugcTalkingHeadBillableDurationSec,
-  videoResolutionCostMultiplier,
+  VIDEO_DURATION_AUTO,
   type UgcClip,
   type UgcProject,
 } from "@socialista/types";
@@ -236,14 +236,21 @@ export async function startUgcVideoGeneration(input: {
       );
     }
 
+    if (
+      model.resolutions?.length &&
+      !model.resolutions.some((entry) => entry.value === project.videoResolution)
+    ) {
+      return fail("That resolution is not supported by this model.");
+    }
+
+    const voiceoverLocked = !talkingHead && Boolean(clip.audioUrl);
+    const durationIsAuto = !talkingHead && !voiceoverLocked && clip.durationAuto === true;
     const billedDuration = talkingHead
       ? ugcTalkingHeadBillableDurationSec(clip)!
-      : clip.durationSec;
-    const billedCost =
-      (model.costUnit === CostUnit.PER_SECOND
-        ? model.cost * billedDuration
-        : model.cost) *
-      videoResolutionCostMultiplier(project.videoResolution);
+      : durationIsAuto
+        ? VIDEO_DURATION_AUTO
+        : clip.durationSec;
+    const billedCost = estimateVideoCredits(model, project.videoResolution, billedDuration);
     const credits = balanceRes.data?.aiCreditsBalance ?? 0;
     if (credits < billedCost) {
       return fail("Insufficient AI credits.");
