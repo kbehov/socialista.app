@@ -44,7 +44,6 @@ import { commitHaptic } from "@/utils/haptics";
 import type { AttachedMedia } from "@/components/files/attach-images-dialog";
 import {
   clampVideoDuration,
-  ContextSupport,
   ModelType,
   PROMPT_KEYS,
   VIDEO_DURATION_DEFAULT,
@@ -335,19 +334,8 @@ function VideoPromptComposer({
         model.modelType === ModelType.VIDEO ||
         model.modelType === ModelType.LIP_SYNC,
     );
-    const pool = videoModels.length > 0 ? videoModels : models;
-    if (attachedImages.length === 0) {
-      const textToVideo = pool.filter(
-        (model) =>
-          !(model.contextSupports ?? []).includes(ContextSupport.IMAGE),
-      );
-      return textToVideo.length > 0 ? textToVideo : pool;
-    }
-    const imageToVideo = pool.filter((model) =>
-      (model.contextSupports ?? []).includes(ContextSupport.IMAGE),
-    );
-    return imageToVideo.length > 0 ? imageToVideo : pool;
-  }, [attachedImages.length, models]);
+    return videoModels.length > 0 ? videoModels : models;
+  }, [models]);
 
   const [selectedModelId, setSelectedModelId] = useState(
     () =>
@@ -767,6 +755,8 @@ function VideoPromptComposer({
         models={visibleModels}
         selectedModelId={selectedModelId}
         onSelectedModelChange={setSelectedModelId}
+        modelPickerVariant="video"
+        modelPickerHeading="Video models"
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
         attachSources={effectiveAttachSources}

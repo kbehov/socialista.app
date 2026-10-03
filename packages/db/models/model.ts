@@ -16,6 +16,16 @@ const modelSchema = new Schema<IModel>(
       required: true,
       default: [ContextSupport.TEXT],
     },
+    resolutions: {
+      type: [
+        {
+          _id: false,
+          value: { type: String, required: true },
+          costPerSecond: { type: Number, required: true },
+        },
+      ],
+      default: [],
+    },
     allowedInUgc: { type: Boolean, required: true, default: false },
     modelProvider: { type: String, required: true },
     company: { type: Schema.Types.ObjectId, ref: 'AiCompany', required: true },

@@ -6,7 +6,6 @@ import {
 } from "@socialista/ai";
 import {
   connectDb,
-  CostUnit,
   disconnectDb,
   getInfluencerById,
   getUgcProjectById,
@@ -22,7 +21,6 @@ import {
   type UgcClipType,
   PROMPT_KEYS,
   parseVideoResolution,
-  videoResolutionCostMultiplier,
   appendUgcVideoTakes,
 } from "@socialista/types";
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
@@ -40,6 +38,7 @@ import {
   setGenerationStatus,
 } from "../shared/metadata.js";
 import { loadSkillOverride } from "../shared/skills.js";
+import { resolveVideoBilledCost } from "../shared/video-cost.js";
 import {
   assertSufficientCredits,
   finalizeGeneration,
@@ -101,11 +100,7 @@ export const generateUgcVideo = schemaTask({
       // Talking-head and voiceover length follow the attached audio. Other scenes keep clip duration.
       const renderDurationSec: number =
         audioRenderDurationSec ?? clip.durationSec;
-      const baseCost =
-        model.costUnit === CostUnit.PER_SECOND
-          ? model.cost * renderDurationSec
-          : model.cost;
-      const billedCost = baseCost * videoResolutionCostMultiplier(resolution);
+      const billedCost = resolveVideoBilledCost(model, resolution, renderDurationSec);
       assertSufficientCredits(workspace, billedCost);
 
       const plannerValue =

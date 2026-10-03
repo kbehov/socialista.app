@@ -23,6 +23,16 @@ export const createModelSchema = z.object({
   contextSupports: z
     .array(z.nativeEnum(ContextSupport))
     .min(1, 'Select at least one context support'),
+  resolutions: z.array(
+    z.object({
+      value: z.string().trim().min(1, 'Resolution is required'),
+      costPerSecond: z
+        .string()
+        .trim()
+        .min(1, 'Price is required')
+        .refine(v => !Number.isNaN(Number(v)) && Number(v) > 0, 'Price must be greater than 0'),
+    }),
+  ),
   allowedInUgc: z.boolean(),
   modelProvider: z.string().trim().min(1, 'Provider is required').max(100, 'Provider must be 100 characters or less'),
   company: z.string().trim().min(1, 'Company is required'),

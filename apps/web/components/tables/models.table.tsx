@@ -27,8 +27,8 @@ function formatDate(value: Date | string) {
 
 export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
   return (
-    <Table>
-      <TableHeader>
+    <Table containerClassName="sidebar-scrollbar min-h-0 min-w-0 flex-1 overflow-auto">
+      <TableHeader className="sticky top-0 z-10 bg-background [&_th]:bg-background">
         <TableRow>
           <TableHead>Name</TableHead>
           <TableHead>Company</TableHead>
@@ -36,6 +36,7 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
           <TableHead>Type</TableHead>
           <TableHead>Context</TableHead>
           <TableHead>Cost</TableHead>
+          <TableHead>Usage</TableHead>
           <TableHead>Cost unit</TableHead>
           <TableHead>Created</TableHead>
           <TableHead>Updated</TableHead>
@@ -70,6 +71,9 @@ export function ModelsTable({ models, onEdit, onDelete }: ModelsTableProps) {
               <ContextSupportLabels supports={model.contextSupports} />
             </TableCell>
             <TableCell className="tabular-nums">{formatCredits(model.cost)}</TableCell>
+            <TableCell className="tabular-nums text-muted-foreground">
+              {(model.usageCount ?? 0).toLocaleString('en-US')}
+            </TableCell>
             <TableCell>{costUnitLabels[model.costUnit] ?? model.costUnit}</TableCell>
             <TableCell className="text-muted-foreground">{formatDate(model.createdAt)}</TableCell>
             <TableCell className="text-muted-foreground">{formatDate(model.updatedAt)}</TableCell>

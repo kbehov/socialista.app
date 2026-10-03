@@ -23,14 +23,21 @@ export enum ContextSupport {
   FILE = 'file',
 }
 
+export type ModelResolution = {
+  value: string
+  costPerSecond: number
+}
+
 export type Model = {
   _id: string
   value: string
   name: string
   cost: number
+  usageCount?: number
   costUnit: CostUnit
   modelType: ModelType
   contextSupports?: ContextSupport[]
+  resolutions?: ModelResolution[]
   allowedInUgc?: boolean
   modelProvider: string
   company?: ModelCompany
@@ -64,6 +71,7 @@ export type CreateModelInput = {
   costUnit: CostUnit
   modelType: ModelType
   contextSupports: ContextSupport[]
+  resolutions?: ModelResolution[]
   allowedInUgc: boolean
   modelProvider: string
   company: string

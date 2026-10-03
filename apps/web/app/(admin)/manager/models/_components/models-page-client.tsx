@@ -2,30 +2,40 @@
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
+import { SmartPagination } from '@/components/common/smart-pagination'
 import { dashboardSurface, DashboardTableShell } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import { CreateModelSheet } from '@/components/models/create-model-sheet'
+import type { Filter } from '@/components/reui/filters'
 import { ModelsTable } from '@/components/tables/models.table'
 import { Button } from '@/components/ui/button'
+import { applyModelFilters, hasActiveModelFilters } from '@/lib/manager-model-filters'
 import { cn } from '@/lib/utils'
 import { deleteModel } from '@/services/models.service'
-import type { AiCompany, Model } from '@socialista/types'
+import type { AiCompany, MetaResponse, Model } from '@socialista/types'
 import { BoxIcon, PlusIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+
+import { ModelsToolbar } from './models-toolbar'
 
 type ModelsPageClientProps = {
   models: Model[]
   companies: AiCompany[]
+  meta: MetaResponse
 }
 
-export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
+export function ModelsPageClient({ models, companies, meta }: ModelsPageClientProps) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingModel, setEditingModel] = useState<Model | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Model | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [filters, setFilters] = useState<Filter<string>[]>([])
+
+  const filteredModels = useMemo(() => applyModelFilters(models, filters), [filters, models])
+  const hasFilters = hasActiveModelFilters(filters)
 
   const openCreateSheet = () => {
     setEditingModel(null)
@@ -69,7 +79,7 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <PageHeader
         title="Models"
         description="Manage AI models and their pricing."
@@ -82,7 +92,7 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
         }
       />
 
-      {models.length === 0 ? (
+      {meta.total === 0 ? (
         <EmptyState
           minHeight="lg"
           icon={BoxIcon}
@@ -96,9 +106,40 @@ export function ModelsPageClient({ models, companies }: ModelsPageClientProps) {
           }
         />
       ) : (
-        <DashboardTableShell>
-          <ModelsTable models={models} onEdit={openEditSheet} onDelete={setDeleteTarget} />
-        </DashboardTableShell>
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+          <ModelsToolbar
+            models={models}
+            companies={companies}
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
+
+          {filteredModels.length === 0 ? (
+            <EmptyState
+              minHeight="md"
+              icon={BoxIcon}
+              title="No matching models"
+              description="Try adjusting or clearing your filters."
+              action={
+                hasFilters ? (
+                  <Button size="sm" variant="outline" onClick={() => setFilters([])}>
+                    Clear filters
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <DashboardTableShell className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              <ModelsTable
+                models={filteredModels}
+                onEdit={openEditSheet}
+                onDelete={setDeleteTarget}
+              />
+            </DashboardTableShell>
+          )}
+
+          <SmartPagination meta={meta} className="shrink-0" />
+        </section>
       )}
 
       <CreateModelSheet

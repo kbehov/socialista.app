@@ -1,7 +1,7 @@
 import { buildVideoPrompt, generateVideo } from '@socialista/ai'
-import { connectDb, CostUnit, disconnectDb } from '@socialista/db'
+import { connectDb, disconnectDb } from '@socialista/db'
 import type { VideoGenerationOutput } from '@socialista/types'
-import { clampVideoDuration, PROMPT_KEYS, TASK_IDS, videoResolutionCostMultiplier } from '@socialista/types'
+import { clampVideoDuration, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
 import { logger, schemaTask } from '@trigger.dev/sdk/v3'
 
 import { videoGenerationPayloadSchema } from '../../schemas/video-generation.schema.js'
@@ -17,6 +17,7 @@ import {
 import { setGenerationFailure, setGenerationStatus } from '../shared/metadata.js'
 import { notifyGenerationComplete, notifyGenerationFailed } from '../shared/notify.js'
 import { loadSkillOverride } from '../shared/skills.js'
+import { resolveVideoBilledCost } from '../shared/video-cost.js'
 import { assertSufficientCredits, finalizeGeneration, loadModelAndWorkspace } from '../shared/workspace.js'
 
 function collectReferenceUrls(imageUrl?: string, imageUrls?: string[]): string[] {
@@ -39,9 +40,7 @@ export const realtimeVideoGeneration = schemaTask({
       const { model, workspace } = await loadModelAndWorkspace(payload.model, payload.workspaceId)
       const duration = clampVideoDuration(payload.duration)
       const generateAudio = payload.generateAudio ?? true
-      const billedCost =
-        (model.costUnit === CostUnit.PER_SECOND ? model.cost * duration : model.cost) *
-        videoResolutionCostMultiplier(payload.resolution)
+      const billedCost = resolveVideoBilledCost(model, payload.resolution, duration)
       assertSufficientCredits(workspace, billedCost)
       logger.info('video model', {
         model: model.value,

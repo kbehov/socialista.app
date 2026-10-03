@@ -24,7 +24,7 @@ import { ContextSupport, ModelType, type Model } from '@socialista/types'
 import { ChevronDownIcon, CoinsIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-export type StudioModelPickerVariant = 'default' | 'image'
+export type StudioModelPickerVariant = 'default' | 'image' | 'video'
 
 type StudioComposerModelSelectorProps = {
   models: Model[]
@@ -58,6 +58,14 @@ const DEFAULT_FILTER_OPTIONS: { id: ModelFilterId; label: string }[] = [
 const IMAGE_FILTER_OPTIONS: { id: ModelFilterId; label: string }[] = [
   { id: 'trending', label: '🔥 Trending' },
   { id: 'low-cost', label: '💰 Low Cost' },
+]
+
+type VideoSortId = 'all' | 'trending' | 'low-cost'
+
+const VIDEO_SORT_OPTIONS: { id: VideoSortId; label: string }[] = [
+  { id: 'all', label: 'All models' },
+  { id: 'trending', label: '🔥 Trending' },
+  { id: 'low-cost', label: '💰 Low cost' },
 ]
 
 const MODALITY_TABS: { type: ModelType; label: string }[] = [
@@ -188,11 +196,13 @@ export function StudioComposerModelSelector({
 }: StudioComposerModelSelectorProps) {
   const [open, setOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Set<ModelFilterId>>(() => new Set())
+  const [videoSort, setVideoSort] = useState<VideoSortId>('all')
 
   const selectedModel = models.find(model => model._id === selectedModelId) ?? models[0]
   const newestModelId = useMemo(() => buildNewestModelId(models), [models])
   const lowCostThreshold = useMemo(() => getLowCostThreshold(models), [models])
   const trendingModelIds = useMemo(() => buildTrendingModelIds(models), [models])
+  const isVideo = variant === 'video'
   const filterOptions =
     variant === 'image' ? IMAGE_FILTER_OPTIONS : DEFAULT_FILTER_OPTIONS
 
@@ -231,7 +241,7 @@ export function StudioComposerModelSelector({
       next = next.filter(model => model.modelType === resolvedModality)
     }
 
-    if (activeFilters.size > 0) {
+    if (!isVideo && activeFilters.size > 0) {
       next = next.filter(model =>
         [...activeFilters].some(filter =>
           modelMatchesFilter(model, filter, lowCostThreshold, trendingModelIds),
@@ -240,11 +250,27 @@ export function StudioComposerModelSelector({
     }
 
     return [...next].sort((a, b) => {
+      if (isVideo && videoSort === 'all') {
+        return a.name.localeCompare(b.name)
+      }
+      if (isVideo && videoSort === 'low-cost') {
+        const costDelta = a.cost - b.cost
+        if (costDelta !== 0) return costDelta
+        return a.name.localeCompare(b.name)
+      }
       const usageDelta = getModelUsageCount(b) - getModelUsageCount(a)
       if (usageDelta !== 0) return usageDelta
       return a.name.localeCompare(b.name)
     })
-  }, [activeFilters, lowCostThreshold, models, resolvedModality, trendingModelIds])
+  }, [
+    activeFilters,
+    isVideo,
+    lowCostThreshold,
+    models,
+    resolvedModality,
+    trendingModelIds,
+    videoSort,
+  ])
 
   const toggleFilter = (filter: ModelFilterId) => {
     setActiveFilters(previous => {
@@ -352,7 +378,34 @@ export function StudioComposerModelSelector({
             ) : null}
           </div>
 
-          {visibleFilters.length > 0 ? (
+          {isVideo ? (
+            <div
+              className="flex shrink-0 gap-1 border-b border-border/35 px-2.5 py-1.5"
+              role="radiogroup"
+              aria-label="Sort models"
+            >
+              {VIDEO_SORT_OPTIONS.map(option => {
+                const active = videoSort === option.id
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={cn(
+                      'rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-[-0.01em] transition-colors',
+                      active
+                        ? 'border-foreground/15 bg-foreground text-background'
+                        : 'border-border/60 bg-background text-foreground/80 hover:border-border hover:bg-muted/30',
+                    )}
+                    onClick={() => setVideoSort(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+          ) : visibleFilters.length > 0 ? (
             <div className="flex shrink-0 flex-wrap gap-1 border-b border-border/35 px-2.5 py-1.5">
               {visibleFilters.map(filter => {
                 const active = activeFilters.has(filter.id)
