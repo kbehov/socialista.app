@@ -66,7 +66,6 @@ export function ClipInteractionLayer({
 
   if (!clip || clip.type === 'audio' || !baseTransform) return null
 
-  const mediaAspect = mediaWidth > 0 && mediaHeight > 0 ? mediaWidth / mediaHeight : 1
   const transform = clip.transform ?? baseTransform
   const heightPct = getClipHeightPercent(transform, canvasWidth, canvasHeight, mediaWidth, mediaHeight)
 
@@ -74,7 +73,6 @@ export function ClipInteractionLayer({
     <ClipInteractionBox
       transform={transform}
       heightPct={heightPct}
-      mediaAspect={mediaAspect}
       canvasWidth={canvasWidth}
       canvasHeight={canvasHeight}
       mediaWidth={mediaWidth}
@@ -90,7 +88,6 @@ export function ClipInteractionLayer({
 function ClipInteractionBox({
   transform,
   heightPct,
-  mediaAspect,
   canvasWidth,
   canvasHeight,
   mediaWidth,
@@ -102,7 +99,6 @@ function ClipInteractionBox({
 }: {
   transform: ClipTransform
   heightPct: number
-  mediaAspect: number
   canvasWidth: number
   canvasHeight: number
   mediaWidth: number
@@ -118,7 +114,6 @@ function ClipInteractionBox({
   const { draft, beginDrag, beginResize, beginRotate } = useClipInteraction({
     transform,
     heightPct,
-    mediaAspect,
     canvasRef: artboardRef,
     onCommit,
     onLiveUpdate,

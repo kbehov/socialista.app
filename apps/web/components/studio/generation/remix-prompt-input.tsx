@@ -13,6 +13,7 @@ import {
   usePromptInputController,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
+import { RemixPresetChips } from '@/components/studio/generation/remix-preset-chips'
 import { STUDIO_COMPOSER_SURFACE_CLASS } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioInputActionTooltip } from '@/components/studio/prompt/studio-input-action-tooltip'
 import { Kbd } from '@/components/ui/kbd'
@@ -139,7 +140,7 @@ function RemixPromptComposer({
           <PromptInputSubmit
             className={cn(
               'h-8 gap-1.5 rounded-lg px-3.5 text-[13px] font-medium tracking-[-0.015em]',
-              'transition-[transform,opacity] duration-150 active:scale-[0.98]',
+              'transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] motion-reduce:active:scale-100',
               !canSubmit && 'opacity-45',
             )}
             disabled={!canSubmit}
@@ -162,16 +163,19 @@ export function RemixPromptInput(props: RemixPromptInputProps) {
     <div className="space-y-2">
       <div className="space-y-1">
         <h3 className="text-[15px] font-medium tracking-[-0.015em] text-foreground">
-          {props.contentKind === 'ad' ? 'Edit this ad' : 'Remix'}
+          {props.contentKind === 'ad' ? 'Edit this ad' : 'More like this'}
         </h3>
         <p className="text-[13px] leading-[1.5] text-black/56 dark:text-white/56">
           {props.contentKind === 'ad'
             ? 'Describe the change. We will regenerate from this ad.'
-            : 'Describe the change. We will regenerate from this image.'}
+            : 'Pick a direction, or describe the change yourself.'}
         </p>
       </div>
       <PromptInputProvider>
-        <RemixPromptComposer {...props} />
+        <div className="space-y-2.5">
+          {props.contentKind === 'image' ? <RemixPresetChips /> : null}
+          <RemixPromptComposer {...props} />
+        </div>
       </PromptInputProvider>
     </div>
   )

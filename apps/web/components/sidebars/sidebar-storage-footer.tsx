@@ -44,11 +44,11 @@ function StorageQuietRow({ usedBytes, limitBytes, percentUsed, isFull, isNearFul
         <div className="min-w-0 flex-1">
           <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} />
         </div>
-        <span className={cn('shrink-0 text-[11px] font-medium tabular-nums', statusClassName(isFull, isNearFull))}>
+        <span className={cn('shrink-0 text-xs font-medium tabular-nums tracking-normal', statusClassName(isFull, isNearFull))}>
           {Math.round(percentUsed)}%
         </span>
       </div>
-      <p className="mt-1.5 truncate pl-5.5 text-[11px] tabular-nums text-muted-foreground">
+      <p className="mt-1.5 truncate pl-5.5 text-xs tabular-nums tracking-normal text-muted-foreground">
         {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
       </p>
     </div>
@@ -62,9 +62,9 @@ function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull
         <HardDriveIcon className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex items-center justify-between gap-2">
-            <span className="text-xs font-medium tracking-tight text-sidebar-foreground">Storage</span>
+            <span className="text-xs font-medium tracking-normal text-sidebar-foreground">Storage</span>
             <span
-              className={cn('shrink-0 text-[11px] font-medium tabular-nums', statusClassName(isFull, isNearFull))}
+              className={cn('shrink-0 text-xs font-medium tabular-nums tracking-normal', statusClassName(isFull, isNearFull))}
             >
               {Math.round(percentUsed)}%
             </span>
@@ -72,7 +72,7 @@ function StorageSummary({ usedBytes, limitBytes, percentUsed, isFull, isNearFull
           <StorageProgress percentUsed={percentUsed} isFull={isFull} isNearFull={isNearFull} />
         </div>
       </div>
-      <p className="mt-1.5 truncate pl-5.5 text-[11px] tabular-nums text-muted-foreground">
+      <p className="mt-1.5 truncate pl-5.5 text-xs tabular-nums tracking-normal text-muted-foreground">
         {formatStorageSize(usedBytes)} of {formatStorageSize(limitBytes)}
       </p>
     </div>

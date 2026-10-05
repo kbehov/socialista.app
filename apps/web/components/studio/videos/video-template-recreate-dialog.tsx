@@ -14,6 +14,11 @@ type VideoTemplateRecreateDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   models: Model[]
+  contextLabel?: string
+  canGoPrevious?: boolean
+  canGoNext?: boolean
+  onGoPrevious?: () => void
+  onGoNext?: () => void
 }
 
 function VideoTemplateRecreateComposer({ models }: { models: Model[] }) {
@@ -45,6 +50,11 @@ export function VideoTemplateRecreateDialog({
   open,
   onOpenChange,
   models,
+  contextLabel,
+  canGoPrevious,
+  canGoNext,
+  onGoPrevious,
+  onGoNext,
 }: VideoTemplateRecreateDialogProps) {
   return (
     <StudioTemplateRecreateDialog
@@ -55,6 +65,11 @@ export function VideoTemplateRecreateDialog({
       resolveInitialPrompt={videoTemplateRecreatePrompt}
       title="Recreate video"
       description="Recreate this template. The reference is already attached."
+      contextLabel={contextLabel}
+      canGoPrevious={canGoPrevious}
+      canGoNext={canGoNext}
+      onGoPrevious={onGoPrevious}
+      onGoNext={onGoNext}
     >
       <VideoTemplateRecreateComposer models={models} />
     </StudioTemplateRecreateDialog>

@@ -2,6 +2,7 @@
 
 import { StudioTemplatesGallery } from '@/components/studio/templates/studio-templates-gallery'
 import { StudioTemplateKind, type StudioTemplateCategoryDto, type StudioTemplateDto } from '@socialista/types'
+import type { ReactNode } from 'react'
 
 type InspirationKind = typeof StudioTemplateKind.IMAGE | typeof StudioTemplateKind.VIDEO
 
@@ -25,6 +26,13 @@ type StudioInspirationsGalleryProps = {
   hideTitle?: boolean
   className?: string
   sectionDescription?: string
+  showCategoryCounts?: boolean
+  featuredLabel?: string
+  featuredCount?: number
+  surpriseLabel?: string
+  aboveGrid?: ReactNode
+  onOpen?: (template: StudioTemplateDto, templates: StudioTemplateDto[]) => void
+  gridEntrance?: boolean
 }
 
 export function StudioInspirationsGallery({
@@ -40,6 +48,13 @@ export function StudioInspirationsGallery({
   hideTitle,
   className,
   sectionDescription,
+  showCategoryCounts,
+  featuredLabel,
+  featuredCount,
+  surpriseLabel,
+  aboveGrid,
+  onOpen,
+  gridEntrance,
 }: StudioInspirationsGalleryProps) {
   return (
     <StudioTemplatesGallery
@@ -54,6 +69,13 @@ export function StudioInspirationsGallery({
       cardVariant="visual"
       onRecreate={onRecreate}
       onPreview={onPreview}
+      onOpen={onOpen}
+      showCategoryCounts={showCategoryCounts}
+      featuredLabel={featuredLabel}
+      featuredCount={featuredCount}
+      surpriseLabel={surpriseLabel}
+      aboveGrid={aboveGrid}
+      gridEntrance={gridEntrance}
       emptyTitle={emptyTitle}
       emptyDescription={emptyDescription ?? EMPTY_DESCRIPTION[kind]}
     />

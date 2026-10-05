@@ -7,7 +7,6 @@ import { getStudioTemplateCategories } from '@/services/studio-templates.service
 import { getWorkspaceVideos } from '@/services/video.service'
 import { StudioTemplateKind } from '@socialista/types'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
-import { preload } from 'react-dom'
 
 async function getGenerationImageUrl(generationId?: string): Promise<string | undefined> {
   if (!generationId) return undefined
@@ -27,7 +26,6 @@ type VideosPageProps = {
 }
 
 export default async function VideosPage({ searchParams }: VideosPageProps) {
-  preload('/socialista-video.webp', { as: 'image' })
   const [{ generationId }, { workspace, project }] = await Promise.all([
     searchParams,
     getCurrentWorkspaceContext(),

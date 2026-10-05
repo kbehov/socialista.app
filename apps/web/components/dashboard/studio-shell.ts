@@ -1,5 +1,6 @@
 /**
  * Dashboard app shell — layout chrome for App Router (`dashboard-shell`, main scrollport, page column).
+ * Canvas and sidebar both use `--background`. `--sidebar` aliases that color.
  * Linear minimal rhythm: inset via `.dashboard-main` in globals.css; flat sections via `dashboardSurface`.
  */
 /** Viewport-locked editors — main stays overflow-hidden; child owns layout. */
@@ -24,28 +25,21 @@ export const STUDIO_SHELL_CLASSES = EDGE_TO_EDGE_STUDIO_CLASSES
 export const dashboardShellProviderClassName = 'dashboard-shell h-svh max-h-svh overflow-hidden'
 
 export const dashboardShellInsetClassName =
-  'dashboard-inset flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden'
+  'dashboard-inset flex h-svh max-h-svh min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground'
 
 /** Page column inside the scrollport — lists, analytics, settings. */
 export const dashboardPageClassName = 'dashboard-page flex min-h-0 w-full min-w-0 flex-1 flex-col'
 
-/** Main scroll area — padded content; studio routes zero out via :has() below. */
-export const dashboardMainClassName = [
-  'dashboard-main sidebar-scrollbar',
-  // Complete literals — Tailwind does not emit classes built with ${}.
-  '[&:has(.image-studio)]:gap-0 [&:has(.studio-shell)]:gap-0 [&:has(.video-studio)]:gap-0 [&:has(.slideshow-studio)]:gap-0 [&:has(.ugc-studio)]:gap-0 [&:has(.post-composer)]:gap-0',
-  '[&:has(.studio-shell)]:overflow-hidden [&:has(.video-studio)]:overflow-hidden [&:has(.slideshow-studio)]:overflow-hidden [&:has(.ugc-studio)]:overflow-hidden [&:has(.post-composer)]:overflow-hidden',
-  '[&:has(.image-studio)]:!p-0 [&:has(.studio-shell)]:!p-0 [&:has(.video-studio)]:!p-0 [&:has(.slideshow-studio)]:!p-0 [&:has(.ugc-studio)]:!p-0 [&:has(.post-composer)]:!p-0',
-  '[&:has(.image-studio)]:[&_.dashboard-page]:max-w-none [&:has(.studio-shell)]:[&_.dashboard-page]:max-w-none [&:has(.video-studio)]:[&_.dashboard-page]:max-w-none [&:has(.slideshow-studio)]:[&_.dashboard-page]:max-w-none [&:has(.ugc-studio)]:[&_.dashboard-page]:max-w-none [&:has(.post-composer)]:[&_.dashboard-page]:max-w-none',
-].join(' ')
+/** Main scroll area — padded content. Studio routes drop inset via `.dashboard-main:has()` in globals.css. */
+export const dashboardMainClassName = 'dashboard-main sidebar-scrollbar'
 
 /** Generation run / locked editor wrapper (matches globals `.image-studio.studio-shell`). */
 export const lockedStudioShellRootClassName =
-  'image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden'
+  'image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground'
 
 /** Studio home — full width inside dashboard; main scrollport keeps vertical scroll. */
 export const imageStudioHomeRootClassName =
-  'image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col'
+  'image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col bg-background text-foreground'
 
 export const videoStudioRootClassName =
   'video-studio flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground'
@@ -58,4 +52,4 @@ export const ugcStudioRootClassName =
 
 /** Post composer — zero dashboard inset via `:has(.post-composer)` on main. */
 export const postComposerRootClassName =
-  'post-composer flex min-h-0 flex-1 flex-col overflow-hidden'
+  'post-composer flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground'

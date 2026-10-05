@@ -10,6 +10,7 @@ import {
 import { GenerationMatrixPlaceholder } from '@/components/studio/generation/generation-matrix-placeholder'
 import { GenerationPipelineSection } from '@/components/studio/generation/generation-pipeline-section'
 import { GenerationProgressHeader } from '@/components/studio/generation/generation-progress-header'
+import { GenerationWaitingTips } from '@/components/studio/generation/generation-waiting-tips'
 import {
   collectStaticAdReferenceUrls,
   collectVideoReferenceUrls,
@@ -19,6 +20,7 @@ import { RemixPromptInput } from '@/components/studio/generation/remix-prompt-in
 import { Button } from '@/components/ui/button'
 import { getLanguageLabel } from '@/components/ui/language-selector'
 import type { GenerationWaitingKind } from '@/constants/generation-waiting.const'
+import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { COMPLETED_STATUSES, FAILED_STATUSES } from '@/constants/generation.const'
 import { useGenerationRun } from '@/hooks/use-generation-run'
 import { resolveGeneratedImagePreviewUrl } from '@/lib/image-generation/preview'
@@ -228,6 +230,16 @@ export function GenerationRunView({
                   workspaceId={remixWorkspaceId}
                 />
               ) : null}
+              {contentKind === 'image' ? (
+                <div className="flex justify-center">
+                  <Link
+                    href={DASHBOARD_ROUTES.STUDIO.IMAGES}
+                    className="text-[13px] font-medium tracking-[-0.015em] text-black/48 underline decoration-black/15 underline-offset-4 transition-colors duration-150 ease-out hover:text-foreground dark:text-white/48 dark:decoration-white/15"
+                  >
+                    Browse more templates
+                  </Link>
+                </div>
+              ) : null}
             </>
           ) : null}
 
@@ -270,6 +282,14 @@ export function GenerationRunView({
                       statusLabel={status.label}
                     />
                   ) : null}
+
+                  {contentKind !== 'ad' ? (
+                    <GenerationWaitingTips kind={contentKind === 'video' ? 'video' : 'image'} />
+                  ) : null}
+                </div>
+              ) : contentKind !== 'ad' ? (
+                <div className="mt-8">
+                  <GenerationWaitingTips kind={contentKind === 'video' ? 'video' : 'image'} />
                 </div>
               ) : null}
             </>

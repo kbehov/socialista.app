@@ -149,25 +149,31 @@ export function AppSidebar({ workspaces, projects, className, ...props }: AppSid
   const workspaceItems = useMemo(() => buildWorkspaceItems(pathname), [pathname])
 
   return (
-    <Sidebar collapsible="icon" className={cn(className)} {...props}>
-      <SidebarHeader className="flex h-(--dashboard-chrome-height) shrink-0 flex-row items-center gap-1 border-b border-sidebar-border px-2 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-1">
-        <div className="min-w-0 flex-1 group-data-[collapsible=icon]:flex-none">
-          <ProjectSwitcher projects={projects} />
-        </div>
-        <SidebarCreateAction compact />
-      </SidebarHeader>
+    <Sidebar
+      collapsible="icon"
+      className={cn('border-sidebar-border text-sidebar-foreground', className)}
+      {...props}
+    >
+      <div className="app-sidebar flex h-full min-h-0 flex-1 flex-col">
+        <SidebarHeader className="flex h-(--dashboard-chrome-height) shrink-0 flex-row items-center gap-1 border-b border-sidebar-border bg-sidebar px-2.5 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-1">
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:flex-none">
+            <ProjectSwitcher projects={projects} />
+          </div>
+          <SidebarCreateAction compact />
+        </SidebarHeader>
 
-      <SidebarContent className="gap-4 overflow-x-hidden px-2 pt-2 pb-1 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:py-2">
-        <NavMain items={platformItems} sectionTitle="Platform" collapsible={false} />
-        <NavMain items={studioItems} sectionTitle="Studio" />
-        <NavMain items={workspaceItems} sectionTitle="Workspace" />
-      </SidebarContent>
+        <SidebarContent className="gap-5 overflow-x-hidden bg-sidebar px-2.5 pt-3 pb-2 group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:py-2">
+          <NavMain items={platformItems} sectionTitle="Platform" collapsible={false} />
+          <NavMain items={studioItems} sectionTitle="Studio" />
+          <NavMain items={workspaceItems} sectionTitle="Workspace" />
+        </SidebarContent>
 
-      <SidebarFooter className="shrink-0 gap-2 px-2 pb-2 pt-1 group-data-[collapsible=icon]:px-1">
-        <SidebarUpgradeCard />
-        <SidebarStorageFooter />
-        <TeamSwitcher workspaces={workspaces} />
-      </SidebarFooter>
+        <SidebarFooter className="shrink-0 gap-2.5 border-t border-sidebar-border bg-sidebar px-2.5 pt-2.5 pb-2.5 group-data-[collapsible=icon]:px-1">
+          <SidebarUpgradeCard />
+          <SidebarStorageFooter />
+          <TeamSwitcher workspaces={workspaces} />
+        </SidebarFooter>
+      </div>
 
       <SidebarRail />
     </Sidebar>

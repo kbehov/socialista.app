@@ -55,7 +55,6 @@ import {
   VIDEO_DURATIONS,
   VIDEO_RESOLUTION_DEFAULT,
   type Model,
-  type Preset,
   type PromptKey,
   type VideoAspectRatio,
   type VideoDuration,
@@ -79,9 +78,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { buildPresetPlaceholderExamples } from "@/lib/studio/preset-media";
 import { VideoPromptAnatomy } from "./video-prompt-anatomy";
-import { StudioPreset } from "@/components/studio/prompt/studio-preset";
 
 const MAX_REFERENCE_IMAGES = 3;
 const DEFAULT_ATTACH_SOURCES: StudioAttachSource[] = [
@@ -125,7 +122,6 @@ export type VideoPromptSubmitResult = {
 
 export type VideoPromptInputProps = {
   models: Model[];
-  presets?: Preset[];
   initialAttachmentUrl?: string;
   initialAttachments?: AttachedMedia[];
   onSubmitOverride?: (result: VideoPromptSubmitResult) => void;
@@ -179,7 +175,6 @@ export type VideoPromptInputProps = {
 
 function VideoPromptComposer({
   models,
-  presets = [],
   initialAttachmentUrl,
   initialAttachments,
   onSubmitOverride,
@@ -382,10 +377,8 @@ function VideoPromptComposer({
 
   const animatedPlaceholderWords = useMemo(() => {
     if (!homeHero || placeholderProp || attachedImages.length > 0) return undefined;
-    const examples = buildPresetPlaceholderExamples(presets);
-    if (examples.length > 0) return examples;
     return [...VIDEO_STUDIO_PLACEHOLDER_EXAMPLES];
-  }, [attachedImages.length, homeHero, placeholderProp, presets]);
+  }, [attachedImages.length, homeHero, placeholderProp]);
 
   const insertAtCursor = useCallback(
     (snippet: string) => {
@@ -859,10 +852,6 @@ function VideoPromptComposer({
 
       {homeHero || hideExtras ? null : (
         <div className="mt-4 flex flex-col items-center gap-4">
-          {studio ? (
-            <StudioPreset presets={presets} disabled={pending} onApply={studio.applyPreset} />
-          ) : null}
-
           <p className="hidden pointer-fine:flex flex-wrap items-center justify-center gap-1.5 text-[11px] tracking-[-0.01em] text-black/32 dark:text-white/32">
             <Kbd className="h-4 min-w-4 border-black/8 bg-transparent px-1 text-[10px] text-black/40 dark:border-white/10 dark:text-white/40">
               /

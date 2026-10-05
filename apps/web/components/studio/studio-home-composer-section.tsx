@@ -11,6 +11,7 @@ const CONTENT_MAX_WIDTH = {
   narrow: 'max-w-2xl',
   medium: 'max-w-3xl',
   wide: 'max-w-[48rem]',
+  roomy: 'max-w-4xl',
 } as const
 
 export type StudioHomeComposerSectionProps = {

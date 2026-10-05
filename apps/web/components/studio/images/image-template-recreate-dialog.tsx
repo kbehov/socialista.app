@@ -14,6 +14,11 @@ type ImageTemplateRecreateDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   models: Model[]
+  contextLabel?: string
+  canGoPrevious?: boolean
+  canGoNext?: boolean
+  onGoPrevious?: () => void
+  onGoNext?: () => void
 }
 
 function ImageTemplateRecreateComposer({ models }: { models: Model[] }) {
@@ -42,6 +47,11 @@ export function ImageTemplateRecreateDialog({
   open,
   onOpenChange,
   models,
+  contextLabel,
+  canGoPrevious,
+  canGoNext,
+  onGoPrevious,
+  onGoNext,
 }: ImageTemplateRecreateDialogProps) {
   return (
     <StudioTemplateRecreateDialog
@@ -52,6 +62,11 @@ export function ImageTemplateRecreateDialog({
       resolveInitialPrompt={templateRecreatePrompt}
       title="Recreate image"
       description="Recreate this template. The reference image is already attached."
+      contextLabel={contextLabel}
+      canGoPrevious={canGoPrevious}
+      canGoNext={canGoNext}
+      onGoPrevious={onGoPrevious}
+      onGoNext={onGoNext}
     >
       <ImageTemplateRecreateComposer models={models} />
     </StudioTemplateRecreateDialog>
