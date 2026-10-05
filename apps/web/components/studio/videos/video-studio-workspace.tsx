@@ -66,7 +66,7 @@ export function VideoStudioWorkspace({
 
         <StudioHomeBelowSection ariaLabel="Templates and recent videos" className="max-w-6xl">
           <Tabs defaultValue="templates" className="w-full gap-6">
-            <TabsList className="mx-auto h-9 w-fit gap-0.5 self-center rounded-full bg-black/[0.04] p-0.5 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10">
+            <TabsList className="mx-auto h-9 w-fit gap-0.5 self-center rounded-full bg-black/4 p-0.5 ring-1 ring-inset ring-black/6:bg-white/[0.05] dark:ring-white/10">
               <TabsTrigger value="templates" className={STUDIO_TAB_TRIGGER_CLASS}>
                 <LayoutTemplateIcon className="size-3.5" strokeWidth={1.75} />
                 Templates
@@ -75,7 +75,7 @@ export function VideoStudioWorkspace({
                 <ClockIcon className="size-3.5" strokeWidth={1.75} />
                 Recent
                 {recentCount > 0 ? (
-                  <span className="tabular-nums text-[12px] text-current/45">{recentCount}</span>
+                  <span className="tabular-nums text-sidebar-label text-current/45">{recentCount}</span>
                 ) : null}
               </TabsTrigger>
             </TabsList>

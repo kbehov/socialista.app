@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@socialista/types'],
   allowedDevOrigins: ['dev.socialista.app'],
   images: {
-    qualities: [75, 80, 85, 88, 90,92, 95, 100],
+    qualities: [75, 80, 85, 88, 90, 92, 95, 100],
     remotePatterns: [
       {
         protocol: 'https',
@@ -33,8 +33,9 @@ const nextConfig: NextConfig = {
     root: monorepoRoot,
   },
   experimental: {
+    proxyClientMaxBodySize: '52mb',
     serverActions: {
-      bodySizeLimit: '52mb', // matches the 50 MB video upload limit + overhead
+      bodySizeLimit: '52mb',
     },
   },
   async headers() {
