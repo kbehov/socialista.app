@@ -1,12 +1,12 @@
 'use client'
 
 import { ErrorState } from '@/components/common/error-state'
-import { VideoStudio } from '@/components/video/video-studio'
 import { Button } from '@/components/ui/button'
+import { VideoStudio } from '@/components/video/video-studio'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { registerAndPlaceAtPlayhead } from '@/lib/video/import-placement'
-import { generateVideoThumbnails, importMediaFromLibrary } from '@/lib/video/media-import'
 import { consumeVideoLibraryImport } from '@/lib/video/library-import-pending'
+import { generateVideoThumbnails, importMediaFromLibrary } from '@/lib/video/media-import'
 import { importSlideshowToTimeline, type SlideshowImportProgress } from '@/lib/video/slideshow-import'
 import { useVideoEditorStore } from '@/lib/video/store'
 import { fetchSlideshow } from '@/services/slideshow.client'
@@ -43,8 +43,11 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
     if (!pending) return
 
     libraryImportRef.current = true
-    setReady(false)
-    setError(null)
+    setTimeout(() => {
+      setReady(false)
+      setError(null)
+    }, 10)
+
     let cancelled = false
 
     async function importFromLibrary() {
@@ -53,11 +56,11 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
       try {
         const asset = await importMediaFromLibrary(
           {
-            url: pending.url,
-            fileId: pending.id,
-            name: pending.name,
-            width: pending.width,
-            height: pending.height,
+            url: pending?.url ?? '',
+            fileId: pending?.id,
+            name: pending?.name,
+            width: pending?.width,
+            height: pending?.height,
           },
           { deferThumbnails: true },
         )
@@ -70,7 +73,7 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
           }
         })
         importedRef.current = true
-        toast.success(`Added ${pending.name ?? 'video'} to timeline`)
+        toast.success(`Added ${pending?.name ?? 'video'} to timeline`)
       } catch (err) {
         if (cancelled) return
         const message = err instanceof Error ? err.message : 'Failed to import video from library'
@@ -170,7 +173,12 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
 
     return (
       <div className="video-studio flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center bg-background px-6">
-        <div className="flex w-full max-w-xs flex-col items-center gap-3" role="status" aria-live="polite" aria-busy="true">
+        <div
+          className="flex w-full max-w-xs flex-col items-center gap-3"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
           <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
           <p className="text-[13px] font-medium tracking-tight text-foreground">
             {formatImportMessage(importProgress)}
@@ -195,7 +203,7 @@ export function VideoCreateEditor({ slideshowId }: VideoCreateEditorProps) {
         description="This slideshow may have been deleted or could not be rendered."
         className="flex-1"
         action={
-          <Button asChild size="sm" variant="outline" className="h-8 text-[12px] font-medium">
+          <Button asChild size="sm" variant="outline" className="h-8 text-sidebar-label font-medium">
             <Link href={DASHBOARD_ROUTES.STUDIO.VIDEOS}>Back to videos</Link>
           </Button>
         }

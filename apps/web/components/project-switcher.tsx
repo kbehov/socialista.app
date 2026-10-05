@@ -96,7 +96,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
             <div className="sidebar-switcher-avatar">
               <PlusIcon className="size-3!" strokeWidth={SWITCHER_ICON_STROKE} />
             </div>
-            <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+            <span className="min-w-0 flex-1 truncate font-medium tracking-normal group-data-[collapsible=icon]:hidden">
               Add project
             </span>
           </SidebarMenuButton>
@@ -116,7 +116,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectResponse[] }) {
               className="h-9 gap-1.5 px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
               <ProjectAvatar project={currentProject} />
-              <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+              <span className="min-w-0 flex-1 truncate font-medium tracking-normal group-data-[collapsible=icon]:hidden">
                 {currentProject.name}
               </span>
               <ChevronDownIcon

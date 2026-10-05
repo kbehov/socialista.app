@@ -18,8 +18,8 @@ import {
   type StudioTemplateDto,
   type StudioTemplateKind,
 } from '@socialista/types'
-import { ChevronLeftIcon, ChevronRightIcon, LayoutTemplateIcon, Loader2Icon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import { ChevronLeftIcon, ChevronRightIcon, LayoutTemplateIcon, Loader2Icon, ShuffleIcon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
 const SCROLL_TARGET_ID = 'dashboard-scroll'
@@ -93,6 +93,8 @@ type TemplateCategoryFilterProps = {
   accentFilters?: boolean
   headingTone?: 'display' | 'quiet'
   chipTone?: CategoryChipTone
+  showCounts?: boolean
+  trailing?: ReactNode
 }
 
 function categoryTabClass(active: boolean, accentFilters: boolean, chipTone: CategoryChipTone) {
@@ -141,6 +143,8 @@ function TemplateCategoryFilter({
   accentFilters = false,
   headingTone = 'display',
   chipTone = 'outline',
+  showCounts = false,
+  trailing,
 }: TemplateCategoryFilterProps) {
   const quiet = headingTone === 'quiet'
   const studio = chipTone === 'studio'
@@ -175,6 +179,9 @@ function TemplateCategoryFilter({
               className={categoryTabClass(active, accentFilters, chipTone)}
             >
               <span className="whitespace-nowrap">{category.name}</span>
+              {showCounts ? (
+                <span className="ml-1.5 text-[10px] tabular-nums opacity-60">{category.templatesCount}</span>
+              ) : null}
             </button>
           </CarouselItem>
         )
@@ -208,7 +215,12 @@ function TemplateCategoryFilter({
             </p>
           ) : null}
         </div>
-        {studio ? null : <CategoryCarouselNav />}
+        {studio ? null : (
+          <div className="flex shrink-0 items-center gap-2">
+            {trailing}
+            <CategoryCarouselNav />
+          </div>
+        )}
       </div>
 
       {categories.length > 0 ? (
@@ -221,6 +233,7 @@ function TemplateCategoryFilter({
               />
               {chips}
             </div>
+            {trailing}
             <CategoryCarouselNav size="md" />
           </div>
         ) : (
@@ -242,6 +255,7 @@ type StudioTemplatesGalleryProps = {
   initialCategories?: StudioTemplateCategoryDto[]
   onRecreate: (template: StudioTemplateDto) => void
   onPreview?: (template: StudioTemplateDto) => void
+  onOpen?: (template: StudioTemplateDto, templates: StudioTemplateDto[]) => void
   sectionTitle?: string
   sectionDescription?: string
   headingTone?: 'display' | 'quiet'
@@ -252,9 +266,16 @@ type StudioTemplatesGalleryProps = {
   hideWhenEmpty?: boolean
   className?: string
   hideTitle?: boolean
+  showCategoryCounts?: boolean
+  featuredLabel?: string
+  featuredCount?: number
+  surpriseLabel?: string
+  aboveGrid?: ReactNode
+  gridEntrance?: boolean
 }
 
 const GRID_CLASS = 'grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-3.5 sm:gap-y-7 lg:grid-cols-4 lg:gap-x-4'
+const ENTER_STAGGER_LIMIT = 8
 
 function sortCategories(categories: StudioTemplateCategoryDto[]) {
   return [...categories].toSorted((a, b) => b.templatesCount - a.templatesCount)
@@ -265,6 +286,7 @@ export function StudioTemplatesGallery({
   initialCategories = EMPTY_TEMPLATE_CATEGORIES,
   onRecreate,
   onPreview,
+  onOpen,
   sectionTitle = 'Templates',
   sectionDescription,
   headingTone = 'display',
@@ -274,6 +296,12 @@ export function StudioTemplatesGallery({
   emptyDescription = 'Import templates to start recreating content from a reference.',
   hideWhenEmpty = false,
   hideTitle = false,
+  showCategoryCounts = false,
+  featuredLabel,
+  featuredCount = 0,
+  surpriseLabel,
+  aboveGrid,
+  gridEntrance = false,
   className,
 }: StudioTemplatesGalleryProps) {
   const nextSeedKey = categorySeedKey(initialCategories)
@@ -354,6 +382,55 @@ export function StudioTemplatesGallery({
     void fetchPage(page + 1, selectedCategory, true).finally(() => setLoadingMore(false))
   }
 
+  const previewFrom = (template: StudioTemplateDto, list: StudioTemplateDto[]) => {
+    if (onOpen) {
+      onOpen(template, list)
+      return
+    }
+    ;(onPreview ?? setPreviewTemplate)(template)
+  }
+
+  const recreateFrom = (template: StudioTemplateDto, list: StudioTemplateDto[]) => {
+    if (onOpen) {
+      onOpen(template, list)
+      return
+    }
+    onRecreate(template)
+  }
+
+  const featured =
+    featuredCount > 0 && selectedCategory === null ? templates.slice(0, featuredCount) : []
+
+  const handleSurprise = () => {
+    if (templates.length === 0) return
+    const template = templates[Math.floor(Math.random() * templates.length)]
+    if (!template) return
+    recreateFrom(template, templates)
+  }
+
+  const surpriseButton =
+    surpriseLabel && templates.length > 0 ? (
+      <button
+        type="button"
+        onClick={handleSurprise}
+        disabled={pending}
+        className={cn(
+          'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3',
+          'text-[12px] font-medium tracking-[-0.015em] text-foreground/78',
+          'bg-transparent ring-1 ring-inset ring-black/10',
+          'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+          'hover:bg-foreground hover:text-background hover:ring-transparent',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+          'active:scale-[0.96] motion-reduce:active:scale-100',
+          'disabled:pointer-events-none disabled:opacity-50',
+          'dark:ring-white/12',
+        )}
+      >
+        <ShuffleIcon className="size-3.5" strokeWidth={1.75} />
+        {surpriseLabel}
+      </button>
+    ) : null
+
   if (hideWhenEmpty && selectedCategory === null && !error && templates.length === 0) {
     return null
   }
@@ -370,9 +447,34 @@ export function StudioTemplatesGallery({
         headingTone={headingTone}
         chipTone={chipTone}
         accentFilters={cardVariant === 'visual'}
+        showCounts={showCategoryCounts}
+        trailing={surpriseButton}
       />
 
       <div className={cn(categories.length > 0 ? 'mt-5 sm:mt-6' : 'mt-4')}>
+        {aboveGrid}
+
+        {featured.length > 0 && featuredLabel ? (
+          <div className="mb-6">
+            <p className="mb-3 text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
+              {featuredLabel}
+            </p>
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {featured.map(template => (
+                <div key={template._id} className="w-[68%] shrink-0 snap-start sm:w-52">
+                  <StudioTemplateCard
+                    template={template}
+                    onPreview={() => previewFrom(template, featured)}
+                    onRecreate={() => recreateFrom(template, featured)}
+                    openLabel={onPreview || onOpen ? 'Open' : 'Preview'}
+                    variant={cardVariant}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {error ? (
           <ErrorState
             title="Could not load templates"
@@ -414,23 +516,51 @@ export function StudioTemplatesGallery({
             className="overflow-visible!"
             style={{ overflow: 'visible' }}
           >
-            <div className={cn(GRID_CLASS, pending && 'opacity-60')}>
-              {templates.map(template => (
-                <StudioTemplateCard
-                  key={template._id}
-                  template={template}
-                  onPreview={onPreview ?? setPreviewTemplate}
-                  onRecreate={onRecreate}
-                  openLabel={onPreview ? 'Open' : 'Preview'}
-                  variant={cardVariant}
-                />
-              ))}
+            <div
+              className={cn(
+                gridEntrance
+                  ? 'grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4'
+                  : GRID_CLASS,
+                pending && 'opacity-60',
+              )}
+            >
+              {templates.map((template, index) => {
+                const card = (
+                  <StudioTemplateCard
+                    template={template}
+                    onPreview={() => previewFrom(template, templates)}
+                    onRecreate={() => recreateFrom(template, templates)}
+                    openLabel={onPreview || onOpen ? 'Open' : 'Preview'}
+                    variant={cardVariant}
+                  />
+                )
+
+                if (!gridEntrance) {
+                  return <div key={template._id}>{card}</div>
+                }
+
+                return (
+                  <div
+                    key={template._id}
+                    className={cn(
+                      'px-1.5 py-3 sm:px-2 [content-visibility:auto] [contain-intrinsic-size:auto_360px]',
+                      index < ENTER_STAGGER_LIMIT &&
+                        'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300 motion-safe:ease-out motion-safe:[animation-fill-mode:backwards] motion-reduce:animate-none',
+                    )}
+                    style={
+                      index < ENTER_STAGGER_LIMIT ? { animationDelay: `${index * 40}ms` } : undefined
+                    }
+                  >
+                    {card}
+                  </div>
+                )
+              })}
             </div>
           </InfiniteScroll>
         ) : null}
       </div>
 
-      {onPreview ? null : (
+      {onPreview || onOpen ? null : (
         <StudioTemplatePreviewDialog
           template={previewTemplate}
           open={previewTemplate !== null}

@@ -14,8 +14,8 @@ import type { StudioTemplateRecreateIdea } from '@/lib/studio/template-recreate'
 import { templateToRecreateAttachments } from '@/lib/studio/template-media'
 import { cn } from '@/lib/utils'
 import type { StudioTemplateDto } from '@socialista/types'
-import { ChevronDownIcon, XIcon } from 'lucide-react'
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 type StudioTemplateRecreateState = {
   template: StudioTemplateDto
@@ -48,6 +48,11 @@ type StudioTemplateRecreateDialogProps = {
   resolveInitialPrompt: (template: StudioTemplateDto) => string
   title: string
   description: string
+  contextLabel?: string
+  canGoPrevious?: boolean
+  canGoNext?: boolean
+  onGoPrevious?: () => void
+  onGoNext?: () => void
   children: ReactNode
 }
 
@@ -71,7 +76,7 @@ function RecreateIdeas({
             'transition-[background-color,transform] duration-150',
             'hover:bg-black/70',
             'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/45',
-            'active:scale-[0.97] motion-reduce:active:scale-100',
+            'active:scale-[0.96] motion-reduce:active:scale-100',
           )}
         >
           Try these ideas
@@ -79,7 +84,7 @@ function RecreateIdeas({
         </CollapsibleTrigger>
         <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150">
           <div className="mt-1.5 flex flex-col items-start gap-1.5">
-            {ideas.map(idea => {
+            {ideas.map((idea, index) => {
               const active = prompt === idea.prompt
 
               return (
@@ -87,12 +92,15 @@ function RecreateIdeas({
                   key={idea.id}
                   type="button"
                   onClick={() => onSelect(idea.prompt)}
+                  style={{ animationDelay: `${index * 40}ms` }}
                   className={cn(
                     'inline-flex h-7 items-center rounded-full px-2.5',
                     'text-[12px] font-medium tracking-[-0.015em]',
-                    'transition-[background-color,color,transform] duration-150',
+                    'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+                    'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200',
+                    'motion-safe:[animation-fill-mode:backwards] motion-reduce:animate-none',
                     'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/45',
-                    'active:scale-[0.97] motion-reduce:active:scale-100',
+                    'active:scale-[0.96] motion-reduce:active:scale-100',
                     active
                       ? 'bg-zinc-900 text-white'
                       : 'bg-white/95 text-zinc-800 shadow-sm hover:bg-white',
@@ -113,11 +121,13 @@ function RecreateSession({
   template,
   ideas,
   resolveInitialPrompt,
+  contextLabel,
   children,
 }: {
   template: StudioTemplateDto
   ideas: readonly StudioTemplateRecreateIdea[]
   resolveInitialPrompt: (template: StudioTemplateDto) => string
+  contextLabel?: string
   children: ReactNode
 }) {
   const [prompt, setPrompt] = useState(() => resolveInitialPrompt(template))
@@ -142,7 +152,12 @@ function RecreateSession({
           />
           <RecreateIdeas ideas={ideas} prompt={prompt} onSelect={setPrompt} />
         </div>
-        <div className="mt-3 w-full">{children}</div>
+        {contextLabel ? (
+          <p className="mt-3 max-w-full truncate text-center text-[13px] font-medium tracking-[-0.015em] text-white/78">
+            {contextLabel}
+          </p>
+        ) : null}
+        <div className={cn('w-full', contextLabel ? 'mt-2.5' : 'mt-3')}>{children}</div>
       </div>
     </StudioTemplateRecreateContext.Provider>
   )
@@ -156,8 +171,38 @@ export function StudioTemplateRecreateDialog({
   resolveInitialPrompt,
   title,
   description,
+  contextLabel,
+  canGoPrevious = false,
+  canGoNext = false,
+  onGoPrevious,
+  onGoNext,
   children,
 }: StudioTemplateRecreateDialogProps) {
+  const canNavigate = Boolean(onGoPrevious || onGoNext)
+
+  useEffect(() => {
+    if (!open || !canNavigate) return
+
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return
+      }
+      if (event.key === 'ArrowLeft' && canGoPrevious) {
+        event.preventDefault()
+        onGoPrevious?.()
+      }
+      if (event.key === 'ArrowRight' && canGoNext) {
+        event.preventDefault()
+        onGoNext?.()
+      }
+    }
+
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [canGoNext, canGoPrevious, canNavigate, onGoNext, onGoPrevious, open])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -187,6 +232,45 @@ export function StudioTemplateRecreateDialog({
           <XIcon className="size-4" strokeWidth={1.75} />
         </Button>
 
+        {canNavigate ? (
+          <>
+            <button
+              type="button"
+              aria-label="Previous template"
+              disabled={!canGoPrevious}
+              onClick={onGoPrevious}
+              className={cn(
+                'pointer-events-auto absolute top-1/2 left-3 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full sm:left-5',
+                'bg-white/10 text-white',
+                'transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+                'hover:bg-white/16',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+                'active:scale-[0.96] motion-reduce:active:scale-100',
+                'disabled:pointer-events-none disabled:opacity-30',
+              )}
+            >
+              <ChevronLeftIcon className="size-5" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              aria-label="Next template"
+              disabled={!canGoNext}
+              onClick={onGoNext}
+              className={cn(
+                'pointer-events-auto absolute top-1/2 right-3 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full sm:right-5',
+                'bg-white/10 text-white',
+                'transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+                'hover:bg-white/16',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+                'active:scale-[0.96] motion-reduce:active:scale-100',
+                'disabled:pointer-events-none disabled:opacity-30',
+              )}
+            >
+              <ChevronRightIcon className="size-5" strokeWidth={1.75} />
+            </button>
+          </>
+        ) : null}
+
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-16">
           {open && template ? (
             <RecreateSession
@@ -194,6 +278,7 @@ export function StudioTemplateRecreateDialog({
               template={template}
               ideas={ideas}
               resolveInitialPrompt={resolveInitialPrompt}
+              contextLabel={contextLabel}
             >
               {children}
             </RecreateSession>

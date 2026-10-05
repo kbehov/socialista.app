@@ -1,12 +1,10 @@
 'use client'
 
 import type { AttachedMedia } from '@/components/files/attach-media/types'
-import { presetToAttachedMedia } from '@/lib/studio/preset-media'
 import { templateReferencesToAttachedMedia } from '@/lib/studio/template-media'
 import { commitHaptic } from '@/utils/haptics'
 import {
   StudioTemplateKind,
-  type Preset,
   type StudioTemplateDto,
   type VideoAspectRatio,
   type VideoResolution,
@@ -29,7 +27,6 @@ type VideoStudioContextValue = {
   composerRef: React.RefObject<HTMLDivElement | null>
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
-  applyPreset: (preset: Preset) => void
   applyTemplate: (template: StudioTemplateDto) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
@@ -67,16 +64,6 @@ export function VideoStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
-  const applyPreset = useCallback(
-    (preset: Preset) => {
-      handlersRef.current?.setPrompt(preset.prompt)
-      handlersRef.current?.setAttachments(presetToAttachedMedia(preset))
-      commitHaptic({ vibrateDuration: 8 })
-      focusComposer()
-    },
-    [focusComposer],
-  )
-
   const applyTemplate = useCallback(
     (template: StudioTemplateDto) => {
       if (template.kind !== StudioTemplateKind.VIDEO) return
@@ -105,11 +92,10 @@ export function VideoStudioProvider({ children }: { children: ReactNode }) {
       composerRef,
       insertSnippet,
       setPrompt,
-      applyPreset,
       applyTemplate,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, applyPreset, applyTemplate, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyTemplate, registerPromptHandlers],
   )
 
   return <VideoStudioContext.Provider value={value}>{children}</VideoStudioContext.Provider>

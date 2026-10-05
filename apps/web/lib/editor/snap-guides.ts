@@ -12,7 +12,7 @@ export type SnapTarget = {
   height: number
 }
 
-const SNAP_THRESHOLD_PCT = 1.75
+export const SNAP_THRESHOLD_PCT = 1.75
 
 type SnapEdge = { value: number; guide: number }
 

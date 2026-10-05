@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { PlayIcon, VideoIcon } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 
 type VideoCardPreviewProps = {
   previewUrl?: string
@@ -30,17 +31,62 @@ function ImagePreview({ src }: { src: string }) {
   )
 }
 
-function VideoPreview({ src }: { src: string }) {
+function canHoverPlay() {
   return (
-    <div className="relative size-full">
+    window.matchMedia('(pointer: fine)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+function VideoPreview({ src }: { src: string }) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const host = root.closest('a, button') ?? root
+
+    const play = () => {
+      if (!canHoverPlay()) return
+      const video = videoRef.current
+      if (!video) return
+      video.preload = 'auto'
+      video.loop = true
+      void video.play().catch(() => {})
+    }
+
+    const stop = () => {
+      const video = videoRef.current
+      if (!video) return
+      video.pause()
+      if (video.readyState >= 1) video.currentTime = 0.1
+    }
+
+    host.addEventListener('pointerenter', play)
+    host.addEventListener('pointerleave', stop)
+    host.addEventListener('focus', play)
+    host.addEventListener('blur', stop)
+    return () => {
+      host.removeEventListener('pointerenter', play)
+      host.removeEventListener('pointerleave', stop)
+      host.removeEventListener('focus', play)
+      host.removeEventListener('blur', stop)
+      stop()
+    }
+  }, [])
+
+  return (
+    <div ref={rootRef} className="relative size-full">
       <video
+        ref={videoRef}
         src={`${src}#t=0.1`}
         muted
         playsInline
         preload="metadata"
         className="size-full object-cover"
       />
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-100 transition-opacity duration-200 ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0 motion-reduce:group-hover/card:opacity-100 motion-reduce:group-focus-within/card:opacity-100 motion-reduce:transition-none">
         <div className="flex size-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm">
           <PlayIcon className="ml-0.5 size-4 fill-current" />
         </div>

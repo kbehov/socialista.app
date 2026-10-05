@@ -1,6 +1,7 @@
 'use client'
 
 import { imageStudioHomeRootClassName } from '@/components/dashboard/studio-shell'
+import { ImageIdeaChips } from '@/components/studio/images/image-idea-chips'
 import { ImageStudioProvider } from '@/components/studio/images/image-studio-provider'
 import { ImageStudioPromptExtras } from '@/components/studio/images/image-studio-prompt-extras'
 import { StudioHomeBelowSection } from '@/components/studio/studio-home-below-section'
@@ -20,13 +21,20 @@ function ImageStudioWorkspaceBody({ models, templateCategories }: ImageStudioWor
       <StudioHomeComposerSection
         id="image-studio-composer"
         ariaLabel="Create an image"
-        description="Describe the scene — attach references with @image1 when you need them."
-        footer={<ImageStudioPromptExtras />}
+        title="What are we posting today?"
+        description="Attach your product with @image1 — we'll handle the rest."
+        contentMaxWidth="roomy"
+        footer={
+          <div className="flex flex-col items-center gap-3.5">
+            <ImageIdeaChips />
+            <ImageStudioPromptExtras />
+          </div>
+        }
       >
         <ImageGenerationPromptInput models={models} />
       </StudioHomeComposerSection>
 
-      <StudioHomeBelowSection ariaLabel="Templates">
+      <StudioHomeBelowSection ariaLabel="Templates" className="max-w-6xl">
         <ImageTemplatesGallery models={models} templateCategories={templateCategories} />
       </StudioHomeBelowSection>
     </div>

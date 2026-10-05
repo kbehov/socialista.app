@@ -26,7 +26,7 @@ export function ConnectAccountTrigger({
     <>
       <Button
         type="button"
-        size="sm"
+        size="lg"
         variant={variant}
         className={cn(dashboardSurface.createCta, className)}
         onClick={() => setOpen(true)}

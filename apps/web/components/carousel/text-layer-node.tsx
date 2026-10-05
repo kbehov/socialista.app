@@ -17,6 +17,7 @@ import { useLayerSnap } from '@/hooks/carousel/use-layer-snap'
 import { LayerTransformHandles } from '@/components/carousel/layer-transform-handles'
 import { AlignmentToolbar, type AlignmentAction } from '@/components/editor/alignment-toolbar'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
+import { ensureStudioFonts } from '@/lib/editor/studio-fonts'
 import { clamp } from '@/lib/carousel/defaults'
 import { alignAlongAxis, alignToEdge } from '@/lib/editor/alignment'
 import {
@@ -91,6 +92,10 @@ export function TextLayerNode({
   const effective = useMemo(() => (draft ? { ...layer, ...draft } : layer), [layer, draft])
   const textCss = useMemo(() => buildTextLayerCss(effective.style, scale), [effective.style, scale])
   const isInteracting = draft != null
+
+  useLayoutEffect(() => {
+    ensureStudioFonts()
+  }, [])
 
   useEffect(() => {
     if (!isEditing || !editRef.current) return

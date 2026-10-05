@@ -3,6 +3,7 @@
 import { toPng } from 'html-to-image'
 import JSZip from 'jszip'
 import type { Slide } from '@socialista/types'
+import { collectFontFamilies, loadUsedStudioFonts, studioFontEmbedCss } from '@/lib/editor/studio-fonts'
 
 type ExportOptions = {
   pixelRatio?: number
@@ -13,12 +14,16 @@ type ExportOptions = {
  * Caller must provide a DOM node that contains the fully-rendered slide canvas.
  */
 export async function exportSlideToPng(node: HTMLElement, options: ExportOptions = {}): Promise<string> {
+  const families = collectFontFamilies(node)
+  await loadUsedStudioFonts(families)
+  const fontEmbedCSS = await studioFontEmbedCss(families)
   return toPng(node, {
     pixelRatio: options.pixelRatio ?? 1,
     // cacheBust re-fetches images and breaks blob: URLs from uploads.
     cacheBust: false,
-    // Avoid font fetch failures during export; text is already laid out in the DOM.
+    // Skip the page's own faces (they fail CORS). Studio faces are inlined below.
     skipFonts: true,
+    fontEmbedCSS,
   })
 }
 
@@ -172,6 +177,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 async function prepareSlideForExport(container: HTMLElement): Promise<void> {
+  await loadUsedStudioFonts(collectFontFamilies(container))
   await document.fonts?.ready
 
   const images = Array.from(container.querySelectorAll('img'))

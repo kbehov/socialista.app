@@ -73,7 +73,7 @@ export function TeamSwitcher({ workspaces }: { workspaces: WorkspaceResponse[] }
               className="h-7 gap-1.5 px-1.5 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
               <WorkspaceAvatar workspace={currentWorkspace} />
-              <span className="min-w-0 flex-1 truncate font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+              <span className="min-w-0 flex-1 truncate font-medium tracking-normal group-data-[collapsible=icon]:hidden">
                 {currentWorkspace.name}
               </span>
               <ChevronDownIcon

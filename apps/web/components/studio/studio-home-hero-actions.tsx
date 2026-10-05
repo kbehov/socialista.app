@@ -14,7 +14,7 @@ import type { ReactNode } from 'react'
 
 export function StudioHomeCreateButton({ href, label }: { href: string; label: string }) {
   return (
-    <Button asChild size="md">
+    <Button asChild size="sm">
       <Link href={href}>
         <PlusIcon className="size-3.5" strokeWidth={1.75} />
         {label}

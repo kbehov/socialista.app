@@ -3,10 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { ClipTransform } from '@socialista/types'
-import { clamp } from '@/lib/video/defaults'
-import { snapLayerPosition, type SnapGuide, type SnapTarget } from '@/lib/editor/snap-guides'
+import { SNAP_THRESHOLD_PCT, snapLayerPosition, type SnapGuide, type SnapTarget } from '@/lib/editor/snap-guides'
+import {
+  CLIP_POS_MAX,
+  CLIP_POS_MIN,
+  clampGesture,
+  resizeClipFromPointer,
+  type ClipResizeHandle,
+} from '@/lib/video/clip-gesture'
 
-export type ClipResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
+export type { ClipResizeHandle }
 
 type Interaction =
   | {
@@ -15,6 +21,8 @@ type Interaction =
       startPointerY: number
       startX: number
       startY: number
+      startWidth: number
+      startHeightPct: number
       canvasWidthPx: number
       canvasHeightPx: number
     }
@@ -27,7 +35,7 @@ type Interaction =
       startY: number
       startWidth: number
       startHeightPct: number
-      aspect: number
+      startRotation: number
       canvasWidthPx: number
       canvasHeightPx: number
     }
@@ -40,17 +48,9 @@ type Interaction =
       startRotation: number
     }
 
-const X_MIN = -20
-const Y_MIN = -20
-const X_MAX = 120
-const Y_MAX = 120
-const W_MIN = 5
-const W_MAX = 200
-
 export function useClipInteraction(opts: {
   transform: ClipTransform
   heightPct: number
-  mediaAspect: number
   canvasRef: RefObject<HTMLElement | null>
   onCommit: (partial: Partial<ClipTransform>) => void
   onLiveUpdate: (partial: Partial<ClipTransform>) => void
@@ -61,7 +61,6 @@ export function useClipInteraction(opts: {
   const {
     transform,
     heightPct,
-    mediaAspect,
     canvasRef,
     onCommit,
     onLiveUpdate,
@@ -79,7 +78,7 @@ export function useClipInteraction(opts: {
   const snapTargetsRef = useRef(snapTargets)
   const onGuidesChangeRef = useRef(onGuidesChange)
   const snapEnabledRef = useRef(snapEnabled)
-  const heightPctRef = useRef(heightPct)
+  const detachRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     onCommitRef.current = onCommit
@@ -103,10 +102,6 @@ export function useClipInteraction(opts: {
     snapEnabledRef.current = snapEnabled
   }, [snapEnabled])
 
-  useEffect(() => {
-    heightPctRef.current = heightPct
-  }, [heightPct])
-
   const updateDraft = useCallback((partial: Partial<ClipTransform>) => {
     const base = draftRef.current ?? transformRef.current
     const next = { ...base, ...partial }
@@ -117,6 +112,8 @@ export function useClipInteraction(opts: {
   }, [])
 
   const stop = useCallback(() => {
+    detachRef.current?.()
+    detachRef.current = null
     if (!interaction.current) return
     interaction.current = null
 
@@ -139,76 +136,56 @@ export function useClipInteraction(opts: {
     if (it.kind === 'drag') {
       const dxPct = ((e.clientX - it.startPointerX) / it.canvasWidthPx) * 100
       const dyPct = ((e.clientY - it.startPointerY) / it.canvasHeightPx) * 100
-      let nextX = clamp(it.startX + dxPct, X_MIN, X_MAX)
-      let nextY = clamp(it.startY + dyPct, Y_MIN, Y_MAX)
+      let nextX = it.startX + dxPct
+      let nextY = it.startY + dyPct
 
       if (snapEnabledRef.current) {
         const snapped = snapLayerPosition({
           x: nextX,
           y: nextY,
-          width: transformRef.current.width,
-          height: heightPctRef.current,
+          width: it.startWidth,
+          height: it.startHeightPct,
           others: snapTargetsRef.current,
         })
-        nextX = snapped.x
-        nextY = snapped.y
-        onGuidesChangeRef.current?.(snapped.guides)
+        const rawDist = Math.hypot(nextX - it.startX, nextY - it.startY)
+        const snapDist = Math.hypot(snapped.x - it.startX, snapped.y - it.startY)
+        // A cover-fit clip already sits on the canvas edges and center. Honor the
+        // pointer until it leaves that snap well, otherwise slow drags do nothing
+        // and then the clip jumps.
+        const breakingAway = snapDist < rawDist - 0.001 && rawDist < SNAP_THRESHOLD_PCT
+        if (breakingAway) {
+          onGuidesChangeRef.current?.([])
+        } else {
+          nextX = snapped.x
+          nextY = snapped.y
+          onGuidesChangeRef.current?.(snapped.guides)
+        }
       } else {
         onGuidesChangeRef.current?.([])
       }
 
-      updateDraft({ x: nextX, y: nextY })
+      updateDraft({
+        x: clampGesture(nextX, CLIP_POS_MIN, CLIP_POS_MAX, it.startX),
+        y: clampGesture(nextY, CLIP_POS_MIN, CLIP_POS_MAX, it.startY),
+      })
       return
     }
 
     if (it.kind === 'resize') {
-      const dxPct = ((e.clientX - it.startPointerX) / it.canvasWidthPx) * 100
-      const dyPct = ((e.clientY - it.startPointerY) / it.canvasHeightPx) * 100
-      const handle = it.handle
-
-      let nextWidth = it.startWidth
-      let nextX = it.startX
-      let nextY = it.startY
-
-      const heightFromWidth = (w: number) => (w * it.canvasWidthPx) / (it.aspect * it.canvasHeightPx)
-
-      if (handle === 'nw' || handle === 'ne' || handle === 'sw' || handle === 'se') {
-        const scaleX = handle.includes('e')
-          ? (it.startWidth + dxPct) / it.startWidth
-          : (it.startWidth - dxPct) / it.startWidth
-        const scaleY = handle.includes('s')
-          ? (it.startHeightPct + dyPct) / it.startHeightPct
-          : (it.startHeightPct - dyPct) / it.startHeightPct
-        const scale = Math.max(0.01, Math.max(scaleX, scaleY))
-        nextWidth = clamp(it.startWidth * scale, W_MIN, W_MAX)
-        const nextHeight = heightFromWidth(nextWidth)
-        if (handle.includes('w')) {
-          nextX = it.startX + it.startWidth - nextWidth
-        }
-        if (handle.includes('n')) {
-          nextY = it.startY + it.startHeightPct - nextHeight
-        }
-      } else if (handle === 'e') {
-        nextWidth = clamp(it.startWidth + dxPct, W_MIN, W_MAX)
-      } else if (handle === 'w') {
-        nextWidth = clamp(it.startWidth - dxPct, W_MIN, W_MAX)
-        nextX = it.startX + (it.startWidth - nextWidth)
-      } else if (handle === 's') {
-        nextWidth = clamp(it.startWidth + dyPct * (it.canvasWidthPx / it.canvasHeightPx) / it.aspect, W_MIN, W_MAX)
-      } else if (handle === 'n') {
-        const newHeight = clamp(it.startHeightPct - dyPct, W_MIN / it.aspect, W_MAX / it.aspect)
-        const deltaH = it.startHeightPct - newHeight
-        nextWidth = clamp((newHeight * it.aspect * it.canvasHeightPx) / it.canvasWidthPx, W_MIN, W_MAX)
-        nextY = it.startY + deltaH
-        nextX = it.startX + (it.startWidth - nextWidth) / 2
-      }
-
       onGuidesChangeRef.current?.([])
-      updateDraft({
-        x: clamp(nextX, X_MIN, X_MAX),
-        y: clamp(nextY, Y_MIN, Y_MAX),
-        width: nextWidth,
+      const next = resizeClipFromPointer({
+        handle: it.handle,
+        pointerDx: e.clientX - it.startPointerX,
+        pointerDy: e.clientY - it.startPointerY,
+        startX: it.startX,
+        startY: it.startY,
+        startWidth: it.startWidth,
+        startHeightPct: it.startHeightPct,
+        rotation: it.startRotation,
+        canvasWidthPx: it.canvasWidthPx,
+        canvasHeightPx: it.canvasHeightPx,
       })
+      updateDraft(next)
       return
     }
 
@@ -222,22 +199,39 @@ export function useClipInteraction(opts: {
   }, [updateDraft])
 
   useEffect(() => {
-    if (!isInteracting) return
-
-    window.addEventListener('pointermove', onMove, { passive: false })
-    window.addEventListener('pointerup', stop)
-    window.addEventListener('pointercancel', stop)
     return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', stop)
-      window.removeEventListener('pointercancel', stop)
+      detachRef.current?.()
+      detachRef.current = null
     }
-  }, [isInteracting, onMove, stop])
+  }, [])
+
+  const attachListeners = () => {
+    if (detachRef.current) return
+    const handleMove = (e: PointerEvent) => onMove(e)
+    const handleStop = () => stop()
+    window.addEventListener('pointermove', handleMove, { passive: false })
+    window.addEventListener('pointerup', handleStop)
+    window.addEventListener('pointercancel', handleStop)
+    detachRef.current = () => {
+      window.removeEventListener('pointermove', handleMove)
+      window.removeEventListener('pointerup', handleStop)
+      window.removeEventListener('pointercancel', handleStop)
+    }
+  }
+
+  const canvasSize = () => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return null
+    return {
+      canvasWidthPx: Math.max(1, rect.width),
+      canvasHeightPx: Math.max(1, rect.height),
+    }
+  }
 
   const beginDrag = (e: React.PointerEvent) => {
     if (e.button !== 0) return
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
+    const size = canvasSize()
+    if (!size) return
     e.preventDefault()
     e.stopPropagation()
     const start = draftRef.current ?? transform
@@ -249,23 +243,26 @@ export function useClipInteraction(opts: {
       startPointerY: e.clientY,
       startX: start.x ?? transform.x,
       startY: start.y ?? transform.y,
-      canvasWidthPx: Math.max(1, rect.width),
-      canvasHeightPx: Math.max(1, rect.height),
+      startWidth: start.width ?? transform.width,
+      startHeightPct: heightPct,
+      ...size,
     }
     setIsInteracting(true)
+    attachListeners()
     updateDraft({ x: start.x ?? transform.x, y: start.y ?? transform.y })
   }
 
   const beginResize = (handle: ClipResizeHandle) => (e: React.PointerEvent) => {
     if (e.button !== 0) return
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
+    const size = canvasSize()
+    if (!size) return
     e.preventDefault()
     e.stopPropagation()
     const start = draftRef.current ?? transform
     const startWidth = start.width ?? transform.width
     const startX = start.x ?? transform.x
     const startY = start.y ?? transform.y
+    const startRotation = start.rotation ?? transform.rotation
     transformRef.current = { ...transform, ...start }
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     interaction.current = {
@@ -277,12 +274,12 @@ export function useClipInteraction(opts: {
       startY,
       startWidth,
       startHeightPct: heightPct,
-      aspect: mediaAspect > 0 ? mediaAspect : 1,
-      canvasWidthPx: Math.max(1, rect.width),
-      canvasHeightPx: Math.max(1, rect.height),
+      startRotation,
+      ...size,
     }
     setIsInteracting(true)
-    updateDraft({ x: startX, y: startY, width: startWidth })
+    attachListeners()
+    updateDraft({ x: startX, y: startY, width: startWidth, rotation: startRotation })
   }
 
   const beginRotate = (e: React.PointerEvent) => {
@@ -304,6 +301,7 @@ export function useClipInteraction(opts: {
       startRotation,
     }
     setIsInteracting(true)
+    attachListeners()
     updateDraft({ rotation: startRotation })
   }
 

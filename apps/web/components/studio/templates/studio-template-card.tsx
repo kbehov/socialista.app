@@ -2,6 +2,7 @@
 
 import { StudioTemplatePreviewMedia } from '@/components/studio/templates/studio-template-preview-media'
 import { CoverCard } from '@/components/ui/card'
+import { isVideoPreviewUrl } from '@/lib/studio/template-media'
 import { cn } from '@/lib/utils'
 import type { StudioTemplateDto } from '@socialista/types'
 
@@ -41,6 +42,7 @@ export function StudioTemplateCard({
         <StudioTemplatePreviewMedia
           url={template.previewImageUrl}
           alt=""
+          playOnHover={isVideoPreviewUrl(template.previewImageUrl)}
           className={cn(
             'size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10',
             'transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]',
@@ -54,10 +56,11 @@ export function StudioTemplateCard({
           aria-hidden
           className={cn(
             'pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/50 via-black/20 to-transparent',
-            isVisual ? 'h-20 opacity-70' : 'h-16 opacity-0',
-            'transition-opacity duration-200',
-            !isVisual && 'group-hover/card:opacity-100',
-            'group-focus-within/card:opacity-100 motion-reduce:transition-none',
+            isVisual ? 'h-20' : 'h-16',
+            'opacity-0 transition-opacity duration-200 motion-reduce:transition-none',
+            isVisual
+              ? 'group-hover/card:opacity-70 group-focus-within/card:opacity-70'
+              : 'group-hover/card:opacity-100 group-focus-within/card:opacity-100',
           )}
         />
       }
@@ -77,13 +80,9 @@ export function StudioTemplateCard({
             'transition-[opacity,transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
             'hover:bg-black/75 active:scale-[0.96] motion-reduce:active:scale-100',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
-            isVisual
-              ? 'opacity-100'
-              : cn(
-                  'opacity-100 pointer-fine:pointer-events-none pointer-fine:opacity-0',
-                  'pointer-fine:group-hover/card:pointer-events-auto pointer-fine:group-hover/card:opacity-100',
-                  'pointer-fine:group-focus-within/card:pointer-events-auto pointer-fine:group-focus-within/card:opacity-100',
-                ),
+            'opacity-100 pointer-fine:pointer-events-none pointer-fine:opacity-0',
+            'pointer-fine:group-hover/card:pointer-events-auto pointer-fine:group-hover/card:opacity-100',
+            'pointer-fine:group-focus-within/card:pointer-events-auto pointer-fine:group-focus-within/card:opacity-100',
           )}
         >
           Recreate

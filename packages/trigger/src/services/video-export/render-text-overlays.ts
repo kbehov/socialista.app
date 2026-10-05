@@ -1,7 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import sharp from 'sharp'
-import type { TextOverlay } from '@socialista/types'
+import { studioFontFaceWeights, studioFontFromCss, type TextOverlay } from '@socialista/types'
 import type { OverlayPng } from './build-filter-complex.js'
 
 /** Approximate average glyph width as a fraction of font size (sans-serif). */
@@ -39,9 +40,39 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
+async function localFontFile(url: string, fontDir: string, cache: Map<string, string>): Promise<string> {
+  const cached = cache.get(url)
+  if (cached) return cached
+  const dest = path.join(fontDir, `font_${cache.size}.ttf`)
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to download font (${response.status}): ${url}`)
+  }
+  await writeFile(dest, Buffer.from(await response.arrayBuffer()))
+  cache.set(url, dest)
+  return dest
+}
+
+async function overlayFontCss(fontFamily: string, fontDir: string, cache: Map<string, string>): Promise<string> {
+  const font = studioFontFromCss(fontFamily)
+  if (!font) return ''
+  const rules: string[] = []
+  for (const face of font.faces) {
+    const localPath = await localFontFile(face.ttf, fontDir, cache)
+    const href = pathToFileURL(localPath).href
+    for (const weight of studioFontFaceWeights(face.weight)) {
+      rules.push(
+        `@font-face{font-family:"${font.family}";font-style:normal;font-weight:${weight};src:url("${href}") format("truetype");}`,
+      )
+    }
+  }
+  return rules.join('')
+}
+
 function buildOverlaySvg(
   overlay: TextOverlay,
   resolution: { width: number; height: number },
+  fontCss: string,
 ): string | null {
   const scalePercent = resolution.width / 100
   const style = overlay.style
@@ -93,8 +124,11 @@ function buildOverlaySvg(
       ? ` transform="rotate(${rotation.toFixed(3)} ${cx.toFixed(2)} ${cy.toFixed(2)})"`
       : ''
 
+  const fontStyle = fontCss ? `<defs><style><![CDATA[${fontCss}]]></style></defs>` : ''
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${resolution.width}" height="${resolution.height}" viewBox="0 0 ${resolution.width} ${resolution.height}">
+  ${fontStyle}
   <g${groupTransform}>
     ${bgEl}
     ${textEls.join('\n    ')}
@@ -112,10 +146,14 @@ export async function renderOverlayPngs(
   workDir: string,
 ): Promise<OverlayPng[]> {
   await mkdir(workDir, { recursive: true })
+  const fontDir = path.join(workDir, 'fonts')
+  await mkdir(fontDir, { recursive: true })
+  const fontCache = new Map<string, string>()
   const out: OverlayPng[] = []
 
   for (const overlay of overlays) {
-    const svg = buildOverlaySvg(overlay, resolution)
+    const fontCss = await overlayFontCss(overlay.style.fontFamily, fontDir, fontCache)
+    const svg = buildOverlaySvg(overlay, resolution, fontCss)
     if (!svg) continue
     const fsPath = path.join(workDir, `text_${overlay.id}.png`)
     const png = await sharp(Buffer.from(svg)).png().toBuffer()

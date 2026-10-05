@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { buildTextLayerCss } from '@/lib/carousel/text-style'
 import { layerStyleFromOverlay } from '@/lib/video/defaults'
@@ -10,6 +10,7 @@ import { LayerTransformHandles } from '@/components/editor/layer-transform-handl
 import { useVideoEditorStore } from '@/lib/video/store'
 import type { TextOverlay } from '@socialista/types'
 import type { Corner } from '@/hooks/editor/use-drag-resize'
+import { ensureStudioFonts } from '@/lib/editor/studio-fonts'
 import { cn } from '@/lib/utils'
 
 type TextOverlayRendererProps = {
@@ -28,6 +29,10 @@ export function TextOverlayRenderer({
   onEditRequestHandled,
 }: TextOverlayRendererProps) {
   const overlays = useVideoEditorStore(s => s.project.textOverlays)
+
+  useLayoutEffect(() => {
+    ensureStudioFonts()
+  }, [])
   const playhead = useVideoEditorStore(s => s.playhead)
   const isPlaying = useVideoEditorStore(s => s.isPlaying)
   const selectedOverlayId = useVideoEditorStore(s => s.selectedOverlayId)
