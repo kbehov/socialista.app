@@ -41,6 +41,8 @@ export interface IModel {
   contextSupports: ContextSupport[]
   /** Per-resolution credits-per-second prices. Used for video models. */
   resolutions?: IModelResolution[]
+  /** Video model accepts a source clip (reference-to-video). */
+  supportsVideoReferences: boolean
   allowedInUgc: boolean
   usageCount: number
   modelProvider: string

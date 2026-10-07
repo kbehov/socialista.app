@@ -46,6 +46,7 @@ export type Model = {
   modelType: ModelType
   contextSupports?: ContextSupport[]
   resolutions?: ModelResolution[]
+  supportsVideoReferences?: boolean
   allowedInUgc?: boolean
   modelProvider: string
   company?: ModelCompany
@@ -80,6 +81,7 @@ export type CreateModelInput = {
   modelType: ModelType
   contextSupports: ContextSupport[]
   resolutions?: ModelResolution[]
+  supportsVideoReferences: boolean
   allowedInUgc: boolean
   modelProvider: string
   company: string

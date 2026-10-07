@@ -11,7 +11,11 @@ import {
   usePromptInputController,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
-import { AttachedMediaThumb, type AttachedMedia } from '@/components/files/attach-images-dialog'
+import {
+  AttachedMediaThumb,
+  type AttachMediaAccept,
+  type AttachedMedia,
+} from '@/components/files/attach-images-dialog'
 import { ModelLogo } from '@/components/icons/model-logo'
 import type { InfluencerPickerMediaType } from '@/components/studio/influencers/influencer-picker-dialog'
 import { StudioAnimatedPlaceholder } from '@/components/studio/prompt/studio-animated-placeholder'
@@ -262,6 +266,7 @@ export type StudioPromptComposerProps = {
   attachments: AttachedMedia[]
   onAttachmentsChange: (files: AttachedMedia[]) => void
   attachSources: readonly StudioAttachSource[]
+  attachAccept?: AttachMediaAccept
   influencerMediaType?: InfluencerPickerMediaType
   attachmentsLocked?: boolean
   maxAttachments?: number
@@ -306,6 +311,11 @@ export type StudioPromptComposerProps = {
   submitClassName?: string
   compact?: boolean
   embedded?: boolean
+  /** Puts model control before aspect/duration tools (recreate dialogs). */
+  modelSelectorFirst?: boolean
+  modelPickerSide?: 'top' | 'bottom'
+  /** Two-row footer: model + submit on top, settings wrap below. */
+  footerLayout?: 'inline' | 'stacked'
 }
 
 export function StudioPromptComposer({
@@ -315,6 +325,7 @@ export function StudioPromptComposer({
   attachments,
   onAttachmentsChange,
   attachSources,
+  attachAccept = 'image',
   influencerMediaType,
   attachmentsLocked = false,
   maxAttachments = 3,
@@ -358,6 +369,9 @@ export function StudioPromptComposer({
   submitClassName,
   compact = false,
   embedded = false,
+  modelSelectorFirst = false,
+  modelPickerSide = 'top',
+  footerLayout = 'inline',
 }: StudioPromptComposerProps) {
   const { textInput } = usePromptInputController()
   const [cursor, setCursor] = useState(0)
@@ -602,6 +616,7 @@ export function StudioPromptComposer({
           heading={modelPickerHeading}
           models={models}
           onSelectedModelChange={onSelectedModelChange}
+          pickerSide={modelPickerSide}
           selectedModelId={selectedModelId}
           tooltip="Choose generation model"
           variant={modelPickerVariant}
@@ -778,103 +793,220 @@ export function StudioPromptComposer({
             compact
               ? 'border-t-0 bg-transparent px-2.5 py-2 sm:px-3'
               : 'border-t-0 bg-transparent px-3 py-2.5 sm:px-3.5',
+            footerLayout === 'stacked' && 'flex-col items-stretch gap-2',
             footerClassName,
           )}
         >
-          <PromptInputTools className="min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-none">
-            {attachSources.length > 0 ? (
-              <>
-                <StudioAttachMenu
-                  sources={attachSources}
-                  attachments={attachments}
-                  onAttachmentsChange={onAttachmentsChange}
-                  maxAttachments={maxAttachments}
-                  workspaceId={workspaceId}
-                  influencerMediaType={influencerMediaType}
-                  disabled={attachDisabled}
-                  className={attachClassName}
-                  disabledReason={
-                    selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
-                      ? 'Add references'
-                      : 'This model does not support image references'
-                  }
-                />
-                <span aria-hidden className="mx-0.5 hidden h-4 w-px shrink-0 bg-black/10 dark:bg-white/12 sm:block" />
-              </>
-            ) : null}
-
-            {tools}
-
-            {count ? (
-              <StudioBatchCountMenu
-                value={count.value}
-                min={count.min}
-                max={count.max}
-                onChange={count.onChange}
-                disabled={disabled || pending}
-                label={count.label}
-                auto={count.auto}
-                onAutoChange={count.onAutoChange}
-                unitSingular={
-                  count.label?.toLowerCase().includes('slide')
-                    ? 'slide'
-                    : count.label?.toLowerCase().includes('video')
-                      ? 'video'
-                      : 'image'
-                }
-                unitPlural={
-                  count.label?.toLowerCase().includes('slide')
-                    ? 'slides'
-                    : count.label?.toLowerCase().includes('video')
-                      ? 'videos'
-                      : 'images'
-                }
-              />
-            ) : null}
-
-            {modelSelector}
-          </PromptInputTools>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {costLabel ? (
-              <span className="flex items-center gap-1 text-sidebar-label tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40">
-                <CoinsIcon className="size-3" strokeWidth={1.75} />
-                {costLabel}
-              </span>
-            ) : null}
-            <StudioInputActionTooltip label={submitTitle ?? submitLabel} shortcut={canSubmit ? '⌘↵' : undefined}>
-              <PromptInputSubmit
-                aria-label={submitTitle ?? submitLabel}
-                variant={submitAppearance === 'send' ? 'ghost' : 'default'}
-                className={cn(
-                  'transition-[transform,opacity] duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
-                  submitAppearance === 'send'
-                    ? STUDIO_COMPOSER_SEND_BUTTON_CLASS
-                    : 'rounded-xl px-2 text-[12px] font-medium tracking-[-0.015em]',
-                  submitAppearance !== 'send' && !canSubmit && 'opacity-40',
-                  submitClassName,
-                )}
-                disabled={!canSubmit}
-                size={submitAppearance === 'send' ? 'icon-xs' : 'xs'}
-                status={pending ? 'submitted' : undefined}
-              >
-                {submitAppearance === 'send' ? (
-                  pending ? null : (
-                    <ChevronUpIcon className="size-3.5 text-background" strokeWidth={2.5} />
-                  )
-                ) : (
+          {footerLayout === 'stacked' ? (
+            <>
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <PromptInputTools className="min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-none">
+                  {attachSources.length > 0 ? (
+                    <>
+                      <StudioAttachMenu
+                        sources={attachSources}
+                        accept={attachAccept}
+                        attachments={attachments}
+                        onAttachmentsChange={onAttachmentsChange}
+                        maxAttachments={maxAttachments}
+                        workspaceId={workspaceId}
+                        influencerMediaType={influencerMediaType}
+                        disabled={attachDisabled}
+                        className={attachClassName}
+                        disabledReason={
+                          selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
+                            ? 'Add references'
+                            : 'This model does not support image references'
+                        }
+                      />
+                      <span
+                        aria-hidden
+                        className="mx-0.5 hidden h-4 w-px shrink-0 bg-black/10 dark:bg-white/12 sm:block"
+                      />
+                    </>
+                  ) : null}
+                  {modelSelector}
+                </PromptInputTools>
+                <div className="flex shrink-0 items-center gap-2">
+                  {costLabel ? (
+                    <span className="flex items-center gap-1 text-sidebar-label tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40">
+                      <CoinsIcon className="size-3" strokeWidth={1.75} />
+                      {costLabel}
+                    </span>
+                  ) : null}
+                  <StudioInputActionTooltip
+                    label={submitTitle ?? submitLabel}
+                    shortcut={canSubmit ? '⌘↵' : undefined}
+                  >
+                    <PromptInputSubmit
+                      aria-label={submitTitle ?? submitLabel}
+                      variant={submitAppearance === 'send' ? 'ghost' : 'default'}
+                      className={cn(
+                        'transition-[transform,opacity] duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
+                        submitAppearance === 'send'
+                          ? STUDIO_COMPOSER_SEND_BUTTON_CLASS
+                          : 'rounded-xl px-2 text-[12px] font-medium tracking-[-0.015em]',
+                        submitAppearance !== 'send' && !canSubmit && 'opacity-40',
+                        submitClassName,
+                      )}
+                      disabled={!canSubmit}
+                      size={submitAppearance === 'send' ? 'icon-xs' : 'xs'}
+                      status={pending ? 'submitted' : undefined}
+                    >
+                      {submitAppearance === 'send' ? (
+                        pending ? null : (
+                          <ChevronUpIcon className="size-3.5 text-background" strokeWidth={2.5} />
+                        )
+                      ) : (
+                        <>
+                          <span>{submitLabel}</span>
+                          {!submitClassName ? (
+                            <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
+                              ⌘↵
+                            </Kbd>
+                          ) : null}
+                        </>
+                      )}
+                    </PromptInputSubmit>
+                  </StudioInputActionTooltip>
+                </div>
+              </div>
+              {tools || count ? (
+                <PromptInputTools className="flex-wrap items-center gap-0.5">
+                  {tools}
+                  {count ? (
+                    <StudioBatchCountMenu
+                      value={count.value}
+                      min={count.min}
+                      max={count.max}
+                      onChange={count.onChange}
+                      disabled={disabled || pending}
+                      label={count.label}
+                      auto={count.auto}
+                      onAutoChange={count.onAutoChange}
+                      unitSingular={
+                        count.label?.toLowerCase().includes('slide')
+                          ? 'slide'
+                          : count.label?.toLowerCase().includes('video')
+                            ? 'video'
+                            : 'image'
+                      }
+                      unitPlural={
+                        count.label?.toLowerCase().includes('slide')
+                          ? 'slides'
+                          : count.label?.toLowerCase().includes('video')
+                            ? 'videos'
+                            : 'images'
+                      }
+                    />
+                  ) : null}
+                </PromptInputTools>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <PromptInputTools className="min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto scrollbar-none">
+                {attachSources.length > 0 ? (
                   <>
-                    <span>{submitLabel}</span>
-                    {!submitClassName ? (
-                      <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
-                        ⌘↵
-                      </Kbd>
-                    ) : null}
+                    <StudioAttachMenu
+                      sources={attachSources}
+                      accept={attachAccept}
+                      attachments={attachments}
+                      onAttachmentsChange={onAttachmentsChange}
+                      maxAttachments={maxAttachments}
+                      workspaceId={workspaceId}
+                      influencerMediaType={influencerMediaType}
+                      disabled={attachDisabled}
+                      className={attachClassName}
+                      disabledReason={
+                        selectedModel?.contextSupports?.includes(ContextSupport.IMAGE)
+                          ? 'Add references'
+                          : 'This model does not support image references'
+                      }
+                    />
+                    <span
+                      aria-hidden
+                      className="mx-0.5 hidden h-4 w-px shrink-0 bg-black/10 dark:bg-white/12 sm:block"
+                    />
                   </>
-                )}
-              </PromptInputSubmit>
-            </StudioInputActionTooltip>
-          </div>
+                ) : null}
+
+                {modelSelectorFirst ? modelSelector : null}
+                {tools}
+                {count ? (
+                  <StudioBatchCountMenu
+                    value={count.value}
+                    min={count.min}
+                    max={count.max}
+                    onChange={count.onChange}
+                    disabled={disabled || pending}
+                    label={count.label}
+                    auto={count.auto}
+                    onAutoChange={count.onAutoChange}
+                    unitSingular={
+                      count.label?.toLowerCase().includes('slide')
+                        ? 'slide'
+                        : count.label?.toLowerCase().includes('video')
+                          ? 'video'
+                          : 'image'
+                    }
+                    unitPlural={
+                      count.label?.toLowerCase().includes('slide')
+                        ? 'slides'
+                        : count.label?.toLowerCase().includes('video')
+                          ? 'videos'
+                          : 'images'
+                    }
+                  />
+                ) : null}
+                {!modelSelectorFirst ? modelSelector : null}
+              </PromptInputTools>
+
+              <div className="flex shrink-0 items-center gap-2">
+                {costLabel ? (
+                  <span className="flex items-center gap-1 text-sidebar-label tabular-nums tracking-[-0.015em] text-black/40 dark:text-white/40">
+                    <CoinsIcon className="size-3" strokeWidth={1.75} />
+                    {costLabel}
+                  </span>
+                ) : null}
+                <StudioInputActionTooltip
+                  label={submitTitle ?? submitLabel}
+                  shortcut={canSubmit ? '⌘↵' : undefined}
+                >
+                  <PromptInputSubmit
+                    aria-label={submitTitle ?? submitLabel}
+                    variant={submitAppearance === 'send' ? 'ghost' : 'default'}
+                    className={cn(
+                      'transition-[transform,opacity] duration-150 active:scale-[0.96] motion-reduce:active:scale-100',
+                      submitAppearance === 'send'
+                        ? STUDIO_COMPOSER_SEND_BUTTON_CLASS
+                        : 'rounded-xl px-2 text-[12px] font-medium tracking-[-0.015em]',
+                      submitAppearance !== 'send' && !canSubmit && 'opacity-40',
+                      submitClassName,
+                    )}
+                    disabled={!canSubmit}
+                    size={submitAppearance === 'send' ? 'icon-xs' : 'xs'}
+                    status={pending ? 'submitted' : undefined}
+                  >
+                    {submitAppearance === 'send' ? (
+                      pending ? null : (
+                        <ChevronUpIcon className="size-3.5 text-background" strokeWidth={2.5} />
+                      )
+                    ) : (
+                      <>
+                        <span>{submitLabel}</span>
+                        {!submitClassName ? (
+                          <Kbd className="ml-0.5 hidden h-5 min-w-5 border-primary-foreground/15 bg-primary-foreground/10 px-1 text-[10px] font-normal text-primary-foreground/85 lg:inline-flex">
+                            ⌘↵
+                          </Kbd>
+                        ) : null}
+                      </>
+                    )}
+                  </PromptInputSubmit>
+                </StudioInputActionTooltip>
+              </div>
+            </>
+          )}
         </PromptInputFooter>
       </PromptInput>
       {dropActive ? (

@@ -152,6 +152,7 @@ export type GenerateFalVideoOptions = {
   prompt: string
   imageUrl?: string
   imageUrls?: string[]
+  videoUrls?: string[]
   aspectRatio?: string
   negativePrompt?: string
   duration?: number
@@ -196,6 +197,7 @@ export async function generateVideoFal({
   prompt,
   imageUrl,
   imageUrls,
+  videoUrls,
   aspectRatio = '9:16',
   negativePrompt,
   duration,
@@ -205,6 +207,10 @@ export async function generateVideoFal({
   userId,
   onProgress,
 }: GenerateFalVideoOptions): Promise<string> {
+  if (videoUrls && videoUrls.length > 0) {
+    throw new Error('This model does not support video references')
+  }
+
   const referenceImages = collectReferenceImages(imageUrl, imageUrls)
 
   const input: Record<string, unknown> = {

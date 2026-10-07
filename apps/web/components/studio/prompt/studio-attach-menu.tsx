@@ -10,6 +10,7 @@ import {
 import { StudioInputActionTooltip } from "@/components/studio/prompt/studio-input-action-tooltip";
 import {
   AttachImagesDialog,
+  type AttachMediaAccept,
   type AttachedMedia,
 } from "@/components/files/attach-images-dialog";
 import { ProductPickerDialog } from "@/components/studio/static-ads/product-picker-dialog";
@@ -94,6 +95,7 @@ type StudioAttachMenuProps = {
   disabledReason?: string;
   className?: string;
   influencerMediaType?: InfluencerPickerMediaType;
+  accept?: AttachMediaAccept;
 };
 
 function buildMenuItems(sources: readonly StudioAttachSource[]): StudioAttachMenuItem[] {
@@ -123,6 +125,7 @@ export function StudioAttachMenu({
   disabledReason,
   className,
   influencerMediaType = "image",
+  accept = "image",
 }: StudioAttachMenuProps) {
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const projectId = useProjectStore((s) => getProjectId(s.currentProject));
@@ -365,7 +368,7 @@ export function StudioAttachMenu({
       {hasFilesSource ? (
         <AttachImagesDialog
           open={mediaOpen}
-          accept="image"
+          accept={accept}
           onOpenChange={setMediaOpen}
           maxSelect={mediaSlots}
           initialSelected={mediaAttachments}

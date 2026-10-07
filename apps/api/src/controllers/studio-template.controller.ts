@@ -48,6 +48,7 @@ function serializeTemplate(template: IStudioTemplate): StudioTemplateDto {
     _id: template._id.toString(),
     categories: template.categories,
     previewImageUrl: template.previewImageUrl,
+    ...(template.sourceImageUrl ? { sourceImageUrl: template.sourceImageUrl } : {}),
     ...(template.name ? { name: template.name } : {}),
     ...(template.description ? { description: template.description } : {}),
     createdAt: template.createdAt,

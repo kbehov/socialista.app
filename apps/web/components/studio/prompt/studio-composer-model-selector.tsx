@@ -34,6 +34,8 @@ type StudioComposerModelSelectorProps = {
   heading?: string
   tooltip?: string
   variant?: StudioModelPickerVariant
+  /** Prefer bottom in full-screen recreate dialogs so the list opens into free space. */
+  pickerSide?: 'top' | 'bottom'
 }
 
 type ModelFilterId =
@@ -193,6 +195,7 @@ export function StudioComposerModelSelector({
   heading = 'Text models',
   tooltip = 'Choose generation model',
   variant = 'default',
+  pickerSide = 'top',
 }: StudioComposerModelSelectorProps) {
   const [open, setOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Set<ModelFilterId>>(() => new Set())
@@ -320,12 +323,12 @@ export function StudioComposerModelSelector({
 
       <PopoverContent
         align="start"
-        collisionPadding={12}
+        collisionPadding={16}
         className={cn(
-          'flex max-h-[min(70dvh,26rem)] w-[min(calc(100vw-1.5rem),26rem)] flex-col gap-0 overflow-hidden rounded-xl border-border/50 p-0 shadow-xl',
+          'z-[100] flex max-h-[min(70dvh,26rem)] w-[min(calc(100vw-1.5rem),26rem)] flex-col gap-0 overflow-hidden rounded-xl border-border/50 p-0 shadow-xl',
           'ring-1 ring-foreground/8',
         )}
-        side="top"
+        side={pickerSide}
         sideOffset={6}
       >
         <Command

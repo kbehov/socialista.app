@@ -24,14 +24,12 @@ function ImageStudioWorkspaceBody({ models, templateCategories }: ImageStudioWor
         title="What are we posting today?"
         description="Attach your product with @image1 — we'll handle the rest."
         contentMaxWidth="roomy"
-        footer={
-          <div className="flex flex-col items-center gap-3.5">
-            <ImageIdeaChips />
-            <ImageStudioPromptExtras />
-          </div>
-        }
+        footer={<ImageStudioPromptExtras />}
       >
-        <ImageGenerationPromptInput models={models} />
+        <div className="flex w-full flex-col gap-3">
+          <ImageIdeaChips compact />
+          <ImageGenerationPromptInput models={models} />
+        </div>
       </StudioHomeComposerSection>
 
       <StudioHomeBelowSection ariaLabel="Templates" className="max-w-6xl">

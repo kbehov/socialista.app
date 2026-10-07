@@ -130,7 +130,7 @@
 
   --secondary: oklch(0.952 0.003 var(--neutral-hue));
   --secondary-foreground: oklch(0.205 0.008 var(--neutral-hue));
-  --muted: oklch(0.952 0.003 var(--neutral-hue));
+  --muted: oklch(0.95 0.003 var(--neutral-hue));
   --muted-foreground: oklch(0.52 0.012 var(--neutral-hue));
   --accent: oklch(0.938 0.003 var(--neutral-hue));
   --accent-foreground: oklch(0.205 0.008 var(--neutral-hue));
@@ -1222,26 +1222,12 @@
     padding-bottom: var(--dashboard-padding-y);
   }
 
-  .dashboard-main:has(
-    .image-studio,
-    .studio-shell,
-    .video-studio,
-    .slideshow-studio,
-    .ugc-studio,
-    .post-composer
-  ) {
+  .dashboard-main:has(.image-studio, .studio-shell, .video-studio, .slideshow-studio, .ugc-studio, .post-composer) {
     gap: 0;
     padding: 0;
   }
 
-  .dashboard-main:has(
-    .image-studio,
-    .studio-shell,
-    .video-studio,
-    .slideshow-studio,
-    .ugc-studio,
-    .post-composer
-  )
+  .dashboard-main:has(.image-studio, .studio-shell, .video-studio, .slideshow-studio, .ugc-studio, .post-composer)
     .dashboard-page {
     max-width: none;
   }
@@ -1866,12 +1852,16 @@
   .editor-segment-tab[aria-selected='true'] {
     background-color: var(--card);
     color: var(--foreground);
-    box-shadow: var(--highlight-inset), 0 1px 1px oklch(0 0 0 / 0.04);
+    box-shadow:
+      var(--highlight-inset),
+      0 1px 1px oklch(0 0 0 / 0.04);
   }
 
   .dark .editor-segment-tab[aria-selected='true'] {
     background-color: var(--surface-3);
-    box-shadow: var(--highlight-inset), 0 1px 1px oklch(0 0 0 / 0.32);
+    box-shadow:
+      var(--highlight-inset),
+      0 1px 1px oklch(0 0 0 / 0.32);
   }
 
   .editor-segment-tab:active {
@@ -2138,38 +2128,14 @@
   /* Image studio prompt stage — photo sits behind the headline and composer, then fades into the page. */
   .image-studio-prompt-stage-scrim {
     background:
-      linear-gradient(
-        to right,
-        var(--background) 0%,
-        transparent 8%,
-        transparent 92%,
-        var(--background) 100%
-      ),
-      linear-gradient(
-        to bottom,
-        rgb(0 0 0 / 0.34) 0%,
-        rgb(0 0 0 / 0.12) 32%,
-        transparent 54%,
-        var(--background) 100%
-      );
+      linear-gradient(to right, var(--background) 0%, transparent 8%, transparent 92%, var(--background) 100%),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.34) 0%, rgb(0 0 0 / 0.12) 32%, transparent 54%, var(--background) 100%);
   }
 
   .dark .image-studio-prompt-stage-scrim {
     background:
-      linear-gradient(
-        to right,
-        var(--background) 0%,
-        transparent 8%,
-        transparent 92%,
-        var(--background) 100%
-      ),
-      linear-gradient(
-        to bottom,
-        rgb(0 0 0 / 0.46) 0%,
-        rgb(0 0 0 / 0.24) 32%,
-        transparent 50%,
-        var(--background) 100%
-      );
+      linear-gradient(to right, var(--background) 0%, transparent 8%, transparent 92%, var(--background) 100%),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.46) 0%, rgb(0 0 0 / 0.24) 32%, transparent 50%, var(--background) 100%);
   }
 
   .studio-home-hero-banner {

@@ -26,6 +26,7 @@ const modelSchema = new Schema<IModel>(
       ],
       default: [],
     },
+    supportsVideoReferences: { type: Boolean, required: true, default: false },
     allowedInUgc: { type: Boolean, required: true, default: false },
     modelProvider: { type: String, required: true },
     company: { type: Schema.Types.ObjectId, ref: 'AiCompany', required: true },

@@ -13,10 +13,10 @@ export const dashboardSurface = {
 
   panel: 'rounded-lg border border-border bg-background px-4 py-3 shadow-none',
   tableShell: 'overflow-hidden rounded-lg border border-border bg-background shadow-none',
-  tableHead: 'border-border bg-muted/20',
+  tableHead: 'border-border bg-foreground/5',
 
   segment:
-    'inline-flex items-center gap-0.5 rounded-[var(--control-radius)] border border-border bg-muted/20 p-0.5',
+    'inline-flex items-center gap-0.5 rounded-[var(--control-radius)] border border-border bg-foreground/5 p-0.5',
   segmentItem:
     'rounded-[var(--control-radius)] text-xs font-medium tracking-normal transition-[color,background-color,transform] duration-(--duration-normal) ease-out active:scale-[var(--press-scale)] motion-reduce:active:scale-100',
   segmentItemActive: 'bg-foreground text-background',

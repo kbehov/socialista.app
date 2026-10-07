@@ -18,7 +18,10 @@ import {
 } from '@/components/studio/prompt/studio-composer-surface'
 import { StudioPromptComposer } from '@/components/studio/prompt/studio-prompt-composer'
 import { StudioReferenceTagHint } from '@/components/studio/prompt/studio-reference-tag-hint'
-import { useStaticAdStudio } from '@/components/studio/static-ads/static-ad-studio-provider'
+import {
+  useStaticAdStudio,
+  type StaticAdTemplateReference,
+} from '@/components/studio/static-ads/static-ad-studio-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +30,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LanguageSelector } from '@/components/ui/language-selector'
+import { DEFAULT_AD_LANGUAGE, LanguageSelector } from '@/components/ui/language-selector'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { useWorkspaceBilling } from '@/hooks/use-workspace-billing'
 import { storeGenerationAccessToken } from '@/lib/image-generation/session'
@@ -67,31 +70,67 @@ const ASPECT_RATIOS = [
 const DEFAULT_PLACEHOLDER =
   'Optional brief — tone, audience, or headline. Leave empty and we invent from your references.'
 
-type StaticAdPromptComposerProps = {
+const noop = () => {}
+
+export type StaticAdPromptInputProps = {
   workspaceId: string
   models: Model[]
+  hideExtras?: boolean
+  bindStudio?: boolean
+  autoFocus?: boolean
+  initialPrompt?: string
+  initialAttachments?: AttachedMedia[]
+  initialTemplateReference?: StaticAdTemplateReference | null
+  placeholder?: string
+  surfaceClassName?: string
+  hideTemplateName?: boolean
 }
 
-function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerProps) {
+type StaticAdPromptComposerProps = StaticAdPromptInputProps
+
+function StaticAdPromptComposer({
+  workspaceId,
+  models,
+  hideExtras = false,
+  bindStudio = true,
+  autoFocus,
+  initialPrompt,
+  initialAttachments,
+  initialTemplateReference = null,
+  placeholder: placeholderProp,
+  surfaceClassName: surfaceClassNameProp,
+  hideTemplateName = false,
+}: StaticAdPromptComposerProps) {
   const router = useRouter()
   const { textInput } = usePromptInputController()
+  const setInput = textInput.setInput
   const currentWorkspace = useWorkspaceStore(s => s.currentWorkspace)
   const projectId = useProjectStore(s => getProjectId(s.currentProject))
   const { credits } = useWorkspaceBilling()
-  const {
-    composerRef,
-    aspectRatio,
-    setAspectRatio,
-    language,
-    setLanguage,
-    registerPromptHandlers,
-    clearActivePreset,
-    templateReference,
-    clearTemplateReference,
-  } = useStaticAdStudio()
+  const studio = useStaticAdStudio()
+  const localComposerRef = useRef<HTMLDivElement>(null)
+  const composerRef = bindStudio ? studio.composerRef : localComposerRef
+
+  const [localAspectRatio, setLocalAspectRatio] = useState<StaticAdAspectRatio>('1:1')
+  const [localLanguage, setLocalLanguage] = useState(DEFAULT_AD_LANGUAGE)
+  const aspectRatio = bindStudio ? studio.aspectRatio : localAspectRatio
+  const setAspectRatio = bindStudio ? studio.setAspectRatio : setLocalAspectRatio
+  const language = bindStudio ? studio.language : localLanguage
+  const setLanguage = bindStudio ? studio.setLanguage : setLocalLanguage
+  const clearActivePreset = bindStudio ? studio.clearActivePreset : noop
+  const studioTemplateReference = studio.templateReference
+  const clearTemplateReference = studio.clearTemplateReference
+  const registerPromptHandlers = bindStudio ? studio.registerPromptHandlers : undefined
+
+  const [localTemplateReference, setLocalTemplateReference] = useState<StaticAdTemplateReference | null>(
+    initialTemplateReference,
+  )
+  const templateReference = bindStudio ? studioTemplateReference : localTemplateReference
 
   const [isPending, startTransition] = useTransition()
-  const [attachments, setAttachments] = useState<AttachedMedia[]>([])
+  const [attachments, setAttachments] = useState<AttachedMedia[]>(() =>
+    initialAttachments?.length ? initialAttachments.slice(0, MAX_STATIC_AD_REFERENCES) : [],
+  )
   const [selectedModelId, setSelectedModelId] = useState(() => {
     const preferred = models.find(model => model.value === STATIC_AD_MODEL)
     return preferred?._id ?? models[0]?._id ?? ''
@@ -112,6 +151,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
   const hasEnoughCredits = !selectedModel || credits >= billedCost
 
   const placeholder = useMemo(() => {
+    if (placeholderProp) return placeholderProp
     if (templateReference && attachments.length >= 2) {
       return 'recreate the template with the creator from @image1 holding the product from @image2…'
     }
@@ -125,7 +165,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
       return 'Optional brief — recreate this template with your product and creator.'
     }
     return DEFAULT_PLACEHOLDER
-  }, [attachments.length, templateReference])
+  }, [attachments.length, placeholderProp, templateReference])
 
   const animatedPlaceholderWords = useMemo(() => {
     if (attachments.length > 0 || templateReference) return undefined
@@ -177,6 +217,7 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
   }, [])
 
   useEffect(() => {
+    if (!registerPromptHandlers) return
     registerPromptHandlers({
       setPrompt,
       getPrompt: () => textInputRef.current.value,
@@ -187,10 +228,18 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
   }, [focusPrompt, insertAtCursor, registerPromptHandlers, setAspectRatio, setPrompt])
 
   useEffect(() => {
+    if (!initialPrompt) return
+    setInput(initialPrompt)
+  }, [initialPrompt, setInput])
+
+  useEffect(() => {
+    if (autoFocus === false) return
+    const shouldFocus = autoFocus ?? !hideExtras
+    if (!shouldFocus) return
     if (typeof window === 'undefined') return
     if (!window.matchMedia('(pointer: fine)').matches) return
     textareaRef.current?.focus()
-  }, [])
+  }, [autoFocus, hideExtras])
 
   const handleAttachmentsChange = useCallback(
     (next: AttachedMedia[]) => {
@@ -375,26 +424,32 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
             <div className="flex items-center gap-2 px-3 sm:px-3.5">
               <div className="relative size-8 shrink-0 overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/12">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={templateReference.imageUrl}
-                  alt={templateReference.name ?? 'Template reference'}
-                  className="size-full object-cover"
-                />
+                <img src={templateReference.imageUrl} alt="" className="size-full object-cover" />
               </div>
               <div className="min-w-0 flex-1 text-left">
                 <p className="truncate text-[12px] font-medium tracking-[-0.015em] text-foreground">
-                  {templateReference.name ?? 'Template reference'}
+                  Template reference
                 </p>
-                <p className="truncate text-[11px] text-black/44 dark:text-white/44">
-                  Recreate this ad with your product
-                </p>
+                {!hideTemplateName && templateReference.name ? (
+                  <p className="truncate text-[11px] text-black/44 dark:text-white/44">{templateReference.name}</p>
+                ) : (
+                  <p className="truncate text-[11px] text-black/44 dark:text-white/44">
+                    Recreate this ad with your product
+                  </p>
+                )}
               </div>
               <button
                 type="button"
                 aria-label="Remove template reference"
                 disabled={isPending}
                 className="flex size-6 items-center justify-center rounded-md text-black/40 transition-colors hover:bg-black/[0.05] hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100 dark:text-white/40 dark:hover:bg-white/[0.08]"
-                onClick={clearTemplateReference}
+                onClick={() => {
+                  if (bindStudio) {
+                    clearTemplateReference()
+                  } else {
+                    setLocalTemplateReference(null)
+                  }
+                }}
               >
                 <XIcon className="size-3.5" strokeWidth={1.75} />
               </button>
@@ -407,12 +462,12 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
         }}
         composerRef={composerRef}
         onPromptChange={clearActivePreset}
-        surfaceClassName={STUDIO_HOME_COMPOSER_SURFACE_CLASS}
+        surfaceClassName={surfaceClassNameProp ?? STUDIO_HOME_COMPOSER_SURFACE_CLASS}
         emptyTitle="No image-input models yet"
         emptyDescription="Add a text-to-image model with image input support in the manager to start generating product ads."
       />
 
-      {attachments.length > 0 ? (
+      {!hideExtras && attachments.length > 0 ? (
         <div className="mt-2.5 px-0.5">
           <StudioReferenceTagHint attachmentCount={attachments.length} variant="static-ad" />
         </div>
@@ -421,16 +476,24 @@ function StaticAdPromptComposer({ workspaceId, models }: StaticAdPromptComposerP
   )
 }
 
-export function StaticAdPromptInput({
-  workspaceId,
-  models,
-}: {
-  workspaceId: string
-  models: Model[]
-}) {
+export function StaticAdPromptInput(props: StaticAdPromptInputProps) {
+  if (props.models.length === 0) {
+    return (
+      <div className="w-full rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-14 text-center">
+        <div className="mx-auto mb-4 flex size-9 items-center justify-center rounded-xl bg-background ring-1 ring-border/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+          <SparklesIcon className="size-3.5 text-muted-foreground" />
+        </div>
+        <p className="text-[15px] font-medium tracking-[-0.02em] text-foreground">No image-input models yet</p>
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[1.55] tracking-[-0.01em] text-muted-foreground">
+          Add a text-to-image model with image input support in the manager to start generating product ads.
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <PromptInputProvider>
-      <StaticAdPromptComposer models={models} workspaceId={workspaceId} />
+    <PromptInputProvider initialInput={props.initialPrompt ?? ''}>
+      <StaticAdPromptComposer {...props} />
     </PromptInputProvider>
   )
 }

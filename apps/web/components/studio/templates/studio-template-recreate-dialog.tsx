@@ -17,8 +17,16 @@ import type { StudioTemplateDto } from '@socialista/types'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
+export type StudioTemplateRecreateOverride = {
+  id: string
+  previewUrl: string
+  attachments: AttachedMedia[]
+  initialPrompt: string
+}
+
 type StudioTemplateRecreateState = {
-  template: StudioTemplateDto
+  template: StudioTemplateDto | null
+  previewUrl: string
   prompt: string
   attachments: AttachedMedia[]
 }
@@ -42,6 +50,7 @@ export function useStudioTemplateRecreate() {
 
 type StudioTemplateRecreateDialogProps = {
   template: StudioTemplateDto | null
+  recreateOverride?: StudioTemplateRecreateOverride | null
   open: boolean
   onOpenChange: (open: boolean) => void
   ideas: readonly StudioTemplateRecreateIdea[]
@@ -54,7 +63,13 @@ type StudioTemplateRecreateDialogProps = {
   onGoPrevious?: () => void
   onGoNext?: () => void
   children: ReactNode
+  sessionClassName?: string
+  previewMediaClassName?: string
+  scrollAreaClassName?: string
 }
+
+const RECREATE_PREVIEW_MEDIA_CLASS =
+  'max-h-[min(58vh,640px)] w-auto max-w-full rounded-xl object-contain shadow-[0_24px_64px_-24px_rgba(0,0,0,0.65)] outline outline-1 outline-white/10'
 
 function RecreateIdeas({
   ideas,
@@ -119,36 +134,53 @@ function RecreateIdeas({
 
 function RecreateSession({
   template,
+  recreateOverride,
   ideas,
   resolveInitialPrompt,
   contextLabel,
+  sessionClassName,
+  previewMediaClassName,
   children,
 }: {
-  template: StudioTemplateDto
+  template: StudioTemplateDto | null
+  recreateOverride?: StudioTemplateRecreateOverride
   ideas: readonly StudioTemplateRecreateIdea[]
   resolveInitialPrompt: (template: StudioTemplateDto) => string
   contextLabel?: string
+  sessionClassName?: string
+  previewMediaClassName?: string
   children: ReactNode
 }) {
-  const [prompt, setPrompt] = useState(() => resolveInitialPrompt(template))
-  const attachments = useMemo(() => templateToRecreateAttachments(template), [template])
+  const previewUrl = recreateOverride?.previewUrl ?? template?.previewImageUrl ?? ''
+  const attachments = useMemo(
+    () => recreateOverride?.attachments ?? (template ? templateToRecreateAttachments(template) : []),
+    [recreateOverride, template],
+  )
+  const [prompt, setPrompt] = useState(() =>
+    recreateOverride?.initialPrompt ?? (template ? resolveInitialPrompt(template) : ''),
+  )
   const value = useMemo(
     () => ({
-      state: { template, prompt, attachments },
+      state: { template, previewUrl, prompt, attachments },
       actions: { setPrompt },
     }),
-    [attachments, prompt, template],
+    [attachments, previewUrl, prompt, template],
   )
 
   return (
     <StudioTemplateRecreateContext.Provider value={value}>
-      <div className="pointer-events-auto flex w-full max-w-[min(92vw,32rem)] flex-col items-center">
+      <div
+        className={cn(
+          'pointer-events-auto flex w-full flex-col items-center',
+          sessionClassName ?? 'max-w-[min(92vw,32rem)]',
+        )}
+      >
         <div className="relative w-fit max-w-full">
           <StudioTemplatePreviewMedia
-            url={template.previewImageUrl}
+            url={previewUrl}
             alt=""
             autoPlay
-            className="max-h-[min(58vh,640px)] w-auto max-w-full rounded-xl object-contain shadow-[0_24px_64px_-24px_rgba(0,0,0,0.65)] outline outline-1 outline-white/10"
+            className={previewMediaClassName ?? RECREATE_PREVIEW_MEDIA_CLASS}
           />
           <RecreateIdeas ideas={ideas} prompt={prompt} onSelect={setPrompt} />
         </div>
@@ -165,6 +197,7 @@ function RecreateSession({
 
 export function StudioTemplateRecreateDialog({
   template,
+  recreateOverride,
   open,
   onOpenChange,
   ideas,
@@ -177,8 +210,13 @@ export function StudioTemplateRecreateDialog({
   onGoPrevious,
   onGoNext,
   children,
+  sessionClassName,
+  previewMediaClassName,
+  scrollAreaClassName,
 }: StudioTemplateRecreateDialogProps) {
   const canNavigate = Boolean(onGoPrevious || onGoNext)
+  const sessionKey = recreateOverride?.id ?? template?._id
+  const hasSession = Boolean(open && sessionKey && (recreateOverride || template))
 
   useEffect(() => {
     if (!open || !canNavigate) return
@@ -271,14 +309,22 @@ export function StudioTemplateRecreateDialog({
           </>
         ) : null}
 
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-16">
-          {open && template ? (
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 justify-center overflow-y-auto overscroll-contain px-4 py-10 sm:py-14',
+            scrollAreaClassName ?? 'items-center',
+          )}
+        >
+          {hasSession ? (
             <RecreateSession
-              key={template._id}
-              template={template}
+              key={sessionKey}
+              template={recreateOverride ? null : template}
+              recreateOverride={recreateOverride ?? undefined}
               ideas={ideas}
               resolveInitialPrompt={resolveInitialPrompt}
               contextLabel={contextLabel}
+              sessionClassName={sessionClassName}
+              previewMediaClassName={previewMediaClassName}
             >
               {children}
             </RecreateSession>

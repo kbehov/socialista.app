@@ -42,6 +42,7 @@ import {
   ZapIcon,
   type LucideIcon,
 } from 'lucide-react'
+import { StudioHomeSectionHeader } from '@/components/studio/studio-home-section-header'
 import { useStaticAdStudio } from './static-ad-studio-provider'
 
 const PRESET_ICONS: Record<StaticAdFormatPresetId, LucideIcon> = {
@@ -72,35 +73,59 @@ const PRESET_ICONS: Record<StaticAdFormatPresetId, LucideIcon> = {
   'meme-format': LaughIcon,
 }
 
-function PresetCarouselNav() {
+function PresetCarouselNav({ compact }: { compact?: boolean }) {
   const { canScrollPrev, canScrollNext, scrollPrev, scrollNext } = useCarousel()
 
   if (!canScrollPrev && !canScrollNext) return null
 
   const buttonClass = cn(
-    'inline-flex size-8 items-center justify-center rounded-full',
+    'inline-flex items-center justify-center rounded-full',
     'text-black/50 dark:text-white/50',
     'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
     'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
     'active:scale-[0.96] motion-reduce:active:scale-100',
     'disabled:pointer-events-none disabled:opacity-30',
+    compact ? 'size-6' : 'size-8',
   )
+
+  const iconClass = compact ? 'size-3' : 'size-3.5'
 
   return (
     <div className="flex shrink-0 items-center gap-0.5">
       <button type="button" aria-label="Scroll formats left" disabled={!canScrollPrev} onClick={scrollPrev} className={buttonClass}>
-        <ChevronLeftIcon className="size-3.5" strokeWidth={1.75} />
+        <ChevronLeftIcon className={iconClass} strokeWidth={1.75} />
       </button>
       <button type="button" aria-label="Scroll formats right" disabled={!canScrollNext} onClick={scrollNext} className={buttonClass}>
-        <ChevronRightIcon className="size-3.5" strokeWidth={1.75} />
+        <ChevronRightIcon className={iconClass} strokeWidth={1.75} />
       </button>
     </div>
   )
 }
 
-export function StaticAdFormatPresets() {
+type StaticAdFormatPresetsProps = {
+  compact?: boolean
+}
+
+export function StaticAdFormatPresets({ compact = false }: StaticAdFormatPresetsProps) {
   const { applyFormatPreset, activePresetId } = useStaticAdStudio()
+
+  const chipClass = (isActive: boolean) =>
+    cn(
+      'inline-flex shrink-0 items-center rounded-full font-medium leading-none tracking-[-0.015em]',
+      'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+      'active:scale-[0.96] motion-reduce:active:scale-100',
+      compact
+        ? 'h-7 gap-1 px-2.5 text-[11px]'
+        : 'h-8 gap-1.5 px-3.5 text-[13px]',
+      isActive
+        ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+        : 'bg-black/[0.045] text-foreground/72 hover:bg-black/[0.08] hover:text-foreground dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
+    )
+
+  const iconSize = compact ? 'size-3' : 'size-3.5'
+  const chipGap = compact ? 'pl-1.5' : 'pl-2'
 
   return (
     <Carousel
@@ -111,20 +136,30 @@ export function StaticAdFormatPresets() {
         containScroll: 'trimSnaps',
       }}
     >
-      <div className="mb-3 space-y-1">
-        <p className="text-[13px] font-medium leading-none tracking-[-0.011em] text-black/56 dark:text-white/56">
-          Formats
-        </p>
-        <p className="text-[13px] leading-snug tracking-[-0.01em] text-muted-foreground/75">
-          Quick-start layouts — tap one to prefill the prompt.
-        </p>
-      </div>
+      {compact ? (
+        <div className="mb-1.5 flex items-center gap-2">
+          <span className="shrink-0 text-[11px] font-medium tracking-[-0.01em] text-black/48 dark:text-white/48">
+            Formats
+          </span>
+          <div
+            aria-hidden
+            className="h-px min-w-0 flex-1 bg-linear-to-r from-border/60 to-transparent"
+          />
+          <PresetCarouselNav compact />
+        </div>
+      ) : (
+        <StudioHomeSectionHeader
+          className="mb-3"
+          title="Formats"
+          description="Quick-start layouts — tap one to prefill the prompt."
+        />
+      )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <div className="relative min-w-0 flex-1">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
           />
 
           <CarouselContent className="ml-0" role="listbox" aria-label="Format starters">
@@ -135,7 +170,7 @@ export function StaticAdFormatPresets() {
               return (
                 <CarouselItem
                   key={preset.id}
-                  className={cn('basis-auto self-stretch pl-0', index > 0 && 'pl-2')}
+                  className={cn('basis-auto self-stretch pl-0', index > 0 && chipGap)}
                 >
                   <button
                     type="button"
@@ -146,18 +181,9 @@ export function StaticAdFormatPresets() {
                       applyFormatPreset(preset)
                       commitHaptic({ vibrateDuration: 8 })
                     }}
-                    className={cn(
-                      'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5',
-                      'text-[13px] font-medium leading-none tracking-[-0.015em]',
-                      'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-                      'active:scale-[0.96] motion-reduce:active:scale-100',
-                      isActive
-                        ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
-                        : 'bg-black/[0.045] text-foreground/72 hover:bg-black/[0.08] hover:text-foreground dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
-                    )}
+                    className={chipClass(isActive)}
                   >
-                    <Icon className="size-3.5 shrink-0 opacity-70" strokeWidth={1.75} aria-hidden />
+                    <Icon className={cn(iconSize, 'shrink-0 opacity-70')} strokeWidth={1.75} aria-hidden />
                     <span className="whitespace-nowrap">{preset.label}</span>
                   </button>
                 </CarouselItem>
@@ -165,7 +191,7 @@ export function StaticAdFormatPresets() {
             })}
           </CarouselContent>
         </div>
-        <PresetCarouselNav />
+        {!compact ? <PresetCarouselNav /> : null}
       </div>
     </Carousel>
   )

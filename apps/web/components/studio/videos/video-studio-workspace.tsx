@@ -19,7 +19,7 @@ const STUDIO_TAB_TRIGGER_CLASS = cn(
   'h-8 flex-none rounded-full px-3.5',
   'text-[13px] font-medium tracking-[-0.015em]',
   'text-black/52 hover:text-foreground',
-  'data-active:bg-white data-active:text-foreground',
+  'data-active:bg-foreground data-active:text-background',
   'data-active:shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)]',
   'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
   'active:scale-[0.96] motion-reduce:active:scale-100 motion-reduce:transition-none',
@@ -66,7 +66,7 @@ export function VideoStudioWorkspace({
 
         <StudioHomeBelowSection ariaLabel="Templates and recent videos" className="max-w-6xl">
           <Tabs defaultValue="templates" className="w-full gap-6">
-            <TabsList className="mx-auto h-9 w-fit gap-0.5 self-center rounded-full bg-black/4 p-0.5 ring-1 ring-inset ring-black/6:bg-white/[0.05] dark:ring-white/10">
+            <TabsList className="mx-auto h-9 w-fit gap-0.5 self-center rounded-full p-0.5 ring-1 ring-inset ring-black/6 dark:ring-white/10">
               <TabsTrigger value="templates" className={STUDIO_TAB_TRIGGER_CLASS}>
                 <LayoutTemplateIcon className="size-3.5" strokeWidth={1.75} />
                 Templates

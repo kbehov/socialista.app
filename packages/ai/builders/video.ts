@@ -15,6 +15,8 @@ export const buildVideoPromptMessages = (
     durationSec?: number
     generateAudio?: boolean
     targetModel?: string
+    /** Edit an existing clip. Images are replacement subjects, not a start frame. */
+    sourceVideoEdit?: boolean
   },
 ): ModelMessage[] => {
   const destination = options?.aspectRatio
@@ -36,8 +38,17 @@ export const buildVideoPromptMessages = (
       `Target video model: ${options.targetModel.trim()}. Write in the prompt format this model responds to best.`
     : null
 
-  const referenceLegend =
-    media && media.length > 0
+  const referenceLegend = options?.sourceVideoEdit
+    ? [
+        'A source video is attached as a video reference, along with any images. Do not write a start-frame or image-to-video prompt.',
+        'Recreate that clip: same motion, camera, timing, framing, lighting, and setting. Change only what the user asked to replace.',
+        media && media.length > 0
+          ? `Replacement images, in order: ${media.map((_, index) => `Image ${index + 1}`).join(', ')}.`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : media && media.length > 0
       ? `Attached reference images in order: ${media
           .map((_, index) => `Image ${index + 1} (@image${index + 1})`)
           .join(', ')}. @imageN in the request maps to Image N. Image 1 is the start-frame identity when animating from a still.`

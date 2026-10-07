@@ -112,25 +112,25 @@
   },
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1072.0",
+    "@aws-sdk/client-s3": "^3.1146.0",
     "@fal-ai/client": "^1.10.1",
     "@socialista/ai": "workspace:*",
     "@socialista/db": "workspace:^",
     "@socialista/types": "workspace:^",
-    "@trigger.dev/sdk": "^4.5.3",
-    "ai": "^7.0.36",
-    "sharp": "^0.35.3",
-    "zod": "^4.4.3"
+    "@trigger.dev/sdk": "^4.7.2",
+    "ai": "^7.0.128",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@socialista/eslint-config": "workspace:^",
     "@socialista/typescript-config": "workspace:^",
-    "@trigger.dev/build": "^4.5.3",
-    "@types/node": "^25.9.3",
-    "eslint": "^10.8.0",
-    "tsx": "^4.7.1",
-    "trigger.dev": "^4.5.3",
+    "@trigger.dev/build": "^4.7.2",
+    "@types/node": "^25.9.9",
+    "eslint": "^10.12.0",
+    "trigger.dev": "^4.7.2",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.7"
   }
 }

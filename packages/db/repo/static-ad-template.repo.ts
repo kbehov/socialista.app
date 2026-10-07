@@ -7,6 +7,19 @@ import type {
 } from '../types/static-ad-template.types.js'
 import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function applyTemplateTextSearch(match: Record<string, unknown>, textSearch?: string) {
+  if (!textSearch) return match
+  const regex = new RegExp(escapeRegex(textSearch), 'i')
+  return {
+    ...match,
+    $or: [{ name: regex }, { categories: regex }],
+  }
+}
+
 export function slugifyCategoryName(name: string): string {
   const slug = name
     .toLowerCase()
@@ -34,15 +47,18 @@ export const createStaticAdTemplate = async (input: CreateStaticAdTemplateInput)
 }
 
 export const listStaticAdTemplates = async (query: string) => {
-  const { match, pagination, sort } = buildFilters(query)
+  const { match, pagination, sort, textSearch } = buildFilters(query)
   const category = typeof match.category === 'string' ? match.category : undefined
   delete match.category
 
-  const filter: Record<string, unknown> = {
-    ...match,
-    active: true,
-    ...(category ? { categories: category } : {}),
-  }
+  const filter = applyTemplateTextSearch(
+    {
+      ...match,
+      active: true,
+      ...(category ? { categories: category } : {}),
+    },
+    textSearch,
+  )
 
   const [templates, total] = await Promise.all([
     StaticAdTemplateModel.find(filter).sort(sort).skip(pagination.skip).limit(pagination.limit).lean(),
@@ -51,7 +67,7 @@ export const listStaticAdTemplates = async (query: string) => {
 
   return {
     templates,
-    meta: buildPaginationMeta(total, pagination, sort),
+    meta: buildPaginationMeta(total, pagination, sort, textSearch),
   }
 }
 

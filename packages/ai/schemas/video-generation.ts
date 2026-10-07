@@ -26,6 +26,7 @@ export const videoGenerationPayloadSchema = z.object({
   resolution: z.string().min(1).default(VIDEO_RESOLUTION_DEFAULT),
   imageUrl: z.string().url().optional(),
   imageUrls: z.array(z.string().url()).optional(),
+  videoUrls: z.array(z.string().url()).optional(),
 })
 
 export type VideoGenerationPayload = z.input<typeof videoGenerationPayloadSchema>

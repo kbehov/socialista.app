@@ -89,6 +89,8 @@ type StudioTemplateDtoBase = {
   _id: string
   categories: string[]
   previewImageUrl: string
+  /** Original uploaded media. For video templates this is the clip when the preview is a still. */
+  sourceImageUrl?: string
   name?: string
   description?: string
   createdAt: Date

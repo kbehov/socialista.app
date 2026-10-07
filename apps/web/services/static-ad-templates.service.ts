@@ -19,6 +19,7 @@ export type GetStaticAdTemplatesQuery = {
   page?: number
   limit?: number
   sort?: string
+  search?: string
 }
 
 const TEMPLATES_PATH = '/manager/static-ad-templates'
@@ -39,6 +40,7 @@ export const getStaticAdTemplates = async (
   if (query?.page) params.set('page', String(query.page))
   if (query?.limit) params.set('limit', String(query.limit))
   if (query?.sort) params.set('sort', query.sort)
+  if (query?.search?.trim()) params.set('query', query.search.trim())
 
   const search = params.toString()
   const path = `${STATIC_AD_TEMPLATE_ROUTES.LIST}${search ? `?${search}` : ''}`

@@ -176,6 +176,7 @@ export type GenerateVideoOptions = {
   resolution?: string
   imageUrl?: string
   imageUrls?: string[]
+  videoUrls?: string[]
   skillId?: string
   /** When false, send the user prompt to the video model without rewriting it. Default true. */
   enhance?: boolean

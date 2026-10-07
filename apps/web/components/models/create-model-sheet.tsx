@@ -44,6 +44,7 @@ const emptyFormValues: CreateModelFormValues = {
   modelType: ModelType.TEXT,
   contextSupports: [ContextSupport.TEXT],
   resolutions: [],
+  supportsVideoReferences: false,
   allowedInUgc: false,
   modelProvider: '',
   company: '',
@@ -60,6 +61,7 @@ function toFormValues(model: Model): CreateModelFormValues {
       value: resolution.value,
       costPerSecond: String(resolution.costPerSecond),
     })),
+    supportsVideoReferences: model.supportsVideoReferences ?? false,
     allowedInUgc: model.allowedInUgc ?? false,
     modelProvider: model.modelProvider,
     value: model.value,
@@ -123,6 +125,7 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
               costPerSecond: Number(resolution.costPerSecond),
             }))
           : [],
+      supportsVideoReferences: values.modelType === ModelType.VIDEO ? values.supportsVideoReferences : false,
       allowedInUgc: values.allowedInUgc,
       modelProvider: values.modelProvider,
       company: values.company,
@@ -341,12 +344,35 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
             </div>
 
             {modelType === ModelType.VIDEO ? (
-              <div className="space-y-2">
-                <FieldLabel>Resolutions</FieldLabel>
-                <p className="text-xs text-muted-foreground">
-                  Per-resolution per-second pricing overrides the base cost for video generations.
-                </p>
-                {fields.map((field, index) => {
+              <>
+                <div className="flex items-center justify-between gap-3 rounded-md border border-input px-3 py-2">
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="model-supports-video-references">Supports video references</FieldLabel>
+                    <p className="text-xs text-muted-foreground">
+                      This model can take a source clip (reference-to-video).
+                    </p>
+                  </div>
+                  <Controller
+                    name="supportsVideoReferences"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        id="model-supports-video-references"
+                        checked={field.value}
+                        disabled={isSubmitting}
+                        onCheckedChange={field.onChange}
+                        aria-invalid={Boolean(errors.supportsVideoReferences)}
+                      />
+                    )}
+                  />
+                </div>
+                <FieldError message={errors.supportsVideoReferences?.message} />
+                <div className="space-y-2">
+                  <FieldLabel>Resolutions</FieldLabel>
+                  <p className="text-xs text-muted-foreground">
+                    Per-resolution per-second pricing overrides the base cost for video generations.
+                  </p>
+                  {fields.map((field, index) => {
                   const credits = Number(resolutionRows?.[index]?.costPerSecond)
                   const hasResolutionPreview = Number.isFinite(credits) && credits > 0
                   return (
@@ -390,18 +416,19 @@ export function CreateModelSheet({ open, onOpenChange, model, companies }: Creat
                     </div>
                   )
                 })}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isSubmitting}
-                  onClick={() => append({ value: '', costPerSecond: '' })}
-                >
-                  <Plus />
-                  Add resolution
-                </Button>
-                <FieldError message={errors.resolutions?.message} />
-              </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => append({ value: '', costPerSecond: '' })}
+                  >
+                    <Plus />
+                    Add resolution
+                  </Button>
+                  <FieldError message={errors.resolutions?.message} />
+                </div>
+              </>
             ) : null}
 
             {errors.root?.message && (

@@ -33,6 +33,7 @@ export const createModelSchema = z.object({
         .refine(v => !Number.isNaN(Number(v)) && Number(v) > 0, 'Price must be greater than 0'),
     }),
   ),
+  supportsVideoReferences: z.boolean(),
   allowedInUgc: z.boolean(),
   modelProvider: z.string().trim().min(1, 'Provider is required').max(100, 'Provider must be 100 characters or less'),
   company: z.string().trim().min(1, 'Company is required'),

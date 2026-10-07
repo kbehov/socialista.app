@@ -64,6 +64,7 @@ export async function startVideoGeneration(input: GenerateVideoOptions): Promise
       resolution,
       ...(input.imageUrl ? { imageUrl: input.imageUrl } : {}),
       ...(input.imageUrls && input.imageUrls.length > 0 ? { imageUrls: input.imageUrls } : {}),
+      ...(input.videoUrls && input.videoUrls.length > 0 ? { videoUrls: input.videoUrls } : {}),
       ...(input.skillId ? { skillId: input.skillId } : {}),
       ...(input.projectId ? { projectId: input.projectId } : {}),
       ...(input.enhance === false ? { enhance: false } : {}),

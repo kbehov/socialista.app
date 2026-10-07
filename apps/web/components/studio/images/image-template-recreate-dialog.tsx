@@ -24,7 +24,7 @@ type ImageTemplateRecreateDialogProps = {
 function ImageTemplateRecreateComposer({ models }: { models: Model[] }) {
   const { state } = useStudioTemplateRecreate()
   const payload =
-    state.template.kind === StudioTemplateKind.IMAGE ? state.template.payload : undefined
+    state.template?.kind === StudioTemplateKind.IMAGE ? state.template.payload : undefined
 
   return (
     <ImagePromptInput

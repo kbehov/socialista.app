@@ -79,6 +79,7 @@ export const realtimeVideoGeneration = schemaTask({
           generateAudio,
           resolution: payload.resolution,
           ...(referenceUrls[0] ? { referenceImageUrl: referenceUrls[0] } : {}),
+          ...(payload.videoUrls?.[0] ? { referenceVideoUrl: payload.videoUrls[0] } : {}),
         },
       })
       startedAt = started.startedAt
@@ -102,6 +103,7 @@ export const realtimeVideoGeneration = schemaTask({
           generateAudio,
           systemOverride,
           targetModel: model.value,
+          sourceVideoEdit: (payload.videoUrls?.length ?? 0) > 0,
         })
         await setGenerationEnhancedPrompt(ctx.run.id, enhanced)
       }
@@ -122,6 +124,7 @@ export const realtimeVideoGeneration = schemaTask({
           resolution: payload.resolution,
           imageUrl: payload.imageUrl,
           imageUrls: payload.imageUrls,
+          videoUrls: payload.videoUrls,
         },
         setGenerationStatus,
       )

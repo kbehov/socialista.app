@@ -25,14 +25,14 @@ function StaticAdStudioBody({ workspaceId, models }: StaticAdStudioWorkspaceProp
         description="Describe the product and layout — tag references with @image1 for on-brand creatives."
         footer={<StudioHomePromptExtras />}
       >
-        <StaticAdPromptInput models={models} workspaceId={workspaceId} />
+        <div className="flex w-full flex-col gap-4">
+          <StaticAdFormatPresets compact />
+          <StaticAdPromptInput models={models} workspaceId={workspaceId} />
+        </div>
       </StudioHomeComposerSection>
 
-      <StudioHomeBelowSection ariaLabel="Formats and templates" className="pb-10 sm:pb-12">
-        <StaticAdFormatPresets />
-        <div className="mt-10 border-t border-border/40 pt-9 sm:mt-11 sm:pt-10">
-          <StaticAdTemplatesGallery embedded />
-        </div>
+      <StudioHomeBelowSection ariaLabel="Templates" className="pb-10 sm:pb-12">
+        <StaticAdTemplatesGallery embedded models={models} workspaceId={workspaceId} />
       </StudioHomeBelowSection>
     </div>
   )

@@ -81,6 +81,7 @@ import { toast } from "sonner";
 import { VideoPromptAnatomy } from "./video-prompt-anatomy";
 
 const MAX_REFERENCE_IMAGES = 3;
+
 const DEFAULT_ATTACH_SOURCES: StudioAttachSource[] = [
   "upload",
   "library",
@@ -115,6 +116,7 @@ export type VideoPromptSubmitResult = {
   generateAudio: boolean;
   resolution: string;
   imageUrls: string[];
+  videoUrls: string[];
   enhance: boolean;
   skillId?: string;
   count: number;
@@ -171,6 +173,8 @@ export type VideoPromptInputProps = {
   extraTools?: ReactNode;
   /** Bump after an AI write so the next Generate sends the prompt as written. */
   rawPromptToken?: number;
+  /** Full-screen template recreate: room for model picker + video settings. */
+  recreateDialog?: boolean;
 };
 
 function VideoPromptComposer({
@@ -215,6 +219,7 @@ function VideoPromptComposer({
   skillTarget = PROMPT_KEYS.videoPrompt,
   extraTools,
   rawPromptToken,
+  recreateDialog = false,
 }: VideoPromptInputProps) {
   const router = useRouter();
   const [submitShortcut] = useState(getSubmitShortcutLabel);
@@ -324,14 +329,20 @@ function VideoPromptComposer({
     setInput(initialPrompt);
   }, [initialPrompt, setInput]);
 
+  const hasVideoRef = attachedImages.some((file) => file.kind === "video");
+  const hasImageRef = attachedImages.some((file) => file.kind === "image");
+  const requiresVideoReferenceModel = hasVideoRef && hasImageRef;
+
   const visibleModels = useMemo(() => {
     const videoModels = models.filter(
       (model) =>
         model.modelType === ModelType.VIDEO ||
         model.modelType === ModelType.LIP_SYNC,
     );
-    return videoModels.length > 0 ? videoModels : models;
-  }, [models]);
+    const base = videoModels.length > 0 ? videoModels : models;
+    if (!requiresVideoReferenceModel) return base;
+    return base.filter((model) => model.supportsVideoReferences === true);
+  }, [models, requiresVideoReferenceModel]);
 
   const [selectedModelId, setSelectedModelId] = useState(
     () =>
@@ -340,21 +351,20 @@ function VideoPromptComposer({
       "",
   );
 
-  useEffect(() => {
-    setSelectedModelId((current) => {
-      if (visibleModels.some((model) => model._id === current)) return current;
-      return (
-        visibleModels.find((model) => model.value === initialModel)?._id ??
-        visibleModels[0]?._id ??
-        ""
-      );
-    });
-  }, [initialModel, visibleModels]);
+  const resolvedModelId = visibleModels.some((model) => model._id === selectedModelId)
+    ? selectedModelId
+    : (visibleModels.find((model) => model.value === initialModel)?._id ??
+      visibleModels[0]?._id ??
+      "");
+  if (resolvedModelId !== selectedModelId) {
+    setSelectedModelId(resolvedModelId);
+  }
 
   const selectedModel = useMemo(
     () => visibleModels.find((model) => model._id === selectedModelId) ?? visibleModels[0],
     [selectedModelId, visibleModels],
   );
+
   const resolutionOptions = useMemo(
     () => (selectedModel ? modelVideoResolutions(selectedModel) : []),
     [selectedModel],
@@ -481,7 +491,16 @@ function VideoPromptComposer({
       visibleModels.find((model) => model._id === selectedModelId) ??
       visibleModels[0];
     if (!selectedModel) {
-      toast.error("Select a model to continue.");
+      toast.error(
+        requiresVideoReferenceModel
+          ? "No model supports video references. Mark one in the model manager."
+          : "Select a model to continue.",
+      );
+      return;
+    }
+
+    if (hasVideoRef && selectedModel.supportsVideoReferences !== true) {
+      toast.error("This model does not support video references");
       return;
     }
 
@@ -494,6 +513,9 @@ function VideoPromptComposer({
       const imageUrls = attachedImages
         .filter((file) => file.kind === "image")
         .map((file) => file.url);
+      const videoUrls = attachedImages
+        .filter((file) => file.kind === "video")
+        .map((file) => file.url);
       if (onSubmitOverride) {
         onSubmitOverride({
           prompt,
@@ -503,6 +525,7 @@ function VideoPromptComposer({
           generateAudio: audioEnabled,
           resolution: resolutionValue,
           imageUrls,
+          videoUrls,
           enhance,
           ...(enhance && skillId ? { skillId } : {}),
           count,
@@ -520,6 +543,7 @@ function VideoPromptComposer({
         resolution: resolutionValue,
         userId: "",
         ...(imageUrls.length > 0 ? { imageUrls } : {}),
+        ...(videoUrls.length > 0 ? { videoUrls } : {}),
         ...(skillId ? { skillId } : {}),
         ...(projectId ? { projectId } : {}),
         ...(enhance ? {} : { enhance: false }),
@@ -551,7 +575,7 @@ function VideoPromptComposer({
           selectedDuration,
         ) * count;
 
-  const enhanceTools = hideEnhance ? null : (
+  const enhanceTools = hideEnhance || recreateDialog ? null : (
     <>
       <PromptInputButton
         aria-label={
@@ -789,6 +813,7 @@ function VideoPromptComposer({
         attachments={attachedImages}
         onAttachmentsChange={handleAttachmentsChange}
         attachSources={effectiveAttachSources}
+        attachAccept="media"
         influencerMediaType={influencerMediaType}
         attachmentsLocked={attachmentsLocked}
         maxAttachments={attachmentsLocked ? 1 : maxAttachments}
@@ -842,6 +867,8 @@ function VideoPromptComposer({
         }
         compact={hideExtras || embedded}
         embedded={embedded}
+        footerLayout={recreateDialog ? 'stacked' : 'inline'}
+        modelPickerSide={recreateDialog ? 'bottom' : 'top'}
       />
 
       {attachedImages.length > 0 && !embedded && !hideExtras ? (

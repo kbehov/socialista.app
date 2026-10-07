@@ -56,5 +56,6 @@ export type VideoGenerator = (options: {
   resolution?: string
   imageUrl?: string
   imageUrls?: string[]
+  videoUrls?: string[]
   onProgress?: (progress: number, label: string) => void
 }) => Promise<string>

@@ -127,6 +127,7 @@ export const buildVideoPrompt = async (payload: {
   generateAudio?: boolean
   systemOverride?: string
   targetModel?: string
+  sourceVideoEdit?: boolean
 }) => {
   const { model, system } = resolvePrompt(PROMPT_KEYS.videoPrompt, payload.systemOverride)
   const { text } = await generateText({
@@ -138,6 +139,7 @@ export const buildVideoPrompt = async (payload: {
       durationSec: payload.durationSec,
       generateAudio: payload.generateAudio,
       targetModel: payload.targetModel,
+      sourceVideoEdit: payload.sourceVideoEdit,
     }),
   })
   return text

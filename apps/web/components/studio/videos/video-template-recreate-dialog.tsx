@@ -24,19 +24,20 @@ type VideoTemplateRecreateDialogProps = {
 function VideoTemplateRecreateComposer({ models }: { models: Model[] }) {
   const { state } = useStudioTemplateRecreate()
   const payload =
-    state.template.kind === StudioTemplateKind.VIDEO ? state.template.payload : undefined
+    state.template?.kind === StudioTemplateKind.VIDEO ? state.template.payload : undefined
 
   return (
     <VideoPromptInput
       models={models}
       hideExtras
+      recreateDialog
       bindStudio={false}
       autoFocus
       initialPrompt={state.prompt}
       initialAttachments={state.attachments}
       initialAspectRatio={payload?.aspectRatio}
       initialModel={payload?.model}
-      initialDuration={payload?.durationSec}
+      initialDurationAuto
       initialResolution={payload?.resolution}
       initialGenerateAudio={payload?.generateAudio}
       placeholder="Describe how to recreate this video…"
@@ -65,6 +66,9 @@ export function VideoTemplateRecreateDialog({
       resolveInitialPrompt={videoTemplateRecreatePrompt}
       title="Recreate video"
       description="Recreate this template. The reference is already attached."
+      sessionClassName="max-w-[min(94vw,40rem)]"
+      previewMediaClassName="max-h-[min(36vh,400px)] w-auto max-w-full rounded-xl object-contain shadow-[0_24px_64px_-24px_rgba(0,0,0,0.65)] outline outline-1 outline-white/10"
+      scrollAreaClassName="items-start pt-6 pb-8 sm:items-center sm:py-12"
       contextLabel={contextLabel}
       canGoPrevious={canGoPrevious}
       canGoNext={canGoNext}
