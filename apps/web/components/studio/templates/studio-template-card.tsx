@@ -5,6 +5,7 @@ import { CoverCard } from '@/components/ui/card'
 import { isVideoPreviewUrl } from '@/lib/studio/template-media'
 import { cn } from '@/lib/utils'
 import type { StudioTemplateDto } from '@socialista/types'
+import { ImagePlusIcon } from 'lucide-react'
 
 export type StudioTemplateCardVariant = 'default' | 'visual'
 
@@ -12,6 +13,7 @@ type StudioTemplateCardProps = {
   template: StudioTemplateDto
   onPreview: (template: StudioTemplateDto) => void
   onRecreate: (template: StudioTemplateDto) => void
+  onReference?: (template: StudioTemplateDto) => void
   openLabel?: string
   variant?: StudioTemplateCardVariant
 }
@@ -20,6 +22,7 @@ export function StudioTemplateCard({
   template,
   onPreview,
   onRecreate,
+  onReference,
   openLabel = 'Preview',
   variant = 'default',
 }: StudioTemplateCardProps) {
@@ -65,28 +68,56 @@ export function StudioTemplateCard({
         />
       }
       overlay={
-        <button
-          type="button"
-          aria-label={recreateAriaLabel}
-          onClick={event => {
-            event.stopPropagation()
-            onRecreate(template)
-          }}
+        <div
           className={cn(
-            'absolute z-10 inline-flex cursor-pointer items-center justify-center gap-1.5',
-            isVisual ? 'inset-x-2.5 bottom-2.5 h-8 rounded-xl px-3' : 'inset-x-2 bottom-2 h-7 rounded-lg px-2.5',
-            'bg-black/60 text-[12px] font-medium tracking-[-0.015em] text-white backdrop-blur-md',
-            'shadow-[0_2px_8px_rgba(0,0,0,0.2)]',
-            'transition-[opacity,transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
-            'hover:bg-black/75 active:scale-[0.96] motion-reduce:active:scale-100',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+            'absolute z-10 flex gap-1.5',
+            isVisual ? 'inset-x-2.5 bottom-2.5' : 'inset-x-2 bottom-2',
             'opacity-100 pointer-fine:pointer-events-none pointer-fine:opacity-0',
             'pointer-fine:group-hover/card:pointer-events-auto pointer-fine:group-hover/card:opacity-100',
             'pointer-fine:group-focus-within/card:pointer-events-auto pointer-fine:group-focus-within/card:opacity-100',
           )}
         >
-          Recreate
-        </button>
+          <button
+            type="button"
+            aria-label={recreateAriaLabel}
+            onClick={event => {
+              event.stopPropagation()
+              onRecreate(template)
+            }}
+            className={cn(
+              'inline-flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5',
+              isVisual ? 'h-8 rounded-xl px-3' : 'h-7 rounded-lg px-2.5',
+              'bg-black/60 text-[12px] font-medium tracking-[-0.015em] text-white backdrop-blur-md',
+              'shadow-[0_2px_8px_rgba(0,0,0,0.2)]',
+              'transition-[opacity,transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+              'hover:bg-black/75 active:scale-[0.96] motion-reduce:active:scale-100',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+            )}
+          >
+            Recreate
+          </button>
+          {onReference ? (
+            <button
+              type="button"
+              aria-label="Use as reference"
+              onClick={event => {
+                event.stopPropagation()
+                onReference(template)
+              }}
+              className={cn(
+                'inline-flex shrink-0 cursor-pointer items-center justify-center',
+                isVisual ? 'size-8 rounded-xl' : 'size-7 rounded-lg',
+                'bg-black/60 text-white backdrop-blur-md',
+                'shadow-[0_2px_8px_rgba(0,0,0,0.2)]',
+                'transition-[opacity,transform,background-color] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
+                'hover:bg-black/75 active:scale-[0.96] motion-reduce:active:scale-100',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+              )}
+            >
+              <ImagePlusIcon className="size-3.5" strokeWidth={1.75} />
+            </button>
+          ) : null}
+        </div>
       }
       title={
         !isVisual && template.name ? (

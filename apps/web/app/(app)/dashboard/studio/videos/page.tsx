@@ -38,35 +38,32 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
     return <WorkspaceRequired message="Select a workspace to view videos." />
   }
 
-  const [modelsRes, videosResponse, initialAttachmentUrl, templateCategoriesRes] =
+  const [modelsRes, initialAttachmentUrl, templateCategoriesRes, videosResponse] =
     await Promise.all([
       getModels('limit=100&modelType=video&sort=-usageCount'),
-      getWorkspaceVideos(workspace.id, {
-        status: 'draft',
-        page: 1,
-        limit: VIDEO_LIST_PAGE_SIZE,
-        projectId: project?.id,
-      }),
       getGenerationImageUrl(generationId),
       getStudioTemplateCategories(StudioTemplateKind.VIDEO),
+      getWorkspaceVideos(workspace.id, {
+        page: 1,
+        limit: VIDEO_LIST_PAGE_SIZE,
+        sort: '-updatedAt',
+        projectId: project?.id,
+      }),
     ])
 
   const models = modelsRes.data?.models ?? []
-  const videos = videosResponse.data?.videos ?? []
-  const error = videosResponse.success ? null : (videosResponse.message ?? 'Failed to load videos')
 
   return (
     <VideoStudioWorkspace
       models={models}
-      workspaceId={workspace.id}
-      initialVideos={videos}
-      initialError={error}
-      initialHasMore={Boolean(videosResponse.meta?.hasNextPage)}
-      initialTotal={videosResponse.meta?.total}
       initialAttachmentUrl={initialAttachmentUrl}
       templateCategories={
         templateCategoriesRes.success ? (templateCategoriesRes.data?.categories ?? []) : []
       }
+      initialVideos={videosResponse.data?.videos ?? []}
+      initialVideosError={videosResponse.success ? null : (videosResponse.message ?? 'Failed to load videos')}
+      initialVideosHasMore={Boolean(videosResponse.meta?.hasNextPage)}
+      initialVideosTotal={videosResponse.meta?.total}
     />
   )
 }

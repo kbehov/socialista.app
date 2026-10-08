@@ -1,7 +1,7 @@
 'use client'
 
 import type { AttachedMedia } from '@/components/files/attach-media/types'
-import { templateReferencesToAttachedMedia } from '@/lib/studio/template-media'
+import { templateReferencesToAttachedMedia, templateToRecreateAttachments } from '@/lib/studio/template-media'
 import { commitHaptic } from '@/utils/haptics'
 import {
   StudioTemplateKind,
@@ -15,6 +15,7 @@ type PromptHandlers = {
   insertAtCursor: (snippet: string) => void
   setPrompt: (text: string) => void
   setAttachments: (attachments: AttachedMedia[]) => void
+  addAttachments: (attachments: AttachedMedia[]) => void
   focusPrompt: () => void
   setModel?: (modelValue: string) => void
   setAspectRatio?: (ratio: VideoAspectRatio) => void
@@ -28,6 +29,7 @@ type VideoStudioContextValue = {
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
   applyTemplate: (template: StudioTemplateDto) => void
+  attachReference: (template: StudioTemplateDto) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -87,15 +89,35 @@ export function VideoStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
+  const attachReference = useCallback(
+    (template: StudioTemplateDto) => {
+      if (template.kind !== StudioTemplateKind.VIDEO) return
+      const attachments = templateToRecreateAttachments(template)
+      if (attachments.length === 0) {
+        const preview = template.previewImageUrl
+        if (!preview) return
+        handlersRef.current?.addAttachments(
+          templateReferencesToAttachedMedia(template, [preview]),
+        )
+      } else {
+        handlersRef.current?.addAttachments(attachments)
+      }
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
       setPrompt,
       applyTemplate,
+      attachReference,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, applyTemplate, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyTemplate, attachReference, registerPromptHandlers],
   )
 
   return <VideoStudioContext.Provider value={value}>{children}</VideoStudioContext.Provider>

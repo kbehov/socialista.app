@@ -19,7 +19,15 @@ import {
   type StudioTemplateKind,
 } from '@socialista/types'
 import { ChevronLeftIcon, ChevronRightIcon, LayoutTemplateIcon, Loader2Icon, ShuffleIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+  type RefObject,
+} from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
 const SCROLL_TARGET_ID = 'dashboard-scroll'
@@ -83,6 +91,12 @@ function CategoryCarouselNav({ size = 'sm' }: { size?: 'sm' | 'md' }) {
 
 type CategoryChipTone = 'outline' | 'studio'
 
+const PINNED_CATEGORY_BAR_CLASS = cn(
+  'sticky top-0 z-20 -mx-1 px-1 pb-2',
+  'bg-background/85 backdrop-blur-md backdrop-saturate-150 supports-backdrop-filter:bg-background/70',
+  'transition-[border-color,box-shadow] duration-150 ease-out',
+)
+
 type TemplateCategoryFilterProps = {
   categories: StudioTemplateCategoryDto[]
   selectedCategory: string | null
@@ -95,6 +109,9 @@ type TemplateCategoryFilterProps = {
   chipTone?: CategoryChipTone
   showCounts?: boolean
   trailing?: ReactNode
+  pinCategoryBar?: boolean
+  categoryBarStuck?: boolean
+  categoryBarSentinelRef?: RefObject<HTMLDivElement | null>
 }
 
 function categoryTabClass(active: boolean, accentFilters: boolean, chipTone: CategoryChipTone) {
@@ -145,6 +162,9 @@ function TemplateCategoryFilter({
   chipTone = 'outline',
   showCounts = false,
   trailing,
+  pinCategoryBar = false,
+  categoryBarStuck = false,
+  categoryBarSentinelRef,
 }: TemplateCategoryFilterProps) {
   const quiet = headingTone === 'quiet'
   const studio = chipTone === 'studio'
@@ -189,17 +209,16 @@ function TemplateCategoryFilter({
     </CarouselContent>
   )
 
-  return (
-    <Carousel
-      className="w-full min-w-0"
-      opts={{
-        align: 'start',
-        dragFree: true,
-        containScroll: 'trimSnaps',
-      }}
+  const headingBlock = (
+    <div
+      className={cn(
+        'flex justify-between gap-4',
+        quiet ? 'mb-3 items-center' : 'mb-4 items-start sm:mb-5',
+        pinCategoryBar && categories.length > 0 && 'mb-3 sm:mb-4',
+      )}
     >
-      <div className={cn('flex justify-between gap-4', quiet ? 'mb-3 items-center' : 'mb-4 items-start sm:mb-5')}>
-        <div className="min-w-0 flex-1 space-y-1">
+      <div className="min-w-0 flex-1 space-y-1">
+        {sectionTitle ? (
           <h2
             className={cn(
               quiet
@@ -209,44 +228,87 @@ function TemplateCategoryFilter({
           >
             {sectionTitle}
           </h2>
-          {sectionDescription ? (
-            <p className="max-w-md text-[13px] leading-[1.45] tracking-[-0.01em] text-black/48 dark:text-white/48">
-              {sectionDescription}
-            </p>
-          ) : null}
-        </div>
-        {studio ? null : (
-          <div className="flex shrink-0 items-center gap-2">
-            {trailing}
-            <CategoryCarouselNav />
-          </div>
-        )}
+        ) : null}
+        {sectionDescription ? (
+          <p className="max-w-md text-[13px] leading-[1.45] tracking-[-0.01em] text-black/48 dark:text-white/48">
+            {sectionDescription}
+          </p>
+        ) : null}
       </div>
+      {studio ? null : (
+        <div className="flex shrink-0 items-center gap-2">
+          {trailing}
+          <CategoryCarouselNav />
+        </div>
+      )}
+    </div>
+  )
 
-      {categories.length > 0 ? (
-        studio ? (
-          <div className="flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
+  const categoryRow =
+    categories.length > 0
+      ? studio
+        ? (
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+                />
+                {chips}
+              </div>
+              {trailing}
+              <CategoryCarouselNav size="md" />
+            </div>
+          )
+        : (
+            <div className={cn('relative pb-0.5', accentFilters && 'pt-0.5')}>
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+                className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
               />
               {chips}
             </div>
-            {trailing}
-            <CategoryCarouselNav size="md" />
-          </div>
-        ) : (
-          <div className={cn('relative pb-0.5', accentFilters && 'pt-0.5')}>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-linear-to-l from-background to-transparent"
-            />
-            {chips}
-          </div>
-        )
-      ) : null}
+          )
+      : null
+
+  const categoryCarousel = (
+    <Carousel
+      className="w-full min-w-0"
+      opts={{
+        align: 'start',
+        dragFree: true,
+        containScroll: 'trimSnaps',
+      }}
+    >
+      {pinCategoryBar ? categoryRow : (
+        <>
+          {headingBlock}
+          {categoryRow}
+        </>
+      )}
     </Carousel>
+  )
+
+  if (!pinCategoryBar) {
+    return categoryCarousel
+  }
+
+  return (
+    <div className="w-full min-w-0">
+      {categoryBarSentinelRef ? <div ref={categoryBarSentinelRef} className="h-px w-full" aria-hidden /> : null}
+      {headingBlock}
+      {categoryRow ? (
+        <div
+          className={cn(
+            PINNED_CATEGORY_BAR_CLASS,
+            categoryBarStuck &&
+              'border-b border-border/50 shadow-[0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]',
+          )}
+        >
+          {categoryCarousel}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -255,6 +317,7 @@ type StudioTemplatesGalleryProps = {
   initialCategories?: StudioTemplateCategoryDto[]
   onRecreate: (template: StudioTemplateDto) => void
   onPreview?: (template: StudioTemplateDto) => void
+  onReference?: (template: StudioTemplateDto) => void
   onOpen?: (template: StudioTemplateDto, templates: StudioTemplateDto[]) => void
   sectionTitle?: string
   sectionDescription?: string
@@ -272,6 +335,8 @@ type StudioTemplatesGalleryProps = {
   surpriseLabel?: string
   aboveGrid?: ReactNode
   gridEntrance?: boolean
+  scrollTargetId?: string
+  pinCategoryBar?: boolean
 }
 
 const GRID_CLASS = 'grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-3.5 sm:gap-y-7 lg:grid-cols-4 lg:gap-x-4'
@@ -286,6 +351,7 @@ export function StudioTemplatesGallery({
   initialCategories = EMPTY_TEMPLATE_CATEGORIES,
   onRecreate,
   onPreview,
+  onReference,
   onOpen,
   sectionTitle = 'Templates',
   sectionDescription,
@@ -303,10 +369,14 @@ export function StudioTemplatesGallery({
   aboveGrid,
   gridEntrance = false,
   className,
+  scrollTargetId = SCROLL_TARGET_ID,
+  pinCategoryBar = false,
 }: StudioTemplatesGalleryProps) {
   const nextSeedKey = categorySeedKey(initialCategories)
   const [seedKey, setSeedKey] = useState(nextSeedKey)
   const [categories, setCategories] = useState<StudioTemplateCategoryDto[]>(() => sortCategories(initialCategories))
+  const [categoryBarStuck, setCategoryBarStuck] = useState(false)
+  const categoryBarSentinelRef = useRef<HTMLDivElement>(null)
   const [templates, setTemplates] = useState<StudioTemplateDto[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [page, setPage] = useState(1)
@@ -344,6 +414,25 @@ export function StudioTemplatesGallery({
     },
     [kind],
   )
+
+  useEffect(() => {
+    if (!pinCategoryBar) return
+    const sentinel = categoryBarSentinelRef.current
+    const scrollRoot = document.getElementById(scrollTargetId)
+    if (!sentinel || !scrollRoot) return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const entry = entries[0]
+        if (!entry) return
+        setCategoryBarStuck(!entry.isIntersecting)
+      },
+      { root: scrollRoot, threshold: 1 },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [pinCategoryBar, scrollTargetId])
 
   useEffect(() => {
     let ignore = false
@@ -449,6 +538,9 @@ export function StudioTemplatesGallery({
         accentFilters={cardVariant === 'visual'}
         showCounts={showCategoryCounts}
         trailing={surpriseButton}
+        pinCategoryBar={pinCategoryBar}
+        categoryBarStuck={categoryBarStuck}
+        categoryBarSentinelRef={categoryBarSentinelRef}
       />
 
       <div className={cn(categories.length > 0 ? 'mt-5 sm:mt-6' : 'mt-4')}>
@@ -466,6 +558,7 @@ export function StudioTemplatesGallery({
                     template={template}
                     onPreview={() => previewFrom(template, featured)}
                     onRecreate={() => recreateFrom(template, featured)}
+                    onReference={onReference}
                     openLabel={onPreview || onOpen ? 'Open' : 'Preview'}
                     variant={cardVariant}
                   />
@@ -511,7 +604,7 @@ export function StudioTemplatesGallery({
             next={handleLoadMore}
             hasMore={hasMore}
             loader={<ScrollLoader />}
-            scrollableTarget={SCROLL_TARGET_ID}
+            scrollableTarget={scrollTargetId}
             scrollThreshold={0.9}
             className="overflow-visible!"
             style={{ overflow: 'visible' }}
@@ -530,6 +623,7 @@ export function StudioTemplatesGallery({
                     template={template}
                     onPreview={() => previewFrom(template, templates)}
                     onRecreate={() => recreateFrom(template, templates)}
+                    onReference={onReference}
                     openLabel={onPreview || onOpen ? 'Open' : 'Preview'}
                     variant={cardVariant}
                   />

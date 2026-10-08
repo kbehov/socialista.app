@@ -2,13 +2,14 @@
 
 import { cn } from '@/lib/utils'
 import type { StaticAdTemplateDto } from '@socialista/types'
-import { EyeIcon } from 'lucide-react'
+import { EyeIcon, ImagePlusIcon } from 'lucide-react'
 import { useState } from 'react'
 
 type StaticAdTemplateCardProps = {
   template: StaticAdTemplateDto
   onPreview: (template: StaticAdTemplateDto) => void
   onRecreate: (template: StaticAdTemplateDto) => void
+  onReference?: (template: StaticAdTemplateDto) => void
   entranceIndex?: number
   appendEntrance?: boolean
 }
@@ -31,6 +32,7 @@ export function StaticAdTemplateCard({
   template,
   onPreview,
   onRecreate,
+  onReference,
   entranceIndex,
   appendEntrance,
 }: StaticAdTemplateCardProps) {
@@ -118,6 +120,22 @@ export function StaticAdTemplateCard({
           >
             Recreate
           </button>
+          {onReference ? (
+            <button
+              type="button"
+              aria-label="Use as layout reference"
+              onClick={event => {
+                event.stopPropagation()
+                onReference(template)
+              }}
+              className={cn(
+                actionButtonClass,
+                'max-w-8 flex-none bg-black/60 hover:bg-black/75',
+              )}
+            >
+              <ImagePlusIcon className="size-3.5 shrink-0" strokeWidth={1.75} />
+            </button>
+          ) : null}
         </div>
       </div>
 

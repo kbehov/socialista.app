@@ -1,5 +1,6 @@
 'use client'
 
+import { useImageStudio } from '@/components/studio/images/image-studio-provider'
 import { ImageTemplateRecents } from '@/components/studio/images/image-template-recents'
 import { ImageTemplateRecreateDialog } from '@/components/studio/images/image-template-recreate-dialog'
 import { StudioInspirationsGallery } from '@/components/studio/templates/studio-inspirations-gallery'
@@ -17,6 +18,8 @@ type ImageTemplatesGalleryProps = {
   templateCategories: StudioTemplateCategoryDto[]
   hideTitle?: boolean
   className?: string
+  scrollTargetId?: string
+  pinCategoryBar?: boolean
 }
 
 type RecreateBrowse = {
@@ -29,7 +32,10 @@ export function ImageTemplatesGallery({
   templateCategories,
   hideTitle = false,
   className,
+  scrollTargetId,
+  pinCategoryBar,
 }: ImageTemplatesGalleryProps) {
+  const { attachReference } = useImageStudio()
   const [browse, setBrowse] = useState<RecreateBrowse | null>(null)
   const template = browse?.templates[browse.index] ?? null
   const category = template?.categories[0]
@@ -67,15 +73,16 @@ export function ImageTemplatesGallery({
         hideTitle={hideTitle}
         className={className}
         showCategoryCounts
-        featuredLabel="🔥 Trending this week"
-        featuredCount={6}
         surpriseLabel="Surprise me"
         aboveGrid={<ImageTemplateRecents onOpen={openTemplate} />}
         gridEntrance
         emptyTitle="No templates yet"
         emptyDescription="When templates are added, they show up here so you can recreate one in a tap."
         onRecreate={next => openTemplate(next, [next])}
+        onReference={attachReference}
         onOpen={openTemplate}
+        scrollTargetId={scrollTargetId}
+        pinCategoryBar={pinCategoryBar}
       />
       <ImageTemplateRecreateDialog
         template={template}

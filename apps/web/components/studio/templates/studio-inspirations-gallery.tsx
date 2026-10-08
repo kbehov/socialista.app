@@ -18,6 +18,7 @@ type StudioInspirationsGalleryProps = {
   templateCategories: StudioTemplateCategoryDto[]
   onRecreate: (template: StudioTemplateDto) => void
   onPreview?: (template: StudioTemplateDto) => void
+  onReference?: (template: StudioTemplateDto) => void
   emptyDescription?: string
   emptyTitle?: string
   sectionTitle?: string
@@ -33,6 +34,8 @@ type StudioInspirationsGalleryProps = {
   aboveGrid?: ReactNode
   onOpen?: (template: StudioTemplateDto, templates: StudioTemplateDto[]) => void
   gridEntrance?: boolean
+  scrollTargetId?: string
+  pinCategoryBar?: boolean
 }
 
 export function StudioInspirationsGallery({
@@ -40,6 +43,7 @@ export function StudioInspirationsGallery({
   templateCategories,
   onRecreate,
   onPreview,
+  onReference,
   emptyDescription,
   emptyTitle = 'No inspirations yet',
   sectionTitle = 'Inspirations',
@@ -55,6 +59,8 @@ export function StudioInspirationsGallery({
   aboveGrid,
   onOpen,
   gridEntrance,
+  scrollTargetId,
+  pinCategoryBar,
 }: StudioInspirationsGalleryProps) {
   return (
     <StudioTemplatesGallery
@@ -69,6 +75,7 @@ export function StudioInspirationsGallery({
       cardVariant="visual"
       onRecreate={onRecreate}
       onPreview={onPreview}
+      onReference={onReference}
       onOpen={onOpen}
       showCategoryCounts={showCategoryCounts}
       featuredLabel={featuredLabel}
@@ -78,6 +85,8 @@ export function StudioInspirationsGallery({
       gridEntrance={gridEntrance}
       emptyTitle={emptyTitle}
       emptyDescription={emptyDescription ?? EMPTY_DESCRIPTION[kind]}
+      scrollTargetId={scrollTargetId}
+      pinCategoryBar={pinCategoryBar}
     />
   )
 }

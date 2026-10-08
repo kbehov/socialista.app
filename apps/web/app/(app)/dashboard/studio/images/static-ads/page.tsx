@@ -1,6 +1,7 @@
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { StaticAdStudioWorkspace } from '@/components/studio/static-ads/static-ad-studio-workspace'
 import { getModels } from '@/services/models.service'
+import { getStaticAdTemplateCategories } from '@/services/static-ad-templates.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { ContextSupport } from '@socialista/types'
 import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
@@ -14,9 +15,10 @@ const STATIC_AD_MODELS_QUERY =
 const StaticAdsPage = async () => {
   preload('/socialista-static-ads.webp', { as: 'image' })
 
-  const [workspace, modelsRes] = await Promise.all([
+  const [workspace, modelsRes, categoriesRes] = await Promise.all([
     getCurrentWorkspace(),
     getModels(STATIC_AD_MODELS_QUERY),
+    getStaticAdTemplateCategories(),
   ])
 
   if (!workspace) {
@@ -27,7 +29,13 @@ const StaticAdsPage = async () => {
     model.contextSupports?.includes(ContextSupport.IMAGE),
   )
 
-  return <StaticAdStudioWorkspace models={models} workspaceId={workspace.id} />
+  return (
+    <StaticAdStudioWorkspace
+      models={models}
+      workspaceId={workspace.id}
+      templateCategories={categoriesRes.success ? (categoriesRes.data?.categories ?? []) : []}
+    />
+  )
 }
 
 export default StaticAdsPage

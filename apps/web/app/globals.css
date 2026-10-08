@@ -1232,8 +1232,8 @@
     max-width: none;
   }
 
-  /* Locked editors own their scroll. Image studio home keeps the main scrollport. */
-  .dashboard-main:has(.studio-shell, .video-studio, .slideshow-studio, .ugc-studio, .post-composer) {
+  /* Locked editors own their scroll. Image studio home uses an inner scrollport. */
+  .dashboard-main:has(.image-studio-home, .studio-shell, .video-studio, .slideshow-studio, .ugc-studio, .post-composer) {
     overflow: hidden;
   }
 
@@ -2115,12 +2115,74 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .image-studio-workspace {
-    scroll-padding-bottom: 2rem;
+  .image-studio-home {
+    --image-studio-composer-inset: 13.5rem;
+    min-height: calc(100svh - var(--dashboard-chrome-height));
   }
 
-  .image-studio-home {
-    min-height: calc(100svh - var(--dashboard-chrome-height));
+  .image-studio-home #image-studio-scroll {
+    scroll-padding-bottom: var(--image-studio-composer-inset);
+    padding-bottom: var(--image-studio-composer-inset);
+  }
+
+  .image-studio-composer-dock {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  .image-studio-composer-dock__fade {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: min(24rem, 52vh);
+    background: linear-gradient(
+      to top,
+      color-mix(in oklch, var(--background) 88%, transparent) 0%,
+      color-mix(in oklch, var(--background) 48%, transparent) 38%,
+      color-mix(in oklch, var(--background) 12%, transparent) 68%,
+      transparent 100%
+    );
+  }
+
+  .image-studio-composer-dock__blur {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: min(20rem, 44vh);
+    -webkit-backdrop-filter: blur(16px) saturate(1.12);
+    backdrop-filter: blur(16px) saturate(1.12);
+    mask-image: linear-gradient(to top, black 0%, black 32%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 32%, transparent 100%);
+  }
+
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .image-studio-composer-dock__blur {
+      background: linear-gradient(
+        to top,
+        color-mix(in oklch, var(--background) 75%, transparent) 0%,
+        transparent 100%
+      );
+    }
+  }
+
+  .image-studio-composer-dock__content {
+    position: relative;
+    pointer-events: auto;
+    margin-inline: auto;
+    width: 100%;
+    max-width: 48rem;
+    padding: 2rem 1rem 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .image-studio-composer-dock__content {
+      padding-inline: 1.5rem;
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    }
   }
 
   /* ── Studio home hero (ElevenLabs-style) ─────────────────────────────── */

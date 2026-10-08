@@ -432,6 +432,25 @@ function VideoPromptComposer({
     setAttachedImages(attachments.slice(0, maxAttachments));
   }, [maxAttachments]);
 
+  const addAttachments = useCallback(
+    (attachments: AttachedMedia[]) => {
+      if (attachmentsLocked || attachments.length === 0) return;
+      setAttachedImages((current) => {
+        const seen = new Set(current.map((item) => item.url));
+        const merged = [...current];
+        for (const item of attachments) {
+          if (seen.has(item.url)) continue;
+          dismissedAttachmentUrls.current.delete(item.url);
+          seen.add(item.url);
+          merged.push(item);
+          if (merged.length >= maxAttachments) break;
+        }
+        return merged.slice(0, maxAttachments);
+      });
+    },
+    [attachmentsLocked, maxAttachments],
+  );
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus();
   }, []);
@@ -453,6 +472,7 @@ function VideoPromptComposer({
       insertAtCursor,
       setPrompt,
       setAttachments,
+      addAttachments,
       focusPrompt,
       setModel,
       setAspectRatio,
@@ -465,6 +485,7 @@ function VideoPromptComposer({
     insertAtCursor,
     setPrompt,
     setAttachments,
+    addAttachments,
     focusPrompt,
     setModel,
     setDurationParam,

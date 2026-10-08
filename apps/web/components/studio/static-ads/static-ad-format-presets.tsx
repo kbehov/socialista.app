@@ -79,10 +79,11 @@ function PresetCarouselNav({ compact }: { compact?: boolean }) {
   if (!canScrollPrev && !canScrollNext) return null
 
   const buttonClass = cn(
-    'inline-flex items-center justify-center rounded-full',
+    'inline-flex items-center justify-center rounded-full bg-background',
     'text-black/50 dark:text-white/50',
+    'ring-1 ring-inset ring-border',
     'transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
-    'hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]',
+    'hover:text-foreground hover:ring-foreground/15 dark:hover:ring-white/20',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
     'active:scale-[0.96] motion-reduce:active:scale-100',
     'disabled:pointer-events-none disabled:opacity-30',
@@ -121,7 +122,10 @@ export function StaticAdFormatPresets({ compact = false }: StaticAdFormatPresets
         : 'h-8 gap-1.5 px-3.5 text-[13px]',
       isActive
         ? 'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.16),inset_0_1px_0_0_rgba(255,255,255,0.2)]'
-        : 'bg-black/[0.045] text-foreground/72 hover:bg-black/[0.08] hover:text-foreground dark:bg-white/[0.07] dark:text-white/74 dark:hover:bg-white/[0.12] dark:hover:text-white',
+        : cn(
+            'bg-background text-foreground/72 ring-1 ring-inset ring-border',
+            'hover:text-foreground hover:ring-foreground/15 dark:hover:ring-white/20',
+          ),
     )
 
   const iconSize = compact ? 'size-3' : 'size-3.5'
@@ -136,24 +140,13 @@ export function StaticAdFormatPresets({ compact = false }: StaticAdFormatPresets
         containScroll: 'trimSnaps',
       }}
     >
-      {compact ? (
-        <div className="mb-1.5 flex items-center gap-2">
-          <span className="shrink-0 text-[11px] font-medium tracking-[-0.01em] text-black/48 dark:text-white/48">
-            Formats
-          </span>
-          <div
-            aria-hidden
-            className="h-px min-w-0 flex-1 bg-linear-to-r from-border/60 to-transparent"
-          />
-          <PresetCarouselNav compact />
-        </div>
-      ) : (
+      {!compact ? (
         <StudioHomeSectionHeader
           className="mb-3"
           title="Formats"
           description="Quick-start layouts — tap one to prefill the prompt."
         />
-      )}
+      ) : null}
 
       <div className="flex items-center gap-1.5">
         <div className="relative min-w-0 flex-1">
@@ -191,7 +184,7 @@ export function StaticAdFormatPresets({ compact = false }: StaticAdFormatPresets
             })}
           </CarouselContent>
         </div>
-        {!compact ? <PresetCarouselNav /> : null}
+        <PresetCarouselNav compact={compact} />
       </div>
     </Carousel>
   )

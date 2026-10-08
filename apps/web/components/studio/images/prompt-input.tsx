@@ -280,6 +280,25 @@ function ImagePromptComposer({
     setAttachedImages(attachments.slice(0, MAX_REFERENCE_IMAGES))
   }, [])
 
+  const addAttachments = useCallback(
+    (attachments: AttachedMedia[]) => {
+      if (attachmentsLocked || attachments.length === 0) return
+      setAttachedImages(current => {
+        const seen = new Set(current.map(item => item.url))
+        const merged = [...current]
+        for (const item of attachments) {
+          if (seen.has(item.url)) continue
+          dismissedAttachmentUrls.current.delete(item.url)
+          seen.add(item.url)
+          merged.push(item)
+          if (merged.length >= MAX_REFERENCE_IMAGES) break
+        }
+        return merged.slice(0, MAX_REFERENCE_IMAGES)
+      })
+    },
+    [attachmentsLocked],
+  )
+
   const focusPrompt = useCallback(() => {
     textareaRef.current?.focus()
   }, [])
@@ -297,11 +316,12 @@ function ImagePromptComposer({
       insertAtCursor,
       setPrompt,
       setAttachments,
+      addAttachments,
       focusPrompt,
       setModel,
       setAspectRatio,
     })
-  }, [studio, insertAtCursor, setPrompt, setAttachments, focusPrompt, setModel])
+  }, [studio, insertAtCursor, setPrompt, setAttachments, addAttachments, focusPrompt, setModel])
 
   useEffect(() => {
     const shouldFocus = autoFocus ?? !hideExtras

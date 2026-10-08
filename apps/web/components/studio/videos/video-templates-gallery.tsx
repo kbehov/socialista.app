@@ -1,6 +1,7 @@
 'use client'
 
 import { StudioInspirationsGallery } from '@/components/studio/templates/studio-inspirations-gallery'
+import { useVideoStudio } from '@/components/studio/videos/video-studio-provider'
 import { VideoTemplateRecents } from '@/components/studio/videos/video-template-recents'
 import { VideoTemplateRecreateDialog } from '@/components/studio/videos/video-template-recreate-dialog'
 import { rememberVideoTemplateRecent } from '@/lib/studio/video-template-recents'
@@ -17,6 +18,8 @@ type VideoTemplatesGalleryProps = {
   templateCategories: StudioTemplateCategoryDto[]
   hideTitle?: boolean
   className?: string
+  scrollTargetId?: string
+  pinCategoryBar?: boolean
 }
 
 type RecreateBrowse = {
@@ -29,7 +32,10 @@ export function VideoTemplatesGallery({
   templateCategories,
   hideTitle = false,
   className,
+  scrollTargetId,
+  pinCategoryBar,
 }: VideoTemplatesGalleryProps) {
+  const { attachReference } = useVideoStudio()
   const [browse, setBrowse] = useState<RecreateBrowse | null>(null)
   const template = browse?.templates[browse.index] ?? null
   const category = template?.categories[0]
@@ -67,15 +73,16 @@ export function VideoTemplatesGallery({
         hideTitle={hideTitle}
         className={className}
         showCategoryCounts
-        featuredLabel="🔥 Trending this week"
-        featuredCount={6}
         surpriseLabel="Surprise me"
         aboveGrid={<VideoTemplateRecents onOpen={openTemplate} />}
         gridEntrance
         emptyTitle="No templates yet"
         emptyDescription="When templates are added, they show up here so you can recreate one in a tap."
         onRecreate={next => openTemplate(next, [next])}
+        onReference={attachReference}
         onOpen={openTemplate}
+        scrollTargetId={scrollTargetId}
+        pinCategoryBar={pinCategoryBar}
       />
       <VideoTemplateRecreateDialog
         template={template}

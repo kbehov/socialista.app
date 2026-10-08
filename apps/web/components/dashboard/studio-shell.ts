@@ -34,9 +34,12 @@ export const dashboardMainClassName = 'dashboard-main sidebar-scrollbar'
 export const lockedStudioShellRootClassName =
   'image-studio studio-shell relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground'
 
-/** Studio home — full width inside dashboard; main scrollport keeps vertical scroll. */
+/** Scrollport for image studio home (templates/history); main stays overflow-hidden. */
+export const IMAGE_STUDIO_HOME_SCROLL_ID = 'image-studio-scroll'
+
+/** Studio home — full width inside dashboard; inner `#image-studio-scroll` owns vertical scroll. */
 export const imageStudioHomeRootClassName =
-  'image-studio image-studio-workspace image-studio-home relative flex w-full flex-1 flex-col bg-background text-foreground'
+  'image-studio image-studio-workspace image-studio-home relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-background text-foreground'
 
 export const videoStudioRootClassName =
   'video-studio flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground'

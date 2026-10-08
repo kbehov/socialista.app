@@ -14,6 +14,7 @@ type PromptHandlers = {
   insertAtCursor: (snippet: string) => void
   setPrompt: (text: string) => void
   setAttachments: (attachments: AttachedMedia[]) => void
+  addAttachments: (attachments: AttachedMedia[]) => void
   focusPrompt: () => void
   setModel?: (modelValue: string) => void
   setAspectRatio?: (ratio: AspectRatio) => void
@@ -24,6 +25,7 @@ type ImageStudioContextValue = {
   insertSnippet: (snippet: string) => void
   setPrompt: (text: string) => void
   applyTemplate: (template: StudioTemplateDto) => void
+  attachReference: (template: StudioTemplateDto) => void
   registerPromptHandlers: (handlers: PromptHandlers) => void
 }
 
@@ -77,15 +79,30 @@ export function ImageStudioProvider({ children }: { children: ReactNode }) {
     [focusComposer],
   )
 
+  const attachReference = useCallback(
+    (template: StudioTemplateDto) => {
+      if (template.kind !== StudioTemplateKind.IMAGE) return
+      const preview = template.previewImageUrl
+      if (!preview) return
+      handlersRef.current?.addAttachments(
+        templateReferencesToAttachedMedia(template, [preview]),
+      )
+      commitHaptic({ vibrateDuration: 8 })
+      focusComposer()
+    },
+    [focusComposer],
+  )
+
   const value = useMemo(
     () => ({
       composerRef,
       insertSnippet,
       setPrompt,
       applyTemplate,
+      attachReference,
       registerPromptHandlers,
     }),
-    [insertSnippet, setPrompt, applyTemplate, registerPromptHandlers],
+    [insertSnippet, setPrompt, applyTemplate, attachReference, registerPromptHandlers],
   )
 
   return <ImageStudioContext.Provider value={value}>{children}</ImageStudioContext.Provider>

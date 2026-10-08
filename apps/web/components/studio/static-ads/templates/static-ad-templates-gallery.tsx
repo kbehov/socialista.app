@@ -3,6 +3,7 @@
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
 import { DashboardSegment, DashboardSegmentButton } from '@/components/dashboard/dashboard-segment'
+import { useStaticAdStudio } from '@/components/studio/static-ads/static-ad-studio-provider'
 import { StaticAdTemplateRecreateDialog } from '@/components/studio/static-ads/templates/static-ad-template-recreate-dialog'
 import {
   StaticAdTemplateCard,
@@ -21,7 +22,14 @@ import { cn } from '@/lib/utils'
 import { getStaticAdTemplateCategories, getStaticAdTemplates } from '@/services/static-ad-templates.service'
 import type { Model, StaticAdTemplateCategoryDto, StaticAdTemplateDto } from '@socialista/types'
 import { ChevronLeftIcon, ChevronRightIcon, LayoutTemplateIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type RefObject,
+} from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
 const SCROLL_TARGET_ID = 'dashboard-scroll'
@@ -90,6 +98,7 @@ type TemplateDiscoveryToolbarProps = {
   total: number
   stuck: boolean
   stickySentinelRef: RefObject<HTMLDivElement | null>
+  exploreLayout?: boolean
 }
 
 function TemplateDiscoveryToolbar({
@@ -102,8 +111,94 @@ function TemplateDiscoveryToolbar({
   total,
   stuck,
   stickySentinelRef,
+  exploreLayout = false,
 }: TemplateDiscoveryToolbarProps) {
   const templateWord = total === 1 ? 'template' : 'templates'
+
+  const categoryCarousel = (
+    <Carousel
+      className="w-full min-w-0"
+      opts={{
+        align: 'start',
+        dragFree: true,
+        containScroll: 'trimSnaps',
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
+          />
+
+          <CarouselContent className="ml-0" role="tablist" aria-label="Template categories">
+            <CarouselItem className="basis-auto self-stretch pl-0">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selectedCategory === null}
+                disabled={disabled}
+                onClick={() => onCategoryChange(null)}
+                className={categoryTabClass(selectedCategory === null)}
+              >
+                All
+              </button>
+            </CarouselItem>
+
+            {categories.map(category => {
+              const active = selectedCategory === category.name
+
+              return (
+                <CarouselItem key={category._id} className="basis-auto self-stretch pl-2">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    disabled={disabled}
+                    onClick={() => onCategoryChange(category.name)}
+                    className={categoryTabClass(active)}
+                  >
+                    <span className="whitespace-nowrap">{category.name}</span>
+                    {!exploreLayout ? (
+                      <span
+                        className={cn(
+                          'tabular-nums text-[11px] font-normal',
+                          active ? 'text-background/70' : 'text-black/40 dark:text-white/40',
+                        )}
+                      >
+                        {category.templatesCount}
+                      </span>
+                    ) : null}
+                  </button>
+                </CarouselItem>
+              )
+            })}
+          </CarouselContent>
+        </div>
+        <CategoryCarouselNav />
+      </div>
+    </Carousel>
+  )
+
+  if (exploreLayout) {
+    if (categories.length === 0) return null
+    return (
+      <div className="w-full min-w-0">
+        <div ref={stickySentinelRef} className="h-px w-full" aria-hidden />
+        <div
+          className={cn(
+            'sticky top-0 z-20 -mx-1 px-1 pb-2',
+            'bg-background/85 backdrop-blur-md backdrop-saturate-150 supports-backdrop-filter:bg-background/70',
+            'transition-[border-color,box-shadow] duration-150 ease-out',
+            stuck &&
+              'border-b border-border/50 shadow-[0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]',
+          )}
+        >
+          {categoryCarousel}
+        </div>
+      </div>
+    )
+  }
 
   const sortControl = (
     <DashboardSegment label="Sort templates" className="shrink-0">
@@ -152,66 +247,7 @@ function TemplateDiscoveryToolbar({
             stuck && 'border-b border-border/50 shadow-[0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]',
           )}
         >
-          <Carousel
-            className="w-full min-w-0"
-            opts={{
-              align: 'start',
-              dragFree: true,
-              containScroll: 'trimSnaps',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="relative min-w-0 flex-1">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background to-transparent"
-                />
-
-                <CarouselContent className="ml-0" role="tablist" aria-label="Template categories">
-                  <CarouselItem className="basis-auto self-stretch pl-0">
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={selectedCategory === null}
-                      disabled={disabled}
-                      onClick={() => onCategoryChange(null)}
-                      className={categoryTabClass(selectedCategory === null)}
-                    >
-                      All
-                    </button>
-                  </CarouselItem>
-
-                  {categories.map(category => {
-                    const active = selectedCategory === category.name
-
-                    return (
-                      <CarouselItem key={category._id} className="basis-auto self-stretch pl-2">
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={active}
-                          disabled={disabled}
-                          onClick={() => onCategoryChange(category.name)}
-                          className={categoryTabClass(active)}
-                        >
-                          <span className="whitespace-nowrap">{category.name}</span>
-                          <span
-                            className={cn(
-                              'tabular-nums text-[11px] font-normal',
-                              active ? 'text-background/70' : 'text-black/40 dark:text-white/40',
-                            )}
-                          >
-                            {category.templatesCount}
-                          </span>
-                        </button>
-                      </CarouselItem>
-                    )
-                  })}
-                </CarouselContent>
-              </div>
-              <CategoryCarouselNav />
-            </div>
-          </Carousel>
+          {categoryCarousel}
         </div>
       ) : null}
     </div>
@@ -223,14 +259,29 @@ type TemplateBrowse = {
   index: number
 }
 
+const EMPTY_CATEGORIES: StaticAdTemplateCategoryDto[] = []
+
 type StaticAdTemplatesGalleryProps = {
   embedded?: boolean
+  exploreLayout?: boolean
   models: Model[]
   workspaceId: string
+  initialCategories?: StaticAdTemplateCategoryDto[]
+  scrollTargetId?: string
 }
 
-export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId }: StaticAdTemplatesGalleryProps) {
-  const [categories, setCategories] = useState<StaticAdTemplateCategoryDto[]>([])
+export function StaticAdTemplatesGallery({
+  embedded = false,
+  exploreLayout = false,
+  models,
+  workspaceId,
+  initialCategories = EMPTY_CATEGORIES,
+  scrollTargetId = SCROLL_TARGET_ID,
+}: StaticAdTemplatesGalleryProps) {
+  const { applyTemplate } = useStaticAdStudio()
+  const [categories, setCategories] = useState<StaticAdTemplateCategoryDto[]>(() =>
+    [...initialCategories].toSorted((a, b) => b.templatesCount - a.templatesCount),
+  )
   const [templates, setTemplates] = useState<StaticAdTemplateDto[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [sort, setSort] = useState<StaticAdTemplateSort>('-createdAt')
@@ -308,9 +359,20 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
     })
   }, [sort, selectedCategory, fetchPage])
 
+  const applyTemplateReference = useCallback(
+    (template: StaticAdTemplateDto) => {
+      applyTemplate({
+        id: template._id,
+        imageUrl: template.imageUrl,
+        name: template.name,
+      })
+    },
+    [applyTemplate],
+  )
+
   useEffect(() => {
     const sentinel = stickySentinelRef.current
-    const scrollRoot = document.getElementById(SCROLL_TARGET_ID)
+    const scrollRoot = document.getElementById(scrollTargetId)
     if (!sentinel || !scrollRoot) return
 
     const observer = new IntersectionObserver(
@@ -324,7 +386,7 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [])
+  }, [scrollTargetId])
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category)
@@ -360,6 +422,7 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
   }
 
   if (
+    !exploreLayout &&
     selectedCategory === null &&
     !error &&
     templates.length === 0 &&
@@ -373,9 +436,11 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
     <div
       className={cn(
         'relative z-10 flex w-full flex-col',
-        embedded
+        embedded && !exploreLayout
           ? 'pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1rem))]'
-          : 'mx-auto mt-8 max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8',
+          : exploreLayout
+            ? 'w-full'
+            : 'mx-auto mt-8 max-w-5xl px-4 pb-[max(4rem,calc(env(safe-area-inset-bottom,0px)+3rem))] sm:px-6 lg:px-8',
       )}
     >
       <TemplateDiscoveryToolbar
@@ -388,9 +453,10 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
         total={total}
         stuck={stuck}
         stickySentinelRef={stickySentinelRef}
+        exploreLayout={exploreLayout}
       />
 
-      <div className="mt-5">
+      <div className={cn(exploreLayout ? 'mt-4' : 'mt-5')}>
         {error ? (
           <ErrorState
             title="Could not load templates"
@@ -406,8 +472,12 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
         {!error && templates.length === 0 && !pending ? (
           <EmptyState
             icon={LayoutTemplateIcon}
-            title="No templates in this category"
-            description="Pick another category to browse more inspirations."
+            title={exploreLayout ? 'No templates yet' : 'No templates in this category'}
+            description={
+              exploreLayout
+                ? 'When templates are added, they show up here so you can recreate one in a tap.'
+                : 'Pick another category to browse more inspirations.'
+            }
             variant="ghost"
             minHeight="sm"
           />
@@ -427,7 +497,7 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
             next={handleLoadMore}
             hasMore={hasMore}
             loader={<LoadMoreSkeletons />}
-            scrollableTarget={SCROLL_TARGET_ID}
+            scrollableTarget={scrollTargetId}
             scrollThreshold={0.9}
             className="!overflow-visible"
             style={{ overflow: 'visible' }}
@@ -446,6 +516,7 @@ export function StaticAdTemplatesGallery({ embedded = false, models, workspaceId
                     template={template}
                     onPreview={template => openTemplate(template, templates)}
                     onRecreate={template => openTemplate(template, templates)}
+                    onReference={exploreLayout ? applyTemplateReference : undefined}
                     entranceIndex={appendEntrance ? undefined : index}
                     appendEntrance={appendEntrance}
                   />

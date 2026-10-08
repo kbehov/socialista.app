@@ -1,101 +1,145 @@
 'use client'
 
-import { imageStudioHomeRootClassName } from '@/components/dashboard/studio-shell'
-import { StudioHomeBelowSection } from '@/components/studio/studio-home-below-section'
-import { StudioHomeComposerSection } from '@/components/studio/studio-home-composer-section'
+import {
+  IMAGE_STUDIO_HOME_SCROLL_ID,
+  imageStudioHomeRootClassName,
+} from '@/components/dashboard/studio-shell'
 import { StudioHomeCreateButton } from '@/components/studio/studio-home-hero-actions'
-import { StudioHomePromptExtras } from '@/components/studio/studio-home-prompt-extras'
-import { VideoStudioProvider } from '@/components/studio/videos/video-studio-provider'
+import { VideoStudioHistory } from '@/components/studio/videos/video-studio-history'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { VideoStudioProvider } from '@/components/studio/videos/video-studio-provider'
+import VideoGenerationPromptInput from '@/components/studio/videos/video-prompt-input'
+import { VideoTemplatesGallery } from '@/components/studio/videos/video-templates-gallery'
 import { cn } from '@/lib/utils'
 import type { Model, StudioTemplateCategoryDto, VideoSummaryResponse } from '@socialista/types'
-import { ClockIcon, LayoutTemplateIcon } from 'lucide-react'
-import { VideoGrid } from './video-grid'
-import VideoGenerationPromptInput from './video-prompt-input'
-import { VideoTemplatesGallery } from './video-templates-gallery'
-
-const STUDIO_TAB_TRIGGER_CLASS = cn(
-  'h-8 flex-none rounded-full px-3.5',
-  'text-[13px] font-medium tracking-[-0.015em]',
-  'text-black/52 hover:text-foreground',
-  'data-active:bg-foreground data-active:text-background',
-  'data-active:shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)]',
-  'transition-[background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]',
-  'active:scale-[0.96] motion-reduce:active:scale-100 motion-reduce:transition-none',
-  'dark:text-white/52 dark:data-active:bg-white/10 dark:data-active:shadow-none',
-)
+import { useMemo, useState } from 'react'
 
 type VideoStudioWorkspaceProps = {
   models: Model[]
-  workspaceId: string
-  initialVideos: VideoSummaryResponse[]
-  initialError?: string | null
-  initialHasMore?: boolean
-  initialTotal?: number
-  initialAttachmentUrl?: string
   templateCategories: StudioTemplateCategoryDto[]
+  initialAttachmentUrl?: string
+  initialVideos?: VideoSummaryResponse[]
+  initialVideosError?: string | null
+  initialVideosHasMore?: boolean
+  initialVideosTotal?: number
 }
 
-export function VideoStudioWorkspace({
+const TAB_CONTENT_CLASS = 'mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8'
+
+function TabCountBadge({ count }: { count: number | null }) {
+  if (count === null || count <= 0) return null
+  return (
+    <span
+      className={cn(
+        'ml-1.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-md px-1',
+        'text-[10px] font-medium tabular-nums leading-none text-muted-foreground/80',
+      )}
+    >
+      {count > 999 ? '999+' : count}
+    </span>
+  )
+}
+
+function VideoStudioWorkspaceBody({
   models,
-  workspaceId,
-  initialVideos,
-  initialError = null,
-  initialHasMore = false,
-  initialTotal,
-  initialAttachmentUrl,
   templateCategories,
+  initialAttachmentUrl,
+  initialVideos,
+  initialVideosError,
+  initialVideosHasMore,
+  initialVideosTotal,
 }: VideoStudioWorkspaceProps) {
-  const recentCount = initialTotal ?? initialVideos.length
+  const exploreCount = useMemo(
+    () => templateCategories.reduce((sum, category) => sum + category.templatesCount, 0),
+    [templateCategories],
+  )
+  const [historyCount, setHistoryCount] = useState<number | null>(null)
 
   return (
-    <VideoStudioProvider>
-      <div className={imageStudioHomeRootClassName}>
-        <StudioHomeComposerSection
-          id="video-studio-composer"
-          ariaLabel="Create a video"
-          title="What are we filming today?"
-          description="Describe the motion and mood — attach a product or creator with @image1."
-          contentMaxWidth="roomy"
-          toolbar={<StudioHomeCreateButton href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE} label="New project" />}
-          footer={<StudioHomePromptExtras />}
+    <div className={cn(imageStudioHomeRootClassName, 'video-studio')}>
+      <Tabs defaultValue="explore" className="flex min-h-0 flex-1 flex-col gap-0">
+        <div
+          className={cn(
+            'shrink-0 z-30 border-b border-border/40 bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/70',
+          )}
         >
-          <VideoGenerationPromptInput initialAttachmentUrl={initialAttachmentUrl} models={models} />
-        </StudioHomeComposerSection>
-
-        <StudioHomeBelowSection ariaLabel="Templates and recent videos" className="max-w-6xl">
-          <Tabs defaultValue="templates" className="w-full gap-6">
-            <TabsList className="mx-auto h-9 w-fit gap-0.5 self-center rounded-full p-0.5 ring-1 ring-inset ring-black/6 dark:ring-white/10">
-              <TabsTrigger value="templates" className={STUDIO_TAB_TRIGGER_CLASS}>
-                <LayoutTemplateIcon className="size-3.5" strokeWidth={1.75} />
-                Templates
+          <div
+            className={cn(
+              TAB_CONTENT_CLASS,
+              'grid grid-cols-[1fr_auto_1fr] items-center gap-2 pb-3 pt-4 sm:pt-5',
+            )}
+          >
+            <div className="min-w-0" aria-hidden />
+            <TabsList variant="line" className="h-9 gap-1">
+              <TabsTrigger value="explore" className="px-3 text-[13px] tracking-[-0.02em]">
+                Explore
+                <TabCountBadge count={exploreCount} />
               </TabsTrigger>
-              <TabsTrigger value="recent" className={STUDIO_TAB_TRIGGER_CLASS}>
-                <ClockIcon className="size-3.5" strokeWidth={1.75} />
-                Recent
-                {recentCount > 0 ? (
-                  <span className="tabular-nums text-sidebar-label text-current/45">{recentCount}</span>
-                ) : null}
+              <TabsTrigger value="history" className="px-3 text-[13px] tracking-[-0.02em]">
+                History
+                <TabCountBadge count={historyCount} />
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="templates" className="mt-0 outline-none">
-              <VideoTemplatesGallery models={models} templateCategories={templateCategories} />
-            </TabsContent>
-
-            <TabsContent value="recent" className="mt-0 outline-none">
-              <VideoGrid
-                workspaceId={workspaceId}
-                initialVideos={initialVideos}
-                initialError={initialError}
-                initialHasMore={initialHasMore}
-                initialTotal={initialTotal}
+            <div className="flex min-w-0 justify-end">
+              <StudioHomeCreateButton
+                href={DASHBOARD_ROUTES.STUDIO.VIDEO_CREATE}
+                label="Blank project"
               />
-            </TabsContent>
-          </Tabs>
-        </StudioHomeBelowSection>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id={IMAGE_STUDIO_HOME_SCROLL_ID}
+          data-dashboard-scroll
+          className="sidebar-scrollbar flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto overscroll-y-contain"
+        >
+          <TabsContent value="explore" className="mt-0 flex-1 outline-none">
+            <div className={TAB_CONTENT_CLASS}>
+              <VideoTemplatesGallery
+                models={models}
+                templateCategories={templateCategories}
+                hideTitle
+                pinCategoryBar
+                scrollTargetId={IMAGE_STUDIO_HOME_SCROLL_ID}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-0 flex-1 outline-none">
+            <div className={TAB_CONTENT_CLASS}>
+              <VideoStudioHistory
+                initialVideos={initialVideos}
+                initialError={initialVideosError}
+                initialHasMore={initialVideosHasMore}
+                initialTotal={initialVideosTotal}
+                onTotalChange={setHistoryCount}
+                scrollTargetId={IMAGE_STUDIO_HOME_SCROLL_ID}
+              />
+            </div>
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      <div className="image-studio-composer-dock">
+        <div aria-hidden className="image-studio-composer-dock__fade" />
+        <div aria-hidden className="image-studio-composer-dock__blur" />
+        <div className="image-studio-composer-dock__content">
+          <VideoGenerationPromptInput
+            models={models}
+            initialAttachmentUrl={initialAttachmentUrl}
+          />
+        </div>
       </div>
+    </div>
+  )
+}
+
+export function VideoStudioWorkspace(props: VideoStudioWorkspaceProps) {
+  return (
+    <VideoStudioProvider>
+      <VideoStudioWorkspaceBody {...props} />
     </VideoStudioProvider>
   )
 }
