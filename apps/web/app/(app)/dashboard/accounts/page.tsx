@@ -10,6 +10,7 @@ import {
   hasActiveAccountFilters,
   parseAccountFiltersFromSearchParams,
 } from '@/lib/accounts/account-filters'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { MetaResponse } from '@socialista/types'
@@ -21,12 +22,14 @@ type AccountsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
+export const metadata = createDashboardMetadata('Accounts')
+
 const defaultMeta: MetaResponse = {
   total: 0,
   page: 1,
   limit: 50,
   hasNextPage: false,
-  hasPreviousPage: false,
+  hasPreviousPage: false, 
 }
 
 function formatAccountsDescription(total: number, workspaceName: string) {

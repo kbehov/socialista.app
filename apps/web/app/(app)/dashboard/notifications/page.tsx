@@ -2,6 +2,7 @@ import { ErrorState } from '@/components/common/error-state'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { PageHeader } from '@/components/headers/page-header'
 import { NotificationsView } from '@/components/notifications/notifications-view'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getNotifications } from '@/services/notification.service'
 import { formatItemCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
@@ -10,6 +11,8 @@ import type { MetaResponse } from '@socialista/types'
 type NotificationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+export const metadata = createDashboardMetadata('Notifications')
 
 const DEFAULT_LIMIT = 20
 

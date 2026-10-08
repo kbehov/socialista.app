@@ -3,7 +3,10 @@ import { StaticAdStudioWorkspace } from '@/components/studio/static-ads/static-a
 import { getModels } from '@/services/models.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import { ContextSupport } from '@socialista/types'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { preload } from 'react-dom'
+
+export const metadata = createDashboardMetadata('Static ads')
 
 const STATIC_AD_MODELS_QUERY =
   'limit=50&modelType=image&contextSupports=image&sort=-usageCount'

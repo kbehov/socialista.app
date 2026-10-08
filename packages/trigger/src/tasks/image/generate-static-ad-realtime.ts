@@ -1,18 +1,22 @@
-import { resolvePrompt } from '@socialista/ai'
-import { connectDb, ContextSupport, disconnectDb } from '@socialista/db'
-import type { ImageGenerationOutput } from '@socialista/types'
 import {
-  clampImageGenerationCount,
-  PROMPT_KEYS,
-  TASK_IDS,
-} from '@socialista/types'
+  buildImagePrompt,
+  resolvePrompt,
+  STATIC_AD_TEMPLATE_EDIT_SYSTEM,
+} from '@socialista/ai'
+import { connectDb, ContextSupport, disconnectDb, getProductById } from '@socialista/db'
+import type { ImageGenerationOutput } from '@socialista/types'
+import { clampImageGenerationCount, PROMPT_KEYS, TASK_IDS } from '@socialista/types'
 import { schemaTask } from '@trigger.dev/sdk/v3'
 import { generateText } from 'ai'
 import {
   assembleStaticAdImagePrompt,
   buildStaticAdCreativeBrief,
+  buildStaticAdTemplateEditRequest,
+  orderStaticAdTemplateEditImages,
   sanitizeStaticAdModelPrompts,
+  type StaticAdTemplateProductFact,
 } from '../../ai/static-ad-prompts.js'
+import type { StaticAdImageInput } from '../../schemas/static-ad.schema.js'
 import { resolveImageGenerator } from '../../providers/resolve-provider.js'
 import {
   resolveStaticAdImages,
@@ -35,6 +39,46 @@ import {
   notifyGenerationFailed,
 } from '../shared/notify.js'
 import { loadSkillOverride } from '../shared/skills.js'
+
+const OBJECT_ID = /^[a-f\d]{24}$/i
+
+function compactProductDescription(description: string): string {
+  return description.replace(/\s+/g, ' ').trim().slice(0, 500)
+}
+
+async function loadTemplateProductFacts(
+  images: readonly StaticAdImageInput[],
+  workspaceId: string,
+): Promise<StaticAdTemplateProductFact[]> {
+  const seenProductIds = new Set<string>()
+  const facts = await Promise.all(
+    images.map(async (image, index): Promise<StaticAdTemplateProductFact | null> => {
+      if (image.role !== 'product') return null
+      const imageName = `Image ${index + 1}`
+      const productId = image.productId?.trim()
+      if (productId && seenProductIds.has(productId)) return null
+      if (productId) seenProductIds.add(productId)
+      if (productId && OBJECT_ID.test(productId)) {
+        try {
+          const product = await getProductById(productId)
+          if (product && String(product.workspaceId) === workspaceId) {
+            const description = compactProductDescription(product.description ?? '')
+            return {
+              image: imageName,
+              name: product.name.trim(),
+              ...(description ? { description } : {}),
+            }
+          }
+        } catch {
+          // A bad catalog id should not block the edit. The photo still applies.
+        }
+      }
+      const label = image.label?.trim()
+      return label ? { image: imageName, name: label } : null
+    }),
+  )
+  return facts.filter((fact): fact is StaticAdTemplateProductFact => fact !== null)
+}
 import {
   assertSufficientCredits,
   finalizeGeneration,
@@ -91,92 +135,130 @@ export const realtimeStaticAdGeneration = schemaTask({
           imageUrls: images.map((image) => image.url),
           language: payload.language,
           numImages,
+          ...(payload.templateId ? { templateId: payload.templateId } : {}),
           ...(payload.adCopy ? { adCopy: payload.adCopy } : {}),
         },
       })
       startedAt = started.startedAt
       generationId = started.generationId
 
-      setGenerationStatus(
-        10,
-        hasTemplate
-          ? 'Art-directing from template and references'
-          : images.length > 1
+      const generateImage = resolveImageGenerator(model.modelProvider)
+      const imageUrls = images.map((image) => image.url)
+      let enhancedPrompt: string
+      let generatedImages: string[]
+      let billedCost: number
+
+      if (hasTemplate) {
+        setGenerationStatus(10, 'Preparing your prompt')
+        const editImages = orderStaticAdTemplateEditImages(images)
+        const editImageUrls = editImages.map((image) => image.url)
+        const products = await loadTemplateProductFacts(editImages, payload.workspaceId)
+        const editRequest = buildStaticAdTemplateEditRequest({
+          prompt: payload.prompt,
+          language: payload.language,
+          adCopy: payload.adCopy,
+          images,
+          products,
+        })
+        enhancedPrompt = await buildImagePrompt({
+          prompt: editRequest,
+          media: editImageUrls.map((imageUrl) => ({ imageUrl })),
+          aspectRatio: payload.aspectRatio,
+          systemOverride: STATIC_AD_TEMPLATE_EDIT_SYSTEM,
+          targetModel: model.value,
+        })
+        billedCost = model.cost * numImages
+        await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
+        setGenerationStatus(
+          40,
+          numImages > 1 ? `Generating ${numImages} images` : 'Generating image',
+        )
+        generatedImages = await generateImage({
+          model: model.value,
+          prompt: enhancedPrompt,
+          aspectRatio: payload.aspectRatio,
+          workspaceId: payload.workspaceId,
+          userId: payload.userId,
+          imageUrls: editImageUrls,
+          numImages,
+          onProgress: setGenerationStatus,
+        })
+      } else {
+        setGenerationStatus(
+          10,
+          images.length > 1
             ? 'Art-directing from your references'
             : 'Art-directing from your reference',
-      )
-
-      const creativeBrief = buildStaticAdCreativeBrief({
-        prompt: payload.prompt,
-        language: payload.language,
-        aspectRatio: payload.aspectRatio,
-        adCopy: payload.adCopy,
-        images,
-        count: numImages,
-      })
-
-      const systemOverride = await loadSkillOverride({
-        skillId: payload.skillId,
-        target: PROMPT_KEYS.staticAd,
-        workspaceId: payload.workspaceId,
-      })
-      const { model: plannerModel, system } = resolvePrompt(
-        PROMPT_KEYS.staticAd,
-        systemOverride,
-      )
-
-      const planned = await generateText({
-        model: plannerModel,
-        system,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              ...images.map((image) => ({
-                type: 'image' as const,
-                image: image.url,
-              })),
-              { type: 'text', text: creativeBrief },
-            ],
-          },
-        ],
-      })
-
-      const plannedPrompts = sanitizeStaticAdModelPrompts(
-        planned.text,
-        numImages,
-      )
-      const enhancedPrompts = plannedPrompts.map((prompt) =>
-        assembleStaticAdImagePrompt(prompt, images),
-      )
-      const billedCost = model.cost * enhancedPrompts.length
-      const enhancedPrompt = enhancedPrompts.join('\n\n---\n\n')
-      await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
-
-      setGenerationStatus(
-        30,
-        enhancedPrompts.length > 1
-          ? `Rendering ${enhancedPrompts.length} campaign creatives`
-          : 'Rendering campaign creative',
-      )
-
-      const generateImage = resolveImageGenerator(model.modelProvider)
-      const generatedImages = (
-        await Promise.all(
-          enhancedPrompts.map((prompt) =>
-            generateImage({
-              model: model.value,
-              prompt,
-              aspectRatio: payload.aspectRatio,
-              workspaceId: payload.workspaceId,
-              userId: payload.userId,
-              imageUrls: images.map((image) => image.url),
-              numImages: 1,
-              onProgress: setGenerationStatus,
-            }),
-          ),
         )
-      ).flat()
+
+        const creativeBrief = buildStaticAdCreativeBrief({
+          prompt: payload.prompt,
+          language: payload.language,
+          aspectRatio: payload.aspectRatio,
+          adCopy: payload.adCopy,
+          images,
+          count: numImages,
+        })
+
+        const systemOverride = await loadSkillOverride({
+          skillId: payload.skillId,
+          target: PROMPT_KEYS.staticAd,
+          workspaceId: payload.workspaceId,
+        })
+        const { model: plannerModel, system } = resolvePrompt(
+          PROMPT_KEYS.staticAd,
+          systemOverride,
+        )
+
+        const planned = await generateText({
+          model: plannerModel,
+          system,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                ...images.map((image) => ({
+                  type: 'image' as const,
+                  image: image.url,
+                })),
+                { type: 'text', text: creativeBrief },
+              ],
+            },
+          ],
+        })
+
+        const enhancedPrompts = sanitizeStaticAdModelPrompts(
+          planned.text,
+          numImages,
+        ).map((prompt) => assembleStaticAdImagePrompt(prompt, images))
+        enhancedPrompt = enhancedPrompts.join('\n\n---\n\n')
+        billedCost = model.cost * enhancedPrompts.length
+        await setGenerationEnhancedPrompt(ctx.run.id, enhancedPrompt)
+
+        setGenerationStatus(
+          30,
+          enhancedPrompts.length > 1
+            ? `Rendering ${enhancedPrompts.length} campaign creatives`
+            : 'Rendering campaign creative',
+        )
+
+        generatedImages = (
+          await Promise.all(
+            enhancedPrompts.map((prompt) =>
+              generateImage({
+                model: model.value,
+                prompt,
+                aspectRatio: payload.aspectRatio,
+                workspaceId: payload.workspaceId,
+                userId: payload.userId,
+                imageUrls,
+                numImages: 1,
+                onProgress: setGenerationStatus,
+              }),
+            ),
+          )
+        ).flat()
+      }
       const imageUrl = generatedImages[0]
       if (!imageUrl) {
         throw new Error('No image was returned from the model')

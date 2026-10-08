@@ -4,9 +4,22 @@ import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
 import { getFolderById, getWorkspaceFiles } from '@/services/files.service'
 import { formatFileCount } from '@/utils/format'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-const DashboardFolderPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+type DashboardFolderPageProps = {
+  params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: DashboardFolderPageProps): Promise<Metadata> {
+  const { id } = await params
+  const folderResult = await getFolderById(id)
+  const name = folderResult.data?.name?.trim()
+  return createDashboardMetadata(name || 'Folder')
+}
+
+const DashboardFolderPage = async ({ params }: DashboardFolderPageProps) => {
   const { id } = await params
   const [folderResult, workspace] = await Promise.all([getFolderById(id), getCurrentWorkspace()])
 

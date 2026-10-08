@@ -2,7 +2,10 @@ import { AddBrandTrigger } from '@/components/brands/add-brand-trigger'
 import { BrandsList } from '@/components/brands/brands-list'
 import { ErrorState } from '@/components/common/error-state'
 import { getWorkspaceBrands } from '@/services/brand.service'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
+
+export const metadata = createDashboardMetadata('Brands')
 
 export default async function ContextBrandsPage() {
   const { workspace, project } = await getCurrentWorkspaceContext()

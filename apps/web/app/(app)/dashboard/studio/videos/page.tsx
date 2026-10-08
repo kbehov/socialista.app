@@ -6,7 +6,10 @@ import { getModels } from '@/services/models.service'
 import { getStudioTemplateCategories } from '@/services/studio-templates.service'
 import { getWorkspaceVideos } from '@/services/video.service'
 import { StudioTemplateKind } from '@socialista/types'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
+
+export const metadata = createDashboardMetadata('Videos')
 
 async function getGenerationImageUrl(generationId?: string): Promise<string | undefined> {
   if (!generationId) return undefined

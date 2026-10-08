@@ -29,6 +29,7 @@ type ComposerEditorProps = {
   onUpdateMediaAltText: (index: number, altText: string) => void
   className?: string
   layout?: ComposerLayout
+  autoFocus?: boolean
 }
 
 export function ComposerEditor({
@@ -43,6 +44,7 @@ export function ComposerEditor({
   onUpdateMediaAltText,
   className,
   layout = 'default',
+  autoFocus = false,
 }: ComposerEditorProps) {
   const isSheet = layout === 'sheet'
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -82,6 +84,12 @@ export function ComposerEditor({
     },
     [onAddMedia, workspaceId],
   )
+
+  useEffect(() => {
+    if (!autoFocus) return
+    if (!window.matchMedia('(pointer: fine)').matches) return
+    textareaRef.current?.focus()
+  }, [autoFocus])
 
   useEffect(() => {
     const el = textareaRef.current

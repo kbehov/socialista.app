@@ -16,6 +16,7 @@ type PromptHandlers = {
 }
 
 export type StaticAdTemplateReference = {
+  id?: string
   imageUrl: string
   name?: string
 }

@@ -12,11 +12,25 @@ import { loadAccountAnalytics } from '@/services/analytics.service'
 import { parseAnalyticsRange } from '@/utils/parsers'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
 import type { AnalyticsAccountInfo, WorkspaceResponse } from '@socialista/types'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 type AccountAnalyticsPageProps = {
   params: Promise<{ accountId: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export async function generateMetadata({ params }: AccountAnalyticsPageProps): Promise<Metadata> {
+  const { accountId } = await params
+  try {
+    const response = await getAccount(accountId)
+    const name = response.data?.account?.accountName?.trim()
+    if (name) return createDashboardMetadata(`${name} analytics`)
+  } catch {
+    // Fall through to generic title.
+  }
+  return createDashboardMetadata('Account analytics')
 }
 
 function hasWorkspaceAnalyticsAccess(workspace: WorkspaceResponse): boolean {

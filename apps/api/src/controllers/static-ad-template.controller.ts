@@ -18,7 +18,9 @@ import {
   type IStaticAdTemplate,
   type IStaticAdTemplateCategory,
 } from '@socialista/db'
-import type { StaticAdTemplateCategoryDto, StaticAdTemplateDto } from '@socialista/types'
+import { TASK_IDS, type StaticAdTemplateCategoryDto, type StaticAdTemplateDto } from '@socialista/types'
+import type { AnalyzeStaticAdTemplateTask } from '@socialista/trigger/task-types'
+import { tasks } from '@trigger.dev/sdk/v3'
 import type { Context } from 'hono'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
@@ -33,6 +35,7 @@ function serializeTemplate(template: IStaticAdTemplate): StaticAdTemplateDto {
     imageUrl: template.imageUrl,
     categories: template.categories,
     ...(template.name ? { name: template.name } : {}),
+    ...(template.blueprint ? { blueprint: template.blueprint } : {}),
     createdAt: template.createdAt,
   }
 }
@@ -189,6 +192,13 @@ export const createStaticAdTemplate = async (c: Context<AppContext>) => {
       name: name || nameFromSourceUrl(sourceImageUrl),
     })
     await syncCategoryCounts(categories)
+    void tasks
+      .trigger<AnalyzeStaticAdTemplateTask>(TASK_IDS.staticAdTemplateAnalysis, {
+        templateId: template._id.toString(),
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to enqueue static ad template analysis', error)
+      })
     return successResponse(c, 201, { template: serializeTemplate(template) })
   } catch (error) {
     if (isDuplicateKeyError(error)) {

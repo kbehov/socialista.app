@@ -1,5 +1,6 @@
 import { ErrorState } from '@/components/common/error-state'
 import { SkillsLibraryView } from '@/components/skills/skills-library-view'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { sortWorkspaceSkills, toSkillListItem, type SkillsSort } from '@/lib/skills/skill-list'
 import { getWorkspaceSkills } from '@/services/skill.service'
 import { firstSearchParam } from '@/utils/parsers'
@@ -9,6 +10,8 @@ import { Suspense } from 'react'
 type ContextSkillsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+export const metadata = createDashboardMetadata('Skills')
 
 export default async function ContextSkillsPage({ searchParams }: ContextSkillsPageProps) {
   const params = await searchParams

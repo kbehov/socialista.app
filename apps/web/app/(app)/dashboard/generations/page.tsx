@@ -3,6 +3,7 @@ import { GenerationsView } from '@/components/generations/generations-view'
 import { PageHeader } from '@/components/headers/page-header'
 import { Button } from '@/components/ui/button'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getWorkspaceGenerations, type GetWorkspaceGenerationsQuery } from '@/services/generation.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { GenerationKind, GenerationStatus, MetaResponse } from '@socialista/types'
@@ -13,6 +14,8 @@ import { WorkspaceRequired } from '../../../../components/dashboard/workspace-re
 type GenerationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+export const metadata = createDashboardMetadata('Generations')
 
 const DEFAULT_LIMIT = 20
 

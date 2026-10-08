@@ -2,6 +2,7 @@
 
 import { CommandPalette } from '@/components/command-palette'
 import { UserDropdown } from '@/components/common/user-dropdown'
+import { DashboardHeaderBreadcrumbs } from '@/components/headers/dashboard-header-breadcrumbs'
 import { FeedbackButton } from '@/components/headers/feedback-button'
 import { FilesHeaderLink } from '@/components/headers/files-header-link'
 import { HeaderTooltip } from '@/components/headers/header-tooltip'
@@ -22,13 +23,14 @@ function DashboardHeader({ workspaceBalance, className }: DashboardHeaderProps) 
   return (
     <TooltipProvider delayDuration={400}>
       <header className={cn('dashboard-header relative flex items-center justify-between gap-3 px-3', className)}>
-        <div className="flex min-w-0 shrink-0 items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2.5">
           <HeaderTooltip label="Toggle sidebar">
-            <SidebarTrigger className={cn(headerIconClassName, '-ml-0.5')} />
+            <SidebarTrigger className={cn(headerIconClassName, '-ml-0.5 shrink-0')} />
           </HeaderTooltip>
+          <DashboardHeaderBreadcrumbs className="hidden min-w-0 md:flex" />
         </div>
 
-        <div className="pointer-events-none absolute top-1/2 left-1/2 z-10 w-full max-w-[min(26rem,calc(100%-11rem))] -translate-x-1/2 -translate-y-1/2">
+        <div className="pointer-events-none absolute top-1/2 left-1/2 z-10 w-full max-w-[min(26rem,calc(100%-11rem))] -translate-x-1/2 -translate-y-1/2 md:max-w-[min(24rem,calc(100%-22rem))]">
           <CommandPalette className="pointer-events-auto w-full" />
         </div>
 

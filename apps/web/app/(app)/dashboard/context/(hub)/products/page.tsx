@@ -2,7 +2,10 @@ import { ErrorState } from "@/components/common/error-state";
 import { AddProductTrigger } from "@/components/products/add-product-trigger";
 import { ProductsTable } from "@/components/tables/products.table";
 import { getWorkspaceProducts } from "@/services/product.service";
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getCurrentWorkspaceContext } from "@/utils/project.utils.server";
+
+export const metadata = createDashboardMetadata('Products')
 
 export default async function ContextProductsPage() {
   const { workspace, project } = await getCurrentWorkspaceContext();

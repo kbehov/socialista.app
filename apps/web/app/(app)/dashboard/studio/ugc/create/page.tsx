@@ -3,7 +3,10 @@ import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { createUgcProject } from '@/services/ugc-project.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { redirect } from 'next/navigation'
+
+export const metadata = createDashboardMetadata('Create UGC ad')
 
 export const dynamic = 'force-dynamic'
 

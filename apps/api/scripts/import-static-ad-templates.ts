@@ -15,6 +15,7 @@ import {
   syncCategoryTemplatesCount,
   upsertStaticAdTemplateCategoryByName,
 } from '@socialista/db'
+import { enqueueStaticAdTemplateAnalysis } from './enqueue-static-ad-template-analysis.js'
 
 type TemplateSeed = {
   image: string
@@ -86,12 +87,19 @@ async function importTemplate(seed: TemplateSeed): Promise<'created' | 'skipped'
   const imageUrl = await uploadBufferToR2(key, compressed, 'image/webp')
   const categories = [...new Set(seed.categories.map(name => name.trim()).filter(Boolean))]
 
-  await createStaticAdTemplate({
+  const created = await createStaticAdTemplate({
     imageUrl,
     sourceImageUrl: seed.image,
     categories,
     name: nameFromSourceUrl(seed.image),
   })
+
+  try {
+    await enqueueStaticAdTemplateAnalysis(created._id.toString())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`Analysis enqueue failed for ${seed.image}: ${message}`)
+  }
 
   return 'created'
 }

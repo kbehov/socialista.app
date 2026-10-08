@@ -5,6 +5,8 @@ import { POST_COPY_SYSTEM } from './prompts/post-copy.js'
 import { IMAGE_PROMPT_SYSTEM } from './prompts/image.js'
 import { INFLUENCER_PROMPT_SYSTEM } from './prompts/influencer.js'
 import { SLIDESHOW_SYSTEM } from './prompts/slideshow.js'
+import { STATIC_AD_RECREATE_CRITIQUE_SYSTEM } from './prompts/static-ad-recreate-critique.js'
+import { STATIC_AD_TEMPLATE_ANALYSIS_SYSTEM } from './prompts/static-ad-template-analysis.js'
 import { STATIC_AD_VISION_SYSTEM } from './prompts/static-ad.js'
 import { UGC_AD_PLAN_SYSTEM } from './prompts/ugc-ad-plan.js'
 import { VIDEO_PROMPT_SYSTEM } from './prompts/video.js'
@@ -33,6 +35,14 @@ export const PROMPT_REGISTRY: Record<RegistryPromptKey, PromptDefinition> = {
   [REGISTRY_PROMPT_KEYS.staticAd]: {
     system: STATIC_AD_VISION_SYSTEM,
     model: AI_PROMPT_MODELS[REGISTRY_PROMPT_KEYS.staticAd],
+  },
+  [REGISTRY_PROMPT_KEYS.staticAdTemplateAnalysis]: {
+    system: STATIC_AD_TEMPLATE_ANALYSIS_SYSTEM,
+    model: AI_PROMPT_MODELS[REGISTRY_PROMPT_KEYS.staticAdTemplateAnalysis],
+  },
+  [REGISTRY_PROMPT_KEYS.staticAdRecreateCritique]: {
+    system: STATIC_AD_RECREATE_CRITIQUE_SYSTEM,
+    model: AI_PROMPT_MODELS[REGISTRY_PROMPT_KEYS.staticAdRecreateCritique],
   },
   [REGISTRY_PROMPT_KEYS.ugcAdPlan]: {
     system: UGC_AD_PLAN_SYSTEM,

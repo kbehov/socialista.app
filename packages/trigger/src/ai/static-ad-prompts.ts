@@ -1,4 +1,4 @@
-import type { AspectRatio, StaticAdCopyInput } from '@socialista/types'
+import type { AspectRatio, StaticAdCopyInput, StaticAdTemplateBlueprint } from '@socialista/types'
 import { getAdLanguageLabel } from '@socialista/types'
 
 import type { StaticAdImageInput } from '../schemas/static-ad.schema.js'
@@ -13,6 +13,8 @@ export type StaticAdPromptInput = {
   images: StaticAdImageInput[]
   /** How many distinct creatives to plan. Defaults to 1. */
   count?: number
+  /** Precomputed template contract. Used only when a template image is attached. */
+  templateBlueprint?: StaticAdTemplateBlueprint | null
 }
 
 export const STATIC_AD_CREATIVE_DELIMITER = '===-CREATIVE-==='
@@ -51,7 +53,7 @@ function roleLegend(role: StaticAdImageInput['role']): string {
     case 'influencer':
       return 'person / influencer — lock face, body, hair, and identity'
     case 'template':
-      return 'ad template to recreate — layout, composition, type, lighting, and scene job only; not product/person identity'
+      return 'ad template to edit in place — keep concept, person, colors, layout, and type; change only what the notes name'
     case 'upload':
     case 'library':
       return 'unlabeled reference — infer from pixels (person, product, setting, style, extra SKU, or a finished ad)'
@@ -76,10 +78,10 @@ export function buildStaticAdImageLegend(
     '',
     'Match flexibly — you are not limited to one product or one person:',
     '- Look at every photo. Roles are hints; pixels and @image tags win.',
-    "- If an ad template is present, recreate its layout and the *job* of the scene (e.g. a girl holding a skincare bottle). Substitute the user's influencer(s) for people in the template and the user's product(s) for products in the template. Do not copy the template model's face or the template brand/pack.",
+    '- If an ad template is present, edit that image in place. Keep its concept, person, colors, and layout. Swap the product only when a product reference is attached. Swap the person only when a person reference is attached or the notes ask for them.',
     '- Extra unlabeled refs can be more products, more people, a location, lighting, wardrobe, or style. Use them. Do not ignore them.',
     '- If the user tagged @imageN, that mapping is ground truth.',
-    "- If a template role has no matching identity ref, use a generic fitting stand-in — never the template's identifiable person or branded pack.",
+    '- If the notes do not ask for a new person or product, keep the ones already in the template.',
   ].join('\n')
 }
 
@@ -87,11 +89,46 @@ function hasTemplateImage(images: readonly StaticAdImageInput[]): boolean {
   return images.some((image) => image.role === 'template')
 }
 
+function formatAdCopy(adCopy?: StaticAdCopyInput): string | null {
+  if (!adCopy) return null
+  const lines: string[] = []
+  if (adCopy.headline?.trim()) lines.push(`headline "${adCopy.headline.trim()}"`)
+  if (adCopy.subheadline?.trim()) lines.push(`subheadline "${adCopy.subheadline.trim()}"`)
+  if (adCopy.cta?.trim()) lines.push(`CTA "${adCopy.cta.trim()}"`)
+  if (adCopy.brandName?.trim()) lines.push(`brand "${adCopy.brandName.trim()}"`)
+  if (lines.length === 0) return null
+  return ['Required on-image copy (verbatim — do not rewrite):', ...lines].join('\n')
+}
+
+export function formatTemplateBlueprint(blueprint: StaticAdTemplateBlueprint): string {
+  const palette = blueprint.palette
+    .map((swatch) => `${swatch.hex} (${swatch.role})`)
+    .join(', ')
+  const lines = [
+    'Template blueprint (ground truth for layout, type hierarchy, and palette roles; use the template image for fine detail):',
+    `- Format: ${blueprint.format}`,
+    `- Layout: ${blueprint.layout}`,
+    `- Type hierarchy: ${blueprint.typeHierarchy}`,
+    `- Palette roles: ${palette || 'infer from the template image and keep those colors'}`,
+    `- Hook style: ${blueprint.hookStyle} (the existing headline's pattern — translate it, do not replace the concept)`,
+    `- Scene job: ${blueprint.sceneJob}`,
+  ]
+  if (blueprint.aspectRatioHint) {
+    lines.push(`- Aspect hint: ${blueprint.aspectRatioHint}`)
+  }
+  lines.push(
+    'Blueprint hex values are the template colors to keep. Do not recolor the layout to the new product. Translate the existing headline; do not write a new concept.',
+  )
+  return lines.join('\n')
+}
+
 const TEMPLATE_RECREATION_BRIEF = [
-  "Template recreation is on. Recreate the template's layout, type hierarchy, lighting mood, and text placement — do not transcribe it pixel by pixel.",
-  "Recolor graphic fields, backgrounds, and type accents to the user's product palette. Native UI chrome stays accurate in screenshot/UI mode.",
-  "The template is composition, not identity. User product photos are the only pack/brand source. User influencer/person photos are the only people to lock. Never carry over the template's product, logo, or model.",
-  'Rewrite all on-image copy as a new scroll-stopping hook for THIS product. Keep template type size/placement; do not translate the template headline. Use marketer notes verbatim when they supply copy.',
+  'Template edit is on. The template image is the picture to edit, not a moodboard.',
+  'Keep its concept, person, pose, background, graphic colors, frame, and type placement.',
+  "Do not recolor the layout to the new product's palette. The new pack keeps its own colors.",
+  'Replace the product only when a product reference or the notes ask for it.',
+  'Replace the person only when a person reference is attached or the notes ask for a different person.',
+  'Translate concept, joke, and offer lines that still fit the new product. Replace lines that name the template product or list its features, ingredients, or use case with the new product facts, in the same slots.',
 ].join(' ')
 
 /**
@@ -117,6 +154,9 @@ export function buildStaticAdCreativeBrief(input: StaticAdPromptInput): string {
   const templated = hasTemplateImage(input.images)
   if (templated) {
     parts.push(TEMPLATE_RECREATION_BRIEF)
+    if (input.templateBlueprint) {
+      parts.push(formatTemplateBlueprint(input.templateBlueprint))
+    }
   }
 
   const notes = input.prompt?.trim()
@@ -134,13 +174,18 @@ export function buildStaticAdCreativeBrief(input: StaticAdPromptInput): string {
     parts.push(NO_NOTES_BRIEF)
   }
 
+  const verbatimCopy = formatAdCopy(input.adCopy)
+  if (verbatimCopy) {
+    parts.push(verbatimCopy)
+  }
+
   const count = input.count && input.count > 1 ? input.count : 1
   if (count > 1) {
     parts.push(
       templated
         ? [
-            `Creative count: ${count} DISTINCT recreations of the template — same layout, type hierarchy, and lighting mood in every one.`,
-            'Vary everything else per creative: a different scroll-stopping hook, a different crop/angle or supporting moment, different prop/set detail. Never the same headline twice.',
+            `Creative count: ${count} attempts of the SAME template edit — same concept, person, colors, layout, and translated copy.`,
+            'Do not invent a new scene or a new headline.',
           ].join(' ')
         : [
             `Creative count: ${count} DISTINCT ad creatives.`,
@@ -167,41 +212,46 @@ export function buildStaticAdCreativeBrief(input: StaticAdPromptInput): string {
 
   parts.push(
     templated
-      ? `Task: Analyze every attached image and write ${promptCount} in Mode/Scene/Copy/Lock format${perPromptBudget}${delimiterHint}. Recreate the template layout with the user's people and products mapped onto the template roles. New scroll-stopping hook${hookSuffix}, not a translated caption. Do not transcribe packaging or the template. Distinctive thumb-stop, exact identities.${noAlternatives}`
+      ? `Task: Analyze every attached image and write ${promptCount} in Mode/Scene/Copy/Lock format${perPromptBudget}${delimiterHint}. Edit the template in place. Keep concept, person, colors, and layout. Change only what the notes and language require${hookSuffix}. Translate existing copy; do not invent a new hook.${noAlternatives}`
       : `Task: Analyze every attached image and write ${promptCount} in Mode/Scene/Copy/Lock format${perPromptBudget}${delimiterHint}. Do not transcribe packaging. Distinctive thumb-stop, exact identities from the refs, scroll-stopping hook. Must not look like a default ChatGPT/Gemini ad.${noAlternatives}`,
   )
 
   return parts.join('\n\n')
 }
 
-/**
- * Minimal assembler for callers that send a prompt directly to an image provider.
- */
-export function buildStaticAdFinalPrompt(input: StaticAdPromptInput): string {
-  const parts: string[] = []
-  const notes = input.prompt?.trim()
-
-  if (notes) {
-    parts.push(`Marketer notes:\n${notes}`)
-  } else {
-    parts.push(NO_NOTES_BRIEF)
-  }
-
-  if (input.images.length > 0) {
-    parts.push(buildStaticAdImageLegend(input.images))
-  }
-
-  if (input.aspectRatio) {
+export function buildStaticAdRecreateCritiqueTurn(input: {
+  drafts: readonly string[]
+  blueprint?: StaticAdTemplateBlueprint | null
+  count: number
+  notes?: string
+  adCopy?: StaticAdCopyInput
+}): string {
+  const count = input.count > 1 ? Math.floor(input.count) : 1
+  const parts = [
+    `Revise these ${count} draft prompt${count > 1 ? 's' : ''}. Return ${count} Mode/Scene/Copy/Lock block${count > 1 ? 's' : ''}.`,
+  ]
+  if (count > 1) {
     parts.push(
-      `Target format: ${input.aspectRatio} — ${ASPECT_RATIO_GUIDANCE[input.aspectRatio]}`,
+      `Separate blocks with a line containing only "${STATIC_AD_CREATIVE_DELIMITER}". Keep every headline unique.`,
     )
   }
-
-  const language = input.language ?? 'en'
+  if (input.blueprint) {
+    parts.push(formatTemplateBlueprint(input.blueprint))
+  }
+  const notes = input.notes?.trim()
+  if (notes) {
+    parts.push(`Marketer notes (keep this intent):\n${notes}`)
+  }
+  const verbatimCopy = formatAdCopy(input.adCopy)
+  if (verbatimCopy) {
+    parts.push(verbatimCopy)
+  }
   parts.push(
-    `All on-image marketing text must be in ${getAdLanguageLabel(language)}.`,
+    [
+      'Draft prompts:',
+      input.drafts.join(`\n${STATIC_AD_CREATIVE_DELIMITER}\n`),
+    ].join('\n'),
   )
-
   return parts.join('\n\n')
 }
 
@@ -260,6 +310,31 @@ export function sanitizeStaticAdModelPrompts(
   return valid.slice(0, Math.max(count, 1))
 }
 
+/** Template first, then the references that may replace something in it. */
+export function orderStaticAdTemplateEditImages(
+  images: readonly StaticAdImageInput[],
+): StaticAdImageInput[] {
+  return [
+    ...images.filter((image) => image.role === 'template'),
+    ...images.filter((image) => image.role !== 'template'),
+  ]
+}
+
+function remapAtImageTags(
+  notes: string,
+  from: readonly StaticAdImageInput[],
+  to: readonly StaticAdImageInput[],
+): string {
+  return notes.replace(/@image(\d+)/gi, (tag, raw: string) => {
+    const source = from[Number(raw) - 1]
+    if (!source) return tag
+    const next = to.findIndex(
+      (image) => image.url === source.url && image.role === source.role,
+    )
+    return next < 0 ? tag : `@image${next + 1}`
+  })
+}
+
 function namedImages(
   images: readonly StaticAdImageInput[],
   match: (image: StaticAdImageInput) => boolean,
@@ -267,6 +342,91 @@ function namedImages(
   return images
     .flatMap((image, index) => (match(image) ? [imageName(index)] : []))
     .join(' and ')
+}
+
+export type StaticAdTemplateProductFact = {
+  /** Image N in the edit order, e.g. "Image 2". */
+  image: string
+  name: string
+  description?: string
+}
+
+/**
+ * User turn for a template edit. The image model edits the template in place.
+ * The picture stays. Product-specific lines are rewritten from the new product.
+ */
+export function buildStaticAdTemplateEditRequest(
+  input: Pick<StaticAdPromptInput, 'prompt' | 'language' | 'adCopy' | 'images'> & {
+    products?: readonly StaticAdTemplateProductFact[]
+  },
+): string {
+  const ordered = orderStaticAdTemplateEditImages(input.images)
+  const templateNames = namedImages(ordered, (image) => image.role === 'template')
+  const productNames = namedImages(ordered, (image) => image.role === 'product')
+  const personNames = namedImages(ordered, (image) => image.role === 'influencer')
+  const languageLabel = getAdLanguageLabel(input.language ?? 'en')
+
+  const lines = [
+    `Edit ${templateNames || 'the template image'} in place. It is a finished static ad.`,
+    'Keep the concept, joke, scene, person, face, pose, expression, wardrobe, background color, graphic colors, type color, frame, logo placement, and type placement.',
+    'Do not recolor the layout to match a new product. Do not invent a new scene because the new product is a different category.',
+  ]
+
+  if (productNames) {
+    lines.push(
+      `Replace only the product with the exact product from ${productNames}. Same hand, position, and scale. The new pack keeps its own label and colors. The rest of the ad keeps the template colors.`,
+    )
+  }
+
+  if (personNames) {
+    lines.push(
+      `Replace the person with the exact person from ${personNames}. Keep the same pose, crop, and setting unless the notes say otherwise.`,
+    )
+  } else {
+    lines.push('Keep the person already in the template. Do not cast a different model.')
+  }
+
+  const productFacts = (input.products ?? []).filter((product) => product.name.trim())
+  if (productFacts.length > 0) {
+    lines.push(
+      [
+        "New product info — the only source for the new product's name, features, ingredients, and use case. Do not use the template product's claims.",
+        ...productFacts.map((product) => {
+          const description = product.description?.trim()
+          return `- ${product.image}: ${product.name.trim()}${description ? `. ${description}` : ''}`
+        }),
+      ].join('\n'),
+    )
+  }
+
+  const verbatim = formatAdCopy(input.adCopy)
+  if (verbatim) {
+    lines.push(
+      `Replace the on-image marketing lines with this copy, same placement and weight:\n${verbatim}`,
+    )
+  } else if (productNames || productFacts.length > 0) {
+    lines.push(
+      [
+        `On-image copy in ${languageLabel}. Same placement and about the same line count.`,
+        'Keep and translate lines that are the concept, joke, offer, or reaction and that still make sense for the new product.',
+        "Replace lines that name the template product or list its features, ingredients, benefits, or use case. Write the new product's real features in those same slots.",
+        'Do not invent features that are not in the product info, on the pack, or in the notes. Do not invent a new concept.',
+      ].join(' '),
+    )
+  } else {
+    lines.push(
+      `Translate the template's existing headline, subline, and CTA into ${languageLabel}. Same meaning, line count, emphasis, and placement. Do not invent a new concept or new product features.`,
+    )
+  }
+
+  const notes = input.prompt?.trim()
+  if (notes) {
+    lines.push(
+      `User request — apply only the changes it names. Everything else stays:\n${remapAtImageTags(notes, input.images, ordered)}`,
+    )
+  }
+
+  return lines.join('\n\n')
 }
 
 export function assembleStaticAdImagePrompt(
@@ -282,7 +442,7 @@ export function assembleStaticAdImagePrompt(
   if (personLock) parts.push(`Exact person identity from ${personLock}.`)
   if (templateLock) {
     parts.push(
-      `Recreate ${templateLock} layout, type hierarchy, and lighting. Map the user's products and people onto those roles. Recolor to the user's pack palette — not the template's product, brand, logo, or model.`,
+      `Edit ${templateLock} in place. Keep its concept, person, background, graphic colors, and type placement. Change only the product or copy the notes name. Do not recolor the layout.`,
     )
   }
   if (parts.length === 0) {

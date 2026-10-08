@@ -22,6 +22,7 @@ import {
   useStaticAdStudio,
   type StaticAdTemplateReference,
 } from '@/components/studio/static-ads/static-ad-studio-provider'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +73,53 @@ const DEFAULT_PLACEHOLDER =
 
 const noop = () => {}
 
+const COPY_FIELD_CLASS =
+  'h-8 w-full rounded-lg bg-black/[0.04] px-2.5 text-[13px] tracking-[-0.015em] text-foreground outline-none placeholder:text-black/35 focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 dark:bg-white/[0.06] dark:placeholder:text-white/35'
+
+function StaticAdCopyFields({
+  headline,
+  cta,
+  disabled,
+  onHeadlineChange,
+  onCtaChange,
+}: {
+  headline: string
+  cta: string
+  disabled: boolean
+  onHeadlineChange: (value: string) => void
+  onCtaChange: (value: string) => void
+}) {
+  return (
+    <Collapsible className="px-3 sm:px-3.5">
+      <CollapsibleTrigger
+        type="button"
+        className="group inline-flex h-7 items-center gap-1 text-[12px] font-medium tracking-[-0.015em] text-black/48 hover:text-foreground dark:text-white/48"
+      >
+        Headline and CTA
+        <ChevronDownIcon className="size-3 transition-transform duration-150 group-data-[state=open]:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="grid gap-2 pt-1.5 pb-1 sm:grid-cols-2">
+        <input
+          value={headline}
+          maxLength={40}
+          placeholder="Headline"
+          disabled={disabled}
+          onChange={event => onHeadlineChange(event.target.value)}
+          className={COPY_FIELD_CLASS}
+        />
+        <input
+          value={cta}
+          maxLength={20}
+          placeholder="CTA"
+          disabled={disabled}
+          onChange={event => onCtaChange(event.target.value)}
+          className={COPY_FIELD_CLASS}
+        />
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 export type StaticAdPromptInputProps = {
   workspaceId: string
   models: Model[]
@@ -84,6 +132,7 @@ export type StaticAdPromptInputProps = {
   placeholder?: string
   surfaceClassName?: string
   hideTemplateName?: boolean
+  showCopyFields?: boolean
 }
 
 type StaticAdPromptComposerProps = StaticAdPromptInputProps
@@ -100,6 +149,7 @@ function StaticAdPromptComposer({
   placeholder: placeholderProp,
   surfaceClassName: surfaceClassNameProp,
   hideTemplateName = false,
+  showCopyFields = false,
 }: StaticAdPromptComposerProps) {
   const router = useRouter()
   const { textInput } = usePromptInputController()
@@ -137,6 +187,8 @@ function StaticAdPromptComposer({
   })
   const [numImages, setNumImages] = useState(IMAGE_GENERATION_COUNT_DEFAULT)
   const [skillId, setSkillId] = useState<string | undefined>()
+  const [headline, setHeadline] = useState('')
+  const [cta, setCta] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const textInputRef = useRef(textInput)
 
@@ -287,6 +339,15 @@ function StaticAdPromptComposer({
         images,
         language,
         numImages,
+        ...(templateReference?.id ? { templateId: templateReference.id } : {}),
+        ...(showCopyFields && (headline.trim() || cta.trim())
+          ? {
+              adCopy: {
+                ...(headline.trim() ? { headline: headline.trim() } : {}),
+                ...(cta.trim() ? { cta: cta.trim() } : {}),
+              },
+            }
+          : {}),
         ...(skillId ? { skillId } : {}),
         ...(projectId ? { projectId } : {}),
       })
@@ -420,39 +481,52 @@ function StaticAdPromptComposer({
           </>
         }
         composerHeader={
-          templateReference ? (
-            <div className="flex items-center gap-2 px-3 sm:px-3.5">
-              <div className="relative size-8 shrink-0 overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/12">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={templateReference.imageUrl} alt="" className="size-full object-cover" />
-              </div>
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate text-[12px] font-medium tracking-[-0.015em] text-foreground">
-                  Template reference
-                </p>
-                {!hideTemplateName && templateReference.name ? (
-                  <p className="truncate text-[11px] text-black/44 dark:text-white/44">{templateReference.name}</p>
-                ) : (
-                  <p className="truncate text-[11px] text-black/44 dark:text-white/44">
-                    Recreate this ad with your product
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                aria-label="Remove template reference"
-                disabled={isPending}
-                className="flex size-6 items-center justify-center rounded-md text-black/40 transition-colors hover:bg-black/[0.05] hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100 dark:text-white/40 dark:hover:bg-white/[0.08]"
-                onClick={() => {
-                  if (bindStudio) {
-                    clearTemplateReference()
-                  } else {
-                    setLocalTemplateReference(null)
-                  }
-                }}
-              >
-                <XIcon className="size-3.5" strokeWidth={1.75} />
-              </button>
+          templateReference || showCopyFields ? (
+            <div className="flex flex-col gap-1.5">
+              {templateReference ? (
+                <div className="flex items-center gap-2 px-3 sm:px-3.5">
+                  <div className="relative size-8 shrink-0 overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/12">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={templateReference.imageUrl} alt="" className="size-full object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="truncate text-[12px] font-medium tracking-[-0.015em] text-foreground">
+                      Template reference
+                    </p>
+                    {!hideTemplateName && templateReference.name ? (
+                      <p className="truncate text-[11px] text-black/44 dark:text-white/44">{templateReference.name}</p>
+                    ) : (
+                      <p className="truncate text-[11px] text-black/44 dark:text-white/44">
+                        Recreate this ad with your product
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Remove template reference"
+                    disabled={isPending}
+                    className="flex size-6 items-center justify-center rounded-md text-black/40 transition-colors hover:bg-black/[0.05] hover:text-foreground active:scale-[0.97] motion-reduce:active:scale-100 dark:text-white/40 dark:hover:bg-white/[0.08]"
+                    onClick={() => {
+                      if (bindStudio) {
+                        clearTemplateReference()
+                      } else {
+                        setLocalTemplateReference(null)
+                      }
+                    }}
+                  >
+                    <XIcon className="size-3.5" strokeWidth={1.75} />
+                  </button>
+                </div>
+              ) : null}
+              {showCopyFields ? (
+                <StaticAdCopyFields
+                  headline={headline}
+                  cta={cta}
+                  disabled={isPending}
+                  onHeadlineChange={setHeadline}
+                  onCtaChange={setCta}
+                />
+              ) : null}
             </div>
           ) : null
         }

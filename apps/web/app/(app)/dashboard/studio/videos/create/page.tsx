@@ -1,4 +1,7 @@
 import { VideoCreateEditor } from '@/components/video/video-create-editor'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
+
+export const metadata = createDashboardMetadata('Create video')
 
 type CreateVideoPageProps = {
   searchParams: Promise<{ slideshowId?: string }>

@@ -15,6 +15,7 @@ export function collectStaticAdImages(
       url: file.url,
       role: file.source,
       ...(file.label ? { label: file.label } : {}),
+      ...(file.productId ? { productId: file.productId } : {}),
     })
     if (images.length >= STATIC_AD_IMAGE_MAX) return images
   }

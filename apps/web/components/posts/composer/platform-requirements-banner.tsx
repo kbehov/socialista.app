@@ -4,11 +4,30 @@ import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/s
 import { cn } from '@/lib/utils'
 import type { SocialProvider } from '@socialista/types'
 import { AlertCircleIcon, InfoIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { getProvidersRequiringMedia } from '../../../constants/platform-limits'
 import type { ComposerValidationIssue } from '../../../types/composer-types'
 import { getMediaRequirementHint, groupValidationIssues } from '../../../utils/composer.utils'
+
+type BannerSnapshot = {
+  showInfoHint: boolean
+  showWarnings: boolean
+  mediaHint: string | null
+  providers: SocialProvider[]
+  issues: ReturnType<typeof groupValidationIssues>
+}
+
+function bannerSnapshotsEqual(current: BannerSnapshot | null, next: BannerSnapshot) {
+  if (!current) return false
+  return (
+    current.showInfoHint === next.showInfoHint &&
+    current.showWarnings === next.showWarnings &&
+    current.mediaHint === next.mediaHint &&
+    current.providers === next.providers &&
+    current.issues === next.issues
+  )
+}
 
 type PlatformRequirementsBannerProps = {
   selectedProviders: SocialProvider[]
@@ -59,12 +78,67 @@ export function PlatformRequirementsBanner({
 
   const showInfoHint = Boolean(mediaHint) && !hasMedia && groupedIssues.length === 0
   const showWarnings = groupedIssues.length > 0
+  const visible = showInfoHint || showWarnings
+  const liveSnapshot: BannerSnapshot | null = visible
+    ? {
+        showInfoHint,
+        showWarnings,
+        mediaHint,
+        providers: providersRequiringMedia,
+        issues: groupedIssues,
+      }
+    : null
+  const [snapshot, setSnapshot] = useState(liveSnapshot)
+  const [open, setOpen] = useState(false)
 
-  if (!showInfoHint && !showWarnings) return null
+  if (liveSnapshot && !bannerSnapshotsEqual(snapshot, liveSnapshot)) {
+    setSnapshot(liveSnapshot)
+  }
+
+  useEffect(() => {
+    if (visible) {
+      const frame = requestAnimationFrame(() => setOpen(true))
+      return () => cancelAnimationFrame(frame)
+    }
+
+    const closeFrame = requestAnimationFrame(() => setOpen(false))
+    const timeout = window.setTimeout(() => setSnapshot(null), 200)
+    return () => {
+      cancelAnimationFrame(closeFrame)
+      window.clearTimeout(timeout)
+    }
+  }, [visible])
+
+  if (!snapshot) return null
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {showInfoHint ? (
+    <div
+      className={cn(
+        'grid -mb-4 transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none',
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+        className,
+      )}
+      inert={!open}
+      aria-hidden={!open}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div
+          className={cn(
+            'pb-4 transition-opacity duration-200 ease-out motion-reduce:transition-none',
+            open ? 'opacity-100' : 'opacity-0',
+          )}
+        >
+          <BannerBody snapshot={snapshot} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BannerBody({ snapshot }: { snapshot: BannerSnapshot }) {
+  return (
+    <div className="space-y-2">
+      {snapshot.showInfoHint ? (
         <div className="flex gap-2.5 rounded-xl border border-border/50 bg-muted/15 px-3.5 py-2.5 dark:bg-muted/10">
           <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground ring-1 ring-border/50">
             <InfoIcon className="size-3" strokeWidth={1.75} />
@@ -72,11 +146,11 @@ export function PlatformRequirementsBanner({
           <div className="min-w-0 space-y-1.5">
             <p className="text-xs font-medium tracking-tight text-foreground">Media required</p>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {mediaHint}. Add an image or video before publishing to these channels.
+              {snapshot.mediaHint}. Add an image or video before publishing to these channels.
             </p>
-            {providersRequiringMedia.length > 0 ? (
+            {snapshot.providers.length > 0 ? (
               <div className="flex flex-wrap gap-1 pt-0.5">
-                {providersRequiringMedia.map(provider => (
+                {snapshot.providers.map(provider => (
                   <span
                     key={provider}
                     className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background px-2 py-0.5 text-[10px] text-muted-foreground"
@@ -91,7 +165,7 @@ export function PlatformRequirementsBanner({
         </div>
       ) : null}
 
-      {showWarnings ? (
+      {snapshot.showWarnings ? (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-3.5 py-2.5 dark:bg-amber-500/10">
           <div className="mb-2 flex items-center gap-2">
             <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400">
@@ -100,7 +174,7 @@ export function PlatformRequirementsBanner({
             <p className="text-xs font-medium tracking-tight text-foreground">Fix before publishing</p>
           </div>
           <ul className="space-y-1.5 pl-7">
-            {groupedIssues.map(issue => (
+            {snapshot.issues.map(issue => (
               <li key={`${issue.code}-${issue.message}`} className="text-[11px] leading-relaxed text-muted-foreground">
                 {issue.message}
                 {issue.accountIds.length > 1 ? (

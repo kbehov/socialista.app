@@ -4,7 +4,10 @@ import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { isWorkspaceAdmin } from '@/lib/workspace-role'
 import { auth } from '@/auth'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { redirect } from 'next/navigation'
+
+export const metadata = createDashboardMetadata('Settings')
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
   const [session, workspace] = await Promise.all([auth(), getCurrentWorkspace()])

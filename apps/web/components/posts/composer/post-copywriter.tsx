@@ -4,7 +4,6 @@ import { SocialPlatformIcon, getSocialPlatformLabel } from '@/components/icons/s
 import {
   COPYWRITER_FADE_EASE,
   COPYWRITER_GENERATION_CREDITS,
-  TONE_OPTIONS,
 } from '@/components/posts/composer/copywriter/copywriter-constants'
 import { SkillModelSelector } from '@/components/skills/skill-model-selector'
 import { StudioSkillPicker } from '@/components/skills/studio-skill-picker'
@@ -56,7 +55,6 @@ export function PostCopywriterDialog({
   compact = false,
 }: PostCopywriterDialogProps) {
   const [prompt, setPrompt] = useState('')
-  const [tone, setTone] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [skillId, setSkillId] = useState<string | undefined>()
@@ -104,7 +102,6 @@ export function PostCopywriterDialog({
 
   const reset = useCallback(() => {
     setPrompt('')
-    setTone('')
     setError(null)
     setCopied(false)
     setCompletion('')
@@ -144,7 +141,7 @@ export function PostCopywriterDialog({
     // Vision context is images only — video frames are not sent to the model.
     const mediaPayload = media
       .filter(item => item.kind === 'image')
-      .slice(0, 4)
+      .slice(0, 3)
       .map(item => ({
         kind: 'image' as const,
         url: item.url,
@@ -159,7 +156,6 @@ export function PostCopywriterDialog({
         existingCaption: trimmedCaption || undefined,
         previousCaption,
         captionMax: limit,
-        tone: tone || undefined,
         media: mediaPayload.length > 0 ? mediaPayload : undefined,
         ...(skillId ? { skillId } : {}),
         ...(selectedTextModel?.value ? { model: selectedTextModel.value } : {}),
@@ -176,7 +172,6 @@ export function PostCopywriterDialog({
     selectedTextModel,
     setCompletion,
     skillId,
-    tone,
     trimmedCaption,
   ])
 
@@ -290,41 +285,6 @@ export function PostCopywriterDialog({
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-5 py-5">
             <section className="space-y-2.5">
-              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Tone</p>
-              <div
-                role="radiogroup"
-                aria-label="Caption tone"
-                className="inline-flex w-full flex-wrap gap-0.5 rounded-full border border-border/50 bg-muted/30 p-0.5 dark:bg-muted/20"
-              >
-                {TONE_OPTIONS.map(option => {
-                  const selected = tone === option.value
-                  return (
-                    <button
-                      key={option.label}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      disabled={isLoading}
-                      onClick={() => setTone(option.value)}
-                      className={cn(
-                        'min-w-0 flex-1 rounded-full px-2.5 py-1.5 text-center text-[11px] font-medium',
-                        'transition-[color,background-color,box-shadow,transform] duration-150',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                        'active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50',
-                        'motion-reduce:active:scale-100',
-                        selected
-                          ? 'bg-background text-foreground shadow-xs ring-1 ring-border/40'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section className="space-y-2.5">
               <div className="flex items-center justify-between gap-2">
                 <label
                   htmlFor="copywriter-brief"
@@ -384,8 +344,9 @@ export function PostCopywriterDialog({
               {imageContextCount > 0 ? (
                 <p className="flex items-center gap-1.5 pt-0.5 text-[11px] tracking-tight text-muted-foreground/70">
                   <ImagesIcon className="size-3 shrink-0" strokeWidth={1.75} aria-hidden />
-                  AI will write with your {imageContextCount} attached{' '}
-                  {imageContextCount === 1 ? 'image' : 'images'} as context
+                  {imageContextCount > 3
+                    ? 'AI will use the first 3 images as context'
+                    : `AI will write with your ${imageContextCount} attached ${imageContextCount === 1 ? 'image' : 'images'} as context`}
                 </p>
               ) : null}
 

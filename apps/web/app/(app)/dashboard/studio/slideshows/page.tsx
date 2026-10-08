@@ -5,7 +5,10 @@ import { getModels } from '@/services/models.service'
 import { getWorkspaceSlideshows } from '@/services/slideshow.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import { ModelType } from '@socialista/types'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { preload } from 'react-dom'
+
+export const metadata = createDashboardMetadata('Slideshows')
 
 export default async function SlideshowsPage() {
   preload('/socialista-static-ads.webp', { as: 'image' })

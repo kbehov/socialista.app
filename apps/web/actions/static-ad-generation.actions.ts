@@ -68,6 +68,7 @@ export async function startStaticAdGeneration(
       ...(templateImage ? { referenceImage: templateImage.url } : {}),
       adCopy: parsed.data.adCopy,
       language: parsed.data.language,
+      ...(parsed.data.templateId ? { templateId: parsed.data.templateId } : {}),
       numImages,
       model: model.value,
       ...(parsed.data.skillId ? { skillId: parsed.data.skillId } : {}),

@@ -1,8 +1,10 @@
+import { isValidObjectId } from 'mongoose'
 import { StaticAdTemplateCategoryModel } from '../models/static-ad-template-category.model.js'
 import { StaticAdTemplateModel } from '../models/static-ad-template.model.js'
 import type {
   CreateStaticAdTemplateInput,
   IStaticAdTemplate,
+  IStaticAdTemplateBlueprint,
   IStaticAdTemplateCategory,
 } from '../types/static-ad-template.types.js'
 import { buildFilters, buildPaginationMeta } from '../utils/build-filters.js'
@@ -34,6 +36,36 @@ export const getStaticAdTemplateBySourceUrl = async (
   sourceImageUrl: string,
 ): Promise<IStaticAdTemplate | null> => {
   return StaticAdTemplateModel.findOne({ sourceImageUrl }).lean()
+}
+
+export const getStaticAdTemplateById = async (
+  id: string,
+): Promise<IStaticAdTemplate | null> => {
+  if (!isValidObjectId(id)) return null
+  return StaticAdTemplateModel.findById(id).lean()
+}
+
+export const setStaticAdTemplateBlueprint = async (
+  id: string,
+  blueprint: IStaticAdTemplateBlueprint,
+): Promise<IStaticAdTemplate | null> => {
+  if (!isValidObjectId(id)) return null
+  return StaticAdTemplateModel.findByIdAndUpdate(
+    id,
+    { $set: { blueprint } },
+    { returnDocument: 'after' },
+  ).lean()
+}
+
+export const listStaticAdTemplatesMissingBlueprint = async (limit: number) => {
+  const capped = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 1
+  return StaticAdTemplateModel.find({
+    active: true,
+    'blueprint.version': { $exists: false },
+  })
+    .select({ _id: 1, imageUrl: 1 })
+    .limit(capped)
+    .lean()
 }
 
 export const createStaticAdTemplate = async (input: CreateStaticAdTemplateInput) => {

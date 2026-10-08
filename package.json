@@ -32,9 +32,9 @@
     "clean:lock": "rm -rf pnpm-lock.yaml"
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
     "prettier": "^3.7.4",
-    "turbo": "^2.10.5"
+    "turbo": "^2.11.7",
+    "typescript": "^6.0.3"
   },
   "packageManager": "pnpm@11.13.1",
   "engines": {

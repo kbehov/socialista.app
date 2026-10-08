@@ -1,4 +1,22 @@
+import type { AspectRatio, StaticAdTemplateFormat } from '@socialista/types'
 import { HydratedDocument, Types } from 'mongoose'
+
+export interface IStaticAdTemplatePaletteSwatch {
+  hex: string
+  role: string
+}
+
+export interface IStaticAdTemplateBlueprint {
+  format: StaticAdTemplateFormat
+  layout: string
+  typeHierarchy: string
+  palette: IStaticAdTemplatePaletteSwatch[]
+  hookStyle: string
+  sceneJob: string
+  aspectRatioHint?: AspectRatio
+  analyzedAt: Date
+  version: number
+}
 
 export interface IStaticAdTemplateCategory {
   _id: Types.ObjectId
@@ -16,6 +34,7 @@ export interface IStaticAdTemplate {
   sourceImageUrl: string
   categories: string[]
   name?: string
+  blueprint?: IStaticAdTemplateBlueprint
   active: boolean
   createdAt: Date
   updatedAt: Date

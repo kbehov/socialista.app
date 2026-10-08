@@ -1,5 +1,8 @@
 import { UpgradePageContent } from '@/components/paywall/upgrade-page-content'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getPolarProducts } from '@/services/billing.service'
+
+export const metadata = createDashboardMetadata('Upgrade')
 
 type UpgradePageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>

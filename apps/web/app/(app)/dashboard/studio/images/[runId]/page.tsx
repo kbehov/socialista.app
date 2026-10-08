@@ -1,6 +1,9 @@
 import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
 import { GenerationProgress } from '@/components/studio/images/generation-progress'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getModels } from '@/services/models.service'
+
+export const metadata = createDashboardMetadata('Image generation')
 
 type ImageGenerationRunPageProps = {
   params: Promise<{ runId: string }>

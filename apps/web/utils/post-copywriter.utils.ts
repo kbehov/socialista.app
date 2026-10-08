@@ -5,8 +5,7 @@ import type { FilePart, ModelMessage } from 'ai'
 export const POST_COPYWRITER_LIMITS = {
   brief: 2000,
   context: 10_000,
-  tone: 120,
-  mediaItems: 4,
+  mediaItems: 3,
   captionMaxMin: 100,
   captionMaxMax: 63_206,
 } as const
@@ -35,7 +34,6 @@ export type PostCompletionBody = {
   existingCaption?: string
   previousCaption?: string
   captionMax?: number
-  tone?: string
   media?: CopywriterMediaItem[]
   skillId?: string
   /** Catalog `Model.value` for the text model to use. */
@@ -53,7 +51,6 @@ export type SanitizedPostCompletionInput = {
   existingCaption?: string
   previousCaption?: string
   captionMax?: number
-  tone?: string
   media: SanitizedMedia[]
   skillId?: string
   model?: string
@@ -110,7 +107,6 @@ export function sanitizePostCompletionBody(body: PostCompletionBody): SanitizedP
     platforms: sanitizeCopywriterPlatforms(body.platforms),
     captionMax: clampCaptionMax(body.captionMax),
     media: sanitizeCopywriterMedia(body.media),
-    tone: body.tone?.trim().slice(0, POST_COPYWRITER_LIMITS.tone) || undefined,
     existingCaption: body.existingCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
     previousCaption: body.previousCaption?.trim().slice(0, POST_COPYWRITER_LIMITS.context) || undefined,
     skillId: body.skillId?.trim() || undefined,
@@ -124,7 +120,6 @@ export function buildPostCopywriterUserPrompt({
   existingCaption,
   previousCaption,
   captionMax,
-  tone,
   media,
 }: SanitizedPostCompletionInput): string {
   const sections: string[] = [
@@ -143,28 +138,23 @@ export function buildPostCopywriterUserPrompt({
     )
   }
 
-  if (tone) {
-    sections.push(`Tone direction: ${tone}. Commit to it fully — do not drift into generic brand-safe voice.`)
-  } else {
-    sections.push(
-      'Tone: auto — pick the sharpest voice that fits the brief and platforms. Prefer human and specific over polished and safe.',
-    )
-  }
-
   if (media.length > 0) {
     const altLines: string[] = []
     for (let i = 0; i < media.length; i++) {
       const altText = media[i]?.altText
       if (altText) altLines.push(`visual ${i + 1}: "${altText}"`)
     }
-    sections.push(
-      [
-        `${media.length} visual${media.length === 1 ? '' : 's'} attached (see image${media.length === 1 ? '' : 's'}). Study first. Caption = the other half of the thought — never describe what's visible.`,
-        altLines.length > 0 ? `User-provided alt text — ${altLines.join('; ')}` : '',
-      ]
-        .filter(Boolean)
-        .join('\n'),
-    )
+    const visualNote = [
+      `${media.length} visual${media.length === 1 ? '' : 's'} attached, in order (see image${media.length === 1 ? '' : 's'}). Study the set first.`,
+      'Caption = the other half of the thought — never describe what is visible.',
+      media.length > 1
+        ? 'Unify the set into one post. Give a reason to swipe instead of recapping each image.'
+        : '',
+      altLines.length > 0 ? `Alt text is a hint, not a script — ${altLines.join('; ')}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+    sections.push(visualNote)
   }
 
   if (existingCaption) {

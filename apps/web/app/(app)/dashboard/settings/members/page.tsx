@@ -1,9 +1,12 @@
 import { MembersSettings } from '@/components/settings/members-settings'
 import { ErrorState } from '@/components/common/error-state'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getWorkspaceInvitations } from '@/services/invitation.service'
 import { getWorkspaceMembers } from '@/services/workspace.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+
+export const metadata = createDashboardMetadata('Members')
 
 export default async function SettingsMembersPage() {
   const workspace = await getCurrentWorkspace()

@@ -3,7 +3,10 @@ import { ErrorState } from '@/components/common/error-state'
 import { PageHeader } from '@/components/headers/page-header'
 import { auth } from '@/auth'
 import { getMe } from '@/services/user.service'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { redirect } from 'next/navigation'
+
+export const metadata = createDashboardMetadata('Account')
 
 export default async function AccountPage() {
   const session = await auth()

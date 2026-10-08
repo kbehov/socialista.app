@@ -8,9 +8,9 @@ import {
   type StudioTemplateRecreateOverride,
 } from '@/components/studio/templates/studio-template-recreate-dialog'
 import {
-  STATIC_AD_TEMPLATE_RECREATE_IDEAS,
-  staticAdTemplateRecreatePrompt,
-  staticAdTemplateToAttachments,
+  STATIC_AD_RECREATE_PROMPT,
+  staticAdTemplateRecreateIdeaIndex,
+  staticAdTemplateRecreateIdeas,
 } from '@/lib/studio/static-ads/recreate-prompt'
 import type { Model, StaticAdTemplateDto } from '@socialista/types'
 import { useMemo } from 'react'
@@ -31,11 +31,14 @@ type StaticAdTemplateRecreateDialogProps = {
 function StaticAdTemplateRecreateComposer({
   models,
   workspaceId,
+  template,
 }: {
   models: Model[]
   workspaceId: string
+  template: StaticAdTemplateDto | null
 }) {
   const { state } = useStudioTemplateRecreate()
+  if (!template) return null
 
   return (
     <StaticAdPromptInput
@@ -45,8 +48,14 @@ function StaticAdTemplateRecreateComposer({
       hideTemplateName
       bindStudio={false}
       autoFocus
+      showCopyFields
       initialPrompt={state.prompt}
       initialAttachments={state.attachments}
+      initialTemplateReference={{
+        id: template._id,
+        imageUrl: template.imageUrl,
+        ...(template.name ? { name: template.name } : {}),
+      }}
       placeholder="Describe how to recreate this ad…"
       surfaceClassName={STUDIO_HERO_COMPOSER_SURFACE_CLASS}
     />
@@ -65,24 +74,29 @@ export function StaticAdTemplateRecreateDialog({
   onGoPrevious,
   onGoNext,
 }: StaticAdTemplateRecreateDialogProps) {
-  const recreateOverride = useMemo((): StudioTemplateRecreateOverride | null => {
+  const session = useMemo(() => {
     if (!template) return null
+    const ideas = staticAdTemplateRecreateIdeas(template)
+    const index = staticAdTemplateRecreateIdeaIndex(template._id, ideas.length)
     return {
-      id: template._id,
-      previewUrl: template.imageUrl,
-      attachments: staticAdTemplateToAttachments(template),
-      initialPrompt: staticAdTemplateRecreatePrompt(),
+      ideas,
+      override: {
+        id: template._id,
+        previewUrl: template.imageUrl,
+        attachments: [],
+        initialPrompt: ideas[index]?.prompt ?? STATIC_AD_RECREATE_PROMPT,
+      } satisfies StudioTemplateRecreateOverride,
     }
   }, [template])
 
   return (
     <StudioTemplateRecreateDialog
       template={null}
-      recreateOverride={recreateOverride}
+      recreateOverride={session?.override ?? null}
       open={open}
       onOpenChange={onOpenChange}
-      ideas={STATIC_AD_TEMPLATE_RECREATE_IDEAS}
-      resolveInitialPrompt={() => staticAdTemplateRecreatePrompt()}
+      ideas={session?.ideas ?? []}
+      resolveInitialPrompt={() => session?.override.initialPrompt ?? STATIC_AD_RECREATE_PROMPT}
       title="Recreate ad"
       description="Recreate this template. The reference image is already attached."
       contextLabel={contextLabel}
@@ -91,7 +105,7 @@ export function StaticAdTemplateRecreateDialog({
       onGoPrevious={onGoPrevious}
       onGoNext={onGoNext}
     >
-      <StaticAdTemplateRecreateComposer models={models} workspaceId={workspaceId} />
+      <StaticAdTemplateRecreateComposer template={template} models={models} workspaceId={workspaceId} />
     </StudioTemplateRecreateDialog>
   )
 }

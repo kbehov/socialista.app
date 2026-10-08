@@ -112,7 +112,9 @@ export {
 export {
   type CreateStaticAdTemplateInput,
   type IStaticAdTemplate,
+  type IStaticAdTemplateBlueprint,
   type IStaticAdTemplateCategory,
+  type IStaticAdTemplatePaletteSwatch,
   type StaticAdTemplateCategoryDocument,
   type StaticAdTemplateDocument,
 } from "./types/static-ad-template.types.js";

@@ -2,6 +2,7 @@
 
 import { DASHBOARD_ROUTES } from '@/constants/app-routes'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import {
   ArrowLeftIcon,
@@ -13,11 +14,13 @@ import {
   SendIcon,
 } from 'lucide-react'
 import Link from 'next/link'
+import type { MouseEvent, ReactNode } from 'react'
 
 type ComposerHeaderProps = {
   canSubmit: boolean
   isSubmitting: boolean
   isReady: boolean
+  isDirty?: boolean
   statusMessage: string
   scheduleMode: 'now' | 'schedule' | 'draft'
   onSaveDraft: () => void
@@ -25,10 +28,42 @@ type ComposerHeaderProps = {
   className?: string
 }
 
+function DisabledActionTooltip({
+  disabled,
+  message,
+  wrapperClassName,
+  children,
+}: {
+  disabled: boolean
+  message: string
+  wrapperClassName?: string
+  children: ReactNode
+}) {
+  if (!disabled) return children
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          tabIndex={0}
+          aria-label={message}
+          className={cn('inline-flex cursor-not-allowed', wrapperClassName)}
+        >
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={6} className="max-w-56 text-center">
+        {message}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 export function ComposerHeader({
   canSubmit,
   isSubmitting,
   isReady,
+  isDirty = false,
   statusMessage,
   scheduleMode,
   onSaveDraft,
@@ -38,9 +73,17 @@ export function ComposerHeader({
   const primaryLabel =
     scheduleMode === 'schedule' ? 'Schedule' : scheduleMode === 'draft' ? 'Save draft' : 'Publish now'
   const PrimaryIcon = scheduleMode === 'schedule' ? CalendarClockIcon : SendIcon
+  const draftDisabled = !canSubmit || isSubmitting
+  const publishDisabled = !isReady || isSubmitting
+  const blockedMessage = isSubmitting ? 'Working…' : statusMessage
+
+  const handleBackClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!isDirty) return
+    if (!window.confirm('Discard this post?')) event.preventDefault()
+  }
 
   return (
-    <>
+    <TooltipProvider delayDuration={160}>
       <header
         className={cn(
           'sticky top-0 z-20 -mx-1 px-1',
@@ -58,7 +101,7 @@ export function ComposerHeader({
               size="icon"
               className="size-8 shrink-0 rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground active:scale-[0.97]"
             >
-              <Link href={DASHBOARD_ROUTES.POSTS} aria-label="Back to posts">
+              <Link href={DASHBOARD_ROUTES.POSTS} aria-label="Back to posts" onClick={handleBackClick}>
                 <ArrowLeftIcon className="size-4" strokeWidth={1.75} />
               </Link>
             </Button>
@@ -85,31 +128,35 @@ export function ComposerHeader({
           </div>
 
           <div className="hidden items-center gap-2 sm:flex">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98]"
-              disabled={!canSubmit || isSubmitting}
-              onClick={onSaveDraft}
-            >
-              <FileTextIcon className="size-3.5" strokeWidth={1.75} />
-              Save draft
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 rounded-full px-4 text-xs font-medium shadow-xs active:scale-[0.98]"
-              disabled={!isReady || isSubmitting}
-              onClick={onPublish}
-            >
-              {isSubmitting ? (
-                <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
-              ) : (
-                <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
-              )}
-              {isSubmitting ? 'Working…' : primaryLabel}
-            </Button>
+            <DisabledActionTooltip disabled={draftDisabled} message={blockedMessage}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-full border-border/60 px-3.5 text-xs font-medium shadow-none hover:bg-muted/40 active:scale-[0.98]"
+                disabled={draftDisabled}
+                onClick={onSaveDraft}
+              >
+                <FileTextIcon className="size-3.5" strokeWidth={1.75} />
+                Save draft
+              </Button>
+            </DisabledActionTooltip>
+            <DisabledActionTooltip disabled={publishDisabled} message={blockedMessage}>
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 rounded-full px-4 text-xs font-medium shadow-xs active:scale-[0.98]"
+                disabled={publishDisabled}
+                onClick={onPublish}
+              >
+                {isSubmitting ? (
+                  <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
+                ) : (
+                  <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
+                )}
+                {isSubmitting ? 'Working…' : primaryLabel}
+              </Button>
+            </DisabledActionTooltip>
           </div>
         </div>
         {/* Scroll-edge fade — soft material boundary instead of a hard rule */}
@@ -128,33 +175,45 @@ export function ComposerHeader({
         )}
       >
         <div className="mx-auto flex max-w-lg items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-10 flex-1 rounded-full border-border/60 text-xs font-medium shadow-none active:scale-[0.98]"
-            disabled={!canSubmit || isSubmitting}
-            onClick={onSaveDraft}
+          <DisabledActionTooltip
+            disabled={draftDisabled}
+            message={blockedMessage}
+            wrapperClassName="min-w-0 flex-1"
           >
-            <FileTextIcon className="size-3.5" strokeWidth={1.75} />
-            Draft
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="h-10 flex-[1.4] rounded-full text-xs font-medium shadow-xs active:scale-[0.98]"
-            disabled={!isReady || isSubmitting}
-            onClick={onPublish}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 w-full flex-1 rounded-full border-border/60 text-xs font-medium shadow-none active:scale-[0.98]"
+              disabled={draftDisabled}
+              onClick={onSaveDraft}
+            >
+              <FileTextIcon className="size-3.5" strokeWidth={1.75} />
+              Draft
+            </Button>
+          </DisabledActionTooltip>
+          <DisabledActionTooltip
+            disabled={publishDisabled}
+            message={blockedMessage}
+            wrapperClassName="min-w-0 flex-[1.4]"
           >
-            {isSubmitting ? (
-              <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
-            ) : (
-              <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
-            )}
-            {isSubmitting ? 'Working…' : primaryLabel}
-          </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-10 w-full flex-[1.4] rounded-full text-xs font-medium shadow-xs active:scale-[0.98]"
+              disabled={publishDisabled}
+              onClick={onPublish}
+            >
+              {isSubmitting ? (
+                <Loader2Icon className="size-3.5 animate-spin" strokeWidth={1.75} />
+              ) : (
+                <PrimaryIcon className="size-3.5" strokeWidth={1.75} />
+              )}
+              {isSubmitting ? 'Working…' : primaryLabel}
+            </Button>
+          </DisabledActionTooltip>
         </div>
       </div>
-    </>
+    </TooltipProvider>
   )
 }

@@ -16,6 +16,7 @@ export const staticAdImageSchema = z.object({
   url: z.string().url(),
   role: z.enum(STATIC_AD_IMAGE_ROLES).optional(),
   label: z.string().trim().max(80).optional(),
+  productId: z.string().trim().min(1).optional(),
 })
 
 export type StaticAdImageInput = z.infer<typeof staticAdImageSchema>
@@ -39,6 +40,7 @@ export const staticAdPayloadObjectSchema = z.object({
   referenceImage: z.string().url().optional(),
   model: z.string().min(1).default(STATIC_AD_MODEL),
   language: z.string().default('en'),
+  templateId: z.string().trim().min(1).optional(),
   adCopy: staticAdCopySchema.optional(),
   numImages: z
     .number()

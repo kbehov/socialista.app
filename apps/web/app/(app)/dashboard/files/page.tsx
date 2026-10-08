@@ -1,7 +1,10 @@
 import { FilesBrowser } from '@/components/files/files-browser'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { WORKSPACE_FILES_PAGE_SIZE } from '@/constants/files'
 import { getFolders, getWorkspaceFiles } from '@/services/files.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+
+export const metadata = createDashboardMetadata('Files')
 
 export default async function DashboardFilesPage() {
   const workspace = await getCurrentWorkspace()

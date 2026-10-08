@@ -13,9 +13,12 @@ import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { MetaResponse } from '@socialista/types'
 import { Link2Icon, PenLineIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { Suspense } from 'react'
 
 import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
+
+export const metadata = createDashboardMetadata('Posts')
 
 type PostsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>

@@ -8,9 +8,12 @@ import { getGeneration } from '@/services/generation.service'
 import type { ComposerMediaItem } from '@/types/composer-types'
 import { generationToComposerMedia } from '@/utils/composer-media.utils'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { Link2Icon } from 'lucide-react'
 
 import { WorkspaceRequired } from '../../../../../components/dashboard/workspace-required'
+
+export const metadata = createDashboardMetadata('Create post')
 
 type CreatePostPageProps = {
   searchParams: Promise<{ generationId?: string; slideshowId?: string }>

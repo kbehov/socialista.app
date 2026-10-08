@@ -1,4 +1,4 @@
-import { resolvePrompt } from '@socialista/ai'
+import { POST_COPY_RUNTIME_CONTRACT, resolvePrompt } from '@socialista/ai'
 import { auth } from '@/auth'
 import { getModels } from '@/services/models.service'
 import { deductWorkspaceAiCredits } from '@/services/workspace.service'
@@ -61,8 +61,12 @@ export async function POST(request: NextRequest) {
 
   const userPrompt = buildPostCopywriterUserPrompt(sanitized)
   const systemOverride = await loadSkillOverride(workspace._id, PROMPT_KEYS.postCopy, sanitized.skillId)
-  const { model: defaultModel, system } = resolvePrompt(PROMPT_KEYS.postCopy, systemOverride)
-  const model = textModelRes.model?.value ?? defaultModel
+  const resolved = resolvePrompt(PROMPT_KEYS.postCopy, systemOverride)
+  const model = textModelRes.model?.value ?? resolved.model
+  // A skill replaces the default system prompt. Keep hard constraints by appending the contract.
+  const system = systemOverride?.trim()
+    ? `${resolved.system}\n\n${POST_COPY_RUNTIME_CONTRACT}`
+    : resolved.system
   const creditCost = textModelRes.cost
 
   try {

@@ -54,6 +54,7 @@ export type ImageGenerator = (options: {
 export const TASK_IDS = {
   imageGeneration: 'realtime-image-generation',
   staticAdGeneration: 'realtime-static-ad-generation',
+  staticAdTemplateAnalysis: 'analyze-static-ad-template',
   refreshAccountToken: 'refresh-account-token',
   publishPost: 'publish-post',
   analyticsSweep: 'analytics-sweep',

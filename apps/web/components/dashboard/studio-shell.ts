@@ -13,10 +13,7 @@ export const LOCKED_STUDIO_SHELL_CLASSES = [
 ] as const
 
 /** Full-bleed studio surfaces — drop dashboard padding and max-width. */
-export const EDGE_TO_EDGE_STUDIO_CLASSES = [
-  'image-studio',
-  ...LOCKED_STUDIO_SHELL_CLASSES,
-] as const
+export const EDGE_TO_EDGE_STUDIO_CLASSES = ['image-studio', ...LOCKED_STUDIO_SHELL_CLASSES] as const
 
 /** @deprecated Use LOCKED_STUDIO_SHELL_CLASSES or EDGE_TO_EDGE_STUDIO_CLASSES */
 export const STUDIO_SHELL_CLASSES = EDGE_TO_EDGE_STUDIO_CLASSES
@@ -52,4 +49,4 @@ export const ugcStudioRootClassName =
 
 /** Post composer — zero dashboard inset via `:has(.post-composer)` on main. */
 export const postComposerRootClassName =
-  'post-composer flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground'
+  'post-composer flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground px-4'

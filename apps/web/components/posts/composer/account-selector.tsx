@@ -218,7 +218,9 @@ export function AccountSelector({
                   title={`${getAccountSecondaryLabel(account, duplicateNameKeys)} — click to remove`}
                   className={cn(
                     'group inline-flex max-w-48 items-center gap-1.5 rounded-full border bg-background py-1 pr-1.5 pl-1',
-                    'text-[11px] font-medium transition-colors active:scale-[0.97]',
+                    'text-[11px] font-medium opacity-100 translate-y-0 active:scale-[0.97]',
+                    'transition-[opacity,translate,color,background-color,border-color] duration-150 ease-out motion-reduce:transition-none',
+                    'starting:opacity-0 starting:translate-y-0.5',
                     'hover:bg-muted/40 dark:hover:bg-muted/30',
                     hasIssue
                       ? 'border-amber-500/40 text-foreground dark:border-amber-500/45'

@@ -3,10 +3,19 @@ import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { InfluencerDetail } from '@/components/studio/influencers/influencer-detail'
 import { deleteInfluencer, getInfluencer } from '@/services/influencer.service'
 import { getModels } from '@/services/models.service'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import type { Metadata } from 'next'
 
 type InfluencerPageProps = {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: InfluencerPageProps): Promise<Metadata> {
+  const { id } = await params
+  const response = await getInfluencer(id)
+  const name = response.data?.influencer?.name?.trim()
+  return createDashboardMetadata(name || 'Influencer')
 }
 
 export default async function InfluencerPage({ params }: InfluencerPageProps) {

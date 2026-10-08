@@ -1,5 +1,8 @@
 import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { SlideshowGenerationRunView } from '@/components/carousel/slideshow-generation-run-view'
+
+export const metadata = createDashboardMetadata('Slideshow generation')
 
 type SlideshowGenerationRunPageProps = {
   params: Promise<{ runId: string }>

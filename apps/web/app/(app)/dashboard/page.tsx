@@ -7,6 +7,7 @@ import { ErrorState } from '@/components/common/error-state'
 import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { PageHeader } from '@/components/headers/page-header'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getAnalyticsOverview, loadAccountAnalytics } from '@/services/analytics.service'
 import { getFirstName, getGreeting } from '@/utils/greeting'
@@ -23,6 +24,8 @@ import type { ReactNode } from 'react'
 type DashboardPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
+
+export const metadata = createDashboardMetadata('Analytics')
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const [{ workspace, project }, session] = await Promise.all([getCurrentWorkspaceContext(), auth()])

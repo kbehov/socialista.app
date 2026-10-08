@@ -10,6 +10,8 @@ export const AI_PROMPT_MODELS: Record<RegistryPromptKey, string> = {
   [REGISTRY_PROMPT_KEYS.videoPrompt]: 'openai/gpt-6-sol',
   [REGISTRY_PROMPT_KEYS.influencerHookVideo]: 'openai/gpt-6-sol',
   [REGISTRY_PROMPT_KEYS.staticAd]: 'openai/gpt-6-sol',
+  [REGISTRY_PROMPT_KEYS.staticAdTemplateAnalysis]: 'openai/gpt-6-sol',
+  [REGISTRY_PROMPT_KEYS.staticAdRecreateCritique]: 'openai/gpt-6-sol',
   [REGISTRY_PROMPT_KEYS.ugcAdPlan]: 'openai/gpt-6-sol',
   [REGISTRY_PROMPT_KEYS.videoScript]: 'openai/gpt-6-sol',
   [REGISTRY_PROMPT_KEYS.slideshow]: 'openai/gpt-6-sol',

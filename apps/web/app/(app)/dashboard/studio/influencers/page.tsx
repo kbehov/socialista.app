@@ -2,7 +2,10 @@ import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { InfluencerList } from '@/components/studio/influencers/influencer-list'
 import { INFLUENCER_LIST_LIMIT } from '@/lib/studio/influencers/influencer-filters'
 import { getWorkspaceInfluencers } from '@/services/influencer.service'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
+
+export const metadata = createDashboardMetadata('Influencers')
 
 export default async function InfluencersPage() {
   const { workspace, project } = await getCurrentWorkspaceContext()

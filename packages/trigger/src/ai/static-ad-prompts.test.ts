@@ -2,9 +2,26 @@ import { describe, expect, it } from 'vitest'
 import {
   assembleStaticAdImagePrompt,
   buildStaticAdCreativeBrief,
+  buildStaticAdRecreateCritiqueTurn,
+  buildStaticAdTemplateEditRequest,
   sanitizeStaticAdModelPrompts,
   STATIC_AD_CREATIVE_DELIMITER,
 } from './static-ad-prompts.js'
+
+const BLUEPRINT = {
+  format: 'graphic' as const,
+  layout: 'Left third oversized number, product on the right.',
+  typeHierarchy: 'Heavy headline top band, small CTA pill bottom right.',
+  palette: [
+    { hex: '#111111', role: 'type' },
+    { hex: '#F4F1EA', role: 'background' },
+  ],
+  hookStyle: 'curiosity gap',
+  sceneJob: 'Product sits beside a stat.',
+  aspectRatioHint: '1:1' as const,
+  analyzedAt: new Date('2026-01-01T00:00:00.000Z'),
+  version: 1,
+}
 
 const COMPACT = `Mode: Screenshot/UI — 1:1 editorial webpage, no browser chrome.
 Scene: Generic Bulgarian fashion-wellness magazine page, full-bleed square. Top band: oversized generic masthead on white, thin black nav, large centered two-line headline. Lower half: vertical split — left Image 1 bottle large among houseplant leaves, label unobstructed; right one generic adult woman in a real bedroom taking a casual phone-mirror photo, fully clothed, matching same-instant reflection. Bright editorial white/black/greens, soft daylight. Bottle is the hero silhouette.
@@ -104,7 +121,8 @@ describe('assembleStaticAdImagePrompt', () => {
       true,
     )
     expect(withRef).toContain(COMPACT)
-    expect(withRef).toContain("Recolor to the user's pack palette")
+    expect(withRef).toContain('Edit Image 2 in place')
+    expect(withRef).toContain('Do not recolor the layout')
     expect(withoutRef).toContain('Exact product identity from Image 1.')
     expect(withRef).not.toMatch(/claim-safe/i)
     expect(withRef.split(/\s+/).length).toBeLessThan(280)
@@ -118,12 +136,12 @@ describe('assembleStaticAdImagePrompt', () => {
     ])
     expect(prompt).toContain('Exact person identity from Image 1.')
     expect(prompt).toContain('Exact product identity from Image 2.')
-    expect(prompt).toContain('Recreate Image 3 layout')
+    expect(prompt).toContain('Edit Image 3 in place')
   })
 })
 
 describe('buildStaticAdCreativeBrief', () => {
-  it('asks template recreations to follow the product palette and skip claim-safety', () => {
+  it('asks template edits to keep the original ad and skip claim-safety', () => {
     const brief = buildStaticAdCreativeBrief({
       images: [
         { url: 'https://cdn.example.com/product.webp', role: 'product' },
@@ -132,10 +150,10 @@ describe('buildStaticAdCreativeBrief', () => {
       language: 'en',
       aspectRatio: '1:1',
     })
-    expect(brief).toMatch(/product palette/i)
-    expect(brief).toMatch(/scroll-stopping hook/i)
+    expect(brief).toMatch(/do not recolor/i)
+    expect(brief).toMatch(/replace lines that name the template product/i)
     expect(brief).toMatch(/@image1/)
-    expect(brief).toMatch(/ad template to recreate/i)
+    expect(brief).toMatch(/ad template to edit in place/i)
     expect(brief).not.toMatch(/claim-safe/i)
     expect(brief).not.toContain(STATIC_AD_CREATIVE_DELIMITER)
     expect(brief).not.toMatch(/Creative count/)
@@ -167,11 +185,11 @@ describe('buildStaticAdCreativeBrief', () => {
     expect(brief).toMatch(/person \/ influencer/)
     expect(brief).toMatch(/Maya/)
     expect(brief).toMatch(/Serum/)
-    expect(brief).toMatch(/Substitute the user's influencer/)
+    expect(brief).toMatch(/Swap the person only when a person reference is attached/)
     expect(brief).toMatch(/not limited to one product/)
   })
 
-  it('asks for N template recreations with the same layout and different hooks', () => {
+  it('asks for N copies of the same template edit', () => {
     const brief = buildStaticAdCreativeBrief({
       images: [
         { url: 'https://cdn.example.com/product.webp', role: 'product' },
@@ -181,11 +199,9 @@ describe('buildStaticAdCreativeBrief', () => {
       aspectRatio: '1:1',
       count: 3,
     })
-    expect(brief).toMatch(
-      /Creative count: 3 DISTINCT recreations of the template/,
-    )
-    expect(brief).toMatch(/same layout, type hierarchy, and lighting mood/)
-    expect(brief).toMatch(/Never the same headline twice/)
+    expect(brief).toMatch(/Creative count: 3 attempts of the SAME template edit/)
+    expect(brief).toMatch(/same concept, person, colors, layout/)
+    expect(brief).toMatch(/Do not invent a new scene/)
     expect(brief).toContain(STATIC_AD_CREATIVE_DELIMITER)
     expect(brief).toMatch(/write 3 SHORT image-edit prompts/)
   })
@@ -205,5 +221,114 @@ describe('buildStaticAdCreativeBrief', () => {
     expect(brief).toMatch(/Only when the notes give no format signal/)
     expect(brief).toContain(STATIC_AD_CREATIVE_DELIMITER)
     expect(brief).not.toMatch(/recreations of the template/)
+  })
+
+  it('injects the template blueprint as layout ground truth', () => {
+    const brief = buildStaticAdCreativeBrief({
+      images: [
+        { url: 'https://cdn.example.com/product.webp', role: 'product' },
+        { url: 'https://cdn.example.com/template.webp', role: 'template' },
+      ],
+      language: 'en',
+      aspectRatio: '1:1',
+      templateBlueprint: BLUEPRINT,
+    })
+    expect(brief).toMatch(/Template blueprint/)
+    expect(brief).toMatch(/Left third oversized number/)
+    expect(brief).toMatch(/curiosity gap/)
+    expect(brief).toContain('#111111')
+    expect(brief).toMatch(/translate the existing headline/i)
+    expect(brief).toMatch(/colors to keep/i)
+  })
+
+  it('quotes structured ad copy as verbatim', () => {
+    const brief = buildStaticAdCreativeBrief({
+      images: [{ url: 'https://cdn.example.com/product.webp', role: 'product' }],
+      adCopy: { headline: 'Stop the scroll', cta: 'Shop' },
+    })
+    expect(brief).toMatch(/Required on-image copy/)
+    expect(brief).toContain('"Stop the scroll"')
+    expect(brief).toContain('"Shop"')
+  })
+
+  it('ignores a blueprint when no template image is attached', () => {
+    const brief = buildStaticAdCreativeBrief({
+      images: [{ url: 'https://cdn.example.com/product.webp', role: 'product' }],
+      templateBlueprint: BLUEPRINT,
+    })
+    expect(brief).not.toMatch(/Template blueprint/)
+  })
+})
+
+describe('buildStaticAdRecreateCritiqueTurn', () => {
+  it('asks for the same number of blocks and includes the blueprint', () => {
+    const turn = buildStaticAdRecreateCritiqueTurn({
+      drafts: [COMPACT, COMPACT_TWO],
+      blueprint: BLUEPRINT,
+      count: 2,
+      notes: 'keep the stat layout',
+      adCopy: { headline: 'Exact line' },
+    })
+    expect(turn).toContain(STATIC_AD_CREATIVE_DELIMITER)
+    expect(turn).toMatch(/Return 2 Mode\/Scene\/Copy\/Lock blocks/)
+    expect(turn).toMatch(/curiosity gap/)
+    expect(turn).toContain('keep the stat layout')
+    expect(turn).toContain('"Exact line"')
+    expect(turn).toContain('Screenshot/UI')
+    expect(turn).toContain('UGC')
+  })
+})
+
+describe('buildStaticAdTemplateEditRequest', () => {
+  it('keeps the template and only swaps the product and language', () => {
+    const request = buildStaticAdTemplateEditRequest({
+      images: [
+        { url: 'https://cdn.example.com/paste.webp', role: 'product' },
+        { url: 'https://cdn.example.com/meme.webp', role: 'template' },
+      ],
+      language: 'bg',
+      prompt: 'change the product only, use @image1, and the language to Bulgarian',
+    })
+    expect(request).toContain('@image2')
+    expect(request).not.toContain('@image1')
+    expect(request).toContain('Edit Image 1 in place')
+    expect(request).toContain('exact product from Image 2')
+    expect(request).toMatch(/Keep the person already in the template/)
+    expect(request).toMatch(/Do not recolor the layout/)
+    expect(request).toMatch(/in Bulgarian/)
+    expect(request).toMatch(/Replace lines that name the template product/)
+    expect(request).toMatch(/Keep and translate lines that are the concept/)
+    expect(request).toContain('change the product only')
+  })
+
+  it('uses supplied copy instead of a translation', () => {
+    const request = buildStaticAdTemplateEditRequest({
+      images: [{ url: 'https://cdn.example.com/meme.webp', role: 'template' }],
+      language: 'bg',
+      adCopy: { headline: 'Точно този ред' },
+    })
+    expect(request).toContain('"Точно този ред"')
+    expect(request).not.toMatch(/Replace lines that name the template product/)
+  })
+
+  it('rewrites template features from the new product info', () => {
+    const request = buildStaticAdTemplateEditRequest({
+      images: [
+        { url: 'https://cdn.example.com/serum.webp', role: 'product' },
+        { url: 'https://cdn.example.com/coffee-ad.webp', role: 'template' },
+      ],
+      language: 'en',
+      products: [
+        {
+          image: 'Image 2',
+          name: 'Glow Serum',
+          description: 'Vitamin C serum for dull skin. Morning use.',
+        },
+      ],
+    })
+    expect(request).toContain('Glow Serum')
+    expect(request).toContain('Vitamin C serum for dull skin')
+    expect(request).toMatch(/Do not use the template product's claims/)
+    expect(request).toMatch(/same slots/)
   })
 })

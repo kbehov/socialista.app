@@ -1,6 +1,9 @@
 import { lockedStudioShellRootClassName } from '@/components/dashboard/studio-shell'
 import { VideoGenerationProgress } from '@/components/studio/videos/video-generation-progress'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getModels } from '@/services/models.service'
+
+export const metadata = createDashboardMetadata('Video generation')
 
 type VideoGenerationRunPageProps = {
   params: Promise<{ runId: string }>

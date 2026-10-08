@@ -38,6 +38,8 @@ export const REGISTRY_PROMPT_KEYS = {
   influencerPrompt: 'influencer-prompt',
   influencerHookVideo: 'influencer-hook-video',
   ugcAdPlan: 'ugc-ad-plan',
+  staticAdTemplateAnalysis: 'static-ad-template-analysis',
+  staticAdRecreateCritique: 'static-ad-recreate-critique',
 } as const
 
 export type RegistryPromptKey = (typeof REGISTRY_PROMPT_KEYS)[keyof typeof REGISTRY_PROMPT_KEYS]

@@ -10,7 +10,11 @@ import { AppSidebar } from '@/components/sidebars/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { ProjectProvider } from '@/context/project-provider'
 import { WorkspaceProvider } from '@/context/workspace-provider'
+import { createDashboardLayoutMetadata } from '@/lib/seo/dashboard-metadata'
 import { getDashboardData } from '@/services/dashboard.service'
+
+export const metadata = createDashboardLayoutMetadata()
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { workspaces, projects, currentWorkspace, aiCreditsBalance } = await getDashboardData()
 

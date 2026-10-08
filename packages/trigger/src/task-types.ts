@@ -4,6 +4,7 @@ import type { fetchAccountAnalyticsTask } from './tasks/analytics/fetch-account-
 import type { postAnalyticsSweep } from './tasks/analytics/sweep-post-analytics.js'
 import type { fetchPostAnalyticsTask } from './tasks/analytics/fetch-post-analytics.js'
 import type { realtimeImageGeneration } from './tasks/image/generate-image-realtime.js'
+import type { analyzeStaticAdTemplate } from './tasks/image/analyze-static-ad-template.js'
 import type { realtimeStaticAdGeneration } from './tasks/image/generate-static-ad-realtime.js'
 import type { cloneInfluencer } from './tasks/influencer/clone-influencer.js'
 import type { generateInfluencer } from './tasks/influencer/generate-influencer.js'
@@ -21,6 +22,7 @@ import type { realtimeSlideshowGeneration } from './tasks/slideshow/generate-sli
 
 export type RealtimeImageGenerationTask = typeof realtimeImageGeneration
 export type RealtimeStaticAdGenerationTask = typeof realtimeStaticAdGeneration
+export type AnalyzeStaticAdTemplateTask = typeof analyzeStaticAdTemplate
 export type GenerateInfluencerTask = typeof generateInfluencer
 export type GenerateInfluencerHookVideoTask = typeof generateInfluencerHookVideo
 export type GenerateInfluencerImageTask = typeof generateInfluencerImage

@@ -2,7 +2,10 @@ import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { InfluencerCreateWorkspace } from '@/components/studio/influencers/influencer-create-workspace'
 import { getModels } from '@/services/models.service'
 import { getCurrentWorkspace } from '@/utils/workspace.utils.server'
+import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { ContextSupport } from '@socialista/types'
+
+export const metadata = createDashboardMetadata('Create influencer')
 
 const INFLUENCER_MODELS_QUERY =
   'limit=50&modelType=image&contextSupports=image&sort=-usageCount'

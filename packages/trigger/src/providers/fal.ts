@@ -75,9 +75,23 @@ export async function generateImageFal({
     num_images: numImages,
   }
 
-  const referenceImage = imageUrl ?? imageUrls?.[0]
-  if (referenceImage) {
-    input.image_url = referenceImage
+  const referenceImages = [
+    ...(imageUrls ?? []),
+    ...(imageUrl && !(imageUrls ?? []).includes(imageUrl) ? [imageUrl] : []),
+  ]
+  if (referenceImages.length > 0) {
+    const id = model.toLowerCase()
+    const usesImageUrls =
+      id.includes('/edit') ||
+      id.includes('/multi') ||
+      id.includes('nano-banana') ||
+      id.includes('grok-imagine-image') ||
+      id.includes('flux-2')
+    if (usesImageUrls) {
+      input.image_urls = referenceImages
+    } else {
+      input.image_url = referenceImages[0]
+    }
   }
 
   logger.info('Submitting to fal', { model, numImages })
