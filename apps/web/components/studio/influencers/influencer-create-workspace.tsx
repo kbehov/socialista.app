@@ -41,7 +41,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition, type FormEvent, type KeyboardEvent } from 'react'
 import { toast } from 'sonner'
-import { InfluencerAvatarSilhouette } from './influencer-avatar-silhouette'
 import { InfluencerCreateForm } from './influencer-create-form'
 import { OptionSegmented } from './influencer-option-controls'
 import { InfluencerPresetStrip } from './influencer-preset-strip'
@@ -282,17 +281,6 @@ export function InfluencerCreateWorkspace({
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain sidebar-scrollbar">
           <div className={cn(CREATE_SHELL, 'flex flex-col gap-6 py-6 sm:py-8')}>
-            <div className="flex justify-center" aria-hidden>
-              <InfluencerAvatarSilhouette
-                skinTone={form.appearance.skinTone}
-                hairColor={form.appearance.hairColor}
-                eyeColor={form.appearance.eyeColor}
-                hairStyle={form.appearance.hairStyle}
-                facialHair={showFacialHair ? form.appearance.facialHair : undefined}
-                size="preview"
-              />
-            </div>
-
             <InfluencerPresetStrip
               selectedId={selectedPresetId}
               onSelect={applyPreset}

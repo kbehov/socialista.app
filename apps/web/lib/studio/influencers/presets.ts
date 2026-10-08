@@ -55,10 +55,12 @@ export type InfluencerCreateFormState = {
 export type InfluencerPreset = {
   id: string
   title: string
+  /** Shown on the preset picker chip */
+  emoji: string
   description: string
   /** What the user will use this influencer for. */
   useCase: string
-  /** Gradient colors for the preset card avatar */
+  /** Tint colors for the preset chip background */
   avatar: { skin: string; hair: string }
   form: InfluencerCreateFormState
 }
@@ -67,6 +69,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'product-reviewer',
     title: 'Product reviewer',
+    emoji: '📦',
     description: 'Scroll-stopping handheld reviews that convert — phone UGC, chest-height product.',
     useCase: 'Product reviews & unboxings',
     avatar: { skin: '#C68642', hair: '#0D0D0D' },
@@ -99,6 +102,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'beauty-grwm',
     title: 'Beauty GRWM',
+    emoji: '💄',
     description: 'Vanity GRWM + serum try-ons — soft daylight, flattering skin focus.',
     useCase: 'Beauty & skincare ads',
     avatar: { skin: '#D4A574', hair: '#0D0D0D' },
@@ -131,6 +135,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'fitness-coach',
     title: 'Fitness coach',
+    emoji: '💪',
     description: 'Gym + outdoor training frames for workout tips and recovery content.',
     useCase: 'Fitness & wellness ads',
     avatar: { skin: '#8D5524', hair: '#3B2314' },
@@ -163,6 +168,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'fashion-ootd',
     title: 'Fashion OOTD',
+    emoji: '👗',
     description: 'Mirror fits + street looks for style hauls and outfit content.',
     useCase: 'Fashion & OOTD',
     avatar: { skin: '#E8C4A8', hair: '#3B2314' },
@@ -195,6 +201,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'food-home-cook',
     title: 'Home cook',
+    emoji: '🍳',
     description: 'Kitchen plating + market runs for recipes and food brands.',
     useCase: 'Food & recipes',
     avatar: { skin: '#F6E6D8', hair: '#B85C38' },
@@ -227,6 +234,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'tech-creator',
     title: 'Tech creator',
+    emoji: '💻',
     description: 'Desk demos and gadget walkthroughs for launches and SaaS.',
     useCase: 'Tech demos & launches',
     avatar: { skin: '#A56C3A', hair: '#0D0D0D' },
@@ -259,6 +267,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'car-talker',
     title: 'Car talker',
+    emoji: '🚗',
     description: 'Passenger-seat confessionals — high-retention TikTok format.',
     useCase: 'Car confessionals & hooks',
     avatar: { skin: '#C68642', hair: '#3B2314' },
@@ -291,6 +300,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'podcast-host',
     title: 'Podcast host',
+    emoji: '🎙️',
     description: 'Mic-forward talking heads for interviews, tips, and thought leadership.',
     useCase: 'Podcast & thought leadership',
     avatar: { skin: '#6B3F24', hair: '#0D0D0D' },
@@ -323,6 +333,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'travel-vlogger',
     title: 'Travel vlogger',
+    emoji: '✈️',
     description: 'Airport-to-hotel day-in-the-life for travel brands and destinations.',
     useCase: 'Travel & destination UGC',
     avatar: { skin: '#D4A574', hair: '#6B3A2A' },
@@ -355,6 +366,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'wellness-morning',
     title: 'Wellness morning',
+    emoji: '🧘',
     description: 'Soft morning rituals for supplements, routines, and mindful living.',
     useCase: 'Wellness & routines',
     avatar: { skin: '#E8C4A8', hair: '#6B3A2A' },
@@ -387,6 +399,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'retail-haul',
     title: 'Retail haul',
+    emoji: '🛍️',
     description: 'Store finds and shopping-bag reveals for retail and DTC brands.',
     useCase: 'Hauls & shopping ads',
     avatar: { skin: '#E8C4A8', hair: '#0D0D0D' },
@@ -419,6 +432,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'business-explainer',
     title: 'Business explainer',
+    emoji: '💼',
     description: 'Seated tips for finance, career, and B2B thought leadership.',
     useCase: 'Business & finance tips',
     avatar: { skin: '#C68642', hair: '#3B2314' },
@@ -451,6 +465,7 @@ export const INFLUENCER_PRESETS: ReadonlyArray<InfluencerPreset> = [
   {
     id: 'educator',
     title: 'Educator',
+    emoji: '📚',
     description: 'Library and study-desk explainers for lessons, courses, and how-tos.',
     useCase: 'Education & how-to UGC',
     avatar: { skin: '#D4A574', hair: '#3B2314' },
