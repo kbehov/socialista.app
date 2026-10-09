@@ -159,6 +159,7 @@ function GrowthChart({ data, provider = 'all', className }: GrowthChartProps) {
     >
       {!hasData ? (
         <AnalyticsEmpty
+          motif="line"
           title="No growth data"
           description="Publish and sync accounts to see trends for this range."
           minHeightClassName="min-h-[200px]"

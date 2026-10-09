@@ -445,7 +445,6 @@ function InfluencerEmptyState({
         description="Try a different name or clear your filters."
         minHeight="lg"
         variant="hero"
-        iconClassName={dashboardSurface.emptyIcon}
         action={
           onClearFilters ? (
             <Button variant="outline" size="sm" className="h-8 rounded-lg" onClick={onClearFilters}>
@@ -465,7 +464,6 @@ function InfluencerEmptyState({
         description="Public influencers will appear here when they're ready to use."
         minHeight="lg"
         variant="hero"
-        iconClassName={dashboardSurface.emptyIcon}
       />
     )
   }
@@ -477,7 +475,6 @@ function InfluencerEmptyState({
       description="Build a reusable AI character, or browse ready-made ones in Discover."
       minHeight="lg"
       variant="hero"
-      iconClassName={dashboardSurface.emptyIcon}
       action={
         <Button asChild size="sm" className="h-8 rounded-lg">
           <Link href={DASHBOARD_ROUTES.STUDIO.INFLUENCER_CREATE}>Create influencer</Link>

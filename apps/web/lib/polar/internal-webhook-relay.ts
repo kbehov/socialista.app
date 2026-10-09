@@ -25,7 +25,11 @@ const serializeValue = (value: unknown): unknown => {
   return value
 }
 
-export const forwardPolarWebhookEvent = async (type: PolarWebhookEventType, data: unknown) => {
+export const forwardPolarWebhookEvent = async (
+  type: PolarWebhookEventType,
+  data: unknown,
+  deliveryId?: string,
+) => {
   const response = await fetch(`${API_URL}${WORKSPACE_ROUTES.PROCESS_POLAR_WEBHOOK}`, {
     method: 'POST',
     headers: {
@@ -33,6 +37,7 @@ export const forwardPolarWebhookEvent = async (type: PolarWebhookEventType, data
       'x-internal-webhook-secret': getInternalWebhookSecret(),
     },
     body: JSON.stringify({
+      id: deliveryId,
       type,
       data: serializeValue(data),
     }),

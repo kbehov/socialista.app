@@ -1,4 +1,4 @@
-import { resolvePlanFromProductId } from '@/services/polar-plan-mapping.js'
+import { planFromProduct } from '@/services/polar-plan-mapping.js'
 import { HttpError } from '@/utils/http-response.js'
 import {
   BillingStatus,
@@ -7,9 +7,9 @@ import {
   getWorkspaceByPolarSubscriptionId,
   getUsersByIds,
   notifyWorkspaceOwnersAndAdmins,
-  PLAN_LIMITS,
   Plan,
   provisionPlan,
+  releaseWebhookEvent,
   resetBillingPeriodUsage,
   tryMarkEventProcessed,
   updateWorkspaceBilling,
@@ -60,8 +60,6 @@ const mapPolarStatus = (status: string): BillingStatus => {
       return BillingStatus.INACTIVE
   }
 }
-
-const planLabel = (plan: Plan) => plan.charAt(0).toUpperCase() + plan.slice(1)
 
 async function notifyBillingOwners(
   workspaceId: string,
@@ -119,11 +117,11 @@ async function emailBillingOwners(
   )
 }
 
-const billingEmailInput = (workspace: IWorkspace, plan: Plan, user: { to: string; name: string }) => ({
+const billingEmailInput = (workspace: IWorkspace, label: string, user: { to: string; name: string }) => ({
   to: user.to,
   name: user.name,
   workspaceName: workspace.name,
-  planLabel: planLabel(plan),
+  planLabel: label,
   manageUrl: `${getAppUrl()}/dashboard/settings/billing`,
 })
 
@@ -153,19 +151,76 @@ const resolveWorkspaceFromOrder = async (order: PolarOrderWebhookData) => {
   return await getWorkspaceByPolarCustomerId(order.customerId)
 }
 
-const syncSubscriptionPeriod = async (workspaceId: string, subscription: PolarSubscriptionWebhookData) => {
+const syncSubscriptionPeriod = async (
+  workspaceId: string,
+  subscription: PolarSubscriptionWebhookData,
+  options: { includePeriodStart?: boolean } = {},
+) => {
   const currentPeriodEnd = toDate(subscription.currentPeriodEnd)
-  const plan = resolvePlanFromProductId(subscription.productId)
+  const includePeriodStart = options.includePeriodStart ?? true
 
   await updateWorkspaceBilling(workspaceId, {
     polarCustomerId: subscription.customerId,
     polarSubscriptionId: subscription.id,
     status: mapPolarStatus(subscription.status),
-    currentPeriodStart: toDate(subscription.currentPeriodStart),
+    ...(includePeriodStart ? { currentPeriodStart: toDate(subscription.currentPeriodStart) } : {}),
     currentPeriodEnd,
     nextBillingDate: currentPeriodEnd ?? new Date(),
-    nextBillingAmount: PLAN_LIMITS[plan].price,
+    ...(typeof subscription.amount === 'number' ? { nextBillingAmount: subscription.amount } : {}),
+    ...(subscription.product?.name?.trim() ? { polarProductName: subscription.product.name.trim() } : {}),
   })
+}
+
+type AppliedPlan = ReturnType<typeof planFromProduct>
+
+const didProductChange = (workspace: IWorkspace, applied: AppliedPlan) => {
+  if (applied.productId) {
+    return workspace.billing.polarProductId !== applied.productId
+  }
+  return workspace.billing.plan !== applied.plan
+}
+
+const isNewBillingPeriod = (workspace: IWorkspace, subscription: PolarSubscriptionWebhookData) => {
+  const previousPeriodStart = workspace.billing.currentPeriodStart
+  const newPeriodStart = toDate(subscription.currentPeriodStart)
+  return (
+    previousPeriodStart != null &&
+    newPeriodStart != null &&
+    previousPeriodStart.getTime() !== newPeriodStart.getTime()
+  )
+}
+
+/**
+ * A product change adds the new allotment to the current balance.
+ * A same-product renewal replaces the balance with that period's allotment.
+ */
+const applyActiveSubscriptionPlan = async (
+  workspace: IWorkspace,
+  workspaceId: string,
+  applied: AppliedPlan,
+  subscription: PolarSubscriptionWebhookData,
+) => {
+  if (didProductChange(workspace, applied)) {
+    await provisionPlan(workspaceId, applied.plan, applied.limits, {
+      creditsMode: 'append',
+      productName: applied.label,
+      productId: applied.productId,
+      oncePerProduct: true,
+    })
+    return { renewal: false, productChanged: true }
+  }
+
+  if (isNewBillingPeriod(workspace, subscription)) {
+    await provisionPlan(workspaceId, applied.plan, applied.limits, {
+      creditsMode: 'keep',
+      productName: applied.label,
+      productId: applied.productId,
+    })
+    await resetBillingPeriodUsage(workspaceId, applied.limits.aiCredits)
+    return { renewal: true, productChanged: false }
+  }
+
+  return { renewal: false, productChanged: false }
 }
 
 async function withSubscriptionWorkspace(
@@ -198,60 +253,57 @@ async function withOrderWorkspace(
 
 export const handleSubscriptionCreated = async (subscription: PolarSubscriptionWebhookData) => {
   return withSubscriptionWorkspace('subscription.created', subscription, async (_workspace, workspaceId) => {
-    const plan = resolvePlanFromProductId(subscription.productId)
-    await syncSubscriptionPeriod(workspaceId, subscription)
+    const applied = planFromProduct(subscription.product, subscription.productId)
     if (mapPolarStatus(subscription.status) === BillingStatus.ACTIVE) {
-      await provisionPlan(workspaceId, plan)
+      await applyActiveSubscriptionPlan(_workspace, workspaceId, applied, subscription)
     }
+    await syncSubscriptionPeriod(workspaceId, subscription)
     await notifyBillingOwners(workspaceId, {
       type: NotificationType.BILLING_SUBSCRIPTION_CREATED,
       title: 'Subscription created',
-      body: `Your ${planLabel(plan)} plan is now active.`,
+      body: `Your ${applied.label} plan is now active.`,
       subscriptionId: subscription.id,
       dedupeKey: `billing.created:${workspaceId}:${subscription.id}`,
     })
     await emailBillingOwners(_workspace, user =>
-      sendBillingSuccessEmail(billingEmailInput(_workspace, plan, user)),
+      sendBillingSuccessEmail(billingEmailInput(_workspace, applied.label, user)),
     )
   })
 }
 
 export const handleSubscriptionUpdated = async (subscription: PolarSubscriptionWebhookData) => {
   return withSubscriptionWorkspace('subscription.updated', subscription, async (workspace, workspaceId) => {
-    await syncSubscriptionPeriod(workspaceId, subscription)
+    const applied = planFromProduct(subscription.product, subscription.productId)
+    const appliedChange =
+      mapPolarStatus(subscription.status) === BillingStatus.ACTIVE
+        ? await applyActiveSubscriptionPlan(workspace, workspaceId, applied, subscription)
+        : { renewal: false, productChanged: false }
+    await syncSubscriptionPeriod(workspaceId, subscription, { includePeriodStart: !appliedChange.renewal })
     if (subscription.status !== 'past_due' && subscription.status !== 'incomplete') return
 
-    const plan = resolvePlanFromProductId(subscription.productId)
     await emailBillingOwners(workspace, user =>
-      sendBillingFailedEmail(billingEmailInput(workspace, plan, user)),
+      sendBillingFailedEmail(billingEmailInput(workspace, applied.label, user)),
     )
   })
 }
 
 export const handleSubscriptionActive = async (subscription: PolarSubscriptionWebhookData) => {
   return withSubscriptionWorkspace('subscription.active', subscription, async (workspace, workspaceId) => {
-    const previousPeriodStart = workspace.billing.currentPeriodStart
     const newPeriodStart = toDate(subscription.currentPeriodStart)
-    const plan = resolvePlanFromProductId(subscription.productId)
+    const applied = planFromProduct(subscription.product, subscription.productId)
+    const { renewal } = await applyActiveSubscriptionPlan(workspace, workspaceId, applied, subscription)
     await syncSubscriptionPeriod(workspaceId, subscription)
-    await provisionPlan(workspaceId, plan)
-    await resetBillingPeriodUsage(workspaceId)
-
-    const isRenewal =
-      previousPeriodStart != null &&
-      newPeriodStart != null &&
-      previousPeriodStart.getTime() !== newPeriodStart.getTime()
-    if (!isRenewal) return
+    if (!renewal || !newPeriodStart) return
 
     await notifyBillingOwners(workspaceId, {
       type: NotificationType.BILLING_SUBSCRIPTION_RENEWED,
       title: 'Subscription renewed',
-      body: `Your ${planLabel(plan)} plan has renewed.`,
+      body: `Your ${applied.label} plan has renewed.`,
       subscriptionId: subscription.id,
       dedupeKey: `billing.renewed:${workspaceId}:${newPeriodStart.toISOString()}`,
     })
     await emailBillingOwners(workspace, user =>
-      sendBillingRenewedEmail(billingEmailInput(workspace, plan, user)),
+      sendBillingRenewedEmail(billingEmailInput(workspace, applied.label, user)),
     )
   })
 }
@@ -270,16 +322,20 @@ export const handleSubscriptionCanceled = async (subscription: PolarSubscription
       subscriptionId: subscription.id,
       dedupeKey: `billing.canceled:${workspaceId}:${subscription.id}`,
     })
-    const plan = resolvePlanFromProductId(subscription.productId)
+    const applied = planFromProduct(subscription.product, subscription.productId)
     await emailBillingOwners(workspace, user =>
-      sendBillingCanceledEmail(billingEmailInput(workspace, plan, user)),
+      sendBillingCanceledEmail(billingEmailInput(workspace, applied.label, user)),
     )
   })
 }
 
 export const handleSubscriptionRevoked = async (subscription: PolarSubscriptionWebhookData) => {
   return withSubscriptionWorkspace('subscription.revoked', subscription, async (_workspace, workspaceId) => {
-    await provisionPlan(workspaceId, Plan.FREE)
+    await provisionPlan(workspaceId, Plan.FREE, undefined, {
+      creditsMode: 'keep',
+      productName: null,
+      productId: null,
+    })
     await updateWorkspaceBilling(workspaceId, {
       status: BillingStatus.INACTIVE,
       polarSubscriptionId: null,
@@ -287,20 +343,34 @@ export const handleSubscriptionRevoked = async (subscription: PolarSubscriptionW
       currentPeriodEnd: null,
       nextBillingDate: new Date(),
       nextBillingAmount: 0,
+      polarProductId: null,
     })
   })
 }
 
 export const handleSubscriptionUncanceled = async (subscription: PolarSubscriptionWebhookData) => {
-  return withSubscriptionWorkspace('subscription.uncanceled', subscription, async (_workspace, workspaceId) => {
-    const plan = resolvePlanFromProductId(subscription.productId)
+  return withSubscriptionWorkspace('subscription.uncanceled', subscription, async (workspace, workspaceId) => {
+    const applied = planFromProduct(subscription.product, subscription.productId)
+    if (didProductChange(workspace, applied)) {
+      await provisionPlan(workspaceId, applied.plan, applied.limits, {
+        creditsMode: 'append',
+        productName: applied.label,
+        productId: applied.productId,
+        oncePerProduct: true,
+      })
+    } else {
+      await provisionPlan(workspaceId, applied.plan, applied.limits, {
+        creditsMode: 'keep',
+        productName: applied.label,
+        productId: applied.productId,
+      })
+    }
     await syncSubscriptionPeriod(workspaceId, subscription)
-    await provisionPlan(workspaceId, plan)
   })
 }
 
 export const handleOrderPaid = async (order: PolarOrderWebhookData) => {
-  return withOrderWorkspace('order.paid', order, async (_workspace, workspaceId) => {
+  return withOrderWorkspace('order.paid', order, async (workspace, workspaceId) => {
     await updateWorkspaceBilling(workspaceId, {
       polarCustomerId: order.customerId,
       status: BillingStatus.ACTIVE,
@@ -309,13 +379,30 @@ export const handleOrderPaid = async (order: PolarOrderWebhookData) => {
     })
 
     if (order.subscription) {
-      await syncSubscriptionPeriod(workspaceId, order.subscription)
-      await provisionPlan(workspaceId, resolvePlanFromProductId(order.subscription.productId ?? order.productId))
+      const subscription = order.subscription.product
+        ? order.subscription
+        : {
+            ...order.subscription,
+            product: order.product,
+            productId: order.subscription.productId ?? order.product?.id ?? order.productId ?? undefined,
+          }
+      const applied = planFromProduct(subscription.product, subscription.productId)
+      const appliedChange =
+        mapPolarStatus(subscription.status) === BillingStatus.ACTIVE
+          ? await applyActiveSubscriptionPlan(workspace, workspaceId, applied, subscription)
+          : { renewal: false, productChanged: false }
+      await syncSubscriptionPeriod(workspaceId, subscription, { includePeriodStart: !appliedChange.renewal })
       return
     }
 
-    if (order.productId) {
-      await provisionPlan(workspaceId, resolvePlanFromProductId(order.productId))
+    const productId = order.product?.id ?? order.productId
+    if (productId || order.product?.name) {
+      const applied = planFromProduct(order.product, productId)
+      await provisionPlan(workspaceId, applied.plan, applied.limits, {
+        creditsMode: 'append',
+        productName: applied.label,
+        productId: applied.productId,
+      })
     }
   })
 }
@@ -354,41 +441,89 @@ const parseMetadata = (value: unknown): PolarWebhookMetadata | null => {
   return metadata
 }
 
+const readString = (record: Record<string, unknown>, ...keys: string[]) => {
+  for (const key of keys) {
+    if (typeof record[key] === 'string') return record[key]
+  }
+  return undefined
+}
+
+const readDateString = (record: Record<string, unknown>, ...keys: string[]) => {
+  for (const key of keys) {
+    if (typeof record[key] === 'string') return record[key]
+    if (record[key] === null) return null
+  }
+  return null
+}
+
+const readNumber = (record: Record<string, unknown>, ...keys: string[]) => {
+  for (const key of keys) {
+    if (typeof record[key] === 'number') return record[key]
+  }
+  return undefined
+}
+
 const parseSubscription = (value: unknown): PolarSubscriptionWebhookData => {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.customerId !== 'string') {
+  if (!isRecord(value)) {
+    throw new HttpError(400, 'Invalid subscription payload')
+  }
+
+  const id = readString(value, 'id')
+  const customerId = readString(value, 'customerId', 'customer_id')
+  if (!id || !customerId) {
     throw new HttpError(400, 'Invalid subscription payload')
   }
 
   return {
-    id: value.id,
-    customerId: value.customerId,
-    productId: typeof value.productId === 'string' ? value.productId : undefined,
-    status: typeof value.status === 'string' ? value.status : 'inactive',
-    currentPeriodStart: typeof value.currentPeriodStart === 'string' ? value.currentPeriodStart : null,
-    currentPeriodEnd: typeof value.currentPeriodEnd === 'string' ? value.currentPeriodEnd : null,
+    id,
+    customerId,
+    productId: readString(value, 'productId', 'product_id'),
+    status: readString(value, 'status') ?? 'inactive',
+    currentPeriodStart: readDateString(value, 'currentPeriodStart', 'current_period_start'),
+    currentPeriodEnd: readDateString(value, 'currentPeriodEnd', 'current_period_end'),
+    amount: readNumber(value, 'amount'),
     metadata: parseMetadata(value.metadata),
+    product: parseProduct(value.product),
   }
 }
 
+const parseProduct = (value: unknown): PolarSubscriptionWebhookData['product'] => {
+  if (!isRecord(value)) return null
+
+  const id = typeof value.id === 'string' ? value.id : undefined
+  const name = typeof value.name === 'string' ? value.name : undefined
+  const metadata = parseMetadata(value.metadata)
+  if (!id && !name && !metadata) return null
+
+  return { id, name, metadata }
+}
+
 const parseOrder = (value: unknown): PolarOrderWebhookData => {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.customerId !== 'string') {
+  if (!isRecord(value)) {
+    throw new HttpError(400, 'Invalid order payload')
+  }
+
+  const id = readString(value, 'id')
+  const customerId = readString(value, 'customerId', 'customer_id')
+  if (!id || !customerId) {
     throw new HttpError(400, 'Invalid order payload')
   }
 
   return {
-    id: value.id,
-    customerId: value.customerId,
-    productId: typeof value.productId === 'string' ? value.productId : null,
-    subscriptionId: typeof value.subscriptionId === 'string' ? value.subscriptionId : null,
-    status: typeof value.status === 'string' ? value.status : 'pending',
+    id,
+    customerId,
+    productId: readString(value, 'productId', 'product_id') ?? null,
+    subscriptionId: readString(value, 'subscriptionId', 'subscription_id') ?? null,
+    status: readString(value, 'status') ?? 'pending',
     paid: value.paid === true,
-    totalAmount: typeof value.totalAmount === 'number' ? value.totalAmount : 0,
+    totalAmount: readNumber(value, 'totalAmount', 'total_amount') ?? 0,
     metadata: parseMetadata(value.metadata),
+    product: parseProduct(value.product),
     subscription: value.subscription ? parseSubscription(value.subscription) : null,
   }
 }
 
-export const parsePolarWebhookEvent = (body: unknown): PolarWebhookEvent => {
+export const parsePolarWebhookEvent = (body: unknown): PolarWebhookEvent & { id?: string } => {
   if (
     !isRecord(body) ||
     typeof body.type !== 'string' ||
@@ -398,29 +533,26 @@ export const parsePolarWebhookEvent = (body: unknown): PolarWebhookEvent => {
   }
 
   const type = body.type as PolarWebhookEventType
+  const id = readString(body, 'id')
 
   if (type.startsWith('subscription.')) {
     return {
+      id,
       type,
       data: parseSubscription(body.data),
-    } as PolarWebhookEvent
+    } as PolarWebhookEvent & { id?: string }
   }
 
   return {
+    id,
     type,
     data: parseOrder(body.data),
-  } as PolarWebhookEvent
+  } as PolarWebhookEvent & { id?: string }
 }
 
 const getEntityId = (event: PolarWebhookEvent) => event.data.id
 
-export const processPolarWebhookEvent = async (event: PolarWebhookEvent) => {
-  const eventKey = buildWebhookEventKey(event.type, getEntityId(event))
-  const acquired = await acquireWebhookEvent(eventKey)
-  if (!acquired) {
-    return true
-  }
-
+const dispatchPolarWebhookEvent = async (event: PolarWebhookEvent) => {
   switch (event.type) {
     case 'subscription.created':
       return await handleSubscriptionCreated(event.data)
@@ -442,5 +574,26 @@ export const processPolarWebhookEvent = async (event: PolarWebhookEvent) => {
       return await handleOrderPaid(event.data)
     default:
       return false
+  }
+}
+
+export const processPolarWebhookEvent = async (event: PolarWebhookEvent & { id?: string }) => {
+  const eventKey = event.id
+    ? `delivery:${event.id}`
+    : buildWebhookEventKey(event.type, getEntityId(event))
+  const acquired = await acquireWebhookEvent(eventKey)
+  if (!acquired) {
+    return true
+  }
+
+  try {
+    const handled = await dispatchPolarWebhookEvent(event)
+    if (!handled) {
+      throw new HttpError(422, `Polar webhook was not applied: ${event.type}`)
+    }
+    return true
+  } catch (error) {
+    await releaseWebhookEvent(eventKey)
+    throw error
   }
 }

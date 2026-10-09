@@ -1,10 +1,10 @@
 'use client'
 
+import { AccountEmptyMarks } from '@/components/accounts/account-empty-marks'
 import { AccountsToolbar } from '@/components/accounts/accounts-toolbar'
 import { AccountsTable } from '@/components/tables/accounts.table'
 import { EmptyState } from '@/components/common/empty-state'
 import { SmartPagination } from '@/components/common/smart-pagination'
-import { dashboardSurface } from '@/components/dashboard'
 import { useAccountFilters } from '@/hooks/use-account-filters'
 import { useAccountSearch } from '@/hooks/use-account-search'
 import type { Filter } from '@/components/reui/filters'
@@ -29,7 +29,8 @@ export function AccountsView({ accounts, meta, searchQuery, filters, hasFilters 
       <div className="flex min-h-0 flex-1 flex-col gap-4">
         <AccountsToolbar total={meta.total} initialQuery={searchQuery} filters={filters} />
         <EmptyState
-          icon={SearchXIcon}
+          icon={isFiltered ? SearchXIcon : undefined}
+          visual={isFiltered ? undefined : <AccountEmptyMarks />}
           title={isFiltered ? 'No accounts match' : 'No accounts found'}
           description={
             isFiltered
@@ -39,7 +40,6 @@ export function AccountsView({ accounts, meta, searchQuery, filters, hasFilters 
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
           action={
             isFiltered ? (
               <button

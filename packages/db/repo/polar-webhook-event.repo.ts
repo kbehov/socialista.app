@@ -12,3 +12,7 @@ export const tryMarkEventProcessed = async (eventKey: string): Promise<boolean> 
     throw error
   }
 }
+
+export const releaseWebhookEvent = async (eventKey: string): Promise<void> => {
+  await PolarWebhookEventModel.deleteOne({ eventKey })
+}

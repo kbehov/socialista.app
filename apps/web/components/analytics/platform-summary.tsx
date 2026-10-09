@@ -32,7 +32,11 @@ function PlatformSummary({ overview, growth, provider = 'all', className }: Plat
   return (
     <AnalyticsSection className={cn('h-full', className)} title="Platforms" description="Audience by network.">
       {providers.length === 0 ? (
-        <AnalyticsEmpty title="No platforms connected" description="Connect a social account to see audience share." />
+        <AnalyticsEmpty
+          motif="shares"
+          title="No platforms connected"
+          description="Connect a social account to see audience share."
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {providers.map(row => {

@@ -26,7 +26,8 @@ export const defaultWorkspaceBilling = () => ({
   status: BillingStatus.ACTIVE,
   nextBillingDate: new Date(),
   nextBillingAmount: 0,
-  aiCreditsBalance: 0,
+  aiCreditsBalance: PLAN_LIMITS[Plan.FREE].aiCredits,
+  aiCreditsAllotment: PLAN_LIMITS[Plan.FREE].aiCredits,
 })
 
 export const defaultWorkspaceSettings = () => {

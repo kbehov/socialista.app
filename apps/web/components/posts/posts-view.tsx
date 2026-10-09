@@ -5,7 +5,6 @@ import { SearchXIcon } from 'lucide-react'
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
 import { SmartPagination } from '@/components/common/smart-pagination'
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { useReportPageScroll } from '@/components/headers/page-scroll-compact'
 import { PostEditSheet } from '@/components/posts/post-edit-sheet'
 import { PostsCalendarView } from '@/components/posts/posts-calendar-view'
@@ -60,7 +59,6 @@ function PostsEmptyState({
         minHeight="lg"
         variant="hero"
         className="flex-1"
-        iconClassName={dashboardSurface.emptyIcon}
         action={
           hasFilters ? (
             <button

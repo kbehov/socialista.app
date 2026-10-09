@@ -38,6 +38,12 @@ export type PolarProductsResponse = {
 
 export type PolarWebhookMetadata = Record<string, string | number | boolean>
 
+export type PolarWebhookProduct = {
+  id?: string
+  name?: string
+  metadata?: PolarWebhookMetadata | null
+}
+
 export type PolarSubscriptionWebhookData = {
   id: string
   customerId: string
@@ -45,7 +51,10 @@ export type PolarSubscriptionWebhookData = {
   status: string
   currentPeriodStart?: string | null
   currentPeriodEnd?: string | null
+  /** Subscription amount in cents. */
+  amount?: number
   metadata?: PolarWebhookMetadata | null
+  product?: PolarWebhookProduct | null
 }
 
 export type PolarOrderWebhookData = {
@@ -57,6 +66,7 @@ export type PolarOrderWebhookData = {
   paid: boolean
   totalAmount: number
   metadata?: PolarWebhookMetadata | null
+  product?: PolarWebhookProduct | null
   subscription?: PolarSubscriptionWebhookData | null
 }
 

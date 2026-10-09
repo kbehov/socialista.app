@@ -4,7 +4,6 @@ import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-reac
 import { useMemo, useState } from 'react'
 
 import { EmptyState } from '@/components/common/empty-state'
-import { dashboardSurface } from '@/components/dashboard/surface'
 import { PostCalendarDayButton } from '@/components/posts/post-calendar-day-button'
 import { PostCalendarTimelineItem } from '@/components/posts/post-calendar-timeline-item'
 import { CALENDAR_MONTH_STATUS_SUMMARY } from '@/components/posts/post-meta'
@@ -192,7 +191,6 @@ function CalendarDayDetailPanel({
               minHeight="sm"
               variant="ghost"
               className="py-10"
-              iconClassName={dashboardSurface.emptyIcon}
             />
           ) : (
             <ul className="divide-y divide-foreground/10" aria-label={`Posts for ${selectedLabel}`}>

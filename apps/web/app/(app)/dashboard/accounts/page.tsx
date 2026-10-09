@@ -1,9 +1,9 @@
+import { AccountEmptyMarks } from '@/components/accounts/account-empty-marks'
 import { AccountsOAuthHandler } from '@/components/accounts/accounts-oauth-handler'
 import { AccountsView } from '@/components/accounts/accounts-view'
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { PageHeader } from '@/components/headers/page-header'
 import {
   getAccountsListQuery,
@@ -14,7 +14,6 @@ import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getCurrentWorkspaceContext } from '@/utils/project.utils.server'
 import type { MetaResponse } from '@socialista/types'
-import { Link2Icon } from 'lucide-react'
 import { Suspense } from 'react'
 import { WorkspaceRequired } from '../../../../components/dashboard/workspace-required'
 
@@ -82,13 +81,12 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         />
       ) : metaData.total === 0 && !query.query && !hasFilters ? (
         <EmptyState
-          icon={Link2Icon}
+          visual={<AccountEmptyMarks />}
           title="Connect an account"
           description="Link Instagram, TikTok, LinkedIn, and more — then schedule everything from one place."
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
         />
       ) : (

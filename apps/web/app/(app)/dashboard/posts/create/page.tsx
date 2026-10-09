@@ -1,7 +1,6 @@
 import { ConnectAccountTrigger } from '@/components/accounts/connect-account-trigger'
 import { EmptyState } from '@/components/common/empty-state'
 import { ErrorState } from '@/components/common/error-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { PostComposer } from '@/components/posts/composer/post-composer'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getGeneration } from '@/services/generation.service'
@@ -61,7 +60,6 @@ export default async function CreatePostPage({ searchParams }: CreatePostPagePro
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
         />
       </div>

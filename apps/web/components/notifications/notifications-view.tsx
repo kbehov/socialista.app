@@ -84,7 +84,6 @@ export function NotificationsView({
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
         />
       ) : (
         <>

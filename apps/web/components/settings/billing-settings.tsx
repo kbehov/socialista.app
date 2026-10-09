@@ -25,8 +25,24 @@ function statusLabel(status: WorkspaceResponse['billing']['status']) {
   if (status === 'active') return 'Active'
   if (status === 'cancelled') return 'Canceled'
   if (status === 'expired') return 'Expired'
-  if (status === 'pending') return 'Pending'
+  if (status === 'pending') return 'Payment issue'
   return 'Inactive'
+}
+
+function isFutureDate(value: Date | string | undefined) {
+  if (!value) return false
+  const date = new Date(value)
+  return !Number.isNaN(date.getTime()) && date.getTime() > Date.now()
+}
+
+function formatCharge(cents: number) {
+  const hasFraction = Math.abs(cents % 100) > 0
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(cents / 100)
 }
 
 export function BillingSettings({ workspace, balance }: BillingSettingsProps) {
@@ -34,6 +50,10 @@ export function BillingSettings({ workspace, balance }: BillingSettingsProps) {
   const isPaid = billing.plan !== 'free'
   const usage = balance?.usage
   const periodEnd = billing.currentPeriodEnd ?? billing.nextBillingDate
+  const cancelsAtPeriodEnd = billing.status === 'cancelled' && isFutureDate(periodEnd)
+  const renews = isPaid && billing.status === 'active' && isFutureDate(periodEnd)
+  const showNextCharge = isPaid && billing.nextBillingAmount > 0 && billing.status !== 'cancelled'
+  const planName = billing.polarProductName?.trim() || planLabel(billing.plan)
 
   return (
     <div className="flex flex-col gap-5">
@@ -58,22 +78,47 @@ export function BillingSettings({ workspace, balance }: BillingSettingsProps) {
         <dl className="grid gap-4 sm:grid-cols-2">
           <div>
             <dt className={dashboardSurface.metricLabel}>Current plan</dt>
-            <dd className={dashboardSurface.metricValueSm}>{planLabel(billing.plan)}</dd>
+            <dd className={dashboardSurface.metricValueSm}>{planName}</dd>
           </div>
           <div>
             <dt className={dashboardSurface.metricLabel}>Status</dt>
-            <dd className={dashboardSurface.metricValueSm}>{statusLabel(billing.status)}</dd>
+            <dd className={dashboardSurface.metricValueSm}>
+              {cancelsAtPeriodEnd && periodEnd ? `Cancels on ${formatDate(periodEnd)}` : statusLabel(billing.status)}
+            </dd>
+            {billing.status === 'pending' ? (
+              <dd className="mt-1 text-sm text-muted-foreground">
+                Update your payment method in the{' '}
+                <a href={getBillingPortalUrl(workspace.id)} className="underline underline-offset-2">
+                  billing portal
+                </a>
+                .
+              </dd>
+            ) : null}
           </div>
           <div>
             <dt className={dashboardSurface.metricLabel}>AI credits</dt>
             <dd className={dashboardSurface.metricValueSm}>{formatCredits(billing.aiCreditsBalance)}</dd>
+            {typeof billing.aiCreditsAllotment === 'number' ? (
+              <dd className="mt-1 text-sm font-normal text-muted-foreground">
+                {formatCredits(billing.aiCreditsAllotment)} included per period
+              </dd>
+            ) : null}
           </div>
           <div>
-            <dt className={dashboardSurface.metricLabel}>{isPaid ? 'Current period' : 'Next billing'}</dt>
-            <dd className="text-sm font-medium tracking-tight">
-              {periodEnd ? formatDate(periodEnd) : '—'}
-            </dd>
+            <dt className={dashboardSurface.metricLabel}>
+              {renews ? 'Renews' : cancelsAtPeriodEnd ? 'Access until' : isPaid ? 'Current period' : 'Next billing'}
+            </dt>
+            <dd className="text-sm font-medium tracking-tight">{periodEnd ? formatDate(periodEnd) : '—'}</dd>
           </div>
+          {showNextCharge ? (
+            <div>
+              <dt className={dashboardSurface.metricLabel}>Next charge</dt>
+              <dd className="text-sm font-medium tracking-tight">
+                {formatCharge(billing.nextBillingAmount)}
+                {periodEnd ? ` on ${formatDate(periodEnd)}` : ''}
+              </dd>
+            </div>
+          ) : null}
         </dl>
       </DashboardSection>
 

@@ -605,6 +605,7 @@
   --animate-shine: shine var(--duration) infinite linear;
   --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
   --animate-hero-badge-float: hero-badge-float var(--duration, 3.2s) ease-out forwards;
+  --animate-empty-rise: empty-rise var(--duration-slow) var(--ease-out) backwards;
 
   @keyframes marquee {
     from {
@@ -664,6 +665,17 @@
     50%,
     100% {
       opacity: 0;
+    }
+  }
+
+  @keyframes empty-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
@@ -1548,23 +1560,17 @@
   }
 
   .app-sidebar .sidebar-upgrade-card-title {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: var(--font-weight-medium);
-    line-height: 1.3;
-    letter-spacing: var(--tracking-normal);
+    line-height: 1.25;
+    letter-spacing: var(--tracking-tight);
   }
 
   .app-sidebar .sidebar-upgrade-card-copy {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 400;
-    line-height: 1.45;
+    line-height: 1.35;
     letter-spacing: 0;
-  }
-
-  .app-sidebar .sidebar-upgrade-card-action {
-    font-size: 0.75rem;
-    font-weight: var(--font-weight-medium);
-    letter-spacing: var(--tracking-normal);
   }
 
   .sidebar-header-icon {
@@ -1649,51 +1655,41 @@
 
   .sidebar-upgrade-card,
   .sidebar-upgrade-mark {
-    --upgrade-fill: oklch(0 0 0);
-    --upgrade-hover: oklch(0.16 0 0);
-    --upgrade-ink: oklch(1 0 0);
-    --upgrade-mute: oklch(1 0 0 / 0.62);
-    --upgrade-sheen: oklch(1 0 0 / 0.12);
-    --upgrade-chip: oklch(1 0 0);
-    --upgrade-chip-ink: oklch(0 0 0);
-    --upgrade-depth: 0 1px 2px oklch(0 0 0 / 0.12);
+    --upgrade-hover: color-mix(in oklch, var(--foreground) 88%, var(--background));
+    --upgrade-icon-well: color-mix(in oklch, var(--background) 14%, transparent);
+    --upgrade-muted: color-mix(in oklch, var(--background) 62%, transparent);
   }
 
   .dark .sidebar-upgrade-card,
   .dark .sidebar-upgrade-mark {
-    --upgrade-fill: oklch(1 0 0);
-    --upgrade-hover: oklch(0.965 0 0);
-    --upgrade-ink: oklch(0 0 0);
-    --upgrade-mute: oklch(0 0 0 / 0.52);
-    --upgrade-sheen: oklch(1 0 0 / 0.8);
-    --upgrade-chip: oklch(0 0 0);
-    --upgrade-chip-ink: oklch(1 0 0);
-    --upgrade-depth: 0 1px 1px oklch(0 0 0 / 0.16), 0 8px 18px -10px oklch(0 0 0 / 0.48);
+    --upgrade-hover: color-mix(in oklch, var(--foreground) 92%, black);
   }
 
   .sidebar-upgrade-card {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    gap: 0.5rem;
     width: 100%;
-    padding: 0.6875rem 0.75rem 0.75rem;
-    border-radius: var(--radius);
-    background-color: var(--upgrade-fill);
-    color: var(--upgrade-ink);
+    min-height: 2.75rem;
+    padding: 0.4375rem 0.5rem 0.4375rem 0.4375rem;
+    border-radius: var(--control-radius);
+    background-color: var(--foreground);
+    color: var(--background);
     text-decoration: none;
     cursor: pointer;
-    box-shadow:
-      inset 0 1px 0 var(--upgrade-sheen),
-      var(--upgrade-depth);
     transition:
       background-color var(--duration-fast) var(--ease-out),
       transform var(--duration-fast) var(--ease-out);
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .sidebar-upgrade-card:hover,
-    .sidebar-upgrade-mark:hover {
+    .sidebar-upgrade-card:hover {
       background-color: var(--upgrade-hover);
+    }
+
+    .sidebar-upgrade-card:hover .sidebar-upgrade-card-chevron {
+      opacity: 1;
+      transform: translateX(1px);
     }
   }
 
@@ -1704,66 +1700,91 @@
   .sidebar-upgrade-card:focus-visible {
     outline: none;
     box-shadow:
-      inset 0 1px 0 var(--upgrade-sheen),
-      var(--upgrade-depth),
       0 0 0 2px var(--sidebar),
       0 0 0 3.5px var(--sidebar-ring);
   }
 
+  .sidebar-upgrade-card-icon {
+    display: flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: calc(var(--control-radius) - 1px);
+    background-color: var(--upgrade-icon-well);
+    color: var(--background);
+  }
+
+  .sidebar-upgrade-card-icon svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .sidebar-upgrade-card-body {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.0625rem;
+    text-align: left;
+  }
+
   .sidebar-upgrade-card-title {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 510;
     line-height: 1.25;
     letter-spacing: var(--tracking-tight);
-    color: var(--upgrade-ink);
+    color: var(--background);
   }
 
   .sidebar-upgrade-card-copy {
-    margin-top: 0.1875rem;
-    font-size: 0.75rem;
+    overflow: hidden;
+    font-size: 0.6875rem;
     font-weight: 400;
-    line-height: 1.4;
+    line-height: 1.35;
     letter-spacing: -0.006em;
-    color: var(--upgrade-mute);
-    text-wrap: pretty;
+    color: var(--upgrade-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .sidebar-upgrade-card-action {
-    display: inline-flex;
-    align-items: center;
-    height: var(--control-height-sm);
-    margin-top: 0.625rem;
-    padding-inline: 0.5625rem;
-    border-radius: var(--control-radius);
-    background-color: var(--upgrade-chip);
-    color: var(--upgrade-chip-ink);
-    font-size: 0.6875rem;
-    font-weight: 510;
-    line-height: 1;
-    letter-spacing: -0.01em;
+  .sidebar-upgrade-card-chevron {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+    opacity: 0.42;
+    color: var(--upgrade-muted);
+    transition:
+      opacity var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
   .sidebar-upgrade-mark {
     display: flex;
-    width: 2rem;
-    height: 2rem;
+    width: var(--control-height);
+    height: var(--control-height);
     align-items: center;
     justify-content: center;
     border-radius: var(--control-radius);
-    background-color: var(--upgrade-fill);
-    color: var(--upgrade-ink);
-    font-size: 0.6875rem;
-    font-weight: 510;
-    letter-spacing: -0.028em;
-    line-height: 1;
+    background-color: var(--foreground);
+    color: var(--background);
     text-decoration: none;
     cursor: pointer;
-    box-shadow:
-      inset 0 1px 0 var(--upgrade-sheen),
-      var(--upgrade-depth);
     transition:
       background-color var(--duration-fast) var(--ease-out),
       transform var(--duration-fast) var(--ease-out);
+  }
+
+  .sidebar-upgrade-mark svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .sidebar-upgrade-mark:hover {
+      background-color: var(--upgrade-hover);
+    }
   }
 
   .sidebar-upgrade-mark:active {
@@ -1773,8 +1794,6 @@
   .sidebar-upgrade-mark:focus-visible {
     outline: none;
     box-shadow:
-      inset 0 1px 0 var(--upgrade-sheen),
-      var(--upgrade-depth),
       0 0 0 2px var(--sidebar),
       0 0 0 3.5px var(--sidebar-ring);
   }
@@ -2088,19 +2107,27 @@
     min-height: 0;
     min-width: 0;
     width: 100%;
+    max-width: 100%;
     height: 100%;
     flex: 1 1 0%;
     flex-direction: column;
+    overflow: hidden;
   }
 
-  /* Cards are portaled to body and anchored to the spotlight box. Keep them
-     readable on small targets (Finish) and stop the overlay from clipping
-     top/right placements. */
-  [data-name='nextstep-overlay'] {
+  /*
+   * NextStep portals the overlay to <body>. Pin it to the visual viewport so
+   * cards use window coordinates and are not clipped by studio scrollports.
+   */
+  html[data-ugc-studio-tour] body > [data-name='nextstep-overlay'] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: 100vw !important;
     overflow: visible !important;
   }
 
-  [data-name='nextstep-card'] {
+  html[data-ugc-studio-tour] body > [data-name='nextstep-overlay'] [data-name='nextstep-card'] {
     max-width: min(20.5rem, calc(100vw - 2rem)) !important;
   }
 

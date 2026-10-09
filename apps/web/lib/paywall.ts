@@ -91,7 +91,12 @@ export const resolveFeaturedProductId = (products: PolarProduct[], preferredId?:
 export const mapWorkspacePlanToProduct = (
   products: PolarProduct[],
   currentPlan: 'free' | 'pro' | 'enterprise' | undefined,
+  currentProductId?: string,
 ) => {
+  if (currentProductId && products.some(product => product.id === currentProductId)) {
+    return currentProductId
+  }
+
   if (!currentPlan || currentPlan === 'free') return undefined
 
   const normalizedPlan = currentPlan.toLowerCase()

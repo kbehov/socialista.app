@@ -1,5 +1,4 @@
 import { EmptyState } from '@/components/common/empty-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import { TagsIcon } from 'lucide-react'
@@ -38,7 +37,6 @@ export function TaxonomyGrid({
         description={emptyDescription}
         action={emptyAction}
         variant="hero"
-        iconClassName={dashboardSurface.emptyIcon}
       />
     )
   }

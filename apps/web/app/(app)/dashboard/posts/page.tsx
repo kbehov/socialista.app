@@ -105,7 +105,6 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
           action={<ConnectAccountTrigger label="Connect account" showPlusIcon={false} />}
         />
       ) : meta.total === 0 && !hasFilters && query.view !== 'calendar' ? (
@@ -116,7 +115,6 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           minHeight="lg"
           variant="hero"
           className="flex-1"
-          iconClassName={dashboardSurface.emptyIcon}
           action={createAction}
         />
       ) : (

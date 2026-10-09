@@ -120,6 +120,7 @@ const ugcStudioTour: Tour = {
       ),
       selector: '#ugc-tour-finish',
       side: 'bottom-right',
+      scrollOffset: 8,
       ...STEP_TARGET,
     },
   ],
@@ -202,6 +203,19 @@ function UgcTourCard({
   )
 }
 
+function UgcTourDocumentState() {
+  const { isNextStepVisible } = useNextStep()
+
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-ugc-studio-tour', isNextStepVisible)
+    return () => {
+      document.documentElement.removeAttribute('data-ugc-studio-tour')
+    }
+  }, [isNextStepVisible])
+
+  return null
+}
+
 function UgcTourAutoStart() {
   const { startNextStep } = useNextStep()
 
@@ -237,8 +251,10 @@ export function UgcStudioTour({ children }: { children: ReactNode }) {
           shadowOpacity="0.55"
           displayArrow
           scrollToTop={false}
+          overlayZIndex={1000}
           disableConsoleLogs
         >
+          <UgcTourDocumentState />
           <UgcTourAutoStart />
           {children}
         </NextStep>

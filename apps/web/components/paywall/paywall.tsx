@@ -21,6 +21,7 @@ export type PaywallProps = {
   products: PolarProduct[]
   workspaceId?: string
   currentPlan?: 'free' | 'pro' | 'enterprise'
+  currentProductId?: string
   reason?: PaywallReason
   title?: string
   description?: string
@@ -94,17 +95,19 @@ function PaywallProductGrid({
   products,
   workspaceId,
   currentPlan,
+  currentProductId,
   featuredProductId,
   variant,
 }: {
   products: PolarProduct[]
   workspaceId?: string
   currentPlan?: PaywallProps['currentPlan']
+  currentProductId?: string
   featuredProductId?: string
   variant: NonNullable<PaywallProps['variant']>
 }) {
   const featuredId = resolveFeaturedProductId(products, featuredProductId)
-  const currentProductId = mapWorkspacePlanToProduct(products, currentPlan)
+  const activeProductId = mapWorkspacePlanToProduct(products, currentPlan, currentProductId)
 
   return (
     <div
@@ -119,7 +122,7 @@ function PaywallProductGrid({
           product={product}
           checkoutUrl={getProductCheckoutUrl(product.id, workspaceId)}
           isFeatured={product.id === featuredId}
-          isCurrentPlan={product.id === currentProductId}
+          isCurrentPlan={product.id === activeProductId}
         />
       ))}
     </div>
@@ -130,6 +133,7 @@ export function Paywall({
   products,
   workspaceId,
   currentPlan = 'free',
+  currentProductId,
   reason = 'generic',
   title,
   description,
@@ -210,6 +214,7 @@ export function Paywall({
               products={products}
               workspaceId={workspaceId}
               currentPlan={currentPlan}
+              currentProductId={currentProductId}
               featuredProductId={featuredProductId}
               variant={variant}
             />

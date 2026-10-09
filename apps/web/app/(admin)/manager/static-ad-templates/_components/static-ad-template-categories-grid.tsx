@@ -2,7 +2,6 @@
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { deleteStaticAdTemplateCategory } from '@/services/static-ad-templates.service'
 import type { StaticAdTemplateCategoryDto } from '@socialista/types'
@@ -50,7 +49,6 @@ export function StaticAdTemplateCategoriesGrid({ categories }: StaticAdTemplateC
           title="No categories yet"
           description="Create a category so static ad templates can be filtered in the studio."
           variant="hero"
-          iconClassName={dashboardSurface.emptyIcon}
         />
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">

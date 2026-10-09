@@ -17,7 +17,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { UgcTemplatesGallery } from './ugc-templates-gallery'
 
 type UgcProjectListProps = {
   workspaceId: string
@@ -80,13 +79,6 @@ export function UgcProjectList({
         actions={createAction}
       />
 
-      <section
-        aria-label="Browse UGC templates"
-        className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
-      >
-        <UgcTemplatesGallery workspaceId={workspaceId} />
-      </section>
-
       {error ? (
         <ErrorState
           title={error}
@@ -118,7 +110,7 @@ export function UgcProjectList({
           </span>
           <p className="text-sm font-semibold tracking-tight">Make your first UGC ad</p>
           <p className="mt-1.5 max-w-[18rem] text-xs leading-relaxed text-muted-foreground">
-            Recreate a template above, or start a blank project.
+            Start a blank project and build your UGC ad scene by scene.
           </p>
           <div className="mt-5">{createAction}</div>
         </div>

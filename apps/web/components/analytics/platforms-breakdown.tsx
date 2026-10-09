@@ -98,7 +98,11 @@ function PlatformsBreakdown({ data, overview, provider = 'all', error, className
       {error ? <p className="mb-3 text-xs text-destructive">{error}</p> : null}
 
       {platforms.length === 0 ? (
-        <AnalyticsEmpty title="No platform data yet" description="Metrics appear after accounts sync." />
+        <AnalyticsEmpty
+          motif="bars"
+          title="No platform data yet"
+          description="Metrics appear after accounts sync."
+        />
       ) : (
         <div className="-mx-4 -mb-4 grid gap-px border-t border-border/50 bg-border/35 sm:grid-cols-2 xl:grid-cols-3">
           {platforms.map(row => (

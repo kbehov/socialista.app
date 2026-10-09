@@ -4,12 +4,15 @@ import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard'
 import { AnalyticsRangeToggle } from '@/components/analytics/analytics-range-toggle'
 import { UpgradeTeaser } from '@/components/analytics/upgrade-teaser'
 import { ErrorState } from '@/components/common/error-state'
+import { DashboardAnalyticsWelcome } from '@/components/dashboard/dashboard-analytics-welcome'
+import { DashboardGetStarted } from '@/components/dashboard/dashboard-get-started'
 import { DashboardGreeting } from '@/components/dashboard/dashboard-greeting'
 import { WorkspaceRequired } from '@/components/dashboard/workspace-required'
 import { PageHeader } from '@/components/headers/page-header'
 import { createDashboardMetadata } from '@/lib/seo/dashboard-metadata'
 import { getWorkspaceAccounts } from '@/services/account.service'
 import { getAnalyticsOverview, loadAccountAnalytics } from '@/services/analytics.service'
+import { getDashboardOnboardingSnapshot } from '@/services/dashboard.service'
 import { getFirstName, getGreeting } from '@/utils/greeting'
 import {
   parseAnalyticsAccountId,
@@ -96,16 +99,35 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     }
   }
 
+  const showAnalyticsWelcome = data.free.connectedAccounts === 0 && !selectedAccountId
+  const onboardingSnapshot = showAnalyticsWelcome
+    ? null
+    : await getDashboardOnboardingSnapshot(workspace.id)
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col gap-(--spacing-dashboard-gap)">
+      {onboardingSnapshot ? (
+        <DashboardGetStarted workspaceId={workspace.id} snapshot={onboardingSnapshot} />
+      ) : null}
+
       <PageHeader
         title={<DashboardGreeting greeting={greeting} name={firstName} period={period} />}
         description={project?.name ?? workspace.name}
         actions={
-          <AnalyticsRangeToggle range={range} params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined} />
+          showAnalyticsWelcome
+            ? undefined
+            : (
+                <AnalyticsRangeToggle
+                  range={range}
+                  params={Object.keys(rangeParams).length > 0 ? rangeParams : undefined}
+                />
+              )
         }
       />
 
+      {showAnalyticsWelcome ? (
+        <DashboardAnalyticsWelcome />
+      ) : (
       <AnalyticsDashboard
         workspaceId={workspace.id}
         projectId={projectId}
@@ -117,6 +139,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         selectedAccountId={selectedAccountId}
         accountView={accountView}
       />
+      )}
     </div>
   )
 }

@@ -2,7 +2,6 @@
 
 import { DeleteConfirmDialog } from '@/components/common/delete-confirm-dialog'
 import { EmptyState } from '@/components/common/empty-state'
-import { dashboardSurface } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { deleteStudioTemplateCategory } from '@/services/studio-templates.service'
 import type { StudioTemplateCategoryDto } from '@socialista/types'
@@ -52,7 +51,6 @@ export function TemplateCategoriesGrid({ categories }: TemplateCategoriesGridPro
           title="No categories yet"
           description="Create a category so image and video templates can share the same filters."
           variant="hero"
-          iconClassName={dashboardSurface.emptyIcon}
         />
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">

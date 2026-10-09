@@ -23,6 +23,7 @@ export function usePaywall(options: UsePaywallOptions = {}) {
 
   const workspaceId = options.workspaceId ?? currentWorkspace?.id
   const currentPlan = options.currentPlan ?? currentWorkspace?.billing.plan ?? 'free'
+  const currentProductId = currentWorkspace?.billing.polarProductId
 
   const show = useCallback(
     (
@@ -50,6 +51,7 @@ export function usePaywall(options: UsePaywallOptions = {}) {
       onOpenChange: setOpen,
       workspaceId,
       currentPlan,
+      currentProductId,
       reason,
       featuredProductId: options.featuredProductId,
       title: copyOverrides.title,
@@ -62,6 +64,7 @@ export function usePaywall(options: UsePaywallOptions = {}) {
       copyOverrides.eyebrow,
       copyOverrides.title,
       currentPlan,
+      currentProductId,
       hide,
       open,
       options.featuredProductId,

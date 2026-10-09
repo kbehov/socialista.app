@@ -6,6 +6,7 @@ import {
   IWorkspace,
   PLAN_LIMITS,
   Plan,
+  type PlanLimits,
   WorkspaceMemberRole,
   type WorkspaceBillingUpdate,
   type WorkspaceUsage,
@@ -55,7 +56,8 @@ const defaultFreePlanDefaults = () => {
       status: BillingStatus.ACTIVE,
       nextBillingDate: new Date(),
       nextBillingAmount: 0,
-      aiCreditsBalance: 0,
+      aiCreditsBalance: limits.aiCredits,
+      aiCreditsAllotment: limits.aiCredits,
     },
   }
 }
@@ -274,25 +276,77 @@ export const updateWorkspaceBilling = async (workspaceId: string, billing: Works
   ).lean()
 }
 
-export const provisionPlan = async (workspaceId: string, plan: Plan) => {
-  const limits = PLAN_LIMITS[plan]
+export type ProvisionCreditsMode = 'replace' | 'append' | 'keep'
 
-  return await WorkspaceModel.findByIdAndUpdate(
-    workspaceId,
-    {
-      $set: {
-        limits: {
-          members: limits.members,
-          posts: limits.posts,
-          storage: limits.storage,
-          accounts: limits.accounts,
-        },
-        'billing.plan': plan,
-        'billing.aiCreditsBalance': limits.aiCredits,
-      },
+export type ProvisionPlanOptions = {
+  /** `replace` sets the balance to the allotment. `append` adds the allotment. `keep` leaves the balance. */
+  creditsMode?: ProvisionCreditsMode
+  /** Polar product label. Pass null to clear it. Omit to leave the stored name unchanged. */
+  productName?: string | null
+  /** Polar product id stored with an append so the same product is not granted twice. */
+  productId?: string | null
+  /** When appending, skip the grant if this product is already applied. */
+  oncePerProduct?: boolean
+}
+
+export const provisionPlan = async (
+  workspaceId: string,
+  plan: Plan,
+  limits: Pick<PlanLimits, 'members' | 'posts' | 'storage' | 'accounts' | 'aiCredits'> = PLAN_LIMITS[plan],
+  options: ProvisionPlanOptions = {},
+) => {
+  const creditsMode = options.creditsMode ?? 'replace'
+  const setFields: Record<string, unknown> = {
+    limits: {
+      members: limits.members,
+      posts: limits.posts,
+      storage: limits.storage,
+      accounts: limits.accounts,
     },
-    { returnDocument: 'after' },
-  ).lean()
+    'billing.plan': plan,
+    'billing.aiCreditsAllotment': limits.aiCredits,
+  }
+  const incFields: Record<string, number> = {}
+  const unsetFields: Record<string, ''> = {}
+
+  if (creditsMode === 'replace') {
+    setFields['billing.aiCreditsBalance'] = limits.aiCredits
+  } else if (creditsMode === 'append' && limits.aiCredits > 0) {
+    incFields['billing.aiCreditsBalance'] = limits.aiCredits
+  }
+
+  const productName = typeof options.productName === 'string' ? options.productName.trim() : options.productName
+  if (productName) {
+    setFields['billing.polarProductName'] = productName
+  } else if (options.productName === null) {
+    unsetFields['billing.polarProductName'] = ''
+  }
+
+  if (options.productId) {
+    setFields['billing.polarProductId'] = options.productId
+  } else if (options.productId === null) {
+    unsetFields['billing.polarProductId'] = ''
+  }
+
+  const update = {
+    $set: setFields,
+    ...(Object.keys(incFields).length > 0 ? { $inc: incFields } : {}),
+    ...(Object.keys(unsetFields).length > 0 ? { $unset: unsetFields } : {}),
+  }
+
+  if (creditsMode === 'append' && options.oncePerProduct) {
+    const filter: Record<string, unknown> = { _id: new Types.ObjectId(workspaceId) }
+    if (options.productId) {
+      filter['billing.polarProductId'] = { $ne: options.productId }
+    } else {
+      filter['billing.plan'] = { $ne: plan }
+    }
+    const granted = await WorkspaceModel.findOneAndUpdate(filter, update, { returnDocument: 'after' }).lean()
+    if (granted) return granted
+    return await getWorkspaceById(workspaceId)
+  }
+
+  return await WorkspaceModel.findByIdAndUpdate(workspaceId, update, { returnDocument: 'after' }).lean()
 }
 
 export const increaseAiCreditsBalance = async (workspaceId: string, amount: number) => {
@@ -327,16 +381,17 @@ export const deductAiCredits = async (workspaceId: string, amount: number) => {
   ).lean()
 }
 
-export const resetBillingPeriodUsage = async (workspaceId: string) => {
+export const resetBillingPeriodUsage = async (workspaceId: string, aiCredits?: number) => {
   const workspace = await getWorkspaceOrThrow(workspaceId)
-  const limits = PLAN_LIMITS[workspace.billing.plan]
+  const credits = aiCredits ?? PLAN_LIMITS[workspace.billing.plan].aiCredits
 
   return await WorkspaceModel.findByIdAndUpdate(
     workspaceId,
     {
       $set: {
         'usage.posts': 0,
-        'billing.aiCreditsBalance': limits.aiCredits,
+        'billing.aiCreditsBalance': credits,
+        'billing.aiCreditsAllotment': credits,
       },
     },
     { returnDocument: 'after' },

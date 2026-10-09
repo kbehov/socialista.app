@@ -30,10 +30,17 @@ export type WorkspaceResponse = {
     plan: 'free' | 'pro' | 'enterprise'
     status: 'active' | 'inactive' | 'pending' | 'cancelled' | 'expired'
     nextBillingDate: Date
+    /** Next charge in cents (Polar's smallest currency unit). */
     nextBillingAmount: number
     aiCreditsBalance: number
+    /** Credits included each billing period for the current product. */
+    aiCreditsAllotment?: number
     polarCustomerId?: string
     polarSubscriptionId?: string
+    /** Polar product currently applied to this workspace. */
+    polarProductId?: string
+    /** Display name of the Polar product currently applied. */
+    polarProductName?: string
     currentPeriodStart?: Date
     currentPeriodEnd?: Date
   }

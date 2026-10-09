@@ -90,6 +90,7 @@ export function UpgradePageContent({ products, loadError = null, checkoutSuccess
         products={products}
         workspaceId={workspaceId}
         currentPlan={currentPlan}
+        currentProductId={currentWorkspace?.billing.polarProductId}
         reason="generic"
         title={hasPaidPlan ? 'Compare plans and add capacity' : undefined}
         description={

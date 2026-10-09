@@ -1,17 +1,34 @@
-import { CustomerPortal } from '@polar-sh/nextjs'
+import { NextResponse } from 'next/server'
 
-import { appUrl, polarServer } from '@/lib/polar/polar'
+import { ApiError } from '@/lib/api'
+import { appUrl, polar } from '@/lib/polar/polar'
 import { getWorkspaceBilling } from '@/services/workspace.service'
 
-export const GET = CustomerPortal({
-  accessToken: process.env.POLAR_ACCESS_TOKEN as string,
-  getCustomerId: async (req: Request) => {
-    const workspaceId = new URL(req.url).searchParams.get('workspaceId')
-    if (!workspaceId) return ''
+export async function GET(req: Request) {
+  const workspaceId = new URL(req.url).searchParams.get('workspaceId')
+  if (!workspaceId) {
+    return NextResponse.json({ error: 'workspaceId is required' }, { status: 400 })
+  }
 
+  let customerId: string | undefined
+  try {
     const { data } = await getWorkspaceBilling(workspaceId)
-    return data?.billing.polarCustomerId ?? ''
-  },
-  returnUrl: `${appUrl}/dashboard/upgrade`,
-  server: polarServer,
-})
+    customerId = data?.billing.polarCustomerId
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    throw error
+  }
+
+  if (!customerId) {
+    return NextResponse.json({ error: 'customerId not defined' }, { status: 400 })
+  }
+
+  const { customerPortalUrl } = await polar.customerSessions.create({
+    returnUrl: `${appUrl}/dashboard/upgrade`,
+    customerId,
+  })
+
+  return NextResponse.redirect(customerPortalUrl)
+}
