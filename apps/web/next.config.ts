@@ -8,6 +8,8 @@ const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://socialista.app').rep
 const llmsDescribedBy = `<${appUrl}/llms.txt>; rel="describedby"`
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  poweredByHeader: false,
   outputFileTracingRoot: monorepoRoot,
   serverExternalPackages: ['@google-cloud/vision', 'mongoose', '@socialista/db'],
   transpilePackages: ['@socialista/types'],

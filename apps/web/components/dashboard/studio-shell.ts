@@ -1,7 +1,9 @@
 /**
  * Dashboard app shell — layout chrome for App Router (`dashboard-shell`, main scrollport, page column).
  * Canvas and sidebar both use `--background`. `--sidebar` aliases that color.
- * Linear minimal rhythm: inset via `.dashboard-main` in globals.css; flat sections via `dashboardSurface`.
+ * Inset via `.dashboard-main` in globals.css; flat sections via `dashboardSurface`.
+ * Radius ladder is `--control-radius` inside `--radius` (outer = inner + padding).
+ * Motion is `--transition-interactive` / `--transition-color`. Focus is `--focus-ring-color` and `.focus-ring`.
  */
 /** Viewport-locked editors — main stays overflow-hidden; child owns layout. */
 export const LOCKED_STUDIO_SHELL_CLASSES = [
@@ -50,6 +52,6 @@ export const slideshowStudioRootClassName =
 export const ugcStudioRootClassName =
   'ugc-studio flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground'
 
-/** Post composer — zero dashboard inset via `:has(.post-composer)` on main. */
+/** Post composer — zero dashboard inset via `:has(.post-composer)` on main. `px-4` is the composer's own inset, on purpose. */
 export const postComposerRootClassName =
   'post-composer flex min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground px-4'

@@ -1,0 +1,20 @@
+# Reference crontab for the Socialista API cron routes.
+# Install on the VPS with:  ./crons/install.sh
+# Paths below assume the deploy prefix /var/www/socialista.
+# Schedules are staggered so token refresh and analytics sweeps do not pile up.
+#
+# MAILTO=""
+# SHELL=/bin/bash
+
+# Publish posts whose scheduled time has passed. Every minute.
+* * * * * /var/www/socialista/crons/posts-publish-due.sh
+
+# Refresh channel tokens that are close to expiry.
+*/15 * * * * /var/www/socialista/crons/accounts-refresh-expiring.sh
+
+# Disconnect channels whose tokens can no longer be refreshed. Once a day.
+17 3 * * * /var/www/socialista/crons/accounts-disconnect-expired.sh
+
+# Account analytics, then post analytics six hours apart from each other.
+7 */6 * * * /var/www/socialista/crons/analytics-sweep.sh
+37 */6 * * * /var/www/socialista/crons/analytics-posts-sweep.sh
